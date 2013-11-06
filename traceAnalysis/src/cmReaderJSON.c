@@ -16,6 +16,7 @@
 #define JSON_MAP_KEY_NAME_NAME		"name"
 #define JSON_MAP_KEY_NAME_START		"start"
 #define JSON_MAP_KEY_NAME_STOP		"stop"
+#define JSON_MAP_KEY_NAME_WHITELIST	"whl"
 
 #define IDLE_MAP_LEVEL 				1
 #define IMAGE_MAP_LEVEL				2
@@ -30,6 +31,7 @@ enum cm_json_map_key{
 	CM_JSON_MAP_KEY_NAME,
 	CM_JSON_MAP_KEY_START,
 	CM_JSON_MAP_KEY_STOP,
+	CM_JSON_MAP_KEY_WHITELIST,
 	CM_JSON_MAP_KEY_UNKNOWN
 };
 
@@ -42,6 +44,7 @@ struct cmReaderJSON{
 	int 					actual_map_level;
 };
 
+static int cmReaderJSON_boolean(void* ctx, int boolean);
 static int cmReaderJSON_number(void* ctx, const char* s, size_t l);
 static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen);
 static int cmReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_t stringLen);
@@ -50,7 +53,7 @@ static int cmReaderJSON_end_map(void* ctx);
 
 static yajl_callbacks json_parser_callback = {
 	NULL,							/* null */	
-	NULL,							/* boolean */
+	cmReaderJSON_boolean,			/* boolean */
 	NULL,							/* integer */
 	NULL,							/* double */
 	cmReaderJSON_number,			/* number */
@@ -126,6 +129,23 @@ struct codeMap* cmReaderJSON_parse_trace(const char* file_name){
 /* YAJL callbacks                                                   	 */
 /* ===================================================================== */
 
+static int cmReaderJSON_boolean(void* ctx, int boolean){
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
+
+	if (cm_reader->actual_key == CM_JSON_MAP_KEY_WHITELIST){
+		switch (cm_reader->actual_map_level){
+			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.white_listed = (boolean == 0)?CODEMAP_NOT_WHITELISTED:CODEMAP_WHITELISTED; break;}
+			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.white_listed = (boolean == 0)?CODEMAP_NOT_WHITELISTED:CODEMAP_WHITELISTED; break;}
+			default : {printf("ERROR: in %s, boolean attribute is not expected at this level\n", __func__); break;}
+		}
+	}
+	else{
+		printf("ERROR: in %s, wrong data type (boolean) for the current key\n", __func__);
+	}
+
+	return 1;
+}
+
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static int cmReaderJSON_number(void* ctx, const char* s, size_t l){
 	/*struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
@@ -151,7 +171,7 @@ static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t
 			case IMAGE_MAP_LEVEL	: {memcpy(cm_reader->current_image.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
 			case SECTION_MAP_LEVEL	: {memcpy(cm_reader->current_section.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
 			case ROUTINE_MAP_LEVEL	: {memcpy(cm_reader->current_routine.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
-			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this level\n", __func__); break;}
 		}
 	}
 	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_START){
@@ -159,7 +179,7 @@ static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t
 			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
 			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
 			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
-			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this level\n", __func__); break;}
 		}
 	}
 	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_STOP){
@@ -167,11 +187,11 @@ static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t
 			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
 			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
 			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
-			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this level\n", __func__); break;}
 		}
 	}
 	else{
-		printf("ERROR: in %s, wrong data type for the current key\n", __func__);
+		printf("ERROR: in %s, wrong data type (string) for the current key\n", __func__);
 	}
 
 	return 1;
@@ -203,6 +223,9 @@ static int cmReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_
 	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_STOP, stringLen)){
 		cm_reader->actual_key = CM_JSON_MAP_KEY_STOP;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_WHITELIST, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_WHITELIST;
 	}
 	else{
 		printf("ERROR: in %s, unknown map key\n", __func__);

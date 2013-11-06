@@ -7,11 +7,12 @@
 
 
 #define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 		"simple_traveral"
-#define ANALYSIS_TYPE_PRINT_INSTRUCTIONS	"print_isntructions"
+#define ANALYSIS_TYPE_PRINT_INSTRUCTIONS	"print_instructions"
 #define ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT	"print_simpleTraceStat"
 #define ANALYSIS_TYPE_PRINT_CODEMAP			"print_codeMap"
 #define ANALYSIS_TYPE_BUILD_CFG				"build_cfg"
 
+static void analysis_print_command();
 
 int main(int argc, char** argv){
 	struct trace* 				ptrace	= NULL;
@@ -46,9 +47,19 @@ int main(int argc, char** argv){
 	}
 	else{
 		printf("ERROR: in %s, unknown analysis type: %s\n", __func__, argv[2]);
+		analysis_print_command();
 	}
 
 	trace_delete(ptrace);
 	
 	return 0;
+}
+
+static void analysis_print_command(){
+	printf("*** Analysis Commands ***\n");
+	printf("\t%s\n", ANALYSIS_TYPE_SIMPLE_TRAVERSAL);
+	printf("\t%s\n", ANALYSIS_TYPE_PRINT_INSTRUCTIONS);	
+	printf("\t%s\n", ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT);
+	printf("\t%s\n", ANALYSIS_TYPE_PRINT_CODEMAP);
+	printf("\t%s\n", ANALYSIS_TYPE_BUILD_CFG);
 }

@@ -3,7 +3,6 @@
 #include "pin.H"
 
 #include "tracer.h"
-#include "whiteList.h"
 #include "traceFiles.h"
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
@@ -28,7 +27,6 @@
  */
 
 
-struct whiteList*	shared_library_list = NULL;		/* ne pas laisser en statique */
 struct traceFiles* 	trace = NULL;					/* ne pas laisser en statique */
 struct tracer		tracer;							/* ne pas laisser en statique */
 
@@ -53,7 +51,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 
 	routine = INS_Rtn(instruction);
 	if (RTN_Valid(routine)){
-		if (whiteList_search(shared_library_list, RTN_Name(routine).c_str()) == 0){
+		if (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0){
 			return;
 		}
 		else{
@@ -61,7 +59,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 			if (SEC_Valid(section)){
 				image= SEC_Img(section);
 				if (IMG_Valid(image)){
-					if (whiteList_search(shared_library_list, IMG_Name(image).c_str()) != 0){
+					if (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0){
 						return;
 					}
 				}
@@ -95,24 +93,27 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
    */
 
 void pintool_instrumentation_img(IMG image, void* val){
-	struct codeMap* 	cm = (struct codeMap*)val;
 	SEC 				section;
 	RTN 				routine;
 	struct cm_routine*	cm_rtn;
+	char				white_listed;
 
-	if (codeMap_add_image(cm, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str())){
+
+	white_listed = (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0)?CODEMAP_WHITELISTED:CODEMAP_NOT_WHITELISTED;
+	if (codeMap_add_image(tracer.code_map, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str(), white_listed)){
 		printf("ERROR: in %s, unable to add image to code map structure\n", __func__);
 	}
 	else{
 		for (section= IMG_SecHead(image); SEC_Valid(section); section = SEC_Next(section)){
 			if (SEC_IsExecutable(section) && SEC_Mapped(section)){
-				if (codeMap_add_section(cm, SEC_Address(section), SEC_Address(section) + SEC_Size(section), SEC_Name(section).c_str())){
+				if (codeMap_add_section(tracer.code_map, SEC_Address(section), SEC_Address(section) + SEC_Size(section), SEC_Name(section).c_str())){
 					printf("ERROR: in %s, unable to add section to code map structure\n", __func__);
 					break;
 				}
 				else{
 					for (routine= SEC_RtnHead(section); RTN_Valid(routine); routine = RTN_Next(routine)){
-						cm_rtn = codeMap_add_routine(cm, RTN_Address(routine), RTN_Address(routine) + RTN_Size(routine), RTN_Name(routine).c_str());
+						white_listed |= (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0)?CODEMAP_WHITELISTED:CODEMAP_NOT_WHITELISTED;
+						cm_rtn = codeMap_add_routine(tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Size(routine), RTN_Name(routine).c_str(), white_listed);
 						if (cm_rtn == NULL){
 							printf("ERROR: in %s, unable to add routine to code map structure\n", __func__);
 							break;
@@ -139,17 +140,20 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 		return -1;
 	}
 
-	tracer.cm = codeMap_create();
-	if (tracer.cm == NULL){
+	tracer.code_map = codeMap_create();
+	if (tracer.code_map == NULL){
 		printf("ERROR: unable to create code map\n");
 		return -1;
 	}
 
 	if (white_list_file_name != NULL){
-		shared_library_list = whiteList_create(white_list_file_name);
-		if (shared_library_list == NULL){
+		tracer.white_list = whiteList_create(white_list_file_name);
+		if (tracer.white_list == NULL){
 			printf("ERROR: unable to create shared library white list\n");
 		}
+	}
+	else{
+		tracer.white_list = NULL;
 	}
 
 	return 0;
@@ -160,12 +164,12 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 /* Cleanup function                                                 	 */
 /* ===================================================================== */
 void pintool_clean(INT32 code, void* arg){
-	traceFiles_print_codeMap(trace, tracer.cm);
+	traceFiles_print_codeMap(trace, tracer.code_map);
 	traceFiles_delete(trace);
 
-	codeMap_delete(tracer.cm);
+	codeMap_delete(tracer.code_map);
 
-    whiteList_delete(shared_library_list);
+    whiteList_delete(tracer.white_list);
 }
 
 
@@ -191,9 +195,9 @@ int main(int argc, char * argv[]){
 		}
 	}
 	
-    IMG_AddInstrumentFunction(pintool_instrumentation_img, tracer.cm);
+    IMG_AddInstrumentFunction(pintool_instrumentation_img, NULL);
     INS_AddInstrumentFunction(pintool_instrumentation_ins, NULL);
-    PIN_AddFiniFunction(pintool_clean, 0);
+    PIN_AddFiniFunction(pintool_clean, NULL);
 	
     PIN_StartProgram();
     

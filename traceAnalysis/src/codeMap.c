@@ -30,7 +30,7 @@ struct codeMap* codeMap_create(){
 	return cm;
 }
 
-int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name){
+int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed){
 	struct cm_image* 	image;
 	struct cm_image** 	cursor = &(cm->images);
 
@@ -44,6 +44,7 @@ int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned 
 			image->address_start = address_start;
 			image->address_stop = address_stop;
 			strncpy(image->name, name, CODEMAP_DEFAULT_NAME_SIZE);
+			image->white_listed = white_listed;
 			image->sections = NULL;
 			image->next = NULL;
 			image->parent = cm;
@@ -102,7 +103,7 @@ int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigne
 	return 0;
 }
 
-struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name){
+struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed){
 	struct cm_routine*	routine = NULL;
 	struct cm_routine**	cursor;
 
@@ -116,6 +117,7 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address
 				routine->address_start = address_start;
 				routine->address_stop = address_stop;
 				strncpy(routine->name, name, CODEMAP_DEFAULT_NAME_SIZE);
+				routine->white_listed = white_listed;
 				routine->nb_execution = 0;
 				routine->next = NULL;
 				routine->parent = cm->current_section;
@@ -310,7 +312,12 @@ void codeMap_delete(struct codeMap* cm){
 
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file){
 	if (routine != NULL){
-		fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\"}", routine->address_start, routine->address_stop, routine->name);
+		if (routine->white_listed == CODEMAP_WHITELISTED){
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true}", routine->address_start, routine->address_stop, routine->name);
+		}
+		else{
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false}", routine->address_start, routine->address_stop, routine->name);
+		}
 	}
 }
 
@@ -338,7 +345,12 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 	struct cm_section* section;
 
 	if (image != NULL){
-		fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"section\":[", image->address_start, image->address_stop, image->name);
+		if (image->white_listed == CODEMAP_WHITELISTED){
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+		}
+		else{
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+		}
 
 		section = image->sections;
 		while(section != NULL){
@@ -393,6 +405,7 @@ void codeMap_clean_image(struct cm_image* image){
 	image->address_start 	= 0;
 	image->address_stop 	= 0;
 	memset(image->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);
+	image->white_listed 	= CODEMAP_NOT_WHITELISTED;
 	image->sections 		= NULL;
 	image->next 			= NULL;
 	image->parent 			= NULL;
@@ -412,6 +425,7 @@ void codeMap_clean_routine(struct cm_routine* routine){
 	routine->address_stop 	= 0;
 	memset(routine->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);
 	routine->nb_execution 	= 0;
+	routine->white_listed 	= CODEMAP_NOT_WHITELISTED;
 	routine->next 			= NULL;
 	routine->parent 		= NULL;
 }

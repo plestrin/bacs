@@ -1,7 +1,17 @@
 #ifndef CODEMAP_H
 #define CODEMAP_H
 
-#define CODEMAP_DEFAULT_NAME_SIZE 256
+#define CODEMAP_DEFAULT_NAME_SIZE 	256
+
+#define CODEMAP_NOT_WHITELISTED		0
+#define CODEMAP_WHITELISTED			1
+
+/* chose que j'aimerais bien faire 
+	- ajouter le feature whiteList 
+	- ajouter le feature nbexecution
+	- faire une méthode de recherche d'adresse 
+	- ajouter des filtres simples sur l'affichage ou sur la recherche pour exclure en fonctions de la whiteList ou du nombre d'éxécution
+*/
 
 struct codeMap{
 	struct cm_image*	images;
@@ -16,6 +26,7 @@ struct cm_image{
 	unsigned long 		address_start;
 	unsigned long 		address_stop;
 	char				name[CODEMAP_DEFAULT_NAME_SIZE];
+	char				white_listed;						/* attention cette valeur n'est pas gérée correctement */
 	struct cm_section*	sections;
 	struct cm_image*	next;
 	struct codeMap*		parent;
@@ -34,15 +45,16 @@ struct cm_routine{
 	unsigned long 		address_start;
 	unsigned long		address_stop;
 	char				name[CODEMAP_DEFAULT_NAME_SIZE];
-	unsigned int 		nb_execution;
+	char				white_listed;						/* attention cette valeur n'est pas gérée correctement */
+	unsigned int 		nb_execution;						/* attention cette valeur n'est pas gérée correctement */
 	struct cm_routine*	next;
 	struct cm_section*	parent;
 };
 
 struct codeMap* codeMap_create();
-int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name);
+int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed);
 int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name);
-struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name);
+struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed);
 void codeMap_print_JSON(struct codeMap* cm, FILE* file);
 void codeMap_print(struct codeMap* cm);
 void codeMap_delete(struct codeMap* cm);
