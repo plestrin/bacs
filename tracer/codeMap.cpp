@@ -318,8 +318,7 @@ static void codeMap_print_section_JSON(struct cm_section* section, FILE* file){
 	struct cm_routine* routine;
 
 	if (section != NULL){
-		/*fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);*/
-		fprintf(file, "{\"name\":\"%s\",\"routine\":[", section->name);
+		fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
 
 		routine = section->routines;
 		while(routine != NULL){
@@ -339,8 +338,7 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 	struct cm_section* section;
 
 	if (image != NULL){
-		/*fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"section\":[", image->address_start, image->address_stop, image->name);*/
-		fprintf(file, "{\"name\":\"%s\",\"section\":[", image->name);
+		fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"section\":[", image->address_start, image->address_stop, image->name);
 
 		section = image->sections;
 		while(section != NULL){
@@ -358,7 +356,7 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 
 static void codeMap_print_routine(struct cm_routine* routine){
 	if (routine != NULL){
-		printf("\t\t\tName: %s, start: 0x%lx, stop: 0x%lx\n", routine->name, routine->address_start, routine->address_stop);
+		printf("\t\t\tName: %s, \t\tstart: 0x%lx, \tstop: 0x%lx\n", routine->name, routine->address_start, routine->address_stop);
 	}
 }
 
@@ -366,8 +364,7 @@ static void codeMap_print_section(struct cm_section* section){
 	struct cm_routine* routine;
 
 	if (section != NULL){
-		/*printf("\t\tName: %s, start: 0x%lx, stop: 0x%lx\n", section->name, section->address_start, section->address_stop);*/
-		printf("\t\tName: %s\n", section->name);
+		printf("\t\tName: %s, \t\tstart: 0x%lx, \tstop: 0x%lx\n", section->name, section->address_start, section->address_stop);
 
 		routine = section->routines;
 		while(routine != NULL){
@@ -381,7 +378,7 @@ static void codeMap_print_image(struct cm_image* image){
 	struct cm_section* section;
 
 	if (image != NULL){
-		/*printf("\tName: %s, start: 0x%lx, stop:0x%lx\n", image->name, image->address_start, image->address_stop);*/
+		printf("\tName: %s, \t\tstart: 0x%lx, \tstop:0x%lx\n", image->name, image->address_start, image->address_stop);
 		printf("\tName: %s\n", image->name);
 
 		section = image->sections;

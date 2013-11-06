@@ -91,7 +91,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
   */
 
   /*
-   * On pourrait flagger les fonctions qui sont dans la whitelisr
+   * On pourrait flagger les fonctions qui sont dans la whiteliste
    */
 
 void pintool_instrumentation_img(IMG image, void* val){
@@ -100,13 +100,13 @@ void pintool_instrumentation_img(IMG image, void* val){
 	RTN 				routine;
 	struct cm_routine*	cm_rtn;
 
-	if (codeMap_add_image(cm, 0, 0, IMG_Name(image).c_str())){
+	if (codeMap_add_image(cm, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str())){
 		printf("ERROR: in %s, unable to add image to code map structure\n", __func__);
 	}
 	else{
 		for (section= IMG_SecHead(image); SEC_Valid(section); section = SEC_Next(section)){
-			if (SEC_IsExecutable(section)){
-				if (codeMap_add_section(cm, 0, 0, SEC_Name(section).c_str())){
+			if (SEC_IsExecutable(section) && SEC_Mapped(section)){
+				if (codeMap_add_section(cm, SEC_Address(section), SEC_Address(section) + SEC_Size(section), SEC_Name(section).c_str())){
 					printf("ERROR: in %s, unable to add section to code map structure\n", __func__);
 					break;
 				}
@@ -118,7 +118,7 @@ void pintool_instrumentation_img(IMG image, void* val){
 							break;
 						}
 						else{
-							/* il faut enregistrer une focntion d'analsye pour garder le compte dee appels au sous fonctions */
+							/* il faut enregistrer une fonction d'analsye pour garder le compte dee appels aux fonctions */
 							/* qu'est-ce que l'on fait avec la whiteList */
 						}
 					}
