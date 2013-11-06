@@ -10,7 +10,7 @@
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	ptrace;
-	char			ins_file_name[TRACE_DIRECTORY_NAME_MAX_LENGTH];
+	char			file_name[TRACE_DIRECTORY_NAME_MAX_LENGTH];
 
 	ptrace = (struct trace*)malloc(sizeof(struct trace));
 	if (ptrace == NULL){
@@ -18,11 +18,17 @@ struct trace* trace_create(const char* dir_name){
 		return NULL;
 	}
 
-	snprintf(ins_file_name, TRACE_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, TRACE_INS_FILE_NAME);
-	if (traceReaderJSON_init(&(ptrace->ins_reader.json), ins_file_name)){
+	snprintf(file_name, TRACE_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, TRACE_INS_FILE_NAME);
+	if (traceReaderJSON_init(&(ptrace->ins_reader.json), file_name)){
 		printf("ERROR: in %s, unable to init trace JSON reader\n", __func__);
 		free(ptrace);
 		return NULL;
+	}
+
+	snprintf(file_name, TRACE_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, TRACE_CM_FILE_NAME);
+	ptrace->cm = cmReaderJSON_parse_trace(file_name);
+	if (ptrace->cm == NULL){
+		printf("WARNING: in %s, continue without code map information\n", __func__);
 	}
 
 	return ptrace;
@@ -65,6 +71,15 @@ void trace_print_simpleTraceStat(struct trace* ptrace){
 	simpleTraceStat_delete(stat);
 }
 
+void trace_print_codeMap(struct trace* ptrace){
+	if (ptrace->cm != NULL){
+		codeMap_print(ptrace->cm);
+	}
+	else{
+		printf("ERROR: in %s, unable to print code map cause it's NULL\n", __func__);
+	}
+}
+
 struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace){
 	struct controlFlowGraph* 	cfg;
 	struct instruction*			ins;
@@ -91,6 +106,11 @@ struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace){
 void trace_delete(struct trace* ptrace){
 	if (ptrace != NULL){
 		traceReaderJSON_clean(&(ptrace->ins_reader.json));
+
+		if (ptrace->cm != NULL){
+			codeMap_delete(ptrace->cm);
+		}
+
 		free(ptrace);
 	}
 }

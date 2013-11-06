@@ -7,143 +7,118 @@
 #include <sys/mman.h>
 #include <string.h>
 
-#include "traceReaderJSON.h"
+#include "cmReaderJSON.h"
 
-#define JSON_MAP_KEY_NAME_TRACE		"trace"
-#define JSON_MAP_KEY_NAME_PC		"pc"
-#define JSON_MAP_KEY_NAME_PC_NEXT	"pc_next"
-#define JSON_MAP_KEY_NAME_INS		"ins"
 
-#define INSTRUCTION_MAP_LEVEL	2
+#define JSON_MAP_KEY_NAME_IMAGE		"image"
+#define JSON_MAP_KEY_NAME_SECTION	"section"
+#define JSON_MAP_KEY_NAME_ROUTINE	"routine"
+#define JSON_MAP_KEY_NAME_NAME		"name"
+#define JSON_MAP_KEY_NAME_START		"start"
+#define JSON_MAP_KEY_NAME_STOP		"stop"
 
-static int traceReaderJSON_number(void* ctx, const char* s, size_t l);
-static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen);
-static int traceReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_t stringLen);
-static int traceReaderJSON_start_map(void* ctx);
-static int traceReaderJSON_end_map(void* ctx);
+#define IDLE_MAP_LEVEL 				1
+#define IMAGE_MAP_LEVEL				2
+#define SECTION_MAP_LEVEL			3
+#define ROUTINE_MAP_LEVEL			4
+
+enum cm_json_map_key{
+	CM_JSON_MAP_KEY_IDLE,
+	CM_JSON_MAP_KEY_IMAGE,
+	CM_JSON_MAP_KEY_SECTION,
+	CM_JSON_MAP_KEY_ROUTINE,
+	CM_JSON_MAP_KEY_NAME,
+	CM_JSON_MAP_KEY_START,
+	CM_JSON_MAP_KEY_STOP,
+	CM_JSON_MAP_KEY_UNKNOWN
+};
+
+struct cmReaderJSON{
+	struct codeMap* 		cm;
+	struct cm_image 		current_image;
+	struct cm_section 		current_section;
+	struct cm_routine		current_routine;
+	enum cm_json_map_key 	actual_key;
+	int 					actual_map_level;
+};
+
+static int cmReaderJSON_number(void* ctx, const char* s, size_t l);
+static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen);
+static int cmReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_t stringLen);
+static int cmReaderJSON_start_map(void* ctx);
+static int cmReaderJSON_end_map(void* ctx);
 
 static yajl_callbacks json_parser_callback = {
 	NULL,							/* null */	
 	NULL,							/* boolean */
 	NULL,							/* integer */
 	NULL,							/* double */
-	traceReaderJSON_number,			/* number */
-	traceReaderJSON_string,			/* string */
-	traceReaderJSON_start_map,		/* start map */
-	traceReaderJSON_map_key,		/* map key */
-	traceReaderJSON_end_map,		/* end map */
+	cmReaderJSON_number,			/* number */
+	cmReaderJSON_string,			/* string */
+	cmReaderJSON_start_map,			/* start map */
+	cmReaderJSON_map_key,			/* map key */
+	cmReaderJSON_end_map,			/* end map */
 	NULL,							/* start array */
 	NULL							/* end array */
 };
 
 
-int traceReaderJSON_init(struct traceReaderJSON* trace_reader, const char* file_name){
+struct codeMap* cmReaderJSON_parse_trace(const char* file_name){
+	int 				file;
 	struct stat 		sb;
-
-	trace_reader->read_offset = 0;
-	trace_reader->buffer = NULL;
-	trace_reader->buffer_length = 0;
-	trace_reader->json_parser_handle = NULL;
-
-	trace_reader->file = open(file_name, O_RDONLY);
-	if (trace_reader->file == -1){
-		printf("ERROR: in %s; unable to open file %s read only\n", __func__, file_name);
-		return -1;
-	}
-
-	if (fstat(trace_reader->file, &sb) < 0){
-		printf("ERROR: in %s, unable to read file size\n", __func__);
-		close(trace_reader->file);
-		trace_reader->file = -1;
-		return -1;
-	}
-
-	trace_reader->file_length = sb.st_size;
-
-	trace_reader->json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)trace_reader);
-	if (trace_reader->json_parser_handle == NULL){
-		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
-		close(trace_reader->file);
-		trace_reader->file = -1;
-		return -1;
-	}
-
-	trace_reader->actual_key = JSON_MAP_KEY_IDLE;
-	trace_reader->actual_map_level = 0;
-
-	trace_reader->instruction_cursor = 0;
-	trace_reader->cache_bot_offset = 0;
-	trace_reader->cache_top_offset = 0;
-	trace_reader->cache_bot_cursor = 0;
-	trace_reader->cache_top_cursor = 0;
-	
-	return 0;
-}
-
-struct instruction* traceReaderJSON_get_next_instruction(struct traceReaderJSON* trace_reader){
-	struct instruction* result = NULL;
-	long				mapping_size;
+	void*				buffer;
+	yajl_handle 		json_parser_handle;
 	yajl_status 		status;
+	struct cmReaderJSON cm_reader;
 
-	if (trace_reader->instruction_cursor >= trace_reader->cache_bot_cursor && trace_reader->instruction_cursor < trace_reader->cache_top_cursor){
-		result = trace_reader->instruction_cache + (trace_reader->cache_bot_offset + (trace_reader->instruction_cursor - trace_reader->cache_bot_cursor))%TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE;
-		trace_reader->instruction_cursor ++;
-	}
-	else{
-		if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
-			munmap(trace_reader->buffer, trace_reader->buffer_length);
-		}
-		mapping_size = (trace_reader->read_offset + TRACEREADERJSON_MMAP_MEMORY_SIZE > trace_reader->file_length)?(trace_reader->file_length - trace_reader->read_offset):TRACEREADERJSON_MMAP_MEMORY_SIZE;
-		if (mapping_size != 0){
-			trace_reader->buffer = mmap(NULL, mapping_size, PROT_READ, MAP_PRIVATE, trace_reader->file, trace_reader->read_offset);
-			if (trace_reader->buffer == NULL){
-				printf("ERROR: in %s, unable to map trace file @ offset %ld\n", __func__, trace_reader->read_offset);
-			}
-			else{
-				trace_reader->read_offset += mapping_size;
-				trace_reader->buffer_length = mapping_size;
-
-				status = yajl_parse(trace_reader->json_parser_handle, trace_reader->buffer, trace_reader->buffer_length);
-				if (status != yajl_status_ok){
-					printf("ERROR: in %s, YAJL parser return an error status\n", __func__);
-				}
-				else{
-					if (trace_reader->read_offset == trace_reader->file_length){
-						status = yajl_complete_parse(trace_reader->json_parser_handle);
-						if (status != yajl_status_ok){
-							printf("ERROR: in %s, YAJL parser return an error status (complete)\n", __func__);
-						}
-						else{
-							result = traceReaderJSON_get_next_instruction(trace_reader);
-						}
-					}
-					else{
-						result = traceReaderJSON_get_next_instruction(trace_reader);
-					}
-				}
-			}
-		}
+	cm_reader.cm = codeMap_create();
+	if (cm_reader.cm == NULL){
+		printf("ERROR: in %s, unable to create code map\n", __func__);
+		return NULL;
 	}
 
-	return result;
-}
+	cm_reader.actual_key 		= CM_JSON_MAP_KEY_IDLE;
+	cm_reader.actual_map_level 	= 0;
 
-void traceReaderJSON_clean(struct traceReaderJSON* trace_reader){
-	if (trace_reader != NULL){
-		if (trace_reader->file != -1){
-			close(trace_reader->file);
-			trace_reader->file = -1;
-		}
-		if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
-			munmap(trace_reader->buffer, trace_reader->buffer_length);
-			trace_reader->buffer = NULL;
-			trace_reader->buffer_length = 0;
-		}
-		if (trace_reader->json_parser_handle != NULL){
-			yajl_free(trace_reader->json_parser_handle);
-			trace_reader->json_parser_handle = NULL;
-		}
+	file = open(file_name, O_RDONLY);
+	if (file == -1){
+		printf("ERROR: in %s; unable to open file %s read only\n", __func__, file_name);
+		codeMap_delete(cm_reader.cm);
+		return NULL;
 	}
+
+	if (fstat(file, &sb) < 0){
+		printf("ERROR: in %s, unable to read file size\n", __func__);
+		close(file);
+		codeMap_delete(cm_reader.cm);
+		return NULL;
+	}
+
+	buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, file, 0);
+	close(file);
+	if (buffer == NULL){
+		printf("ERROR: in %s, unable to map file\n", __func__);
+		codeMap_delete(cm_reader.cm);
+		return NULL;
+	}
+
+	json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)&cm_reader);
+	if (json_parser_handle == NULL){
+		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
+		munmap(buffer, sb.st_size);
+		codeMap_delete(cm_reader.cm);
+		return NULL;
+	}
+
+	status = yajl_parse(json_parser_handle, buffer, sb.st_size);
+	if (status != yajl_status_ok){
+		printf("ERROR: in %s, YAJL parser return an error status\n", __func__);
+	}
+
+	yajl_free(json_parser_handle);
+	munmap(buffer, sb.st_size);
+
+	return cm_reader.cm;
 }
 
 
@@ -152,8 +127,8 @@ void traceReaderJSON_clean(struct traceReaderJSON* trace_reader){
 /* ===================================================================== */
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static int traceReaderJSON_number(void* ctx, const char* s, size_t l){
-	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
+static int cmReaderJSON_number(void* ctx, const char* s, size_t l){
+	/*struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
 
 	if (trace_reader->actual_key == JSON_MAP_KEY_PC){
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul(s, NULL, 16);
@@ -163,23 +138,37 @@ static int traceReaderJSON_number(void* ctx, const char* s, size_t l){
 	}
 	else{
 		printf("ERROR: in %s, wrong data type for the current key\n", __func__);
-	}
+	}*/
 
 	return 1;
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen){
-	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
+static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen){
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
 
-	if (trace_reader->actual_key == JSON_MAP_KEY_INS){
-		/* il faut faire quelque chose*/
+	if (cm_reader->actual_key == CM_JSON_MAP_KEY_NAME){
+		switch (cm_reader->actual_map_level){
+			case IMAGE_MAP_LEVEL	: {memcpy(cm_reader->current_image.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
+			case SECTION_MAP_LEVEL	: {memcpy(cm_reader->current_section.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
+			case ROUTINE_MAP_LEVEL	: {memcpy(cm_reader->current_routine.name, stringVal, (stringLen > CODEMAP_DEFAULT_NAME_SIZE)?CODEMAP_DEFAULT_NAME_SIZE:stringLen); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+		}
 	}
-	else if (trace_reader->actual_key == JSON_MAP_KEY_PC){
-		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul((const char*)stringVal, NULL, 16);
+	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_START){
+		switch (cm_reader->actual_map_level){
+			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
+			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
+			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+		}
 	}
-	else if (trace_reader->actual_key == JSON_MAP_KEY_PC_NEXT){
-		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc_next = strtoul((const char*)stringVal, NULL, 16);
+	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_STOP){
+		switch (cm_reader->actual_map_level){
+			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
+			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
+			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
+			default : {printf("ERROR: in %s, string attribute is not expected at this stage\n", __func__); break;}
+		}
 	}
 	else{
 		printf("ERROR: in %s, wrong data type for the current key\n", __func__);
@@ -188,50 +177,83 @@ static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, siz
 	return 1;
 }
 
-static int traceReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_t stringLen){
-	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
+static int cmReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_t stringLen){
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
 
-	if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_TRACE, stringLen)){
-		trace_reader->actual_key = JSON_MAP_KEY_TRACE;
+	if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_IMAGE, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_IMAGE;
 	}
-	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_PC, stringLen)){
-		trace_reader->actual_key = JSON_MAP_KEY_PC;
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_SECTION, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_SECTION;
+		if (codeMap_add_static_image(cm_reader->cm, &(cm_reader->current_image))){
+			printf("ERROR: in %s, unable to add image to code map\n", __func__);
+		}
 	}
-	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_PC_NEXT, stringLen)){
-		trace_reader->actual_key = JSON_MAP_KEY_PC_NEXT;
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_ROUTINE, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_ROUTINE;
+		if (codeMap_add_static_section(cm_reader->cm, &(cm_reader->current_section))){
+			printf("ERROR: in %s, unable to add section to code map\n", __func__);
+		}
 	}
-	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_INS, stringLen)){
-		trace_reader->actual_key = JSON_MAP_KEY_INS;
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_NAME, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_NAME;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_START, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_START;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_STOP, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_STOP;
 	}
 	else{
 		printf("ERROR: in %s, unknown map key\n", __func__);
-		trace_reader->actual_key = JSON_MAP_KEY_UNKNOWN;
+		cm_reader->actual_key = CM_JSON_MAP_KEY_UNKNOWN;
 	}
 	return 1;
 }
 
-static int traceReaderJSON_start_map(void* ctx){
-	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
+static int cmReaderJSON_start_map(void* ctx){
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
 
-	trace_reader->actual_map_level ++;
+	cm_reader->actual_map_level ++;
 
-	return 1;
-}
-
-static int traceReaderJSON_end_map(void* ctx){
-	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
-
-	if (trace_reader->actual_map_level == INSTRUCTION_MAP_LEVEL){
-		
-		if ((trace_reader->cache_top_offset + 1)%TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE == trace_reader->cache_bot_offset){
-			trace_reader->cache_bot_offset = (trace_reader->cache_bot_offset + 1)%TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE;
-			trace_reader->cache_bot_cursor ++;
+	switch (cm_reader->actual_map_level){
+		case ROUTINE_MAP_LEVEL : {
+			codeMap_clean_routine(&(cm_reader->current_routine));
+			break;
 		}
-		trace_reader->cache_top_offset = (trace_reader->cache_top_offset + 1)%TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE;
-		trace_reader->cache_top_cursor ++;
+		case SECTION_MAP_LEVEL : {
+			codeMap_clean_section(&(cm_reader->current_section));
+			break;
+		}
+		case IMAGE_MAP_LEVEL : {
+			codeMap_clean_image(&(cm_reader->current_image));
+			break;
+		}
+		case IDLE_MAP_LEVEL : {
+			break;
+		}
+		default : {
+			printf("ERROR: in %s, wrong map level (%d), this case is not meant to happen\n", __func__, cm_reader->actual_map_level);
+			break;
+		}
 	}
 
-	trace_reader->actual_map_level --;
+	return 1;
+}
+
+static int cmReaderJSON_end_map(void* ctx){
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
+
+	if (cm_reader->actual_map_level == ROUTINE_MAP_LEVEL){
+		if (codeMAp_add_static_routine(cm_reader->cm, &(cm_reader->current_routine))){
+			printf("ERROR: in %s, unable to add routine to code map\n", __func__);
+		}
+	}
+	else if ((cm_reader->actual_map_level != SECTION_MAP_LEVEL) && (cm_reader->actual_map_level != IMAGE_MAP_LEVEL) && (cm_reader->actual_map_level != IDLE_MAP_LEVEL)){
+		printf("ERROR: in %s, wrong map level (%d), this case is not meant to happen\n", __func__, cm_reader->actual_map_level);
+	}
+
+	cm_reader->actual_map_level --;
 
 	return 1;
 }

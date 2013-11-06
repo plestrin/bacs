@@ -9,6 +9,7 @@
 #define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 		"simple_traveral"
 #define ANALYSIS_TYPE_PRINT_INSTRUCTIONS	"print_isntructions"
 #define ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT	"print_simpleTraceStat"
+#define ANALYSIS_TYPE_PRINT_CODEMAP			"print_codeMap"
 #define ANALYSIS_TYPE_BUILD_CFG				"build_cfg"
 
 
@@ -34,6 +35,9 @@ int main(int argc, char** argv){
 	}
 	else if (!strcmp(argv[2], ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT)){
 		trace_print_simpleTraceStat(ptrace);
+	}
+	else if (!strcmp(argv[2], ANALYSIS_TYPE_PRINT_CODEMAP)){
+		trace_print_codeMap(ptrace);
 	}
 	else if (!strcmp(argv[2], ANALYSIS_TYPE_BUILD_CFG)){
 		struct controlFlowGraph* cfg = trace_construct_flow_graph(ptrace);

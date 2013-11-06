@@ -68,7 +68,7 @@ int traceReaderJSON_init(struct traceReaderJSON* trace_reader, const char* file_
 		return -1;
 	}
 
-	trace_reader->actual_key = JSON_MAP_KEY_IDLE;
+	trace_reader->actual_key = TRACE_JSON_MAP_KEY_IDLE;
 	trace_reader->actual_map_level = 0;
 
 	trace_reader->instruction_cursor = 0;

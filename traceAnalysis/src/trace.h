@@ -1,6 +1,7 @@
 #ifndef TRACE_H
 #define TRACE_H
 
+#include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
 #include "controlFlowGraph.h"
@@ -15,6 +16,8 @@ struct trace{
 	union {
 		struct traceReaderJSON json;
 	} ins_reader;
+
+	struct codeMap* cm;
 };
 
 struct trace* trace_create(const char* dir_name);
@@ -22,6 +25,7 @@ struct trace* trace_create(const char* dir_name);
 void trace_simple_traversal(struct trace* ptrace);
 void trace_print_instructions(struct trace* ptrace);
 void trace_print_simpleTraceStat(struct trace* ptrace);
+void trace_print_codeMap(struct trace* ptrace);
 struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace);
 
 void trace_delete(struct trace* ptrace);
