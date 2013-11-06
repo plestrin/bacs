@@ -68,5 +68,7 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image);
 int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section);
 int codeMAp_add_static_routine(struct codeMap* cm, struct cm_routine* routine);
 
+#define CODEMAP_INCREMENT_ROUTINE_EXE(rtn) ((rtn)->nb_execution ++)
+
 
 #endif

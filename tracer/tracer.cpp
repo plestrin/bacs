@@ -30,6 +30,9 @@
 struct traceFiles* 	trace = NULL;					/* ne pas laisser en statique */
 struct tracer		tracer;							/* ne pas laisser en statique */
 
+
+/* Je suis bien tenté de virer les KNOB et da faire quelque chose à la mano à la place */
+/* Tant qu'à faire on pourrait faire un truc un peu standard le mutualisé avec le programme de trace ?? */
 KNOB<string> knob_trace_file_name(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify trace file name");
 KNOB<BOOL> knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST, "(Optional) Shared library white list");
 KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelist-name", DEFAULT_WHITE_LIST_FILE_NAME, "Specify shared library white list file name");
@@ -37,8 +40,14 @@ KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelis
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
-void pintool_analysis(ADDRINT pc, ADDRINT pc_next){
+void pintool_instruction_analysis(ADDRINT pc, ADDRINT pc_next){
 	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\"},", pc, pc_next);
+}
+
+void pintool_routine_analysis(void* cm_routine_ptr){
+	struct cm_routine* routine = (struct cm_routine*)cm_routine_ptr;
+	
+	CODEMAP_INCREMENT_ROUTINE_EXE(routine);
 }
 
 /* ===================================================================== */
@@ -69,7 +78,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 
 	}
 
-	INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_analysis, 
+	INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
 		IARG_INST_PTR, 												/* program counter */
 		IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
 		IARG_END);
@@ -80,17 +89,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
  * au APIs qui sont white lister afin de désactiver l'analyse du code
  * Est-ce que ça ne serait pas plus efficace de ne pas instrumenter le code dans un premier temps?? 
  * Attention je ne saias pas si c'est intéressant de conserver cette méthode ici ??
- * De toute facon il faut éviter de fiare des printf
  */
-
-
- /* Je pense que ça serait pas mal de faire figurer un certains nombre d'infos sur les imports au 
-  * début/ fin de la trace afin de pouvoir rapidement identifier l'appartenance du code en mémoire
-  */
-
-  /*
-   * On pourrait flagger les fonctions qui sont dans la whiteliste
-   */
 
 void pintool_instrumentation_img(IMG image, void* val){
 	SEC 				section;
@@ -119,8 +118,9 @@ void pintool_instrumentation_img(IMG image, void* val){
 							break;
 						}
 						else{
-							/* il faut enregistrer une fonction d'analsye pour garder le compte dee appels aux fonctions */
-							/* qu'est-ce que l'on fait avec la whiteList */
+							RTN_Open(routine);
+							RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)pintool_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
+							RTN_Close(routine);
 						}
 					}
 				}

@@ -313,10 +313,10 @@ void codeMap_delete(struct codeMap* cm){
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file){
 	if (routine != NULL){
 		if (routine->white_listed == CODEMAP_WHITELISTED){
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true}", routine->address_start, routine->address_stop, routine->name);
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
 		}
 		else{
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false}", routine->address_start, routine->address_stop, routine->name);
+			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
 		}
 	}
 }

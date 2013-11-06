@@ -17,6 +17,7 @@
 #define JSON_MAP_KEY_NAME_START		"start"
 #define JSON_MAP_KEY_NAME_STOP		"stop"
 #define JSON_MAP_KEY_NAME_WHITELIST	"whl"
+#define JSON_MAP_KEY_NAME_EXE		"exe"
 
 #define IDLE_MAP_LEVEL 				1
 #define IMAGE_MAP_LEVEL				2
@@ -32,6 +33,7 @@ enum cm_json_map_key{
 	CM_JSON_MAP_KEY_START,
 	CM_JSON_MAP_KEY_STOP,
 	CM_JSON_MAP_KEY_WHITELIST,
+	CM_JSON_MAP_KEY_EXE,
 	CM_JSON_MAP_KEY_UNKNOWN
 };
 
@@ -148,17 +150,19 @@ static int cmReaderJSON_boolean(void* ctx, int boolean){
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static int cmReaderJSON_number(void* ctx, const char* s, size_t l){
-	/*struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
+	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
 
-	if (trace_reader->actual_key == JSON_MAP_KEY_PC){
-		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul(s, NULL, 16);
-	}
-	else if (trace_reader->actual_key == JSON_MAP_KEY_PC_NEXT){
-		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc_next = strtoul(s, NULL, 16);
+	if (cm_reader->actual_key == CM_JSON_MAP_KEY_EXE){
+		if (cm_reader->actual_map_level == ROUTINE_MAP_LEVEL){
+			cm_reader->current_routine.nb_execution = (unsigned int)atoi(s);
+		}
+		else{
+			printf("ERROR: in %s, number attribute is not expected at this level\n", __func__);
+		}
 	}
 	else{
-		printf("ERROR: in %s, wrong data type for the current key\n", __func__);
-	}*/
+		printf("ERROR: in %s, wrong data type (number) for the current key\n", __func__);
+	}
 
 	return 1;
 }
@@ -226,6 +230,9 @@ static int cmReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size_
 	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_WHITELIST, stringLen)){
 		cm_reader->actual_key = CM_JSON_MAP_KEY_WHITELIST;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_EXE, stringLen)){
+		cm_reader->actual_key = CM_JSON_MAP_KEY_EXE;
 	}
 	else{
 		printf("ERROR: in %s, unknown map key\n", __func__);
