@@ -6,6 +6,12 @@
 #define CODEMAP_NOT_WHITELISTED		0
 #define CODEMAP_WHITELISTED			1
 
+
+#define CODEMAP_FILTER_WHITELIST		0x00000001
+#define CODEMAP_FILTER_EXECUTED			0x00000002
+
+#define CODEMAP_TAB_LENGTH			8 /* warning this is quite messy - but it'll do the work for now  */
+
 /* chose que j'aimerais bien faire 
 	- ajouter le feature whiteList 
 	- ajouter le feature nbexecution
@@ -26,7 +32,7 @@ struct cm_image{
 	unsigned long 		address_start;
 	unsigned long 		address_stop;
 	char				name[CODEMAP_DEFAULT_NAME_SIZE];
-	char				white_listed;						/* attention cette valeur n'est pas gérée correctement */
+	char				white_listed;
 	struct cm_section*	sections;
 	struct cm_image*	next;
 	struct codeMap*		parent;
@@ -45,8 +51,8 @@ struct cm_routine{
 	unsigned long 		address_start;
 	unsigned long		address_stop;
 	char				name[CODEMAP_DEFAULT_NAME_SIZE];
-	char				white_listed;						/* attention cette valeur n'est pas gérée correctement */
-	unsigned int 		nb_execution;						/* attention cette valeur n'est pas gérée correctement */
+	char				white_listed;
+	unsigned int 		nb_execution;
 	struct cm_routine*	next;
 	struct cm_section*	parent;
 };
@@ -56,7 +62,7 @@ int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned 
 int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name);
 struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed);
 void codeMap_print_JSON(struct codeMap* cm, FILE* file);
-void codeMap_print(struct codeMap* cm);
+void codeMap_print(struct codeMap* cm, int filter);
 void codeMap_delete(struct codeMap* cm);
 
 void codeMap_clean_image(struct cm_image* image);

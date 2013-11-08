@@ -8,9 +8,17 @@ static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file);
 static void codeMap_print_section_JSON(struct cm_section* section, FILE* file);
 static void codeMap_print_image_JSON(struct cm_image* image, FILE* file);
 
-static void codeMap_print_routine(struct cm_routine* routine);
-static void codeMap_print_section(struct cm_section* section);
-static void codeMap_print_image(struct cm_image* image);
+static void codeMap_print_routine(struct cm_routine* routine, int filter);
+static void codeMap_print_section(struct cm_section* section, int filter);
+static void codeMap_print_image(struct cm_image* image, int filter);
+
+static int codeMap_filter_routine_executed(struct cm_routine* routine);
+static int codeMap_filter_section_executed(struct cm_section* section);
+static int codeMap_filter_image_executed(struct cm_image* image);
+
+static int codeMap_filter_routine_whitelisted(struct cm_routine* routine);
+static int codeMap_filter_section_whitelisted(struct cm_section* section);
+static int codeMap_filter_image_whitelisted(struct cm_image* image);
 
 
 struct codeMap* codeMap_create(){
@@ -220,7 +228,6 @@ int codeMAp_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 			}
 			else{
 				memcpy(new_routine, routine, sizeof(struct cm_routine));
-				new_routine->nb_execution = 0;
 				new_routine->next = NULL;
 				new_routine->parent = cm->current_section;
 
@@ -262,15 +269,27 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 	}
 }
 
-void codeMap_print(struct codeMap* cm){
+void codeMap_print(struct codeMap* cm, int filter){
 	struct cm_image* image;
 
 	if (cm != NULL){
-		printf("*** Code Map ***\n");
+		if (filter){
+			printf("*** Code Map - filter:{ ");
+			if (filter & CODEMAP_FILTER_WHITELIST){
+				printf("WHITELIST ");
+			}
+			if (filter & CODEMAP_FILTER_EXECUTED){
+				printf("EXECUTED ");
+			}
+			printf("} ***\n");
+		}
+		else{
+			printf("*** Code Map ***\n");
+		}
 
 		image = cm->images;
 		while(image != NULL){
-			codeMap_print_image(image);
+			codeMap_print_image(image, filter);
 			image = image->next;
 		}		
 	}
@@ -366,36 +385,74 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 	}
 }
 
-static void codeMap_print_routine(struct cm_routine* routine){
+static void codeMap_print_routine(struct cm_routine* routine, int filter){
 	if (routine != NULL){
-		printf("\t\t\tName: %s, \t\tstart: 0x%lx, \tstop: 0x%lx\n", routine->name, routine->address_start, routine->address_stop);
+		if (filter & CODEMAP_FILTER_EXECUTED){
+			if (!codeMap_filter_routine_executed(routine)){
+				return;
+			}
+		}
+		if (filter & CODEMAP_FILTER_WHITELIST){
+			if (codeMap_filter_routine_whitelisted(routine)){
+				return;
+			}
+		}
+
+		if (strlen(routine->name) > 2*CODEMAP_TAB_LENGTH){
+			printf("\t\t\tName: %s, \tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
+		}
+		else if (strlen(routine->name) > CODEMAP_TAB_LENGTH){
+			printf("\t\t\tName: %s, \t\tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
+		}
+		else{
+			printf("\t\t\tName: %s, \t\t\tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
+		}
 	}
 }
 
-static void codeMap_print_section(struct cm_section* section){
+static void codeMap_print_section(struct cm_section* section, int filter){
 	struct cm_routine* routine;
 
 	if (section != NULL){
-		printf("\t\tName: %s, \t\tstart: 0x%lx, \tstop: 0x%lx\n", section->name, section->address_start, section->address_stop);
+		if (filter & CODEMAP_FILTER_EXECUTED){
+			if (!codeMap_filter_section_executed(section)){
+				return;
+			}
+		}
+		if (filter & CODEMAP_FILTER_WHITELIST){
+			if (codeMap_filter_section_whitelisted(section)){
+				return;
+			}
+		}
+		printf("\t\tName: %s, \t\tstart: 0x%lx, stop: 0x%lx\n", section->name, section->address_start, section->address_stop);
 
 		routine = section->routines;
 		while(routine != NULL){
-			codeMap_print_routine(routine);
+			codeMap_print_routine(routine, filter);
 			routine = routine->next;
 		}		
 	}
 }
 
-static void codeMap_print_image(struct cm_image* image){
+static void codeMap_print_image(struct cm_image* image, int filter){
 	struct cm_section* section;
 
 	if (image != NULL){
-		printf("\tName: %s, \t\tstart: 0x%lx, \tstop:0x%lx\n", image->name, image->address_start, image->address_stop);
-		printf("\tName: %s\n", image->name);
+		if (filter & CODEMAP_FILTER_EXECUTED){
+			if (!codeMap_filter_image_executed(image)){
+				return;
+			}
+		}
+		if (filter & CODEMAP_FILTER_WHITELIST){
+			if (codeMap_filter_image_whitelisted(image)){
+				return;
+			}
+		}
+		printf("\tName: %s, \t\tstart: 0x%lx, stop:0x%lx\n", image->name, image->address_start, image->address_stop);
 
 		section = image->sections;
 		while(section != NULL){
-			codeMap_print_section(section);
+			codeMap_print_section(section, filter);
 			section = section->next;
 		}		
 	}
@@ -428,4 +485,69 @@ void codeMap_clean_routine(struct cm_routine* routine){
 	routine->white_listed 	= CODEMAP_NOT_WHITELISTED;
 	routine->next 			= NULL;
 	routine->parent 		= NULL;
+}
+
+static int codeMap_filter_routine_executed(struct cm_routine* routine){
+	return routine->nb_execution;
+}
+
+static int codeMap_filter_section_executed(struct cm_section* section){
+	struct cm_routine* cursor = section->routines;
+
+	while(cursor != NULL){
+		if (codeMap_filter_routine_executed(cursor)){
+			return 1;
+		}
+		cursor = cursor->next;
+	}
+
+	return 0;
+}
+
+static int codeMap_filter_image_executed(struct cm_image* image){
+	struct cm_section* cursor = image->sections;
+
+	while(cursor != NULL){
+		if (codeMap_filter_section_executed(cursor)){
+			return 1;
+		}
+		cursor = cursor->next;
+	}
+
+	return 0;
+}
+
+static int codeMap_filter_routine_whitelisted(struct cm_routine* routine){
+	return (routine->white_listed == CODEMAP_WHITELISTED);
+}
+
+static int codeMap_filter_section_whitelisted(struct cm_section* section){
+	struct cm_routine* cursor = section->routines;
+
+	while(cursor != NULL){
+		if (!codeMap_filter_routine_whitelisted(cursor)){
+			return 0;
+		}
+		cursor = cursor->next;
+	}
+
+	return 1;
+}
+
+static int codeMap_filter_image_whitelisted(struct cm_image* image){
+	if (image->white_listed == CODEMAP_WHITELISTED){
+		return 1;
+	}
+	else{
+		struct cm_section* cursor = image->sections;
+
+		while(cursor != NULL){
+			if (!codeMap_filter_section_whitelisted(cursor)){
+				return 0;
+			}
+			cursor = cursor->next;
+		}
+
+		return 1;
+	}
 }

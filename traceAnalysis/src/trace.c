@@ -73,7 +73,7 @@ void trace_print_simpleTraceStat(struct trace* ptrace){
 
 void trace_print_codeMap(struct trace* ptrace){
 	if (ptrace->cm != NULL){
-		codeMap_print(ptrace->cm);
+		codeMap_print(ptrace->cm, CODEMAP_FILTER_EXECUTED);
 	}
 	else{
 		printf("ERROR: in %s, unable to print code map cause it's NULL\n", __func__);
