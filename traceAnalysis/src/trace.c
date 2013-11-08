@@ -73,6 +73,7 @@ void trace_print_simpleTraceStat(struct trace* ptrace){
 
 void trace_print_codeMap(struct trace* ptrace){
 	if (ptrace->cm != NULL){
+		/* We need to find a way to set the filter from the command line */
 		codeMap_print(ptrace->cm, CODEMAP_FILTER_EXECUTED);
 	}
 	else{
