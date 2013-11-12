@@ -14,7 +14,7 @@ struct trace* trace_create(const char* dir_name){
 
 	ptrace = (struct trace*)malloc(sizeof(struct trace));
 	if (ptrace == NULL){
-		printf("ERROR: in %s, unable to alloacte memory\n", __func__);
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		return NULL;
 	}
 
@@ -73,6 +73,7 @@ void trace_print_simpleTraceStat(struct trace* ptrace){
 
 void trace_print_codeMap(struct trace* ptrace){
 	if (ptrace->cm != NULL){
+		codeMap_check_address(ptrace->cm);
 		/* We need to find a way to set the filter from the command line */
 		codeMap_print(ptrace->cm, CODEMAP_FILTER_EXECUTED);
 	}

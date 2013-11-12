@@ -551,3 +551,143 @@ static int codeMap_filter_image_whitelisted(struct cm_image* image){
 		return 1;
 	}
 }
+
+int codeMap_check_address(struct codeMap* cm){
+	struct cm_image* 	cursor_image;
+	struct cm_section* 	cursor_section;
+	struct cm_routine*	cursor_routine;
+
+	printf("Checking code map address consistency: ");
+
+	if (cm != NULL){
+		cursor_image = cm->images;
+		while(cursor_image != NULL){
+
+			if (cursor_image->address_start > cursor_image->address_stop){
+				printf("ERROR: image start address is greater than its stop address\n");
+				return -1;
+			}
+
+			cursor_section = cursor_image->sections;
+			while(cursor_section != NULL){
+				
+				if (cursor_section->address_start > cursor_section->address_stop){
+					printf("ERROR: section start address is greater thant its stop address\n");
+					return -1;
+				}
+
+				if (cursor_section->address_start < cursor_image->address_start || cursor_section->address_stop > cursor_image->address_stop){
+					printf("ERROR: section can't exist outside of an image\n");
+					return -1;
+				}
+
+				cursor_routine = cursor_section->routines;
+				while(cursor_routine != NULL){
+
+					if (cursor_routine->address_start > cursor_routine->address_stop){
+						printf("ERROR: routine start address is greater than its stop address\n");
+						return -1;
+					}
+
+					if (cursor_routine->address_start < cursor_section->address_start || cursor_routine->address_stop > cursor_section->address_stop){
+						printf("ERROR: section can't exist outside of an image\n");
+						return -1;
+					}
+
+					cursor_routine = cursor_routine->next;
+				}
+
+				cursor_section = cursor_section->next;
+			}
+
+			cursor_image = cursor_image->next;
+		}
+	}
+
+	printf("SUCCESS\n");
+
+	return 0;
+}
+
+struct cm_image* codeMap_search_image(struct codeMap* cm, unsigned long address){
+	struct cm_image* image_cursor;
+
+	if (cm != NULL){
+		image_cursor = cm->images;
+
+		while(image_cursor != NULL){
+			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+				return image_cursor;
+			}
+
+			image_cursor = image_cursor->next;
+		}
+	}
+
+	return NULL;
+}
+
+struct cm_section* codeMap_search_section(struct codeMap* cm, unsigned long address){
+	struct cm_image* 	image_cursor;
+	struct cm_section* 	section_cursor;
+
+	if (cm != NULL){
+		image_cursor = cm->images;
+
+		while(image_cursor != NULL){
+			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+				section_cursor = image_cursor->sections;
+
+				while(section_cursor != NULL){
+					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
+						return section_cursor;
+					}
+
+					section_cursor = section_cursor->next;
+				}
+			}
+
+			image_cursor = image_cursor->next;
+		}
+	}
+
+	return NULL;
+}
+
+struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long address){
+	struct cm_image* 	image_cursor;
+	struct cm_section* 	section_cursor;
+	struct cm_routine* 	routine_cursor;
+
+	if (cm != NULL){
+		image_cursor = cm->images;
+
+		while(image_cursor != NULL){
+			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+				section_cursor = image_cursor->sections;
+
+				while(section_cursor != NULL){
+					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
+						routine_cursor = section_cursor->routines;
+
+						while(routine_cursor != NULL){
+							if (routine_cursor->address_start <= address && routine_cursor->address_stop >= address){
+								return routine_cursor;
+							}
+
+							routine_cursor = routine_cursor->next;
+						}
+
+
+					}
+
+					section_cursor = section_cursor->next;
+				}
+			}
+
+			image_cursor = image_cursor->next;
+		}
+	}
+
+	return NULL;
+}

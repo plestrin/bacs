@@ -5,6 +5,7 @@
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
 #include "controlFlowGraph.h"
+#include "callTree.h"
 
 #define TRACE_DIRECTORY_NAME_MAX_LENGTH 256
 #define TRACE_INS_FILE_NAME "ins.json"
