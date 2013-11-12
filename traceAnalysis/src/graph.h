@@ -13,12 +13,12 @@
 	- parcours du graph de manière efficace - créer des mapping pour pouvoir faire des tris est des parcours rapides.
  */
 
-/*
- - faire une classe builder qui maitient en poiinter vers le dernier élement dans le but de créer des edges ou de rajouter des élément sans cohérence
- */
-
 /* je propose de développer cette absatrction pour construire un arbre deb procédure - mais bien garder en tête la faciliterde généraliser l'interface */
  
+struct graphBuilder{
+	int 						current_node_offset;
+	int 						previous_node_offset;
+};
 
 struct graph{
 	struct graphNode* 			nodes;
@@ -31,11 +31,6 @@ struct graph{
 	unsigned long				exit_point;
 	struct graphNode_callback* 	callback_node;
 	struct graphBuilder 		builder;
-};
-
-struct graphBuilder{
-	int 						current_node_offset;
-	int 						previous_node_offset;
 };
 
 

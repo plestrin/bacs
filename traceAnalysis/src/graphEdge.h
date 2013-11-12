@@ -14,8 +14,8 @@ static inline void graphEdge_init(struct graphEdge* edge, unsigned long src, uns
 	edge->nb_execution = nb_execution;
 }
 
-static inline void graphEdge_increment(struct graphEdge* edge){
-	edge->nb_execution ++;
+static inline void graphEdge_increment(struct graphEdge* edge, int nb_execution){
+	edge->nb_execution += nb_execution;
 }
 
 #endif
