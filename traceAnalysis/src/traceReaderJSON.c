@@ -155,7 +155,10 @@ void traceReaderJSON_clean(struct traceReaderJSON* trace_reader){
 static int traceReaderJSON_number(void* ctx, const char* s, size_t l){
 	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
 
-	if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC){
+	if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_INS){
+		trace_reader->instruction_cache[trace_reader->cache_top_offset].opcode = atoi(s);
+	}
+	else if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC){
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul(s, NULL, 16);
 	}
 	else if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC_NEXT){
@@ -172,10 +175,7 @@ static int traceReaderJSON_number(void* ctx, const char* s, size_t l){
 static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t stringLen){
 	struct traceReaderJSON* trace_reader = (struct traceReaderJSON*)ctx;
 
-	if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_INS){
-		/* il faut faire quelque chose*/
-	}
-	else if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC){
+	if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC){
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul((const char*)stringVal, NULL, 16);
 	}
 	else if (trace_reader->actual_key == TRACE_JSON_MAP_KEY_PC_NEXT){

@@ -14,15 +14,15 @@
 /*
  * Todo list:
  *	- trace format JSON
- *	- faire une whitelist de dll ou de nom de fonction
- *	- liste la liste des infos qu'il faut enregistrer
+ *	- la liste des infos qu'il faut enregistrer
  *	- déterminer la façon dont il faut instrumenter le code: une fois par basic bloc ou une fois par instruction
- * 	- faire un verbose de toute les instruction 
+ * 	- faire un verbose de toute les instructions (??)
  *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf)
- *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire q'un seul. En plus afficher l'aide en cas d'erreur
+ *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire qu'un seul. En plus afficher l'aide en cas d'erreur
  *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
- * 	- regarder si le fait d'écrire du JSON en ASCII n'est pas trop lent
- *	- 
+ * 	- utiliser une double thread pour l'écriture des traces (avec zlib pour la compression trop fou !!)
+ *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir) 
+ * 	- 
  *	- d'autres idées sont les biens venues
  */
 
@@ -40,8 +40,8 @@ KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelis
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
-void pintool_instruction_analysis(ADDRINT pc, ADDRINT pc_next){
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\"},", pc, pc_next);
+void pintool_instruction_analysis(ADDRINT pc, ADDRINT pc_next, UINT32 opcode){
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u},", pc, pc_next, opcode);
 }
 
 void pintool_routine_analysis(void* cm_routine_ptr){
@@ -81,15 +81,9 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 	INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
 		IARG_INST_PTR, 												/* program counter */
 		IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+		IARG_UINT32, INS_Opcode(instruction),						/* opcode */
 		IARG_END);
 }
-
-
-/* OK si je comprends bien le but de cette fonction c'est d'intrumenter les calls 
- * au APIs qui sont white lister afin de désactiver l'analyse du code
- * Est-ce que ça ne serait pas plus efficace de ne pas instrumenter le code dans un premier temps?? 
- * Attention je ne saias pas si c'est intéressant de conserver cette méthode ici ??
- */
 
 void pintool_instrumentation_img(IMG image, void* val){
 	SEC 				section;

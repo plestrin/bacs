@@ -1,10 +1,12 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
+#include <stdint.h>
 
 struct instruction{
-	unsigned long pc;
-	unsigned long pc_next;
+	unsigned long 	pc;
+	unsigned long 	pc_next;
+	uint32_t 		opcode;
 };
 
 

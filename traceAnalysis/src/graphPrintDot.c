@@ -68,7 +68,7 @@ static void graphPrintDot_print_edge(struct graph* graph, FILE* file){
 			if (src_node != NULL){
 				src_id = (*src_node)->entry_point;
 
-				fprintf(file, "%lu -> %lu\n", src_id, dst_id);
+				fprintf(file, "%lu -> %lu [label=\"%d\"]\n", src_id, dst_id, graph->edges[e].nb_execution);
 			}
 			else{
 				printf("ERROR: in %s, graph serach return NULL pointer\n", __func__);
