@@ -671,7 +671,7 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long addr
 						routine_cursor = section_cursor->routines;
 
 						while(routine_cursor != NULL){
-							if (routine_cursor->address_start <= address && routine_cursor->address_stop >= address){
+							if (routine_cursor->address_start <= address && routine_cursor->address_stop > address){
 								return routine_cursor;
 							}
 
