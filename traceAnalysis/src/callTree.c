@@ -47,7 +47,7 @@ void* callTree_create_node(void* first_element){
 	return (void*)node;
 }
 
-int callTree_contain_element(void* data, void* element){
+int callTree_may_add_element(void* data, void* element){
 	struct callTree_node* 		node = (struct callTree_node*)data;
 	struct cm_routine* 			routine;
 	struct callTree_element* 	el = (struct callTree_element*)element;
@@ -60,7 +60,28 @@ int callTree_contain_element(void* data, void* element){
 		}
 	}
 	else{
-		if (el->ins->pc == node->entry_address){
+		if ((codeSegment_search_instruction(&(node->segment), el->ins) >= 0) || (el->ins->opcode != XED_ICLASS_RET_FAR && el->ins->opcode != XED_ICLASS_RET_NEAR && el->ins->opcode != XED_ICLASS_CALL_FAR && el->ins->opcode != XED_ICLASS_CALL_NEAR)){
+			result = 0;
+		}
+	}
+
+	return result;
+}
+
+int callTree_element_is_owned(void* data, void* element){
+	struct callTree_node* 		node = (struct callTree_node*)data;
+	struct cm_routine* 			routine;
+	struct callTree_element* 	el = (struct callTree_element*)element;
+	int 						result = -1;
+
+	routine = codeMap_search_routine(el->cm, el->ins->pc);
+	if (routine != NULL){
+		if (routine->address_start == node->entry_address){
+			result = 0;
+		}
+	}
+	else{
+		if (codeSegment_search_instruction(&(node->segment), el->ins) >= 0){
 			result = 0;
 		}
 	}

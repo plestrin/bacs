@@ -1,9 +1,10 @@
-PROG_NAME=analysis
-CC=gcc
-CFLAGS=-W -Wall -pedantic -Wextra -g
-LDFLAGS=-lyajl
-SRC_DIRECTORY=src/
-BUILD_DIRECTORY=build/
+PROG_NAME			:= analysis
+CC					:= gcc
+CFLAGS				:= -W -Wall -pedantic -Wextra -g
+LDFLAGS				:= -lyajl
+SRC_DIRECTORY 		:= src/
+BUILD_DIRECTORY 	:= build/
+INCLUDE_DIRECTORY 	:= include/
 
 
 all: $(BUILD_DIRECTORY)analysis.o 			\
@@ -24,7 +25,7 @@ all: $(BUILD_DIRECTORY)analysis.o 			\
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIRECTORY)%.o: $(SRC_DIRECTORY)%.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -I $(INCLUDE_DIRECTORY) -o $@ -c $< $(CFLAGS)
 	
 
 clean:
