@@ -16,6 +16,10 @@ static void graphBuilder_init(struct graphBuilder* builder);
 static inline int graphBuilder_is_valid(struct graphBuilder* builder);
 static inline void graphBuilder_move(struct graphBuilder* builder, int new_offset);
 
+static void graph_invalid_mappings(struct graph* graph);
+static int graphMapping_map_node(struct graph* graph, struct graphMapping* mapping);
+static int graphMapping_map_edge(struct graph* graph, struct graphMapping* mapping);
+
 
 struct graph* graph_create(){
 	struct graph* graph = (struct graph*)malloc(sizeof(struct graph));
@@ -45,6 +49,9 @@ struct graph* graph_create(){
 
 		graphBuilder_init(&(graph->builder));
 		graphNode_callback_init(&(graph->callback_node));
+
+		graph->mapping_head = NULL;
+		graph->mapping_tail = NULL;
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -60,6 +67,8 @@ int graph_add_element(struct graph* graph, void* element){
 	int nb_edge_execution;
 
 	if (graph != NULL){
+		graph_invalid_mappings(graph);
+
 		if (graphBuilder_is_valid(&(graph->builder))){
 			if (graphNode_may_add_element(graph->nodes + graph->builder.current_node_offset, &(graph->callback_node), element) == 0){
 				status = graphNode_add_element(graph->nodes + graph->builder.current_node_offset, &(graph->callback_node), element);
@@ -185,6 +194,10 @@ void graph_delete(struct graph* graph){
 
 		free(graph->nodes);
 		free(graph->edges);
+
+		while(graph->mapping_head != NULL){
+			graph_delete_mapping(graph, graph->mapping_head);
+		}
 
 		free(graph);
 	}
@@ -331,4 +344,159 @@ static inline int graphBuilder_is_valid(struct graphBuilder* builder){
 static inline void graphBuilder_move(struct graphBuilder* builder, int new_offset){
 	builder->previous_node_offset = builder->current_node_offset;
 	builder->current_node_offset = new_offset;
+}
+
+/* ===================================================================== */
+/* Graph Mapping function(s) 	                                         */
+/* ===================================================================== */
+
+struct graphMapping* graph_create_mapping(struct graph* graph, enum graphMapping_type type, int (*compare)(const void*,const void*)){
+	struct graphMapping* 	mapping = NULL;
+	int 					status = -1;
+
+	if (graph != NULL){
+		mapping = (struct graphMapping*)malloc(sizeof(struct graphMapping));
+		if (mapping != NULL){
+			mapping->type = type;
+			mapping->compare = compare;
+			mapping->map = NULL;
+
+			switch(type){
+				case GRAPHMAPPING_NODE : {status = graphMapping_map_node(graph, mapping); break;}
+				case GRAPHMAPPING_EDGE : {status = graphMapping_map_edge(graph, mapping); break;}
+			}
+
+			if (status){
+				printf("ERROR: in %s, unable to map\n", __func__);
+				free(mapping);
+				mapping = NULL;
+			}
+			else{
+				if (graph->mapping_tail != NULL){
+					mapping->prev = graph->mapping_tail;
+					mapping->next = NULL;
+					graph->mapping_tail->next = mapping;
+					graph->mapping_tail = mapping;
+				}
+				else{
+					if (graph->mapping_head != NULL){
+						printf("ERROR: in %s, this case is to meant to happen\n", __func__);
+					}
+					graph->mapping_head = mapping;
+					graph->mapping_tail = mapping;
+					mapping->next = NULL;
+					mapping->prev = NULL;
+				}
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		}
+	}
+
+	return mapping;
+}
+
+void* graph_search(struct graph* graph, struct graphMapping* mapping, const void* key){
+	void* 	result = NULL;
+	int  	status = -1;
+
+	if (mapping != NULL){
+		if (!mapping->valid){
+			switch(mapping->type){
+				case GRAPHMAPPING_NODE : {status = graphMapping_map_node(graph, mapping); break;}
+				case GRAPHMAPPING_EDGE : {status = graphMapping_map_edge(graph, mapping); break;}
+			}
+
+			if (status){
+				printf("ERROR: in %s, unable to map\n", __func__);
+				return result;
+			}
+		}
+
+		result = bsearch(key, mapping->map, mapping->size, sizeof(void*), mapping->compare);
+	}
+
+	return result;
+}
+
+void graph_delete_mapping(struct graph* graph, struct graphMapping* mapping){
+	if (mapping != NULL && graph != NULL){
+		if (mapping->next != NULL){
+			mapping->next->prev = mapping->prev;
+		}
+		else{
+			graph->mapping_tail = mapping->prev;
+		}
+		if (mapping->prev != NULL){
+			mapping->prev->next = mapping->next;
+		}
+		else{
+			graph->mapping_head = mapping->next;
+		}
+
+		if (mapping->map != NULL){
+			free(mapping->map);
+		}
+		free(mapping);
+	}
+}
+
+static void graph_invalid_mappings(struct graph* graph){
+	struct graphMapping* cursor = graph->mapping_head;
+
+	while(cursor != NULL){
+		cursor->valid = 0;
+		cursor = cursor->next;
+	}
+}
+
+static int graphMapping_map_node(struct graph* graph, struct graphMapping* mapping){
+	int n;
+
+	if (mapping->map != NULL){
+		free(mapping->map);
+	}
+
+	mapping->size = graph->nb_node;
+	mapping->map = (void**)malloc(sizeof(void*) * mapping->size);
+	if (mapping->map != NULL){
+		for (n = 0; n < mapping->size; n++){
+			mapping->map[n] = graph->nodes + n; 
+		}
+
+		qsort (mapping->map, mapping->size, sizeof(void*), mapping->compare);
+
+		mapping->valid = 1;
+	}
+	else{
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int graphMapping_map_edge(struct graph* graph, struct graphMapping* mapping){
+	int e;
+
+	if (mapping->map != NULL){
+		free(mapping->map);
+	}
+
+	mapping->size = graph->nb_edge;
+	mapping->map = (void**)malloc(sizeof(void*) * mapping->size);
+	if (mapping->map != NULL){
+		for (e = 0; e < mapping->size; e++){
+			mapping->map[e] = graph->nodes + e; 
+		}
+
+		qsort (mapping->map, mapping->size, sizeof(void*), mapping->compare);
+	}
+	else{
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
+
+	return 0;
 }

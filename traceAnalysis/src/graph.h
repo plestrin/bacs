@@ -12,12 +12,25 @@
 	- insertion d'un edge
 	- parcours du graph de manière efficace - créer des mapping pour pouvoir faire des tris est des parcours rapides.
  */
-
-/* je propose de développer cette absatrction pour construire un arbre deb procédure - mais bien garder en tête la faciliterde généraliser l'interface */
  
 struct graphBuilder{
 	int 						current_node_offset;
 	int 						previous_node_offset;
+};
+
+enum graphMapping_type{
+	GRAPHMAPPING_NODE,
+	GRAPHMAPPING_EDGE
+};
+
+struct graphMapping{
+	struct graphMapping* 	prev;
+	struct graphMapping* 	next;
+	enum graphMapping_type 	type;
+	int (*compare)(const void*,const void*);
+	void** 					map;
+	int 					size;
+	char 					valid;
 };
 
 struct graph{
@@ -31,11 +44,17 @@ struct graph{
 	unsigned long				exit_point;
 	struct graphNode_callback 	callback_node;
 	struct graphBuilder 		builder;
+	struct graphMapping*		mapping_head;
+	struct graphMapping* 		mapping_tail;
 };
 
 
 struct graph* graph_create();
 int graph_add_element(struct graph* graph, void* element);
 void graph_delete(struct graph* graph);
+
+struct graphMapping* graph_create_mapping(struct graph* graph, enum graphMapping_type type, int (*compare)(const void*,const void*));
+void* graph_search(struct graph* graph, struct graphMapping* mapping, const void* key);
+void graph_delete_mapping(struct graph* graph, struct graphMapping* mapping);
 
 #endif
