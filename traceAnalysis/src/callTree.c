@@ -28,7 +28,6 @@ void* callTree_create_node(void* first_element){
 			node = NULL;
 		}
 		else{
-			node->entry_address = 0;
 			node->nb_execution = 1;
 			
 			routine = codeMap_search_routine(element->cm, element->ins->pc);
@@ -37,7 +36,10 @@ void* callTree_create_node(void* first_element){
 				memcpy(node->name, routine->name, CODEMAP_DEFAULT_NAME_SIZE);
 			}
 			else{
-				printf("ERROR: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
+				printf("WARNING: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
+
+				node->entry_address = element->ins->pc;
+				memset(node->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);
 			}
 		}
 	}
@@ -54,6 +56,11 @@ int callTree_contain_element(void* data, void* element){
 	routine = codeMap_search_routine(el->cm, el->ins->pc);
 	if (routine != NULL){
 		if (routine->address_start == node->entry_address){
+			result = 0;
+		}
+	}
+	else{
+		if (el->ins->pc == node->entry_address){
 			result = 0;
 		}
 	}

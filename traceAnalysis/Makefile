@@ -30,3 +30,5 @@ $(BUILD_DIRECTORY)%.o: $(SRC_DIRECTORY)%.c
 clean:
 	@ rm -f $(BUILD_DIRECTORY)*.o
 	@ rm -f $(PROG_NAME)
+	@ rm -f *.dot
+	@ rm -f *.png
