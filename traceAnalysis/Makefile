@@ -19,7 +19,8 @@ all: $(BUILD_DIRECTORY)analysis.o 			\
 	$(BUILD_DIRECTORY)graph.o 				\
 	$(BUILD_DIRECTORY)graphNode.o			\
 	$(BUILD_DIRECTORY)codeSegment.o			\
-	$(BUILD_DIRECTORY)callTree.o
+	$(BUILD_DIRECTORY)callTree.o 			\
+	$(BUILD_DIRECTORY)graphPrintDot.o
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIRECTORY)%.o: $(SRC_DIRECTORY)%.c

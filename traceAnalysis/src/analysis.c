@@ -4,6 +4,7 @@
 
 #include "trace.h"
 #include "gephiCFGIO.h"
+#include "graphPrintDot.h"
 
 
 #define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 		"simple_traveral"
@@ -48,7 +49,9 @@ int main(int argc, char** argv){
 	}
 	else if (!strcmp(argv[2], ANALYSIS_TYPE_BUILD_CALLTREE)){
 		struct graph* callTree  =trace_construct_call_tree(ptrace);
-		/* we can print the graph here */
+		if (graphPrintDot_print(graph, "callTree.dot")){
+			print("ERROR: in %s, unable to print call tree to dot format\n", __func__);
+		}
 		graph_delete(callTree);
 	}
 	else{
