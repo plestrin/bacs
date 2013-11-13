@@ -116,8 +116,8 @@ struct graph* trace_construct_call_tree(struct trace* ptrace){
 		callTree->callback_node.may_add_element 	= callTree_contain_element;
 		callTree->callback_node.add_element 		= callTree_add_element;
 		callTree->callback_node.element_is_owned 	= callTree_contain_element;
+		callTree->callback_node.print_dot 			= callTree_printDot_node;
 		callTree->callback_node.delete_data 		= callTree_delete_node;
-
 
 		do{
 			ins = traceReaderJSON_get_next_instruction(&(ptrace->ins_reader.json));

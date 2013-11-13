@@ -12,6 +12,7 @@ struct callTree_element{
 void* callTree_create_node(void* first_element);
 int callTree_contain_element(void* data, void* element);
 int callTree_add_element(void* data, void* element);
+void callTree_printDot_node(FILE* file, void* data);
 void callTree_delete_node(void* data);
 
 #endif

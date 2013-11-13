@@ -7,15 +7,9 @@
 #define GRAPH_NODE_BATCH	256
 #define GRAPH_EDGE_BATCH	256
 
-/* les méthides que l'on doit prendre en charge:
-	- insertion d'un noeud
-	- insertion d'un edge
-	- parcours du graph de manière efficace - créer des mapping pour pouvoir faire des tris est des parcours rapides.
- */
- 
 struct graphBuilder{
-	int 						current_node_offset;
-	int 						previous_node_offset;
+	int 					current_node_offset;
+	int 					previous_node_offset;
 };
 
 enum graphMapping_type{

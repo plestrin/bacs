@@ -113,6 +113,14 @@ int graphNode_split_enter(struct graphNode* node_orig, struct graphNode* node_ne
 	return result;
 }
 
+void graphNode_print_dot(struct graphNode* node, struct graphNode_callback* callback, FILE* file){
+	if (callback != NULL){
+		if (callback->print_dot != NULL){
+			callback->print_dot(file, node->data);
+		}
+	}
+}
+
 void graphNode_clean(struct graphNode* node, struct graphNode_callback* callback){
 	if (callback != NULL){
 		if (callback->delete_data != NULL){

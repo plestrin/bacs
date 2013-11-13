@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "codeSegment.h"
 #include "callTree.h"
@@ -7,6 +8,7 @@
 struct callTree_node{
 	struct codeSegment 	segment;
 	unsigned long		entry_address;
+	char 				name[CODEMAP_DEFAULT_NAME_SIZE];
 	int 				nb_execution;
 };
 
@@ -32,6 +34,7 @@ void* callTree_create_node(void* first_element){
 			routine = codeMap_search_routine(element->cm, element->ins->pc);
 			if (routine != NULL){
 				node->entry_address = routine->address_start;
+				memcpy(node->name, routine->name, CODEMAP_DEFAULT_NAME_SIZE);
 			}
 			else{
 				printf("ERROR: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
@@ -78,6 +81,12 @@ int callTree_add_element(void* data, void* element){
 	}
 
 	return result;
+}
+
+void callTree_printDot_node(FILE* file, void* data){
+	struct callTree_node* node = (struct callTree_node*)data;
+
+	fprintf(file, "[label=\"%s\"]", node->name);
 }
 
 void callTree_delete_node(void* data){
