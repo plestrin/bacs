@@ -17,7 +17,7 @@ static inline int graphBuilder_is_valid(struct graphBuilder* builder);
 static inline void graphBuilder_move(struct graphBuilder* builder, int new_offset);
 
 
-struct graph* graph_create(struct graphNode_callback* callback_node){
+struct graph* graph_create(){
 	struct graph* graph = (struct graph*)malloc(sizeof(struct graph));
 	if (graph != NULL){
 		graph->nodes = (struct graphNode*)malloc(sizeof(struct graphNode) * GRAPH_NODE_BATCH);
@@ -42,9 +42,9 @@ struct graph* graph_create(struct graphNode_callback* callback_node){
 		graph->nb_edge = 0;
 		graph->entry_point = 0;
 		graph->exit_point = 0;
-		graph->callback_node = callback_node;
 
 		graphBuilder_init(&(graph->builder));
+		graphNode_callback_init(&(graph->callback_node));
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -61,20 +61,20 @@ int graph_add_element(struct graph* graph, void* element){
 
 	if (graph != NULL){
 		if (graphBuilder_is_valid(&(graph->builder))){
-			if (graphNode_may_add_element(graph->nodes + graph->builder.current_node_offset, graph->callback_node, element) == 0){
-				status = graphNode_add_element(graph->nodes + graph->builder.current_node_offset, graph->callback_node, element);
+			if (graphNode_may_add_element(graph->nodes + graph->builder.current_node_offset, &(graph->callback_node), element) == 0){
+				status = graphNode_add_element(graph->nodes + graph->builder.current_node_offset, &(graph->callback_node), element);
 				if (status){
 					printf("ERROR: in %s, unable to add element to current node\n", __func__);
 				}
 			}
 			else{
-				if (graphNode_may_leave(graph->nodes + graph->builder.current_node_offset, graph->callback_node) != 0){
+				if (graphNode_may_leave(graph->nodes + graph->builder.current_node_offset, &(graph->callback_node)) != 0){
 					node_offset = graph_create_node(graph);
 					if (node_offset < 0){
 						printf("ERROR: in %s, unable to create node\n", __func__);
 					}
 					else{
-						status = graphNode_split_leave(graph->nodes + graph->builder.current_node_offset, graph->nodes + node_offset, &(nb_edge_execution), graph->callback_node);
+						status = graphNode_split_leave(graph->nodes + graph->builder.current_node_offset, graph->nodes + node_offset, &(nb_edge_execution), &(graph->callback_node));
 						if (status){
 							printf("ERROR: in %s, unable to split node - early leaving\n", __func__);
 						}
@@ -94,7 +94,7 @@ int graph_add_element(struct graph* graph, void* element){
 						printf("ERROR: in %s, unable to create node\n", __func__);
 					}
 					else{
-						status = graphNode_init(graph->nodes + node_offset, graph->callback_node, element);
+						status = graphNode_init(graph->nodes + node_offset, &(graph->callback_node), element);
 						if (status){
 							printf("ERROR: in %s, unable to init graph node\n", __func__);
 						}
@@ -108,8 +108,8 @@ int graph_add_element(struct graph* graph, void* element){
 					}
 				}
 				else{
-					if (graphNode_may_add_element(graph->nodes + node_offset, graph->callback_node, element) == 0){
-						status = graphNode_add_element(graph->nodes + node_offset, graph->callback_node, element);
+					if (graphNode_may_add_element(graph->nodes + node_offset, &(graph->callback_node), element) == 0){
+						status = graphNode_add_element(graph->nodes + node_offset, &(graph->callback_node), element);
 						if (status){
 							printf("ERROR: in %s, unable to add element to current node\n", __func__);
 						}
@@ -125,7 +125,7 @@ int graph_add_element(struct graph* graph, void* element){
 							printf("ERROR: in %s, unable to create node\n", __func__);
 						}
 						else{
-							status = graphNode_split_enter(graph->nodes + node_offset, graph->nodes + new_node_offset, &nb_edge_execution, graph->callback_node, element);
+							status = graphNode_split_enter(graph->nodes + node_offset, graph->nodes + new_node_offset, &nb_edge_execution, &(graph->callback_node), element);
 							if (status){
 								printf("ERROR: in %s, unable to split node - late entry\n", __func__);
 							}
@@ -135,7 +135,7 @@ int graph_add_element(struct graph* graph, void* element){
 									printf("ERROR: in %s, unable to add edge after split\n", __func__);
 								}
 								else{
-									status = graphNode_add_element(graph->nodes + new_node_offset, graph->callback_node, element);
+									status = graphNode_add_element(graph->nodes + new_node_offset, &(graph->callback_node), element);
 									if (status){
 										printf("ERROR: in %s, unable to add element to current node\n", __func__);
 									}
@@ -157,7 +157,7 @@ int graph_add_element(struct graph* graph, void* element){
 				printf("ERROR: in %s, unable to create node\n", __func__);
 			}
 			else{
-				status = graphNode_init(graph->nodes + node_offset, graph->callback_node, element);
+				status = graphNode_init(graph->nodes + node_offset, &(graph->callback_node), element);
 				if (status){
 					printf("ERROR: in %s, unable to init graph node\n", __func__);
 				}
@@ -180,7 +180,7 @@ void graph_delete(struct graph* graph){
 
 	if (graph != NULL){
 		for (n = 0; n < graph->nb_node; n++){
-			graphNode_clean(graph->nodes + n, graph->callback_node);
+			graphNode_clean(graph->nodes + n, &(graph->callback_node));
 		}
 
 		free(graph->nodes);
@@ -241,7 +241,7 @@ static int graph_search_node(struct graph* graph, void* element){
 	int n;
 
 	for (n = 0; n < graph->nb_node; n++){
-		if (graphNode_element_is_owned(graph->nodes + n, graph->callback_node, element) == 0){
+		if (graphNode_element_is_owned(graph->nodes + n, &(graph->callback_node), element) == 0){
 			result = n;
 			break;
 		}

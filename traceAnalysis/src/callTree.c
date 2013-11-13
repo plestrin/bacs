@@ -66,7 +66,7 @@ int callTree_add_element(void* data, void* element){
 
 	ins_offset = codeSegment_search_instruction(&(node->segment), el->ins);
 	if (ins_offset < 0){
-		if (codeSegment_add_instruction(&(node->segment), el->ins)){
+		if (codeSegment_add_instruction(&(node->segment), el->ins) < 0){
 			printf("ERROR: in %s, unable to add instruction to code segment\n", __func__);
 			result = -1;
 		}

@@ -29,12 +29,12 @@ struct graph{
 	int 						nb_edge;
 	unsigned long 				entry_point;
 	unsigned long				exit_point;
-	struct graphNode_callback* 	callback_node;
+	struct graphNode_callback 	callback_node;
 	struct graphBuilder 		builder;
 };
 
 
-struct graph* graph_create(struct graphNode_callback* callback_node);
+struct graph* graph_create();
 int graph_add_element(struct graph* graph, void* element);
 void graph_delete(struct graph* graph);
 

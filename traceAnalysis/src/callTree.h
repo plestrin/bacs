@@ -9,7 +9,7 @@ struct callTree_element{
 	struct codeMap*		cm;
 };
 
-void* callTree_create_codeSegment(void* first_element);
+void* callTree_create_node(void* first_element);
 int callTree_contain_element(void* data, void* element);
 int callTree_add_element(void* data, void* element);
 void callTree_delete_node(void* data);

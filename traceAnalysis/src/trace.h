@@ -6,6 +6,7 @@
 #include "cmReaderJSON.h"
 #include "controlFlowGraph.h"
 #include "callTree.h"
+#include "graph.h"
 
 #define TRACE_DIRECTORY_NAME_MAX_LENGTH 256
 #define TRACE_INS_FILE_NAME "ins.json"
@@ -28,6 +29,7 @@ void trace_print_instructions(struct trace* ptrace);
 void trace_print_simpleTraceStat(struct trace* ptrace);
 void trace_print_codeMap(struct trace* ptrace);
 struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace);
+struct graph* trace_construct_call_tree(struct trace* ptrace);
 
 void trace_delete(struct trace* ptrace);
 

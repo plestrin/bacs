@@ -105,6 +105,40 @@ struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace){
 	return cfg;
 }
 
+struct graph* trace_construct_call_tree(struct trace* ptrace){
+	struct graph* 				callTree;
+	struct instruction*			ins;
+	struct callTree_element		element;
+
+	callTree = graph_create();
+	if (callTree != NULL){
+		callTree->callback_node.create_data 		= callTree_create_node;
+		callTree->callback_node.may_add_element 	= callTree_contain_element;
+		callTree->callback_node.add_element 		= callTree_add_element;
+		callTree->callback_node.element_is_owned 	= callTree_contain_element;
+		callTree->callback_node.delete_data 		= callTree_delete_node;
+
+
+		do{
+			ins = traceReaderJSON_get_next_instruction(&(ptrace->ins_reader.json));
+			if (ins != NULL){
+				element.ins = ins;
+				element.cm = ptrace->cm;
+				if (graph_add_element(callTree, &element)){
+					printf("ERROR: in %s, unable to add instruction to call tree\n", __func__);
+					break;
+				}
+			}
+		} while (ins != NULL);
+
+	}
+	else{
+		printf("ERROR: in %s, unable to create graph\n", __func__);
+	}
+
+	return callTree;
+}
+
 void trace_delete(struct trace* ptrace){
 	if (ptrace != NULL){
 		traceReaderJSON_clean(&(ptrace->ins_reader.json));
