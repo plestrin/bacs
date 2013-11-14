@@ -60,6 +60,7 @@ int callTree_may_add_element(void* data, void* element){
 		}
 	}
 	else{
+		/* Idealy in case of a CALL check if the dst is whitelisted */
 		if ((codeSegment_search_instruction(&(node->segment), el->ins) >= 0) || (el->ins->opcode != XED_ICLASS_RET_FAR && el->ins->opcode != XED_ICLASS_RET_NEAR && el->ins->opcode != XED_ICLASS_CALL_FAR && el->ins->opcode != XED_ICLASS_CALL_NEAR)){
 			result = 0;
 		}

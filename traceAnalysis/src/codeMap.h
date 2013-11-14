@@ -12,12 +12,6 @@
 
 #define CODEMAP_TAB_LENGTH			8 /* warning this is quite messy - but it'll do the work for now  */
 
-/* chose que j'aimerais bien faire 
-	- ajouter le feature whiteList 
-	- ajouter le feature nbexecution
-	- faire une méthode de recherche d'adresse 
-	- ajouter des filtres simples sur l'affichage ou sur la recherche pour exclure en fonctions de la whiteList ou du nombre d'éxécution
-*/
 
 struct codeMap{
 	struct cm_image*	images;
@@ -75,10 +69,11 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image);
 int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section);
 int codeMAp_add_static_routine(struct codeMap* cm, struct cm_routine* routine);
 
-
 struct cm_image* codeMap_search_image(struct codeMap* cm, unsigned long address);
 struct cm_section* codeMap_search_section(struct codeMap* cm, unsigned long address);
 struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long address);
+
+int codeMap_is_instruction_whiteListed(struct codeMap* cm, unsigned long address);
 
 #define CODEMAP_INCREMENT_ROUTINE_EXE(rtn) ((rtn)->nb_execution ++)
 

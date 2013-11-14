@@ -21,7 +21,8 @@
  *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire qu'un seul. En plus afficher l'aide en cas d'erreur
  *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
  * 	- utiliser une double thread pour l'écriture des traces (avec zlib pour la compression trop fou !!)
- *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir) 
+ *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir)
+ *	- traiter le cas des instructions qui n'appartiennent pas à une routine et dont l'image est whitelistée
  * 	- 
  *	- d'autres idées sont les biens venues
  */
@@ -40,6 +41,7 @@ KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelis
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
+
 void pintool_instruction_analysis(ADDRINT pc, ADDRINT pc_next, UINT32 opcode){
 	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u},", pc, pc_next, opcode);
 }
@@ -53,36 +55,15 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* ===================================================================== */
 /* Instrumentation function                                              */
 /* ===================================================================== */
+
 void pintool_instrumentation_ins(INS instruction, void* arg){
-	RTN routine;
-	SEC section;
-	IMG image;
-
-	routine = INS_Rtn(instruction);
-	if (RTN_Valid(routine)){
-		if (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0){
-			return;
-		}
-		else{
-			section = RTN_Sec(routine);
-			if (SEC_Valid(section)){
-				image= SEC_Img(section);
-				if (IMG_Valid(image)){
-					if (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0){
-						return;
-					}
-				}
-			}
-
-		}
-
+	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
+		INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
+			IARG_INST_PTR, 												/* program counter */
+			IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+			IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+			IARG_END);
 	}
-
-	INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
-		IARG_INST_PTR, 												/* program counter */
-		IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
-		IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-		IARG_END);
 }
 
 void pintool_instrumentation_img(IMG image, void* val){
@@ -127,6 +108,7 @@ void pintool_instrumentation_img(IMG image, void* val){
 /* ===================================================================== */
 /* Init function                                                    	 */
 /* ===================================================================== */
+
 int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 	trace = traceFiles_create(trace_dir_name);
 	if (trace == NULL){
@@ -157,6 +139,7 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 /* ===================================================================== */
 /* Cleanup function                                                 	 */
 /* ===================================================================== */
+
 void pintool_clean(INT32 code, void* arg){
 	traceFiles_print_codeMap(trace, tracer.code_map);
 	traceFiles_delete(trace);
@@ -170,6 +153,7 @@ void pintool_clean(INT32 code, void* arg){
 /* ===================================================================== */
 /* Main                                                                  */
 /* ===================================================================== */
+
 int main(int argc, char * argv[]){
      PIN_InitSymbols();
 	

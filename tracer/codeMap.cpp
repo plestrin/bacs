@@ -448,7 +448,7 @@ static void codeMap_print_image(struct cm_image* image, int filter){
 				return;
 			}
 		}
-		printf("\tName: %s, \t\tstart: 0x%lx, stop:0x%lx\n", image->name, image->address_start, image->address_stop);
+		printf("\tName: %s, \t\tstart: 0x%lx, stop:0x%lx, whiteListed: %d\n", image->name, image->address_start, image->address_stop, image->white_listed);
 
 		section = image->sections;
 		while(section != NULL){
@@ -645,6 +645,7 @@ struct cm_section* codeMap_search_section(struct codeMap* cm, unsigned long addr
 
 					section_cursor = section_cursor->next;
 				}
+				break;
 			}
 
 			image_cursor = image_cursor->next;
@@ -677,12 +678,12 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long addr
 
 							routine_cursor = routine_cursor->next;
 						}
-
-
+						break;
 					}
 
 					section_cursor = section_cursor->next;
 				}
+				break;
 			}
 
 			image_cursor = image_cursor->next;
@@ -690,4 +691,45 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long addr
 	}
 
 	return NULL;
+}
+
+int codeMap_is_instruction_whiteListed(struct codeMap* cm, unsigned long address){
+	struct cm_image* 	image_cursor;
+	struct cm_section* 	section_cursor;
+	struct cm_routine* 	routine_cursor;
+
+	if (cm != NULL){
+		image_cursor = cm->images;
+
+		while(image_cursor != NULL){
+			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+				if (image_cursor->white_listed == CODEMAP_WHITELISTED){
+					return CODEMAP_WHITELISTED;
+				}
+
+				section_cursor = image_cursor->sections;
+				while(section_cursor != NULL){
+					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
+						routine_cursor = section_cursor->routines;
+
+						while(routine_cursor != NULL){
+							if (routine_cursor->address_start <= address && routine_cursor->address_stop > address){
+								return routine_cursor->white_listed;
+							}
+
+							routine_cursor = routine_cursor->next;
+						}
+					}
+					break;
+
+					section_cursor = section_cursor->next;
+				}
+				break;
+			}
+
+			image_cursor = image_cursor->next;
+		}
+	}
+
+	return CODEMAP_NOT_WHITELISTED;
 }
