@@ -16,15 +16,16 @@
  *	- trace format JSON
  *	- la liste des infos qu'il faut enregistrer
  *	- déterminer la façon dont il faut instrumenter le code: une fois par basic bloc ou une fois par instruction
- * 	- faire un verbose de toute les instructions (??)
- *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf)
+ *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf, car mélange avec la sortie standard de l'application a tracer)
  *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire qu'un seul. En plus afficher l'aide en cas d'erreur
  *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
  * 	- utiliser une double thread pour l'écriture des traces (avec zlib pour la compression trop fou !!)
  *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir)
  *	- traiter le cas des instructions qui n'appartiennent pas à une routine et dont l'image est whitelistée
  * 	- 
- *	- d'autres idées sont les biens venues
+ * 	- que faire des predicated?
+ * 	- 
+ *	- d'autres idées sont les bienvenues
  */
 
 
@@ -56,6 +57,7 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* Instrumentation function                                              */
 /* ===================================================================== */
 
+/* En terme de granularité de l'instrumentation qui peux moins peux le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'aasez systématique */
 void pintool_instrumentation_ins(INS instruction, void* arg){
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
 		INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
