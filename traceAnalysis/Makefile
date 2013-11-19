@@ -4,7 +4,8 @@ CFLAGS				:= -W -Wall -pedantic -Wextra -g
 LDFLAGS				:= -lyajl
 SRC_DIRECTORY 		:= src/
 BUILD_DIRECTORY 	:= build/
-INCLUDE_DIRECTORY 	:= include/
+INCLUDE_DIRECTORY 	:= -I include/ -I ../misc/
+MISC_DIR 			:= ../misc/
 
 
 all: $(BUILD_DIRECTORY)analysis.o 			\
@@ -21,15 +22,21 @@ all: $(BUILD_DIRECTORY)analysis.o 			\
 	$(BUILD_DIRECTORY)graphNode.o			\
 	$(BUILD_DIRECTORY)codeSegment.o			\
 	$(BUILD_DIRECTORY)callTree.o 			\
-	$(BUILD_DIRECTORY)graphPrintDot.o
+	$(BUILD_DIRECTORY)graphPrintDot.o		\
+	$(MISC_DIR)multiColumn.o
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIRECTORY)%.o: $(SRC_DIRECTORY)%.c
-	$(CC) -I $(INCLUDE_DIRECTORY) -o $@ -c $< $(CFLAGS)
+	$(CC) $(INCLUDE_DIRECTORY) -o $@ -c $< $(CFLAGS)
+
+$(MISC_DIR)%.o: $(MISC_DIR)%.c
+	$(CC) -o $@ -c $< $(CFLAGS)
 	
+.PHONY: clean
 
 clean:
 	@ rm -f $(BUILD_DIRECTORY)*.o
 	@ rm -f $(PROG_NAME)
 	@ rm -f *.dot
 	@ rm -f *.png
+	@ rm -f $(MISC_DIR)*.o

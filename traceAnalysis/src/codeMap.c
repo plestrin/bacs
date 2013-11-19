@@ -3,14 +3,15 @@
 #include <string.h>
 
 #include "codeMap.h"
+#include "multiColumn.h"
 
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file);
 static void codeMap_print_section_JSON(struct cm_section* section, FILE* file);
 static void codeMap_print_image_JSON(struct cm_image* image, FILE* file);
 
-static void codeMap_print_routine(struct cm_routine* routine, int filter);
-static void codeMap_print_section(struct cm_section* section, int filter);
-static void codeMap_print_image(struct cm_image* image, int filter);
+static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter);
+static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter);
+static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter);
 
 static int codeMap_filter_routine_executed(struct cm_routine* routine);
 static int codeMap_filter_section_executed(struct cm_section* section);
@@ -270,11 +271,12 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 }
 
 void codeMap_print(struct codeMap* cm, int filter){
-	struct cm_image* image;
+	struct cm_image* 			image;
+	struct multiColumnPrinter* 	printer;
 
 	if (cm != NULL){
 		if (filter){
-			printf("*** Code Map - filter:{ ");
+			printf("*** Code Map - filter: { ");
 			if (filter & CODEMAP_FILTER_WHITELIST){
 				printf("WHITELIST ");
 			}
@@ -287,11 +289,34 @@ void codeMap_print(struct codeMap* cm, int filter){
 			printf("*** Code Map ***\n");
 		}
 
-		image = cm->images;
-		while(image != NULL){
-			codeMap_print_image(image, filter);
-			image = image->next;
-		}		
+		printer = multiColumnPrinter_create(stdout, 6, NULL, NULL);
+		if (printer != NULL){
+			multiColumnPrinter_set_column_size(printer, 0, 38);
+			multiColumnPrinter_set_column_size(printer, 1, 7);
+			multiColumnPrinter_set_column_size(printer, 2, 24);
+			multiColumnPrinter_set_column_size(printer, 3, 10);
+			multiColumnPrinter_set_column_size(printer, 4, 10);
+			multiColumnPrinter_set_column_size(printer, 5, 6);
+
+			multiColumnPrinter_set_title(printer, 0, "IMAGE");
+			multiColumnPrinter_set_title(printer, 1, "SECTION");
+			multiColumnPrinter_set_title(printer, 2, "ROUTINE");
+			multiColumnPrinter_set_title(printer, 3, "START @");
+			multiColumnPrinter_set_title(printer, 4, "STOP @");
+			multiColumnPrinter_set_title(printer, 5, "WHITEL");
+			multiColumnPrinter_print_header(printer);
+
+			image = cm->images;
+			while(image != NULL){
+				codeMap_print_image(printer, image, filter);
+				image = image->next;
+			}
+
+			multiColumnPrinter_delete(printer);
+		}
+		else{
+			printf("ERROR: in %s, unable to create multi column printer\n", __func__);
+		}
 	}
 }
 
@@ -381,11 +406,14 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 			else{
 				fprintf(file, "]}");
 			}
-		}		
+		}	
 	}
 }
 
-static void codeMap_print_routine(struct cm_routine* routine, int filter){
+static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter){
+	char address_start[32];
+	char address_stop[32];
+
 	if (routine != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
 			if (!codeMap_filter_routine_executed(routine)){
@@ -398,20 +426,22 @@ static void codeMap_print_routine(struct cm_routine* routine, int filter){
 			}
 		}
 
-		if (strlen(routine->name) > 2*CODEMAP_TAB_LENGTH){
-			printf("\t\t\tName: %s, \tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
-		}
-		else if (strlen(routine->name) > CODEMAP_TAB_LENGTH){
-			printf("\t\t\tName: %s, \t\tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
+		snprintf(address_start, 32, "0x%lx", routine->address_start);
+		snprintf(address_stop, 32, "0x%lx", routine->address_stop);
+
+		if (routine->white_listed == CODEMAP_WHITELISTED){
+			multiColumnPrinter_print(printer, " ", " ", routine->name, address_start, address_stop, "yes", NULL);
 		}
 		else{
-			printf("\t\t\tName: %s, \t\t\tstart: 0x%lx, stop: 0x%lx, exe: %u\n", routine->name, routine->address_start, routine->address_stop, routine->nb_execution);
+			multiColumnPrinter_print(printer, " ", " ", routine->name, address_start, address_stop, "no", NULL);
 		}
 	}
 }
 
-static void codeMap_print_section(struct cm_section* section, int filter){
-	struct cm_routine* routine;
+static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter){
+	struct cm_routine* 	routine;
+	char 				address_start[32];
+	char 				address_stop[32];
 
 	if (section != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
@@ -424,18 +454,24 @@ static void codeMap_print_section(struct cm_section* section, int filter){
 				return;
 			}
 		}
-		printf("\t\tName: %s, \t\tstart: 0x%lx, stop: 0x%lx\n", section->name, section->address_start, section->address_stop);
+
+		snprintf(address_start, 32, "0x%lx", section->address_start);
+		snprintf(address_stop, 32, "0x%lx", section->address_stop);
+
+		multiColumnPrinter_print(printer, " ", section->name, " ", address_start, address_stop, " ", NULL);
 
 		routine = section->routines;
 		while(routine != NULL){
-			codeMap_print_routine(routine, filter);
+			codeMap_print_routine(printer, routine, filter);
 			routine = routine->next;
 		}		
 	}
 }
 
-static void codeMap_print_image(struct cm_image* image, int filter){
-	struct cm_section* section;
+static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter){
+	struct cm_section* 	section;
+	char 				address_start[32];
+	char 				address_stop[32];
 
 	if (image != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
@@ -448,13 +484,24 @@ static void codeMap_print_image(struct cm_image* image, int filter){
 				return;
 			}
 		}
-		printf("\tName: %s, \t\tstart: 0x%lx, stop:0x%lx, whiteListed: %d\n", image->name, image->address_start, image->address_stop, image->white_listed);
+
+		snprintf(address_start, 32, "0x%lx", image->address_start);
+		snprintf(address_stop, 32, "0x%lx", image->address_stop);
+
+		if (image->white_listed == CODEMAP_WHITELISTED){
+			multiColumnPrinter_print(printer, image->name, " ", " ", address_start, address_stop, "yes", NULL);
+		}
+		else{
+			multiColumnPrinter_print(printer, image->name, " ", " ", address_start, address_stop, "no", NULL);
+		}
 
 		section = image->sections;
 		while(section != NULL){
-			codeMap_print_section(section, filter);
+			codeMap_print_section(printer, section, filter);
 			section = section->next;
-		}		
+		}
+
+		multiColumnPrinter_print_horizontal_separator(printer);
 	}
 }
 
