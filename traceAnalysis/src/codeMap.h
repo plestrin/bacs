@@ -10,8 +10,6 @@
 #define CODEMAP_FILTER_WHITELIST	0x00000001
 #define CODEMAP_FILTER_EXECUTED		0x00000002
 
-#define CODEMAP_TAB_LENGTH			8 /* warning this is quite messy - but it'll do the work for now  */
-
 
 struct codeMap{
 	struct cm_image*	images;

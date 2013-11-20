@@ -1,24 +1,29 @@
-TEST_DIRECTORY=test
+EXAMPLE_DIRECTORY	:=example/
 
-CC=gcc
-CFLAGS=-W -Wall -pedantic
-LDFLAGS=
-VPATH=$(TEST_DIRECTORY)
+CC			:=gcc
+CFLAGS			:=-W -Wall -pedantic -Wextra
+LDFLAGS			:=
+VPATH			:=$(TEST_DIRECTORY)
 
-PROG1_NAME=TEA
+TEA_EXAMPLE_NAME	:=TEA
 
-all: TEA
+all: example
 
-TEA: TEA.o $(TEST_DIRECTORY)/tea_test.o
-	$(CC) -o $(TEST_DIRECTORY)/$(PROG1_NAME) $^ $(LDFLAGS)
+example: tea_example
+
+tea_example: TEA.o $(EXAMPLE_DIRECTORY)tea_test.o
+	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME) $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-$(TEST_DIRECTORY)/tea_test.o: $(TEST_DIRECTORY)/tea_test.c
+$(EXAMPLE_DIRECTORY)%.o: $(EXAMPLE_DIRECTORY)%.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
+.PHONY: clean example
+
 clean:
-	rm -f *.o
-	rm -f *~
-	rm -f $(TEST_DIRECTORY)/*
+	@ rm -f *.o
+	@ rm -f *~
+	@ rm -f $(EXAMPLE_DIRECTORY)*.o
+	@ rm -f $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)
