@@ -75,6 +75,18 @@ int traceFragment_search_pc(struct traceFragment* frag, struct instruction* ins)
 	return result;
 }
 
+struct instruction* traceFragment_get_last_instruction(struct traceFragment* frag){
+	struct instruction* instruction = NULL;
+
+	if (frag != NULL){
+		if (frag->nb_instruction > 0){
+			instruction = frag->instructions + (frag->nb_instruction - 1);
+		}
+	}
+
+	return instruction;
+}
+
 void traceFragment_delete(struct traceFragment* frag){
 	if (frag != NULL){
 		traceFragment_clean(frag);

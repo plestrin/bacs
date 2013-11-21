@@ -9,7 +9,6 @@ struct callTree_node{
 	struct traceFragment 	fragment;
 	unsigned long			entry_address;
 	char 					name[CODEMAP_DEFAULT_NAME_SIZE];
-	int 					nb_execution;
 };
 
 void* callTree_create_node(void* first_element){
@@ -28,8 +27,6 @@ void* callTree_create_node(void* first_element){
 			node = NULL;
 		}
 		else{
-			node->nb_execution = 1;
-			
 			routine = codeMap_search_routine(element->cm, element->ins->pc);
 			if (routine != NULL){
 				node->entry_address = routine->address_start;
@@ -52,6 +49,7 @@ int callTree_may_add_element(void* data, void* element){
 	struct cm_routine* 			routine;
 	struct callTree_element* 	el = (struct callTree_element*)element;
 	int 						result = -1;
+	struct instruction* 		previous_instruction;
 
 	routine = codeMap_search_routine(el->cm, el->ins->pc);
 	if (routine != NULL){
@@ -60,11 +58,17 @@ int callTree_may_add_element(void* data, void* element){
 		}
 	}
 	else{
-		/* Idealy in case of a CALL check if the dst is whitelisted */
-		/* This is wrong. The ret instruction actually belongs to the current block. But not the next instruction */
-		/* renomer la méthode ci-dessous en serach pc */
-		if ((traceFragment_search_pc(&(node->fragment), el->ins) >= 0) || (el->ins->opcode != XED_ICLASS_RET_FAR && el->ins->opcode != XED_ICLASS_RET_NEAR && el->ins->opcode != XED_ICLASS_CALL_FAR && el->ins->opcode != XED_ICLASS_CALL_NEAR)){
+		if (traceFragment_search_pc(&(node->fragment), el->ins) >= 0){
 			result = 0;
+		}
+		else{
+			previous_instruction = traceFragment_get_last_instruction(&(node->fragment));
+			if (previous_instruction != NULL){
+				/* Idealy in case of a CALL check if the dst is whitelisted */
+				if (previous_instruction->opcode != XED_ICLASS_RET_FAR && previous_instruction->opcode != XED_ICLASS_RET_NEAR && previous_instruction->opcode != XED_ICLASS_CALL_FAR && previous_instruction->opcode != XED_ICLASS_CALL_NEAR){
+					result = 0;
+				}
+			}
 		}
 	}
 
@@ -95,21 +99,11 @@ int callTree_element_is_owned(void* data, void* element){
 int callTree_add_element(void* data, void* element){
 	struct callTree_node* 		node = (struct callTree_node*)data;
 	struct callTree_element*	el = (struct callTree_element*)element;
-	int 						ins_offset;
 	int 						result = 0;
 
-	/* Warning this method needs to be redesigned to save every dynamic instruction */
-	ins_offset = traceFragment_search_pc(&(node->fragment), el->ins);
-	if (ins_offset < 0){
-		if (traceFragment_add_instruction(&(node->fragment), el->ins) < 0){
-			printf("ERROR: in %s, unable to add instruction to code fragment\n", __func__);
-			result = -1;
-		}
-		else{
-			if (el->ins->pc == node->entry_address){
-				node->nb_execution ++;
-			}
-		}
+	if (traceFragment_add_instruction(&(node->fragment), el->ins) < 0){
+		printf("ERROR: in %s, unable to add instruction to code fragment\n", __func__);
+		result = -1;
 	}
 
 	return result;
