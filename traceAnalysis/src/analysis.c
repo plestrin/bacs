@@ -7,14 +7,17 @@
 #include "graphPrintDot.h"
 
 
-#define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 		"simple_traveral"
-#define ANALYSIS_TYPE_PRINT_INSTRUCTIONS	"print_instructions"
-#define ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT	"print_simpleTraceStat"
-#define ANALYSIS_TYPE_PRINT_CODEMAP			"print_codeMap"
-#define ANALYSIS_TYPE_BUILD_CFG				"build_cfg"
-#define ANALYSIS_TYPE_BUILD_CALLTREE		"build_callTree"
+#define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 			"simple_traveral"
+#define ANALYSIS_TYPE_PRINT_INSTRUCTIONS		"print_instructions"
+#define ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT		"print_simpleTraceStat"
+#define ANALYSIS_TYPE_PRINT_CODEMAP				"print_codeMap"
+#define ANALYSIS_TYPE_BUILD_CFG					"build_cfg"
+#define ANALYSIS_TYPE_BUILD_CALLTREE			"build_callTree"
+#define ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT	"print_rtn_opcode_percent"
 
 static void analysis_print_command();
+
+/* Ca serait bien de faire quelque chose d'interactif - pour pouoir construire et printer dans une même session */
 
 int main(int argc, char** argv){
 	struct trace* 				ptrace	= NULL;
@@ -48,10 +51,15 @@ int main(int argc, char** argv){
 		controlFlowGraph_delete(cfg);
 	}
 	else if (!strcmp(argv[2], ANALYSIS_TYPE_BUILD_CALLTREE)){
-		struct graph* callTree  =trace_construct_call_tree(ptrace);
+		struct graph* callTree = trace_construct_callTree(ptrace);
 		if (graphPrintDot_print(callTree, "callTree.dot")){
 			printf("ERROR: in %s, unable to print call tree to dot format\n", __func__);
 		}
+		graph_delete(callTree);
+	}
+	else if(!strcmp(argv[2], ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT)){
+		struct graph* callTree = trace_construct_callTree(ptrace);
+		callTree_print_opcode_percent(callTree);
 		graph_delete(callTree);
 	}
 	else{
@@ -72,4 +80,5 @@ static void analysis_print_command(){
 	printf("\t%s\n", ANALYSIS_TYPE_PRINT_CODEMAP);
 	printf("\t%s\n", ANALYSIS_TYPE_BUILD_CFG);
 	printf("\t%s\n", ANALYSIS_TYPE_BUILD_CALLTREE);
+	printf("\t%s\n", ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT);
 }

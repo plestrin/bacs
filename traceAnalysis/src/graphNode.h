@@ -16,7 +16,7 @@ struct graphNode_callback{
 	int(*split_leave)(void* data_orig, void** data_new);					/* Split the current node data due to an early leaving - "may_leave" has been run previously						DYNAMIC 	*/
 	int(*split_enter)(void* data_orig, void** data_new, void* element);		/* Split the current node data due to late enter - "may_add_element" & "element_is_owned" has been run previously 	DYNAMIC 	*/
 	int(*get_nb_execution)(void* data);										/* Return the number of execution for the node 																		STATIC 		*/
-	void(*print_dot)(FILE* file, void* data); 								/* Print node data in DOT format 																					STATIC 		*/
+	void(*print_dot)(void* data, FILE* file); 								/* Print node data in DOT format 																					STATIC 		*/
 	void(*delete_data)(void* data);											/* Delete the node's data 																							DYNAMIC		*/
 };
 

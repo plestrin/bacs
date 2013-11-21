@@ -29,8 +29,7 @@ void trace_print_instructions(struct trace* ptrace);
 void trace_print_simpleTraceStat(struct trace* ptrace);
 void trace_print_codeMap(struct trace* ptrace);
 struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace);
-struct graph* trace_construct_call_tree(struct trace* ptrace);
-
+struct graph* trace_construct_callTree(struct trace* ptrace);
 void trace_delete(struct trace* ptrace);
 
 #endif

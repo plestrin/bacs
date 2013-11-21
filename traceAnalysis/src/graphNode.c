@@ -116,7 +116,7 @@ int graphNode_split_enter(struct graphNode* node_orig, struct graphNode* node_ne
 void graphNode_print_dot(struct graphNode* node, struct graphNode_callback* callback, FILE* file){
 	if (callback != NULL){
 		if (callback->print_dot != NULL){
-			callback->print_dot(file, node->data);
+			callback->print_dot(node->data, file);
 		}
 	}
 }

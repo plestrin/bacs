@@ -105,7 +105,7 @@ struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace){
 	return cfg;
 }
 
-struct graph* trace_construct_call_tree(struct trace* ptrace){
+struct graph* trace_construct_callTree(struct trace* ptrace){
 	struct graph* 				callTree;
 	struct instruction*			ins;
 	struct callTree_element		element;
@@ -116,7 +116,7 @@ struct graph* trace_construct_call_tree(struct trace* ptrace){
 		callTree->callback_node.may_add_element 	= callTree_may_add_element;
 		callTree->callback_node.add_element 		= callTree_add_element;
 		callTree->callback_node.element_is_owned 	= callTree_element_is_owned;
-		callTree->callback_node.print_dot 			= callTree_printDot_node;
+		callTree->callback_node.print_dot 			= callTree_node_printDot;
 		callTree->callback_node.delete_data 		= callTree_delete_node;
 
 		element.cm = ptrace->cm;

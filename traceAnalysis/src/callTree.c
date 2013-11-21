@@ -4,6 +4,7 @@
 
 #include "traceFragment.h"
 #include "callTree.h"
+#include "multiColumn.h"
 
 struct callTree_node{
 	struct traceFragment 	fragment;
@@ -109,15 +110,53 @@ int callTree_add_element(void* data, void* element){
 	return result;
 }
 
-void callTree_printDot_node(FILE* file, void* data){
-	struct callTree_node* node = (struct callTree_node*)data;
-
-	fprintf(file, "[label=\"%s\"]", node->name);
-}
-
 void callTree_delete_node(void* data){
 	struct callTree_node* node = (struct callTree_node*)data;
 
 	traceFragment_clean(&(node->fragment));
 	free(node);
+}
+
+void callTree_node_printDot(void* data, FILE* file){
+	struct callTree_node* node = (struct callTree_node*)data;
+
+	fprintf(file, "[label=\"%s\"]", node->name);
+}
+
+void callTree_print_opcode_percent(struct graph* callTree){
+	struct multiColumnPrinter* 	printer;
+	int 						i;
+	struct callTree_node* 		node;
+	float 						percent;
+	char 						percent_string[32];
+	int 						nb_opcode = 3;
+	uint32_t 					opcode[3] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHR};
+	int 						nb_excluded_opcode = 3;
+	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
+
+
+	if (callTree != NULL){
+		printer = multiColumnPrinter_create(stdout, 2, NULL, NULL);
+
+		if (printer != NULL){
+			multiColumnPrinter_set_column_size(printer, 0, 24);
+			multiColumnPrinter_set_column_size(printer, 1, 16);
+
+			multiColumnPrinter_set_title(printer, 0, (char*)"FRAGMENT");
+			multiColumnPrinter_set_title(printer, 1, (char*)"PERCENT");
+			multiColumnPrinter_print_header(printer);
+
+			for (i = 0; i < callTree->nb_node; i++){
+				node = (struct callTree_node*)callTree->nodes[i].data;
+				percent = traceFragment_opcode_percent(&(node->fragment), nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
+				snprintf(percent_string, 32, "%f", percent*100);
+				multiColumnPrinter_print(printer, node->name, percent_string, NULL);
+			}
+
+			multiColumnPrinter_delete(printer);
+		}
+		else{
+			printf("ERROR: in %s, unable to create multi column printer\n", __func__);
+		}
+	}
 }
