@@ -6,7 +6,10 @@ COMPILER 		:= gcc
 TARGET_OS 		:= linux
 SOURCE_DIR 		:= src/
 MISC_DIR		:= ../misc/
-INCLUDE 		:= -I$(MISC_DIR)
+SHARED_DIR 		:= ../shared/
+INCLUDE_SRC 	:= -I$(MISC_DIR) -I$(SHARED_DIR)
+INCLUDE_MISC 	:=
+INCLUDE_SHARED 	:= -I$(MISC_DIR)
 TOOL_ROOTS 		:= tracer
 OBJECT_ROOTS 	:= whiteList traceFiles codeMap multiColumn
 
@@ -43,10 +46,13 @@ clean:
 ###### Default build rules for tools ######
 
 $(OBJDIR)%$(OBJ_SUFFIX): $(SOURCE_DIR)%.cpp
-	$(CXX) $(TOOL_CXXFLAGS) $(INCLUDE) $(COMP_OBJ)$@ $<
+	$(CXX) $(TOOL_CXXFLAGS) $(INCLUDE_SRC) $(COMP_OBJ)$@ $<
 
 $(OBJDIR)%$(OBJ_SUFFIX): $(MISC_DIR)%.cpp
-	$(CXX) $(TOOL_CXXFLAGS) $(INCLUDE) $(COMP_OBJ)$@ $<
+	$(CXX) $(TOOL_CXXFLAGS) $(INCLUDE_MISC) $(COMP_OBJ)$@ $<
+
+$(OBJDIR)%$(OBJ_SUFFIX): $(SHARED_DIR)%.cpp
+	$(CXX) $(TOOL_CXXFLAGS) $(INCLUDE_SHARED) $(COMP_OBJ)$@ $<
 
 $(OBJDIR)%$(PINTOOL_SUFFIX): $(OBJDIR)%$(OBJ_SUFFIX) $(OBJECTS)
 	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
