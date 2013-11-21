@@ -16,7 +16,7 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 		nb_column = 1;
 	}
 	
-	printer = malloc(sizeof(struct multiColumnPrinter) + (nb_column - 1) * sizeof(struct multiColumnColumn));
+	printer = (struct multiColumnPrinter*)malloc(sizeof(struct multiColumnPrinter) + (nb_column - 1) * sizeof(struct multiColumnColumn));
 	if (printer != NULL){
 		printer->file = file;
 		printer->nb_column = nb_column;

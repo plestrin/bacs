@@ -298,12 +298,12 @@ void codeMap_print(struct codeMap* cm, int filter){
 			multiColumnPrinter_set_column_size(printer, 4, 10);
 			multiColumnPrinter_set_column_size(printer, 5, 6);
 
-			multiColumnPrinter_set_title(printer, 0, "IMAGE");
-			multiColumnPrinter_set_title(printer, 1, "SECTION");
-			multiColumnPrinter_set_title(printer, 2, "ROUTINE");
-			multiColumnPrinter_set_title(printer, 3, "START @");
-			multiColumnPrinter_set_title(printer, 4, "STOP @");
-			multiColumnPrinter_set_title(printer, 5, "WHITEL");
+			multiColumnPrinter_set_title(printer, 0, (char*)"IMAGE");
+			multiColumnPrinter_set_title(printer, 1, (char*)"SECTION");
+			multiColumnPrinter_set_title(printer, 2, (char*)"ROUTINE");
+			multiColumnPrinter_set_title(printer, 3, (char*)"START @");
+			multiColumnPrinter_set_title(printer, 4, (char*)"STOP @");
+			multiColumnPrinter_set_title(printer, 5, (char*)"WHITEL");
 			multiColumnPrinter_print_header(printer);
 
 			image = cm->images;

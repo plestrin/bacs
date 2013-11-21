@@ -1,33 +1,33 @@
-PROG_NAME			:= analysis
-CC					:= gcc
-CFLAGS				:= -W -Wall -pedantic -Wextra -g
-LDFLAGS				:= -lyajl
-SRC_DIRECTORY 		:= src/
-BUILD_DIRECTORY 	:= build/
-INCLUDE_DIRECTORY 	:= -I include/ -I ../misc/
-MISC_DIR 			:= ../misc/
+PROG_NAME	:= analysis
+CC			:= gcc
+CFLAGS		:= -W -Wall -pedantic -Wextra -g
+LDFLAGS		:= -lyajl
+SRC_DIR 	:= src/
+BUILD_DIR 	:= build/
+MISC_DIR 	:= ../misc/
+INCLUDE		:= -I include/ -I $(MISC_DIR)
 
 
-all: $(BUILD_DIRECTORY)analysis.o 			\
-	$(BUILD_DIRECTORY)trace.o 				\
-	$(BUILD_DIRECTORY)codeMap.o				\
-	$(BUILD_DIRECTORY)traceReaderJSON.o 	\
-	$(BUILD_DIRECTORY)cmReaderJSON.o 		\
-	$(BUILD_DIRECTORY)controlFlowGraph.o 	\
-	$(BUILD_DIRECTORY)basicBlock.o 			\
-	$(BUILD_DIRECTORY)gephiCFGIO.o 			\
-	$(BUILD_DIRECTORY)instruction.o			\
-	$(BUILD_DIRECTORY)simpleTraceStat.o		\
-	$(BUILD_DIRECTORY)graph.o 				\
-	$(BUILD_DIRECTORY)graphNode.o			\
-	$(BUILD_DIRECTORY)codeSegment.o			\
-	$(BUILD_DIRECTORY)callTree.o 			\
-	$(BUILD_DIRECTORY)graphPrintDot.o		\
+all: $(BUILD_DIR)analysis.o 			\
+	$(BUILD_DIR)trace.o 				\
+	$(BUILD_DIR)codeMap.o				\
+	$(BUILD_DIR)traceReaderJSON.o 	\
+	$(BUILD_DIR)cmReaderJSON.o 		\
+	$(BUILD_DIR)controlFlowGraph.o 	\
+	$(BUILD_DIR)basicBlock.o 			\
+	$(BUILD_DIR)gephiCFGIO.o 			\
+	$(BUILD_DIR)instruction.o			\
+	$(BUILD_DIR)simpleTraceStat.o		\
+	$(BUILD_DIR)graph.o 				\
+	$(BUILD_DIR)graphNode.o			\
+	$(BUILD_DIR)codeSegment.o			\
+	$(BUILD_DIR)callTree.o 			\
+	$(BUILD_DIR)graphPrintDot.o		\
 	$(MISC_DIR)multiColumn.o
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
-$(BUILD_DIRECTORY)%.o: $(SRC_DIRECTORY)%.c
-	$(CC) $(INCLUDE_DIRECTORY) -o $@ -c $< $(CFLAGS)
+$(BUILD_DIR)%.o: $(SRC_DIR)%.c
+	$(CC) $(INCLUDE) -o $@ -c $< $(CFLAGS)
 
 $(MISC_DIR)%.o: $(MISC_DIR)%.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -35,7 +35,7 @@ $(MISC_DIR)%.o: $(MISC_DIR)%.c
 .PHONY: clean
 
 clean:
-	@ rm -f $(BUILD_DIRECTORY)*.o
+	@ rm -f $(BUILD_DIR)*.o
 	@ rm -f $(PROG_NAME)
 	@ rm -f *.dot
 	@ rm -f *.png
