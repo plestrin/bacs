@@ -119,11 +119,11 @@ struct graph* trace_construct_call_tree(struct trace* ptrace){
 		callTree->callback_node.print_dot 			= callTree_printDot_node;
 		callTree->callback_node.delete_data 		= callTree_delete_node;
 
+		element.cm = ptrace->cm;
 		do{
 			ins = traceReaderJSON_get_next_instruction(&(ptrace->ins_reader.json));
 			if (ins != NULL){
 				element.ins = ins;
-				element.cm = ptrace->cm;
 				if (graph_add_element(callTree, &element)){
 					printf("ERROR: in %s, unable to add instruction to call tree\n", __func__);
 					break;

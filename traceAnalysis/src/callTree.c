@@ -2,14 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "codeSegment.h"
+#include "traceFragment.h"
 #include "callTree.h"
 
 struct callTree_node{
-	struct codeSegment 	segment;
-	unsigned long		entry_address;
-	char 				name[CODEMAP_DEFAULT_NAME_SIZE];
-	int 				nb_execution;
+	struct traceFragment 	fragment;
+	unsigned long			entry_address;
+	char 					name[CODEMAP_DEFAULT_NAME_SIZE];
+	int 					nb_execution;
 };
 
 void* callTree_create_node(void* first_element){
@@ -19,11 +19,11 @@ void* callTree_create_node(void* first_element){
 
 	node = (struct callTree_node*)malloc(sizeof(struct callTree_node));
 	if (node != NULL){
-		codeSegment_init(&(node->segment));
+		traceFragment_init(&(node->fragment));
 
-		if (codeSegment_add_instruction(&(node->segment), element->ins)){
-			printf("ERROR: in %s, unable to add instruction to code segment\n", __func__);
-			codeSegment_clean(&(node->segment));
+		if (traceFragment_add_instruction(&(node->fragment), element->ins)){
+			printf("ERROR: in %s, unable to add instruction to code fragment\n", __func__);
+			traceFragment_clean(&(node->fragment));
 			free(node);
 			node = NULL;
 		}
@@ -61,7 +61,9 @@ int callTree_may_add_element(void* data, void* element){
 	}
 	else{
 		/* Idealy in case of a CALL check if the dst is whitelisted */
-		if ((codeSegment_search_instruction(&(node->segment), el->ins) >= 0) || (el->ins->opcode != XED_ICLASS_RET_FAR && el->ins->opcode != XED_ICLASS_RET_NEAR && el->ins->opcode != XED_ICLASS_CALL_FAR && el->ins->opcode != XED_ICLASS_CALL_NEAR)){
+		/* This is wrong. The ret instruction actually belongs to the current block. But not the next instruction */
+		/* renomer la méthode ci-dessous en serach pc */
+		if ((traceFragment_search_pc(&(node->fragment), el->ins) >= 0) || (el->ins->opcode != XED_ICLASS_RET_FAR && el->ins->opcode != XED_ICLASS_RET_NEAR && el->ins->opcode != XED_ICLASS_CALL_FAR && el->ins->opcode != XED_ICLASS_CALL_NEAR)){
 			result = 0;
 		}
 	}
@@ -82,7 +84,7 @@ int callTree_element_is_owned(void* data, void* element){
 		}
 	}
 	else{
-		if (codeSegment_search_instruction(&(node->segment), el->ins) >= 0){
+		if (traceFragment_search_pc(&(node->fragment), el->ins) >= 0){
 			result = 0;
 		}
 	}
@@ -96,10 +98,11 @@ int callTree_add_element(void* data, void* element){
 	int 						ins_offset;
 	int 						result = 0;
 
-	ins_offset = codeSegment_search_instruction(&(node->segment), el->ins);
+	/* Warning this method needs to be redesigned to save every dynamic instruction */
+	ins_offset = traceFragment_search_pc(&(node->fragment), el->ins);
 	if (ins_offset < 0){
-		if (codeSegment_add_instruction(&(node->segment), el->ins) < 0){
-			printf("ERROR: in %s, unable to add instruction to code segment\n", __func__);
+		if (traceFragment_add_instruction(&(node->fragment), el->ins) < 0){
+			printf("ERROR: in %s, unable to add instruction to code fragment\n", __func__);
 			result = -1;
 		}
 		else{
@@ -121,6 +124,6 @@ void callTree_printDot_node(FILE* file, void* data){
 void callTree_delete_node(void* data){
 	struct callTree_node* node = (struct callTree_node*)data;
 
-	codeSegment_clean(&(node->segment));
+	traceFragment_clean(&(node->fragment));
 	free(node);
 }

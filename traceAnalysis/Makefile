@@ -23,7 +23,7 @@ all: $(BUILD_DIR)analysis.o 			\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)graph.o 				\
 	$(BUILD_DIR)graphNode.o				\
-	$(BUILD_DIR)codeSegment.o			\
+	$(BUILD_DIR)traceFragment.o			\
 	$(BUILD_DIR)callTree.o 				\
 	$(BUILD_DIR)graphPrintDot.o			\
 	$(BUILD_DIR)multiColumn.o
