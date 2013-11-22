@@ -123,16 +123,28 @@ void callTree_node_printDot(void* data, FILE* file){
 	fprintf(file, "[label=\"%s\"]", node->name);
 }
 
+/* This method is out of place here */
 void callTree_print_opcode_percent(struct graph* callTree){
 	struct multiColumnPrinter* 	printer;
 	int 						i;
 	struct callTree_node* 		node;
 	float 						percent;
 	char 						percent_string[32];
-	int 						nb_opcode = 3;
-	uint32_t 					opcode[3] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHR};
+	int 						nb_opcode = 10;
+	uint32_t 					opcode[10] = {	XED_ICLASS_XOR,
+												XED_ICLASS_SHL,
+												XED_ICLASS_SHLD,
+												XED_ICLASS_SHR,
+												XED_ICLASS_SHRD,
+												XED_ICLASS_NOT,
+												XED_ICLASS_OR,
+												XED_ICLASS_AND,
+												XED_ICLASS_ROL,
+  												XED_ICLASS_ROR};
 	int 						nb_excluded_opcode = 3;
-	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
+	uint32_t 					excluded_opcode[3] = {	XED_ICLASS_MOV,
+														XED_ICLASS_PUSH,
+														XED_ICLASS_POP};
 
 
 	if (callTree != NULL){
