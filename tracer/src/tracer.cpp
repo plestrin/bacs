@@ -43,8 +43,16 @@ KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelis
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
 
-void pintool_instruction_analysis(ADDRINT pc, ADDRINT pc_next, UINT32 opcode){
+void pintool_instruction_analysis_nomem(ADDRINT pc, ADDRINT pc_next, UINT32 opcode){
 	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u},", pc, pc_next, opcode);
+}
+
+void pintool_instruction_analysis_1read(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT read_address, UINT32 read_size){
+	UINT32 read_value; /* We do not expect more than 32 bits mem access */
+
+	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
+
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}]},", pc, pc_next, opcode, read_address, read_value, read_size);
 }
 
 void pintool_routine_analysis(void* cm_routine_ptr){
@@ -57,14 +65,33 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* Instrumentation function                                              */
 /* ===================================================================== */
 
-/* En terme de granularité de l'instrumentation qui peux moins peux le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'aasez systématique */
+/* En terme de granularité de l'instrumentation qui peut le moins peut le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'aasez systématique */
 void pintool_instrumentation_ins(INS instruction, void* arg){
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
-		INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis, 
-			IARG_INST_PTR, 												/* program counter */
-			IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
-			IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-			IARG_END);
+		
+		/* For now we do not care about mem write */
+		if (INS_IsMemoryRead(instruction)){
+			if (INS_HasMemoryRead2(instruction)){
+				/* We do not deal with this kind of stuff */
+				printf("Whaou! a 2 mem oprands ins is beeing instrumented\n");
+			}
+			else{
+				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read, 
+					IARG_INST_PTR, 												/* program counter */
+					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+					IARG_MEMORYREAD_EA, 										/* memory address of the operand */
+					IARG_UINT32, INS_MemoryReadSize(instruction),				/* memory access size */
+					IARG_END);
+			}
+		}
+		else{
+			INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_nomem, 
+				IARG_INST_PTR, 												/* program counter */
+				IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+				IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+				IARG_END);
+		}
 	}
 }
 

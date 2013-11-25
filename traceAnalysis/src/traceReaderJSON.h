@@ -14,6 +14,10 @@ enum trace_json_map_key{
 	TRACE_JSON_MAP_KEY_PC,
 	TRACE_JSON_MAP_KEY_PC_NEXT,
 	TRACE_JSON_MAP_KEY_INS,
+	TRACE_JSON_MAP_KEY_DATA_READ,
+	TRACE_JSON_MAP_KEY_DATA_MEM,
+	TRACE_JSON_MAP_KEY_DATA_SIZE,
+	TRACE_JSON_MAP_KEY_DATA_VAL,
 	TRACE_JSON_MAP_KEY_UNKNOWN
 };
 
@@ -27,6 +31,7 @@ struct traceReaderJSON{
 	yajl_handle 			json_parser_handle;
 	enum trace_json_map_key actual_key;
 	int 					actual_map_level;
+	int 					actual_instruction_data_offset;
 
 	long 					instruction_cursor;
 	struct instruction 		instruction_cache[TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE];
