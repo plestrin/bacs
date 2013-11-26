@@ -185,7 +185,7 @@ void* array_get(struct array* array, uint32_t index){
 	uint32_t 			nb_element_per_page;
 
 	nb_element_per_page = ARRAY_DEFAULT_PAGE_SIZE / array->element_size;
-	if (_array_get_length(array->pages) * nb_element_per_page < index){
+	if (_array_get_length(array->pages) * nb_element_per_page <= index){
 		return array->buffer + (index % nb_element_per_page) * array->element_size;
 	}
 	else{
