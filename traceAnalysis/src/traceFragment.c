@@ -5,7 +5,7 @@
 #include "traceFragment.h"
 #include "argBuffer.h"
 
-int memAccess_compare_address(const void* mem_access1, const void* mem_access2); /* Order memAccess array in address order */
+int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); /* Order memAccess array in address order */
 
 
 struct traceFragment* codeSegment_create(){
@@ -217,10 +217,12 @@ struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_acce
 	int 				j;
 	struct array* 		array = NULL;
 	uint64_t 			mem_address_upper_bound;
+	uint64_t 			mem_address_written;
 	struct argBuffer 	arg;
+	int8_t 				nb_byte;
 
 	if (mem_access != NULL && nb_mem_access > 0){
-		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), memAccess_compare_address);
+		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
 
 		array = array_create(sizeof(struct argBuffer));
 		if (array == NULL){
@@ -236,12 +238,16 @@ struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_acce
 				arg.data 				= (char*)malloc(arg.size);
 				if (arg.data == NULL){
 					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					break;
+					return array;
 				}
 
+				mem_address_written = mem_access[j].address;
 				while (j <  i){
-					/* warning we do not raise alarm for overlapping access with different value */
-					memcpy(arg.data + (mem_access[j].address - arg.location.address), &(mem_access[j].value), mem_access[j].size);
+					nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);
+					if (nb_byte > 0){
+						memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);
+						mem_address_written += nb_byte;
+					}
 					j++;
 				}
 
@@ -264,9 +270,13 @@ struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_acce
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		}
 		else{
+			mem_address_written = mem_access[j].address;
 			while (j < i){
-				/* warning we do not raise alarm for overlapping access with different value */
-				memcpy(arg.data + (mem_access[j].address - arg.location.address), &(mem_access[j].value), mem_access[j].size);
+				nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);
+				if (nb_byte > 0){
+					memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);
+					mem_address_written += nb_byte;
+				}
 				j++;
 			}
 
@@ -301,7 +311,7 @@ void traceFragment_clean(struct traceFragment* frag){
 	}
 }
 
-int memAccess_compare_address(const void* mem_access1, const void* mem_access2){
+int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2){
 	int64_t diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
 
 	if (diff > 0){
@@ -311,6 +321,6 @@ int memAccess_compare_address(const void* mem_access1, const void* mem_access2){
 		return -1;
 	}
 	else{
-		return 0;
+		return ((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order;
 	}
 }

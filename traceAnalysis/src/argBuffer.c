@@ -4,7 +4,8 @@
 #include "argBuffer.h"
 
 void argBuffer_print_raw(struct argBuffer* arg){
-	unsigned int i;
+	uint32_t 	i;
+	char 		hexa[16] = {'0', '1', '2', '3', '4' , '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
 	if (arg != NULL){
 		if (arg->location_type == ARG_LOCATION_MEMORY){
@@ -25,7 +26,7 @@ void argBuffer_print_raw(struct argBuffer* arg){
 		printf("\t-Value: \t");
 
 		for (i = 0; i < arg->size; i++){
-			printf("%02x", arg->data[i]);
+			printf("%c%c", hexa[(arg->data[i] >> 4) & 0x0f], hexa[arg->data[i] & 0x0f]);
 		}
 
 		printf("\n");
