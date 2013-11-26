@@ -3,11 +3,19 @@
 
 #include "instruction.h"
 #include "codeMap.h"
+#include "traceFragment.h"
 #include "graph.h"
 
 struct callTree_element{
 	struct instruction* ins;
 	struct codeMap*		cm;
+};
+
+/* This structure can be only define in the source - remove dependency to traceFragement.h */
+struct callTree_node{
+	struct traceFragment 	fragment;
+	unsigned long			entry_address;
+	char 					name[CODEMAP_DEFAULT_NAME_SIZE];
 };
 
 /* Callbacks for the graph structure */

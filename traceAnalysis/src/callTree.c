@@ -6,12 +6,6 @@
 #include "callTree.h"
 #include "multiColumn.h"
 
-struct callTree_node{
-	struct traceFragment 	fragment;
-	unsigned long			entry_address;
-	char 					name[CODEMAP_DEFAULT_NAME_SIZE];
-};
-
 void* callTree_create_node(void* first_element){
 	struct callTree_node* 		node;
 	struct cm_routine* 			routine;

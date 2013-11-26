@@ -44,6 +44,6 @@ void* array_get(struct array* array, uint32_t index);
 void array_clean(struct array* array);
 void array_delete(struct array* array);
 
-#define array_get_length(array) ((array).nb_element)
+#define array_get_length(array) ((array)->nb_element)
 
 #endif

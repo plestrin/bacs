@@ -24,9 +24,11 @@ all: $(BUILD_DIR)analysis.o 			\
 	$(BUILD_DIR)graph.o 				\
 	$(BUILD_DIR)graphNode.o				\
 	$(BUILD_DIR)traceFragment.o			\
+	$(BUILD_DIR)argBuffer.o 			\
 	$(BUILD_DIR)callTree.o 				\
 	$(BUILD_DIR)graphPrintDot.o			\
-	$(BUILD_DIR)multiColumn.o
+	$(BUILD_DIR)multiColumn.o 			\
+	$(BUILD_DIR)array.o
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIR)%.o: $(SRC_DIR)%.c

@@ -102,14 +102,16 @@ int array_init(struct array* array, uint32_t element_size){
 
 		array->buffer = (char*)malloc(ARRAY_DEFAULT_ALLOC_SIZE);
 		if (array->buffer != NULL){
-			array->nb_allocated_byte = ARRAY_DEFAULT_ALLOC_SIZE;
-			array->nb_filled_byte = 0;
-			array->nb_element = 0;
-			array->element_size = element_size;
+			array->nb_allocated_byte 	= ARRAY_DEFAULT_ALLOC_SIZE;
+			array->nb_filled_byte 		= 0;
+			array->nb_element 			= 0;
+			array->element_size 		= element_size;
 
 			if (array->element_size > ARRAY_DEFAULT_PAGE_SIZE){
 				printf("WARNING: in %s, element size is larger than a page\n", __func__);
 			}
+
+			result = 0;
 		}
 		else{
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);

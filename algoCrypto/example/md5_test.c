@@ -5,7 +5,7 @@
 #include "../MD5.h"
 
 int main(){
-	char 		message[] = "a";
+	char 		message[] = "Hello world";
 	char* 		padded_message;
 	uint32_t 	message_size;
 	uint32_t 	hash[4];
