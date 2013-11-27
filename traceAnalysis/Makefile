@@ -28,7 +28,8 @@ all: $(BUILD_DIR)analysis.o 			\
 	$(BUILD_DIR)callTree.o 				\
 	$(BUILD_DIR)graphPrintDot.o			\
 	$(BUILD_DIR)multiColumn.o 			\
-	$(BUILD_DIR)array.o
+	$(BUILD_DIR)array.o 				\
+	$(BUILD_DIR)printBuffer.o
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIR)%.o: $(SRC_DIR)%.c
