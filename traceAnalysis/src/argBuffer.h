@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "argBuffer.h"
+
 enum argLocationType{
 	ARG_LOCATION_MEMORY,
 	ARG_LOCATION_REGISTER

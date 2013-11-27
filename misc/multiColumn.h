@@ -2,6 +2,7 @@
 #define MULTICOLUMN_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #define MULTICOLUMN_DEFAULT_SIZE 		12
 #define MULTICOLUMN_DEFAULT_SEPARATOR 	" | "

@@ -11,9 +11,9 @@ INCLUDE_MISC	:=
 INCLUDE_SHARED	:= -I$(MISC_DIR)
 
 
-all: $(BUILD_DIR)analysis.o 			\
+all: $(BUILD_DIR)codeMap.o				\
+	$(BUILD_DIR)analysis.o 				\
 	$(BUILD_DIR)trace.o 				\
-	$(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)traceReaderJSON.o 		\
 	$(BUILD_DIR)cmReaderJSON.o 			\
 	$(BUILD_DIR)controlFlowGraph.o 		\
@@ -27,6 +27,7 @@ all: $(BUILD_DIR)analysis.o 			\
 	$(BUILD_DIR)argBuffer.o 			\
 	$(BUILD_DIR)callTree.o 				\
 	$(BUILD_DIR)graphPrintDot.o			\
+	$(BUILD_DIR)primitiveReference.o 	\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
 	$(BUILD_DIR)printBuffer.o

@@ -12,9 +12,9 @@
 
 /* 
  * Make sur the data buffer is large enough to hold the padding. Use the macro above to compute the size of the data buffer
- * - data		: input message
- * - nb_block 	: size of the input message
- * - hash		: 128 bits hash value allocated by the user
+ * - data			: input message
+ * - data_length 	: size of the input message
+ * - hash			: 128 bits hash value allocated by the user
  */
 
 void md5(uint32_t* data, uint64_t data_length, uint32_t* hash);

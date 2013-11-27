@@ -8,11 +8,11 @@
 #define INSTRUCTION_MAX_NB_DATA 1
 
 
- /* Data type value:
-  * - bit 1: set to 0 -> INAVALID 	set to 1 VALID
-  * - bit 2: set to 0 -> MEM 		set to 1 REG
-  * - bit 3: set to 0 -> READ 		set to 1 WRITE
-  */
+/* Data type value:
+ * - bit 1: set to 0 -> INVALID 	set to 1 VALID
+ * - bit 2: set to 0 -> MEM 		set to 1 REG
+ * - bit 3: set to 0 -> READ 		set to 1 WRITE
+ */
 
 #define INSTRUCTION_DATA_TYPE_SET_INVALID(type) (type) &= 0xfffffffe;
 #define INSTRUCTION_DATA_TYPE_SET_VALID(type) 	(type) |= 0x00000001;
