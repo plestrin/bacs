@@ -6,6 +6,8 @@
 #include "MD5.h"
 
 
+void ioChecker_wrapper_md5(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
+
 struct ioChecker* ioChecker_create(){
 	struct ioChecker* checker;
 
@@ -37,7 +39,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_IMPLICIT_SIZE(input_specifier[1], 0);
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], MD5_HASH_NB_BYTE);
 
-		if (primitiveReference_init(&primitive, "MD5", 2, 1, input_specifier, output_specifier, NULL)){ /* attention à remplacer par un vrai pointer */
+		if (primitiveReference_init(&primitive, "MD5", 2, 1, input_specifier, output_specifier, ioChecker_wrapper_md5)){
 			printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);
 		}
 		else{
@@ -68,5 +70,22 @@ void ioChecker_delete(struct ioChecker* checker){
 	if (checker != NULL){
 		ioChecker_clean(checker);
 		free(checker);
+	}
+}
+
+/* ===================================================================== */
+/* Wrapper crypto function(s) 	                                         */
+/* ===================================================================== */
+
+void ioChecker_wrapper_md5(void** input, uint8_t nb_input, void** output, uint8_t nb_output){
+	uint64_t size;
+
+	/* We can check the padding of the first argument */
+	if (nb_input != 2 || nb_output != 1){
+		printf("ERROR: in %s, incorrect arguement(s) to call md5\n", __func__);
+	}
+	else{
+		size = *(uint32_t*)input[1] * 8;
+		md5((uint32_t*)input[0], size, (uint32_t*)output[0]);
 	}
 }

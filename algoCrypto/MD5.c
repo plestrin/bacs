@@ -28,12 +28,16 @@ void md5(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	uint64_t nb_block = MD5_DATA_SIZE_TO_NB_BLOCK(data_length);
 	uint64_t i;
 
-	/* Padding */
+	#ifndef ANALYSIS_REFERENCE_IMPLEMENTATION
+
+	/* Padding - no padding for reference implementation */
 	*((char*)data + data_length) = (char)0x80;
 	for (i = 1; (data_length + i)%MD5_BLOCK_NB_BYTE != 56; i++){
 		*((char*)data + data_length + i) = 0x00;
 	}
 	*(uint64_t*)((char*)data + data_length + i) = data_length * 8;
+
+	#endif
 	
 
 	for (i = 0; i < nb_block; i++){
