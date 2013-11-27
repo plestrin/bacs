@@ -110,7 +110,40 @@ int main(int argc, char** argv){
 		}
 		/* Warning this section is tmp - only for dev purpose - do not run on general input */
 		else if (!strcmp(argv[2], ANALYSIS_TYPE_IO)){
-			/* custom */
+			struct argBuffer txt;
+			struct argBuffer hash;
+			unsigned char hash_val[16] = {0x3e, 0x25, 0x96, 0x0a, 0x79, 0xdb, 0xc6, 0x9b, 0x67, 0x4c, 0xd4, 0xec, 0x67, 0xa7, 0x2c, 0x62};
+			unsigned char txt_val[64] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+			struct primitiveReference* prim;
+
+			txt.location_type = ARG_LOCATION_MEMORY;
+			txt.location.address = 1;
+			txt.size = 64;
+			txt.data = (char*)malloc(64); /* srry but we don't check allocation */
+			memcpy(txt.data, txt_val, 64);
+
+			hash.location_type = ARG_LOCATION_MEMORY;
+			hash.location.address = 2;
+			hash.size = 16;
+			hash.data  =(char*)malloc(16); /* srry but we don't check allocation */
+			memcpy(hash.data, hash_val, 16); 
+
+			argBuffer_print_raw(&txt);
+			argBuffer_print_raw(&hash);
+
+			prim = (struct primitiveReference*)array_get(&(checker->reference_array), 0);
+
+			primitiveReference_print(prim);
+
+			if (primitiveReference_test(prim, 1, 1, &(txt), &(hash)) == 0){
+				printf("SUCCESS!\n");
+			}
+			else{
+				printf("FAILURE!\n");
+			}
+
+			free(txt.data);
+			free(hash.data);
 		}
 		else{
 			printf("ERROR: in %s, unknown analysis type: %s\n", __func__, argv[2]);

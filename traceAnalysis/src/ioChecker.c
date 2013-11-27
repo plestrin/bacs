@@ -85,7 +85,7 @@ void ioChecker_wrapper_md5(void** input, uint8_t nb_input, void** output, uint8_
 		printf("ERROR: in %s, incorrect arguement(s) to call md5\n", __func__);
 	}
 	else{
-		size = *(uint32_t*)input[1] * 8;
+		size = *(uint32_t*)input[1];
 		md5((uint32_t*)input[0], size, (uint32_t*)output[0]);
 	}
 }

@@ -1,5 +1,3 @@
-#include <stdio.h> /* a supprimer pour le debug */
-
 #include "MD5.h"
 
 #define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
@@ -25,10 +23,12 @@ void md5(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	uint32_t C;
 	uint32_t D;
 
-	uint64_t nb_block = MD5_DATA_SIZE_TO_NB_BLOCK(data_length);
-	uint64_t i;
+	uint32_t nb_block;
+	uint32_t i;
 
 	#ifndef ANALYSIS_REFERENCE_IMPLEMENTATION
+
+	nb_block = (uint32_t)MD5_DATA_SIZE_TO_NB_BLOCK(data_length);
 
 	/* Padding - no padding for reference implementation */
 	*((char*)data + data_length) = (char)0x80;
@@ -37,8 +37,11 @@ void md5(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	}
 	*(uint64_t*)((char*)data + data_length + i) = data_length * 8;
 
+	#else
+
+	nb_block = (uint32_t)(data_length / MD5_BLOCK_NB_BYTE);
+
 	#endif
-	
 
 	for (i = 0; i < nb_block; i++){
 
