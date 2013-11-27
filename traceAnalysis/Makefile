@@ -6,7 +6,8 @@ SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-INCLUDE_SRC		:= -Iinclude/ -I$(MISC_DIR) -I$(SHARED_DIR)
+CRYPTO_DIR 		:= ../algoCrypto/
+INCLUDE_SRC		:= -Iinclude/ -I$(MISC_DIR) -I$(SHARED_DIR) -I$(CRYPTO_DIR)
 INCLUDE_MISC	:= 
 INCLUDE_SHARED	:= -I$(MISC_DIR)
 
@@ -28,9 +29,12 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)callTree.o 				\
 	$(BUILD_DIR)graphPrintDot.o			\
 	$(BUILD_DIR)primitiveReference.o 	\
+	$(BUILD_DIR)ioChecker.o 			\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
-	$(BUILD_DIR)printBuffer.o
+	$(BUILD_DIR)printBuffer.o			\
+	$(CRYPTO_DIR)MD5.o					\
+
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 
 $(BUILD_DIR)%.o: $(SRC_DIR)%.c
@@ -41,6 +45,9 @@ $(BUILD_DIR)%.o: $(MISC_DIR)%.c
 
 $(BUILD_DIR)%.o: $(SHARED_DIR)%.c
 	$(CC) $(INCLUDE_SHARED) -o $@ -c $< $(CFLAGS)
+
+$(CRYPTO_DIR)%.o:
+	@ (cd $(CRYPTO_DIR) && $(MAKE))
 	
 .PHONY: clean
 
