@@ -4,6 +4,7 @@
 
 #include "traceFragment.h"
 #include "argBuffer.h"
+#include "multiColumn.h"
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); /* Order memAccess array in address order */
 
@@ -212,6 +213,40 @@ int traceFragment_create_mem_array(struct traceFragment* frag){
 	return result;
 }
 
+void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access){
+	struct multiColumnPrinter* 	printer;
+	int 						i;
+	char 						order_str[20];
+	char 						value_str[20];
+	char 						addr_str[20];
+	char 						size_str[20];
+
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 3, 4);
+
+		multiColumnPrinter_set_title(printer, 0, (char*)"ORDER");
+		multiColumnPrinter_set_title(printer, 1, (char*)"VALUE");
+		multiColumnPrinter_set_title(printer, 2, (char*)"ADDRESS");
+		multiColumnPrinter_set_title(printer, 3, (char*)"SIZE");
+		multiColumnPrinter_print_header(printer);
+
+		for (i = 0; i < nb_mem_access; i++){
+			snprintf(order_str, 20, "%u", mem_access[i].order);
+			snprintf(value_str, 20, "%08x", mem_access[i].value); 		/* attention c'est un peu de la merde */
+			snprintf(addr_str, 20, "%08x", mem_access[i].address);		/* attention c'est un peu de la merde */
+			snprintf(size_str, 20, "%u", mem_access[i].size);
+
+			multiColumnPrinter_print(printer, order_str, value_str, addr_str, size_str, NULL);
+		}
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__);
+	}
+}
+
 struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
 	int 				i;
 	int 				j;
@@ -223,6 +258,8 @@ struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_acce
 
 	if (mem_access != NULL && nb_mem_access > 0){
 		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
+
+		traceFragment_print_mem_array(mem_access, nb_mem_access); /*pour le debug */
 
 		array = array_create(sizeof(struct argBuffer));
 		if (array == NULL){

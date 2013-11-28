@@ -134,7 +134,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 						IARG_UINT32, INS_MemoryWriteSize(instruction),				/* write memory access size */
 						IARG_END);
 					if (INS_HasFallThrough(instruction)){
-						INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
+						INS_InsertCall(instruction, IPOINT_AFTER, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
 					}
 					else if (INS_IsBranchOrCall(instruction)){
 						INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
@@ -164,7 +164,7 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 					IARG_UINT32, INS_MemoryWriteSize(instruction),				/* memory access size */
 					IARG_END);
 				if (INS_HasFallThrough(instruction)){
-					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
+					INS_InsertCall(instruction, IPOINT_AFTER, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
 				}
 				else if (INS_IsBranchOrCall(instruction)){
 					INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);

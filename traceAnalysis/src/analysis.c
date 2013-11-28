@@ -5,7 +5,7 @@
 #include "trace.h"
 #include "ioChecker.h"
 #include "gephiCFGIO.h"			/* gephi is a crap and must be destroy with fire */
-#include "graphPrintDot.h"		/* meybe delete later */
+#include "graphPrintDot.h"		/* maybe delete later */
 #include "argBuffer.h" 			/* delete later*/
 #include "primitiveReference.h" /* maybe delete later */
 
@@ -80,6 +80,7 @@ int main(int argc, char** argv){
 			struct graph* 			callTree;
 			struct callTree_node* 	node;
 			struct array* 			read_mem_arg;
+			struct array* 			write_mem_arg;
 			uint32_t 				i;
 			struct argBuffer* 		arg;
 
@@ -92,9 +93,11 @@ int main(int argc, char** argv){
 
 			traceFragment_create_mem_array(&(node->fragment));
 
-			printf("Nb mem read access: %d\n", node->fragment.nb_memory_read_access);
+			printf("Nb mem read access:  %d\n", node->fragment.nb_memory_read_access);
+			printf("Nb mem write access: %d\n", node->fragment.nb_memory_write_access);
 
 			read_mem_arg = traceFragement_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
+			write_mem_arg = traceFragement_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
 
 			printf("Nb read mem arg: %u\n", array_get_length(read_mem_arg));
 
@@ -104,7 +107,16 @@ int main(int argc, char** argv){
 				free(arg->data);
 			}
 
+			printf("Nb write mem arg: %u\n", array_get_length(write_mem_arg));
+
+			for (i = 0; i < array_get_length(write_mem_arg); i++){
+				arg = (struct argBuffer*)array_get(write_mem_arg, i);
+				argBuffer_print_raw(arg);
+				free(arg->data);
+			}
+
 			array_delete(read_mem_arg);
+			array_delete(write_mem_arg);
 
 			graph_delete(callTree);
 		}
