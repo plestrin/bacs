@@ -73,8 +73,6 @@ int32_t simpleTraceStat_add_instruction(struct simpleTraceStat* stat, struct ins
 				}
 			}
 		}
-
-
 	}
 
 	return 0;

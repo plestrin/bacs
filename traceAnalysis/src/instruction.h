@@ -5,7 +5,7 @@
 
 #include "xed-iclass-enum.h"
 
-#define INSTRUCTION_MAX_NB_DATA 1
+#define INSTRUCTION_MAX_NB_DATA 2
 
 
 /* Data type value:
@@ -19,7 +19,7 @@
 #define INSTRUCTION_DATA_TYPE_SET_MEM(type)		(type) &= 0xfffffffd;
 #define INSTRUCTION_DATA_TYPE_SET_REG(type)		(type) |= 0x00000002;
 #define INSTRUCTION_DATA_TYPE_SET_READ(type)	(type) &= 0xfffffffb;
-#define INSTRCUTION_DATA_TYPE_SET_WRITE(type)	(type) |= 0x00000004;
+#define INSTRUCTION_DATA_TYPE_SET_WRITE(type)	(type) |= 0x00000004;
 
 #define INSTRUCTION_DATA_TYPE_IS_INVALID(type) 	(((type) & 0x00000001) == 0x00000000)
 #define INSTRUCTION_DATA_TYPE_IS_VALID(type) 	(((type) & 0x00000001) == 0x00000001)

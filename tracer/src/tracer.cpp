@@ -24,6 +24,7 @@
  *	- traiter le cas des instructions qui n'appartiennent pas à une routine et dont l'image est whitelistée
  * 	- 
  * 	- que faire des predicated?
+ *  - pour l'instant on va faire les choses à la crado on verra ensuite pour les raffinements
  * 	- 
  *	- d'autres idées sont les bienvenues
  */
@@ -31,6 +32,8 @@
 
 struct traceFiles* 	trace = NULL;					/* ne pas laisser en statique */
 struct tracer		tracer;							/* ne pas laisser en statique */
+ADDRINT 			static_write_address; 			/* super moche mais je ne sais pas quoi faire */
+UINT32 				static_write_size; 				/* c'est également super moche mais je ne sais pas quoi faire */
 
 
 /* Je suis bien tenté de virer les KNOB et da faire quelque chose à la mano à la place */
@@ -38,6 +41,7 @@ struct tracer		tracer;							/* ne pas laisser en statique */
 KNOB<string> knob_trace_file_name(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify trace file name");
 KNOB<BOOL> knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST, "(Optional) Shared library white list");
 KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelist-name", DEFAULT_WHITE_LIST_FILE_NAME, "Specify shared library white list file name");
+
 
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
@@ -55,6 +59,39 @@ void pintool_instruction_analysis_1read(ADDRINT pc, ADDRINT pc_next, UINT32 opco
 	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}]},", pc, pc_next, opcode, read_address, read_value, read_size);
 }
 
+void pintool_instruction_analysis_1read_1write_part1(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT read_address, UINT32 read_size, ADDRINT write_address, UINT32 write_size){
+	UINT32 read_value; /* We do not expect more than 32 bits mem access */
+
+	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
+
+	static_write_address 	= write_address;
+	static_write_size 		= write_size;
+
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}],\"write\":[{\"mem\":\"%08x\",", pc, pc_next, opcode, read_address, read_value, read_size, write_address);
+}
+
+void pintool_instruction_analysis_1read_1write_part2(){
+	UINT32 write_value; /* We do not expect more than 32 bits mem access */
+
+	PIN_SafeCopy(&write_value, (void*)static_write_address, static_write_size);
+
+	fprintf(trace->ins_file, "\"val\":\"%08x\",\"size\":%u}]},", write_value, static_write_size);
+}
+
+void pintool_instruction_analysis_1write_part1(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT write_address, UINT32 write_size){
+	static_write_address 	= write_address;
+	static_write_size 		= write_size;
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"write\":[{\"mem\":\"%08x\",", pc, pc_next, opcode, write_address);
+}
+
+void pintool_instruction_analysis_1write_part2(){
+	UINT32 write_value; /* We do not expect more than 32 bits mem access */
+
+	PIN_SafeCopy(&write_value, (void*)static_write_address, static_write_size);
+
+	fprintf(trace->ins_file, "\"val\":\"%08x\",\"size\":%u}]},", write_value, static_write_size);
+}
+
 void pintool_routine_analysis(void* cm_routine_ptr){
 	struct cm_routine* routine = (struct cm_routine*)cm_routine_ptr;
 	
@@ -68,29 +105,81 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* En terme de granularité de l'instrumentation qui peut le moins peut le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'aasez systématique */
 void pintool_instrumentation_ins(INS instruction, void* arg){
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
+
+		if (INS_IsPredicated(instruction)){
+			/* Don't know what to do */
+			printf("Predicated instruction ahead!\n");
+		}
 		
 		/* For now we do not care about mem write */
 		if (INS_IsMemoryRead(instruction)){
 			if (INS_HasMemoryRead2(instruction)){
 				/* We do not deal with this kind of stuff */
 				printf("Whaou! a 2 mem oprands ins is beeing instrumented\n");
+
+				if (INS_IsMemoryWrite(instruction)){
+					/* Weirdest case ever - do not bother */
+					printf("BAOUM!\n");
+				}
 			}
 			else{
-				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read, 
-					IARG_INST_PTR, 												/* program counter */
-					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
-					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-					IARG_MEMORYREAD_EA, 										/* memory address of the operand */
-					IARG_UINT32, INS_MemoryReadSize(instruction),				/* memory access size */
-					IARG_END);
+				if (INS_IsMemoryWrite(instruction)){
+					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_1write_part1, 
+						IARG_INST_PTR, 												/* program counter */
+						IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+						IARG_MEMORYREAD_EA, 										/* read memory address of the operand */
+						IARG_UINT32, INS_MemoryReadSize(instruction),				/* read memory access size */
+						IARG_MEMORYWRITE_EA, 										/* write memory address of the operand */
+						IARG_UINT32, INS_MemoryWriteSize(instruction),				/* write memory access size */
+						IARG_END);
+					if (INS_HasFallThrough(instruction)){
+						INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
+					}
+					else if (INS_IsBranchOrCall(instruction)){
+						INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
+					}
+					else{
+						printf("This case is not suppose to happen\n");
+					}
+				}
+				else{
+					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read, 
+						IARG_INST_PTR, 												/* program counter */
+						IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+						IARG_MEMORYREAD_EA, 										/* memory address of the operand */
+						IARG_UINT32, INS_MemoryReadSize(instruction),				/* memory access size ATTENTION cette méthode ne pas l'air d'être très précise plutôt faire des itération sur les opérandes */
+						IARG_END);
+				}
 			}
 		}
 		else{
-			INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_nomem, 
-				IARG_INST_PTR, 												/* program counter */
-				IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
-				IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-				IARG_END);
+			if (INS_IsMemoryWrite(instruction)){
+				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_part1, 
+					IARG_INST_PTR, 												/* program counter */
+					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+					IARG_MEMORYWRITE_EA, 										/* memory address of the operand */
+					IARG_UINT32, INS_MemoryWriteSize(instruction),				/* memory access size */
+					IARG_END);
+				if (INS_HasFallThrough(instruction)){
+					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
+				}
+				else if (INS_IsBranchOrCall(instruction)){
+					INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
+				}
+				else{
+					printf("This case is not suppose to happen\n");
+				}
+			}
+			else{
+				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_nomem, 
+					IARG_INST_PTR, 												/* program counter */
+					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
+					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
+					IARG_END);
+			}
 		}
 	}
 }
