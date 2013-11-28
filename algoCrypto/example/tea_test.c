@@ -3,24 +3,45 @@
 #include <string.h>
 
 #include "../TEA.h"
+#include "../../misc/printBuffer.h"
 
 int main(){
-	char* 			data	= NULL;
-	uint32_t		size 	= 32;
-	uint32_t		key[4]	 = {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
+	char* 			plaintext		= NULL;
+	char* 			ciphertext 		= NULL;
+	char* 			deciphertext 	= NULL;
+	uint32_t		size 			= 32;
+	uint32_t		key[4]	 		= {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
 	
-	data = (char*)malloc(size);
-	if (data != NULL){
-		memset(data, 0, size);
-		strcpy(data, "Hello World!");
-		printf("Message 1:\t%s\n", data);
+	plaintext 		= (char*)malloc(size);
+	ciphertext 		= (char*)malloc(size);
+	deciphertext 	= (char*)malloc(size);
+	if (plaintext != NULL && ciphertext != NULL && deciphertext != NULL){
+		memset(plaintext, 0, size);
+		strcpy(plaintext, "Hello World!");
 		
-		tea_encypher((uint32_t*)data, (uint64_t)(size >> 3), key);
-		tea_decipher((uint32_t*)data, (uint64_t)(size >> 3), key);
+		printf("Plaintext:\t\"%s\"\n", plaintext);
+		printf("Key: \t\t");
+		printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
+		printf("\n");
+
+		tea_encypher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
+
+		printf("Ciphertext: \t");
+		printBuffer_raw(stdout, ciphertext, size);
+		printf("\n");
+
+		tea_decipher((uint32_t*)ciphertext, (uint64_t)size, key, (uint32_t*)deciphertext);
 		
-		printf("Message 2:\t%s\n", data);
+		if (memcmp(plaintext, deciphertext, size) == 0){
+			printf("Recovery: \tOK\n");
+		}
+		else{
+			printf("Recovery: \tFAIL\n");
+		}
 		
-		free(data);
+		free(plaintext);
+		free(ciphertext);
+		free(deciphertext);
 	}
 	else{
 		printf("ERROR: unable to allocate memory\n");

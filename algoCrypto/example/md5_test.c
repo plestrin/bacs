@@ -3,9 +3,10 @@
 #include <string.h>
 
 #include "../MD5.h"
+#include "../../misc/printBuffer.h"
 
 int main(){
-	char 		message[] = "Hello world";
+	char 		message[] = "Hello world!";
 	char* 		padded_message;
 	uint32_t 	message_size;
 	uint32_t 	hash[4];
@@ -17,8 +18,10 @@ int main(){
 
 		md5((uint32_t*)padded_message, message_size, hash);
 
-		printf("Message: \"%s\"\n", message);
-		printf("MD5 hash: %08x%08x%08x%08x\n", hash[0], hash[1], hash[2], hash[3]);
+		printf("Plaintext: \"%s\"\n", message);
+		printf("MD5 hash:  ");
+		printBuffer_raw(stdout, (char*)hash, MD5_HASH_NB_BYTE);
+		printf("\n");
 
 		free(padded_message);
 	}

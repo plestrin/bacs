@@ -1,30 +1,30 @@
-EXAMPLE_DIRECTORY	:=example/
+EXAMPLE_DIRECTORY	:= example/
 
-CC					:=gcc
-CFLAGS				:=-W -Wall -pedantic -Wextra -g
+CC					:= gcc
+CFLAGS				:= -W -Wall -pedantic -Wextra -g
 LDFLAGS				:=
-VPATH				:=$(TEST_DIRECTORY)
+VPATH				:= $(TEST_DIRECTORY)
 
-TEA_EXAMPLE_NAME	:=TEA
-MD5_EXAMPLE_NAME 	:=MD5
+TEA_EXAMPLE_NAME	:= TEA
+MD5_EXAMPLE_NAME 	:= MD5
 
 all: example
 
 example: tea_example md5_example
 
-tea_example: TEA.o $(EXAMPLE_DIRECTORY)tea_test.o TEA.h
+tea_example: TEA.o $(EXAMPLE_DIRECTORY)tea_test.o ../misc/printBuffer.o
 	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME) $^ $(LDFLAGS)
 
-md5_example: MD5.o TEA.o $(EXAMPLE_DIRECTORY)md5_test.o MD5.h
+md5_example: MD5.o TEA.o $(EXAMPLE_DIRECTORY)md5_test.o ../misc/printBuffer.o
 	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME) $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-$(EXAMPLE_DIRECTORY)%.o: $(EXAMPLE_DIRECTORY)%.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+MD5.o: MD5.h
+TEA.o: TEA.h
 
-.PHONY: clean example tea_example md5_example
+.PHONY: clean example
 
 clean:
 	@ rm -f *.o
