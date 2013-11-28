@@ -4,7 +4,7 @@
 #include "instruction.h"
 
 void instruction_print(struct instruction *ins){
-	int i;
+	uint32_t i;
 
 	if (ins != NULL){
 		printf("*** Instruction %p ***\n", (void*)ins);
@@ -28,9 +28,9 @@ void instruction_print(struct instruction *ins){
 					/* a completer */
 				}
 				switch(ins->data[i].size){
-				case 1 : {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x000000ff); break;}
-				case 2 : {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x0000ffff); break;}
-				case 4 : {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0xffffffff); break;}
+				case 1 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x000000ff); break;}
+				case 2 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x0000ffff); break;}
+				case 4 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0xffffffff); break;}
 				default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
 				}
 				printf("\t\tSize: \t%u\n", ins->data[i].size);

@@ -48,6 +48,7 @@ struct insData{
 	uint8_t 			size;
 };
 
+/* statuer sur la taille des address mémoire */
 struct instruction{
 	unsigned long 	pc;
 	unsigned long 	pc_next; /* je ne sais pas si c'est encore justifié avec les opcodes ?? Avoir lorsque l'on va reprendre le control flow graph */
