@@ -233,8 +233,14 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 
 		for (i = 0; i < nb_mem_access; i++){
 			snprintf(order_str, 20, "%u", mem_access[i].order);
-			snprintf(value_str, 20, "%08x", mem_access[i].value); 		/* attention c'est un peu de la merde */
-			snprintf(addr_str, 20, "%08x", mem_access[i].address);		/* attention c'est un peu de la merde */
+			switch(mem_access[i].size){
+			case 1 	: {snprintf(value_str, 20, "%02x", mem_access[i].value & 0x000000ff); break;}
+			case 2 	: {snprintf(value_str, 20, "%04x", mem_access[i].value & 0x0000ffff); break;}
+			case 4 	: {snprintf(value_str, 20, "%08x", mem_access[i].value & 0xffffffff); break;}
+			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+			}
+			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+			snprintf(addr_str, 20, "%llx", mem_access[i].address);
 			snprintf(size_str, 20, "%u", mem_access[i].size);
 
 			multiColumnPrinter_print(printer, order_str, value_str, addr_str, size_str, NULL);
@@ -247,7 +253,7 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 	}
 }
 
-struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
+struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
 	int 				i;
 	int 				j;
 	struct array* 		array = NULL;
@@ -258,8 +264,6 @@ struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_acce
 
 	if (mem_access != NULL && nb_mem_access > 0){
 		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
-
-		traceFragment_print_mem_array(mem_access, nb_mem_access); /*pour le debug */
 
 		array = array_create(sizeof(struct argBuffer));
 		if (array == NULL){

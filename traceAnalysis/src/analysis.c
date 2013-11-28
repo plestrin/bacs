@@ -93,11 +93,13 @@ int main(int argc, char** argv){
 
 			traceFragment_create_mem_array(&(node->fragment));
 
+			traceFragment_print_mem_array(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
+
 			printf("Nb mem read access:  %d\n", node->fragment.nb_memory_read_access);
 			printf("Nb mem write access: %d\n", node->fragment.nb_memory_write_access);
 
-			read_mem_arg = traceFragement_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
-			write_mem_arg = traceFragement_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
+			read_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
+			write_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
 
 			printf("Nb read mem arg: %u\n", array_get_length(read_mem_arg));
 

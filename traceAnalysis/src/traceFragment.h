@@ -33,8 +33,8 @@ struct instruction* traceFragment_get_last_instruction(struct traceFragment* fra
 float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);
 int traceFragment_create_mem_array(struct traceFragment* frag);
 void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access);
-struct array* traceFragement_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access);	/* Identification rule: adjacent memory locations belong to the same argument */
-void traceFragement_delete(struct traceFragment* frag);
+struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access);	/* Identification rule: adjacent memory locations belong to the same argument */
+void traceFragment_delete(struct traceFragment* frag);
 void traceFragment_clean(struct traceFragment* frag);
 
 #endif
