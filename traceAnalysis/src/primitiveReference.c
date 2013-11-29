@@ -109,8 +109,22 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 			}
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
-			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_IMPLICIT_SIZE(primitive->input_specifier[i]) < nb_input){
-				arg_in[i] = (void*)&(input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_IMPLICIT_SIZE(primitive->input_specifier[i])].size);
+			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]) < nb_input){
+				arg_in[i] = (void*)&(input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i])].size);
+			}
+			else{
+				break;
+			}
+		}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
+			if (j < nb_input){
+				if (input[j].size <= PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i])){
+					arg_in[i] = (void*)input[j].data;
+					j ++;
+				}
+				else{
+					break;
+				}
 			}
 			else{
 				break;
@@ -139,6 +153,31 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 					}
 					else{
 						j ++;
+					}
+				}
+				else{
+					break;
+				}
+			}
+			else{
+				break;
+			}
+		}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
+			if ( j < nb_output){
+				if (PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]) < nb_input){
+					if (output[j].size == input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i])].size){
+						arg_out[i] = malloc(output[j].size);
+						if (arg_out[i] == NULL){
+							printf("ERROR: in %s, unable to allocate memory\n", __func__);
+							break;
+						}
+						else{
+							j ++;
+						}
+					}
+					else{
+						break;
 					}
 				}
 				else{
@@ -206,16 +245,19 @@ void primitiveReference_print(struct primitiveReference* primitive){
 		printf("\tNb input: \t%u\n", primitive->nb_input);
 		for (i = 0; i < primitive->nb_input; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
+				printf("\t\tArg %u: \t\tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \tsize multiple of %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
+				printf("\t\tArg %u: \t\tsize multiple of %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_UNDEFINED(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \tundefined\n", i);
+				printf("\t\tArg %u: \t\tundefined\n", i);
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \tsize of arg %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_IMPLICIT_SIZE(primitive->input_specifier[i]));
+				printf("\t\tImplicit arg %u: size of input %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]));
+			}
+			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
+				printf("\t\tArg %u: \t\tmax size %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i]));
 			}
 			else{
 				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
@@ -224,7 +266,10 @@ void primitiveReference_print(struct primitiveReference* primitive){
 		printf("\tNb output: \t%u\n", primitive->nb_output);
 		for (i = 0; i < primitive->nb_output; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
-				printf("\t\tArg %u: \tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
+				printf("\t\tArg %u: \t\tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
+			}
+			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
+				printf("\t\tArg %u: \t\tsize of input %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]));
 			}
 			else{
 				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);

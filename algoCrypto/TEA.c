@@ -3,7 +3,7 @@
 #define DELTA 		0x9E3779B9
 #define NB_ROUND	32
 
-void tea_encypher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output){
+void tea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output){
 	uint32_t y;
 	uint32_t z;
 	uint32_t s;

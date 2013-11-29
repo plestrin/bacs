@@ -24,7 +24,7 @@ int main(){
 		printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
 		printf("\n");
 
-		tea_encypher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
+		tea_encipher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
 
 		printf("Ciphertext: \t");
 		printBuffer_raw(stdout, ciphertext, size);

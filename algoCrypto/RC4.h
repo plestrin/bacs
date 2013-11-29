@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define RC4_KEY_MAX_NB_BYTE 	256
-#define RC4_KAY_MIN_NB_BYTE 	1
+#define RC4_KEY_MIN_NB_BYTE 	1
 
 /* 
  * Operands description:

@@ -33,6 +33,8 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)array.o 				\
 	$(BUILD_DIR)printBuffer.o			\
 	$(BUILD_DIR)MD5.o					\
+	$(BUILD_DIR)TEA.o 					\
+	$(BUILD_DIR)RC4.o 					\
 
 	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
 

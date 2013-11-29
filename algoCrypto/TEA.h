@@ -16,7 +16,7 @@
  * - output 		: output message. Its length is equal to the length of the input
  */
 
-void tea_encypher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
+void tea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
 void tea_decipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
 
 #endif
