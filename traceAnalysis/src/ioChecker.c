@@ -31,6 +31,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		return result;
 	}
 
+	/* MD5 hash */
 	{
 		uint32_t input_specifier[2];
 		uint32_t output_specifier[1];
@@ -48,6 +49,12 @@ int32_t ioChecker_init(struct ioChecker* checker){
 			}
 		}
 	}
+
+	/* TEA cipher */
+	{
+		/* in order to add tea cipher new arg mode in primitive ref output size equal to input size */
+	}
+
 
 	result = 0;
 
