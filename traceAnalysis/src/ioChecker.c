@@ -164,8 +164,6 @@ void ioChecker_submit_arguments(struct ioChecker* checker, struct array* input_a
 		return;
 	}
 
-	printf("Nb input: %u, nb output: %u\n", nb_input, nb_output);
-
 	/* Generate input sub set */
 	for (i = 1; i <= nb_input; i++){
 		memset(current_input, 0, i);
