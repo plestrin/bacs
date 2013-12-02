@@ -136,7 +136,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 		}	
 	}
 
-	if (j != nb_input){
+	if (j != nb_input || i != primitive->nb_input){
 		free(arg_in);
 		free(arg_out);
 		return result;
@@ -194,7 +194,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 		}	
 	}
 
-	if (j != nb_output){
+	if (j != nb_output || i != primitive->nb_output){
 		free(arg_in);
 		for (i = 0; i < primitive->nb_output; i++){
 			if (arg_out[i] != NULL){

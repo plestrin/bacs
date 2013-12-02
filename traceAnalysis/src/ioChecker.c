@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ioChecker.h"
 #include "primitiveReference.h"
@@ -13,6 +14,7 @@ void ioChecker_wrapper_tea_encipher(void** input, uint8_t nb_input, void** outpu
 void ioChecker_wrapper_tea_decipher(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
 void ioChecker_wrapper_rc4(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
 
+static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output);
 
 struct ioChecker* ioChecker_create(){
 	struct ioChecker* checker;
@@ -116,6 +118,125 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	}
 
 	result = 0;
+
+	return result;
+}
+
+void ioChecker_submit_arguments(struct ioChecker* checker, struct array* input_args, struct array* output_args){
+	uint8_t 			nb_input;
+	uint8_t 			nb_output;
+	uint8_t 			i;
+	uint8_t 			j;
+	uint8_t 			k;
+	uint8_t 			l;
+	uint8_t 			m;
+	uint8_t 			n;
+	struct argBuffer* 	arg_in;
+	struct argBuffer* 	arg_out;
+	uint8_t* 			current_input;
+	uint8_t* 			current_output;
+	uint8_t 			input_next;
+	uint8_t 			output_next;
+
+	nb_input = (uint8_t)array_get_length(input_args);
+	nb_output = (uint8_t)array_get_length(output_args);
+
+	arg_in = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
+	arg_out = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_output);
+
+	current_input = (uint8_t*)malloc(nb_input);
+	current_output = (uint8_t*)malloc(nb_output);
+
+	if (arg_in == NULL || arg_out == NULL || current_input == NULL || current_output == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		if (arg_in != NULL){
+			free(arg_in);
+		}
+		if (arg_out != NULL){
+			free(arg_out);
+		}
+		if (current_input == NULL){
+			free(current_input);
+		}
+		if (current_output == NULL){
+			free(current_output);
+		}
+		return;
+	}
+
+	printf("Nb input: %u, nb output: %u\n", nb_input, nb_output);
+
+	/* Generate input sub set */
+	for (i = 1; i <= nb_input; i++){
+		memset(current_input, 0, i);
+		input_next = 1;
+
+		while(input_next){
+
+			/* Generate the output sub set */
+			for (j = 1; j <= nb_output; j++){
+				memset(current_output, 0, j);
+				output_next = 1;
+
+				while(output_next){
+					for (k = 0; k < i; k++){
+						memcpy(arg_in + k, array_get(input_args, current_input[k]), sizeof(struct argBuffer));
+					}
+					for (l = 0; l < j; l++){
+						memcpy(arg_out + l, array_get(output_args, current_output[l]), sizeof(struct argBuffer));
+					}
+					ioChecker_ckeck(checker, i, j, arg_in, arg_out);
+
+					for (n = 0, output_next = 0; n < j; n++){
+						output_next |= (current_output[n] != nb_output - 1);
+					}
+
+					if (output_next){
+						l = j -1;
+						while(current_output[l] == nb_output - 1){
+							l--;
+						}
+						current_output[l] ++;
+						for (n = l + 1; n < j; n++){
+							current_output[n] = 0;
+						}
+					}
+				}
+			}
+
+			for (m = 0, input_next = 0; m < i; m++){
+				input_next |= (current_input[m] != nb_input - 1);
+			}
+
+			if (input_next){
+				k = i -1;
+				while(current_input[k] == nb_input - 1){
+					k--;
+				}
+				current_input[k] ++;
+				for (m = k + 1; m < i; m++){
+					current_input[m] = 0;
+				}
+			}
+		}
+	}
+
+	free(arg_in);
+	free(arg_out);
+	free(current_input);
+	free(current_output);
+}
+
+static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output){
+	uint32_t i;
+	int32_t result = -1;
+
+	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+		if (!primitiveReference_test((struct primitiveReference*)array_get(&(checker->reference_array), i), nb_input, nb_output, input, output)){
+			result = 0;
+			break;
+		}
+	}
 
 	return result;
 }

@@ -106,7 +106,6 @@ int main(int argc, char** argv){
 			for (i = 0; i < array_get_length(read_mem_arg); i++){
 				arg = (struct argBuffer*)array_get(read_mem_arg, i);
 				argBuffer_print_raw(arg);
-				free(arg->data);
 			}
 
 			printf("Nb write mem arg: %u\n", array_get_length(write_mem_arg));
@@ -114,6 +113,17 @@ int main(int argc, char** argv){
 			for (i = 0; i < array_get_length(write_mem_arg); i++){
 				arg = (struct argBuffer*)array_get(write_mem_arg, i);
 				argBuffer_print_raw(arg);
+			}
+
+			/* Check submit */
+			ioChecker_submit_arguments(checker, read_mem_arg, write_mem_arg);
+
+			for (i = 0; i < array_get_length(write_mem_arg); i++){
+				arg = (struct argBuffer*)array_get(write_mem_arg, i);
+				free(arg->data);
+			}
+			for (i = 0; i < array_get_length(read_mem_arg); i++){
+				arg = (struct argBuffer*)array_get(read_mem_arg, i);
 				free(arg->data);
 			}
 
@@ -128,7 +138,9 @@ int main(int argc, char** argv){
 			struct argBuffer hash;
 			unsigned char hash_val[16] = {0x3e, 0x25, 0x96, 0x0a, 0x79, 0xdb, 0xc6, 0x9b, 0x67, 0x4c, 0xd4, 0xec, 0x67, 0xa7, 0x2c, 0x62};
 			unsigned char txt_val[64] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-			struct primitiveReference* prim;
+			/* struct primitiveReference* prim; */
+			struct array* array_in;
+			struct array* array_out;
 
 			txt.location_type = ARG_LOCATION_MEMORY;
 			txt.location.address = 1;
@@ -145,19 +157,24 @@ int main(int argc, char** argv){
 			argBuffer_print_raw(&txt);
 			argBuffer_print_raw(&hash);
 
-			prim = (struct primitiveReference*)array_get(&(checker->reference_array), 0);
+			array_in = array_create(sizeof(struct argBuffer));
+			array_out = array_create(sizeof(struct argBuffer));
 
-			primitiveReference_print(prim);
+			if (array_in != NULL && array_out != NULL){
+				array_add(array_in, (void*)&txt); /* we should test if the return value is >= 0 */
+				array_add(array_out, (void*)&hash);	/* we should test if the return value is >= 0*/
 
-			if (primitiveReference_test(prim, 1, 1, &(txt), &(hash)) == 0){
-				printf("SUCCESS!\n");
+				ioChecker_submit_arguments(checker, array_in, array_out);
+
+				array_delete(array_in);
+				array_delete(array_out);
+
+				free(txt.data);
+				free(hash.data);
 			}
 			else{
-				printf("FAILURE!\n");
+				printf("ERROR: in %s, unable to create arrays\n", __func__);
 			}
-
-			free(txt.data);
-			free(hash.data);
 		}
 		else{
 			printf("ERROR: in %s, unknown analysis type: %s\n", __func__, argv[2]);
