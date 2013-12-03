@@ -117,6 +117,8 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		}
 	}
 
+	/* Do not foget to update PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT and PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT */
+
 	result = 0;
 
 	return result;
@@ -165,14 +167,14 @@ void ioChecker_submit_arguments(struct ioChecker* checker, struct array* input_a
 	}
 
 	/* Generate input sub set */
-	for (i = 1; i <= nb_input; i++){
+	for (i = 1; i <= ((nb_input > PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT) ? PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT : nb_input); i++){
 		memset(current_input, 0, i);
 		input_next = 1;
 
 		while(input_next){
 
 			/* Generate the output sub set */
-			for (j = 1; j <= nb_output; j++){
+			for (j = 1; j <= ((nb_output > PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT) ? PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT : nb_output); j++){
 				memset(current_output, 0, j);
 				output_next = 1;
 

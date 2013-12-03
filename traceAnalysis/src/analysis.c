@@ -92,8 +92,9 @@ int main(int argc, char** argv){
 			printf("Node %d routine name: %s\n", 20, node->name);
 
 			traceFragment_create_mem_array(&(node->fragment));
+			traceFragment_remove_read_after_write(&(node->fragment));
 
-			/*traceFragment_print_mem_array(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);*/
+			/* traceFragment_print_mem_array(node->fragment.write_memory_array, node->fragment.nb_memory_write_access); */
 
 			printf("Nb mem read access:  %d\n", node->fragment.nb_memory_read_access);
 			printf("Nb mem write access: %d\n", node->fragment.nb_memory_write_access);

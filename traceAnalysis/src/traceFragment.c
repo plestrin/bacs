@@ -6,7 +6,8 @@
 #include "argBuffer.h"
 #include "multiColumn.h"
 
-int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); /* Order memAccess array in address order */
+int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); 		/* Order memAccess array in address order and in order order as a second option */
+int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2); 	/* Search the given address for a lower order */
 
 
 struct traceFragment* codeSegment_create(){
@@ -253,6 +254,57 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 	}
 }
 
+int traceFragment_remove_read_after_write(struct traceFragment* frag){
+	int 				result = -1;
+	int 				i;
+	int 				writing_pointer = 0;
+	struct memAccess* 	write_access;
+	struct memAccess* 	new_array;
+
+
+	if (frag != NULL){
+		if (frag->write_memory_array != NULL && frag->read_memory_array != NULL){
+			qsort(frag->read_memory_array, frag->nb_memory_read_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
+			qsort(frag->write_memory_array, frag->nb_memory_write_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
+
+			/* Warning! This is kind of dumb because it does not take into account the access size */
+			for (i = 0; i < frag->nb_memory_read_access; i++){
+				write_access = (struct memAccess*)bsearch (frag->read_memory_array + i, frag->write_memory_array, frag->nb_memory_write_access, sizeof(struct memAccess), memAccess_compare_address_then_lower_order);
+				if (write_access != NULL){
+					if (frag->read_memory_array[i].order < write_access->order){
+						printf("ERROR: in %s, something screws up in the bsearch - must be due to the asym compare routine\n", __func__);
+					}
+				}
+				else{
+					if (writing_pointer != i){
+						memcpy(frag->read_memory_array + writing_pointer, frag->read_memory_array + i, sizeof(struct memAccess));
+					}
+					writing_pointer ++;
+				}
+			}
+
+			#ifdef VERBOSE
+			printf("Removing %u read write memory access (before: %u, after: %u)\n", (i - writing_pointer), i, writing_pointer);
+			#endif
+
+			new_array = (struct memAccess*)realloc(frag->read_memory_array, sizeof(struct memAccess) * writing_pointer);
+			if (new_array != NULL){
+				frag->read_memory_array = new_array;
+			}
+			else{
+				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+			}
+			frag->nb_memory_read_access = writing_pointer;
+		}
+		else{
+			printf("ERROR: in %s, create the mem array before calling theis routine\n", __func__);
+		}
+	}
+
+	return result;
+
+}
+
 struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
 	int 				i;
 	int 				j;
@@ -352,6 +404,10 @@ void traceFragment_clean(struct traceFragment* frag){
 	}
 }
 
+/* ===================================================================== */
+/* Comparison functions 	                                         */
+/* ===================================================================== */
+
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2){
 	int64_t diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
 
@@ -363,5 +419,39 @@ int memAccess_compare_address_then_order(const void* mem_access1, const void* me
 	}
 	else{
 		return ((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order;
+	}
+}
+
+int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2){
+	int64_t diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
+
+	if (diff > 0){
+		return 1;
+	}
+	else if (diff < 0){
+		return -1;
+	}
+	else{
+		return ((struct memAccess*)mem_access2)->order - ((struct memAccess*)mem_access1)->order;
+	}
+}
+
+int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2){
+	int64_t addr_diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
+
+	if (addr_diff > 0){
+		return 1;
+	}
+	else if (addr_diff < 0){
+		return -1;
+	}
+	else{
+		int32_t order_diff = ((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order;
+		if (order_diff < 0){
+			return -1;
+		}
+		else{
+			return 0;
+		}
 	}
 }

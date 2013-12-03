@@ -5,8 +5,10 @@
 
 #include "argBuffer.h"
 
-#define PRIMITIVEREFERENCE_MAX_NAME_SIZE 256
-#define PRIMITIVEREFERENCE_UNDEFINED_LENGTH -1
+#define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT	2	/* Do not forget to update this value after adding new primitive implementation to the data base */
+#define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT	1	/* Do not forget to update this value after adding new primitive implementation to the data base */
+
+#define PRIMITIVEREFERENCE_MAX_NAME_SIZE 			256
 
 /* Arg specifier value:
  * 				bit [1..3]									|				bit [4..32]

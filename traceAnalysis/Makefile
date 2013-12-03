@@ -1,6 +1,6 @@
 PROG_NAME		:= analysis
 CC				:= gcc
-CFLAGS			:= -W -Wall -pedantic -Wextra -g
+CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE
 LDFLAGS			:= -lyajl
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
