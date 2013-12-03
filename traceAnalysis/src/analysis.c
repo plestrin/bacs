@@ -8,6 +8,7 @@
 #include "graphPrintDot.h"		/* maybe delete later */
 #include "argBuffer.h" 			/* delete later*/
 #include "primitiveReference.h" /* maybe delete later */
+#include "inputParser.h"
 
 
 #define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 			"simple_traveral"
@@ -22,30 +23,43 @@
 
 static void analysis_print_command();
 
-/* Ca serait bien de faire quelque chose d'interactif - pour pouvoir construire et printer dans une même session */
-
 int main(int argc, char** argv){
 	struct trace* 				trace	= NULL;
 	struct ioChecker*			checker = NULL;
+	struct inputParser* 		parser 	= NULL;
 	
+	/* a supprimer */
 	if	(argc != 3){
 		printf("ERROR: in %s, please specify the trace directory as first argument\n", __func__);
 		printf("ERROR: in %s, please specify the analysis type as second argument\n", __func__);
 		return 0;
 	}
 
+	parser = inputParser_create();
+	if (parser == NULL){
+		printf("ERROR: in %s, unable to create inputParser\n", __func__);
+		goto exit;
+	}
+
 	checker = ioChecker_create();
 	if (checker == NULL){
 		printf("ERROR: in %s, unable to create ioChecker\n", __func__);
+		goto exit;
 	}
 	
+	/* check about what does trace create actually do */
 	trace = trace_create(argv[1]);
 	if (trace == NULL){
 		printf("ERROR: in %s, unable to create the trace\n", __func__);
+		/* leave with a goto */
 	}
 
+	/* Add command entrie */
 
-	if (trace != NULL && checker != NULL){
+	inputParser_exe(parser); /* end of the game */
+
+
+	if (trace != NULL){
 		if (!strcmp(argv[2], ANALYSIS_TYPE_SIMPLE_TRAVERSAL)){
 			trace_simple_traversal(trace);
 		}
@@ -86,10 +100,10 @@ int main(int argc, char** argv){
 
 			callTree = trace_construct_callTree(trace);
 
-			node = (struct callTree_node*)callTree->nodes[32].data;
+			node = (struct callTree_node*)callTree->nodes[31].data;
 
 			/* Make sur to select the crypto  node */
-			printf("Node %d routine name: %s\n", 32, node->name);
+			printf("Node %d routine name: %s\n", 21, node->name);
 
 			traceFragment_create_mem_array(&(node->fragment));
 			/* traceFragment_remove_read_after_write(&(node->fragment)); */
@@ -193,9 +207,12 @@ int main(int argc, char** argv){
 		}
 	}
 
+	exit:
+
 	trace_delete(trace);
 	ioChecker_delete(checker);
-	
+	inputParser_delete(parser);
+
 	return 0;
 }
 
