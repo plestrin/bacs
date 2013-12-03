@@ -135,42 +135,53 @@ int main(int argc, char** argv){
 		}
 		/* Warning this section is tmp - only for dev purpose - do not run on general input */
 		else if (!strcmp(argv[2], ANALYSIS_TYPE_IO)){
-			struct argBuffer txt;
-			struct argBuffer hash;
-			unsigned char hash_val[16] = {0x3e, 0x25, 0x96, 0x0a, 0x79, 0xdb, 0xc6, 0x9b, 0x67, 0x4c, 0xd4, 0xec, 0x67, 0xa7, 0x2c, 0x62};
-			unsigned char txt_val[64] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+			struct argBuffer plt;
+			struct argBuffer key;
+			struct argBuffer cit;
+			unsigned char plt_val[12] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
+			unsigned char key_val[3]  = {0x4b, 0x65, 0x79};
+			unsigned char cit_val[12] = {0xa3, 0xfa, 0x1b, 0xed, 0xd8, 0x14, 0x9d, 0x1d, 0xd5, 0x75, 0x2e, 0x09};
 			struct array* array_in;
 			struct array* array_out;
 
-			txt.location_type = ARG_LOCATION_MEMORY;
-			txt.location.address = 1;
-			txt.size = 64;
-			txt.data = (char*)malloc(64); /* srry but we don't check allocation */
-			memcpy(txt.data, txt_val, 64);
+			plt.location_type = ARG_LOCATION_MEMORY;
+			plt.location.address = 1;
+			plt.size = 12;
+			plt.data = (char*)malloc(12); /* srry but we don't check allocation */
+			memcpy(plt.data, plt_val, 12);
 
-			hash.location_type = ARG_LOCATION_MEMORY;
-			hash.location.address = 2;
-			hash.size = 16;
-			hash.data  =(char*)malloc(16); /* srry but we don't check allocation */
-			memcpy(hash.data, hash_val, 16); 
+			key.location_type = ARG_LOCATION_MEMORY;
+			key.location.address = 2;
+			key.size = 3;
+			key.data = (char*)malloc(3); /* srry but we don't check allocation */
+			memcpy(key.data, key_val, 3);
 
-			argBuffer_print_raw(&txt);
-			argBuffer_print_raw(&hash);
+			cit.location_type = ARG_LOCATION_MEMORY;
+			cit.location.address = 3;
+			cit.size = 12;
+			cit.data = (char*)malloc(12); /* srry but we don't check allocation */
+			memcpy(cit.data, cit_val, 12);
+
+			argBuffer_print_raw(&plt);
+			argBuffer_print_raw(&key);
+			argBuffer_print_raw(&cit);
 
 			array_in = array_create(sizeof(struct argBuffer));
 			array_out = array_create(sizeof(struct argBuffer));
 
 			if (array_in != NULL && array_out != NULL){
-				array_add(array_in, (void*)&txt); /* we should test if the return value is >= 0 */
-				array_add(array_out, (void*)&hash);	/* we should test if the return value is >= 0*/
+				array_add(array_in, (void*)&plt); 	/* we should test if the return value is >= 0 */
+				array_add(array_in, (void*)&key); 	/* we should test if the return value is >= 0 */
+				array_add(array_out, (void*)&cit);	/* we should test if the return value is >= 0*/
 
 				ioChecker_submit_arguments(checker, array_in, array_out);
 
 				array_delete(array_in);
 				array_delete(array_out);
 
-				free(txt.data);
-				free(hash.data);
+				free(plt.data);
+				free(key.data);
+				free(cit.data);
 			}
 			else{
 				printf("ERROR: in %s, unable to create arrays\n", __func__);

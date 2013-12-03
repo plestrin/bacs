@@ -5,6 +5,7 @@
 
 #include "argBuffer.h"
 
+/* Maybe we can make those bounds dynamics */
 #define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT	2	/* Do not forget to update this value after adding new primitive implementation to the data base */
 #define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT	1	/* Do not forget to update this value after adding new primitive implementation to the data base */
 
