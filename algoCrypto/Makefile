@@ -1,16 +1,21 @@
-EXAMPLE_DIRECTORY	:= example/
+EXAMPLE_DIRECTORY			:= example/
+TOMCRYPT_DIRECTORY 			:= tomCrypt/
 
-CC					:= gcc
-CFLAGS				:= -W -Wall -pedantic -Wextra -g
-LDFLAGS				:=
-VPATH				:= $(TEST_DIRECTORY)
+CC							:= gcc
+CFLAGS						:= -W -Wall -pedantic -Wextra -g
+LDFLAGS						:=
+VPATH						:= $(TEST_DIRECTORY)
 
-TEA_EXAMPLE_NAME	:= TEA
-MD5_EXAMPLE_NAME 	:= MD5
-RC4_EXAMPLE_NAME 	:= RC4
+TEA_EXAMPLE_NAME			:= TEA
+MD5_EXAMPLE_NAME 			:= MD5
+RC4_EXAMPLE_NAME 			:= RC4
 
-all: example
+MD5_TOMCRYPT_EXAMPLE_NAME 	:= MD5
+RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
 
+all: example tomCrypt
+
+# *** Example compile rules ***
 example: tea_example md5_example rc4_example
 
 tea_example: TEA.o $(EXAMPLE_DIRECTORY)tea_test.o ../misc/printBuffer.o
@@ -22,6 +27,16 @@ md5_example: MD5.o $(EXAMPLE_DIRECTORY)md5_test.o ../misc/printBuffer.o
 rc4_example: RC4.o $(EXAMPLE_DIRECTORY)rc4_test.o ../misc/printBuffer.o
 	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME) $^ $(LDFLAGS)
 
+# *** TomCrypt compile rules ***
+tomCrypt: tomCrypt_md5_example tomCrypt_rc4_example
+
+tomCrypt_md5_example: $(TOMCRYPT_DIRECTORY)md5_tom.o ../misc/printBuffer.o
+	$(CC) -o $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME) $^ $(LDFLAGS) -ltomcrypt
+
+tomCrypt_rc4_example: $(TOMCRYPT_DIRECTORY)rc4_tom.o ../misc/printBuffer.o
+	$(CC) -o $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME) $^ $(LDFLAGS) -ltomcrypt
+
+# *** General compile rules ***
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
@@ -29,7 +44,7 @@ MD5.o: MD5.h
 TEA.o: TEA.h
 RC4.o: RC4.h
 
-.PHONY: clean example
+.PHONY: clean example tomCrypt
 
 clean:
 	@ rm -f *.o
@@ -38,5 +53,8 @@ clean:
 	@ rm -f $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)
 	@ rm -f $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)
 	@ rm -f $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)
+	@ rm -f $(TOMCRYPT_DIRECTORY)*.o
+	@ rm -f $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME)
+	@ rm -f $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME)
 
 

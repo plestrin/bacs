@@ -139,7 +139,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	}
 
 	#ifdef VERBOSE
-	printf("IOChecker: {");
+	printf("Create IOChecker: {");
 	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
 		if (primitive_pointer != NULL){
