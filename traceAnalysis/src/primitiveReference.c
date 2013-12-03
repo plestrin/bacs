@@ -245,6 +245,40 @@ void primitiveReference_print(struct primitiveReference* primitive){
 	}
 }
 
+uint8_t primitiveReference_get_nb_explicit_input(struct primitiveReference* primitive){
+	uint8_t result = 0;
+	uint8_t i;
+
+	if (primitive != NULL){
+		for (i = 0; i < primitive->nb_input; i++){
+			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i]) ||
+				PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i]) 	||
+				PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_UNDEFINED(primitive->input_specifier[i]) 	||
+				PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
+				result ++;
+			}
+		}
+	}
+
+	return result;
+}
+
+uint8_t primitiveReference_get_nb_explicit_output(struct primitiveReference* primitive){
+	uint8_t result = 0;
+	uint8_t i;
+
+	if (primitive != NULL){
+		for (i = 0; i < primitive->nb_output; i++){
+			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i]) ||
+				PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
+				result ++;
+			}
+		}
+	}
+
+	return result;
+}
+
 void primitiveReference_clean(struct primitiveReference* primitive){
 	if (primitive->input_specifier != NULL){
 		free(primitive->input_specifier);

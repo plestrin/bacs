@@ -5,10 +5,6 @@
 
 #include "argBuffer.h"
 
-/* Maybe we can make those bounds dynamics */
-#define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT	2	/* Do not forget to update this value after adding new primitive implementation to the data base */
-#define PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT	1	/* Do not forget to update this value after adding new primitive implementation to the data base */
-
 #define PRIMITIVEREFERENCE_MAX_NAME_SIZE 			256
 
 /* Arg specifier value:
@@ -52,6 +48,8 @@ struct primitiveReference{
 int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, uint8_t nb_input, void** output, uint8_t nb_output));
 int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output);
 void primitiveReference_print(struct primitiveReference* primitive);
+uint8_t primitiveReference_get_nb_explicit_input(struct primitiveReference* primitive);
+uint8_t primitiveReference_get_nb_explicit_output(struct primitiveReference* primitive);
 void primitiveReference_clean(struct primitiveReference* primitive);
 
 #endif

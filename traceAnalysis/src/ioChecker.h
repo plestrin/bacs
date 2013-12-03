@@ -1,10 +1,14 @@
 #ifndef IOCHECKER_H
 #define IOCHECKER_H
 
+#include <stdint.h>
+
 #include "array.h"
 
 struct ioChecker{
-	struct array reference_array;
+	struct array 	reference_array;
+	uint8_t 		max_nb_input;
+	uint8_t 		max_nb_output;
 	/* other stuff later like thread pool, submission queue etc*/
 };
 

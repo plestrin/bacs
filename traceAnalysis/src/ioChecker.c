@@ -33,6 +33,10 @@ struct ioChecker* ioChecker_create(){
 int32_t ioChecker_init(struct ioChecker* checker){
 	int32_t 					result = -1;
 	struct primitiveReference 	primitive;
+	uint32_t 					i;
+	struct primitiveReference* 	primitive_pointer;
+	uint8_t 					nb_explicit_input;
+	uint8_t 					nb_explicit_output;
 
 	if (array_init(&(checker->reference_array), sizeof(struct primitiveReference))){
 		printf("ERROR: in %s, unable to create array structure\n", __func__);
@@ -117,7 +121,41 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		}
 	}
 
-	/* Do not foget to update PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT and PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT */
+	checker->max_nb_input = 0;
+	checker->max_nb_output = 0;
+
+	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
+		if (primitive_pointer != NULL){
+			nb_explicit_input = primitiveReference_get_nb_explicit_input(primitive_pointer);
+			nb_explicit_output = primitiveReference_get_nb_explicit_output(primitive_pointer);
+
+			checker->max_nb_input = (checker->max_nb_input < nb_explicit_input) ? nb_explicit_input : checker->max_nb_input;
+			checker->max_nb_output = (checker->max_nb_output < nb_explicit_output) ? nb_explicit_output : checker->max_nb_output;
+		}
+		else{
+			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
+		}
+	}
+
+	#ifdef VERBOSE
+	printf("IOChecker: {");
+	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
+		if (primitive_pointer != NULL){
+			if (i != (array_get_length(&(checker->reference_array)) - 1)){
+				printf("%s, ", primitive_pointer->name);
+			}
+			else{
+				printf("%s} ", primitive_pointer->name);
+			}
+		}
+		else{
+			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
+		}
+	}
+	printf("max input: %u, max output: %u\n", checker->max_nb_input, checker->max_nb_output);
+	#endif
 
 	result = 0;
 
@@ -167,14 +205,14 @@ void ioChecker_submit_arguments(struct ioChecker* checker, struct array* input_a
 	}
 
 	/* Generate input sub set */
-	for (i = 1; i <= ((nb_input > PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT) ? PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_INPUT : nb_input); i++){
+	for (i = 1; i <= ((nb_input > checker->max_nb_input) ? checker->max_nb_input : nb_input); i++){
 		memset(current_input, 0, i);
 		input_next = 1;
 
 		while(input_next){
 
 			/* Generate the output sub set */
-			for (j = 1; j <= ((nb_output > PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT) ? PRIMITIVEREFERENCE_MAX_NB_EXPLICIT_OUTPUT : nb_output); j++){
+			for (j = 1; j <= ((nb_output > checker->max_nb_output) ? checker->max_nb_output : nb_output); j++){
 				memset(current_output, 0, j);
 				output_next = 1;
 
