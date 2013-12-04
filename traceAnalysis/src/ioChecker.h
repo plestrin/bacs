@@ -15,6 +15,10 @@ struct ioChecker{
 struct ioChecker* ioChecker_create();
 int32_t ioChecker_init(struct ioChecker* checker);
 void ioChecker_submit_arguments(struct ioChecker* checker, struct array* input_args, struct array* output_args);
+void ioChecker_print(struct ioChecker* checker);
+
+void ioChecker_handmade_test(struct ioChecker* checker); /* This is a debuging routine */
+
 void ioChecker_clean(struct ioChecker* checker);
 void ioChecker_delete(struct ioChecker* checker);
 

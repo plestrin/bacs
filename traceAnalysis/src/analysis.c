@@ -3,36 +3,15 @@
 #include <string.h>
 
 #include "trace.h"
-#include "ioChecker.h"
-#include "gephiCFGIO.h"			/* gephi is a crap and must be destroy with fire */
-#include "graphPrintDot.h"		/* maybe delete later */
-#include "argBuffer.h" 			/* delete later*/
-#include "primitiveReference.h" /* maybe delete later */
 #include "inputParser.h"
-
-
-#define ANALYSIS_TYPE_SIMPLE_TRAVERSAL 			"simple_traveral"
-#define ANALYSIS_TYPE_PRINT_INSTRUCTIONS		"print_instructions"
-#define ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT		"print_simpleTraceStat"
-#define ANALYSIS_TYPE_PRINT_CODEMAP				"print_codeMap"
-#define ANALYSIS_TYPE_BUILD_CFG					"build_cfg"
-#define ANALYSIS_TYPE_BUILD_CALLTREE			"build_callTree"
-#define ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT	"print_rtn_opcode_percent"
-#define ANALYSIS_TYPE_DEV 						"dev" 	/* this is garbage just for the dev */
-#define ANALYSIS_TYPE_IO 						"io" 	/* this is garbage just for the dev */
-
-static void analysis_print_command();
 
 int main(int argc, char** argv){
 	struct trace* 				trace	= NULL;
-	struct ioChecker*			checker = NULL;
 	struct inputParser* 		parser 	= NULL;
 	
-	/* a supprimer */
-	if	(argc != 3){
+	if	(argc != 2){
 		printf("ERROR: in %s, please specify the trace directory as first argument\n", __func__);
-		printf("ERROR: in %s, please specify the analysis type as second argument\n", __func__);
-		return 0;
+		goto exit;
 	}
 
 	parser = inputParser_create();
@@ -40,191 +19,68 @@ int main(int argc, char** argv){
 		printf("ERROR: in %s, unable to create inputParser\n", __func__);
 		goto exit;
 	}
-
-	checker = ioChecker_create();
-	if (checker == NULL){
-		printf("ERROR: in %s, unable to create ioChecker\n", __func__);
-		goto exit;
-	}
 	
-	/* check about what does trace create actually do */
 	trace = trace_create(argv[1]);
 	if (trace == NULL){
 		printf("ERROR: in %s, unable to create the trace\n", __func__);
-		/* leave with a goto */
+		goto exit;
 	}
 
-	/* Add command entrie */
-
-	inputParser_exe(parser); /* end of the game */
-
-
-	if (trace != NULL){
-		if (!strcmp(argv[2], ANALYSIS_TYPE_SIMPLE_TRAVERSAL)){
-			trace_simple_traversal(trace);
-		}
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_PRINT_INSTRUCTIONS)){
-			trace_print_instructions(trace);
-		}
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT)){
-			trace_print_simpleTraceStat(trace);
-		}
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_PRINT_CODEMAP)){
-			trace_print_codeMap(trace);
-		}
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_BUILD_CFG)){
-			struct controlFlowGraph* cfg = trace_construct_flow_graph(trace);
-			gephiCFGIO_print(cfg, NULL);
-			controlFlowGraph_delete(cfg);
-		}
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_BUILD_CALLTREE)){
-			struct graph* callTree = trace_construct_callTree(trace);
-			if (graphPrintDot_print(callTree, "callTree.dot")){
-				printf("ERROR: in %s, unable to print call tree to dot format\n", __func__);
-			}
-			graph_delete(callTree);
-		}
-		else if(!strcmp(argv[2], ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT)){
-			struct graph* callTree = trace_construct_callTree(trace);
-			callTree_print_opcode_percent(callTree);
-			graph_delete(callTree);
-		}
-		/* Warning this section is tmp - only for dev purpose - do not run on general input */
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_DEV)){
-			struct graph* 			callTree;
-			struct callTree_node* 	node;
-			struct array* 			read_mem_arg;
-			struct array* 			write_mem_arg;
-			uint32_t 				i;
-			struct argBuffer* 		arg;
-
-			callTree = trace_construct_callTree(trace);
-
-			node = (struct callTree_node*)callTree->nodes[31].data;
-
-			/* Make sur to select the crypto  node */
-			printf("Node %d routine name: %s\n", 21, node->name);
-
-			traceFragment_create_mem_array(&(node->fragment));
-			/* traceFragment_remove_read_after_write(&(node->fragment)); */
-
-			/* traceFragment_print_mem_array(node->fragment.write_memory_array, node->fragment.nb_memory_write_access); */
-
-			printf("Nb mem read access:  %d\n", node->fragment.nb_memory_read_access);
-			printf("Nb mem write access: %d\n", node->fragment.nb_memory_write_access);
-
-			read_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
-			write_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
-
-			printf("Nb read mem arg: %u\n", array_get_length(read_mem_arg));
-
-			for (i = 0; i < array_get_length(read_mem_arg); i++){
-				arg = (struct argBuffer*)array_get(read_mem_arg, i);
-				argBuffer_print_raw(arg);
-			}
-
-			printf("Nb write mem arg: %u\n", array_get_length(write_mem_arg));
-
-			for (i = 0; i < array_get_length(write_mem_arg); i++){
-				arg = (struct argBuffer*)array_get(write_mem_arg, i);
-				argBuffer_print_raw(arg);
-			}
-
-			/* Check submit */
-			ioChecker_submit_arguments(checker, read_mem_arg, write_mem_arg);
-
-			for (i = 0; i < array_get_length(write_mem_arg); i++){
-				arg = (struct argBuffer*)array_get(write_mem_arg, i);
-				free(arg->data);
-			}
-			for (i = 0; i < array_get_length(read_mem_arg); i++){
-				arg = (struct argBuffer*)array_get(read_mem_arg, i);
-				free(arg->data);
-			}
-
-			array_delete(read_mem_arg);
-			array_delete(write_mem_arg);
-
-			graph_delete(callTree);
-		}
-		/* Warning this section is tmp - only for dev purpose - do not run on general input */
-		else if (!strcmp(argv[2], ANALYSIS_TYPE_IO)){
-			struct argBuffer plt;
-			struct argBuffer key;
-			struct argBuffer cit;
-			unsigned char plt_val[12] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
-			unsigned char key_val[3]  = {0x4b, 0x65, 0x79};
-			unsigned char cit_val[12] = {0xa3, 0xfa, 0x1b, 0xed, 0xd8, 0x14, 0x9d, 0x1d, 0xd5, 0x75, 0x2e, 0x09};
-			struct array* array_in;
-			struct array* array_out;
-
-			plt.location_type = ARG_LOCATION_MEMORY;
-			plt.location.address = 1;
-			plt.size = 12;
-			plt.data = (char*)malloc(12); /* srry but we don't check allocation */
-			memcpy(plt.data, plt_val, 12);
-
-			key.location_type = ARG_LOCATION_MEMORY;
-			key.location.address = 2;
-			key.size = 3;
-			key.data = (char*)malloc(3); /* srry but we don't check allocation */
-			memcpy(key.data, key_val, 3);
-
-			cit.location_type = ARG_LOCATION_MEMORY;
-			cit.location.address = 3;
-			cit.size = 12;
-			cit.data = (char*)malloc(12); /* srry but we don't check allocation */
-			memcpy(cit.data, cit_val, 12);
-
-			argBuffer_print_raw(&plt);
-			argBuffer_print_raw(&key);
-			argBuffer_print_raw(&cit);
-
-			array_in = array_create(sizeof(struct argBuffer));
-			array_out = array_create(sizeof(struct argBuffer));
-
-			if (array_in != NULL && array_out != NULL){
-				array_add(array_in, (void*)&plt); 	/* we should test if the return value is >= 0 */
-				array_add(array_in, (void*)&key); 	/* we should test if the return value is >= 0 */
-				array_add(array_out, (void*)&cit);	/* we should test if the return value is >= 0*/
-
-				ioChecker_submit_arguments(checker, array_in, array_out);
-
-				array_delete(array_in);
-				array_delete(array_out);
-
-				free(plt.data);
-				free(key.data);
-				free(cit.data);
-			}
-			else{
-				printf("ERROR: in %s, unable to create arrays\n", __func__);
-			}
-		}
-		else{
-			printf("ERROR: in %s, unknown analysis type: %s\n", __func__, argv[2]);
-			analysis_print_command();
-		}
+	/* ioChecker specific commands*/
+	if(inputParser_add_cmd(parser, "print ioChecker", "Display the ioChecker structure", trace->checker, (void(*)(void*))ioChecker_print)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
 	}
+	if(inputParser_add_cmd(parser, "test ioChecker", "User define test on the ioChecker (CAUTION - debug only)", trace->checker, (void(*)(void*))ioChecker_handmade_test)){ /* DEV */
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
+	/* codeMap specific commands */
+	if(inputParser_add_cmd(parser, "check codeMap", "Perform basic checks on the codeMap address", trace->code_map, (void(*)(void*))codeMap_check_address)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "print codeMap", "Print the codeMap (informations about routine address)", trace, (void(*)(void*))trace_codeMap_print)){ /* it would be great to select a filter from the command line */
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
+	/* trace specific commands */
+	if(inputParser_add_cmd(parser, "print trace", "Print all the instructions of the trace", trace, (void(*)(void*))trace_instructions_print)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
+	/* simpleTraceStat specific commands */
+	if(inputParser_add_cmd(parser, "create simpleTraceStat", "Create a simpleTraceStat (holds synthetic informations about instructions in the trace)", trace, (void(*)(void*))trace_simpleTraceStat_create)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "print simpleTraceStat", "Print a previously created simpleTraceStat", trace, (void(*)(void*))trace_simpleTraceStat_print)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}	
+	if(inputParser_add_cmd(parser, "delete simpleTraceStat", "Delete a previously created simpleTraceStat", trace, (void(*)(void*))trace_simpleTraceStat_delete)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
+	/* callTree specific commands */
+	if(inputParser_add_cmd(parser, "create callTree", "Create the routine call tree", trace, (void(*)(void*))trace_callTree_create)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "print dot callTree", "Print the callTree in the DOT format to specified file", trace, (void(*)(void*))trace_simpleTraceStat_delete)){ /*specified file*/
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "print callTree opcode percent", "For each traceFragment in the callTree, print its special instruction percent", trace, (void(*)(void*))trace_callTree_print_opcode_percent)){ /* modify later */
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "test callTree", "User define test on the ioChecker (CAUTION - debug only)", trace, (void(*)(void*))trace_callTree_handmade_test)){ /* DEV */
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "delete callTree", "Print the codeMap (informations about routine address)", trace, (void(*)(void*))trace_codeMap_print)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
+	inputParser_exe(parser);
 
 	exit:
 
 	trace_delete(trace);
-	ioChecker_delete(checker);
 	inputParser_delete(parser);
 
 	return 0;
-}
-
-static void analysis_print_command(){
-	printf("*** Analysis Commands ***\n");
-	printf("\t%s\n", ANALYSIS_TYPE_SIMPLE_TRAVERSAL);
-	printf("\t%s\n", ANALYSIS_TYPE_PRINT_INSTRUCTIONS);	
-	printf("\t%s\n", ANALYSIS_TYPE_PRINT_SIMPLETRACESTAT);
-	printf("\t%s\n", ANALYSIS_TYPE_PRINT_CODEMAP);
-	printf("\t%s\n", ANALYSIS_TYPE_BUILD_CFG);
-	printf("\t%s\n", ANALYSIS_TYPE_BUILD_CALLTREE);
-	printf("\t%s\n", ANALYSIS_TYPE_PRINT_RTN_OPCODE_PERCENT);
-	printf("\t%s * WARNING *\n", ANALYSIS_TYPE_DEV);
-	printf("\t%s * WARNING *\n", ANALYSIS_TYPE_IO);
 }

@@ -207,8 +207,7 @@ void primitiveReference_print(struct primitiveReference* primitive){
 	uint8_t i;
 
 	if (primitive != NULL){
-		printf("*** Primitive reference %p ***\n", (void*)primitive);
-		printf("\tName: \t\t%s\n", primitive->name);
+		printf("*** Primitive reference %s ***\n", primitive->name);
 		printf("\tNb input: \t%u\n", primitive->nb_input);
 		for (i = 0; i < primitive->nb_input; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){

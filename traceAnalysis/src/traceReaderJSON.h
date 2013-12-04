@@ -43,6 +43,7 @@ struct traceReaderJSON{
 };
 
 int traceReaderJSON_init(struct traceReaderJSON* trace_reader, const char* file_name);
+int traceReaderJSON_reset(struct traceReaderJSON* trace_reader);
 struct instruction* traceReaderJSON_get_next_instruction(struct traceReaderJSON* trace_reader);
 void traceReaderJSON_clean(struct traceReaderJSON* trace_reader);
 

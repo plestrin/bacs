@@ -279,6 +279,20 @@ static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, uint
 	return result;
 }
 
+void ioChecker_print(struct ioChecker* checker){
+	uint32_t 					i;
+	struct primitiveReference* 	primitive;
+
+	if (checker != NULL){
+		printf("*** IoChecker ***\nMax input: %u, Max output: %u\n", checker->max_nb_input, checker->max_nb_output);
+
+		for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+			primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
+			primitiveReference_print(primitive);
+		}
+	}
+}
+
 void ioChecker_clean(struct ioChecker* checker){
 	uint32_t 					i;
 	struct primitiveReference* 	primitive;
@@ -349,5 +363,63 @@ void ioChecker_wrapper_rc4(void** input, uint8_t nb_input, void** output, uint8_
 		input_length = *(uint32_t*)input[1];
 		key_length = *(uint32_t*)input[3];
 		rc4((uint8_t*)input[0], input_length, (uint8_t*)input[2], key_length, (uint8_t*)output[0]);
+	}
+}
+
+/* ===================================================================== */
+/* Special debug stuff - don't touch	                                 */
+/* ===================================================================== */
+
+void ioChecker_handmade_test(struct ioChecker* checker){
+	struct argBuffer plt;
+	struct argBuffer key;
+	struct argBuffer cit;
+	unsigned char plt_val[12] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
+	unsigned char key_val[3]  = {0x4b, 0x65, 0x79};
+	unsigned char cit_val[12] = {0xa3, 0xfa, 0x1b, 0xed, 0xd8, 0x14, 0x9d, 0x1d, 0xd5, 0x75, 0x2e, 0x09};
+	struct array* array_in;
+	struct array* array_out;
+
+	plt.location_type = ARG_LOCATION_MEMORY;
+	plt.location.address = 1;
+	plt.size = 12;
+	plt.data = (char*)malloc(12); /* srry but we don't check allocation */
+	memcpy(plt.data, plt_val, 12);
+
+	key.location_type = ARG_LOCATION_MEMORY;
+	key.location.address = 2;
+	key.size = 3;
+	key.data = (char*)malloc(3); /* srry but we don't check allocation */
+	memcpy(key.data, key_val, 3);
+
+	cit.location_type = ARG_LOCATION_MEMORY;
+	cit.location.address = 3;
+	cit.size = 12;
+	cit.data = (char*)malloc(12); /* srry but we don't check allocation */
+	memcpy(cit.data, cit_val, 12);
+
+	argBuffer_print_raw(&plt);
+	argBuffer_print_raw(&key);
+	argBuffer_print_raw(&cit);
+
+	array_in = array_create(sizeof(struct argBuffer));
+	array_out = array_create(sizeof(struct argBuffer));
+
+	if (array_in != NULL && array_out != NULL){
+		array_add(array_in, (void*)&plt); 	/* we should test if the return value is >= 0 */
+		array_add(array_in, (void*)&key); 	/* we should test if the return value is >= 0 */
+		array_add(array_out, (void*)&cit);	/* we should test if the return value is >= 0*/
+
+		ioChecker_submit_arguments(checker, array_in, array_out);
+
+		array_delete(array_in);
+		array_delete(array_out);
+
+		free(plt.data);
+		free(key.data);
+		free(cit.data);
+	}
+	else{
+		printf("ERROR: in %s, unable to create arrays\n", __func__);
 	}
 }

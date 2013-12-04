@@ -64,15 +64,7 @@ int traceReaderJSON_init(struct traceReaderJSON* trace_reader, const char* file_
 		return -1;
 	}
 
-	trace_reader->file_length = sb.st_size;
-
-	trace_reader->json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)trace_reader);
-	if (trace_reader->json_parser_handle == NULL){
-		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
-		close(trace_reader->file);
-		trace_reader->file = -1;
-		return -1;
-	}
+	trace_reader->file_length 						= sb.st_size;
 
 	trace_reader->actual_key 						= TRACE_JSON_MAP_KEY_IDLE;
 	trace_reader->actual_map_level 					= 0;
@@ -85,6 +77,43 @@ int traceReaderJSON_init(struct traceReaderJSON* trace_reader, const char* file_
 	trace_reader->cache_top_cursor 					= 0;
 	
 	return 0;
+}
+
+int traceReaderJSON_reset(struct traceReaderJSON* trace_reader){
+	int result = -1;
+
+	if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
+		munmap(trace_reader->buffer, trace_reader->buffer_length);
+		trace_reader->buffer = NULL;
+		trace_reader->buffer_length = 0;
+	}
+
+	if (trace_reader->json_parser_handle != NULL){
+		yajl_free(trace_reader->json_parser_handle);
+	}
+	trace_reader->json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)trace_reader);
+	if (trace_reader->json_parser_handle == NULL){
+		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
+		close(trace_reader->file);
+		trace_reader->file = -1;
+		return result;
+	}
+
+	trace_reader->read_offset 						= 0;
+
+	trace_reader->actual_key 						= TRACE_JSON_MAP_KEY_IDLE;
+	trace_reader->actual_map_level 					= 0;
+	trace_reader->actual_instruction_data_offset 	= 0;
+
+	trace_reader->instruction_cursor 				= 0;
+	trace_reader->cache_bot_offset	 				= 0;
+	trace_reader->cache_top_offset 					= 0;
+	trace_reader->cache_bot_cursor 					= 0;
+	trace_reader->cache_top_cursor 					= 0;
+
+	result = 0;
+
+	return result;
 }
 
 struct instruction* traceReaderJSON_get_next_instruction(struct traceReaderJSON* trace_reader){

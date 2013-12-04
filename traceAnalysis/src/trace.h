@@ -4,9 +4,10 @@
 #include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
-#include "controlFlowGraph.h"
 #include "callTree.h"
 #include "graph.h"
+#include "simpleTraceStat.h"
+#include "ioChecker.h"
 
 #define TRACE_DIRECTORY_NAME_MAX_LENGTH 256
 #define TRACE_INS_FILE_NAME "ins.json"
@@ -16,20 +17,32 @@ struct trace{
 	char directory_name[TRACE_DIRECTORY_NAME_MAX_LENGTH];
 
 	union {
-		struct traceReaderJSON json;
-	} ins_reader;
+		struct traceReaderJSON 	json;
+	} 							ins_reader;
 
-	struct codeMap* cm;
+	struct ioChecker*			checker;
+	struct codeMap* 			code_map;
+	struct simpleTraceStat* 	simple_trace_stat;
+	struct graph* 				call_tree;
 };
 
 struct trace* trace_create(const char* dir_name);
 
-void trace_simple_traversal(struct trace* ptrace);
-void trace_print_instructions(struct trace* ptrace);
-void trace_print_simpleTraceStat(struct trace* ptrace);
-void trace_print_codeMap(struct trace* ptrace);
-struct controlFlowGraph* trace_construct_flow_graph(struct trace* ptrace);
-struct graph* trace_construct_callTree(struct trace* ptrace);
-void trace_delete(struct trace* ptrace);
+void trace_instructions_print(struct trace* trace);
+
+void trace_simpleTraceStat_create(struct trace* trace);
+void trace_simpleTraceStat_print(struct trace* trace);
+void trace_simpleTraceStat_delete(struct trace* trace);
+
+void trace_codeMap_print(struct trace* trace);
+
+void trace_callTree_create(struct trace* trace);
+void trace_callTree_print_dot(struct trace* trace);
+void trace_callTree_print_opcode_percent(struct trace* trace); 	/* il faudrait faire un iterateur sur les tracefragments contenus dans le callTree */
+void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging routine */
+void trace_callTree_delete(struct trace* trace);
+
+
+void trace_delete(struct trace* trace);
 
 #endif

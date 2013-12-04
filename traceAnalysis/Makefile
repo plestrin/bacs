@@ -16,9 +16,6 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)trace.o 				\
 	$(BUILD_DIR)traceReaderJSON.o 		\
 	$(BUILD_DIR)cmReaderJSON.o 			\
-	$(BUILD_DIR)controlFlowGraph.o 		\
-	$(BUILD_DIR)basicBlock.o 			\
-	$(BUILD_DIR)gephiCFGIO.o 			\
 	$(BUILD_DIR)instruction.o			\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)graph.o 				\
