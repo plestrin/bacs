@@ -9,6 +9,7 @@ VPATH						:= $(TEST_DIRECTORY)
 TEA_EXAMPLE_NAME			:= TEA
 MD5_EXAMPLE_NAME 			:= MD5
 RC4_EXAMPLE_NAME 			:= RC4
+AES_EXAMPLE_NAME 			:= AES
 
 MD5_TOMCRYPT_EXAMPLE_NAME 	:= MD5
 RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
@@ -16,7 +17,7 @@ RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
 all: example tomCrypt
 
 # *** Example compile rules ***
-example: tea_example md5_example rc4_example
+example: tea_example md5_example rc4_example aes_example
 
 tea_example: TEA.o $(EXAMPLE_DIRECTORY)tea_test.o ../misc/printBuffer.o
 	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME) $^ $(LDFLAGS)
@@ -26,6 +27,9 @@ md5_example: MD5.o $(EXAMPLE_DIRECTORY)md5_test.o ../misc/printBuffer.o
 
 rc4_example: RC4.o $(EXAMPLE_DIRECTORY)rc4_test.o ../misc/printBuffer.o
 	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME) $^ $(LDFLAGS)
+
+aes_example: AES.o $(EXAMPLE_DIRECTORY)aes_test.o ../misc/printBuffer.o
+	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME) $^ $(LDFLAGS)
 
 # *** TomCrypt compile rules ***
 tomCrypt: tomCrypt_md5_example tomCrypt_rc4_example
@@ -53,6 +57,7 @@ clean:
 	@ rm -f $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)
 	@ rm -f $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)
 	@ rm -f $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)
+	@ rm -f $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)
 	@ rm -f $(TOMCRYPT_DIRECTORY)*.o
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME)
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME)
