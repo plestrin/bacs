@@ -207,40 +207,41 @@ void primitiveReference_print(struct primitiveReference* primitive){
 	uint8_t i;
 
 	if (primitive != NULL){
-		printf("*** Primitive reference %s ***\n", primitive->name);
-		printf("\tNb input: \t%u\n", primitive->nb_input);
+		printf("Primitive reference %s: ", primitive->name);
+		printf("input(s) -> {");
 		for (i = 0; i < primitive->nb_input; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \t\tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
+				printf("(explicit %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \t\tsize multiple of %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
+				printf("(explicit %u: size multiple of %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_UNDEFINED(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \t\tundefined\n", i);
+				printf("(explicit %u: undefined size)", i);
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
-				printf("\t\tImplicit arg %u: size of input %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]));
+				printf("(implicit %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
-				printf("\t\tArg %u: \t\tmax size %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i]));
+				printf("(explicit %u: max size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i]));
 			}
 			else{
 				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
 			}
 		}
-		printf("\tNb output: \t%u\n", primitive->nb_output);
+		printf("}, output(s) -> {");
 		for (i = 0; i < primitive->nb_output; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
-				printf("\t\tArg %u: \t\tsize %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
+				printf("(explicit %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
 			}
 			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
-				printf("\t\tArg %u: \t\tsize of input %u\n", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]));
+				printf("(explicit %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]));
 			}
 			else{
 				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
 			}
 		}
+		printf("}\n");
 	}
 }
 
