@@ -5,6 +5,7 @@
 #include "trace.h"
 #include "instruction.h"
 #include "graphPrintDot.h"
+#include "argBuffer.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -180,6 +181,52 @@ void trace_callTree_print_opcode_percent(struct trace* trace){
 	}
 }
 
+/* attention si on fait une méthode iterate elle peut être intéressante ici */
+void trace_callTree_bruteForce(struct trace* trace){
+	int32_t 				i;
+	struct callTree_node* 	node;
+	struct array* 			read_mem_arg;
+	struct array* 			write_mem_arg;
+
+	if (trace->call_tree != NULL){
+		for (i = 0; i < trace->call_tree->nb_node; i++){
+			node = (struct callTree_node*)trace->call_tree->nodes[i].data;
+
+			if (traceFragment_create_mem_array(&(node->fragment))){
+				printf("ERROR: in %s, unable to create mem array for node %d\n", __func__, i);
+				break;
+			}
+
+			if ((node->fragment.nb_memory_read_access > 0) && (node->fragment.nb_memory_write_access > 0)){
+				#ifdef VERBOSE
+				printf("Searching routine %d, name \"%s\" ...\n", i, node->name);
+				#endif
+
+				read_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
+				write_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
+
+				if (read_mem_arg != NULL && write_mem_arg != NULL){
+					ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
+				}
+				else{
+					printf("ERROR: in %s, read_mem_arg or write_mem_arg array is NULL\n", __func__);
+				}
+				
+				argBuffer_delete_array(read_mem_arg);
+				argBuffer_delete_array(write_mem_arg);
+			}
+			#ifdef VERBOSE
+			else{
+				printf("Skipping  routine %d, name \"%s\" : no read and write mem access\n", i, node->name);
+			}
+			#endif
+		}
+	}
+	else{
+		printf("ERROR: in %s, callTree is NULL\n", __func__);
+	}
+}
+
 void trace_callTree_delete(struct trace* trace){
 	if (trace->call_tree != NULL){
 		graph_delete(trace->call_tree);
@@ -210,8 +257,6 @@ void trace_delete(struct trace* trace){
 /* ===================================================================== */
 /* Special debug stuff - don't touch	                                 */
 /* ===================================================================== */
-
-#include "argBuffer.h"
 
 
 void trace_callTree_handmade_test(struct trace* trace){
@@ -255,17 +300,8 @@ void trace_callTree_handmade_test(struct trace* trace){
 		/* Check submit */
 		ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
 
-		for (i = 0; i < array_get_length(write_mem_arg); i++){
-			arg = (struct argBuffer*)array_get(write_mem_arg, i);
-			free(arg->data);
-		}
-		for (i = 0; i < array_get_length(read_mem_arg); i++){
-			arg = (struct argBuffer*)array_get(read_mem_arg, i);
-			free(arg->data);
-		}
-
-		array_delete(read_mem_arg);
-		array_delete(write_mem_arg);
+		argBuffer_delete_array(read_mem_arg);
+		argBuffer_delete_array(write_mem_arg);
 	}
 	else{
 		printf("ERROR: in %s, callTree is NULL\n", __func__);

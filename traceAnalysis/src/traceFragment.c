@@ -211,6 +211,8 @@ int traceFragment_create_mem_array(struct traceFragment* frag){
 		}
 	}
 
+	result = 0;
+
 	return result;
 }
 

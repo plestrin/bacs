@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "argBuffer.h"
+#include "array.h"
 
 enum argLocationType{
 	ARG_LOCATION_MEMORY,
@@ -20,6 +20,8 @@ struct argBuffer{
 };
 
 void argBuffer_print_raw(struct argBuffer* arg);
+
+void argBuffer_delete_array(struct array* arg_array);
 
 
 

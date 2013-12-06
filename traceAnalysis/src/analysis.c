@@ -68,7 +68,11 @@ int main(int argc, char** argv){
 	if(inputParser_add_cmd(parser, "print callTree opcode percent", "For each traceFragment in the callTree, print its special instruction percent", trace, (void(*)(void*))trace_callTree_print_opcode_percent)){ /* modify later */
 		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
 	}
-	if(inputParser_add_cmd(parser, "test callTree", "User define test on the ioChecker (CAUTION - debug only)", trace, (void(*)(void*))trace_callTree_handmade_test)){ /* DEV */
+
+	if(inputParser_add_cmd(parser, "search callTree", "Search crypto primitives in every routine of the callTree", trace, (void(*)(void*))trace_callTree_bruteForce)){ /* modify later */
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+	if(inputParser_add_cmd(parser, "test callTree", "User define test on the callTree (CAUTION - debug only)", trace, (void(*)(void*))trace_callTree_handmade_test)){ /* DEV */
 		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
 	}
 	if(inputParser_add_cmd(parser, "delete callTree", "Print the codeMap (informations about routine address)", trace, (void(*)(void*))trace_codeMap_print)){
