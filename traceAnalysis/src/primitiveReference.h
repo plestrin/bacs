@@ -42,10 +42,10 @@ struct primitiveReference{
 	uint8_t 	nb_output;
 	uint32_t* 	input_specifier;
 	uint32_t* 	output_specifier;
-	void(*func)(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
+	void(*func)(void** input, void** output);
 };
 
-int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, uint8_t nb_input, void** output, uint8_t nb_output));
+int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, void** output));
 int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output);
 void primitiveReference_print(struct primitiveReference* primitive);
 uint8_t primitiveReference_get_nb_explicit_input(struct primitiveReference* primitive);

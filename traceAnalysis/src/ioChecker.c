@@ -7,12 +7,17 @@
 #include "MD5.h"
 #include "TEA.h"
 #include "RC4.h"
+#include "AES.h"
 
 
-void ioChecker_wrapper_md5(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
-void ioChecker_wrapper_tea_encipher(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
-void ioChecker_wrapper_tea_decipher(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
-void ioChecker_wrapper_rc4(void** input, uint8_t nb_input, void** output, uint8_t nb_output);
+void ioChecker_wrapper_md5(void** input, void** output);
+void ioChecker_wrapper_tea_encipher(void** input, void** output);
+void ioChecker_wrapper_tea_decipher(void** input, void** output);
+void ioChecker_wrapper_rc4(void** input, void** output);
+void ioChecker_wrapper_aes128_key_expand_encrypt(void** input, void** output);
+void ioChecker_wrapper_aes128_key_expand_decrypt(void** input, void** output);
+void ioChecker_wrapper_aes128_encrypt(void** input, void** output);
+void ioChecker_wrapper_aes128_decrypt(void** input, void** output);
 
 static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output);
 
@@ -43,6 +48,16 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		return result;
 	}
 
+	#define IOCHECKER_ADD_PRIMITIVE_REFRENCE(name, function)																																		\
+	if (primitiveReference_init(&primitive, (name), sizeof(input_specifier) / sizeof(uint32_t), sizeof(output_specifier) / sizeof(uint32_t), input_specifier, output_specifier, (function))){		\
+		printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);																											\
+	}																																																\
+	else{																																															\
+		if (array_add(&(checker->reference_array), &primitive) < 0){																																\
+			printf("ERROR: in %s, unable to add element to array\n", __func__);																														\
+		}																																															\
+	}
+
 	/* MD5 hash */
 	{
 		uint32_t input_specifier[2];
@@ -52,14 +67,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_IMPLICIT_SIZE(input_specifier[1], 0);
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], MD5_HASH_NB_BYTE);
 
-		if (primitiveReference_init(&primitive, "MD5", 2, 1, input_specifier, output_specifier, ioChecker_wrapper_md5)){
-			printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);
-		}
-		else{
-			if (array_add(&(checker->reference_array), &primitive) < 0){
-				printf("ERROR: in %s, unable to add element to array\n", __func__);
-			}
-		}
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("MD5", ioChecker_wrapper_md5)
 	}
 
 	/* TEA cipher */
@@ -72,14 +80,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[2], TEA_KEY_NB_BYTE);
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(output_specifier[0], 0);
 
-		if (primitiveReference_init(&primitive, "TEA encypher", 3, 1, input_specifier, output_specifier, ioChecker_wrapper_tea_encipher)){
-			printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);
-		}
-		else{
-			if (array_add(&(checker->reference_array), &primitive) < 0){
-				printf("ERROR: in %s, unable to add element to array\n", __func__);
-			}
-		}
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("TEA encrypt", ioChecker_wrapper_tea_encipher)
 	}
 	{
 		uint32_t input_specifier[3];
@@ -90,14 +91,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[2], TEA_KEY_NB_BYTE);
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(output_specifier[0], 0);
 
-		if (primitiveReference_init(&primitive, "TEA decypher", 3, 1, input_specifier, output_specifier, ioChecker_wrapper_tea_decipher)){
-			printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);
-		}
-		else{
-			if (array_add(&(checker->reference_array), &primitive) < 0){
-				printf("ERROR: in %s, unable to add element to array\n", __func__);
-			}
-		}
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("TEA decrypt", ioChecker_wrapper_tea_decipher)
 	}
 
 	/* RC4 cipher */
@@ -111,14 +105,47 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_IMPLICIT_SIZE(input_specifier[3], 1);
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(output_specifier[0], 0);
 
-		if (primitiveReference_init(&primitive, "RC4", 4, 1, input_specifier, output_specifier, ioChecker_wrapper_rc4)){
-			printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);
-		}
-		else{
-			if (array_add(&(checker->reference_array), &primitive) < 0){
-				printf("ERROR: in %s, unable to add element to array\n", __func__);
-			}
-		}
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("RC4", ioChecker_wrapper_rc4)
+	}
+
+	/* AES 128 */
+	{
+		uint32_t input_specifier[1];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_128_NB_BYTE_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_128_NB_BYTE_ROUND_KEY);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand encrypt", ioChecker_wrapper_aes128_key_expand_encrypt)
+	}
+	{
+		uint32_t input_specifier[1];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_128_NB_BYTE_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_128_NB_BYTE_ROUND_KEY);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand decrypt", ioChecker_wrapper_aes128_key_expand_decrypt)
+	}
+	{
+		uint32_t input_specifier[2];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_BLOCK_NB_BYTE);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[1], AES_128_NB_BYTE_ROUND_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 encrypt", ioChecker_wrapper_aes128_encrypt)
+	}
+	{
+		uint32_t input_specifier[2];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_BLOCK_NB_BYTE);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[1], AES_128_NB_BYTE_ROUND_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand decrypt", ioChecker_wrapper_aes128_decrypt)
 	}
 
 	checker->max_nb_input = 0;
@@ -284,7 +311,7 @@ void ioChecker_print(struct ioChecker* checker){
 	struct primitiveReference* 	primitive;
 
 	if (checker != NULL){
-		printf("*** IoChecker ***\nMax input: %u, Max output: %u\n", checker->max_nb_input, checker->max_nb_output);
+		printf("*** IoChecker (max input: %u, max output: %u) ***\n", checker->max_nb_input, checker->max_nb_output);
 
 		for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 			primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
@@ -316,54 +343,50 @@ void ioChecker_delete(struct ioChecker* checker){
 /* Wrapper crypto function(s) 	                                         */
 /* ===================================================================== */
 
-void ioChecker_wrapper_md5(void** input, uint8_t nb_input, void** output, uint8_t nb_output){
+void ioChecker_wrapper_md5(void** input, void** output){
 	uint64_t size;
 
-	if (nb_input != 2 || nb_output != 1){
-		printf("ERROR: in %s, incorrect argument(s) to call md5\n", __func__);
-	}
-	else{
-		size = *(uint32_t*)input[1];
-		md5((uint32_t*)input[0], size, (uint32_t*)output[0]);
-	}
+	size = *(uint32_t*)input[1];
+	md5((uint32_t*)input[0], size, (uint32_t*)output[0]);
 }
 
-void ioChecker_wrapper_tea_encipher(void** input, uint8_t nb_input, void** output, uint8_t nb_output){
+void ioChecker_wrapper_tea_encipher(void** input, void** output){
 	uint64_t size;
 
-	if (nb_input != 3 || nb_output != 1){
-		printf("ERROR: in %s, incorrect argument(s) to call tea encypher\n", __func__);
-	}
-	else{
-		size = *(uint32_t*)input[1];
-		tea_encipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
-	}
+	size = *(uint32_t*)input[1];
+	tea_encipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
 }
 
-void ioChecker_wrapper_tea_decipher(void** input, uint8_t nb_input, void** output, uint8_t nb_output){
+void ioChecker_wrapper_tea_decipher(void** input, void** output){
 	uint64_t size;
 
-	if (nb_input != 3 || nb_output != 1){
-		printf("ERROR: in %s, incorrect argument(s) to call tea decypher\n", __func__);
-	}
-	else{
-		size = *(uint32_t*)input[1];
-		tea_decipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
-	}
+	size = *(uint32_t*)input[1];
+	tea_decipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
 }
 
-void ioChecker_wrapper_rc4(void** input, uint8_t nb_input, void** output, uint8_t nb_output){
+void ioChecker_wrapper_rc4(void** input, void** output){
 	uint64_t input_length;
 	uint8_t key_length;
 
-	if (nb_input != 4 || nb_output != 1){
-		printf("ERROR: in %s, incorrect argument(s) to call rc4\n", __func__);
-	}
-	else{
-		input_length = *(uint32_t*)input[1];
-		key_length = *(uint32_t*)input[3];
-		rc4((uint8_t*)input[0], input_length, (uint8_t*)input[2], key_length, (uint8_t*)output[0]);
-	}
+	input_length = *(uint32_t*)input[1];
+	key_length = *(uint32_t*)input[3];
+	rc4((uint8_t*)input[0], input_length, (uint8_t*)input[2], key_length, (uint8_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes128_key_expand_encrypt(void** input, void** output){
+	aes128_key_expand_encrypt((uint32_t*)input[0], (uint32_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes128_key_expand_decrypt(void** input, void** output){
+	aes128_key_expand_decrypt((uint32_t*)input[0], (uint32_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes128_encrypt(void** input, void** output){
+	aes128_encrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes128_decrypt(void** input, void** output){
+	aes128_decrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
 
 /* ===================================================================== */

@@ -5,7 +5,7 @@
 #include "primitiveReference.h"
 #include "printBuffer.h"
 
-int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, uint8_t nb_input, void** output, uint8_t nb_output)){
+int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, void** output)){
 	int32_t result = -1;
 
 	if (nb_input < 1){
@@ -173,7 +173,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 		}	
 	}
 
-	primitive->func(arg_in, primitive->nb_input, arg_out, primitive->nb_output);
+	primitive->func(arg_in, arg_out);
 
 	for (j = 0, result = 0; j < nb_output; j++){
 		result |= memcmp(arg_out[j], output[j].data, output[j].size);
@@ -207,7 +207,7 @@ void primitiveReference_print(struct primitiveReference* primitive){
 	uint8_t i;
 
 	if (primitive != NULL){
-		printf("Primitive reference %s: ", primitive->name);
+		printf("%s: ", primitive->name);
 		printf("input(s) -> {");
 		for (i = 0; i < primitive->nb_input; i++){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){
