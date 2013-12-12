@@ -6,10 +6,10 @@
 #include "workPercent.h"
 
 int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2);
-int32_t loopEngine_search_loop_offset(struct loopToken* loop, int32_t* offset);
+int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration);
 
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
-static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);
+/*static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);*/
 
 struct loopEngine* loopEngine_create(){
 	struct loopEngine* engine;
@@ -62,28 +62,28 @@ int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instructio
 }
 
 /* This routine is slow - to make it faster we can do some precomputation on the element array (sorting for example) */
-/* In my opinion the slowest thing at the end is to look in the token array - because it's hudge */
-/* Attention il y a peut-être une régle pour ne pas être obligé de cherché dans tout l'array de token - ce qui à la fin est extrement pénalisant */
 int32_t loopEngine_process(struct loopEngine* engine){
-	int32_t 			result = -1;
-	uint32_t 			i;
-	int32_t 			index_prev;
-	void* 				element;
-	uint32_t 			max_index;
-	uint32_t 			min_index;
-	uint32_t  			loop_length;
-	struct loopToken 	new_iteration;
-	struct loopToken 	new_instance;
-	int32_t 			instance_index;
-	int32_t 			loop_index;
-	struct loopToken*	matching_loop;
-	uint32_t 			counter_instance = 0;
-	uint32_t			counter_iteration = 0;
-	struct array 		token_array;
-	struct loopToken* 	current_token;
-	uint32_t			pool_offset = 0;
+	int32_t 				result 				= -1;
+	uint32_t 				i;
+	int32_t 				index_prev;
+	void* 					element;
+	uint32_t 				max_index;
+	uint32_t 				min_index;
+	struct loopToken 		new_iteration;
+	struct loopToken 		new_instance;
+	int32_t 				instance_index;
+	int32_t 				loop_index;
+	struct loopIteration 	iteration;
+	struct loopToken*		matching_loop;
+	uint32_t 				counter_instance 	= 0;
+	uint32_t				counter_iteration 	= 0;
+	struct array 			token_array;
+	uint32_t* 				token_accelerator	= NULL;
+	uint32_t				last_token;
+	struct loopToken* 		current_token;
+	uint32_t				pool_offset 		= 0;
 	#ifdef VERBOSE
-	struct workPercent 	work;
+	struct workPercent 		work;
 	#endif
 
 	#ifdef VERBOSE
@@ -94,11 +94,18 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	if (array_init(&token_array, sizeof(struct loopToken))){
 		printf("ERROR: in %s, unable to init token array\n", __func__);
 		return result;
-	}	
+	}
+
+	token_accelerator = (uint32_t*)calloc(array_get_length(&(engine->element_array)), sizeof(uint32_t));
+	if (token_accelerator == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		goto exit;
+	}
 
 	for (i = LOOP_MINIMAL_CORE_LENGTH; i < array_get_length(&(engine->element_array)); i++){
 		element = array_get(&(engine->element_array), i);
-		index_prev = i + 1 - LOOP_MINIMAL_CORE_LENGTH ;
+		index_prev = i + 1 - LOOP_MINIMAL_CORE_LENGTH;
+		last_token = array_get_length(&token_array);
 
 		do {
 			max_index = index_prev - 1;
@@ -107,32 +114,18 @@ int32_t loopEngine_process(struct loopEngine* engine){
 			index_prev = array_search_seq_down(&(engine->element_array), min_index, max_index, element, (int32_t(*)(void*,void*))loopEngine_search_previous_occurrence);
 
 			if (index_prev >= 0){
-				loop_length = i - index_prev;
+				iteration.offset = index_prev;
+				iteration.length = i - index_prev;
 
-				if (loopEngine_compare_instruction_sequence(engine, index_prev, i, loop_length) == 0){
+				if (loopEngine_compare_instruction_sequence(engine, iteration.offset, i, iteration.length) == 0){
 
-					loop_index = array_get_length(&token_array);
-					matching_loop = NULL;
-
-					do {
-						loop_index = array_search_seq_down(&token_array, 0, loop_index - 1, &index_prev, (int32_t(*)(void*,void*))loopEngine_search_loop_offset);
-						if (loop_index >= 0){
-							matching_loop = (struct loopToken*)array_get(&token_array, loop_index);
-
-							if (matching_loop->length == loop_length){
-								if (loopEngine_compare_instruction_sequence(engine, matching_loop->offset, i, loop_length)){
-									matching_loop = NULL;
-								}
-							}
-							else{
-								matching_loop = NULL;
-							}
-						}
-					} while(loop_index >= 0 && matching_loop == NULL);
-
-					if (matching_loop == NULL){
-						new_instance.offset 		= index_prev;
-						new_instance.length 		= loop_length;
+					loop_index = array_search_seq_down(&token_array, token_accelerator[iteration.offset], array_get_length(&token_array) - 1, &iteration, (int32_t(*)(void*,void*))loopEngine_search_matching_loop);
+					if (loop_index >= 0){
+						matching_loop = (struct loopToken*)array_get(&token_array, loop_index);
+					}
+					else{
+						new_instance.offset 		= iteration.offset;
+						new_instance.length 		= iteration.length;
 						new_instance.id 			= counter_instance;
 						new_instance.iteration 		= 0;
 
@@ -149,7 +142,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 					}
 
 					new_iteration.offset 		= i;
-					new_iteration.length 		= loop_length;
+					new_iteration.length 		= iteration.length;
 					new_iteration.id 			= matching_loop->id;					
 					new_iteration.iteration 	= matching_loop->iteration + 1;
 
@@ -162,6 +155,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 				}
 			}
 		} while(index_prev > (int32_t)min_index);
+
+		token_accelerator[i] = last_token;
 
 		#ifdef VERBOSE
 		workPercent_notify(&work, 1);
@@ -216,7 +211,12 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	result = 0;
 
 	exit:
+
 	array_clean(&token_array);
+	if (token_accelerator != NULL){
+		free(token_accelerator);
+	}
+
 	return result;
 }
 
@@ -277,10 +277,11 @@ static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine
 	return result;
 }
 
+#if 0
 static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 	/*we can sort loop byt start address and */
 }
-
+#endif
 
 /* ===================================================================== */
 /* Sorting routine(s)	    				                             */
@@ -290,6 +291,6 @@ int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct i
 	return (int32_t)(ins1->opcode - ins2->opcode);
 }
 
-int32_t loopEngine_search_loop_offset(struct loopToken* loop, int32_t* offset){
-	return (int32_t)loop->offset - *offset;
+int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration){
+	return !(loop->offset == iteration->offset && loop->length == iteration->length);
 }
