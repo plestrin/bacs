@@ -6,6 +6,7 @@
 #include "instruction.h"
 #include "graphPrintDot.h"
 #include "argBuffer.h"
+#include "loop.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -252,6 +253,39 @@ void trace_delete(struct trace* trace){
 
 		free(trace);
 	}
+}
+
+void trace_create_loop_list(struct trace* trace){
+	/*Warning  the is quite for testing purpose */
+	struct instruction* ins;
+	struct loopEngine engine;
+
+	if (loopEngine_init(&engine)){
+		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+		return;
+	}
+
+	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
+		do{
+			ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
+			if (ins != NULL){
+				if (loopEngine_add(&engine, ins)){
+					printf("ERROR: in %s, loopEngine failed to add element\n", __func__);
+					break;
+				}
+			}
+		} while (ins != NULL);
+	}
+	else{
+		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+	}
+
+	loopEngine_process(&engine);
+	/*loopEngine_print_loop(&engine);*/
+
+	/* a completer */
+
+	loopEngine_clean(&engine);
 }
 
 /* ===================================================================== */

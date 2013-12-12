@@ -79,6 +79,11 @@ int main(int argc, char** argv){
 		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
 	}
 
+	/* loop specific commands */
+	if (inputParser_add_cmd(parser, "create loop list", "Create the loop list for the given trace according to Aligot definition", trace, (void(*)(void*))trace_create_loop_list)){
+		printf("ERROR: in %s unable to add cmd to inputParser\n", __func__);
+	}
+
 	inputParser_exe(parser);
 
 	exit:

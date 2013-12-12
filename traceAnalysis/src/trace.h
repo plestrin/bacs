@@ -43,6 +43,7 @@ void trace_callTree_bruteForce(struct trace* trace); 			/* idem */
 void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging routine */
 void trace_callTree_delete(struct trace* trace);
 
+void trace_create_loop_list(struct trace* trace);				/* quite messy for now */
 
 void trace_delete(struct trace* trace);
 
