@@ -146,7 +146,7 @@ static void inputParser_print_help(struct inputParser* parser){
 	struct multiColumnPrinter* 	printer;
 	struct cmdEntry* 			entry;
 
-	printer = multiColumnPrinter_create(stdout, 2, NULL, " ");
+	printer = multiColumnPrinter_create(stdout, 2, NULL, NULL, " ");
 	if (printer == NULL){
 		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
 		return;
