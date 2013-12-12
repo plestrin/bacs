@@ -25,6 +25,10 @@ int32_t workPercent_init(struct workPercent* work ,char* line, enum workPercent_
 	work->counter = 0;
 	work->step_counter = 0;
 
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(work->start_time))){
+		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+	}
+
 	return 0;
 }
 
@@ -65,6 +69,19 @@ void workPercent_notify(struct workPercent* work, uint32_t value){
 		break;
 	}
 	}	
+}
+
+void workPercent_conclude(struct workPercent* work){
+	struct timespec stop_time;
+	double duration;
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
+		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+	}
+
+	duration = (stop_time.tv_sec - work->start_time.tv_sec) + (stop_time.tv_nsec - work->start_time.tv_nsec) / 1000000000.;
+
+	printf("\r%s100%% - time %.3f s\n", work->line, duration);
 }
 
 void workPercent_delete(struct workPercent* work){

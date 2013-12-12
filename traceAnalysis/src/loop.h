@@ -38,6 +38,7 @@ int32_t loopEngine_init(struct loopEngine* engine);
 int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instruction);
 int32_t loopEngine_process(struct loopEngine* engine);
 void loopEngine_print_loop(struct loopEngine* engine);
+
 void loopEngine_clean(struct loopEngine* engine);
 void loopEngine_delete(struct loopEngine* engine);
 

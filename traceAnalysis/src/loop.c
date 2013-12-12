@@ -9,6 +9,7 @@ int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct i
 int32_t loopEngine_search_loop_offset(struct loopToken* loop, int32_t* offset);
 
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
+static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);
 
 struct loopEngine* loopEngine_create(){
 	struct loopEngine* engine;
@@ -62,6 +63,7 @@ int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instructio
 
 /* This routine is slow - to make it faster we can do some precomputation on the element array (sorting for example) */
 /* In my opinion the slowest thing at the end is to look in the token array - because it's hudge */
+/* Attention il y a peut-être une régle pour ne pas être obligé de cherché dans tout l'array de token - ce qui à la fin est extrement pénalisant */
 int32_t loopEngine_process(struct loopEngine* engine){
 	int32_t 			result = -1;
 	uint32_t 			i;
@@ -167,7 +169,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	}
 
 	#ifdef VERBOSE
-	printf("\nLoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting ...\n", counter_iteration, counter_instance);
+	workPercent_conclude(&work);
+	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting ...\n", counter_iteration, counter_instance);
 	#endif
 
 	if (engine->index != NULL){
@@ -258,14 +261,6 @@ void loopEngine_delete(struct loopEngine* engine){
 	}
 }
 
-int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2){
-	return (int32_t)(ins1->opcode - ins2->opcode);
-}
-
-int32_t loopEngine_search_loop_offset(struct loopToken* loop, int32_t* offset){
-	return (int32_t)loop->offset - *offset;
-}
-
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length){
 	struct instruction* ins1;
 	struct instruction* ins2;
@@ -280,4 +275,21 @@ static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine
 	}
 
 	return result;
+}
+
+static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
+	/*we can sort loop byt start address and */
+}
+
+
+/* ===================================================================== */
+/* Sorting routine(s)	    				                             */
+/* ===================================================================== */
+
+int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2){
+	return (int32_t)(ins1->opcode - ins2->opcode);
+}
+
+int32_t loopEngine_search_loop_offset(struct loopToken* loop, int32_t* offset){
+	return (int32_t)loop->offset - *offset;
 }
