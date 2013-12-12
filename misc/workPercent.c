@@ -23,11 +23,14 @@ int32_t workPercent_init(struct workPercent* work ,char* line, enum workPercent_
 	work->accuracy = accuracy;
 	work->nb_unit = nb_unit;
 	work->counter = 0;
+	work->step_counter = 0;
 
 	return 0;
 }
 
 void workPercent_notify(struct workPercent* work, uint32_t value){
+	uint32_t new_step;
+
 	work->counter += value;
 	if (work->counter > work->nb_unit){
 		work->counter = work->nb_unit;
@@ -35,22 +38,28 @@ void workPercent_notify(struct workPercent* work, uint32_t value){
 
 	switch(work->accuracy){
 	case WORKPERCENT_ACCURACY_0 : {
-		if ((100 * work->counter) % work->nb_unit == 0){
-			printf("\r%s%u%% ...", work->line, (uint32_t)((100 * work->counter) / work->nb_unit));
+		new_step = (100 * work->counter) / work->nb_unit;
+		if (new_step > work->step_counter){
+			work->step_counter = new_step;
+			printf("\r%s%u%% ...", work->line, work->step_counter);
 			fflush(stdout);
 		}
 		break;
 	}
 	case WORKPERCENT_ACCURACY_1 : {
-		if ((1000 * work->counter) % work->nb_unit == 0){
-			printf("\r%s%.1f%% ...", work->line, (uint32_t)((1000 * work->counter) / work->nb_unit) / 10.);
+		new_step = (1000 * work->counter) / work->nb_unit;
+		if (new_step > work->step_counter){
+			work->step_counter = new_step;
+			printf("\r%s%.1f%% ...", work->line, work->step_counter / 10.);
 			fflush(stdout);
 		}
 		break;
 	}
 	case WORKPERCENT_ACCURACY_2	: {
-		if ((10000 * work->counter) % work->nb_unit == 0){
-			printf("\r%s%.2f%% ...", work->line, (uint32_t)((10000 * work->counter) / work->nb_unit) / 100.);
+		new_step = (10000 * work->counter) / work->nb_unit;
+		if (new_step > work->step_counter){
+			work->step_counter = new_step;
+			printf("\r%s%.2f%% ...", work->line, work->step_counter / 100.);
 			fflush(stdout);
 		}
 		break;

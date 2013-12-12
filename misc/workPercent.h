@@ -14,6 +14,7 @@ struct workPercent{
 	enum workPercent_accuracy 	accuracy;
 	uint64_t 					nb_unit;
 	uint64_t					counter;
+	uint32_t 					step_counter;
 };
 
 struct workPercent* workPercent_create(char* line, enum workPercent_accuracy accuracy, uint64_t nb_unit);
