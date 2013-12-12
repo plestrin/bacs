@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define ARRAY_DEFAULT_ALLOC_SIZE 	1024
-#define ARRAY_DEFAULT_PAGE_SIZE 	131072
+#define ARRAY_DEFAULT_ALLOC_SIZE 	1024 	/* how to set this value properly ?? for best efficiency try some test */
+#define ARRAY_DEFAULT_PAGE_SIZE 	131072 	/* same for this value */
 
 struct _array{
 	char* 		buffer;
@@ -15,7 +15,7 @@ struct _array{
 
 struct _array* _array_create(uint32_t element_size);
 void _array_init(struct _array* _array, uint32_t element_size);
-int _array_add(struct _array* _array, void* element);
+int32_t _array_add(struct _array* _array, void* element);
 void _array_clean(struct _array* _array);
 void _array_delete(struct _array* _array);
 
@@ -38,9 +38,11 @@ struct array{
 };
 
 struct array* array_create(uint32_t element_size);
-int array_init(struct array* array, uint32_t element_size);
-int array_add(struct array* array, void* element);
+int32_t array_init(struct array* array, uint32_t element_size);
+int32_t array_add(struct array* array, void* element);
 void* array_get(struct array* array, uint32_t index);
+int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
+int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 void array_clean(struct array* array);
 void array_delete(struct array* array);
 

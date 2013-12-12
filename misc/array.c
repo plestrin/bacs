@@ -27,8 +27,8 @@ void _array_init(struct _array* _array, uint32_t element_size){
 	}
 }
 
-int _array_add(struct _array* _array, void* element){
-	int 		result = -1;
+int32_t _array_add(struct _array* _array, void* element){
+	int32_t 	result = -1;
 	char* 		buffer;
 	uint32_t	nb_allocated_byte;
 
@@ -94,8 +94,8 @@ struct array* array_create(uint32_t element_size){
 	return array;
 }
 
-int array_init(struct array* array, uint32_t element_size){
-	int result = -1;
+int32_t array_init(struct array* array, uint32_t element_size){
+	int32_t result = -1;
 
 	if (array != NULL){
 		_array_init(&(array->pages), sizeof(struct arrayPage));
@@ -123,8 +123,8 @@ int array_init(struct array* array, uint32_t element_size){
 	return result;
 }
 
-int array_add(struct array* array, void* element){
-	int 				result = -1;
+int32_t array_add(struct array* array, void* element){
+	int32_t 			result = -1;
 	char* 				buffer;
 	uint32_t 			nb_allocated_byte;
 	struct arrayPage 	page;
@@ -174,7 +174,7 @@ int array_add(struct array* array, void* element){
 		}
 
 		memcpy(array->buffer + array->nb_filled_byte, element, array->element_size);
-		result = array->nb_filled_byte / array->element_size;
+		result = array->nb_element;
 		array->nb_filled_byte += array->element_size;
 		array->nb_element ++;
 	}
@@ -194,6 +194,58 @@ void* array_get(struct array* array, uint32_t index){
 		page = (struct arrayPage*)_array_get(array->pages, index / nb_element_per_page);
 		return page->buffer + (index % nb_element_per_page) * array->element_size;
 	}
+}
+
+int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key)){
+	struct arrayPage* 	page;
+	uint32_t 			nb_element_per_page;
+	uint32_t 			i;
+	int32_t 			result = -1;
+	void* 				element;
+
+	nb_element_per_page = ARRAY_DEFAULT_PAGE_SIZE / array->element_size;
+
+	for (i = min_index; (i < array->nb_element) && (result == -1) && (i < max_index); i++){
+		if (_array_get_length(array->pages) * nb_element_per_page <= i){
+			element = array->buffer + (i % nb_element_per_page) * array->element_size;
+		}
+		else{
+			page = (struct arrayPage*)_array_get(array->pages, i / nb_element_per_page);
+			element = page->buffer + (i % nb_element_per_page) * array->element_size;
+		}
+
+		if (compare(element, key) == 0){
+			result = i;
+		}
+	}
+
+	return result;
+}
+
+int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key)){
+	struct arrayPage* 	page;
+	uint32_t 			nb_element_per_page;
+	uint32_t 			i;
+	int32_t 			result = -1;
+	void* 				element;
+
+	nb_element_per_page = ARRAY_DEFAULT_PAGE_SIZE / array->element_size;
+
+	for (i = ((max_index + 1) > array->nb_element) ? array->nb_element : (max_index + 1); (result == -1) && (i > 0) && (i > min_index); i--){
+		if (_array_get_length(array->pages) * nb_element_per_page <= (i - 1)){
+			element = array->buffer + ((i - 1) % nb_element_per_page) * array->element_size;
+		}
+		else{
+			page = (struct arrayPage*)_array_get(array->pages, (i - 1) / nb_element_per_page);
+			element = page->buffer + ((i - 1) % nb_element_per_page) * array->element_size;
+		}
+
+		if (compare(element, key) == 0){
+			result = (i - 1);
+		}
+	}
+
+	return result;
 }
 
 void array_clean(struct array* array){
