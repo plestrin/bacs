@@ -102,15 +102,6 @@ void trace_simpleTraceStat_print(struct trace* trace){
 	}
 }
 
-void trace_codeMap_print(struct trace* trace){
-	if (trace->code_map != NULL){
-		codeMap_print(trace->code_map, CODEMAP_FILTER_EXECUTED);
-	}
-	else{
-		printf("ERROR: in %s, codeMap is NULL\n", __func__);
-	}
-}
-
 void trace_simpleTraceStat_delete(struct trace* trace){
 	if (trace->simple_trace_stat != NULL){
 		simpleTraceStat_delete(trace->simple_trace_stat);
@@ -161,9 +152,9 @@ void trace_callTree_create(struct trace* trace){
 	}
 }
 
-void trace_callTree_print_dot(struct trace* trace){
+void trace_callTree_print_dot(struct trace* trace, char* file_name){
 	if (trace->call_tree != NULL){
-		if (graphPrintDot_print(trace->call_tree, "callTree.dot")){
+		if (graphPrintDot_print(trace->call_tree, file_name)){
 			printf("ERROR: in %s, unable to print callTree to DOT format\n", __func__);
 		}
 	}

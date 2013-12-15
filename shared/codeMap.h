@@ -1,14 +1,16 @@
 #ifndef CODEMAP_H
 #define CODEMAP_H
 
-#define CODEMAP_DEFAULT_NAME_SIZE 	256
+#define CODEMAP_DEFAULT_NAME_SIZE 		256
 
-#define CODEMAP_NOT_WHITELISTED		0
-#define CODEMAP_WHITELISTED			1
+#define CODEMAP_NOT_WHITELISTED			0
+#define CODEMAP_WHITELISTED				1
 
+#define CODEMAP_FILTER_WHITELIST		0x00000001
+#define CODEMAP_FILTER_EXECUTED			0x00000002
 
-#define CODEMAP_FILTER_WHITELIST	0x00000001
-#define CODEMAP_FILTER_EXECUTED		0x00000002
+#define CODEMAP_FILTER_WHITELIST_CMD 	'W'
+#define CODEMAP_FILTER_EXECUTED_CMD 	'E'
 
 
 struct codeMap{
@@ -55,7 +57,7 @@ int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigne
 struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed);
 int codeMap_check_address(struct codeMap* cm);
 void codeMap_print_JSON(struct codeMap* cm, FILE* file);
-void codeMap_print(struct codeMap* cm, int filter);
+void codeMap_print(struct codeMap* cm, char* str_filter);
 void codeMap_delete(struct codeMap* cm);
 
 void codeMap_clean_image(struct cm_image* image);

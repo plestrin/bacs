@@ -36,13 +36,11 @@ void trace_simpleTraceStat_create(struct trace* trace);
 void trace_simpleTraceStat_print(struct trace* trace);
 void trace_simpleTraceStat_delete(struct trace* trace);
 
-void trace_codeMap_print(struct trace* trace);
-
 /* concernant le codefragment il faudrait faire un object général indépendant de la méthode de génération */
 /* ce qui permettrait de resortir le io checker de la trace ce qui n'a pas de raison d'être d'un point de vue structurel */
 
 void trace_callTree_create(struct trace* trace);
-void trace_callTree_print_dot(struct trace* trace);
+void trace_callTree_print_dot(struct trace* trace, char* file_name);
 void trace_callTree_print_opcode_percent(struct trace* trace); 	/* il faudrait faire un iterateur sur les tracefragments contenus dans le callTree */
 void trace_callTree_bruteForce(struct trace* trace); 			/* idem */
 void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging routine */

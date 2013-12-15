@@ -270,11 +270,27 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 	}
 }
 
-void codeMap_print(struct codeMap* cm, int filter){
+void codeMap_print(struct codeMap* cm, char* str_filter){
 	struct cm_image* 			image;
 	struct multiColumnPrinter* 	printer;
+	int 						filter = 0;
+	unsigned int 				i;
+
+	#ifdef VERBOSE
+	printf("Available filters ('%c' = whitelist, '%c' = executed)\n", CODEMAP_FILTER_WHITELIST_CMD, CODEMAP_FILTER_EXECUTED_CMD);
+	#endif
 
 	if (cm != NULL){
+		if (str_filter != NULL){
+			for (i = 0; i < strlen(str_filter); i++){
+				switch(str_filter[i]){
+				case CODEMAP_FILTER_WHITELIST_CMD 	: {filter |= CODEMAP_FILTER_WHITELIST; break;}
+				case CODEMAP_FILTER_EXECUTED_CMD 	: {filter |= CODEMAP_FILTER_EXECUTED; break;}
+				default 							: {printf("WARNING: in %s, unknown filter specifier '%c'\n", __func__, str_filter[i]); break;}
+				}
+			}
+		}
+
 		if (filter){
 			printf("*** Code Map - filter: { ");
 			if (filter & CODEMAP_FILTER_WHITELIST){

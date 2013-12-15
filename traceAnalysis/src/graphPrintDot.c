@@ -15,6 +15,9 @@ int graphPrintDot_print(struct graph* graph, const char* name){
 	
 	if (graph != NULL){
 		if (name == NULL){
+			#ifdef VERBOSE
+			printf("WARNING: in %s, no file name specified, using default file name: \"%s\"\n", __func__, GRAPHPRINTDOT_DEFAULT_FILE_NAME);
+			#endif
 			file = fopen(GRAPHPRINTDOT_DEFAULT_FILE_NAME, "w");
 		}
 		else{
