@@ -258,7 +258,24 @@ void trace_loop_create(struct trace* trace){
 	}
 
 	loopEngine_process(trace->loop_engine);
-	loopEngine_remove_redundant_loop(trace->loop_engine); /* remove later */
+}
+
+void trace_loop_remove_redundant(struct trace* trace){
+	if (trace->loop_engine != NULL){
+		loopEngine_remove_redundant_loop(trace->loop_engine);
+	}
+	else{
+		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
+	}
+}
+
+void trace_loop_pack_epilogue(struct trace* trace){
+	if (trace->loop_engine != NULL){
+		loopEngine_pack_epilogue(trace->loop_engine);
+	}
+	else{
+		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
+	}
 }
 
 void trace_loop_print(struct trace* trace){

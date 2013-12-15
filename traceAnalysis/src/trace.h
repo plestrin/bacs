@@ -47,6 +47,8 @@ void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging 
 void trace_callTree_delete(struct trace* trace);
 
 void trace_loop_create(struct trace* trace);
+void trace_loop_remove_redundant(struct trace* trace);
+void trace_loop_pack_epilogue(struct trace* trace);
 void trace_loop_print(struct trace* trace);
 void trace_loop_delete(struct trace* trace);
 

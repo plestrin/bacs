@@ -194,6 +194,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 		if (current_token->iteration == 0){
 			engine->loops[current_token->id].offset = current_token->offset;
 			engine->loops[current_token->id].length = current_token->length;
+			engine->loops[current_token->id].epilogue = 0;
 		}
 	}
 
@@ -222,7 +223,7 @@ int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
 
 		for (i = 1, counter = 1; i < engine->nb_loop; i++){
-			if (engine->loops[i].length > engine->loops[i - 1].length){
+			if (engine->loops[i].offset + (engine->loops[i].length * engine->loops[i].nb_iteration) + engine->loops[i].epilogue > engine->loops[counter - 1].offset + (engine->loops[counter - 1].length * engine->loops[counter - 1].nb_iteration) + engine->loops[counter - 1].epilogue){
 				if (i != counter){
 					memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
 				}
@@ -240,7 +241,43 @@ int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 		}
 
 		#ifdef VERBOSE
-		printf("LoopEngine: removed redundant loop(s) -> keeping %u\n", engine->nb_loop);
+		printf("LoopEngine: removed redundant loop(s) -> remaining %u loop(s)\n", engine->nb_loop);
+		#endif
+	}
+
+	return 0;
+}
+
+/* We expect that loopEngine_remove_redundant_loop has just been previously run */
+int32_t loopEngine_pack_epilogue(struct loopEngine* engine){
+	uint32_t 		i;
+	uint32_t 		counter;
+	struct loop* 	realloc_loops;
+
+	if (engine->loops != NULL){
+		for (i = 1, counter = 1; i < engine->nb_loop; i++){
+			if (engine->loops[i].offset == 1 + engine->loops[counter - 1].offset + engine->loops[counter -1].epilogue && engine->loops[i].length == engine->loops[counter - 1].length && engine->loops[i].nb_iteration == engine->loops[counter - 1].nb_iteration){
+				engine->loops[counter - 1].epilogue ++;
+			}
+			else{
+				if (i != counter){
+					memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
+				}
+				counter ++;
+			}
+		}
+
+		engine->nb_loop = counter;
+		realloc_loops = (struct loop*)realloc(engine->loops, engine->nb_loop * sizeof(struct loop));
+		if (realloc_loops == NULL){
+			printf("ERROR: in %s, unable to realloc loops\n", __func__);
+		}
+		else{
+			engine->loops = realloc_loops;
+		}
+
+		#ifdef VERBOSE
+		printf("LoopEngine: packed epilogue-> remaining %u loop(s)\n", engine->nb_loop);
 		#endif
 	}
 
@@ -251,7 +288,7 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 
-	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
 	if (printer == NULL){
 		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
 	}
@@ -263,17 +300,19 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT);
 	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT);
 	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT);
+	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT);
 
 	multiColumnPrinter_set_title(printer, 0, (char*)"");
 	multiColumnPrinter_set_title(printer, 1, (char*)"Nb it");
 	multiColumnPrinter_set_title(printer, 2, (char*)"Offset");
 	multiColumnPrinter_set_title(printer, 3, (char*)"Length");
+	multiColumnPrinter_set_title(printer, 4, (char*)"Epilogue");
 
 	multiColumnPrinter_print_header(printer);
 
 	if (engine->loops != NULL){
 		for (i = 0; i < engine->nb_loop; i++){
-			multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, NULL);
+			multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, NULL);
 		}
 	}
 
@@ -334,6 +373,6 @@ int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2){
 		return (int32_t)(loop1->offset - loop2->offset);
 	}
 	else{
-		return (int32_t)(loop2->length - loop1->length);
+		return (int32_t)(loop2->epilogue + loop2->length * loop2->nb_iteration - loop1->epilogue + loop1->length * loop1->nb_iteration);
 	}
 }
