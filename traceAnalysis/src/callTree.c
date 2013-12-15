@@ -123,7 +123,6 @@ void callTree_print_opcode_percent(struct graph* callTree){
 	int 						i;
 	struct callTree_node* 		node;
 	float 						percent;
-	char 						percent_string[32];
 	int 						nb_opcode = 10;
 	uint32_t 					opcode[10] = {	XED_ICLASS_XOR,
 												XED_ICLASS_SHL,
@@ -142,21 +141,26 @@ void callTree_print_opcode_percent(struct graph* callTree){
 
 
 	if (callTree != NULL){
-		printer = multiColumnPrinter_create(stdout, 2, NULL, NULL);
+		printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
 
 		if (printer != NULL){
-			multiColumnPrinter_set_column_size(printer, 0, 24);
-			multiColumnPrinter_set_column_size(printer, 1, 16);
+			multiColumnPrinter_set_column_size(printer, 0, 4);
+			multiColumnPrinter_set_column_size(printer, 1, 24);
+			multiColumnPrinter_set_column_size(printer, 2, 16);
 
-			multiColumnPrinter_set_title(printer, 0, (char*)"FRAGMENT");
-			multiColumnPrinter_set_title(printer, 1, (char*)"PERCENT");
+			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT);
+			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
+
+			multiColumnPrinter_set_title(printer, 0, (char*)"");
+			multiColumnPrinter_set_title(printer, 1, (char*)"FRAGMENT");
+			multiColumnPrinter_set_title(printer, 2, (char*)"PERCENT");
+
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < callTree->nb_node; i++){
 				node = (struct callTree_node*)callTree->nodes[i].data;
 				percent = traceFragment_opcode_percent(&(node->fragment), nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-				snprintf(percent_string, 32, "%f", percent*100);
-				multiColumnPrinter_print(printer, node->name, percent_string, NULL);
+				multiColumnPrinter_print(printer, i, node->name, percent*100, NULL);
 			}
 
 			multiColumnPrinter_delete(printer);

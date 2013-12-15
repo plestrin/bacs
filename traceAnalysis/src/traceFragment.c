@@ -219,23 +219,24 @@ int traceFragment_create_mem_array(struct traceFragment* frag){
 void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access){
 	struct multiColumnPrinter* 	printer;
 	int 						i;
-	char 						order_str[20];
 	char 						value_str[20];
 	char 						addr_str[20];
-	char 						size_str[20];
 
-	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 3, 4);
+
+		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT);
+		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT);
 
 		multiColumnPrinter_set_title(printer, 0, (char*)"ORDER");
 		multiColumnPrinter_set_title(printer, 1, (char*)"VALUE");
 		multiColumnPrinter_set_title(printer, 2, (char*)"ADDRESS");
 		multiColumnPrinter_set_title(printer, 3, (char*)"SIZE");
+
 		multiColumnPrinter_print_header(printer);
 
 		for (i = 0; i < nb_mem_access; i++){
-			snprintf(order_str, 20, "%u", mem_access[i].order);
 			switch(mem_access[i].size){
 			case 1 	: {snprintf(value_str, 20, "%02x", mem_access[i].value & 0x000000ff); break;}
 			case 2 	: {snprintf(value_str, 20, "%04x", mem_access[i].value & 0x0000ffff); break;}
@@ -244,9 +245,8 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 			}
 			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 			snprintf(addr_str, 20, "%llx", mem_access[i].address);
-			snprintf(size_str, 20, "%u", mem_access[i].size);
 
-			multiColumnPrinter_print(printer, order_str, value_str, addr_str, size_str, NULL);
+			multiColumnPrinter_print(printer, mem_access[i].order, value_str, addr_str, mem_access[i].size, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);

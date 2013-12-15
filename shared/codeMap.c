@@ -289,7 +289,7 @@ void codeMap_print(struct codeMap* cm, int filter){
 			printf("*** Code Map ***\n");
 		}
 
-		printer = multiColumnPrinter_create(stdout, 6, NULL, NULL);
+		printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
 		if (printer != NULL){
 			multiColumnPrinter_set_column_size(printer, 0, 38);
 			multiColumnPrinter_set_column_size(printer, 1, 7);

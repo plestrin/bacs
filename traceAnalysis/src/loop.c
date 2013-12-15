@@ -4,12 +4,18 @@
 
 #include "loop.h"
 #include "workPercent.h"
+#include "multiColumn.h"
+
+struct loopIteration{
+	uint32_t offset;
+	uint32_t length;
+};
 
 int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2);
 int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration);
+int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
 
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
-/*static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);*/
 
 struct loopEngine* loopEngine_create(){
 	struct loopEngine* engine;
@@ -38,9 +44,8 @@ int32_t loopEngine_init(struct loopEngine* engine){
 			printf("ERROR: in %s, unable to init element array\n", __func__);
 		}
 		else{
-			engine->nb_loop = 0;
-			engine->index = NULL;
-			engine->iteration_pool = NULL;
+			engine->loops = NULL;
+			engine->nb_loop = 0;	
 		}
 	}
 
@@ -78,10 +83,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	uint32_t 				counter_instance 	= 0;
 	uint32_t				counter_iteration 	= 0;
 	struct array 			token_array;
-	uint32_t* 				token_accelerator	= NULL;
-	uint32_t				last_token;
+	uint32_t* 				token_search_bound = NULL;
 	struct loopToken* 		current_token;
-	uint32_t				pool_offset 		= 0;
 	#ifdef VERBOSE
 	struct workPercent 		work;
 	#endif
@@ -96,8 +99,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 		return result;
 	}
 
-	token_accelerator = (uint32_t*)calloc(array_get_length(&(engine->element_array)), sizeof(uint32_t));
-	if (token_accelerator == NULL){
+	token_search_bound = (uint32_t*)calloc(2 * array_get_length(&(engine->element_array)), sizeof(uint32_t));
+	if (token_search_bound == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		goto exit;
 	}
@@ -105,7 +108,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	for (i = LOOP_MINIMAL_CORE_LENGTH; i < array_get_length(&(engine->element_array)); i++){
 		element = array_get(&(engine->element_array), i);
 		index_prev = i + 1 - LOOP_MINIMAL_CORE_LENGTH;
-		last_token = array_get_length(&token_array);
+		token_search_bound[2*i] = array_get_length(&token_array);
 
 		do {
 			max_index = index_prev - 1;
@@ -119,7 +122,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 
 				if (loopEngine_compare_instruction_sequence(engine, iteration.offset, i, iteration.length) == 0){
 
-					loop_index = array_search_seq_down(&token_array, token_accelerator[iteration.offset], array_get_length(&token_array) - 1, &iteration, (int32_t(*)(void*,void*))loopEngine_search_matching_loop);
+					loop_index = array_search_seq_down(&token_array, token_search_bound[2*iteration.offset], token_search_bound[2*iteration.offset + 1], &iteration, (int32_t(*)(void*,void*))loopEngine_search_matching_loop);
 					if (loop_index >= 0){
 						matching_loop = (struct loopToken*)array_get(&token_array, loop_index);
 					}
@@ -156,7 +159,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 			}
 		} while(index_prev > (int32_t)min_index);
 
-		token_accelerator[i] = last_token;
+		token_search_bound[2*i + 1] = array_get_length(&token_array);
 
 		#ifdef VERBOSE
 		workPercent_notify(&work, 1);
@@ -165,44 +168,33 @@ int32_t loopEngine_process(struct loopEngine* engine){
 
 	#ifdef VERBOSE
 	workPercent_conclude(&work);
-	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting ...\n", counter_iteration, counter_instance);
+	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting\n", counter_iteration, counter_instance);
 	#endif
 
-	if (engine->index != NULL){
-		free(engine->index);
-		engine->index = NULL;
-	}
-	if (engine->iteration_pool != NULL){
-		free(engine->iteration_pool);
-		engine->iteration_pool = NULL;
+	free(token_search_bound);
+	token_search_bound = NULL;
+
+	if (engine->loops != NULL){
+		free(engine->loops);
+		engine->loops = NULL;
 	}
 
-	engine->index = (struct loopIndex*)malloc(counter_instance * sizeof(struct loopIndex));
-	if (engine->index == NULL){
+	engine->loops = (struct loop*)calloc(counter_instance, sizeof(struct loop));
+	if (engine->loops == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		goto exit;
 	}
-
-	engine->iteration_pool = (struct loopIteration*)malloc(counter_iteration * sizeof(struct loopIteration));
-	if (engine->iteration_pool == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		goto exit;
-	}
-
-	memset(engine->index, 0, sizeof(struct loopIndex) * counter_instance);
 
 	for (i = array_get_length(&token_array); i > 0; i--){
 		current_token = (struct loopToken*)array_get(&token_array, i - 1);
 
-		if (engine->index[current_token->id].nb_iteration == 0){
-			engine->index[current_token->id].first_iteration = engine->iteration_pool + pool_offset;
-			engine->index[current_token->id].nb_iteration = current_token->iteration + 1;
-
-			pool_offset += current_token->iteration + 1;
+		if (engine->loops[current_token->id].nb_iteration == 0){
+			engine->loops[current_token->id].nb_iteration = current_token->iteration + 1;
 		}
-		
-		engine->index[current_token->id].first_iteration[current_token->iteration].offset = current_token->offset;
-		engine->index[current_token->id].first_iteration[current_token->iteration].length = current_token->length;
+		if (current_token->iteration == 0){
+			engine->loops[current_token->id].offset = current_token->offset;
+			engine->loops[current_token->id].length = current_token->length;
+		}
 	}
 
 	engine->nb_loop = counter_instance;
@@ -213,43 +205,88 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	exit:
 
 	array_clean(&token_array);
-	if (token_accelerator != NULL){
-		free(token_accelerator);
+	if (token_search_bound != NULL){
+		free(token_search_bound);
 	}
 
 	return result;
 }
 
-void loopEngine_print_loop(struct loopEngine* engine){
-	uint32_t i;
-	uint32_t j;
 
-	if (engine->index != NULL && engine->iteration_pool != NULL){
-		for (i = 0; i < engine->nb_loop; i++){
-			printf("%u - it = %u {", i, engine->index[i].nb_iteration);
-			for (j = 0; j < engine->index[i].nb_iteration; j++){
-				if (j != engine->index[i].nb_iteration - 1){
-					printf("(off: %u, lgth: %u), ", engine->index[i].first_iteration[j].offset, engine->index[i].first_iteration[j].length);
+int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
+	uint32_t 		i;
+	uint32_t 		counter;
+	struct loop* 	realloc_loops;
+
+	if (engine->loops != NULL){
+		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
+
+		for (i = 1, counter = 1; i < engine->nb_loop; i++){
+			if (engine->loops[i].length > engine->loops[i - 1].length){
+				if (i != counter){
+					memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
 				}
-				else{
-					printf("(off: %u, lgth: %u)}\n", engine->index[i].first_iteration[j].offset, engine->index[i].first_iteration[j].length);
-				}
+				counter ++;
 			}
 		}
+
+		engine->nb_loop = counter;
+		realloc_loops = (struct loop*)realloc(engine->loops, engine->nb_loop * sizeof(struct loop));
+		if (realloc_loops == NULL){
+			printf("ERROR: in %s, unable to realloc loops\n", __func__);
+		}
+		else{
+			engine->loops = realloc_loops;
+		}
+
+		#ifdef VERBOSE
+		printf("LoopEngine: removed redundant loop(s) -> keeping %u\n", engine->nb_loop);
+		#endif
 	}
+
+	return 0;
+}
+
+void loopEngine_print_loop(struct loopEngine* engine){
+	uint32_t 					i;
+	struct multiColumnPrinter* 	printer;
+
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
+	if (printer == NULL){
+		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+	}
+
+	multiColumnPrinter_set_column_size(printer, 0, 8);
+	multiColumnPrinter_set_column_size(printer, 1, 6);
+
+	multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT);
+	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT);
+	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT);
+	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT);
+
+	multiColumnPrinter_set_title(printer, 0, (char*)"");
+	multiColumnPrinter_set_title(printer, 1, (char*)"Nb it");
+	multiColumnPrinter_set_title(printer, 2, (char*)"Offset");
+	multiColumnPrinter_set_title(printer, 3, (char*)"Length");
+
+	multiColumnPrinter_print_header(printer);
+
+	if (engine->loops != NULL){
+		for (i = 0; i < engine->nb_loop; i++){
+			multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, NULL);
+		}
+	}
+
+	multiColumnPrinter_delete(printer);
 }
 
 void loopEngine_clean(struct loopEngine* engine){
 	if (engine != NULL){
 		array_clean(&(engine->element_array));
 		
-		if (engine->index != NULL){
-			free(engine->index);
-			engine->index = NULL;
-		}
-		if (engine->iteration_pool != NULL){
-			free(engine->iteration_pool);
-			engine->iteration_pool = NULL;
+		if (engine->loops != NULL){
+			free(engine->loops);
+			engine->loops = NULL;
 		}
 	}
 }
@@ -277,12 +314,6 @@ static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine
 	return result;
 }
 
-#if 0
-static int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
-	/*we can sort loop byt start address and */
-}
-#endif
-
 /* ===================================================================== */
 /* Sorting routine(s)	    				                             */
 /* ===================================================================== */
@@ -293,4 +324,16 @@ int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct i
 
 int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration){
 	return !(loop->offset == iteration->offset && loop->length == iteration->length);
+}
+
+int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2){
+	struct loop* loop1 = (struct loop*)arg1;
+	struct loop* loop2 = (struct loop*)arg2;
+
+	if (loop1->offset != loop2->offset){
+		return (int32_t)(loop1->offset - loop2->offset);
+	}
+	else{
+		return (int32_t)(loop2->length - loop1->length);
+	}
 }

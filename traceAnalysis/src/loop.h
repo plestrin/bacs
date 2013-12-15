@@ -8,14 +8,10 @@
 
 #define LOOP_MINIMAL_CORE_LENGTH 3
 
-struct loopIndex{
-	struct loopIteration* 	first_iteration;
-	uint32_t 				nb_iteration;
-};
-
-struct loopIteration{
+struct loop{
 	uint32_t 				offset;
-	uint32_t				length;
+	uint32_t 				length;
+	uint32_t 				nb_iteration;
 };
 
 struct loopToken{
@@ -27,9 +23,8 @@ struct loopToken{
 
 struct loopEngine{
 	struct array 			element_array;
+	struct loop* 			loops;
 	uint32_t 				nb_loop;
-	struct loopIndex* 		index;
-	struct loopIteration* 	iteration_pool;
 };
 
 struct loopEngine* loopEngine_create();
@@ -37,6 +32,7 @@ int32_t loopEngine_init(struct loopEngine* engine);
 
 int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instruction);
 int32_t loopEngine_process(struct loopEngine* engine);
+int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);
 void loopEngine_print_loop(struct loopEngine* engine);
 
 void loopEngine_clean(struct loopEngine* engine);

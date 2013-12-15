@@ -8,6 +8,7 @@
 #include "graph.h"
 #include "simpleTraceStat.h"
 #include "ioChecker.h"
+#include "loop.h"
 
 #define TRACE_DIRECTORY_NAME_MAX_LENGTH 256
 #define TRACE_INS_FILE_NAME "ins.json"
@@ -24,17 +25,21 @@ struct trace{
 	struct codeMap* 			code_map;
 	struct simpleTraceStat* 	simple_trace_stat;
 	struct graph* 				call_tree;
+	struct loopEngine*			loop_engine;
 };
 
 struct trace* trace_create(const char* dir_name);
 
-void trace_instructions_print(struct trace* trace);
+void trace_instruction_print(struct trace* trace);
 
 void trace_simpleTraceStat_create(struct trace* trace);
 void trace_simpleTraceStat_print(struct trace* trace);
 void trace_simpleTraceStat_delete(struct trace* trace);
 
 void trace_codeMap_print(struct trace* trace);
+
+/* concernant le codefragment il faudrait faire un object général indépendant de la méthode de génération */
+/* ce qui permettrait de resortir le io checker de la trace ce qui n'a pas de raison d'être d'un point de vue structurel */
 
 void trace_callTree_create(struct trace* trace);
 void trace_callTree_print_dot(struct trace* trace);
@@ -43,7 +48,9 @@ void trace_callTree_bruteForce(struct trace* trace); 			/* idem */
 void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging routine */
 void trace_callTree_delete(struct trace* trace);
 
-void trace_create_loop_list(struct trace* trace);				/* quite messy for now */
+void trace_loop_create(struct trace* trace);
+void trace_loop_print(struct trace* trace);
+void trace_loop_delete(struct trace* trace);
 
 void trace_delete(struct trace* trace);
 

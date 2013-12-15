@@ -6,7 +6,6 @@
 #include "instruction.h"
 #include "graphPrintDot.h"
 #include "argBuffer.h"
-#include "loop.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -41,11 +40,12 @@ struct trace* trace_create(const char* dir_name){
 
 	trace->simple_trace_stat = NULL;
 	trace->call_tree = NULL;
+	trace->loop_engine = NULL;
 
 	return trace;
 }
 
-void trace_instructions_print(struct trace* trace){
+void trace_instruction_print(struct trace* trace){
 	struct instruction* ins;
 
 	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
@@ -238,8 +238,62 @@ void trace_callTree_delete(struct trace* trace){
 	}
 }
 
+void trace_loop_create(struct trace* trace){
+	struct instruction* ins;
+
+	if (trace->loop_engine != NULL){
+		loopEngine_delete(trace->loop_engine);
+	}
+
+	trace->loop_engine = loopEngine_create();
+	if (trace->loop_engine == NULL){
+		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+		return;
+	}
+
+	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
+		do{
+			ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
+			if (ins != NULL){
+				if (loopEngine_add(trace->loop_engine, ins)){
+					printf("ERROR: in %s, loopEngine failed to add element\n", __func__);
+					break;
+				}
+			}
+		} while (ins != NULL);
+	}
+	else{
+		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+	}
+
+	loopEngine_process(trace->loop_engine);
+	loopEngine_remove_redundant_loop(trace->loop_engine); /* remove later */
+}
+
+void trace_loop_print(struct trace* trace){
+	if (trace->loop_engine != NULL){
+		loopEngine_print_loop(trace->loop_engine);
+	}
+	else{
+		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
+	}
+}
+
+void trace_loop_delete(struct trace* trace){
+	if (trace->loop_engine != NULL){
+		loopEngine_delete(trace->loop_engine);
+		trace->loop_engine = NULL;
+	}
+	else{
+		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
+	}
+}
+
 void trace_delete(struct trace* trace){
 	if (trace != NULL){
+		if (trace->loop_engine != NULL){
+			loopEngine_delete(trace->loop_engine);
+		}
 		if (trace->simple_trace_stat != NULL){
 			simpleTraceStat_delete(trace->simple_trace_stat);
 		}
@@ -253,39 +307,6 @@ void trace_delete(struct trace* trace){
 
 		free(trace);
 	}
-}
-
-void trace_create_loop_list(struct trace* trace){
-	/*Warning  the is quite for testing purpose */
-	struct instruction* ins;
-	struct loopEngine engine;
-
-	if (loopEngine_init(&engine)){
-		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
-		return;
-	}
-
-	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
-		do{
-			ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
-			if (ins != NULL){
-				if (loopEngine_add(&engine, ins)){
-					printf("ERROR: in %s, loopEngine failed to add element\n", __func__);
-					break;
-				}
-			}
-		} while (ins != NULL);
-	}
-	else{
-		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
-	}
-
-	loopEngine_process(&engine);
-	/*loopEngine_print_loop(&engine);*/
-
-	/* a completer */
-
-	loopEngine_clean(&engine);
 }
 
 /* ===================================================================== */
