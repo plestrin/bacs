@@ -2,8 +2,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __linux__
+
 #include "../AES.h"
 #include "../../misc/printBuffer.h"
+
+#endif
+
+#ifdef WIN32
+
+#include "AES.h"
+#include "../../misc/printBuffer.h"
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#endif
 
 /*Those test vectors are taken from: http://www.inconteam.com/software-development/41-encryption/55-aes-test-vectors#aes-ecb */
 

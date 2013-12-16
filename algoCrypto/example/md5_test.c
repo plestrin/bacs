@@ -2,8 +2,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __linux__
+
 #include "../MD5.h"
 #include "../../misc/printBuffer.h"
+
+#endif
+
+#ifdef WIN32
+
+#include "MD5.h"
+#include "../../misc/printBuffer.h"
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#endif
 
 int main(){
 	char 		message[] = "Hello world!";

@@ -2,8 +2,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __linux__
+
 #include "../TEA.h"
 #include "../../misc/printBuffer.h"
+
+#endif
+
+#ifdef WIN32
+
+#include "TEA.h"
+#include "../../misc/printBuffer.h"
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#endif
 
 int main(){
 	char* 			plaintext		= NULL;
@@ -17,7 +32,7 @@ int main(){
 	deciphertext 	= (char*)malloc(size);
 	if (plaintext != NULL && ciphertext != NULL && deciphertext != NULL){
 		memset(plaintext, 0, size);
-		strcpy(plaintext, "Hello World!");
+		strncpy(plaintext, "Hello World!", size);
 		
 		printf("Plaintext:\t\"%s\"\n", plaintext);
 		printf("Key: \t\t");
