@@ -14,7 +14,11 @@ struct traceFragment* codeSegment_create(){
 	struct traceFragment* frag = (struct traceFragment*)malloc(sizeof(struct traceFragment));
 
 	if (frag != NULL){
-		traceFragment_init(frag);
+		if (traceFragment_init(frag)){
+			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+			free(frag);
+			frag = NULL;
+		}
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -23,64 +27,18 @@ struct traceFragment* codeSegment_create(){
 	return frag;
 }
 
-void traceFragment_init(struct traceFragment* frag){
-	if (frag != NULL){
-		frag->instructions = (struct instruction*)malloc(sizeof(struct instruction) * TRACEFRAGMENT_INSTRUCTION_BATCH);
-		if (frag->instructions != NULL){
-			frag->nb_allocated_instruction = TRACEFRAGMENT_INSTRUCTION_BATCH;
-		}
-		else{
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			frag->nb_allocated_instruction = 0;
-		}
-		frag->nb_instruction = 0;
+int32_t traceFragment_init(struct traceFragment* frag){
+	int32_t result = -1;
 
+	result = array_init(&frag->instruction_array, sizeof(struct instruction));
+	if (result){
+		printf("ERROR: in %s, unable to init instruction array\n", __func__);
+	}
+	else{
 		frag->read_memory_array 		= NULL;
 		frag->write_memory_array 		= NULL;
 		frag->nb_memory_read_access 	= 0;
 		frag->nb_memory_write_access 	= 0;
-	}
-	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-	}
-}
-
-int traceFragment_add_instruction(struct traceFragment* frag, struct instruction* ins){
-	struct instruction* new_buffer;
-
-	if (frag != NULL){
-		if (frag->nb_allocated_instruction == frag->nb_instruction){
-			new_buffer = (struct instruction*)realloc(frag->instructions, sizeof(struct instruction) * (frag->nb_allocated_instruction + TRACEFRAGMENT_INSTRUCTION_BATCH));
-			if (new_buffer != NULL){
-				frag->instructions = new_buffer;
-				frag->nb_allocated_instruction += TRACEFRAGMENT_INSTRUCTION_BATCH;
-			}
-			else{
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				return -1;
-			}
-		}
-
-		memcpy(frag->instructions + frag->nb_instruction, ins, sizeof(struct instruction));
-		frag->nb_instruction ++;
-
-		return frag->nb_instruction - 1;
-	}
-
-	return -1;
-}
-
-int traceFragment_search_pc(struct traceFragment* frag, struct instruction* ins){
-	int result = -1;
-	int i;
-
-	if (frag != NULL){
-		for (i = 0; i < frag->nb_instruction; i++){
-			if (instruction_compare_pc(ins, frag->instructions + i)){
-				result = i;
-				break;
-			}
-		}
 	}
 
 	return result;
@@ -90,8 +48,8 @@ struct instruction* traceFragment_get_last_instruction(struct traceFragment* fra
 	struct instruction* instruction = NULL;
 
 	if (frag != NULL){
-		if (frag->nb_instruction > 0){
-			instruction = frag->instructions + (frag->nb_instruction - 1);
+		if (array_get_length(&(frag->instruction_array)) > 0){
+			instruction = (struct instruction*)array_get(&(frag->instruction_array), array_get_length(&(frag->instruction_array)) - 1);
 		}
 	}
 
@@ -99,19 +57,21 @@ struct instruction* traceFragment_get_last_instruction(struct traceFragment* fra
 }
 
 float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode){
-	float 	result = 0;
-	int 	i;
-	int 	j;
-	int 	nb_effective_instruction = 0;
-	int 	nb_found_instruction = 0;
-	char 	excluded;
+	float 				result = 0;
+	uint32_t 			i;
+	struct instruction*	instruction;
+	int 				j;
+	int 				nb_effective_instruction = 0;
+	int 				nb_found_instruction = 0;
+	char 				excluded;
 
 	if (frag != NULL){
-		for (i = 0; i < frag->nb_instruction; i++){
+		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
+			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
 			excluded = 0;
 			if (excluded_opcode != NULL){
 				for (j = 0; j < nb_excluded_opcode; j++){
-					if (frag->instructions[i].opcode == excluded_opcode[j]){
+					if (instruction->opcode == excluded_opcode[j]){
 						excluded = 1;
 						break;
 					}
@@ -122,7 +82,7 @@ float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, ui
 				nb_effective_instruction++;
 				if (opcode != NULL){
 					for (j = 0; j < nb_opcode; j++){
-						if (frag->instructions[i].opcode == opcode[j]){
+						if (instruction->opcode == opcode[j]){
 							nb_found_instruction ++;
 							break;
 						}
@@ -137,21 +97,24 @@ float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, ui
 	return result;
 }
 
+/* il faut modifier cette méthode */
 int traceFragment_create_mem_array(struct traceFragment* frag){
-	uint32_t 	nb_read_mem 	= 0;
-	uint32_t 	nb_write_mem 	= 0;
-	int 		result 			= -1;
-	int 		i;
-	int 		j;
+	uint32_t 			nb_read_mem 	= 0;
+	uint32_t 			nb_write_mem 	= 0;
+	int 				result 			= -1;
+	uint32_t 			i;
+	int 				j;
+	struct instruction* instruction;
 
 	if (frag != NULL){
-		for (i = 0; i < frag->nb_instruction; i++){
+		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
+			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
 			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(frag->instructions[i].data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(frag->instructions[i].data[j].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(frag->instructions[i].data[j].type)){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(instruction->data[j].type)){
+					if (INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
 						nb_read_mem ++;
 					}
-					if (INSTRUCTION_DATA_TYPE_IS_WRITE(frag->instructions[i].data[j].type)){
+					if (INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
 						nb_write_mem ++;
 					}
 				}
@@ -189,21 +152,22 @@ int traceFragment_create_mem_array(struct traceFragment* frag){
 		nb_read_mem = 0;
 		nb_write_mem = 0;
 
-		for (i = 0; i < frag->nb_instruction; i++){
+		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
+			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
 			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(frag->instructions[i].data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(frag->instructions[i].data[j].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(frag->instructions[i].data[j].type)){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(instruction->data[j].type)){
+					if (INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
 						frag->read_memory_array[nb_read_mem].order		= i * INSTRUCTION_MAX_NB_DATA + j;
-						frag->read_memory_array[nb_read_mem].value 		= frag->instructions[i].data[j].value;
-						frag->read_memory_array[nb_read_mem].address	= frag->instructions[i].data[j].location.address;
-						frag->read_memory_array[nb_read_mem].size 		= frag->instructions[i].data[j].size;
+						frag->read_memory_array[nb_read_mem].value 		= instruction->data[j].value;
+						frag->read_memory_array[nb_read_mem].address	= instruction->data[j].location.address;
+						frag->read_memory_array[nb_read_mem].size 		= instruction->data[j].size;
 						nb_read_mem ++;
 					}
-					if (INSTRUCTION_DATA_TYPE_IS_WRITE(frag->instructions[i].data[j].type)){
+					if (INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
 						frag->write_memory_array[nb_write_mem].order		= i * INSTRUCTION_MAX_NB_DATA + j;
-						frag->write_memory_array[nb_write_mem].value 		= frag->instructions[i].data[j].value;
-						frag->write_memory_array[nb_write_mem].address		= frag->instructions[i].data[j].location.address;
-						frag->write_memory_array[nb_write_mem].size 		= frag->instructions[i].data[j].size;
+						frag->write_memory_array[nb_write_mem].value 		= instruction->data[j].value;
+						frag->write_memory_array[nb_write_mem].address		= instruction->data[j].location.address;
+						frag->write_memory_array[nb_write_mem].size 		= instruction->data[j].size;
 						nb_write_mem ++;
 					}
 				}
@@ -386,23 +350,20 @@ struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_acces
 
 void traceFragment_delete(struct traceFragment* frag){
 	if (frag != NULL){
-		traceFragment_clean(frag);
-		
+		traceFragment_clean(frag);	
 		free(frag);
 	}
 }
 
 void traceFragment_clean(struct traceFragment* frag){
 	if (frag != NULL){
-		if (frag->instructions != NULL){
-			free(frag->instructions);
-		}
 		if (frag->read_memory_array != NULL){
 			free(frag->read_memory_array);
 		}
 		if (frag->write_memory_array != NULL){
 			free(frag->write_memory_array);
 		}
+		array_clean(&(frag->instruction_array));
 	}
 }
 

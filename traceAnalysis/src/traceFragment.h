@@ -16,9 +16,10 @@ struct memAccess{
 };
 
 struct traceFragment{
-	struct instruction* instructions;
+	struct array 		instruction_array;
+	/*struct instruction* instructions;
 	int 				nb_allocated_instruction;
-	int 				nb_instruction;
+	int 				nb_instruction;*/
 	struct memAccess* 	read_memory_array;
 	struct memAccess* 	write_memory_array;
 	int 				nb_memory_read_access;
@@ -26,10 +27,16 @@ struct traceFragment{
 };
 
 struct traceFragment* codeFragment_create();
-void traceFragment_init(struct traceFragment* frag);
+int32_t traceFragment_init(struct traceFragment* frag);
 
-int traceFragment_add_instruction(struct traceFragment* frag, struct instruction* ins);
-int traceFragment_search_pc(struct traceFragment* frag, struct instruction* ins);
+static inline int32_t traceFragment_add_instruction(struct traceFragment* frag, struct instruction* ins){
+	return array_add(&(frag->instruction_array), ins);
+}
+
+static inline int32_t traceFragment_search_pc(struct traceFragment* frag, struct instruction* ins){
+	return array_search_seq_up(&(frag->instruction_array), 0, array_get_length(&(frag->instruction_array)), ins, (int32_t(*)(void*,void*))instruction_compare_pc);
+}
+
 struct instruction* traceFragment_get_last_instruction(struct traceFragment* frag);
 float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);
 

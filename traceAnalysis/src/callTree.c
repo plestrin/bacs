@@ -13,26 +13,29 @@ void* callTree_create_node(void* first_element){
 
 	node = (struct callTree_node*)malloc(sizeof(struct callTree_node));
 	if (node != NULL){
-		traceFragment_init(&(node->fragment));
+		if (traceFragment_init(&(node->fragment))){
+			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+			free(node);
+			return NULL;
+		}
 
 		if (traceFragment_add_instruction(&(node->fragment), element->ins)){
 			printf("ERROR: in %s, unable to add instruction to code fragment\n", __func__);
 			traceFragment_clean(&(node->fragment));
 			free(node);
-			node = NULL;
+			return NULL;
+		}
+
+		routine = codeMap_search_routine(element->cm, element->ins->pc);
+		if (routine != NULL){
+			node->entry_address = routine->address_start;
+			memcpy(node->name, routine->name, CODEMAP_DEFAULT_NAME_SIZE);
 		}
 		else{
-			routine = codeMap_search_routine(element->cm, element->ins->pc);
-			if (routine != NULL){
-				node->entry_address = routine->address_start;
-				memcpy(node->name, routine->name, CODEMAP_DEFAULT_NAME_SIZE);
-			}
-			else{
-				printf("WARNING: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
-
-				node->entry_address = element->ins->pc;
-				memset(node->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);
-			}
+			printf("WARNING: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
+			
+			node->entry_address = element->ins->pc;
+			memset(node->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);
 		}
 	}
 
