@@ -5,6 +5,7 @@
 #include "loop.h"
 #include "workPercent.h"
 #include "multiColumn.h"
+#include "traceFragment.h"
 
 struct loopIteration{
 	uint32_t offset;
@@ -317,6 +318,42 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	}
 
 	multiColumnPrinter_delete(printer);
+}
+
+int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array){
+	uint32_t 				i;
+	uint32_t 				j;
+	int32_t 				result = -1;
+	struct traceFragment 	fragment;
+
+	if (engine->loops != NULL){
+		for (i = 0; i < engine->nb_loop; i++){
+			if (traceFragment_init(&fragment)){
+				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+				return result;
+			}
+
+			for (j = 0; j < engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue; j++){
+				/* We can do something way faster here - read multiple - write multiple - copy multiple */
+				if (traceFragment_add_instruction(&fragment, (struct instruction*)array_get(&(engine->element_array), j + engine->loops[i].offset)) < 0){
+					printf("ERROR: in %s, unable to add instruction to traceFragment\n", __func__);
+				}
+			}
+
+			if (array_add(array, &fragment) < 0){
+				printf("ERROR: in %s, unable to add traceFragment %u to array\n", __func__, i);
+				traceFragment_clean(&fragment);
+				return result;
+			}
+		}
+
+		result = 0;
+	}
+	else{
+		printf("ERROR: in %s, loopEngine does not contain loops- cannot export\n", __func__);
+	}
+
+	return result;
 }
 
 void loopEngine_clean(struct loopEngine* engine){

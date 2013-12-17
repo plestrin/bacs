@@ -221,7 +221,7 @@ void trace_callTree_export(struct trace* trace){
 				break;
 			}
 
-			if (array_add(&(trace->frag_array), &fragment)){
+			if (array_add(&(trace->frag_array), &fragment) < 0){
 				printf("ERROR: in %s, unable to add fragment to frag_array\n", __func__);
 				break;
 			}
@@ -283,7 +283,9 @@ void trace_loop_create(struct trace* trace){
 
 void trace_loop_remove_redundant(struct trace* trace){
 	if (trace->loop_engine != NULL){
-		loopEngine_remove_redundant_loop(trace->loop_engine);
+		if (loopEngine_remove_redundant_loop(trace->loop_engine)){
+			printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
+		}
 	}
 	else{
 		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
@@ -292,7 +294,9 @@ void trace_loop_remove_redundant(struct trace* trace){
 
 void trace_loop_pack_epilogue(struct trace* trace){
 	if (trace->loop_engine != NULL){
-		loopEngine_pack_epilogue(trace->loop_engine);
+		if (loopEngine_pack_epilogue(trace->loop_engine)){
+			printf("ERROR: in %s, unable to pack epilogue\n", __func__);
+		}
 	}
 	else{
 		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
@@ -302,6 +306,17 @@ void trace_loop_pack_epilogue(struct trace* trace){
 void trace_loop_print(struct trace* trace){
 	if (trace->loop_engine != NULL){
 		loopEngine_print_loop(trace->loop_engine);
+	}
+	else{
+		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
+	}
+}
+
+void trace_loop_export(struct trace* trace){
+	if (trace->loop_engine != NULL){
+		if (loopEngine_export_traceFragment(trace->loop_engine, &(trace->frag_array))){
+			printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
+		}
 	}
 	else{
 		printf("ERROR: in %s, loopEngine is NULL\n", __func__);

@@ -46,7 +46,6 @@ void* array_get(struct array* array, uint32_t index);
 int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_clone(struct array* array_src, struct array* array_dst);
-int32_t array_add_array(struct array* array_src, struct array* array_dst);
 void array_empty(struct array* array);
 void array_clean(struct array* array);
 void array_delete(struct array* array);

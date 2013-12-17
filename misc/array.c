@@ -319,16 +319,12 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 	return result;
 }
 
-int32_t array_add_array(struct array* array_src, struct array* array_dst){
-	/* a completer */
-	return 0;
-}
-
 void array_empty(struct array* array){
 	uint32_t i;
 	struct arrayPage* page;
 
 	array->nb_filled_byte = 0;
+	array->nb_element = 0;
 
 	for (i = 0; i < _array_get_length(array->pages); i++){
 		page = (struct arrayPage*)_array_get(array->pages, i);

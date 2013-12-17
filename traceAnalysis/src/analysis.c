@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callTree", "Create the routine callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print dot callTree", "Print the callTree in the DOT format to a file. Specify file name as argument", INPUTPARSER_CMD_INTERACTIVE, trace, trace_callTree_print_dot)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print callTree opcode percent", "For each traceFragment in the callTree, print its special instruction percent", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_print_opcode_percent) /* modify later */
-	ADD_CMD_TO_INPUT_PARSER(parser, "export callTree", "Export the traceFragment(s) of the callTree to traceFragement array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export callTree", "Export the traceFragment(s) of the callTree to the traceFragement array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete callTree", "Delete a previously create callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_delete)
 
 	/* loop specific commands */
@@ -61,6 +61,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", "Remove the redundant loops from the loops list", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_remove_redundant)
 	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", "Pack loop epilogue to reduce the number of loops (must be run after \"remove redundant loop\")", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_pack_epilogue)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", "Print every loops contained in the loopEngine", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", "Export loop(s) to traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", "Delete a previously created loopEngine (loop)", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_delete)
 
 	/* traceFragement specific commands */
