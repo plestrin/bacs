@@ -38,11 +38,41 @@ struct trace* trace_create(const char* dir_name){
 		printf("WARNING: in %s, continue without code map information\n", __func__);
 	}
 
+	if (array_init(&(trace->frag_array), sizeof(struct traceFragment))){
+		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
+		ioChecker_delete(trace->checker);
+		free(trace);
+		return NULL;
+	}
+
 	trace->simple_trace_stat = NULL;
 	trace->call_tree = NULL;
 	trace->loop_engine = NULL;
 
 	return trace;
+}
+
+void trace_delete(struct trace* trace){
+	if (trace != NULL){
+		trace_frag_clean(trace);
+		array_clean(&(trace->frag_array));
+
+		if (trace->loop_engine != NULL){
+			loopEngine_delete(trace->loop_engine);
+		}
+		if (trace->simple_trace_stat != NULL){
+			simpleTraceStat_delete(trace->simple_trace_stat);
+		}
+		if (trace->call_tree != NULL){
+			graph_delete(trace->call_tree);
+		}
+
+		traceReaderJSON_clean(&(trace->ins_reader.json));
+		codeMap_delete(trace->code_map);
+		ioChecker_delete(trace->checker);
+
+		free(trace);
+	}
 }
 
 void trace_instruction_print(struct trace* trace){
@@ -112,6 +142,10 @@ void trace_simpleTraceStat_delete(struct trace* trace){
 	}
 }
 
+/* ===================================================================== */
+/* Calltree functions						                             */
+/* ===================================================================== */
+
 void trace_callTree_create(struct trace* trace){
 	struct instruction*			ins;
 	struct callTree_element		element;
@@ -173,46 +207,29 @@ void trace_callTree_print_opcode_percent(struct trace* trace){
 	}
 }
 
-/* attention si on fait une méthode iterate elle peut être intéressante ici */
-void trace_callTree_bruteForce(struct trace* trace){
+void trace_callTree_export(struct trace* trace){
 	int32_t 				i;
 	struct callTree_node* 	node;
-	struct array* 			read_mem_arg;
-	struct array* 			write_mem_arg;
+	struct traceFragment 	fragment;
 
 	if (trace->call_tree != NULL){
 		for (i = 0; i < trace->call_tree->nb_node; i++){
 			node = (struct callTree_node*)trace->call_tree->nodes[i].data;
 
-			if (traceFragment_create_mem_array(&(node->fragment))){
-				printf("ERROR: in %s, unable to create mem array for node %d\n", __func__, i);
+			if (traceFragment_clone(&(node->fragment), &fragment)){
+				printf("ERROR: in %s, unable to clone traceFragment\n", __func__);
 				break;
 			}
 
-			if ((node->fragment.nb_memory_read_access > 0) && (node->fragment.nb_memory_write_access > 0)){
-				#ifdef VERBOSE
-				printf("Searching routine %d, name \"%s\" ...\n", i, node->name);
-				#endif
-
-				read_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
-				write_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
-
-				if (read_mem_arg != NULL && write_mem_arg != NULL){
-					ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
-				}
-				else{
-					printf("ERROR: in %s, read_mem_arg or write_mem_arg array is NULL\n", __func__);
-				}
-				
-				argBuffer_delete_array(read_mem_arg);
-				argBuffer_delete_array(write_mem_arg);
+			if (array_add(&(trace->frag_array), &fragment)){
+				printf("ERROR: in %s, unable to add fragment to frag_array\n", __func__);
+				break;
 			}
-			#ifdef VERBOSE
-			else{
-				printf("Skipping  routine %d, name \"%s\" : no read and write mem access\n", i, node->name);
-			}
-			#endif
 		}
+
+		#ifdef VERBOSE
+		printf("CallTree: %d/%d traceFragment(s) have been exported\n", i, trace->call_tree->nb_node);
+		#endif
 	}
 	else{
 		printf("ERROR: in %s, callTree is NULL\n", __func__);
@@ -228,6 +245,10 @@ void trace_callTree_delete(struct trace* trace){
 		printf("ERROR: in %s, callTree is NULL\n", __func__);
 	}
 }
+
+/* ===================================================================== */
+/* Loop functions						                                 */
+/* ===================================================================== */
 
 void trace_loop_create(struct trace* trace){
 	struct instruction* ins;
@@ -297,76 +318,65 @@ void trace_loop_delete(struct trace* trace){
 	}
 }
 
-void trace_delete(struct trace* trace){
-	if (trace != NULL){
-		if (trace->loop_engine != NULL){
-			loopEngine_delete(trace->loop_engine);
-		}
-		if (trace->simple_trace_stat != NULL){
-			simpleTraceStat_delete(trace->simple_trace_stat);
-		}
-		if (trace->call_tree != NULL){
-			graph_delete(trace->call_tree);
-		}
+/* ===================================================================== */
+/* frag functions						                                 */
+/* ===================================================================== */
 
-		traceReaderJSON_clean(&(trace->ins_reader.json));
-		codeMap_delete(trace->code_map);
-		ioChecker_delete(trace->checker);
+void trace_frag_clean(struct trace* trace){
+	uint32_t 				i;
+	struct traceFragment* 	fragment;
 
-		free(trace);
+	for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+		fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+		traceFragment_clean(fragment);
 	}
+	array_empty(&(trace->frag_array));
 }
 
-/* ===================================================================== */
-/* Special debug stuff - don't touch	                                 */
-/* ===================================================================== */
+/* on peut parser un index de fragment */
+void trace_frag_print(struct trace* trace){
+	/* upgrade later */
+	printf("TraceFragment array contains %u element(s)\n", array_get_length(&(trace->frag_array)));
+}
 
-
-void trace_callTree_handmade_test(struct trace* trace){
-	struct callTree_node* 	node;
+/* on peut parser un index de fragment */
+void trace_frag_search(struct trace* trace){
+	uint32_t 				i;
+	struct traceFragment* 	fragment;
 	struct array* 			read_mem_arg;
 	struct array* 			write_mem_arg;
-	uint32_t 				i;
-	struct argBuffer* 		arg;
-		
-	if (trace->call_tree != NULL){
-		node = (struct callTree_node*)trace->call_tree->nodes[31].data;
 
-		/* Make sur to select the crypto  node */
-		printf("Node %d routine name: %s\n", 21, node->name);
-
-		traceFragment_create_mem_array(&(node->fragment));
-		/* traceFragment_remove_read_after_write(&(node->fragment)); */
-
-		/* traceFragment_print_mem_array(node->fragment.write_memory_array, node->fragment.nb_memory_write_access); */
-
-		printf("Nb mem read access:  %d\n", node->fragment.nb_memory_read_access);
-		printf("Nb mem write access: %d\n", node->fragment.nb_memory_write_access);
-		
-		read_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.read_memory_array, node->fragment.nb_memory_read_access);
-		write_mem_arg = traceFragment_extract_mem_arg_adjacent(node->fragment.write_memory_array, node->fragment.nb_memory_write_access);
-
-		printf("Nb read mem arg: %u\n", array_get_length(read_mem_arg));
-
-		for (i = 0; i < array_get_length(read_mem_arg); i++){
-			arg = (struct argBuffer*)array_get(read_mem_arg, i);
-			argBuffer_print_raw(arg);
+	for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+		fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+		if (traceFragment_create_mem_array(fragment)){
+			printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, i);
+			break;
 		}
 
-		printf("Nb write mem arg: %u\n", array_get_length(write_mem_arg));
+		/* traceFragment_remove_read_after_write(fragment); */
 
-		for (i = 0; i < array_get_length(write_mem_arg); i++){
-			arg = (struct argBuffer*)array_get(write_mem_arg, i);
-			argBuffer_print_raw(arg);
+		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
+			#ifdef VERBOSE
+			printf("Searching fragment %u/%u ...\n", i, array_get_length(&(trace->frag_array)));
+			#endif
+
+			read_mem_arg = traceFragment_extract_mem_arg_adjacent(fragment->read_memory_array, fragment->nb_memory_read_access);
+			write_mem_arg = traceFragment_extract_mem_arg_adjacent(fragment->write_memory_array, fragment->nb_memory_write_access);
+
+			if (read_mem_arg != NULL && write_mem_arg != NULL){
+				ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
+			}
+			else{
+				printf("ERROR: in %s, read_mem_arg or write_mem_arg array is NULL\n", __func__);
+			}
+				
+			argBuffer_delete_array(read_mem_arg);
+			argBuffer_delete_array(write_mem_arg);
 		}
-
-		/* Check submit */
-		ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
-
-		argBuffer_delete_array(read_mem_arg);
-		argBuffer_delete_array(write_mem_arg);
-	}
-	else{
-		printf("ERROR: in %s, callTree is NULL\n", __func__);
+		#ifdef VERBOSE
+		else{
+			printf("Skipping  fragment %u/%u: no read and write mem access\n", i, array_get_length(&(trace->frag_array)));
+		}
+		#endif
 	}
 }

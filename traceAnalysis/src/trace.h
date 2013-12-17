@@ -1,6 +1,7 @@
 #ifndef TRACE_H
 #define TRACE_H
 
+#include "array.h"
 #include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
@@ -26,12 +27,14 @@ struct trace{
 	struct simpleTraceStat* 	simple_trace_stat;
 	struct graph* 				call_tree;
 	struct loopEngine*			loop_engine;
+	struct array				frag_array;
 };
 
 struct trace* trace_create(const char* dir_name);
 
 void trace_instruction_print(struct trace* trace);
 
+/*Attention il faudrait pouvoir utliser cette stat non plus sur la trace mais sur un traceFragment */
 void trace_simpleTraceStat_create(struct trace* trace);
 void trace_simpleTraceStat_print(struct trace* trace);
 void trace_simpleTraceStat_delete(struct trace* trace);
@@ -41,9 +44,8 @@ void trace_simpleTraceStat_delete(struct trace* trace);
 
 void trace_callTree_create(struct trace* trace);
 void trace_callTree_print_dot(struct trace* trace, char* file_name);
-void trace_callTree_print_opcode_percent(struct trace* trace); 	/* il faudrait faire un iterateur sur les tracefragments contenus dans le callTree */
-void trace_callTree_bruteForce(struct trace* trace); 			/* idem */
-void trace_callTree_handmade_test(struct trace* trace); 		/* This is a debuging routine */
+void trace_callTree_print_opcode_percent(struct trace* trace); /* a modifier */
+void trace_callTree_export(struct trace* trace);
 void trace_callTree_delete(struct trace* trace);
 
 void trace_loop_create(struct trace* trace);
@@ -51,6 +53,10 @@ void trace_loop_remove_redundant(struct trace* trace);
 void trace_loop_pack_epilogue(struct trace* trace);
 void trace_loop_print(struct trace* trace);
 void trace_loop_delete(struct trace* trace);
+
+void trace_frag_clean(struct trace* trace);
+void trace_frag_print(struct trace* trace);
+void trace_frag_search(struct trace* trace);
 
 void trace_delete(struct trace* trace);
 

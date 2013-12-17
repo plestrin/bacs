@@ -56,6 +56,27 @@ struct instruction* traceFragment_get_last_instruction(struct traceFragment* fra
 	return instruction;
 }
 
+int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment* frag_dst){
+	if (array_clone(&(frag_src->instruction_array), &(frag_dst->instruction_array))){
+		printf("ERROR: in %s, unable to clone array\n", __func__);
+		return -1;
+	}
+	
+	if (frag_src->read_memory_array != NULL){
+		printf("WARNING: in %s, this method does not copy the read_memory_array buffer\n", __func__);
+	}
+	if (frag_src->write_memory_array != NULL){
+		printf("WARNING: in %s, this method does not copy the write_memory_array buffer\n", __func__);
+	}
+
+	frag_dst->read_memory_array 		= NULL;
+	frag_dst->write_memory_array 		= NULL;
+	frag_dst->nb_memory_read_access 	= frag_src->nb_memory_read_access;
+	frag_dst->nb_memory_write_access 	= frag_src->nb_memory_write_access;
+
+	return 0;
+}
+
 float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode){
 	float 				result = 0;
 	uint32_t 			i;
@@ -97,13 +118,12 @@ float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, ui
 	return result;
 }
 
-/* il faut modifier cette méthode */
-int traceFragment_create_mem_array(struct traceFragment* frag){
+int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 	uint32_t 			nb_read_mem 	= 0;
 	uint32_t 			nb_write_mem 	= 0;
-	int 				result 			= -1;
+	int32_t 			result 			= -1;
 	uint32_t 			i;
-	int 				j;
+	uint32_t 			j;
 	struct instruction* instruction;
 
 	if (frag != NULL){
@@ -220,10 +240,10 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 	}
 }
 
-int traceFragment_remove_read_after_write(struct traceFragment* frag){
+int32_t traceFragment_remove_read_after_write(struct traceFragment* frag){
 	int 				result = -1;
-	int 				i;
-	int 				writing_pointer = 0;
+	uint32_t 			i;
+	uint32_t 			writing_pointer = 0;
 	struct memAccess* 	write_access;
 	struct memAccess* 	new_array;
 
@@ -271,6 +291,7 @@ int traceFragment_remove_read_after_write(struct traceFragment* frag){
 
 }
 
+/* this routine must be adapted to take into account different heristics like: opcode value end access size */
 struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
 	int 				i;
 	int 				j;
