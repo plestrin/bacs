@@ -16,6 +16,8 @@ struct _array{
 struct _array* _array_create(uint32_t element_size);
 void _array_init(struct _array* _array, uint32_t element_size);
 int32_t _array_add(struct _array* _array, void* element);
+int32_t _array_clone(struct _array* _array_src, struct _array* _array_dst);
+void _array_empty(struct _array* _array);
 void _array_clean(struct _array* _array);
 void _array_delete(struct _array* _array);
 
@@ -43,6 +45,9 @@ int32_t array_add(struct array* array, void* element);
 void* array_get(struct array* array, uint32_t index);
 int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
+int32_t array_clone(struct array* array_src, struct array* array_dst);
+int32_t array_add_array(struct array* array_src, struct array* array_dst);
+void array_empty(struct array* array);
 void array_clean(struct array* array);
 void array_delete(struct array* array);
 

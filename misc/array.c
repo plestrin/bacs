@@ -62,6 +62,36 @@ int32_t _array_add(struct _array* _array, void* element){
 	return result;
 }
 
+int32_t _array_clone(struct _array* _array_src, struct _array* _array_dst){
+	if (_array_src->nb_allocated_byte > 0){
+		_array_dst->buffer = (char*)malloc(_array_src->nb_allocated_byte);
+		if (_array_dst->buffer == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			return -1;
+		}
+		memcpy(_array_dst->buffer, _array_src->buffer, _array_src->nb_filled_byte);
+	}
+	else{
+		_array_dst->buffer = NULL;
+	}
+
+	_array_dst->nb_allocated_byte 	= _array_src->nb_allocated_byte;
+	_array_dst->nb_filled_byte		= _array_src->nb_filled_byte;
+	_array_dst->element_size 		= _array_src->element_size;
+
+	return 0;
+}
+
+void _array_empty(struct _array* _array){
+	_array->nb_allocated_byte 	= 0;
+	_array->nb_filled_byte 		= 0;
+	
+	if (_array->buffer != NULL){
+		free(_array->buffer);
+		_array->buffer = NULL;
+	}
+}
+
 void _array_clean(struct _array* _array){
 	if (_array != NULL){
 		if (_array->buffer != NULL){
@@ -246,6 +276,66 @@ int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t 
 	}
 
 	return result;
+}
+
+int32_t array_clone(struct array* array_src, struct array* array_dst){
+	uint32_t 			i;
+	int32_t 			result = -1;
+	struct arrayPage* 	page_src;
+	struct arrayPage* 	page_dst;
+
+	array_dst->buffer = (char*)malloc(array_src->nb_allocated_byte);
+	if (array_dst->buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return result;
+	}
+	memcpy(array_dst->buffer, array_src->buffer, array_src->nb_filled_byte);
+
+	array_dst->nb_allocated_byte 	= array_src->nb_allocated_byte;
+	array_dst->nb_filled_byte 		= array_src->nb_filled_byte;
+	array_dst->nb_element 			= array_src->nb_element;
+	array_dst->element_size 		= array_src->element_size;
+
+	if (_array_clone(&(array_src->pages), &(array_dst->pages))){
+		printf("ERROR: in %s, unable to clone _array pages\n", __func__);
+		free(array_dst->buffer);
+		return result;
+	}
+
+	for (i = 0; i < _array_get_length(array_dst->pages); i++){
+		page_src = (struct arrayPage*)_array_get(array_src->pages, i);
+		page_dst = (struct arrayPage*)_array_get(array_dst->pages, i);
+
+		page_dst->buffer = (char*)malloc(page_src->nb_allocated_byte);
+		if (page_dst->buffer == NULL){
+			printf("ERROR: in %s, unable to allocate memory for page %u\n", __func__, i);
+			return result;
+		}
+		memcpy(page_dst->buffer, page_src->buffer, page_src->nb_filled_byte);
+	}
+
+	result = 0;
+
+	return result;
+}
+
+int32_t array_add_array(struct array* array_src, struct array* array_dst){
+	/* a completer */
+	return 0;
+}
+
+void array_empty(struct array* array){
+	uint32_t i;
+	struct arrayPage* page;
+
+	array->nb_filled_byte = 0;
+
+	for (i = 0; i < _array_get_length(array->pages); i++){
+		page = (struct arrayPage*)_array_get(array->pages, i);
+		free(page->buffer);
+	}
+
+	_array_empty(&(array->pages));
 }
 
 void array_clean(struct array* array){
