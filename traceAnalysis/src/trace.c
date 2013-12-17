@@ -6,6 +6,7 @@
 #include "instruction.h"
 #include "graphPrintDot.h"
 #include "argBuffer.h"
+#include "simpleTraceStat.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -45,7 +46,6 @@ struct trace* trace_create(const char* dir_name){
 		return NULL;
 	}
 
-	trace->simple_trace_stat = NULL;
 	trace->call_tree = NULL;
 	trace->loop_engine = NULL;
 
@@ -59,9 +59,6 @@ void trace_delete(struct trace* trace){
 
 		if (trace->loop_engine != NULL){
 			loopEngine_delete(trace->loop_engine);
-		}
-		if (trace->simple_trace_stat != NULL){
-			simpleTraceStat_delete(trace->simple_trace_stat);
 		}
 		if (trace->call_tree != NULL){
 			graph_delete(trace->call_tree);
@@ -88,57 +85,6 @@ void trace_instruction_print(struct trace* trace){
 	}
 	else{
 		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
-	}
-}
-
-void trace_simpleTraceStat_create(struct trace* trace){
-	struct instruction* 	ins;
-	
-	if (trace->simple_trace_stat != NULL){
-		simpleTraceStat_delete(trace->simple_trace_stat);
-		#ifdef VERBOSE
-		printf("Deleting previous simpleTraceStat\n");
-		#endif
-	}
-	trace->simple_trace_stat = simpleTraceStat_create();
-	if (trace->simple_trace_stat != NULL){
-		if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
-			do{
-				ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
-				if (ins != NULL){
-					if (simpleTraceStat_add_instruction(trace->simple_trace_stat, ins)){
-						printf("ERROR: in %s, unable to add instruction to simpleTraceStat\n", __func__);
-					}
-				}
-			} while (ins != NULL);
-		}
-		else{
-			printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
-			simpleTraceStat_delete(trace->simple_trace_stat);
-			trace->simple_trace_stat = NULL;
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to create simpleTraceStat\n", __func__);
-	}
-}
-
-void trace_simpleTraceStat_print(struct trace* trace){
-	if (trace->simple_trace_stat != NULL){
-		simpleTraceStat_print(trace->simple_trace_stat);
-	}
-	else{
-		printf("ERROR: in %s, simpleTaceStat is not created\n", __func__);
-	}
-}
-
-void trace_simpleTraceStat_delete(struct trace* trace){
-	if (trace->simple_trace_stat != NULL){
-		simpleTraceStat_delete(trace->simple_trace_stat);
-		trace->simple_trace_stat = NULL;
-	}
-	else{
-		printf("ERROR: in %s, codeMap is NULL\n", __func__);
 	}
 }
 
@@ -278,7 +224,9 @@ void trace_loop_create(struct trace* trace){
 		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
 	}
 
-	loopEngine_process(trace->loop_engine);
+	if (loopEngine_process(trace->loop_engine)){
+		printf("ERROR: in %s, unable to process loopEngine\n", __func__);
+	}
 }
 
 void trace_loop_remove_redundant(struct trace* trace){
@@ -348,10 +296,41 @@ void trace_frag_clean(struct trace* trace){
 	array_empty(&(trace->frag_array));
 }
 
-/* on peut parser un index de fragment */
-void trace_frag_print(struct trace* trace){
-	/* upgrade later */
-	printf("TraceFragment array contains %u element(s)\n", array_get_length(&(trace->frag_array)));
+void trace_frag_print_stat(struct trace* trace, char* arg){
+	uint32_t 					i;
+	struct simpleTraceStat 		stat;
+	struct multiColumnPrinter* 	printer = NULL;
+	uint32_t 					index;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->frag_array))){
+			simpleTraceStat_init(&stat);
+			simpleTraceStat_process(&stat, (struct traceFragment*)array_get(&(trace->frag_array), index));
+			simpleTraceStat_print(printer, &stat);
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+		}
+	}
+	else{
+		printer = simpleTraceStat_init_MultiColumnPrinter();
+		if (printer != NULL){
+			multiColumnPrinter_print_header(printer);
+
+			for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+				simpleTraceStat_init(&stat);
+				simpleTraceStat_process(&stat, (struct traceFragment*)array_get(&(trace->frag_array), i));
+				simpleTraceStat_print(printer, &stat);
+			}
+
+			multiColumnPrinter_delete(printer);
+		}
+		else{
+			printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
+		}
+	}
 }
 
 /* on peut parser un index de fragment */

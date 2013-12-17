@@ -7,7 +7,6 @@
 #include "cmReaderJSON.h"
 #include "callTree.h"
 #include "graph.h"
-#include "simpleTraceStat.h"
 #include "ioChecker.h"
 #include "loop.h"
 
@@ -24,7 +23,6 @@ struct trace{
 
 	struct ioChecker*			checker;
 	struct codeMap* 			code_map;
-	struct simpleTraceStat* 	simple_trace_stat;
 	struct graph* 				call_tree;
 	struct loopEngine*			loop_engine;
 	struct array				frag_array;
@@ -34,17 +32,13 @@ struct trace* trace_create(const char* dir_name);
 
 void trace_instruction_print(struct trace* trace);
 
-/*Attention il faudrait pouvoir utliser cette stat non plus sur la trace mais sur un traceFragment */
-void trace_simpleTraceStat_create(struct trace* trace);
-void trace_simpleTraceStat_print(struct trace* trace);
-void trace_simpleTraceStat_delete(struct trace* trace);
-
-/* concernant le codefragment il faudrait faire un object général indépendant de la méthode de génération */
-/* ce qui permettrait de resortir le io checker de la trace ce qui n'a pas de raison d'être d'un point de vue structurel */
+/* faire un object indépendant pour stocker les arguments candidats- à la manière de frag le but test double
+ * - d'une part permettre plusieurs méthode de génération d'arguments
+ * - d'autre part vérifier les résultats issus de cette phase à l'aide de méthodes print dédiées */
 
 void trace_callTree_create(struct trace* trace);
 void trace_callTree_print_dot(struct trace* trace, char* file_name);
-void trace_callTree_print_opcode_percent(struct trace* trace); /* a modifier */
+void trace_callTree_print_opcode_percent(struct trace* trace); /* déplacer cette méthode sur les traceFragments */
 void trace_callTree_export(struct trace* trace);
 void trace_callTree_delete(struct trace* trace);
 
@@ -56,7 +50,7 @@ void trace_loop_export(struct trace* trace);
 void trace_loop_delete(struct trace* trace);
 
 void trace_frag_clean(struct trace* trace);
-void trace_frag_print(struct trace* trace);
+void trace_frag_print_stat(struct trace* trace, char* arg);
 void trace_frag_search(struct trace* trace);
 
 void trace_delete(struct trace* trace);

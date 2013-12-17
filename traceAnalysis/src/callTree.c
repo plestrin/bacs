@@ -151,7 +151,7 @@ void callTree_print_opcode_percent(struct graph* callTree){
 			multiColumnPrinter_set_column_size(printer, 1, 24);
 			multiColumnPrinter_set_column_size(printer, 2, 16);
 
-			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT);
+			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
 			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
 
 			multiColumnPrinter_set_title(printer, 0, (char*)"");

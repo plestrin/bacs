@@ -39,6 +39,8 @@ struct array{
 	uint32_t 		element_size;
 };
 
+/* Dans le loop exporter j'aurai besoin d'une méthode qui permette de copier rapidement des segments d'un tableau à l'autre */
+
 struct array* array_create(uint32_t element_size);
 int32_t array_init(struct array* array, uint32_t element_size);
 int32_t array_add(struct array* array, void* element);

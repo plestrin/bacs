@@ -297,11 +297,11 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_set_column_size(printer, 0, 8);
 	multiColumnPrinter_set_column_size(printer, 1, 6);
 
-	multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT);
-	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT);
-	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT);
-	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT);
-	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT);
+	multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
+	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
+	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
+	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
+	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
 
 	multiColumnPrinter_set_title(printer, 0, (char*)"");
 	multiColumnPrinter_set_title(printer, 1, (char*)"Nb it");

@@ -139,8 +139,9 @@ void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* pr
 
 void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 	char* 		value_str;
-	int32_t 	value_int;
-	uint32_t 	value_uint;
+	int32_t 	value_int32;
+	uint32_t 	value_uint32;
+	uint64_t 	value_uint64;
 	double		value_dbl;
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	char 		raw_value[MULTICOLUMN_STRING_MAX_SIZE];
@@ -156,22 +157,29 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 				value_str = (char*)va_arg(vl, char*);
 				break;
 			}
-			case MULTICOLUMN_TYPE_INT 		: {
+			case MULTICOLUMN_TYPE_INT32 	: {
 				value_str = raw_value;
-				value_int = (int32_t)va_arg(vl, int32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int); 
+				value_int32 = (int32_t)va_arg(vl, int32_t);
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int32); 
 				break;
 			}
-			case MULTICOLUMN_TYPE_UINT 		: {
+			case MULTICOLUMN_TYPE_UINT32 	: {
 				value_str = raw_value;
-				value_uint = (uint32_t)va_arg(vl, uint32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%u", value_uint);
+				value_uint32 = (uint32_t)va_arg(vl, uint32_t);
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%u", value_uint32);
 				break;
 			}
 			case MULTICOLUMN_TYPE_DOUBLE 	: {
 				value_str = raw_value;
 				value_dbl = (double)va_arg(vl, double);
 				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%f", value_dbl);
+				break;
+			}
+			case MULTICOLUMN_TYPE_HEX_64	: {
+				value_str = raw_value;
+				value_uint64 = (uint64_t)va_arg(vl, uint64_t);
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0X%llx", value_uint64);
 				break;
 			}
 			default 						: {

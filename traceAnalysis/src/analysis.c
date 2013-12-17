@@ -43,12 +43,6 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_instruction_print)
-
-	/* simpleTraceStat specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create simpleTraceStat", "Create a simpleTraceStat (holds synthetic informations about instructions in the trace)", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_simpleTraceStat_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print simpleTraceStat", "Print a previously created simpleTraceStat", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_simpleTraceStat_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete simpleTraceStat", "Delete a previously created simpleTraceStat", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_simpleTraceStat_delete)
-
 	/* callTree specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callTree", "Create the routine callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print dot callTree", "Print the callTree in the DOT format to a file. Specify file name as argument", INPUTPARSER_CMD_INTERACTIVE, trace, trace_callTree_print_dot)
@@ -66,7 +60,7 @@ int main(int argc, char** argv){
 
 	/* traceFragement specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", "Clean the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_clean)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", "Print the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_print) /* rendre interactive (ça peut être cool) */
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", "Print simpleTraceStat about the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_stat)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search frag", "Search every element in the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_search) /* attention il sera peut-être intéressant de séparer le génération des arguemnst de la recherche */
 
 

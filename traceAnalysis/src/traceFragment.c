@@ -204,14 +204,14 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 	struct multiColumnPrinter* 	printer;
 	int 						i;
 	char 						value_str[20];
-	char 						addr_str[20];
 
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 3, 4);
 
-		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT);
-		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT);
+		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_HEX_64);
+		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
 
 		multiColumnPrinter_set_title(printer, 0, (char*)"ORDER");
 		multiColumnPrinter_set_title(printer, 1, (char*)"VALUE");
@@ -227,10 +227,8 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 			case 4 	: {snprintf(value_str, 20, "%08x", mem_access[i].value & 0xffffffff); break;}
 			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
 			}
-			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-			snprintf(addr_str, 20, "%llx", mem_access[i].address);
 
-			multiColumnPrinter_print(printer, mem_access[i].order, value_str, addr_str, mem_access[i].size, NULL);
+			multiColumnPrinter_print(printer, mem_access[i].order, value_str, mem_access[i].address, mem_access[i].size, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);
