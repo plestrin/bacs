@@ -26,6 +26,7 @@ struct trace{
 	struct graph* 				call_tree;
 	struct loopEngine*			loop_engine;
 	struct array				frag_array;
+	struct array 				arg_array;
 };
 
 struct trace* trace_create(const char* dir_name);
@@ -51,7 +52,11 @@ void trace_loop_delete(struct trace* trace);
 
 void trace_frag_clean(struct trace* trace);
 void trace_frag_print_stat(struct trace* trace, char* arg);
-void trace_frag_search(struct trace* trace);
+void trace_frag_extract_arg(struct trace* trace, char* arg);
+
+void trace_arg_clean(struct trace* trace);
+void trace_arg_print(struct trace* trace);
+void trace_arg_search(struct trace* trace, char* arg);
 
 void trace_delete(struct trace* trace);
 

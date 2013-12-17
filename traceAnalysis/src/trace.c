@@ -46,6 +46,15 @@ struct trace* trace_create(const char* dir_name){
 		return NULL;
 	}
 
+	if (array_init(&(trace->arg_array), sizeof(struct argument))){
+		printf("ERROR: in %s, unable to init argument array\n", __func__);
+		array_clean(&(trace->frag_array));
+		ioChecker_delete(trace->checker);
+		free(trace);
+		return NULL;
+
+	}
+
 	trace->call_tree = NULL;
 	trace->loop_engine = NULL;
 
@@ -54,6 +63,9 @@ struct trace* trace_create(const char* dir_name){
 
 void trace_delete(struct trace* trace){
 	if (trace != NULL){
+		trace_arg_clean(trace);
+		array_clean(&(trace->arg_array));
+
 		trace_frag_clean(trace);
 		array_clean(&(trace->frag_array));
 
@@ -333,14 +345,31 @@ void trace_frag_print_stat(struct trace* trace, char* arg){
 	}
 }
 
-/* on peut parser un index de fragment */
-void trace_frag_search(struct trace* trace){
+void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t 				i;
 	struct traceFragment* 	fragment;
-	struct array* 			read_mem_arg;
-	struct array* 			write_mem_arg;
+	struct argument 		argument;
+	uint32_t 				start;
+	uint32_t				stop;
+	uint32_t 				index;
 
-	for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+	start = 0;
+	stop = array_get_length(&(trace->frag_array));
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+			return;
+		}
+	}
+
+	for (i = start; i < stop; i++){
 		fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
 		if (traceFragment_create_mem_array(fragment)){
 			printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, i);
@@ -350,27 +379,76 @@ void trace_frag_search(struct trace* trace){
 		/* traceFragment_remove_read_after_write(fragment); */
 
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
-			#ifdef VERBOSE
-			printf("Searching fragment %u/%u ...\n", i, array_get_length(&(trace->frag_array)));
-			#endif
+			argument.input = traceFragment_extract_mem_arg_adjacent(fragment->read_memory_array, fragment->nb_memory_read_access);
+			argument.output = traceFragment_extract_mem_arg_adjacent(fragment->write_memory_array, fragment->nb_memory_write_access);
 
-			read_mem_arg = traceFragment_extract_mem_arg_adjacent(fragment->read_memory_array, fragment->nb_memory_read_access);
-			write_mem_arg = traceFragment_extract_mem_arg_adjacent(fragment->write_memory_array, fragment->nb_memory_write_access);
-
-			if (read_mem_arg != NULL && write_mem_arg != NULL){
-				ioChecker_submit_arguments(trace->checker, read_mem_arg, write_mem_arg);
+			if (argument.input != NULL && argument.output != NULL){
+				if (array_add(&(trace->arg_array), &argument) < 0){
+					printf("ERROR: in %s, unable to add arguement to arg array\n", __func__);
+				}
 			}
 			else{
 				printf("ERROR: in %s, read_mem_arg or write_mem_arg array is NULL\n", __func__);
 			}
-				
-			argBuffer_delete_array(read_mem_arg);
-			argBuffer_delete_array(write_mem_arg);
 		}
 		#ifdef VERBOSE
 		else{
-			printf("Skipping  fragment %u/%u: no read and write mem access\n", i, array_get_length(&(trace->frag_array)));
+			printf("Skipping fragment %u/%u: no read and write mem access\n", i, array_get_length(&(trace->frag_array)));
 		}
 		#endif
+	}
+}
+
+/* ===================================================================== */
+/* arg functions						                                 */
+/* ===================================================================== */
+
+void trace_arg_clean(struct trace* trace){
+	uint32_t 				i;
+	struct argument* 		argument;
+
+	for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+		argument = (struct argument*)array_get(&(trace->arg_array), i);
+		argBuffer_delete_array(argument->input);
+		argBuffer_delete_array(argument->output);
+	}
+	array_empty(&(trace->arg_array));
+}
+
+void trace_arg_print(struct trace* trace){
+	/*do it later must be interesting */
+}
+
+void trace_arg_search(struct trace* trace, char* arg){
+	uint32_t 				i;
+	struct argument* 		argument;
+	uint32_t 				start;
+	uint32_t				stop;
+	uint32_t 				index;
+
+	start = 0;
+	stop = array_get_length(&(trace->arg_array));
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->arg_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
+			return;
+		}
+	}
+
+	for (i = start; i < stop; i++){
+		argument = (struct argument*)array_get(&(trace->arg_array), i);
+
+		#ifdef VERBOSE
+		printf("Searching fragment %u/%u ...\n", i + 1, array_get_length(&(trace->arg_array)));
+		#endif
+
+		ioChecker_submit_arguments(trace->checker, argument->input, argument->output);
 	}
 }

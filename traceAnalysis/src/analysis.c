@@ -61,7 +61,12 @@ int main(int argc, char** argv){
 	/* traceFragement specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", "Clean the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_clean)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", "Print simpleTraceStat about the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_stat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search frag", "Search every element in the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_search) /* attention il sera peut-être intéressant de séparer le génération des arguemnst de la recherche */
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", "Extract input and output argument(s) from the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_extract_arg) /* attention il sera peut-être intéressant de séparer le génération des arguemnst de la recherche */
+
+	/* argument specific commands */
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", "Clean the argument array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "... =p", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argument array. Specify an index as a second argument", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
 
 
 	inputParser_exe(parser, argc - 2, argv + 2);

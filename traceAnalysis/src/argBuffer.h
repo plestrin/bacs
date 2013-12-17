@@ -5,6 +5,11 @@
 
 #include "array.h"
 
+struct argument{
+	struct array* input;
+	struct array* output;
+};
+
 enum argLocationType{
 	ARG_LOCATION_MEMORY,
 	ARG_LOCATION_REGISTER
