@@ -7,13 +7,12 @@
 void argBuffer_print_raw(struct argBuffer* arg){
 	if (arg != NULL){
 		if (arg->location_type == ARG_LOCATION_MEMORY){
-			printf("*** Argument Memory %p ***\n", (void*)arg);
+			printf("Argument Memory\n");
 			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 			printf("\t-Address: \t0x%llx\n", arg->location.address);
-
 		}
 		else if (arg->location_type == ARG_LOCATION_REGISTER){
-			printf("*** Argument Register %p ***\n", (void*)arg);
+			printf("Argument Register\n");
 			/* a completer */
 		}
 		else{

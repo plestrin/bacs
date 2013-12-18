@@ -32,10 +32,7 @@ struct trace{
 struct trace* trace_create(const char* dir_name);
 
 void trace_instruction_print(struct trace* trace);
-
-/* faire un object indépendant pour stocker les arguments candidats- à la manière de frag le but test double
- * - d'une part permettre plusieurs méthode de génération d'arguments
- * - d'autre part vérifier les résultats issus de cette phase à l'aide de méthodes print dédiées */
+void trace_instruction_export(struct trace* trace);
 
 void trace_callTree_create(struct trace* trace);
 void trace_callTree_print_dot(struct trace* trace, char* file_name);
@@ -52,10 +49,11 @@ void trace_loop_delete(struct trace* trace);
 
 void trace_frag_clean(struct trace* trace);
 void trace_frag_print_stat(struct trace* trace, char* arg);
+void trace_frag_print_ins(struct trace* trace, char* arg);
 void trace_frag_extract_arg(struct trace* trace, char* arg);
 
 void trace_arg_clean(struct trace* trace);
-void trace_arg_print(struct trace* trace);
+void trace_arg_print(struct trace* trace, char* arg);
 void trace_arg_search(struct trace* trace, char* arg);
 
 void trace_delete(struct trace* trace);

@@ -175,11 +175,17 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%f", value_dbl);
 				break;
 			}
+			case MULTICOLUMN_TYPE_HEX_32	: {
+				value_str = raw_value;
+				value_uint32 = (uint32_t)va_arg(vl, uint32_t);
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%08x", value_uint32);
+				break;
+			}
 			case MULTICOLUMN_TYPE_HEX_64	: {
 				value_str = raw_value;
 				value_uint64 = (uint64_t)va_arg(vl, uint64_t);
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0X%llx", value_uint64);
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
 				break;
 			}
 			default 						: {

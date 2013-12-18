@@ -84,16 +84,50 @@ void trace_delete(struct trace* trace){
 	}
 }
 
+/* ===================================================================== */
+/* Trace functions						                                 */
+/* ===================================================================== */
+
 void trace_instruction_print(struct trace* trace){
-	struct instruction* ins;
+	struct instruction* instruction;
 
 	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
 		do{
-			ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
-			if (ins != NULL){
-				instruction_print(ins);
+			instruction = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
+			if (instruction != NULL){
+				instruction_print(NULL, instruction);
 			}
-		} while (ins != NULL);
+		} while (instruction != NULL);
+	}
+	else{
+		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+	}
+}
+
+void trace_instruction_export(struct trace* trace){
+	struct instruction* 	instruction;
+	struct traceFragment 	fragment;
+
+	if (traceFragment_init(&fragment)){
+		printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+		return;
+	}
+
+	if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
+		do{
+			instruction = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
+			if (instruction != NULL){
+				if (traceFragment_add_instruction(&fragment, instruction) < 0){
+					printf("ERROR: in %s, unable to add instruction to traceFragment\n", __func__);
+					break;
+				}
+			}
+		} while (instruction != NULL);
+
+		if (array_add(&(trace->frag_array), &fragment) < 0){
+			printf("ERROR: in %s, unable to add traceFragment to frag_array\n", __func__);
+			traceFragment_clean(&fragment);
+		}
 	}
 	else{
 		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
@@ -345,6 +379,41 @@ void trace_frag_print_stat(struct trace* trace, char* arg){
 	}
 }
 
+void trace_frag_print_ins(struct trace* trace, char* arg){
+	struct multiColumnPrinter* 	printer;
+	struct traceFragment* 		fragment;
+	uint32_t 					i;
+	uint32_t 					index;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->frag_array))){
+			printer = instruction_init_multiColumnPrinter();
+			if (printer != NULL){
+				multiColumnPrinter_print_header(printer);
+
+				fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+
+				for (i = 0; i < traceFragment_get_nb_instruction(fragment); i++){
+					instruction_print(printer, traceFragment_get_instruction(fragment, i));
+				}
+
+				multiColumnPrinter_delete(printer);
+			}
+			else{
+				printf("ERROR: in %s, init multiColumnPrinter fails\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+		}
+	}
+	else{
+		printf("ERROR: in %s, an index value must be specified\n", __func__);
+	}
+}
+
 void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t 				i;
 	struct traceFragment* 	fragment;
@@ -415,8 +484,60 @@ void trace_arg_clean(struct trace* trace){
 	array_empty(&(trace->arg_array));
 }
 
-void trace_arg_print(struct trace* trace){
-	/*do it later must be interesting */
+void trace_arg_print(struct trace* trace, char* arg){
+	uint32_t 					index;
+	uint32_t 					i;
+	struct argument* 			argument;
+	struct argBuffer* 			buffer;
+	struct multiColumnPrinter* 	printer;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->arg_array))){
+			argument = (struct argument*)array_get(&(trace->arg_array), index);
+
+			for (i = 0; i < array_get_length(argument->input); i++){
+				buffer = (struct argBuffer*)array_get(argument->input, i);
+				printf("Input %u/%u ", i + 1, array_get_length(argument->input));
+				argBuffer_print_raw(buffer);
+			}
+
+			for (i = 0; i < array_get_length(argument->output); i++){
+				buffer = (struct argBuffer*)array_get(argument->output, i);
+				printf("Output %u/%u ", i + 1, array_get_length(argument->output));
+				argBuffer_print_raw(buffer);
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
+		}
+	}
+	else{
+		printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+		if (printer != NULL){
+
+			multiColumnPrinter_set_title(printer, 0, "Index");
+			multiColumnPrinter_set_title(printer, 1, "Nb Input");
+			multiColumnPrinter_set_title(printer, 2, "Nb Output");
+
+			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
+
+			multiColumnPrinter_print_header(printer);
+
+			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+				argument = (struct argument*)array_get(&(trace->arg_array), i);
+				multiColumnPrinter_print(printer, i, array_get_length(argument->input), array_get_length(argument->output), NULL);
+			}
+
+			multiColumnPrinter_delete(printer);
+		}
+		else{
+			printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
+		}
+	}
 }
 
 void trace_arg_search(struct trace* trace, char* arg){

@@ -99,6 +99,8 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* desc, char
 	return result;
 }
 
+#include "printBuffer.h" /* pour le debug */ 
+
 void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 	uint32_t 			i;
 	int32_t 			entry_index;
@@ -112,6 +114,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 		parser->exit = 0;
 		while(!parser->exit){
 			printf(ANSI_COLOR_CYAN ">>> ");
+			fflush(stdout);
 
 			if (cmd_counter < argc){
 				strncpy(line, argv[cmd_counter], INPUTPARSER_LINE_SIZE);
@@ -125,6 +128,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 					switch(character){
 					case '\t' 	: {break;}
 					case '\n' 	: {break;}
+					case EOF	: {printf("ERROR: in %s, fgetc returns EOF on stdin\n", __func__); return;}
 					default 	: {line[i++] = character; break;}
 					}
 				} while(character != '\n' && i < INPUTPARSER_LINE_SIZE - 1);

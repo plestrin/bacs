@@ -35,6 +35,14 @@ static inline int32_t traceFragment_search_pc(struct traceFragment* frag, struct
 	return array_search_seq_up(&(frag->instruction_array), 0, array_get_length(&(frag->instruction_array)), ins, (int32_t(*)(void*,void*))instruction_compare_pc);
 }
 
+static inline uint32_t traceFragment_get_nb_instruction(struct traceFragment* frag){
+	return array_get_length(&(frag->instruction_array));
+}
+
+static inline struct instruction* traceFragment_get_instruction(struct traceFragment* frag, uint32_t index){
+	return (struct instruction*)array_get(&(frag->instruction_array), index);
+}
+
 struct instruction* traceFragment_get_last_instruction(struct traceFragment* frag);
 int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment* frag_dst);
 float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);

@@ -13,9 +13,16 @@
 #define MULTICOLUMN_TYPE_INT32 			2
 #define MULTICOLUMN_TYPE_UINT32 		3
 #define MULTICOLUMN_TYPE_DOUBLE 		4
-#define MULTICOLUMN_TYPE_HEX_64 		5
+#define MULTICOLUMN_TYPE_HEX_32			5
+#define MULTICOLUMN_TYPE_HEX_64 		6
 
-#define MULTICOLUMN_TYPE_IS_VALID(type) ((type) == MULTICOLUMN_TYPE_STRING || (type) == MULTICOLUMN_TYPE_INT32 || (type) == MULTICOLUMN_TYPE_UINT32 || (type) == MULTICOLUMN_TYPE_DOUBLE || (type) == MULTICOLUMN_TYPE_HEX_64)
+#define MULTICOLUMN_TYPE_IS_VALID(type) 		\
+	((type) == MULTICOLUMN_TYPE_STRING 	||		\
+	(type)  == MULTICOLUMN_TYPE_INT32  	||		\
+	(type)  == MULTICOLUMN_TYPE_UINT32 	||		\
+	(type)  == MULTICOLUMN_TYPE_DOUBLE 	||		\
+	(type) 	== MULTICOLUMN_TYPE_HEX_32 	|| 		\
+	(type)  == MULTICOLUMN_TYPE_HEX_64)
 
 struct multiColumnColumn{
 	uint32_t 					size;

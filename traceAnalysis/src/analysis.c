@@ -39,13 +39,15 @@ int main(int argc, char** argv){
 
 	/* codeMap specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->code_map, codeMap_check_address)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address)", INPUTPARSER_CMD_INTERACTIVE, trace->code_map, codeMap_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, trace->code_map, codeMap_print)
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_instruction_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", "Export the whole trace as traceFragment", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_instruction_export)
+
 	/* callTree specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callTree", "Create the routine callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print dot callTree", "Print the callTree in the DOT format to a file. Specify file name as argument", INPUTPARSER_CMD_INTERACTIVE, trace, trace_callTree_print_dot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print dot callTree", "Print the callTree in the DOT format to a file. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_callTree_print_dot)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print callTree opcode percent", "For each traceFragment in the callTree, print its special instruction percent", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_print_opcode_percent) /* modify later */
 	ADD_CMD_TO_INPUT_PARSER(parser, "export callTree", "Export the traceFragment(s) of the callTree to the traceFragement array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete callTree", "Delete a previously create callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_delete)
@@ -61,12 +63,13 @@ int main(int argc, char** argv){
 	/* traceFragement specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", "Clean the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_frag_clean)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", "Print simpleTraceStat about the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_stat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", "Extract input and output argument(s) from the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_extract_arg) /* attention il sera peut-être intéressant de séparer le génération des arguemnst de la recherche */
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", "Print instructions of the traceFragment. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_ins)
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", "Extract input and output argument(s) from the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_extract_arg)
 
 	/* argument specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", "Clean the argument array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_clean)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "... =p", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argument array. Specify an index as a second argument", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "Print arguments from the argument array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argument array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
 
 
 	inputParser_exe(parser, argc - 2, argv + 2);

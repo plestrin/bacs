@@ -83,14 +83,17 @@ int traceReaderJSON_reset(struct traceReaderJSON* trace_reader){
 	int result = -1;
 
 	if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
-		munmap(trace_reader->buffer, trace_reader->buffer_length);
+		if (munmap(trace_reader->buffer, trace_reader->buffer_length)){
+			printf("ERROR: in %s, munmap failed\n", __func__);
+		}
 		trace_reader->buffer = NULL;
-		trace_reader->buffer_length = 0;
 	}
 
 	if (trace_reader->json_parser_handle != NULL){
 		yajl_free(trace_reader->json_parser_handle);
+		trace_reader->json_parser_handle = NULL;
 	}
+
 	trace_reader->json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)trace_reader);
 	if (trace_reader->json_parser_handle == NULL){
 		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
@@ -100,6 +103,7 @@ int traceReaderJSON_reset(struct traceReaderJSON* trace_reader){
 	}
 
 	trace_reader->read_offset 						= 0;
+	trace_reader->buffer_length 					= 0;
 
 	trace_reader->actual_key 						= TRACE_JSON_MAP_KEY_IDLE;
 	trace_reader->actual_map_level 					= 0;
@@ -127,7 +131,10 @@ struct instruction* traceReaderJSON_get_next_instruction(struct traceReaderJSON*
 	}
 	else{
 		if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
-			munmap(trace_reader->buffer, trace_reader->buffer_length);
+			if (munmap(trace_reader->buffer, trace_reader->buffer_length)){
+				printf("ERROR: in %s, munmap failed\n", __func__);
+			}
+			trace_reader->buffer = NULL;
 		}
 		mapping_size = (trace_reader->read_offset + TRACEREADERJSON_MMAP_MEMORY_SIZE > trace_reader->file_length)?(trace_reader->file_length - trace_reader->read_offset):TRACEREADERJSON_MMAP_MEMORY_SIZE;
 		if (mapping_size != 0){
@@ -167,11 +174,15 @@ struct instruction* traceReaderJSON_get_next_instruction(struct traceReaderJSON*
 void traceReaderJSON_clean(struct traceReaderJSON* trace_reader){
 	if (trace_reader != NULL){
 		if (trace_reader->file != -1){
-			close(trace_reader->file);
+			if (close(trace_reader->file)){
+				printf("ERROR: in %s, file close failed\n", __func__);
+			}
 			trace_reader->file = -1;
 		}
 		if (trace_reader->buffer != NULL && trace_reader->buffer_length > 0){
-			munmap(trace_reader->buffer, trace_reader->buffer_length);
+			if (munmap(trace_reader->buffer, trace_reader->buffer_length)){
+				printf("ERROR: in %s, munmap failed\n", __func__);
+			}
 			trace_reader->buffer = NULL;
 			trace_reader->buffer_length = 0;
 		}
