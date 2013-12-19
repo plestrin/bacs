@@ -188,7 +188,7 @@ static void inputParser_print_help(struct inputParser* parser){
 		return;
 	}
 
-	multiColumnPrinter_set_column_size(printer, 0, 30);
+	multiColumnPrinter_set_column_size(printer, 0, 24);
 	multiColumnPrinter_set_column_size(printer, 1, 3);
 	multiColumnPrinter_set_column_size(printer, 2, 96);
 

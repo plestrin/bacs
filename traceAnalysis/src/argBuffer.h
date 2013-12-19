@@ -5,9 +5,12 @@
 
 #include "array.h"
 
+#define ARGBUFFER_TAG_LENGTH 32
+
 struct argument{
-	struct array* input;
-	struct array* output;
+	char 			tag[ARGBUFFER_TAG_LENGTH];
+	struct array*	input;
+	struct array*	output;
 };
 
 enum argLocationType{

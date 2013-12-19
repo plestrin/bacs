@@ -18,15 +18,11 @@ struct callTree_node{
 	char 					name[CODEMAP_DEFAULT_NAME_SIZE];
 };
 
-/* Callbacks for the graph structure */
 void* callTree_create_node(void* first_element);
 int callTree_may_add_element(void* data, void* element);
 int callTree_add_element(void* data, void* element);
 int callTree_element_is_owned(void* data, void* element);
 void callTree_node_printDot(void* data, FILE* file);
 void callTree_delete_node(void* data);
-
-
-void callTree_print_opcode_percent(struct graph* callTree);
 
 #endif

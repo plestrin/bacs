@@ -25,7 +25,7 @@ struct simpleTraceStat* simpleTraceStat_create();
 void simpleTraceStat_init(struct simpleTraceStat* stat);
 int32_t simpleTraceStat_process(struct simpleTraceStat* stat, struct traceFragment* frag);
 struct multiColumnPrinter* simpleTraceStat_init_MultiColumnPrinter();
-void simpleTraceStat_print(struct multiColumnPrinter* printer, struct simpleTraceStat* stat);
+void simpleTraceStat_print(struct multiColumnPrinter* printer, uint32_t index, char* tag, struct simpleTraceStat* stat);
 void simpleTraceStat_delete(struct simpleTraceStat* stat);
 
 #endif

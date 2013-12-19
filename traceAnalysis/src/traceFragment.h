@@ -2,11 +2,12 @@
 #define TRACEFRAGMENT_H
 
 #include <stdint.h>
+#include <string.h>
 
 #include "instruction.h"
 #include "array.h"
 
-#define TRACEFRAGMENT_INSTRUCTION_BATCH	64
+#define TRACEFRAGMENT_TAG_LENGTH 32
 
 struct memAccess{
 	uint32_t 	order;
@@ -15,8 +16,8 @@ struct memAccess{
 	uint8_t 	size;
 };
 
-/* Ce serait bien de pouvoir mettre un tag sur les traceFragements - exemple dans le cas du callTree le nom de la routine */
 struct traceFragment{
+	char 				tag[TRACEFRAGMENT_TAG_LENGTH];
 	struct array 		instruction_array;
 	struct memAccess* 	read_memory_array;
 	struct memAccess* 	write_memory_array;
@@ -26,6 +27,10 @@ struct traceFragment{
 
 struct traceFragment* codeFragment_create();
 int32_t traceFragment_init(struct traceFragment* frag);
+
+static inline void traceFragment_set_tag(struct traceFragment* frag, char* tag){
+	strncpy(frag->tag, tag, TRACEFRAGMENT_TAG_LENGTH);
+}
 
 static inline int32_t traceFragment_add_instruction(struct traceFragment* frag, struct instruction* ins){
 	return array_add(&(frag->instruction_array), ins);
@@ -45,7 +50,7 @@ static inline struct instruction* traceFragment_get_instruction(struct traceFrag
 
 struct instruction* traceFragment_get_last_instruction(struct traceFragment* frag);
 int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment* frag_dst);
-float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);
+double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);
 
 int32_t traceFragment_create_mem_array(struct traceFragment* frag);
 void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access);

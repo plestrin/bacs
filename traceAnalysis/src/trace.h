@@ -36,7 +36,6 @@ void trace_instruction_export(struct trace* trace);
 
 void trace_callTree_create(struct trace* trace);
 void trace_callTree_print_dot(struct trace* trace, char* file_name);
-void trace_callTree_print_opcode_percent(struct trace* trace); /* déplacer cette méthode sur les traceFragments */
 void trace_callTree_export(struct trace* trace);
 void trace_callTree_delete(struct trace* trace);
 
@@ -50,10 +49,13 @@ void trace_loop_delete(struct trace* trace);
 void trace_frag_clean(struct trace* trace);
 void trace_frag_print_stat(struct trace* trace, char* arg);
 void trace_frag_print_ins(struct trace* trace, char* arg);
+void trace_frag_print_percent(struct trace* trace);
+void trace_frag_set_tag(struct trace* trace, char* arg); /* a completer */
 void trace_frag_extract_arg(struct trace* trace, char* arg);
 
 void trace_arg_clean(struct trace* trace);
 void trace_arg_print(struct trace* trace, char* arg);
+void trace_arg_set_tag(struct trace* trace, char* arg);
 void trace_arg_search(struct trace* trace, char* arg);
 
 void trace_delete(struct trace* trace);

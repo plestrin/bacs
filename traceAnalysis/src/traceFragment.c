@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "traceFragment.h"
 #include "argBuffer.h"
@@ -35,6 +34,7 @@ int32_t traceFragment_init(struct traceFragment* frag){
 		printf("ERROR: in %s, unable to init instruction array\n", __func__);
 	}
 	else{
+		frag->tag[0]					= '\0';
 		frag->read_memory_array 		= NULL;
 		frag->write_memory_array 		= NULL;
 		frag->nb_memory_read_access 	= 0;
@@ -69,6 +69,8 @@ int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment
 		printf("WARNING: in %s, this method does not copy the write_memory_array buffer\n", __func__);
 	}
 
+	strncpy(frag_dst->tag, frag_src->tag, TRACEFRAGMENT_TAG_LENGTH);
+
 	frag_dst->read_memory_array 		= NULL;
 	frag_dst->write_memory_array 		= NULL;
 	frag_dst->nb_memory_read_access 	= frag_src->nb_memory_read_access;
@@ -77,8 +79,8 @@ int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment
 	return 0;
 }
 
-float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode){
-	float 				result = 0;
+double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode){
+	double 				result = 0;
 	uint32_t 			i;
 	struct instruction*	instruction;
 	int 				j;
@@ -112,7 +114,7 @@ float traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, ui
 			}
 		}
 
-		result = (float)nb_found_instruction/(float)((nb_effective_instruction == 0)?1:nb_effective_instruction);
+		result = (double)nb_found_instruction/(double)((nb_effective_instruction == 0)?1:nb_effective_instruction);
 	}
 
 	return result;

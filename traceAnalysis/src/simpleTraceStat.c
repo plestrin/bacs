@@ -93,26 +93,30 @@ int32_t simpleTraceStat_process(struct simpleTraceStat* stat, struct traceFragme
 struct multiColumnPrinter* simpleTraceStat_init_MultiColumnPrinter(){
 	struct multiColumnPrinter* printer;
 
-	printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 8, NULL, NULL, NULL);
 	if (printer != NULL){
-		multiColumnPrinter_set_column_size(printer, 0, 10);
-		multiColumnPrinter_set_column_size(printer, 1, 10);
+		multiColumnPrinter_set_column_size(printer, 0, 5);
 		multiColumnPrinter_set_column_size(printer, 2, 10);
 		multiColumnPrinter_set_column_size(printer, 3, 10);
+		multiColumnPrinter_set_column_size(printer, 4, 10);
+		multiColumnPrinter_set_column_size(printer, 5, 10);
 
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
-		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
 		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
 		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
-		multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_64);
-		multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_HEX_64);
+		multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
+		multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_UINT32);
+		multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_HEX_64);
+		multiColumnPrinter_set_column_type(printer, 7, MULTICOLUMN_TYPE_HEX_64);
 
-		multiColumnPrinter_set_title(printer, 0, (char*)"Dyn Ins");
-		multiColumnPrinter_set_title(printer, 1, (char*)"Diff Ins");
-		multiColumnPrinter_set_title(printer, 2, (char*)"Mem read");
-		multiColumnPrinter_set_title(printer, 3, (char*)"Mem write");
-		multiColumnPrinter_set_title(printer, 4, (char*)"Min PC");
-		multiColumnPrinter_set_title(printer, 5, (char*)"Max PC");
+		multiColumnPrinter_set_title(printer, 0, (char*)"Index");
+		multiColumnPrinter_set_title(printer, 1, (char*)"Tag");
+		multiColumnPrinter_set_title(printer, 2, (char*)"Dyn Ins");
+		multiColumnPrinter_set_title(printer, 3, (char*)"Diff Ins");
+		multiColumnPrinter_set_title(printer, 4, (char*)"Mem read");
+		multiColumnPrinter_set_title(printer, 5, (char*)"Mem write");
+		multiColumnPrinter_set_title(printer, 6, (char*)"Min PC");
+		multiColumnPrinter_set_title(printer, 7, (char*)"Max PC");
 	}
 	else{
 		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
@@ -121,7 +125,7 @@ struct multiColumnPrinter* simpleTraceStat_init_MultiColumnPrinter(){
 	return printer;
 }
 
-void simpleTraceStat_print(struct multiColumnPrinter* printer, struct simpleTraceStat* stat){
+void simpleTraceStat_print(struct multiColumnPrinter* printer, uint32_t index, char* tag, struct simpleTraceStat* stat){
 	if (stat != NULL){
 		if (printer == NULL){
 			printf("*** SimpleTraceStat ***\n");
@@ -137,7 +141,7 @@ void simpleTraceStat_print(struct multiColumnPrinter* printer, struct simpleTrac
 			printf("\tMax program counter: \t\t0x%llx\n", stat->max_pc);
 		}
 		else{
-			multiColumnPrinter_print(printer, stat->nb_dynamic_instruction, stat->nb_different_instruction, stat->nb_mem_read, stat->nb_mem_write, stat->min_pc, stat->max_pc, NULL);
+			multiColumnPrinter_print(printer, index, tag, stat->nb_dynamic_instruction, stat->nb_different_instruction, stat->nb_mem_read, stat->nb_mem_write, stat->min_pc, stat->max_pc, NULL);
 		}
 	}
 }

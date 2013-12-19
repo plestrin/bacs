@@ -124,6 +124,8 @@ void trace_instruction_export(struct trace* trace){
 			}
 		} while (instruction != NULL);
 
+		traceFragment_set_tag(&fragment, "trace");
+
 		if (array_add(&(trace->frag_array), &fragment) < 0){
 			printf("ERROR: in %s, unable to add traceFragment to frag_array\n", __func__);
 			traceFragment_clean(&fragment);
@@ -189,16 +191,6 @@ void trace_callTree_print_dot(struct trace* trace, char* file_name){
 	}
 }
 
-/* Warning this function is not meant to last forever */
-void trace_callTree_print_opcode_percent(struct trace* trace){
-	if (trace->call_tree != NULL){
-		callTree_print_opcode_percent(trace->call_tree);
-	}
-	else{
-		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}
-}
-
 void trace_callTree_export(struct trace* trace){
 	int32_t 				i;
 	struct callTree_node* 	node;
@@ -212,6 +204,8 @@ void trace_callTree_export(struct trace* trace){
 				printf("ERROR: in %s, unable to clone traceFragment\n", __func__);
 				break;
 			}
+
+			traceFragment_set_tag(&fragment, node->name);
 
 			if (array_add(&(trace->frag_array), &fragment) < 0){
 				printf("ERROR: in %s, unable to add fragment to frag_array\n", __func__);
@@ -347,14 +341,19 @@ void trace_frag_print_stat(struct trace* trace, char* arg){
 	struct simpleTraceStat 		stat;
 	struct multiColumnPrinter* 	printer = NULL;
 	uint32_t 					index;
+	struct traceFragment*		fragment;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
 		
 		if (index < array_get_length(&(trace->frag_array))){
+			fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+			#ifdef VERBOSE
+			printf("Print simpleTraceStat for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(trace->frag_array)));
+			#endif
 			simpleTraceStat_init(&stat);
-			simpleTraceStat_process(&stat, (struct traceFragment*)array_get(&(trace->frag_array), index));
-			simpleTraceStat_print(printer, &stat);
+			simpleTraceStat_process(&stat, fragment);
+			simpleTraceStat_print(printer, 0, NULL, &stat);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
@@ -366,9 +365,10 @@ void trace_frag_print_stat(struct trace* trace, char* arg){
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+				fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
 				simpleTraceStat_init(&stat);
-				simpleTraceStat_process(&stat, (struct traceFragment*)array_get(&(trace->frag_array), i));
-				simpleTraceStat_print(printer, &stat);
+				simpleTraceStat_process(&stat, fragment);
+				simpleTraceStat_print(printer, i, fragment->tag, &stat);
 			}
 
 			multiColumnPrinter_delete(printer);
@@ -391,9 +391,12 @@ void trace_frag_print_ins(struct trace* trace, char* arg){
 		if (index < array_get_length(&(trace->frag_array))){
 			printer = instruction_init_multiColumnPrinter();
 			if (printer != NULL){
-				multiColumnPrinter_print_header(printer);
-
 				fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+				#ifdef VERBOSE
+				printf("Print instructions for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(trace->frag_array)));
+				#endif
+
+				multiColumnPrinter_print_header(printer);
 
 				for (i = 0; i < traceFragment_get_nb_instruction(fragment); i++){
 					instruction_print(printer, traceFragment_get_instruction(fragment, i));
@@ -411,6 +414,103 @@ void trace_frag_print_ins(struct trace* trace, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, an index value must be specified\n", __func__);
+	}
+}
+
+void trace_frag_print_percent(struct trace* trace){
+	uint32_t 					nb_opcode = 10;
+	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
+	uint32_t 					nb_excluded_opcode = 3;
+	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
+	uint32_t 					i;
+	struct multiColumnPrinter* 	printer;
+	struct traceFragment* 		fragment;
+	double 						percent;
+
+	#ifdef VERBOSE
+	printf("Included opcode(s): ");
+	for (i = 0; i < nb_opcode; i++){
+		if (i == nb_opcode - 1){
+			printf("%s\n", instruction_opcode_2_string(opcode[i]));
+		}
+		else{
+			printf("%s, ", instruction_opcode_2_string(opcode[i]));
+		}
+	}
+	printf("Excluded opcode(s): ");
+	for (i = 0; i < nb_excluded_opcode; i++){
+		if (i == nb_excluded_opcode - 1){
+			printf("%s\n", instruction_opcode_2_string(excluded_opcode[i]));
+		}
+		else{
+			printf("%s, ", instruction_opcode_2_string(excluded_opcode[i]));
+		}
+	}
+	#endif
+
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 0, 5);
+		multiColumnPrinter_set_column_size(printer, 1, 24);
+		multiColumnPrinter_set_column_size(printer, 2, 16);
+
+		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
+
+		multiColumnPrinter_set_title(printer, 0, (char*)"Index");
+		multiColumnPrinter_set_title(printer, 1, (char*)"Tag");
+		multiColumnPrinter_set_title(printer, 2, (char*)"Percent (%%)");
+
+		multiColumnPrinter_print_header(printer);
+
+		for (i = 0; i < array_get_length(&(trace->frag_array)); i++){
+			fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+			percent = traceFragment_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
+			multiColumnPrinter_print(printer, i, fragment->tag, percent*100, NULL);
+		}
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+	}
+}
+
+void trace_frag_set_tag(struct trace* trace, char* arg){
+	uint32_t 				i;
+	uint32_t 				index;
+	struct traceFragment* 	fragment;
+	uint8_t 				found_space = 0;
+
+	if (arg != NULL){
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			index = (uint32_t)atoi(arg);
+
+			if (index < array_get_length(&(trace->frag_array))){
+				fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+
+				#ifdef VERBOSE
+				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
+				#endif
+
+				strncpy(fragment->tag, arg + i + 1, ARGBUFFER_TAG_LENGTH);
+			}
+			else{
+				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+			}
+		}
+		else{
+			printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
 	}
 }
 
@@ -452,6 +552,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			argument.output = traceFragment_extract_mem_arg_adjacent(fragment->write_memory_array, fragment->nb_memory_write_access);
 
 			if (argument.input != NULL && argument.output != NULL){
+				strncpy(argument.tag, fragment->tag, ARGBUFFER_TAG_LENGTH);
 				if (array_add(&(trace->arg_array), &argument) < 0){
 					printf("ERROR: in %s, unable to add arguement to arg array\n", __func__);
 				}
@@ -462,7 +563,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		#ifdef VERBOSE
 		else{
-			printf("Skipping fragment %u/%u: no read and write mem access\n", i, array_get_length(&(trace->frag_array)));
+			printf("Skipping fragment %u/%u (tag: \"%s\"): no read and write mem access\n", i, array_get_length(&(trace->frag_array)), fragment->tag);
 		}
 		#endif
 	}
@@ -496,6 +597,9 @@ void trace_arg_print(struct trace* trace, char* arg){
 		
 		if (index < array_get_length(&(trace->arg_array))){
 			argument = (struct argument*)array_get(&(trace->arg_array), index);
+			#ifdef VERBOSE
+			printf("Print argument %u (tag: \"%s\", nb argument: %u)\n", index, argument->tag, array_get_length(&(trace->arg_array)));
+			#endif
 
 			for (i = 0; i < array_get_length(argument->input); i++){
 				buffer = (struct argBuffer*)array_get(argument->input, i);
@@ -514,22 +618,26 @@ void trace_arg_print(struct trace* trace, char* arg){
 		}
 	}
 	else{
-		printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+		printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 		if (printer != NULL){
 
+			multiColumnPrinter_set_column_size(printer, 0, 5);
+			multiColumnPrinter_set_column_size(printer, 1, 24);
+
 			multiColumnPrinter_set_title(printer, 0, "Index");
-			multiColumnPrinter_set_title(printer, 1, "Nb Input");
-			multiColumnPrinter_set_title(printer, 2, "Nb Output");
+			multiColumnPrinter_set_title(printer, 1, "Tag");
+			multiColumnPrinter_set_title(printer, 2, "Nb Input");
+			multiColumnPrinter_set_title(printer, 3, "Nb Output");
 
 			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
 			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
 
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
 				argument = (struct argument*)array_get(&(trace->arg_array), i);
-				multiColumnPrinter_print(printer, i, array_get_length(argument->input), array_get_length(argument->output), NULL);
+				multiColumnPrinter_print(printer, i, argument->tag, array_get_length(argument->input), array_get_length(argument->output), NULL);
 			}
 
 			multiColumnPrinter_delete(printer);
@@ -537,6 +645,44 @@ void trace_arg_print(struct trace* trace, char* arg){
 		else{
 			printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
 		}
+	}
+}
+
+void trace_arg_set_tag(struct trace* trace, char* arg){
+	uint32_t 			i;
+	uint32_t 			index;
+	struct argument* 	argument;
+	uint8_t 			found_space = 0;
+
+	if (arg != NULL){
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			index = (uint32_t)atoi(arg);
+
+			if (index < array_get_length(&(trace->arg_array))){
+				argument = (struct argument*)array_get(&(trace->arg_array), index);
+
+				#ifdef VERBOSE
+				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, argument->tag, arg + i + 1);
+				#endif
+
+				strncpy(argument->tag, arg + i + 1, ARGBUFFER_TAG_LENGTH);
+			}
+			else{
+				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
+			}
+		}
+		else{
+			printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
 	}
 }
 
@@ -567,7 +713,7 @@ void trace_arg_search(struct trace* trace, char* arg){
 		argument = (struct argument*)array_get(&(trace->arg_array), i);
 
 		#ifdef VERBOSE
-		printf("Searching fragment %u/%u ...\n", i + 1, array_get_length(&(trace->arg_array)));
+		printf("Searching fragment %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)), argument->tag);
 		#endif
 
 		ioChecker_submit_arguments(trace->checker, argument->input, argument->output);
