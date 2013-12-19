@@ -99,8 +99,6 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* desc, char
 	return result;
 }
 
-#include "printBuffer.h" /* pour le debug */ 
-
 void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 	uint32_t 			i;
 	int32_t 			entry_index;

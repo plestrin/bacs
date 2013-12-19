@@ -322,9 +322,9 @@ void loopEngine_print_loop(struct loopEngine* engine){
 
 int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array){
 	uint32_t 				i;
-	uint32_t 				j;
 	int32_t 				result = -1;
 	struct traceFragment 	fragment;
+	uint32_t 				total_length;
 
 	if (engine->loops != NULL){
 		for (i = 0; i < engine->nb_loop; i++){
@@ -333,11 +333,9 @@ int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array*
 				return result;
 			}
 
-			for (j = 0; j < engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue; j++){
-				/* We can do something way faster here - read multiple - write multiple - copy multiple */
-				if (traceFragment_add_instruction(&fragment, (struct instruction*)array_get(&(engine->element_array), j + engine->loops[i].offset)) < 0){
-					printf("ERROR: in %s, unable to add instruction to traceFragment\n", __func__);
-				}
+			total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
+			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset,  total_length) !=  (int32_t)total_length){
+				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
 			}
 
 			if (array_add(array, &fragment) < 0){

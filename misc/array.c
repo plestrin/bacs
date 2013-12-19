@@ -319,6 +319,91 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 	return result;
 }
 
+int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t offset, uint32_t nb_element){
+	int32_t 			result = -1;
+	uint32_t 			nb_remaining_element;
+	char* 				buffer;
+	uint32_t 			nb_allocated_element;
+	uint32_t 			nb_allocated_byte;
+	uint32_t 			nb_copied_byte;
+	uint32_t 			nb_copied_element;
+	struct arrayPage 	page;
+	uint32_t			copy_index_src;
+	char* 				copy_ptr_src;
+	struct arrayPage* 	page_src;
+
+
+	if (array_src->element_size != array_dst->element_size){
+		printf("ERROR: in %s, copy between arrays of different element size is a dangerous thing -> aborting\n", __func__);
+		return result;
+	}
+
+	if (array_src->nb_element < offset + nb_element){
+		printf("ERROR: in %s, source array does not contain required elements -> aborting\n", __func__);
+		return result;
+	}
+
+	nb_remaining_element = nb_element;
+
+	while (nb_remaining_element > 0){
+		nb_allocated_element = ((ARRAY_DEFAULT_PAGE_SIZE - array_dst->nb_filled_byte) / array_dst->element_size > nb_remaining_element) ? nb_remaining_element : ((ARRAY_DEFAULT_PAGE_SIZE - array_dst->nb_filled_byte) / array_dst->element_size);
+		nb_allocated_byte = ((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) / ARRAY_DEFAULT_ALLOC_SIZE + (((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) % ARRAY_DEFAULT_ALLOC_SIZE == 0) ? 0 : 1)) * ARRAY_DEFAULT_ALLOC_SIZE;
+
+		if (nb_allocated_byte > array_dst->nb_allocated_byte){
+			buffer = realloc(array_dst->buffer, nb_allocated_byte);
+			if (buffer == NULL){
+				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				break;
+			}
+
+			array_dst->buffer = buffer;
+			array_dst->nb_allocated_byte = nb_allocated_byte;
+		}
+
+		nb_copied_element = 0;
+		while(nb_copied_element < nb_allocated_element){
+			copy_index_src = offset + (nb_element - nb_remaining_element) + nb_copied_element;
+
+			if (_array_get_length(array_src->pages) * (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size) <= copy_index_src){
+				copy_ptr_src = array_src->buffer + (copy_index_src % (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size)) * array_src->element_size;
+				nb_copied_byte = (nb_allocated_element - nb_copied_element) * array_src->element_size;
+			}
+			else{
+				page_src = (struct arrayPage*)_array_get(array_src->pages, copy_index_src / (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size));
+				copy_ptr_src = page_src->buffer + (copy_index_src % (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size)) * array_src->element_size;
+				nb_copied_byte = (((nb_allocated_element - nb_copied_element) > ((ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size) - (copy_index_src % (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size)))) ? ((ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size) - (copy_index_src % (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size))) : (nb_allocated_element - nb_copied_element)) * array_src->element_size;
+			}
+
+			memcpy(array_dst->buffer + array_dst->nb_filled_byte, copy_ptr_src, nb_copied_byte);
+			nb_copied_element += nb_copied_byte / array_dst->element_size;
+			array_dst->nb_filled_byte += nb_copied_byte;
+		}
+
+		array_dst->nb_element += nb_allocated_element;
+
+		if (array_dst->nb_allocated_byte == ARRAY_DEFAULT_PAGE_SIZE){
+			page.buffer = array_dst->buffer;
+			page.nb_allocated_byte = array_dst->nb_allocated_byte;
+			page.nb_filled_byte = array_dst->nb_filled_byte;
+
+			if (_array_add(&(array_dst->pages), &page) < 0){
+				printf("ERROR: in %s, unable to archive page\n", __func__);
+				break;
+			}
+
+			array_dst->nb_allocated_byte = 0;
+			array_dst->nb_filled_byte = 0;
+			array_dst->buffer = NULL;
+		}
+
+		nb_remaining_element -= nb_copied_element;
+	}
+
+	result = nb_element - nb_remaining_element;
+
+	return result;
+}
+
 void array_empty(struct array* array){
 	uint32_t i;
 	struct arrayPage* page;

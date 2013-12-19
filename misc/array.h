@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define ARRAY_DEFAULT_ALLOC_SIZE 	1024 	/* how to set this value properly ?? for best efficiency try some test */
-#define ARRAY_DEFAULT_PAGE_SIZE 	131072 	/* same for this value */
+#define ARRAY_DEFAULT_PAGE_SIZE 	131072 	/* same for this value - MUST be a multiple of ARRAY_DEFAULT_ALLOC_SIZE */
 
 struct _array{
 	char* 		buffer;
@@ -39,8 +39,6 @@ struct array{
 	uint32_t 		element_size;
 };
 
-/* Dans le loop exporter j'aurai besoin d'une méthode qui permette de copier rapidement des segments d'un tableau à l'autre */
-
 struct array* array_create(uint32_t element_size);
 int32_t array_init(struct array* array, uint32_t element_size);
 int32_t array_add(struct array* array, void* element);
@@ -48,6 +46,7 @@ void* array_get(struct array* array, uint32_t index);
 int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_clone(struct array* array_src, struct array* array_dst);
+int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t offset, uint32_t nb_element);
 void array_empty(struct array* array);
 void array_clean(struct array* array);
 void array_delete(struct array* array);
