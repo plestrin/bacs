@@ -408,6 +408,12 @@ int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2){
 		return (int32_t)(loop1->offset - loop2->offset);
 	}
 	else{
-		return (int32_t)(loop2->epilogue + loop2->length * loop2->nb_iteration - loop1->epilogue + loop1->length * loop1->nb_iteration);
+		if (loop2->epilogue + loop2->length * loop2->nb_iteration != loop1->epilogue + loop1->length * loop1->nb_iteration){
+			return (int32_t)(loop2->epilogue + loop2->length * loop2->nb_iteration) - (int32_t)(loop1->epilogue + loop1->length * loop1->nb_iteration);
+		}
+		else{
+			/* We promote loops with a high number of iteration */
+			return (int32_t)loop2->nb_iteration - loop1->nb_iteration;
+		}
 	}
 }
