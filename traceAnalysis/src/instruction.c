@@ -10,14 +10,15 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 	if (printer != NULL){
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_32);
 		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
-		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
-		multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
+
+		multiColumnPrinter_set_column_size(printer, 3, 64);
+		multiColumnPrinter_set_column_size(printer, 4, 32);
 
 		multiColumnPrinter_set_title(printer, 0, "PC");
 		multiColumnPrinter_set_title(printer, 1, "Opcode Val");
 		multiColumnPrinter_set_title(printer, 2, "Opcode Str");
-		multiColumnPrinter_set_title(printer, 3, "Nb read");
-		multiColumnPrinter_set_title(printer, 4, "NB write");
+		multiColumnPrinter_set_title(printer, 3, "Read Access");
+		multiColumnPrinter_set_title(printer, 4, "Write Access");
 	}
 	else{
 		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
@@ -28,22 +29,50 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 
 void instruction_print(struct multiColumnPrinter* printer, struct instruction *ins){
 	uint32_t i;
-	uint32_t nb_read = 0;
-	uint32_t nb_write = 0;
 
 	if (ins != NULL){
 		if (printer != NULL){
+			char 		read_access[MULTICOLUMN_STRING_MAX_SIZE];
+			char 		write_access[MULTICOLUMN_STRING_MAX_SIZE];
+			uint32_t 	str_read_offset = 0;
+			uint32_t 	str_write_offset = 0;
+			char* 		current_str;
+			uint32_t*	current_offset;
+			uint32_t	nb_byte_written;
+
+			read_access[0] = '\0';
+			write_access[0] = '\0';
+
 			for ( i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
 				if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[i].type)){
 					if (INSTRUCTION_DATA_TYPE_IS_READ(ins->data[i].type)){
-						nb_read ++;
+						current_str = read_access + str_read_offset;
+						current_offset = &str_read_offset;
 					}
 					else{
-						nb_write ++;
+						current_str = write_access + str_write_offset;
+						current_offset = &str_write_offset;
+					}
+
+					if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
+						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08lx ", ins->data[i].location.address);
+						current_str += nb_byte_written;
+						*current_offset += nb_byte_written;
+					}
+					else{
+						/* a completer */
+						printf("WARNING: in %s, this case is not implemented\n", __func__);
+					}
+
+					switch(ins->data[i].size){
+					case 1 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%02x(1)}", ins->data[i].value & 0x000000ff); break;}
+					case 2 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%04x(2)}", ins->data[i].value & 0x0000ffff); break;}
+					case 4 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%08x(4)}", ins->data[i].value & 0xffffffff); break;}
+					default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
 					}
 				}
 			}
-			multiColumnPrinter_print(printer, (uint32_t)ins->pc, ins->opcode, instruction_opcode_2_string(ins->opcode), nb_read, nb_write, NULL);
+			multiColumnPrinter_print(printer, (uint32_t)ins->pc, ins->opcode, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
 		}
 		else{
 			printf("*** Instruction ***\n");
@@ -65,6 +94,7 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 					}
 					else{
 						/* a completer */
+						printf("WARNING: in %s, this case is not implemented\n", __func__);
 					}
 					switch(ins->data[i].size){
 					case 1 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x000000ff); break;}
