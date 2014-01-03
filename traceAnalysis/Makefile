@@ -7,16 +7,16 @@ BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
 CRYPTO_DIR 		:= ../algoCrypto/
-INCLUDE_SRC		:= -Iinclude/ -I$(MISC_DIR) -I$(SHARED_DIR) -I$(CRYPTO_DIR)
+INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(CRYPTO_DIR)
 INCLUDE_SHARED	:= -I$(MISC_DIR)
 
 
 all: $(BUILD_DIR)codeMap.o				\
+	$(BUILD_DIR)instruction.o			\
 	$(BUILD_DIR)analysis.o 				\
 	$(BUILD_DIR)trace.o 				\
 	$(BUILD_DIR)traceReaderJSON.o 		\
 	$(BUILD_DIR)cmReaderJSON.o 			\
-	$(BUILD_DIR)instruction.o			\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)graph.o 				\
 	$(BUILD_DIR)graphNode.o				\

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "xed-iclass-enum.h"
+#include "include/xed-iclass-enum.h"
 #include "multiColumn.h"
 
 #define INSTRUCTION_MAX_NB_DATA 2
@@ -63,6 +63,6 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 
 int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins2);
 
-char* instruction_opcode_2_string(uint32_t opcode);
+const char* instruction_opcode_2_string(uint32_t opcode);
 
 #endif

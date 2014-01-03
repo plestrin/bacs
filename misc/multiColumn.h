@@ -40,7 +40,7 @@ struct multiColumnPrinter{
 struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator);
 void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, uint32_t size);
 void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, uint8_t type);
-void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, char* title);
+void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, const char* title);
 void multiColumnPrinter_print_header(struct multiColumnPrinter* printer);
 void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* printer);
 void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...);

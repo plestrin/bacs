@@ -5,6 +5,17 @@
 
 #include "multiColumn.h"
 
+#ifdef WIN32
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#define snprintf(str, size, format, ...) _snprintf_s((str), (size), _TRUNCATE, (format), __VA_ARGS__)
+#define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
+
+#endif
+
 static void multiColumnPrinter_constrain_string(char* src, char* dst, uint32_t size);
 
 struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator){
@@ -98,6 +109,17 @@ void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint
 	}
 }
 
+void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, const char* title){
+	if (printer != NULL){
+		if (printer->nb_column > column){
+			strncpy(printer->columns[column].title, title, MULTICOLUMN_STRING_MAX_SIZE);
+		}
+		else{
+			printf("ERROR: in %s, column argument exceeds printer size\n", __func__);
+		}
+	}
+}
+
 void multiColumnPrinter_print_header(struct multiColumnPrinter* printer){
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	uint32_t	i;
@@ -184,8 +206,10 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 			case MULTICOLUMN_TYPE_HEX_64	: {
 				value_str = raw_value;
 				value_uint64 = (uint64_t)va_arg(vl, uint64_t);
+				#ifdef __linux__
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
+				#endif
 				break;
 			}
 			default 						: {
@@ -206,17 +230,6 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 		}
 
 		va_end(vl);
-	}
-}
-
-void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, char* title){
-	if (printer != NULL){
-		if (printer->nb_column > column){
-			strncpy(printer->columns[column].title, title, MULTICOLUMN_STRING_MAX_SIZE);
-		}
-		else{
-			printf("ERROR: in %s, column argument exceeds printer size\n", __func__);
-		}
 	}
 }
 

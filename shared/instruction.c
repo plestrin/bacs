@@ -113,7 +113,7 @@ int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins
 	return (ins1->pc - ins2->pc);
 }
 
-char* instruction_opcode_2_string(uint32_t opcode){
+const char* instruction_opcode_2_string(uint32_t opcode){
 	switch((xed_iclass_enum_t)opcode){
 	case XED_ICLASS_INVALID 	: {return "INVALID";}
 	case XED_ICLASS_AAA 		: {return "AAA";}

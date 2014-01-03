@@ -3,7 +3,25 @@
 #include <string.h>
 
 #include "codeMap.h"
+
+#ifdef __linux__
+
 #include "multiColumn.h"
+
+#endif
+
+#ifdef WIN32
+
+#include "../misc/multiColumn.h"
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#define snprintf(str, size, format, ...) _snprintf_s((str), (size), _TRUNCATE, (format), __VA_ARGS__)
+#define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
+
+#endif
 
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file);
 static void codeMap_print_section_JSON(struct cm_section* section, FILE* file);
