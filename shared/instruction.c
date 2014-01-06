@@ -8,7 +8,13 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 
 	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
 	if (printer != NULL){
+		#if defined ARCH_32
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_32);
+		#elif defined ARCH_64
+		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_64);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
 
 		multiColumnPrinter_set_column_size(printer, 3, 64);
@@ -55,7 +61,14 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 					}
 
 					if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
-						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08lx ", ins->data[i].location.address);
+						#if defined ARCH_32
+						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08x ", ins->data[i].location.address);
+						#elif defined ARCH_64
+						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %llx ", ins->data[i].location.address);
+						#else
+						#error Please specify an architecture {ARCH_32 or ARCH_64}
+						#endif
 						current_str += nb_byte_written;
 						*current_offset += nb_byte_written;
 					}
@@ -72,12 +85,18 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 					}
 				}
 			}
-			multiColumnPrinter_print(printer, (uint32_t)ins->pc, ins->opcode, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
+			multiColumnPrinter_print(printer, ins->pc, ins->opcode, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
 		}
 		else{
 			printf("*** Instruction ***\n");
-			printf("\tPC: \t\t0x%08lx\n", ins->pc);
-			printf("\tPC next: \t0x%08lx\n", ins->pc_next);
+			#if defined ARCH_32
+			printf("\tPC: \t\t0x%08x\n", ins->pc);
+			#elif defined ARCH_64
+			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+			printf("\tPC: \t\t0x%llx\n", ins->pc);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 			printf("\tOpcode: \t%s (%u)\n", instruction_opcode_2_string(ins->opcode), ins->opcode);
 
 			for ( i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
@@ -90,7 +109,14 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 					}
 
 					if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
-						printf("\t\tMem: \t0x%08lx\n", ins->data[i].location.address);
+						#if defined ARCH_32
+						printf("\t\tMem: \t0x%08x\n", ins->data[i].location.address);
+						#elif defined ARCH_64
+						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+						printf("\t\tMem: \t0x%llx\n", ins->data[i].location.address);
+						#else
+						#error Please specify an architecture {ARCH_32 or ARCH_64}
+						#endif
 					}
 					else{
 						/* a completer */
@@ -110,7 +136,7 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 }
 
 int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins2){
-	return (ins1->pc - ins2->pc);
+	return (int32_t)(ins1->pc - ins2->pc);
 }
 
 const char* instruction_opcode_2_string(uint32_t opcode){

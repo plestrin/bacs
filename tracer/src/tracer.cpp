@@ -4,6 +4,7 @@
 
 #include "tracer.h"
 #include "traceFiles.h"
+#include "instruction.h" /* je ne sias pas trop à quoi ça sert mais on verra bien */
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST				"0"
@@ -13,9 +14,6 @@
 
 /*
  * Todo list:
- *	- trace format JSON
- *	- la liste des infos qu'il faut enregistrer
- *	- déterminer la façon dont il faut instrumenter le code: une fois par basic bloc ou une fois par instruction
  *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf, car mélange avec la sortie standard de l'application a tracer)
  *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire qu'un seul. En plus afficher l'aide en cas d'erreur
  *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
@@ -47,19 +45,24 @@ KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelis
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
 
-void pintool_instruction_analysis_nomem(ADDRINT pc, ADDRINT pc_next, UINT32 opcode){
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u},", pc, pc_next, opcode);
+/* This is a debug routine */
+void pintool_instruction_analysis_test(ADDRINT pc){
+	printf("0x%08x - TEST\n", pc);
 }
 
-void pintool_instruction_analysis_1read(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT read_address, UINT32 read_size){
+void pintool_instruction_analysis_nomem(ADDRINT pc, UINT32 opcode){
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u},", pc, opcode);
+}
+
+void pintool_instruction_analysis_1read(ADDRINT pc, UINT32 opcode, ADDRINT read_address, UINT32 read_size){
 	UINT32 read_value; /* We do not expect more than 32 bits mem access */
 
 	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
 
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}]},", pc, pc_next, opcode, read_address, read_value, read_size);
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}]},", pc, opcode, read_address, read_value, read_size);
 }
 
-void pintool_instruction_analysis_1read_1write_part1(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT read_address, UINT32 read_size, ADDRINT write_address, UINT32 write_size){
+void pintool_instruction_analysis_1read_1write_part1(ADDRINT pc, UINT32 opcode, ADDRINT read_address, UINT32 read_size, ADDRINT write_address, UINT32 write_size){
 	UINT32 read_value; /* We do not expect more than 32 bits mem access */
 
 	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
@@ -67,7 +70,7 @@ void pintool_instruction_analysis_1read_1write_part1(ADDRINT pc, ADDRINT pc_next
 	static_write_address 	= write_address;
 	static_write_size 		= write_size;
 
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}],\"write\":[{\"mem\":\"%08x\",", pc, pc_next, opcode, read_address, read_value, read_size, write_address);
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}],\"write\":[{\"mem\":\"%08x\",", pc, opcode, read_address, read_value, read_size, write_address);
 }
 
 void pintool_instruction_analysis_1read_1write_part2(){
@@ -78,10 +81,10 @@ void pintool_instruction_analysis_1read_1write_part2(){
 	fprintf(trace->ins_file, "\"val\":\"%08x\",\"size\":%u}]},", write_value, static_write_size);
 }
 
-void pintool_instruction_analysis_1write_part1(ADDRINT pc, ADDRINT pc_next, UINT32 opcode, ADDRINT write_address, UINT32 write_size){
+void pintool_instruction_analysis_1write_part1(ADDRINT pc, UINT32 opcode, ADDRINT write_address, UINT32 write_size){
 	static_write_address 	= write_address;
 	static_write_size 		= write_size;
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"pc_next\":\"%08x\",\"ins\":%u,\"write\":[{\"mem\":\"%08x\",", pc, pc_next, opcode, write_address);
+	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"write\":[{\"mem\":\"%08x\",", pc, opcode, write_address);
 }
 
 void pintool_instruction_analysis_1write_part2(){
@@ -109,6 +112,8 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 		if (INS_IsPredicated(instruction)){
 			/* Don't know what to do */
 			printf("Predicated instruction ahead!\n");
+			printf("Ins: %s\n", instruction_opcode_2_string(INS_Opcode(instruction)));
+			INS_InsertPredicatedCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_test, IARG_INST_PTR, IARG_END);
 		}
 		
 		/* For now we do not care about mem write */
@@ -126,7 +131,6 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 				if (INS_IsMemoryWrite(instruction)){
 					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_1write_part1, 
 						IARG_INST_PTR, 												/* program counter */
-						IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
 						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
 						IARG_MEMORYREAD_EA, 										/* read memory address of the operand */
 						IARG_UINT32, INS_MemoryReadSize(instruction),				/* read memory access size */
@@ -146,7 +150,6 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 				else{
 					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read, 
 						IARG_INST_PTR, 												/* program counter */
-						IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
 						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
 						IARG_MEMORYREAD_EA, 										/* memory address of the operand */
 						IARG_UINT32, INS_MemoryReadSize(instruction),				/* memory access size ATTENTION cette méthode ne pas l'air d'être très précise plutôt faire des itération sur les opérandes */
@@ -158,7 +161,6 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 			if (INS_IsMemoryWrite(instruction)){
 				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_part1, 
 					IARG_INST_PTR, 												/* program counter */
-					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
 					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
 					IARG_MEMORYWRITE_EA, 										/* memory address of the operand */
 					IARG_UINT32, INS_MemoryWriteSize(instruction),				/* memory access size */
@@ -176,7 +178,6 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 			else{
 				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_nomem, 
 					IARG_INST_PTR, 												/* program counter */
-					IARG_ADDRINT, INS_NextAddress(instruction), 				/* address of the next instruction */
 					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
 					IARG_END);
 			}

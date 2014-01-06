@@ -11,7 +11,6 @@
 
 #define JSON_MAP_KEY_NAME_TRACE			"trace"
 #define JSON_MAP_KEY_NAME_PC			"pc"
-#define JSON_MAP_KEY_NAME_PC_NEXT		"pc_next"
 #define JSON_MAP_KEY_NAME_INS			"ins"
 #define JSON_MAP_KEY_NAME_DATA_READ 	"read"
 #define JSON_MAP_KEY_NAME_DATA_WRITE 	"write"
@@ -226,11 +225,13 @@ static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, siz
 
 	switch (trace_reader->actual_key){
 	case TRACE_JSON_MAP_KEY_PC : {
+		#if defined ARCH_32
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoul((const char*)stringVal, NULL, 16);
-		break;
-	}
-	case TRACE_JSON_MAP_KEY_PC_NEXT : {
-		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc_next = strtoul((const char*)stringVal, NULL, 16);
+		#elif defined ARCH_64
+		trace_reader->instruction_cache[trace_reader->cache_top_offset].pc = strtoull((const char*)stringVal, NULL, 16);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 		break;
 	}
 	case TRACE_JSON_MAP_KEY_DATA_VAL : {
@@ -239,7 +240,13 @@ static int traceReaderJSON_string(void* ctx, const unsigned char* stringVal, siz
 	}
 	case TRACE_JSON_MAP_KEY_DATA_MEM : {
 		INSTRUCTION_DATA_TYPE_SET_MEM(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+		#if defined ARCH_32
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].location.address = strtoul((const char*)stringVal, NULL, 16);
+		#elif defined ARCH_64
+		trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].location.address = strtoull((const char*)stringVal, NULL, 16);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 		break;
 	}
 	default : {
@@ -259,9 +266,6 @@ static int traceReaderJSON_map_key(void* ctx, const unsigned char* stringVal, si
 	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_PC, stringLen)){
 		trace_reader->actual_key = TRACE_JSON_MAP_KEY_PC;
-	}
-	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_PC_NEXT, stringLen)){
-		trace_reader->actual_key = TRACE_JSON_MAP_KEY_PC_NEXT;
 	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_INS, stringLen)){
 		trace_reader->actual_key = TRACE_JSON_MAP_KEY_INS;

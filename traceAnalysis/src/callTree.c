@@ -32,7 +32,13 @@ void* callTree_create_node(void* first_element){
 			memcpy(node->name, routine->name, CODEMAP_DEFAULT_NAME_SIZE);
 		}
 		else{
-			printf("WARNING: in %s, instruction @ 0x%lx, does not be belong to any routine\n", __func__, element->ins->pc);
+			#if defined ARCH_32
+			printf("WARNING: in %s, instruction @ 0x%08x, does not be belong to any routine\n", __func__, element->ins->pc);
+			#elif defined ARCH_64
+			printf("WARNING: in %s, instruction @ 0x%llx, does not be belong to any routine\n", __func__, element->ins->pc);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 			
 			node->entry_address = element->ins->pc;
 			memset(node->name, '\0', CODEMAP_DEFAULT_NAME_SIZE);

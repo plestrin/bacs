@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "array.h"
+#include "address.h"
 
 #define ARGBUFFER_TAG_LENGTH 32
 
@@ -21,7 +22,8 @@ enum argLocationType{
 struct argBuffer{
 	enum argLocationType 	location_type;
 	union {
-		uint64_t 			address;
+		ADDRESS 			address;
+		uint16_t 			reg;
 	} 						location;
 	uint32_t 				size;
 	char* 					data;

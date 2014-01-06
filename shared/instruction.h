@@ -5,9 +5,9 @@
 
 #include "include/xed-iclass-enum.h"
 #include "multiColumn.h"
+#include "address.h"
 
 #define INSTRUCTION_MAX_NB_DATA 2
-
 
 /* Data type value:
  * - bit 1: set to 0 -> INVALID 	set to 1 VALID
@@ -29,8 +29,6 @@
 #define INSTRUCTION_DATA_TYPE_IS_READ(type)		(((type) & 0x00000004) == 0x00000000)
 #define INSTRUCTION_DATA_TYPE_IS_WRITE(type) 	(((type) & 0x00000004) == 0x00000004)
 
-
-
 enum insDataType{
 	INSDATA_INVALID 	= 0x00000000,
 	INSDATA_MEM_READ	= 0x00000001,
@@ -42,22 +40,19 @@ enum insDataType{
 struct insData{
 	enum insDataType 	type;
 	union {
-		unsigned long 	address;
-		/* some stuff for registers */
+		ADDRESS 		address;
+		uint16_t 		reg;
 	}					location;
 	uint32_t 			value;
 	uint8_t 			size;
 };
 
-/* statuer sur la taille des address mémoire */
 struct instruction{
-	unsigned long 	pc;
-	unsigned long 	pc_next; /* je ne sais pas si c'est encore justifié avec les opcodes ?? Avoir lorsque l'on va reprendre le control flow graph */
+	ADDRESS 		pc;
 	uint32_t 		opcode;
 	struct insData 	data[INSTRUCTION_MAX_NB_DATA];
 };
 
-/* multiColumnPrinter is quite poor, upgrade later */
 struct multiColumnPrinter* instruction_init_multiColumnPrinter();
 void instruction_print(struct multiColumnPrinter* printer, struct instruction *ins);
 

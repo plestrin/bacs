@@ -212,7 +212,13 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 		multiColumnPrinter_set_column_size(printer, 3, 4);
 
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
+		#if defined ARCH_32
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_HEX_32);
+		#elif defined ARCH_64
 		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_HEX_64);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
 
 		multiColumnPrinter_set_title(printer, 0, (char*)"ORDER");
@@ -296,8 +302,8 @@ struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_acces
 	int 				i;
 	int 				j;
 	struct array* 		array = NULL;
-	uint64_t 			mem_address_upper_bound;
-	uint64_t 			mem_address_written;
+	ADDRESS 			mem_address_upper_bound;
+	ADDRESS 			mem_address_written;
 	struct argBuffer 	arg;
 	int8_t 				nb_byte;
 
@@ -393,40 +399,22 @@ void traceFragment_clean(struct traceFragment* frag){
 /* ===================================================================== */
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2){
-	int64_t diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
-
-	if (diff > 0){
+	if (((struct memAccess*)mem_access1)->address > ((struct memAccess*)mem_access2)->address){
 		return 1;
 	}
-	else if (diff < 0){
+	else if (((struct memAccess*)mem_access2)->address > ((struct memAccess*)mem_access1)->address){
 		return -1;
 	}
 	else{
-		return ((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order;
-	}
-}
-
-int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2){
-	int64_t diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
-
-	if (diff > 0){
-		return 1;
-	}
-	else if (diff < 0){
-		return -1;
-	}
-	else{
-		return ((struct memAccess*)mem_access2)->order - ((struct memAccess*)mem_access1)->order;
+		return (int32_t)(((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order);
 	}
 }
 
 int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2){
-	int64_t addr_diff = ((struct memAccess*)mem_access1)->address - ((struct memAccess*)mem_access2)->address;
-
-	if (addr_diff > 0){
+	if (((struct memAccess*)mem_access1)->address > ((struct memAccess*)mem_access2)->address){
 		return 1;
 	}
-	else if (addr_diff < 0){
+	else if (((struct memAccess*)mem_access2)->address < ((struct memAccess*)mem_access2)->address){
 		return -1;
 	}
 	else{

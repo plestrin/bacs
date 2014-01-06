@@ -2,7 +2,18 @@
 #define TRACEFILE_H
 
 #include <stdio.h>
+
+#ifdef __linux__
+
 #include "codeMap.h"
+
+#endif
+
+#ifdef WIN32
+
+#include "../../shared/codeMap.h"
+
+#endif
 
 #define TRACEFILES_MAX_NAME_SIZE 256
 

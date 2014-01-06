@@ -180,17 +180,33 @@ static int cmReaderJSON_string(void* ctx, const unsigned char* stringVal, size_t
 	}
 	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_START){
 		switch (cm_reader->actual_map_level){
+			#if defined ARCH_32
 			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
 			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
 			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_start = strtoul((const char*)stringVal, NULL, 16); break;}
+			#elif defined ARCH_64
+			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_start = strtoull((const char*)stringVal, NULL, 16); break;}
+			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_start = strtoull((const char*)stringVal, NULL, 16); break;}
+			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_start = strtoull((const char*)stringVal, NULL, 16); break;}
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 			default : {printf("ERROR: in %s, string attribute is not expected at this level\n", __func__); break;}
 		}
 	}
 	else if (cm_reader->actual_key == CM_JSON_MAP_KEY_STOP){
 		switch (cm_reader->actual_map_level){
+			#if defined ARCH_32
 			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
 			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
 			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_stop = strtoul((const char*)stringVal, NULL, 16); break;}
+			#elif defined ARCH_64
+			case IMAGE_MAP_LEVEL	: {cm_reader->current_image.address_stop = strtoull((const char*)stringVal, NULL, 16); break;}
+			case SECTION_MAP_LEVEL	: {cm_reader->current_section.address_stop = strtoull((const char*)stringVal, NULL, 16); break;}
+			case ROUTINE_MAP_LEVEL	: {cm_reader->current_routine.address_stop = strtoull((const char*)stringVal, NULL, 16); break;}
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 			default : {printf("ERROR: in %s, string attribute is not expected at this level\n", __func__); break;}
 		}
 	}

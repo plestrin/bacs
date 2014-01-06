@@ -1,6 +1,12 @@
 PROG_NAME		:= analysis
+DEBUG 			:= 1
+ARCHI			:= ARCH_32
 CC				:= gcc
-CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE
+ifeq ($(DEBUG),1)
+CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE -D$(ARCHI)
+else
+CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
+endif
 LDFLAGS			:= -lyajl
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/

@@ -218,10 +218,9 @@ static int graph_create_node(struct graph* graph){
 			return -1;
 		}
 	}
-	else{
-		node_offset = graph->nb_node;
-		graph->nb_node ++;
-	}
+
+	node_offset = graph->nb_node;
+	graph->nb_node ++;
 
 	return node_offset;
 }
@@ -241,10 +240,9 @@ static int graph_create_edge(struct graph* graph){
 			return -1;
 		}
 	}
-	else{
-		edge_offset = graph->nb_edge;
-		graph->nb_edge ++;
-	}
+
+	edge_offset = graph->nb_edge;
+	graph->nb_edge ++;
 
 	return edge_offset;
 }

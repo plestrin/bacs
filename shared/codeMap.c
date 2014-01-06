@@ -57,7 +57,7 @@ struct codeMap* codeMap_create(){
 	return cm;
 }
 
-int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed){
+int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name, char white_listed){
 	struct cm_image* 	image;
 	struct cm_image** 	cursor = &(cm->images);
 
@@ -91,7 +91,7 @@ int codeMap_add_image(struct codeMap* cm, unsigned long address_start, unsigned 
 	return 0;
 }
 
-int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name){
+int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name){
 	struct cm_section* 	section;
 	struct cm_section** cursor;
 
@@ -130,7 +130,7 @@ int codeMap_add_section(struct codeMap* cm, unsigned long address_start, unsigne
 	return 0;
 }
 
-struct cm_routine* codeMap_add_routine(struct codeMap* cm, unsigned long address_start, unsigned long address_stop, const char* name, char white_listed){
+struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name, char white_listed){
 	struct cm_routine*	routine = NULL;
 	struct cm_routine**	cursor;
 
@@ -332,6 +332,16 @@ void codeMap_print(struct codeMap* cm, char* str_filter){
 			multiColumnPrinter_set_column_size(printer, 4, 10);
 			multiColumnPrinter_set_column_size(printer, 5, 6);
 
+			#if defined ARCH_32
+			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_32);
+			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_32);
+			#elif defined ARCH_64
+			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_64);
+			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_64);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
+
 			multiColumnPrinter_set_title(printer, 0, (char*)"IMAGE");
 			multiColumnPrinter_set_title(printer, 1, (char*)"SECTION");
 			multiColumnPrinter_set_title(printer, 2, (char*)"ROUTINE");
@@ -391,10 +401,22 @@ void codeMap_delete(struct codeMap* cm){
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file){
 	if (routine != NULL){
 		if (routine->white_listed == CODEMAP_WHITELISTED){
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#if defined ARCH_32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#elif defined ARCH_64
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 		}
 		else{
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#if defined ARCH_32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#elif defined ARCH_64
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 		}
 	}
 }
@@ -403,7 +425,13 @@ static void codeMap_print_section_JSON(struct cm_section* section, FILE* file){
 	struct cm_routine* routine;
 
 	if (section != NULL){
-		fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
+		#if defined ARCH_32
+		fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
+		#elif defined ARCH_64
+		fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 
 		routine = section->routines;
 		while(routine != NULL){
@@ -424,10 +452,22 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 
 	if (image != NULL){
 		if (image->white_listed == CODEMAP_WHITELISTED){
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+			#if defined ARCH_32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+			#elif defined ARCH_64
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 		}
 		else{
-			fprintf(file, "{\"start\":\"%lx\",\"stop\":\"%lx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+			#if defined ARCH_32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+			#elif defined ARCH_64
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 		}
 
 		section = image->sections;
@@ -445,9 +485,6 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 }
 
 static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter){
-	char address_start[32];
-	char address_stop[32];
-
 	if (routine != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
 			if (!codeMap_filter_routine_executed(routine)){
@@ -460,22 +497,17 @@ static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_
 			}
 		}
 
-		snprintf(address_start, 32, "0x%lx", routine->address_start);
-		snprintf(address_stop, 32, "0x%lx", routine->address_stop);
-
 		if (routine->white_listed == CODEMAP_WHITELISTED){
-			multiColumnPrinter_print(printer, " ", " ", routine->name, address_start, address_stop, "yes", NULL);
+			multiColumnPrinter_print(printer, " ", " ", routine->name, routine->address_start, routine->address_stop, "yes", NULL);
 		}
 		else{
-			multiColumnPrinter_print(printer, " ", " ", routine->name, address_start, address_stop, "no", NULL);
+			multiColumnPrinter_print(printer, " ", " ", routine->name, routine->address_start, routine->address_stop, "no", NULL);
 		}
 	}
 }
 
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter){
 	struct cm_routine* 	routine;
-	char 				address_start[32];
-	char 				address_stop[32];
 
 	if (section != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
@@ -489,10 +521,7 @@ static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_
 			}
 		}
 
-		snprintf(address_start, 32, "0x%lx", section->address_start);
-		snprintf(address_stop, 32, "0x%lx", section->address_stop);
-
-		multiColumnPrinter_print(printer, " ", section->name, " ", address_start, address_stop, " ", NULL);
+		multiColumnPrinter_print(printer, " ", section->name, " ", section->address_start, section->address_stop, " ", NULL);
 
 		routine = section->routines;
 		while(routine != NULL){
@@ -504,8 +533,6 @@ static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_
 
 static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter){
 	struct cm_section* 	section;
-	char 				address_start[32];
-	char 				address_stop[32];
 
 	if (image != NULL){
 		if (filter & CODEMAP_FILTER_EXECUTED){
@@ -519,14 +546,11 @@ static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_im
 			}
 		}
 
-		snprintf(address_start, 32, "0x%lx", image->address_start);
-		snprintf(address_stop, 32, "0x%lx", image->address_stop);
-
 		if (image->white_listed == CODEMAP_WHITELISTED){
-			multiColumnPrinter_print(printer, image->name, " ", " ", address_start, address_stop, "yes", NULL);
+			multiColumnPrinter_print(printer, image->name, " ", " ", image->address_start, image->address_stop, "yes", NULL);
 		}
 		else{
-			multiColumnPrinter_print(printer, image->name, " ", " ", address_start, address_stop, "no", NULL);
+			multiColumnPrinter_print(printer, image->name, " ", " ", image->address_start, image->address_stop, "no", NULL);
 		}
 
 		section = image->sections;
@@ -690,7 +714,7 @@ int codeMap_check_address(struct codeMap* cm){
 	return 0;
 }
 
-struct cm_image* codeMap_search_image(struct codeMap* cm, unsigned long address){
+struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address){
 	struct cm_image* image_cursor;
 
 	if (cm != NULL){
@@ -708,7 +732,7 @@ struct cm_image* codeMap_search_image(struct codeMap* cm, unsigned long address)
 	return NULL;
 }
 
-struct cm_section* codeMap_search_section(struct codeMap* cm, unsigned long address){
+struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address){
 	struct cm_image* 	image_cursor;
 	struct cm_section* 	section_cursor;
 
@@ -736,7 +760,7 @@ struct cm_section* codeMap_search_section(struct codeMap* cm, unsigned long addr
 	return NULL;
 }
 
-struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long address){
+struct cm_routine* codeMap_search_routine(struct codeMap* cm, ADDRESS address){
 	struct cm_image* 	image_cursor;
 	struct cm_section* 	section_cursor;
 	struct cm_routine* 	routine_cursor;
@@ -774,7 +798,7 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, unsigned long addr
 	return NULL;
 }
 
-int codeMap_is_instruction_whiteListed(struct codeMap* cm, unsigned long address){
+int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 	struct cm_image* 	image_cursor;
 	struct cm_section* 	section_cursor;
 	struct cm_routine* 	routine_cursor;

@@ -4,6 +4,16 @@
 
 #include "whiteList.h"
 
+int whiteList_compare(const void* entry1, const void* entry2);
+
+#ifdef WIN32
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#endif
+
 #ifdef __linux__
 
 #include <sys/types.h>
@@ -12,81 +22,128 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-int whiteList_compare(const void * entry1, const void * entry2);
-
-
-struct whiteList* whiteList_create(const char* file_name){
-	int 				file;
-	struct stat 		sb;
-	struct whiteList* 	result;
-	size_t				i;
-	int 				n;
-
-
-	result = (struct whiteList*)malloc(sizeof(struct whiteList));
-	if (result == NULL){
-		printf("ERROR: unable to allocate memory\n");
-		return NULL;
-	}
+int whiteList_init(struct whiteList* list, const char* file_name){
+	int 		result = -1;
+	int 		file;
+	struct stat sb;
+	size_t		i;
+	int 		n;
 
 	file = open(file_name, O_RDONLY);
 	if (file == -1){
-		printf("ERROR: unable to open file: %s\n", file_name);
-		free(result);
-		return NULL;
+		printf("ERROR: in %s, unable to open file: %s\n", __func__, file_name);
+		return result;
 	}
 
 	if (fstat(file, &sb) < 0){
-		printf("ERROR: unable to read file size\n");
+		printf("ERROR: in %s, unable to read file size\n", __func__);
 		close(file);
-		free(result);
-		return NULL;
+		return result;
 	}
 
-	result->buffer = (char*)mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, file, 0);
-	if (result->buffer == NULL){
-		printf("ERROR: unable to mmap memory\n");
+	list->buffer = (char*)mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, file, 0);
+	if (list->buffer == NULL){
+		printf("ERROR: in %s, unable to mmap memory\n", __func__);
 		close(file);
-		free(result);
-		return NULL;
+		return result;
 	}
 
 	close(file);
 
-	result->buffer_size = sb.st_size;
-	result->nb_entry = 1;
+	list->buffer_size = sb.st_size;
+	list->nb_entry = 1;
 
-	for (i = 0; i < result->buffer_size; i++){
-		if (result->buffer[i] == '\n'){
-			result->nb_entry ++;
-			result->buffer[i] = '\0';
+	for (i = 0; i < list->buffer_size; i++){
+		if (list->buffer[i] == '\n'){
+			list->nb_entry ++;
+			list->buffer[i] = '\0';
 		}
 	}
 
-	result->entries = (char**)malloc(sizeof(char*)*result->nb_entry);
-	if (result->entries == NULL){
-		printf("ERROR: unable to allocate memory\n");
-		munmap(result->buffer, result->buffer_size);
-		free(result);
-		return NULL;
+	list->entries = (char**)malloc(sizeof(char*)*list->nb_entry);
+	if (list->entries == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		munmap(list->buffer, list->buffer_size);
+		return result;
 	}
 
-	result->entries[0] = result->buffer;
-	for (n = 1, i = 0; n < result->nb_entry; n++){
-		while ((i < result->buffer_size) && (result->buffer[i] != '\0')){
+	list->entries[0] = list->buffer;
+	for (n = 1, i = 0; n < list->nb_entry; n++){
+		while ((i < list->buffer_size) && (list->buffer[i] != '\0')){
 			i++;
 		}
-		if (i >= result->buffer_size){
-			printf("ERROR: searching for end of line fails at line %d:%d\n", n, result->nb_entry);
-			result->entries[n] = result->entries[n-1];
+		if (i >= list->buffer_size){
+			printf("ERROR: in %s, searching for end of line fails at line %d:%d\n", __func__, n, list->nb_entry);
+			list->entries[n] = list->entries[n-1];
 		}
 		else{
 			i++;
-			result->entries[n] = result->buffer + i;
+			list->entries[n] = list->buffer + i;
 		}
 	}
 
-	qsort(result->entries, result->nb_entry, sizeof(char*), whiteList_compare);	
+	qsort(list->entries, list->nb_entry, sizeof(char*), whiteList_compare);	
+
+	result = 0;
+
+	return result;
+}
+
+void whiteList_clean(struct whiteList* list){
+	if (list->entries != NULL){
+		free(list->entries);
+	}
+	if (list->buffer != NULL && list->buffer_size > 0){
+		munmap(list->buffer, list->buffer_size);
+	}
+}
+
+#endif
+
+#ifdef WIN32
+
+int whiteList_init(struct whiteList* list, const char* file_name){
+	int result = -1;
+
+	/* liste des choses qu'il faut faire:
+		- lecture de la taille du fichier
+		- allocation du buffer principal
+		- ouverture du fichier
+		- copy du contenu du fichier dans l'espace alloué.
+		- fermeture du fichier
+		- création de l'index 
+	*/
+
+	result = 0;
+
+	return result;
+}
+
+void whiteList_clean(struct whiteList* list){
+	if (list->entries != NULL){
+		free(list->entries);
+	}
+	if (list->buffer != NULL && list->buffer_size > 0){
+		/*munmap(list->buffer, list->buffer_size);*/
+	}
+}
+
+#endif
+
+struct whiteList* whiteList_create(const char* file_name){
+	struct whiteList* 	result;
+
+	result = (struct whiteList*)malloc(sizeof(struct whiteList));
+	if (result == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+	else{
+		if (whiteList_init(result, file_name)){
+			printf("ERROR: in %s, unable to init whiteList\n", __func__);
+			free(result);
+			result = NULL;
+		}
+	}
 
 	return result;
 }
@@ -125,12 +182,7 @@ void whiteList_print(struct whiteList* list){
 
 void whiteList_delete(struct whiteList* list){
 	if (list != NULL){
-		if (list->entries != NULL){
-			free(list->entries);
-		}
-		if (list->buffer != NULL && list->buffer_size > 0){
-			munmap(list->buffer, list->buffer_size);
-		}
+		whiteList_clean(list);
 		free(list);
 	}
 }
@@ -138,6 +190,3 @@ void whiteList_delete(struct whiteList* list){
 int whiteList_compare(const void* entry1, const void* entry2){
 	return strcmp(*(char**)entry1, *(char**)entry2);
 }
-
-
-#endif

@@ -12,7 +12,7 @@
 struct memAccess{
 	uint32_t 	order;
 	uint32_t 	value;
-	uint64_t 	address;
+	ADDRESS 	address;
 	uint8_t 	size;
 };
 
