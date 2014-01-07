@@ -521,21 +521,59 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t 				start;
 	uint32_t				stop;
 	uint32_t 				index;
+	uint8_t 				found_space = 0;
+	struct array*(*extract_routine_read)(struct memAccess*,int);
+	struct array*(*extract_routine_write)(struct memAccess*,int);
+
+	#define ARG_A_DESC 	"arguments are made of adjacent memory access"
+	#define ARG_AS_DESC "same as \"A\" with additional access size consideration (Mandatory for fragmentation)"
 
 	start = 0;
 	stop = array_get_length(&(trace->frag_array));
 
 	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			index = (uint32_t)atoi(arg + i + 1);
 		
-		if (index < array_get_length(&(trace->frag_array))){
-			start = index;
-			stop = index + 1;
+			if (index < array_get_length(&(trace->frag_array))){
+				start = index;
+				stop = index + 1;
+			}
+			else{
+				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+				return;
+			}
+		}
+
+		if (!strncmp(arg, "A", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"A\" : %s\n", ARG_A_DESC);
+			#endif
+		}
+		else if (!strncmp(arg, "AS", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_size_write;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"AS\" : %s\n", ARG_AS_DESC);
+			#endif
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
-			return;
+			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
+			goto arg_error;
 		}
+		
+	}
+	else{
+		printf("ERROR: in %s, an argument is expected to select the extraction routine\n", __func__);
+		goto arg_error;
 	}
 
 	for (i = start; i < stop; i++){
@@ -548,8 +586,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		/* traceFragment_remove_read_after_write(fragment); */
 
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
-			argument.input = traceFragment_extract_mem_arg_adjacent(fragment->read_memory_array, fragment->nb_memory_read_access);
-			argument.output = traceFragment_extract_mem_arg_adjacent(fragment->write_memory_array, fragment->nb_memory_write_access);
+			argument.input = extract_routine_read(fragment->read_memory_array, fragment->nb_memory_read_access);
+			argument.output = extract_routine_write(fragment->write_memory_array, fragment->nb_memory_write_access);
 
 			if (argument.input != NULL && argument.output != NULL){
 				strncpy(argument.tag, fragment->tag, ARGBUFFER_TAG_LENGTH);
@@ -567,6 +605,17 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		#endif
 	}
+
+	return;
+
+	arg_error:
+	printf("Expected extraction specifier:\n");
+	printf(" - \"A\"  : %s\n", ARG_A_DESC);
+	printf(" - \"AS\" : %s\n", ARG_AS_DESC);
+	return;
+
+	#undef ARG_A_DESC
+	#undef ARG_AS_DESC
 }
 
 /* ===================================================================== */

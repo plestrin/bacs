@@ -4,7 +4,7 @@
 
 #include "tracer.h"
 #include "traceFiles.h"
-#include "instruction.h" /* je ne sias pas trop à quoi ça sert mais on verra bien */
+#include "instruction.h" /* je ne sais pas trop à quoi ça sert mais on verra bien */
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST				"0"
@@ -105,7 +105,7 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* Instrumentation function                                              */
 /* ===================================================================== */
 
-/* En terme de granularité de l'instrumentation qui peut le moins peut le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'aasez systématique */
+/* En terme de granularité de l'instrumentation qui peut le moins peut le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'assez systématique */
 void pintool_instrumentation_ins(INS instruction, void* arg){
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
 

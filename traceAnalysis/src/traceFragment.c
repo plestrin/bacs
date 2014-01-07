@@ -6,6 +6,7 @@
 #include "multiColumn.h"
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); 		/* Order memAccess array in address order and in order order as a second option */
+int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2); 	/* Order memAccess array in address order and in inv order order as a second option */
 int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2); 	/* Search the given address for a lower order */
 
 
@@ -297,83 +298,158 @@ int32_t traceFragment_remove_read_after_write(struct traceFragment* frag){
 
 }
 
-/* this routine must be adapted to take into account different heristics like: opcode value end access size */
-struct array* traceFragment_extract_mem_arg_adjacent(struct memAccess* mem_access, int nb_mem_access){
-	int 				i;
-	int 				j;
-	struct array* 		array = NULL;
-	ADDRESS 			mem_address_upper_bound;
-	ADDRESS 			mem_address_written;
-	struct argBuffer 	arg;
-	int8_t 				nb_byte;
-
-	if (mem_access != NULL && nb_mem_access > 0){
-		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
-
-		array = array_create(sizeof(struct argBuffer));
-		if (array == NULL){
-			printf("ERROR: in %s, unable to create array struture\n", __func__);
-			return array;
-		}
-
-		for (i = 1, j = 0, mem_address_upper_bound = mem_access[0].address + mem_access[0].size; i < nb_mem_access; i++){
-			if (mem_access[i].address > mem_address_upper_bound){
-				arg.location_type 		= ARG_LOCATION_MEMORY;
-				arg.location.address 	= mem_access[j].address;
-				arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);
-				arg.data 				= (char*)malloc(arg.size);
-				if (arg.data == NULL){
-					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					return array;
-				}
-
-				mem_address_written = mem_access[j].address;
-				while (j <  i){
-					nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);
-					if (nb_byte > 0){
-						memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);
-						mem_address_written += nb_byte;
-					}
-					j++;
-				}
-
-				if (array_add(array, &arg) < 0){
-					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-				}
-
-				mem_address_upper_bound = mem_access[i].address + mem_access[i].size;
-			}
-			else{
-				mem_address_upper_bound = (mem_address_upper_bound > (mem_access[i].address + mem_access[i].size)) ? mem_address_upper_bound : (mem_access[i].address + mem_access[i].size);
-			}
-		}
-
-		arg.location_type 		= ARG_LOCATION_MEMORY;
-		arg.location.address 	= mem_access[j].address;
-		arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);
-		arg.data 				= (char*)malloc(arg.size);
-		if (arg.data == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		}
-		else{
-			mem_address_written = mem_access[j].address;
-			while (j < i){
-				nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);
-				if (nb_byte > 0){
-					memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);
-					mem_address_written += nb_byte;
-				}
-				j++;
-			}
-
-			if (array_add(array, &arg) < 0){
-				printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-			}
-		}
-	}
-
-	return array;
+#define TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(name, sort_rtn)																																	\
+struct array* (name)(struct memAccess* mem_access, int nb_mem_access){																															\
+	int 				i;																																										\
+	int 				j;																																										\
+	struct array* 		array = NULL;																																							\
+	ADDRESS 			mem_address_upper_bound;																																				\
+	ADDRESS 			mem_address_written;																																					\
+	struct argBuffer 	arg;																																									\
+	int8_t 				nb_byte;																																								\
+																																																\
+	if (mem_access != NULL && nb_mem_access > 0){																																				\
+		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), (sort_rtn));																													\
+																																																\
+		array = array_create(sizeof(struct argBuffer));																																			\
+		if (array == NULL){																																										\
+			printf("ERROR: in %s, unable to create array structure\n", __func__);																												\
+			return array;																																										\
+		}																																														\
+																																																\
+		for (i = 1, j = 0, mem_address_upper_bound = mem_access[0].address + mem_access[0].size; i < nb_mem_access; i++){																		\
+			if (mem_access[i].address > mem_address_upper_bound){																																\
+				arg.location_type 		= ARG_LOCATION_MEMORY;																																	\
+				arg.location.address 	= mem_access[j].address;																																\
+				arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																							\
+				arg.data 				= (char*)malloc(arg.size);																																\
+				if (arg.data == NULL){																																							\
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);																												\
+					return array;																																								\
+				}																																												\
+																																																\
+				mem_address_written = mem_access[j].address;																																	\
+				while (j <  i){																																									\
+					nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);																						\
+					if (nb_byte > 0){																																							\
+						memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);								\
+						mem_address_written += nb_byte;																																			\
+					}																																											\
+					j++;																																										\
+				}																																												\
+																																																\
+				if (array_add(array, &arg) < 0){																																				\
+					printf("ERROR: in %s, unable to add element to array structure\n", __func__);																								\
+				}																																												\
+																																																\
+				mem_address_upper_bound = mem_access[i].address + mem_access[i].size;																											\
+			}																																													\
+			else{																																												\
+				mem_address_upper_bound = (mem_address_upper_bound > (mem_access[i].address + mem_access[i].size)) ? mem_address_upper_bound : (mem_access[i].address + mem_access[i].size);	\
+			}																																													\
+		}																																														\
+																																																\
+		arg.location_type 		= ARG_LOCATION_MEMORY;																																			\
+		arg.location.address 	= mem_access[j].address;																																		\
+		arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																									\
+		arg.data 				= (char*)malloc(arg.size);																																		\
+		if (arg.data == NULL){																																									\
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);																														\
+		}																																														\
+		else{																																													\
+			mem_address_written = mem_access[j].address;																																		\
+			while (j < i){																																										\
+				nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);																							\
+				if (nb_byte > 0){																																								\
+					memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);									\
+					mem_address_written += nb_byte;																																				\
+				}																																												\
+				j++;																																											\
+			}																																													\
+																																																\
+			if (array_add(array, &arg) < 0){																																					\
+				printf("ERROR: in %s, unable to add element to array structure\n", __func__);																									\
+			}																																													\
+		}																																														\
+	}																																															\
+																																																\
+	return array;																																												\
 }
+
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_read, memAccess_compare_address_then_order)
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_write, memAccess_compare_address_then_inv_order)
+
+#define TRACE_FRAGMENT_EXTRACT_MEM_ARG_ADJACENT_SIZE(name, sort_rtn)																															\
+struct array* (name)(struct memAccess* mem_access, int nb_mem_access){																															\
+	struct array* 		array = NULL;																																							\
+	uint8_t*			taken;																																									\
+	int 				i;																																										\
+	int 				j;																																										\
+	int 				k;																																										\
+	struct argBuffer 	arg;																																									\
+	uint32_t			size;																																									\
+																																																\
+	if (mem_access != NULL && nb_mem_access > 0){																																				\
+		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), (sort_rtn));																													\
+																																																\
+		taken = (uint8_t*)calloc(sizeof(uint8_t) * nb_mem_access);																																\
+		if (taken == NULL){																																										\
+			printf("ERROR: in %s, unable to alloacte memory\n", __func__);																														\
+			return array;																																										\
+		}																																														\
+																																																\
+		array = array_create(sizeof(struct argBuffer));																																			\
+		if (array == NULL){																																										\
+			printf("ERROR: in %s, unable to create array structure\n", __func__);																												\
+		}																																														\
+		else{																																													\
+			for (i = 0; i < nb_mem_access; i++){																																				\
+				if (taken[i] == 0){																																								\
+					size = mem_access[i].size;																																					\
+					for (j = i + 1; j < nb_mem_access; j++){																																	\
+						if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size)){																										\
+							if (mem_access[j].address == mem_access[i].address + size){																											\
+								size += mem_access[j].address;																																	\
+								taken[j] = 1;																																					\
+							}																																									\
+							else if (mem_access[j].address > mem_access[i].address + size){																										\
+								break;																																							\
+							}																																									\
+						}																																										\
+					}																																											\
+																																																\
+					arg.location_type 		= ARG_LOCATION_MEMORY;																																\
+					arg.location.address 	= mem_access[i].address;																															\
+					arg.size 				= size;																																				\
+					arg.data 				= (char*)malloc(arg.size);																															\
+					if (arg.data == NULL){																																						\
+						printf("ERROR: in %s, unable to allocate memory\n", __func__);																											\
+						return array;																																							\
+					}																																											\
+																																																\
+					for (k = i, size = 0; k < j; k++){																																			\
+						if (taken[k] == 1){																																						\
+							memcpy(arg.data + size, &(mem_access[k].value), mem_access[i].size);																								\
+							size += mem_access[i].size;																																			\
+							taken[k] = 2;																																						\
+						}																																										\
+					}																																											\
+																																																\
+					if (array_add(array, &arg) < 0){																																			\
+						printf("ERROR: in %s, unable to add element to array structure\n", __func__);																							\
+					}																																											\
+				}																																												\
+			}																																													\
+		}																																														\
+																																																\
+		free(taken);																																											\
+	}																																															\
+																																																\
+	return array;																																												\
+}
+
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_size_read, memAccess_compare_address_then_order)
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_size_write, memAccess_compare_address_then_inv_order)
 
 void traceFragment_delete(struct traceFragment* frag){
 	if (frag != NULL){
@@ -410,6 +486,18 @@ int memAccess_compare_address_then_order(const void* mem_access1, const void* me
 	}
 }
 
+int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2){
+	if (((struct memAccess*)mem_access1)->address > ((struct memAccess*)mem_access2)->address){
+		return 1;
+	}
+	else if (((struct memAccess*)mem_access2)->address > ((struct memAccess*)mem_access1)->address){
+		return -1;
+	}
+	else{
+		return (int32_t)(((struct memAccess*)mem_access2)->order - ((struct memAccess*)mem_access1)->order);
+	}
+}
+
 int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2){
 	if (((struct memAccess*)mem_access1)->address > ((struct memAccess*)mem_access2)->address){
 		return 1;
@@ -418,8 +506,7 @@ int memAccess_compare_address_then_lower_order(const void* mem_access1, const vo
 		return -1;
 	}
 	else{
-		int32_t order_diff = ((struct memAccess*)mem_access1)->order - ((struct memAccess*)mem_access2)->order;
-		if (order_diff < 0){
+		if (((struct memAccess*)mem_access1)->order < ((struct memAccess*)mem_access2)->order){
 			return -1;
 		}
 		else{
