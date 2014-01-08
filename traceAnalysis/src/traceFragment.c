@@ -322,6 +322,7 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 				arg.location_type 		= ARG_LOCATION_MEMORY;																																	\
 				arg.location.address 	= mem_access[j].address;																																\
 				arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																							\
+				arg.access_size 		= ARGBUFFER_ACCESS_SIZE_UNDEFINED;																														\
 				arg.data 				= (char*)malloc(arg.size);																																\
 				if (arg.data == NULL){																																							\
 					printf("ERROR: in %s, unable to allocate memory\n", __func__);																												\
@@ -352,6 +353,7 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 		arg.location_type 		= ARG_LOCATION_MEMORY;																																			\
 		arg.location.address 	= mem_access[j].address;																																		\
 		arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																									\
+		arg.access_size 		= ARGBUFFER_ACCESS_SIZE_UNDEFINED;																																\
 		arg.data 				= (char*)malloc(arg.size);																																		\
 		if (arg.data == NULL){																																									\
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);																														\
@@ -379,7 +381,7 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_read, memAccess_compare_address_then_order)
 TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_write, memAccess_compare_address_then_inv_order)
 
-#define TRACE_FRAGMENT_EXTRACT_MEM_ARG_ADJACENT_SIZE(name, sort_rtn)																															\
+#define TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT_SIZE(name, sort_rtn)																																\
 struct array* (name)(struct memAccess* mem_access, int nb_mem_access){																															\
 	struct array* 		array = NULL;																																							\
 	uint8_t*			taken;																																									\
@@ -392,9 +394,9 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 	if (mem_access != NULL && nb_mem_access > 0){																																				\
 		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), (sort_rtn));																													\
 																																																\
-		taken = (uint8_t*)calloc(sizeof(uint8_t) * nb_mem_access);																																\
+		taken = (uint8_t*)calloc(nb_mem_access, sizeof(uint8_t));																																\
 		if (taken == NULL){																																										\
-			printf("ERROR: in %s, unable to alloacte memory\n", __func__);																														\
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);																														\
 			return array;																																										\
 		}																																														\
 																																																\
@@ -405,15 +407,19 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 		else{																																													\
 			for (i = 0; i < nb_mem_access; i++){																																				\
 				if (taken[i] == 0){																																								\
+					taken[i] = 1;																																								\
 					size = mem_access[i].size;																																					\
 					for (j = i + 1; j < nb_mem_access; j++){																																	\
 						if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size)){																										\
 							if (mem_access[j].address == mem_access[i].address + size){																											\
-								size += mem_access[j].address;																																	\
+								size += mem_access[j].size;																																		\
 								taken[j] = 1;																																					\
 							}																																									\
 							else if (mem_access[j].address > mem_access[i].address + size){																										\
 								break;																																							\
+							}																																									\
+							else{																																								\
+								taken[j] = 2;																																					\
 							}																																									\
 						}																																										\
 					}																																											\
@@ -421,6 +427,7 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 					arg.location_type 		= ARG_LOCATION_MEMORY;																																\
 					arg.location.address 	= mem_access[i].address;																															\
 					arg.size 				= size;																																				\
+					arg.access_size 		= mem_access[i].size;																																\
 					arg.data 				= (char*)malloc(arg.size);																															\
 					if (arg.data == NULL){																																						\
 						printf("ERROR: in %s, unable to allocate memory\n", __func__);																											\
@@ -448,8 +455,8 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 	return array;																																												\
 }
 
-TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_size_read, memAccess_compare_address_then_order)
-TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_size_write, memAccess_compare_address_then_inv_order)
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT_SIZE(traceFragment_extract_mem_arg_adjacent_size_read, memAccess_compare_address_then_order)
+TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT_SIZE(traceFragment_extract_mem_arg_adjacent_size_write, memAccess_compare_address_then_inv_order)
 
 void traceFragment_delete(struct traceFragment* frag){
 	if (frag != NULL){

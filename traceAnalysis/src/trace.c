@@ -735,12 +735,58 @@ void trace_arg_set_tag(struct trace* trace, char* arg){
 	}
 }
 
+void trace_arg_fragment(struct trace* trace, char* arg){
+	uint32_t 			start;
+	uint32_t			stop;
+	uint32_t 			index;
+	uint32_t			i;
+	struct argument* 	argument;
+	struct array 		new_argument_array;
+
+	start = 0;
+	stop = array_get_length(&(trace->arg_array));
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->arg_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
+			return;
+		}
+	}
+
+	if (array_init(&new_argument_array, sizeof(struct argument))){
+		printf("ERROR: in %s, unable to create array", __func__);
+		return;
+	}
+
+	for (i = start; i < stop; i++){
+		argument = (struct argument*)array_get(&(trace->arg_array), i);
+
+		#ifdef VERBOSE
+		printf("Fragmenting arg %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, argument->tag);
+		#endif
+
+		argument_fragment_input(argument, &new_argument_array);
+	}
+
+	if (array_copy(&new_argument_array, &(trace->arg_array), 0, array_get_length(&new_argument_array)) != array_get_length(&new_argument_array)){
+		printf("ERROR: in %s, unable to copy arrays (may cause memory loss)\n", __func__);
+	}
+
+	array_clean(&new_argument_array);
+}
+
 void trace_arg_search(struct trace* trace, char* arg){
-	uint32_t 				i;
-	struct argument* 		argument;
-	uint32_t 				start;
-	uint32_t				stop;
-	uint32_t 				index;
+	uint32_t 			i;
+	struct argument* 	argument;
+	uint32_t 			start;
+	uint32_t			stop;
+	uint32_t 			index;
 
 	start = 0;
 	stop = array_get_length(&(trace->arg_array));
@@ -762,7 +808,7 @@ void trace_arg_search(struct trace* trace, char* arg){
 		argument = (struct argument*)array_get(&(trace->arg_array), i);
 
 		#ifdef VERBOSE
-		printf("Searching fragment %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)), argument->tag);
+		printf("Searching argument %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, argument->tag);
 		#endif
 
 		ioChecker_submit_arguments(trace->checker, argument->input, argument->output);
