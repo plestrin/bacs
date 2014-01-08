@@ -36,6 +36,8 @@ struct argBuffer{
 
 void argBuffer_print_raw(struct argBuffer* arg);
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst);
+int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
+
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
 void argBuffer_delete_array(struct array* arg_array);
 

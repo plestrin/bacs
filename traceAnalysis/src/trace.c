@@ -774,7 +774,7 @@ void trace_arg_fragment(struct trace* trace, char* arg){
 		argument_fragment_input(argument, &new_argument_array);
 	}
 
-	if (array_copy(&new_argument_array, &(trace->arg_array), 0, array_get_length(&new_argument_array)) != array_get_length(&new_argument_array)){
+	if (array_copy(&new_argument_array, &(trace->arg_array), 0, array_get_length(&new_argument_array)) != (int32_t)array_get_length(&new_argument_array)){
 		printf("ERROR: in %s, unable to copy arrays (may cause memory loss)\n", __func__);
 	}
 
@@ -811,6 +811,6 @@ void trace_arg_search(struct trace* trace, char* arg){
 		printf("Searching argument %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, argument->tag);
 		#endif
 
-		ioChecker_submit_arguments(trace->checker, argument->input, argument->output);
+		ioChecker_submit_argBuffers(trace->checker, argument->input, argument->output);
 	}
 }

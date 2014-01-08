@@ -48,17 +48,15 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	return result;
 }
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, uint8_t nb_output, struct argBuffer* input, struct argBuffer* output){
-	uint32_t 	result = -1;
-	uint8_t 	i;
-	uint8_t 	j;
-	void** 		arg_in;
-	void** 		arg_out;
-
-	/* There is no implicit output - for faster test*/
-	if (primitive->nb_output != nb_output){
-		return result;
-	}
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args){
+	int32_t 			result = -1;
+	uint8_t 			i;
+	uint8_t 			j;
+	uint32_t 			k;
+	void** 				arg_in;
+	void** 				arg_out;
+	uint32_t*			arg_out_size;
+	struct argBuffer* 	argBuffer_out;
 
 	arg_in = (void**)alloca(primitive->nb_input * sizeof(void*));
 
@@ -134,32 +132,25 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 	}
 
 	arg_out = (void**)alloca(primitive->nb_output * sizeof(void*));
+	arg_out_size = (uint32_t*)alloca(primitive->nb_output * sizeof(uint32_t));
 
 	memset(arg_out, 0, primitive->nb_output * sizeof(void*));
 
 	for (i = 0; i < primitive->nb_output; i++){
 		if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
-			if (output[i].size == PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
-				arg_out[i] = malloc(output[i].size);
-				if (arg_out[i] == NULL){
-					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					goto exit;
-				}
-			}
-			else{
+			arg_out_size[i] = PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]);
+			arg_out[i] = malloc(arg_out_size[i]);
+			if (arg_out[i] == NULL){
+				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 				goto exit;
 			}
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]) < nb_input){
-				if (output[i].size == input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i])].size){
-					arg_out[i] = malloc(output[i].size);
-					if (arg_out[i] == NULL){
-						printf("ERROR: in %s, unable to allocate memory\n", __func__);
-						goto exit;
-					}
-				}
-				else{
+				arg_out_size[i] = input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i])].size;
+				arg_out[i] = malloc(arg_out_size[i]);
+				if (arg_out[i] == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
 					goto exit;
 				}
 			}
@@ -175,8 +166,16 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 
 	primitive->func(arg_in, arg_out);
 
-	for (j = 0, result = 0; j < nb_output; j++){
-		result |= memcmp(arg_out[j], output[j].data, output[j].size);
+	for (j = 0, result = 0; j < primitive->nb_output; j++){
+		for (k = 0; k < array_get_length(output_args); k++){
+			argBuffer_out = (struct argBuffer*)array_get(output_args, k);
+			if (argBuffer_search(argBuffer_out, arg_out[j], arg_out_size[j]) >= 0){
+				break;
+			}
+		}
+		if (k == array_get_length(output_args)){
+			result = 1;
+		}
 	}
 
 	if (!result){
@@ -186,9 +185,9 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 			printBuffer_raw(stdout, input[j].data, input[j].size);
 			printf("\n");
 		}
-		for (j = 0; j < nb_output; j++){
+		for (j = 0; j < primitive->nb_output; j++){
 			printf("\tArg %u out: ", j);
-			printBuffer_raw(stdout, output[j].data, output[j].size);
+			printBuffer_raw(stdout, arg_out[j], arg_out_size[j]);
 			printf("\n");
 		}
 	}

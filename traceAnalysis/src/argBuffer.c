@@ -69,6 +69,22 @@ int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst){
 	return 0;
 }
 
+int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size){
+	uint32_t i;
+
+	if (arg->size >= buffer_size){
+		for (i = 0; i <= (arg->size - buffer_size); i++){
+			if (!memcmp(arg->data + i, buffer, buffer_size)){
+				return i;
+			}
+		}
+		return -1;
+	}
+	else{
+		return -1;
+	}
+}
+
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){
 	uint32_t 			i;
 	struct argBuffer* 	arg_src;
