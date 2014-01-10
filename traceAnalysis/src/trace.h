@@ -5,8 +5,8 @@
 #include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
-#include "callTree.h"
-#include "graph.h"
+/*#include "callTree.h"
+#include "graph.h"*/
 #include "ioChecker.h"
 #include "loop.h"
 
@@ -23,7 +23,7 @@ struct trace{
 
 	struct ioChecker*			checker;
 	struct codeMap* 			code_map;
-	struct graph* 				call_tree;
+	/*struct graph* 				call_tree;*/
 	struct loopEngine*			loop_engine;
 	struct array				frag_array;
 	struct array 				arg_array;

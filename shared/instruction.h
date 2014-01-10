@@ -4,8 +4,13 @@
 #include <stdint.h>
 
 #include "include/xed-iclass-enum.h"
-#include "multiColumn.h"
 #include "address.h"
+
+#if defined __linux__
+#include "multiColumn.h"
+#elif defined WIN32
+#include "../misc/multiColumn.h"
+#endif
 
 #define INSTRUCTION_MAX_NB_DATA 2
 

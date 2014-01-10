@@ -17,8 +17,8 @@ struct simpleTraceStat{
 	uint32_t 	nb_mem_write_1;
 	uint32_t 	nb_mem_write_2;
 	uint32_t 	nb_mem_write_4;
-	uint64_t 	min_pc;
-	uint64_t 	max_pc;
+	ADDRESS 	min_pc;
+	ADDRESS 	max_pc;
 };
 
 struct simpleTraceStat* simpleTraceStat_create();

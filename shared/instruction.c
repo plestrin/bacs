@@ -3,6 +3,16 @@
 
 #include "instruction.h"
 
+#ifdef WIN32
+
+#ifndef __func__
+#define __func__ __FUNCTION__
+#endif
+
+#define snprintf(str, size, format, ...) _snprintf_s((str), (size), _TRUNCATE, (format), __VA_ARGS__)
+
+#endif
+
 struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 	struct multiColumnPrinter* printer;
 

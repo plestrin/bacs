@@ -4,13 +4,11 @@
 
 #include "codeMap.h"
 
-#ifdef __linux__
+#if defined __linux__
 
 #include "multiColumn.h"
 
-#endif
-
-#ifdef WIN32
+#elif defined WIN32
 
 #include "../misc/multiColumn.h"
 

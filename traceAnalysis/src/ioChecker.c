@@ -94,7 +94,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	}
 
 	/* RC4 cipher */
-	{
+	/*{
 		uint32_t input_specifier[4];
 		uint32_t output_specifier[1];
 
@@ -105,7 +105,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(output_specifier[0], 0);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("RC4", ioChecker_wrapper_rc4)
-	}
+	}*/
 
 	/* AES 128 */
 	{
@@ -117,7 +117,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand encrypt", ioChecker_wrapper_aes128_key_expand_encrypt)
 	}
-	{
+	/*{
 		uint32_t input_specifier[1];
 		uint32_t output_specifier[1];
 
@@ -145,7 +145,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand decrypt", ioChecker_wrapper_aes128_decrypt)
-	}
+	}*/
 
 	checker->max_nb_input = 0;
 

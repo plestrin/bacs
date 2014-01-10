@@ -55,7 +55,7 @@ struct trace* trace_create(const char* dir_name){
 
 	}
 
-	trace->call_tree = NULL;
+	/*trace->call_tree = NULL;*/
 	trace->loop_engine = NULL;
 
 	return trace;
@@ -72,9 +72,9 @@ void trace_delete(struct trace* trace){
 		if (trace->loop_engine != NULL){
 			loopEngine_delete(trace->loop_engine);
 		}
-		if (trace->call_tree != NULL){
+		/*if (trace->call_tree != NULL){
 			graph_delete(trace->call_tree);
-		}
+		}*/
 
 		traceReaderJSON_clean(&(trace->ins_reader.json));
 		codeMap_delete(trace->code_map);
@@ -141,7 +141,7 @@ void trace_instruction_export(struct trace* trace){
 /* ===================================================================== */
 
 void trace_callTree_create(struct trace* trace){
-	struct instruction*			ins;
+	/*struct instruction*			ins;
 	struct callTree_element		element;
 
 	if (trace->call_tree != NULL){
@@ -177,22 +177,22 @@ void trace_callTree_create(struct trace* trace){
 	}
 	else{
 		printf("ERROR: in %s, unable to create graph\n", __func__);
-	}
+	}*/
 }
 
 void trace_callTree_print_dot(struct trace* trace, char* file_name){
-	if (trace->call_tree != NULL){
+	/*if (trace->call_tree != NULL){
 		if (graphPrintDot_print(trace->call_tree, file_name)){
 			printf("ERROR: in %s, unable to print callTree to DOT format\n", __func__);
 		}
 	}
 	else{
 		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}
+	}*/
 }
 
 void trace_callTree_export(struct trace* trace){
-	int32_t 				i;
+	/*int32_t 				i;
 	struct callTree_node* 	node;
 	struct traceFragment 	fragment;
 
@@ -219,17 +219,17 @@ void trace_callTree_export(struct trace* trace){
 	}
 	else{
 		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}
+	}*/
 }
 
 void trace_callTree_delete(struct trace* trace){
-	if (trace->call_tree != NULL){
+	/*if (trace->call_tree != NULL){
 		graph_delete(trace->call_tree);
 		trace->call_tree = NULL;
 	}
 	else{
 		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}
+	}*/
 }
 
 /* ===================================================================== */

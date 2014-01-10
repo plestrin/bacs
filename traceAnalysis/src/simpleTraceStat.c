@@ -106,8 +106,15 @@ struct multiColumnPrinter* simpleTraceStat_init_MultiColumnPrinter(){
 		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
 		multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
 		multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_UINT32);
+		#if defined ARCH_32
+		multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_HEX_32);
+		multiColumnPrinter_set_column_type(printer, 7, MULTICOLUMN_TYPE_HEX_32);
+		#elif defined ARCH_64
 		multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_HEX_64);
 		multiColumnPrinter_set_column_type(printer, 7, MULTICOLUMN_TYPE_HEX_64);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
 
 		multiColumnPrinter_set_title(printer, 0, (char*)"Index");
 		multiColumnPrinter_set_title(printer, 1, (char*)"Tag");
@@ -135,10 +142,17 @@ void simpleTraceStat_print(struct multiColumnPrinter* printer, uint32_t index, c
 			printf("\tMemory read: \t\t\t%u (1 byte: %u, 2 bytes: %u, 4 bytes: %u)\n", stat->nb_mem_read, stat->nb_mem_read_1, stat->nb_mem_read_2, stat->nb_mem_read_4);
 			printf("\tMemory write: \t\t\t%u (1 byte: %u, 2 bytes: %u, 4 bytes: %u)\n", stat->nb_mem_write, stat->nb_mem_write_1, stat->nb_mem_write_2, stat->nb_mem_write_4);
 
+			#if defined ARCH_32
+			printf("\tMin program counter: \t\t0x%x\n", stat->min_pc);
+			printf("\tMax program counter: \t\t0x%x\n", stat->max_pc);
+			#elif defined ARCH_64
 			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 			printf("\tMin program counter: \t\t0x%llx\n", stat->min_pc);
 			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 			printf("\tMax program counter: \t\t0x%llx\n", stat->max_pc);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
 		}
 		else{
 			multiColumnPrinter_print(printer, index, tag, stat->nb_dynamic_instruction, stat->nb_different_instruction, stat->nb_mem_read, stat->nb_mem_write, stat->min_pc, stat->max_pc, NULL);

@@ -4,7 +4,11 @@
 
 #include "tracer.h"
 #include "traceFiles.h"
+#if defined __linux__
 #include "instruction.h" /* je ne sais pas trop à quoi ça sert mais on verra bien */
+#elif defined WIN32
+#include "../../../shared/instruction.h"
+#endif
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST				"0"
