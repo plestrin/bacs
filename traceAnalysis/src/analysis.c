@@ -72,6 +72,9 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "Print arguments from the argument array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", "Set tag value for specific argument. Specify arg index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "fragment arg", "Fragment argument. Specify arg index and tag value", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_fragment)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create argumentGraph", "Create a dependency graph between argument", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_create_argumentGraph)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print dot argumentGraph", "Print the argumentGraph in the DOT format. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print_dot_argumentGraph)
+	ADD_CMD_TO_INPUT_PARSER(parser, "delete argumentGraph", "Delete a previously created argumentGraph", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_delete_argumentGraph)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argument array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
 
 

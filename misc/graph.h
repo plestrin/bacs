@@ -57,7 +57,6 @@ struct graph* graph_create(struct graphCallback* callback);
 int32_t graph_init(struct graph* graph, struct graphCallback* callback);
 int32_t graph_add_node(struct graph* graph, void* data);
 int32_t graph_add_edge(struct graph* graph, int32_t node_src, int32_t node_dst, void* data);
-int32_t graph_get_edge(struct graph* graph, int32_t node_src, int32_t node_dst);
 
 static inline uint32_t graph_get_nb_node(struct graph* graph){
 	return array_get_length(&(graph->node_array));

@@ -7,6 +7,7 @@
 #include "graphPrintDot.h"
 #include "argBuffer.h"
 #include "simpleTraceStat.h"
+#include "argumentGraph.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -57,24 +58,28 @@ struct trace* trace_create(const char* dir_name){
 
 	/*trace->call_tree = NULL;*/
 	trace->loop_engine = NULL;
+	trace->argument_graph = NULL;
 
 	return trace;
 }
 
 void trace_delete(struct trace* trace){
 	if (trace != NULL){
-		trace_arg_clean(trace);
-		array_clean(&(trace->arg_array));
-
-		trace_frag_clean(trace);
-		array_clean(&(trace->frag_array));
-
 		if (trace->loop_engine != NULL){
 			loopEngine_delete(trace->loop_engine);
 		}
 		/*if (trace->call_tree != NULL){
 			graph_delete(trace->call_tree);
 		}*/
+		if (trace->argument_graph != NULL){
+			graph_delete(trace->argument_graph);
+		}
+
+		trace_arg_clean(trace);
+		array_clean(&(trace->arg_array));
+
+		trace_frag_clean(trace);
+		array_clean(&(trace->frag_array));
 
 		traceReaderJSON_clean(&(trace->ins_reader.json));
 		codeMap_delete(trace->code_map);
@@ -146,6 +151,7 @@ void trace_callTree_create(struct trace* trace){
 
 	if (trace->call_tree != NULL){
 		graph_delete(trace->call_tree);
+		printf("WARNING: in %s, deleting the current callTree\n", __func__);
 	}
 	trace->call_tree = graph_create();
 	if (trace->call_tree != NULL){
@@ -182,8 +188,13 @@ void trace_callTree_create(struct trace* trace){
 
 void trace_callTree_print_dot(struct trace* trace, char* file_name){
 	/*if (trace->call_tree != NULL){
-		if (graphPrintDot_print(trace->call_tree, file_name)){
-			printf("ERROR: in %s, unable to print callTree to DOT format\n", __func__);
+		if (file_name != NULL){
+			if (graphPrintDot_print(trace->call_tree, file_name)){
+				printf("ERROR: in %s, unable to print callTree in DOT format to file: \"%s\"\n", __func__, file_name);
+			}
+		}
+		else{
+			printf("ERROR: in %s, please specify a file name\n", __func__);
 		}
 	}
 	else{
@@ -779,6 +790,53 @@ void trace_arg_fragment(struct trace* trace, char* arg){
 	}
 
 	array_clean(&new_argument_array);
+}
+
+void trace_arg_create_argumentGraph(struct trace* trace){
+	uint32_t i;
+
+	if (trace->argument_graph != NULL){
+		graph_delete(trace->argument_graph);
+		printf("WARNING: in %s, deleting the current argumentGraph\n", __func__);
+	}
+	trace->argument_graph = argumentGraph_create();
+	if (trace->argument_graph != NULL){
+		for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+			if (argumentGraph_add_argument(trace->argument_graph, (struct argument*)array_get(&(trace->arg_array), i))){
+				printf("ERROR: in %s, unable to add argument %u to argumentGraph\n", __func__, i);
+				break;
+			}
+		}
+	}
+	else{
+		printf("ERROR: in %s, unable to create graph\n", __func__);
+	}
+}
+
+void trace_arg_print_dot_argumentGraph(struct trace* trace, char* file_name){
+	if (trace->argument_graph != NULL){
+		if (file_name != NULL){
+			if (graphPrintDot_print(trace->argument_graph, file_name)){
+				printf("ERROR: in %s, unable to print argumentGraph in DOT format to file: \"%s\"\n", __func__, file_name);
+			}
+		}
+		else{
+			printf("ERROR: in %s, please specify a file name\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, argumentGraph is NULL\n", __func__);
+	}
+}
+
+void trace_arg_delete_argumentGraph(struct trace* trace){
+	if (trace->argument_graph != NULL){
+		graph_delete(trace->argument_graph);
+		trace->argument_graph = NULL;
+	}
+	else{
+		printf("ERROR: in %s, argumentGraph is NULL\n", __func__);
+	}
 }
 
 void trace_arg_search(struct trace* trace, char* arg){

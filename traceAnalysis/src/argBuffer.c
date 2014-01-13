@@ -85,6 +85,68 @@ int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_si
 	}
 }
 
+struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2){
+	struct argBuffer* 	result = NULL;
+	uint32_t			size;
+	uint32_t			offset_arg1;
+	uint32_t			offset_arg2;
+
+	if (arg1->location_type == arg2->location_type){
+		if (arg1->location_type == ARG_LOCATION_MEMORY){
+			if (arg1->location.address > arg2->location.address){
+				if (arg2->location.address + arg2->size <= arg1->location.address){
+					return NULL;
+				}
+				offset_arg1 = 0;
+				offset_arg2 = arg1->location.address - arg2->location.address;
+			}
+			else{
+				if (arg1->location.address + arg1->size <= arg2->location.address){
+					return NULL;
+				}
+				offset_arg1 = arg2->location.address - arg1->location.address;
+				offset_arg2 = 0;
+			}
+
+			size = ((arg1->size - offset_arg1) > (arg2->size - offset_arg2)) ? (arg2->size - offset_arg2) : (arg1->size - offset_arg1);
+			if (!memcmp(arg1->data + offset_arg1, arg2->data + offset_arg2, size)){
+				result = (struct argBuffer*)malloc(sizeof(struct argBuffer));
+				if (result == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				}
+				else{
+					result->location_type = ARG_LOCATION_MEMORY;
+					result->location.address = arg1->location.address + offset_arg1;
+					result->size = size;
+					result->access_size = (arg1->access_size == arg2->access_size) ? arg1->access_size : ARGBUFFER_ACCESS_SIZE_UNDEFINED;
+					result->data = (char*)malloc(size);
+					if (result->data == NULL){
+						printf("ERROR: in %s, unable to allocate memory\n", __func__);
+						free(result);
+						return NULL;
+					}
+					memcpy(result->data, arg1->data + offset_arg1, size);
+				}
+			}
+		}
+		else if(arg1->location_type == ARG_LOCATION_REGISTER){
+			/* a completer */
+		}
+		else{
+			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+		}
+	}
+
+	return result;
+}
+
+void argBuffer_delete(struct argBuffer* arg){
+	if (arg != NULL){
+		free(arg->data);
+		free(arg);
+	}
+}
+
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){
 	uint32_t 			i;
 	struct argBuffer* 	arg_src;

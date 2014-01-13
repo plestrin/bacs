@@ -26,11 +26,14 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)traceFragment.o			\
 	$(BUILD_DIR)argBuffer.o 			\
+	$(BUILD_DIR)argumentGraph.o 		\
 	$(BUILD_DIR)primitiveReference.o 	\
 	$(BUILD_DIR)ioChecker.o 			\
 	$(BUILD_DIR)loop.o 					\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
+	$(BUILD_DIR)graph.o 				\
+	$(BUILD_DIR)graphPrintDot.o 		\
 	$(BUILD_DIR)printBuffer.o			\
 	$(BUILD_DIR)inputParser.o			\
 	$(BUILD_DIR)workPercent.o			\

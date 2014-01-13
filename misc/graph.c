@@ -100,23 +100,6 @@ int32_t graph_add_edge(struct graph* graph, int32_t node_src, int32_t node_dst, 
 	return result;
 }
 
-int32_t graph_get_edge(struct graph* graph, int32_t node_src, int32_t node_dst){
-	struct edge edge;
-
-	if (graph->special_mapping_edge_src == NULL){
-		graph->special_mapping_edge_src = graphMapping_create(graph, GRAPH_MAPPING_TYPE_EDGE, (int32_t(*)(const void*,const void*,void*))edge_sort_src_dst, (int32_t(*)(const void*,const void*,void*))edge_search_src_dst);
-		if (graph->special_mapping_edge_src == NULL){
-			printf("ERROR: in %s, unable to create mapping\n", __func__);
-			return -1;
-		}
-	}
-
-	edge.id_src = node_src;
-	edge.id_dst = node_dst;
-
-	return graphMapping_search(graph, graph->special_mapping_edge_src, &edge);
-}
-
 void graph_clean(struct graph* graph){
 	uint32_t i;
 
