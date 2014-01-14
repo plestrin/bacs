@@ -6,17 +6,8 @@
 #include "array.h"
 #include "address.h"
 
-#define ARGBUFFER_TAG_LENGTH 				32
-
 #define ARGBUFFER_FRAGMENT_MAX_NB_ELEMENT 	9
-
 #define ARGBUFFER_ACCESS_SIZE_UNDEFINED 	-1
-
-struct argument{
-	char 			tag[ARGBUFFER_TAG_LENGTH];
-	struct array*	input;
-	struct array*	output;
-};
 
 enum argLocationType{
 	ARG_LOCATION_MEMORY,
@@ -36,13 +27,13 @@ struct argBuffer{
 
 void argBuffer_print_raw(struct argBuffer* arg);
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst);
+int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
 struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2);
+void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_);
 void argBuffer_delete(struct argBuffer* arg);
 
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
 void argBuffer_delete_array(struct array* arg_array);
-
-void argument_fragment_input(struct argument* argument, struct array* array);
 
 #endif

@@ -4,10 +4,10 @@
 
 #include "trace.h"
 #include "instruction.h"
-#include "graphPrintDot.h"
+#include "argSet.h"
 #include "argBuffer.h"
 #include "simpleTraceStat.h"
-#include "argumentGraph.h"
+#include "argSetGraph.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -47,8 +47,8 @@ struct trace* trace_create(const char* dir_name){
 		return NULL;
 	}
 
-	if (array_init(&(trace->arg_array), sizeof(struct argument))){
-		printf("ERROR: in %s, unable to init argument array\n", __func__);
+	if (array_init(&(trace->arg_array), sizeof(struct argSet))){
+		printf("ERROR: in %s, unable to init argSet array\n", __func__);
 		array_clean(&(trace->frag_array));
 		ioChecker_delete(trace->checker);
 		free(trace);
@@ -58,7 +58,7 @@ struct trace* trace_create(const char* dir_name){
 
 	/*trace->call_tree = NULL;*/
 	trace->loop_engine = NULL;
-	trace->argument_graph = NULL;
+	trace->arg_set_graph = NULL;
 
 	return trace;
 }
@@ -67,12 +67,14 @@ void trace_delete(struct trace* trace){
 	if (trace != NULL){
 		if (trace->loop_engine != NULL){
 			loopEngine_delete(trace->loop_engine);
+			trace->loop_engine = NULL;
 		}
 		/*if (trace->call_tree != NULL){
 			graph_delete(trace->call_tree);
 		}*/
-		if (trace->argument_graph != NULL){
-			graph_delete(trace->argument_graph);
+		if (trace->arg_set_graph != NULL){
+			argSetGraph_delete(trace->arg_set_graph);
+			trace->arg_set_graph = NULL;
 		}
 
 		trace_arg_clean(trace);
@@ -145,6 +147,7 @@ void trace_instruction_export(struct trace* trace){
 /* Calltree functions						                             */
 /* ===================================================================== */
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void trace_callTree_create(struct trace* trace){
 	/*struct instruction*			ins;
 	struct callTree_element		element;
@@ -186,6 +189,7 @@ void trace_callTree_create(struct trace* trace){
 	}*/
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void trace_callTree_print_dot(struct trace* trace, char* file_name){
 	/*if (trace->call_tree != NULL){
 		if (file_name != NULL){
@@ -202,6 +206,7 @@ void trace_callTree_print_dot(struct trace* trace, char* file_name){
 	}*/
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void trace_callTree_export(struct trace* trace){
 	/*int32_t 				i;
 	struct callTree_node* 	node;
@@ -233,6 +238,7 @@ void trace_callTree_export(struct trace* trace){
 	}*/
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void trace_callTree_delete(struct trace* trace){
 	/*if (trace->call_tree != NULL){
 		graph_delete(trace->call_tree);
@@ -510,7 +516,7 @@ void trace_frag_set_tag(struct trace* trace, char* arg){
 				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
 				#endif
 
-				strncpy(fragment->tag, arg + i + 1, ARGBUFFER_TAG_LENGTH);
+				strncpy(fragment->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
 			}
 			else{
 				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
@@ -528,7 +534,7 @@ void trace_frag_set_tag(struct trace* trace, char* arg){
 void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t 				i;
 	struct traceFragment* 	fragment;
-	struct argument 		argument;
+	struct argSet 			arg_set;
 	uint32_t 				start;
 	uint32_t				stop;
 	uint32_t 				index;
@@ -560,6 +566,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
 				return;
 			}
+		}
+		else{
+			i ++;
 		}
 
 		if (!strncmp(arg, "A", i)){
@@ -597,12 +606,16 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		/* traceFragment_remove_read_after_write(fragment); */
 
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
-			argument.input = extract_routine_read(fragment->read_memory_array, fragment->nb_memory_read_access);
-			argument.output = extract_routine_write(fragment->write_memory_array, fragment->nb_memory_write_access);
+			arg_set.input = extract_routine_read(fragment->read_memory_array, fragment->nb_memory_read_access);
+			arg_set.output = extract_routine_write(fragment->write_memory_array, fragment->nb_memory_write_access);
 
-			if (argument.input != NULL && argument.output != NULL){
-				strncpy(argument.tag, fragment->tag, ARGBUFFER_TAG_LENGTH);
-				if (array_add(&(trace->arg_array), &argument) < 0){
+			if (arg_set.input != NULL && arg_set.output != NULL){
+				strncpy(arg_set.tag, fragment->tag, ARGSET_TAG_MAX_LENGTH);
+				if (strlen(arg_set.tag) == 0){
+					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "%u", array_get_length(&(trace->arg_array)));
+				}
+
+				if (array_add(&(trace->arg_array), &arg_set) < 0){
 					printf("ERROR: in %s, unable to add arguement to arg array\n", __func__);
 				}
 			}
@@ -635,12 +648,21 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 void trace_arg_clean(struct trace* trace){
 	uint32_t 				i;
-	struct argument* 		argument;
+	struct argSet* 			arg_set;
+
+	if (trace->arg_set_graph != NULL){
+		argSetGraph_delete(trace->arg_set_graph);
+		trace->arg_set_graph = NULL;
+
+		#ifdef VERBOSE
+		printf("The argSetGraph attached to the argSet array has been destroyed\n");
+		#endif
+	}
 
 	for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
-		argument = (struct argument*)array_get(&(trace->arg_array), i);
-		argBuffer_delete_array(argument->input);
-		argBuffer_delete_array(argument->output);
+		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
+		argBuffer_delete_array(arg_set->input);
+		argBuffer_delete_array(arg_set->output);
 	}
 	array_empty(&(trace->arg_array));
 }
@@ -648,7 +670,7 @@ void trace_arg_clean(struct trace* trace){
 void trace_arg_print(struct trace* trace, char* arg){
 	uint32_t 					index;
 	uint32_t 					i;
-	struct argument* 			argument;
+	struct argSet* 				arg_set;
 	struct argBuffer* 			buffer;
 	struct multiColumnPrinter* 	printer;
 
@@ -656,20 +678,20 @@ void trace_arg_print(struct trace* trace, char* arg){
 		index = (uint32_t)atoi(arg);
 		
 		if (index < array_get_length(&(trace->arg_array))){
-			argument = (struct argument*)array_get(&(trace->arg_array), index);
+			arg_set = (struct argSet*)array_get(&(trace->arg_array), index);
 			#ifdef VERBOSE
-			printf("Print argument %u (tag: \"%s\", nb argument: %u)\n", index, argument->tag, array_get_length(&(trace->arg_array)));
+			printf("Print argSet %u (tag: \"%s\", nb argSet: %u)\n", index, arg_set->tag, array_get_length(&(trace->arg_array)));
 			#endif
 
-			for (i = 0; i < array_get_length(argument->input); i++){
-				buffer = (struct argBuffer*)array_get(argument->input, i);
-				printf("Input %u/%u ", i + 1, array_get_length(argument->input));
+			for (i = 0; i < array_get_length(arg_set->input); i++){
+				buffer = (struct argBuffer*)array_get(arg_set->input, i);
+				printf("Input %u/%u ", i + 1, array_get_length(arg_set->input));
 				argBuffer_print_raw(buffer);
 			}
 
-			for (i = 0; i < array_get_length(argument->output); i++){
-				buffer = (struct argBuffer*)array_get(argument->output, i);
-				printf("Output %u/%u ", i + 1, array_get_length(argument->output));
+			for (i = 0; i < array_get_length(arg_set->output); i++){
+				buffer = (struct argBuffer*)array_get(arg_set->output, i);
+				printf("Output %u/%u ", i + 1, array_get_length(arg_set->output));
 				argBuffer_print_raw(buffer);
 			}
 		}
@@ -696,8 +718,8 @@ void trace_arg_print(struct trace* trace, char* arg){
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
-				argument = (struct argument*)array_get(&(trace->arg_array), i);
-				multiColumnPrinter_print(printer, i, argument->tag, array_get_length(argument->input), array_get_length(argument->output), NULL);
+				arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
+				multiColumnPrinter_print(printer, i, arg_set->tag, array_get_length(arg_set->input), array_get_length(arg_set->output), NULL);
 			}
 
 			multiColumnPrinter_delete(printer);
@@ -711,7 +733,7 @@ void trace_arg_print(struct trace* trace, char* arg){
 void trace_arg_set_tag(struct trace* trace, char* arg){
 	uint32_t 			i;
 	uint32_t 			index;
-	struct argument* 	argument;
+	struct argSet* 		arg_set;
 	uint8_t 			found_space = 0;
 
 	if (arg != NULL){
@@ -725,13 +747,13 @@ void trace_arg_set_tag(struct trace* trace, char* arg){
 			index = (uint32_t)atoi(arg);
 
 			if (index < array_get_length(&(trace->arg_array))){
-				argument = (struct argument*)array_get(&(trace->arg_array), index);
+				arg_set = (struct argSet*)array_get(&(trace->arg_array), index);
 
 				#ifdef VERBOSE
-				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, argument->tag, arg + i + 1);
+				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, arg_set->tag, arg + i + 1);
 				#endif
 
-				strncpy(argument->tag, arg + i + 1, ARGBUFFER_TAG_LENGTH);
+				strncpy(arg_set->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
 			}
 			else{
 				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
@@ -751,8 +773,8 @@ void trace_arg_fragment(struct trace* trace, char* arg){
 	uint32_t			stop;
 	uint32_t 			index;
 	uint32_t			i;
-	struct argument* 	argument;
-	struct array 		new_argument_array;
+	struct argSet* 		arg_set;
+	struct array 		new_argSet_array;
 
 	start = 0;
 	stop = array_get_length(&(trace->arg_array));
@@ -770,54 +792,44 @@ void trace_arg_fragment(struct trace* trace, char* arg){
 		}
 	}
 
-	if (array_init(&new_argument_array, sizeof(struct argument))){
+	if (array_init(&new_argSet_array, sizeof(struct argSet))){
 		printf("ERROR: in %s, unable to create array", __func__);
 		return;
 	}
 
 	for (i = start; i < stop; i++){
-		argument = (struct argument*)array_get(&(trace->arg_array), i);
+		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
 
 		#ifdef VERBOSE
-		printf("Fragmenting arg %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, argument->tag);
+		printf("Fragmenting arg %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
 		#endif
 
-		argument_fragment_input(argument, &new_argument_array);
+		argSet_fragment_input(arg_set, &new_argSet_array);
 	}
 
-	if (array_copy(&new_argument_array, &(trace->arg_array), 0, array_get_length(&new_argument_array)) != (int32_t)array_get_length(&new_argument_array)){
+	if (array_copy(&new_argSet_array, &(trace->arg_array), 0, array_get_length(&new_argSet_array)) != (int32_t)array_get_length(&new_argSet_array)){
 		printf("ERROR: in %s, unable to copy arrays (may cause memory loss)\n", __func__);
 	}
 
-	array_clean(&new_argument_array);
+	array_clean(&new_argSet_array);
 }
 
-void trace_arg_create_argumentGraph(struct trace* trace){
-	uint32_t i;
-
-	if (trace->argument_graph != NULL){
-		graph_delete(trace->argument_graph);
-		printf("WARNING: in %s, deleting the current argumentGraph\n", __func__);
+void trace_arg_create_argSetGraph(struct trace* trace){
+	if (trace->arg_set_graph != NULL){
+		argSetGraph_delete(trace->arg_set_graph);
+		printf("WARNING: in %s, deleting the current argSetGraph\n", __func__);
 	}
-	trace->argument_graph = argumentGraph_create();
-	if (trace->argument_graph != NULL){
-		for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
-			if (argumentGraph_add_argument(trace->argument_graph, (struct argument*)array_get(&(trace->arg_array), i))){
-				printf("ERROR: in %s, unable to add argument %u to argumentGraph\n", __func__, i);
-				break;
-			}
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to create graph\n", __func__);
+	trace->arg_set_graph = argSetGraph_create(&(trace->arg_array));
+	if (trace->arg_set_graph == NULL){
+		printf("ERROR: in %s, unable to create argSetGraph\n", __func__);
 	}
 }
 
-void trace_arg_print_dot_argumentGraph(struct trace* trace, char* file_name){
-	if (trace->argument_graph != NULL){
+void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name){
+	if (trace->arg_set_graph != NULL){
 		if (file_name != NULL){
-			if (graphPrintDot_print(trace->argument_graph, file_name)){
-				printf("ERROR: in %s, unable to print argumentGraph in DOT format to file: \"%s\"\n", __func__, file_name);
+			if (argSetGraph_print_dot(trace->arg_set_graph, file_name)){
+				printf("ERROR: in %s, unable to print argSetGraph in DOT format to file: \"%s\"\n", __func__, file_name);
 			}
 		}
 		else{
@@ -825,23 +837,96 @@ void trace_arg_print_dot_argumentGraph(struct trace* trace, char* file_name){
 		}
 	}
 	else{
-		printf("ERROR: in %s, argumentGraph is NULL\n", __func__);
+		printf("ERROR: in %s, argSetGraph is NULL\n", __func__);
 	}
 }
 
-void trace_arg_delete_argumentGraph(struct trace* trace){
-	if (trace->argument_graph != NULL){
-		graph_delete(trace->argument_graph);
-		trace->argument_graph = NULL;
+void trace_arg_pack(struct trace* trace, char* arg){
+	uint32_t 				i;
+	uint32_t 				start;
+	uint32_t				stop;
+	uint32_t 				index;
+	uint8_t 				found_space = 0;
+	int32_t (*pack_routine)(struct argSetGraph*,uint32_t);
+
+	#define ARG_S_DESC 		"pack the an argSet with one of his parent. Generate a lot of argSets but smaller ones"
+
+	start = 0;
+	stop = array_get_length(&(trace->arg_array));
+
+	if (arg != NULL){
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			index = (uint32_t)atoi(arg + i + 1);
+		
+			if (index < array_get_length(&(trace->arg_array))){
+				start = index;
+				stop = index + 1;
+			}
+			else{
+				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
+				return;
+			}
+		}
+		else{
+			i ++;
+		}
+
+		if (!strncmp(arg, "S", i)){
+			pack_routine = argSetGraph_pack_simple;
+			#ifdef VERBOSE
+			printf("Selecting packing routine \"S\" : %s\n", ARG_S_DESC);
+			#endif
+		}
+		else{
+			printf("ERROR: in %s, bad packing routine specifier of length %u\n", __func__, i);
+			goto arg_error;
+		}
+		
 	}
 	else{
-		printf("ERROR: in %s, argumentGraph is NULL\n", __func__);
+		printf("ERROR: in %s, an argument is expected to select the packing routine\n", __func__);
+		goto arg_error;
+	}
+
+	if (trace->arg_set_graph != NULL){
+		for (i = start; i < stop; i++){
+			if (pack_routine(trace->arg_set_graph, i)){
+				printf("ERROR: in %s, unable to pack argSet %u\n", __func__, i);
+				break;
+			}
+		}
+	}
+
+	return;
+
+	arg_error:
+	printf("Expected packing specifier:\n");
+	printf(" - \"S\"  : %s\n", ARG_S_DESC);
+	return;
+
+	#undef ARG_A_DESC
+	#undef ARG_AS_DESC
+}
+
+void trace_arg_delete_argSetGraph(struct trace* trace){
+	if (trace->arg_set_graph != NULL){
+		argSetGraph_delete(trace->arg_set_graph);
+		trace->arg_set_graph = NULL;
+	}
+	else{
+		printf("ERROR: in %s, argSetGraph is NULL\n", __func__);
 	}
 }
 
 void trace_arg_search(struct trace* trace, char* arg){
 	uint32_t 			i;
-	struct argument* 	argument;
+	struct argSet* 		arg_set;
 	uint32_t 			start;
 	uint32_t			stop;
 	uint32_t 			index;
@@ -863,12 +948,12 @@ void trace_arg_search(struct trace* trace, char* arg){
 	}
 
 	for (i = start; i < stop; i++){
-		argument = (struct argument*)array_get(&(trace->arg_array), i);
+		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
 
 		#ifdef VERBOSE
-		printf("Searching argument %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, argument->tag);
+		printf("Searching argSet %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
 		#endif
 
-		ioChecker_submit_argBuffers(trace->checker, argument->input, argument->output);
+		ioChecker_submit_argBuffers(trace->checker, arg_set->input, arg_set->output);
 	}
 }

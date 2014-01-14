@@ -26,7 +26,8 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)traceFragment.o			\
 	$(BUILD_DIR)argBuffer.o 			\
-	$(BUILD_DIR)argumentGraph.o 		\
+	$(BUILD_DIR)argSet.o 				\
+	$(BUILD_DIR)argSetGraph.o 			\
 	$(BUILD_DIR)primitiveReference.o 	\
 	$(BUILD_DIR)ioChecker.o 			\
 	$(BUILD_DIR)loop.o 					\

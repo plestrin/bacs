@@ -7,6 +7,6 @@
 
 #define GRAPHPRINTDOT_DEFAULT_FILE_NAME "graph.dot"
 
-int32_t graphPrintDot_print(struct graph* graph, const char* file_name);
+int32_t graphPrintDot_print(struct graph* graph, const char* file_name, void* arg);
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "traceFragment.h"
 #include "argBuffer.h"
+#include "argSet.h"
 #include "multiColumn.h"
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); 		/* Order memAccess array in address order and in order order as a second option */

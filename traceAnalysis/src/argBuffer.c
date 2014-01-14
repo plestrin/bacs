@@ -6,7 +6,6 @@
 #include "printBuffer.h"
 
 void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element);
-static void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_);
 
 void argBuffer_print_raw(struct argBuffer* arg){
 	if (arg != NULL){
@@ -172,6 +171,30 @@ int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){
 	return 0;
 }
 
+int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2){
+	int32_t result = -1;
+
+	if (arg1->size == arg2->size && arg1->location_type == arg2->location_type){
+		if (!memcmp(arg1->data, arg2->data, arg1->size)){
+			if (arg1->location_type == ARG_LOCATION_MEMORY){
+				if (arg1->location.address == arg2->location.address){
+					result = 0;
+				}
+			}
+			else if (arg1->location_type == ARG_LOCATION_REGISTER){
+				if (arg1->location.reg == arg2->location.reg){
+					result = 0;
+				}
+			}
+			else{
+				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+			}
+		}
+	}
+	
+	return result;
+}
+
 void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element){
 	uint32_t i;
 	uint32_t j;
@@ -193,7 +216,7 @@ void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element){
 	} 
 }
 
-static void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_){
+void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_){
 	uint32_t 	nb_element;
 	uint32_t	partition_size;
 	uint32_t 	nb_partition;
@@ -301,140 +324,4 @@ void argBuffer_delete_array(struct array* arg_array){
 
 		array_delete(arg_array);
 	}
-}
-
-void argument_fragment_input(struct argument* argument, struct array* array){
-	uint32_t 			nb_input;
-	uint32_t**			table_store;
-	uint32_t*			nb_element_store;
-	uint32_t			i;
-	uint32_t			j;
-	uint32_t			k;
-	struct argument 	new_argument;
-	struct argBuffer* 	argBuffer;
-	struct argBuffer 	new_argBuffer;
-	uint32_t 			nb_fragment = 0;
-	uint32_t			local_index;
-	uint32_t 			global_index;
-
-	nb_input = array_get_length(argument->input);
-
-	table_store = (uint32_t**)malloc(sizeof(uint32_t*) * nb_input);
-	if (table_store == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		return;
-	}
-
-	nb_element_store = (uint32_t*)malloc(sizeof(uint32_t) * nb_input);
-	if (nb_element_store == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		free(table_store);
-		return;
-	}
-
-	for (i = 0; i < nb_input; i++){
-		argBuffer_create_fragment_table((struct argBuffer*)array_get(argument->input, i), table_store + i, nb_element_store + i);
-		if (table_store[i] != NULL && nb_element_store[i] != 0){
-			if (nb_fragment == 0){
-				nb_fragment = (0x00000001 << (nb_element_store[i] - 1)) - 1;
-			}
-			else{
-				nb_fragment = nb_fragment * ((0x00000001 << (nb_element_store[i] - 1)) - 1);
-			}
-		}
-	}
-
-	if (nb_fragment != 0){
-		#ifdef VERBOSE
-		printf("Creating %u fragment argument(s)\n", nb_fragment);
-		#endif
-
-		for (i = 0; i < nb_fragment; i++){
-			global_index = i;
-
-			snprintf(new_argument.tag, ARGBUFFER_TAG_LENGTH, "frag %u: %s", i, argument->tag);
-
-			new_argument.input = array_create(sizeof(struct argBuffer));
-			if (new_argument.input == NULL){
-				printf("ERROR: in %s, unable to create array\n", __func__);
-				break;
-			}
-
-			new_argument.output = (struct array*)malloc(sizeof(struct array));
-			if (new_argument.output == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				break;
-			}
-
-			for (j = 0; j < nb_input; j++){
-				if (table_store[j] != NULL && nb_element_store[j] != 0){
-					local_index = global_index % ((0x00000001 << (nb_element_store[j] - 1)) - 1);
-					global_index = global_index / ((0x00000001 << (nb_element_store[j] - 1)) - 1);
-					argBuffer = (struct argBuffer*)array_get(argument->input, j);
-
-					new_argBuffer.location_type = argBuffer->location_type;
-					new_argBuffer.access_size = argBuffer->access_size;
-
-					for (k = 0; k < nb_element_store[j]; k++){
-						if (table_store[j][local_index * (2 * nb_element_store[j]) + 2*k + 1] != 0){
-							new_argBuffer.size = table_store[j][local_index * (2 * nb_element_store[j]) + 2*k + 1] * new_argBuffer.access_size;
-							if (new_argBuffer.location_type == ARG_LOCATION_MEMORY){
-								new_argBuffer.location.address = argBuffer->location.address + table_store[j][local_index * (2 * nb_element_store[j]) + 2*k] * new_argBuffer.access_size;
-							}
-							else if (new_argBuffer.location_type == ARG_LOCATION_REGISTER){
-								/* a completer */
-							}
-							else{
-								printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
-							}
-
-							new_argBuffer.data = (char*)malloc(new_argBuffer.size);
-							if (new_argBuffer.data == NULL){
-								printf("ERROR: in %s, unable to allocate memory\n", __func__);
-								continue;
-							}
-							memcpy(new_argBuffer.data, argBuffer->data + table_store[j][local_index * (2 * nb_element_store[j]) + 2*k] * new_argBuffer.access_size, new_argBuffer.size);
-
-							if (array_add(new_argument.input, &new_argBuffer) < 0){
-								printf("ERROR: in %s, unable to add argBuffer in input array\n", __func__);
-								free(new_argBuffer.data);
-							}
-						}
-					}
-				}
-				else{
-					if (argBuffer_clone((struct argBuffer*)array_get(argument->input, j), &new_argBuffer)){
-						printf("ERROR: in %s, unable to clone argBuffer\n", __func__);
-					}
-					else{
-						if (array_add(new_argument.input, &new_argBuffer) < 0){
-							printf("ERROR: in %s, unable to add argBuffer to array\n", __func__);
-						}
-					}
-				}
-			}
-
-			if (argBuffer_clone_array(argument->output, new_argument.output)){
-				printf("ERROR: in %s, unable to clone output argBuffer array\n", __func__);
-				argBuffer_delete_array(new_argument.input);
-				break;
-			}
-
-			if (array_add(array, &new_argument) < 0){
-				printf("ERROR: in %s, unable to add argument to array\n", __func__);
-				break;
-			}
-		}
-
-		for (i = 0;  i < nb_input; i++){
-			if (table_store[i] != NULL){
-				free(table_store[i]);
-			}
-		}
-	}
-
-	free(table_store);
-	free(nb_element_store);
-
-	return;
 }

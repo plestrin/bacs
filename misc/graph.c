@@ -342,6 +342,8 @@ int32_t graphMapping_search(struct graph* graph, struct graphMapping* mapping, c
 }
 
 uint32_t* graphMapping_search_(struct graph* graph, struct graphMapping* mapping, const void* key){
+	uint32_t* ptr;
+
 	if (graphMapping_is_valid(graph, mapping)){
 		if (graphMapping_map(graph, mapping)){
 			printf("ERROR: in %s, unable to recompute mapping\n", __func__);
@@ -349,7 +351,13 @@ uint32_t* graphMapping_search_(struct graph* graph, struct graphMapping* mapping
 		}
 	}
 
-	return (uint32_t*)bsearch_r(key, mapping->map, mapping->size, sizeof(uint32_t), (__compar_d_fn_t)mapping->search, graph);
+	ptr = (uint32_t*)bsearch_r(key, mapping->map, mapping->size, sizeof(uint32_t), (__compar_d_fn_t)mapping->search, graph);
+
+	while(ptr > mapping->map && ((__compar_d_fn_t)mapping->compare)(ptr, ptr - 1, graph) == 0){
+		ptr --;
+	}
+
+	return ptr;
 }
 
 void graphMapping_print(struct graph* graph, struct graphMapping* mapping){

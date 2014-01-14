@@ -22,8 +22,8 @@ struct graphMapping{
 };
 
 struct graphCallback{
-	void(*node_print_dot)(void*, FILE*);
-	void(*edge_print_dot)(void*, FILE*);
+	void(*node_print_dot)(void*, FILE*, void*);
+	void(*edge_print_dot)(void*, FILE*, void*);
 	void(*node_clean)(void*);
 	void(*edge_clean)(void*);
 };

@@ -25,7 +25,7 @@ struct trace{
 	struct codeMap* 			code_map;
 
 	/*struct graph* 				call_tree;*/
-	struct graph* 				argument_graph;
+	struct argSetGraph* 		arg_set_graph;
 	struct loopEngine*			loop_engine;
 
 	struct array				frag_array;
@@ -60,9 +60,10 @@ void trace_arg_clean(struct trace* trace);
 void trace_arg_print(struct trace* trace, char* arg);
 void trace_arg_set_tag(struct trace* trace, char* arg);
 void trace_arg_fragment(struct trace* trace, char* arg);
-void trace_arg_create_argumentGraph(struct trace* trace);
-void trace_arg_print_dot_argumentGraph(struct trace* trace, char* file_name);
-void trace_arg_delete_argumentGraph(struct trace* trace);
+void trace_arg_create_argSetGraph(struct trace* trace);
+void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name);
+void trace_arg_pack(struct trace* trace, char* arg);
+void trace_arg_delete_argSetGraph(struct trace* trace);
 void trace_arg_search(struct trace* trace, char* arg);
 
 
