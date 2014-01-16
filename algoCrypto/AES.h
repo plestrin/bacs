@@ -62,5 +62,18 @@ void aes192_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes256_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes256_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
+/* 
+ * Designed for the analysis program (loop centric approach)
+ * - input			: 128 bits
+ * - round_key 		: 36, 44, 52 words
+ * - output 		: 128 bits
+ */
+
+ void aes128_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+
+ void aes192_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+
+ void aes256_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+
 
 #endif

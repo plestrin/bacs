@@ -14,6 +14,7 @@ struct memAccess{
 	uint32_t 	value;
 	ADDRESS 	address;
 	uint8_t 	size;
+	uint32_t 	opcode;
 };
 
 struct traceFragment{
@@ -58,7 +59,7 @@ int32_t traceFragment_remove_read_after_write(struct traceFragment* frag);
 struct array* traceFragment_extract_mem_arg_adjacent_read(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_write(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess* mem_access, int nb_mem_access);
-struct array* traceFragment_extract_mem_arg_adjacent_size_write(struct memAccess* mem_access, int nb_mem_access);
+struct array* traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct memAccess* mem_access, int nb_mem_access);
 
 void traceFragment_delete(struct traceFragment* frag);
 void traceFragment_clean(struct traceFragment* frag);

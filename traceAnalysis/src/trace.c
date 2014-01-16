@@ -542,8 +542,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	struct array*(*extract_routine_read)(struct memAccess*,int);
 	struct array*(*extract_routine_write)(struct memAccess*,int);
 
-	#define ARG_A_DESC 	"arguments are made of adjacent memory access"
-	#define ARG_AS_DESC "same as \"A\" with additional access size consideration (Mandatory for fragmentation)"
+	#define ARG_A_DESC 		"arguments are made of adjacent memory access"
+	#define ARG_AS_DESC 	"same as \"A\" with additional access size consideration (Mandatory for fragmentation)"
+	#define ARG_ASO_DESC	"same as \"AS\" with additional opcode consideration"
 
 	start = 0;
 	stop = array_get_length(&(trace->frag_array));
@@ -580,9 +581,16 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, "AS", i)){
 			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_size_write;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
 			#ifdef VERBOSE
 			printf("Selecting extraction routine \"AS\" : %s\n", ARG_AS_DESC);
+			#endif
+		}
+		else if (!strncmp(arg, "ASO", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_opcode_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"ASO\" : %s\n", ARG_ASO_DESC);
 			#endif
 		}
 		else{
@@ -634,12 +642,14 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 	arg_error:
 	printf("Expected extraction specifier:\n");
-	printf(" - \"A\"  : %s\n", ARG_A_DESC);
-	printf(" - \"AS\" : %s\n", ARG_AS_DESC);
+	printf(" - \"A\"    : %s\n", ARG_A_DESC);
+	printf(" - \"AS\"   : %s\n", ARG_AS_DESC);
+	printf(" - \"ASO\"  : %s\n", ARG_ASO_DESC);
 	return;
 
 	#undef ARG_A_DESC
 	#undef ARG_AS_DESC
+	#undef ARG_ASO_DESC
 }
 
 /* ===================================================================== */
