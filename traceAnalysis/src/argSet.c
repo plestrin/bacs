@@ -211,7 +211,12 @@ int32_t argSet_combine(struct argSet* set_dst, struct argSet** set_src, uint32_t
 			for (k = 0; k < array_get_length(output); k++){
 				arg_dst = (struct argBuffer*)array_get(output, k);
 
+				/* not necessary if the merge routine (below) is more complete */
 				if (!argBuffer_equal(arg_src, arg_dst)){
+					break;
+				}
+
+				if (!argBuffer_try_merge(arg_dst, arg_src)){
 					break;
 				}
 			}

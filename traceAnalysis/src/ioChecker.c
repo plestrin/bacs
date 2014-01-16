@@ -18,6 +18,8 @@ void ioChecker_wrapper_aes128_key_expand_encrypt(void** input, void** output);
 void ioChecker_wrapper_aes128_key_expand_decrypt(void** input, void** output);
 void ioChecker_wrapper_aes128_encrypt(void** input, void** output);
 void ioChecker_wrapper_aes128_decrypt(void** input, void** output);
+void ioChecker_wrapper_aes192_key_expand_encrypt(void** input, void** output);
+void ioChecker_wrapper_aes256_key_expand_encrypt(void** input, void** output);
 
 static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, struct argBuffer* input, struct array* output_args);
 
@@ -146,6 +148,28 @@ int32_t ioChecker_init(struct ioChecker* checker){
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand decrypt", ioChecker_wrapper_aes128_decrypt)
 	}*/
+
+	/* AES 192 */
+	{
+		uint32_t input_specifier[1];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_192_NB_BYTE_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_192_NB_BYTE_ROUND_KEY);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES192 key expand encrypt", ioChecker_wrapper_aes192_key_expand_encrypt)
+	}
+
+	/* AES 256 */
+	{
+		uint32_t input_specifier[1];
+		uint32_t output_specifier[1];
+
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(input_specifier[0], AES_256_NB_BYTE_KEY);
+		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_256_NB_BYTE_ROUND_KEY);
+
+		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES256 key expand encrypt", ioChecker_wrapper_aes256_key_expand_encrypt)
+	}
 
 	checker->max_nb_input = 0;
 
@@ -337,6 +361,14 @@ void ioChecker_wrapper_aes128_encrypt(void** input, void** output){
 
 void ioChecker_wrapper_aes128_decrypt(void** input, void** output){
 	aes128_decrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes192_key_expand_encrypt(void** input, void** output){
+	aes192_key_expand_encrypt((uint32_t*)input[0], (uint32_t*)output[0]);
+}
+
+void ioChecker_wrapper_aes256_key_expand_encrypt(void** input, void** output){
+	aes256_key_expand_encrypt((uint32_t*)input[0], (uint32_t*)output[0]);
 }
 
 /* ===================================================================== */

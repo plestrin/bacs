@@ -612,7 +612,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			if (arg_set.input != NULL && arg_set.output != NULL){
 				strncpy(arg_set.tag, fragment->tag, ARGSET_TAG_MAX_LENGTH);
 				if (strlen(arg_set.tag) == 0){
-					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "%u", array_get_length(&(trace->arg_array)));
+					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag: %u", i);
 				}
 
 				if (array_add(&(trace->arg_array), &arg_set) < 0){
@@ -704,7 +704,7 @@ void trace_arg_print(struct trace* trace, char* arg){
 		if (printer != NULL){
 
 			multiColumnPrinter_set_column_size(printer, 0, 5);
-			multiColumnPrinter_set_column_size(printer, 1, 24);
+			multiColumnPrinter_set_column_size(printer, 1, ARGSET_TAG_MAX_LENGTH);
 
 			multiColumnPrinter_set_title(printer, 0, "Index");
 			multiColumnPrinter_set_title(printer, 1, "Tag");

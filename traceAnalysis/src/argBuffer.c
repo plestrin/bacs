@@ -139,6 +139,56 @@ struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* ar
 	return result;
 }
 
+int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2){
+	int32_t result = -1;
+	char* 	new_data;
+
+	if (arg1->location_type == arg2->location_type){
+		if (arg1->location_type == ARG_LOCATION_MEMORY){
+			/* For now no overlapping permitted - may change it afterward */
+			if (arg2->location.address + arg2->size == arg1->location.address){
+				new_data = (char*)malloc(arg1->size + arg2->size);
+				if (new_data == NULL){
+					printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				}
+				else{
+					memcpy(new_data, arg2->data, arg2->size);
+					memcpy(new_data + arg2->size, arg1->data, arg1->size);
+					free(arg1->data);
+					arg1->data = new_data;
+					arg1->size += arg2->size;
+					arg1->access_size = (arg1->access_size < arg2->access_size) ? arg1->access_size : arg2->access_size;
+					arg1->location.address = arg2->location.address;
+
+					result = 0;
+				}
+			}
+			else if (arg1->location.address + arg1->size == arg2->location.address){
+				new_data = (char*)realloc(arg1->data, arg1->size + arg2->size);
+				if (new_data == NULL){
+					printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				}
+				else{
+					memcpy(new_data + arg1->size, arg2->data, arg2->size);
+					arg1->data = new_data;
+					arg1->size += arg2->size;
+					arg1->access_size = (arg1->access_size < arg2->access_size) ? arg1->access_size : arg2->access_size;
+
+					result = 0;
+				}
+			}
+		}
+		else if(arg1->location_type == ARG_LOCATION_REGISTER){
+			/* a completer */
+		}
+		else{
+			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+		}
+	}
+
+	return result;
+}
+
 void argBuffer_delete(struct argBuffer* arg){
 	if (arg != NULL){
 		free(arg->data);
