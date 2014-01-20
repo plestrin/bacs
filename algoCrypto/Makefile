@@ -1,8 +1,13 @@
 EXAMPLE_DIRECTORY			:= example/
 TOMCRYPT_DIRECTORY 			:= tomCrypt/
+DEBUG 						:= 0
 
 CC							:= gcc
+ifeq ($(DEBUG),1)
 CFLAGS						:= -W -Wall -pedantic -Wextra -g
+else
+CFLAGS						:= -W -Wall -pedantic -Wextra -O1
+endif
 LDFLAGS						:=
 VPATH						:= $(TEST_DIRECTORY)
 

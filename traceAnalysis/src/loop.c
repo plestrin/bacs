@@ -338,6 +338,8 @@ int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array*
 				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
 			}
 
+			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
+
 			if (array_add(array, &fragment) < 0){
 				printf("ERROR: in %s, unable to add traceFragment %u to array\n", __func__, i);
 				traceFragment_clean(&fragment);

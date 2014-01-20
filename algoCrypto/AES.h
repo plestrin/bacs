@@ -70,10 +70,13 @@ void aes256_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
  */
 
  void aes128_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+ void aes128_inner_loop_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
  void aes192_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+ void aes192_inner_loop_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
  void aes256_inner_loop_enc(uint32_t* input, uint32_t* round_key, uint32_t* output);
+ void aes256_inner_loop_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
 
 #endif

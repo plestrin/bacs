@@ -8,6 +8,8 @@
 #include "argBuffer.h"
 #include "simpleTraceStat.h"
 #include "argSetGraph.h"
+#include "printBuffer.h"
+#include "readBuffer.h"
 
 struct trace* trace_create(const char* dir_name){
 	struct trace* 	trace;
@@ -620,7 +622,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			if (arg_set.input != NULL && arg_set.output != NULL){
 				strncpy(arg_set.tag, fragment->tag, ARGSET_TAG_MAX_LENGTH);
 				if (strlen(arg_set.tag) == 0){
-					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag: %u", i);
+					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", i);
 				}
 
 				if (array_add(&(trace->arg_array), &arg_set) < 0){
@@ -803,7 +805,7 @@ void trace_arg_fragment(struct trace* trace, char* arg){
 	}
 
 	if (array_init(&new_argSet_array, sizeof(struct argSet))){
-		printf("ERROR: in %s, unable to create array", __func__);
+		printf("ERROR: in %s, unable to create array\n", __func__);
 		return;
 	}
 
@@ -966,4 +968,63 @@ void trace_arg_search(struct trace* trace, char* arg){
 
 		ioChecker_submit_argBuffers(trace->checker, arg_set->input, arg_set->output);
 	}
+}
+
+void trace_arg_seek(struct trace* trace, char* arg){
+	uint32_t 			i;
+	uint32_t 			j;
+	uint32_t 			k;
+	struct argSet* 		arg_set;
+	struct argBuffer* 	arg_buffer;
+	char* 				buffer;
+	uint32_t 			buffer_length;
+	uint32_t 			compare_length;
+
+	#define MIN_COMPARE_SIZE 4
+
+	buffer = readBuffer_raw(arg, strlen(arg));
+	buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
+	if (buffer == NULL){
+		printf("ERROR: in %s, readBuffer return NULL\n", __func__);
+	}
+	else{
+		#ifdef VERBOSE
+		printf("Min compare size is set to: %u\n", MIN_COMPARE_SIZE);
+		#endif
+
+		for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+			arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
+			
+			/* INPUT */
+			for (j = 0; j < array_get_length(arg_set->input); j++){
+				arg_buffer = (struct argBuffer*)array_get(arg_set->input, j);
+
+				for (k = 0; k < ((arg_buffer->size > (MIN_COMPARE_SIZE - 1)) ? (arg_buffer->size - (MIN_COMPARE_SIZE - 1)) : 0); k++){
+					compare_length = (buffer_length > arg_buffer->size - k) ? (arg_buffer->size - k) : buffer_length;
+					if (!memcmp(buffer, arg_buffer->data + k, compare_length)){
+						printf("Found correspondence in argset %u, (tag: \"%s\"), input %u:\n", i, arg_set->tag, j);
+						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, k, compare_length);
+						printf("\n");
+					}
+				}
+			}
+
+			/* OUTPUT */
+			for (j = 0; j < array_get_length(arg_set->output); j++){
+				arg_buffer = (struct argBuffer*)array_get(arg_set->output, j);
+
+				for (k = 0; k < ((arg_buffer->size > (MIN_COMPARE_SIZE - 1)) ? (arg_buffer->size - (MIN_COMPARE_SIZE - 1)) : 0); k++){
+					compare_length = (buffer_length > arg_buffer->size - k) ? (arg_buffer->size - k) : buffer_length;
+					if (!memcmp(buffer, arg_buffer->data + k, compare_length)){
+						printf("Found correspondence in argset %u, (tag: \"%s\"), output %u:\n", i, arg_set->tag, j);
+						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, k, compare_length);
+						printf("\n");
+					}
+				}
+			}
+		}
+		free(buffer);
+	}
+
+	#undef MIN_COMPARE_SIZE
 }

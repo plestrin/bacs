@@ -36,6 +36,7 @@ all: $(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)graph.o 				\
 	$(BUILD_DIR)graphPrintDot.o 		\
 	$(BUILD_DIR)printBuffer.o			\
+	$(BUILD_DIR)readBuffer.o			\
 	$(BUILD_DIR)inputParser.o			\
 	$(BUILD_DIR)workPercent.o			\
 	$(BUILD_DIR)MD5.o					\

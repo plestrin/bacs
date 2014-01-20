@@ -65,6 +65,7 @@ void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name);
 void trace_arg_pack(struct trace* trace, char* arg);
 void trace_arg_delete_argSetGraph(struct trace* trace);
 void trace_arg_search(struct trace* trace, char* arg);
+void trace_arg_seek(struct trace* trace, char* arg);
 
 
 void trace_delete(struct trace* trace);

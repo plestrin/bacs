@@ -658,6 +658,36 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
     output[3] = t3 ^ round_key[3];                                                                                                                                                  \
 }
 
+#define AES_INNER_LOOP_DECRYPT(name, nb_round)                                                                                                                                      \
+void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){                                                                                                                \
+    uint32_t    s0 = input[0];                                                                                                                                                      \
+    uint32_t    s1 = input[1];                                                                                                                                                      \
+    uint32_t    s2 = input[2];                                                                                                                                                      \
+    uint32_t    s3 = input[3];                                                                                                                                                      \
+    uint32_t    t0;                                                                                                                                                                 \
+    uint32_t    t1;                                                                                                                                                                 \
+    uint32_t    t2;                                                                                                                                                                 \
+    uint32_t    t3;                                                                                                                                                                 \
+    uint8_t     i;                                                                                                                                                                  \
+                                                                                                                                                                                    \
+    for (i = ((nb_round) - 1); i > 0; i--){                                                                                                                                         \
+        t0 = TD0[(s0 >> 24) & 0x000000ff] ^ TD1[(s3 >> 16) & 0x000000ff] ^ TD2[(s2 >> 8) & 0x000000ff] ^ TD3[s1 & 0x000000ff];                                                      \
+        t1 = TD0[(s1 >> 24) & 0x000000ff] ^ TD1[(s0 >> 16) & 0x000000ff] ^ TD2[(s3 >> 8) & 0x000000ff] ^ TD3[s2 & 0x000000ff];                                                      \
+        t2 = TD0[(s2 >> 24) & 0x000000ff] ^ TD1[(s1 >> 16) & 0x000000ff] ^ TD2[(s0 >> 8) & 0x000000ff] ^ TD3[s3 & 0x000000ff];                                                      \
+        t3 = TD0[(s3 >> 24) & 0x000000ff] ^ TD1[(s2 >> 16) & 0x000000ff] ^ TD2[(s1 >> 8) & 0x000000ff] ^ TD3[s0 & 0x000000ff];                                                      \
+                                                                                                                                                                                    \
+        s0 = t0 ^ round_key[4 * (i - 1) + 0];                                                                                                                                               \
+        s1 = t1 ^ round_key[4 * (i - 1) + 1];                                                                                                                                               \
+        s2 = t2 ^ round_key[4 * (i - 1) + 2];                                                                                                                                               \
+        s3 = t3 ^ round_key[4 * (i - 1) + 3];                                                                                                                                               \
+    }                                                                                                                                                                               \
+                                                                                                                                                                                    \
+    output[0] = s0;                                                                                                                                                                 \
+    output[1] = s1;                                                                                                                                                                 \
+    output[2] = s2;                                                                                                                                                                 \
+    output[3] = s3;                                                                                                                                                                 \
+}
+
 AES_KEY_EXPAND_DECRYPT(aes128_key_expand_decrypt, aes128_key_expand_encrypt, AES_128_NB_ROUND)
 AES_KEY_EXPAND_DECRYPT(aes192_key_expand_decrypt, aes192_key_expand_encrypt, AES_192_NB_ROUND)
 AES_KEY_EXPAND_DECRYPT(aes256_key_expand_decrypt, aes256_key_expand_encrypt, AES_256_NB_ROUND)
@@ -673,3 +703,7 @@ AES_DECRYPT(aes256_decrypt, AES_256_NB_ROUND)
 AES_INNER_LOOP_ENCRYPT(aes128_inner_loop_enc, AES_128_NB_ROUND)
 AES_INNER_LOOP_ENCRYPT(aes192_inner_loop_enc, AES_192_NB_ROUND)
 AES_INNER_LOOP_ENCRYPT(aes256_inner_loop_enc, AES_256_NB_ROUND)
+
+AES_INNER_LOOP_DECRYPT(aes128_inner_loop_dec, AES_128_NB_ROUND)
+AES_INNER_LOOP_DECRYPT(aes192_inner_loop_dec, AES_192_NB_ROUND)
+AES_INNER_LOOP_DECRYPT(aes256_inner_loop_dec, AES_256_NB_ROUND)

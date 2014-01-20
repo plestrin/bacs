@@ -77,6 +77,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "pack arg", "Pack arguments that are dependent according to the argSetGraph. Specify packing method [mandatory] and index", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_pack)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete argSetGraph", "Delete a previously created argSetGraph", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_delete_argSetGraph)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", "Seek for a user defined argBuffer in the argSet array. Specify the buffer as second argument (raw format)", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_seek)
 
 
 	inputParser_exe(parser, argc - 2, argv + 2);
