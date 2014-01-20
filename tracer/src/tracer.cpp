@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string.h>
 #include "pin.H"
 
 #include "tracer.h"
@@ -38,12 +39,8 @@ ADDRINT 			static_write_address; 			/* super moche mais je ne sais pas quoi fair
 UINT32 				static_write_size; 				/* c'est également super moche mais je ne sais pas quoi faire */
 
 
-/* Je suis bien tenté de virer les KNOB et da faire quelque chose à la mano à la place */
-/* Tant qu'à faire on pourrait faire un truc un peu standard le mutualisé avec le programme de trace ?? */
-KNOB<string> knob_trace_file_name(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify trace file name");
-KNOB<BOOL> knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST, "(Optional) Shared library white list");
-KNOB<string> knob_white_list_file_name(KNOB_MODE_WRITEONCE, "pintool", "whitelist-name", DEFAULT_WHITE_LIST_FILE_NAME, "Specify shared library white list file name");
-
+KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
+KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
 
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
@@ -235,20 +232,21 @@ void pintool_instrumentation_img(IMG image, void* val){
 int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 	trace = traceFiles_create(trace_dir_name);
 	if (trace == NULL){
-		printf("ERROR: unable to create trace file\n");
+		printf("ERROR: in %s, unable to create trace file\n", __func__);
 		return -1;
 	}
 
 	tracer.code_map = codeMap_create();
 	if (tracer.code_map == NULL){
-		printf("ERROR: unable to create code map\n");
+		printf("ERROR: in %s, unable to create code map\n", __func__);
 		return -1;
 	}
 
-	if (white_list_file_name != NULL){
+	if (white_list_file_name != NULL && strcmp(white_list_file_name, "NULL")){
 		tracer.white_list = whiteList_create(white_list_file_name);
 		if (tracer.white_list == NULL){
-			printf("ERROR: unable to create shared library white list\n");
+			printf("ERROR: in %s, unable to create shared library white list\n", __func__);
+			return -1;
 		}
 	}
 	else{
@@ -278,24 +276,19 @@ void pintool_clean(INT32 code, void* arg){
 /* ===================================================================== */
 
 int main(int argc, char * argv[]){
-     PIN_InitSymbols();
+    PIN_InitSymbols();
 	
 	if (PIN_Init(argc, argv)){
-		printf("ERROR: unable to init PIN\n");
+		printf("ERROR: in %s, unable to init PIN\n", __func__);
 		return -1;
 	}
 
-	if (knob_white_list.Value()){
-		if (pintool_init(knob_trace_file_name.Value().c_str(), knob_white_list_file_name.Value().c_str())){
-			return -1;
-		}
+	if (pintool_init(knob_trace.Value().c_str(), knob_white_list.Value().c_str())){
+		printf("ERROR: in %s, unable to init the tool\n", __func__);
+		printf("%s",  KNOB_BASE::StringKnobSummary().c_str());
+		return -1;
 	}
-	else{
-		if (pintool_init(knob_trace_file_name.Value().c_str(), NULL)){
-			return -1;
-		}
-	}
-	
+
     IMG_AddInstrumentFunction(pintool_instrumentation_img, NULL);
     INS_AddInstrumentFunction(pintool_instrumentation_ins, NULL);
     PIN_AddFiniFunction(pintool_clean, NULL);
