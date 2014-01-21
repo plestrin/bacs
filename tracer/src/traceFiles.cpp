@@ -53,7 +53,7 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 		#endif
 
 		if (result->ins_file == NULL){
-			printf("ERROR: unable to create file \"%s\"\n", file_name);
+			printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, file_name);
 		}
 		else{
 			fprintf(result->ins_file, "{\"trace\":[");
@@ -61,7 +61,7 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 		}
 	}
 	else{
-		printf("ERROR: unable to allocate memory\n");
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
 	return result;
 }
@@ -98,7 +98,7 @@ void traceFiles_delete(struct traceFiles* trace){
 		if (trace->ins_file != NULL){
 			if (ftell(trace->ins_file) != trace->ins_header_position){
 				if (fseek(trace->ins_file, -1, SEEK_CUR)){
-					printf("ERROR: unable to set cursor position, trace file might be incorrect\n");
+					printf("ERROR: in %s, unable to set cursor position, trace file might be incorrect\n", __func__);
 				}
 			}
 			fprintf(trace->ins_file, "]}");

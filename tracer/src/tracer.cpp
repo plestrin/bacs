@@ -1,26 +1,18 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <stdlib.h>
 #include "pin.H"
 
 #include "tracer.h"
 #include "traceFiles.h"
-#if defined __linux__
-#include "instruction.h" /* je ne sais pas trop à quoi ça sert mais on verra bien */
-#elif defined WIN32
-#include "../../../shared/instruction.h"
-#endif
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
-#define DEFAULT_WHITE_LIST				"0"
-#define DEFAULT_WHITE_LIST_FILE_NAME	"NULL"
-
-#define TRACE_FILE_MIN_LENGTH			10
+#define DEFAULT_WHITE_LIST_FILE_NAME	""
 
 /*
  * Todo list:
  *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf, car mélange avec la sortie standard de l'application a tracer)
- *	- pour l'instant je ne suis pas satisfait de la gestion des KNOB pour la whiteList: il faudrait en faire qu'un seul. En plus afficher l'aide en cas d'erreur
  *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
  * 	- utiliser une double thread pour l'écriture des traces (avec zlib pour la compression trop fou !!)
  *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir)
@@ -32,68 +24,90 @@
  *	- d'autres idées sont les bienvenues
  */
 
-
-struct traceFiles* 	trace = NULL;					/* ne pas laisser en statique */
 struct tracer		tracer;							/* ne pas laisser en statique */
-ADDRINT 			static_write_address; 			/* super moche mais je ne sais pas quoi faire */
-UINT32 				static_write_size; 				/* c'est également super moche mais je ne sais pas quoi faire */
-
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
 KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
+
 
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
 
-/* This is a debug routine */
-void pintool_instruction_analysis_test(ADDRINT pc){
-	printf("0x%08x - TEST\n", pc);
+void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
+	tracer.current_instruction->data[0].type = INSDATA_INVALID;
+	tracer.current_instruction->data[1].type = INSDATA_INVALID;
+
+	tracer.current_instruction->pc = pc;
+	tracer.current_instruction->opcode = opcode;
+	tracer.current_instruction ++;
+	tracer.buffer_offset ++;
+
+	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
+		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+		tracer.current_instruction = tracer.buffer;
+		tracer.buffer_offset = 0;
+	}
 }
 
-void pintool_instruction_analysis_nomem(ADDRINT pc, UINT32 opcode){
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u},", pc, opcode);
+void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
+	tracer.current_instruction->data[0].type = INSDATA_MEM_READ;
+	tracer.current_instruction->data[0].size = size;
+	tracer.current_instruction->data[0].location.address = address;
+
+	PIN_SafeCopy(&(tracer.current_instruction->data[0].location.address), (void*)address, size);
+
+	tracer.current_instruction->data[1].type = INSDATA_INVALID;
+
+	tracer.current_instruction->pc = pc;
+	tracer.current_instruction->opcode = opcode;
+	tracer.current_instruction ++;
+	tracer.buffer_offset ++;
+
+	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
+		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+		tracer.current_instruction = tracer.buffer;
+		tracer.buffer_offset = 0;
+	}
 }
 
-void pintool_instruction_analysis_1read(ADDRINT pc, UINT32 opcode, ADDRINT read_address, UINT32 read_size){
-	UINT32 read_value; /* We do not expect more than 32 bits mem access */
+void pintool_instruction_analysis_1write_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
+	tracer.current_instruction->data[0].type = INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].size = size;
+	tracer.current_instruction->data[0].location.address = address;
 
-	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
+	tracer.current_instruction->data[1].type = INSDATA_INVALID;
 
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}]},", pc, opcode, read_address, read_value, read_size);
+	tracer.current_instruction->pc = pc;
+	tracer.current_instruction->opcode = opcode;
 }
 
-void pintool_instruction_analysis_1read_1write_part1(ADDRINT pc, UINT32 opcode, ADDRINT read_address, UINT32 read_size, ADDRINT write_address, UINT32 write_size){
-	UINT32 read_value; /* We do not expect more than 32 bits mem access */
+void pintool_instruction_analysis_1write_mem_1read_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_write, UINT32 size_write, ADDRINT address_read, UINT32 size_read){
+	tracer.current_instruction->data[0].type = INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].size = size_write;
+	tracer.current_instruction->data[0].location.address = address_write;
 
-	PIN_SafeCopy(&read_value, (void*)read_address, read_size);
+	tracer.current_instruction->data[1].type = INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].size = size_read;
+	tracer.current_instruction->data[1].location.address = address_read;
 
-	static_write_address 	= write_address;
-	static_write_size 		= write_size;
+	PIN_SafeCopy(&(tracer.current_instruction->data[1].location.address), (void*)address_read, size_read);
 
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"read\":[{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}],\"write\":[{\"mem\":\"%08x\",", pc, opcode, read_address, read_value, read_size, write_address);
+	tracer.current_instruction->pc = pc;
+	tracer.current_instruction->opcode = opcode;
 }
 
-void pintool_instruction_analysis_1read_1write_part2(){
-	UINT32 write_value; /* We do not expect more than 32 bits mem access */
+void pintool_instruction_analysis_1write_mem_Xread_mem_p2(){
+	PIN_SafeCopy(&(tracer.current_instruction->data[0].location.address), (void*)tracer.current_instruction->data[0].location.address, tracer.current_instruction->data[0].size);
 
-	PIN_SafeCopy(&write_value, (void*)static_write_address, static_write_size);
+	tracer.current_instruction ++;
+	tracer.buffer_offset ++;
 
-	fprintf(trace->ins_file, "\"val\":\"%08x\",\"size\":%u}]},", write_value, static_write_size);
-}
-
-void pintool_instruction_analysis_1write_part1(ADDRINT pc, UINT32 opcode, ADDRINT write_address, UINT32 write_size){
-	static_write_address 	= write_address;
-	static_write_size 		= write_size;
-	fprintf(trace->ins_file, "{\"pc\":\"%08x\",\"ins\":%u,\"write\":[{\"mem\":\"%08x\",", pc, opcode, write_address);
-}
-
-void pintool_instruction_analysis_1write_part2(){
-	UINT32 write_value; /* We do not expect more than 32 bits mem access */
-
-	PIN_SafeCopy(&write_value, (void*)static_write_address, static_write_size);
-
-	fprintf(trace->ins_file, "\"val\":\"%08x\",\"size\":%u}]},", write_value, static_write_size);
+	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
+		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+		tracer.current_instruction = tracer.buffer;
+		tracer.buffer_offset = 0;
+	}
 }
 
 void pintool_routine_analysis(void* cm_routine_ptr){
@@ -102,86 +116,94 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 	CODEMAP_INCREMENT_ROUTINE_EXE(routine);
 }
 
+
 /* ===================================================================== */
 /* Instrumentation function                                              */
 /* ===================================================================== */
 
-/* En terme de granularité de l'instrumentation qui peut le moins peut le plus - peut être plus rapide pour la whiteliste sinon on fait quelque chose d'assez systématique */
 void pintool_instrumentation_ins(INS instruction, void* arg){
+	void (*ins_insertCall)		(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
+	IPOINT 						ipoint_p2 = IPOINT_BEFORE;
+	uint32_t 					selector = ANALYSIS_SELECTOR_NO_ARG;
+
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
 
 		if (INS_IsPredicated(instruction)){
-			/* Don't know what to do */
-			printf("Predicated instruction ahead!\n");
-			printf("Ins: %s\n", instruction_opcode_2_string(INS_Opcode(instruction)));
-			INS_InsertPredicatedCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_test, IARG_INST_PTR, IARG_END);
-		}
-		
-		/* For now we do not care about mem write */
-		if (INS_IsMemoryRead(instruction)){
-			if (INS_HasMemoryRead2(instruction)){
-				/* We do not deal with this kind of stuff */
-				printf("Whaou! a 2 mem oprands ins is beeing instrumented\n");
-
-				if (INS_IsMemoryWrite(instruction)){
-					/* Weirdest case ever - do not bother */
-					printf("BAOUM!\n");
-				}
-			}
-			else{
-				if (INS_IsMemoryWrite(instruction)){
-					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_1write_part1, 
-						IARG_INST_PTR, 												/* program counter */
-						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-						IARG_MEMORYREAD_EA, 										/* read memory address of the operand */
-						IARG_UINT32, INS_MemoryReadSize(instruction),				/* read memory access size */
-						IARG_MEMORYWRITE_EA, 										/* write memory address of the operand */
-						IARG_UINT32, INS_MemoryWriteSize(instruction),				/* write memory access size */
-						IARG_END);
-					if (INS_HasFallThrough(instruction)){
-						INS_InsertCall(instruction, IPOINT_AFTER, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
-					}
-					else if (INS_IsBranchOrCall(instruction)){
-						INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1read_1write_part2, IARG_END);
-					}
-					else{
-						printf("This case is not suppose to happen\n");
-					}
-				}
-				else{
-					INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read, 
-						IARG_INST_PTR, 												/* program counter */
-						IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-						IARG_MEMORYREAD_EA, 										/* memory address of the operand */
-						IARG_UINT32, INS_MemoryReadSize(instruction),				/* memory access size ATTENTION cette méthode ne pas l'air d'être très précise plutôt faire des itération sur les opérandes */
-						IARG_END);
-				}
-			}
+			ins_insertCall = INS_InsertPredicatedCall;
 		}
 		else{
-			if (INS_IsMemoryWrite(instruction)){
-				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_part1, 
-					IARG_INST_PTR, 												/* program counter */
-					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-					IARG_MEMORYWRITE_EA, 										/* memory address of the operand */
-					IARG_UINT32, INS_MemoryWriteSize(instruction),				/* memory access size */
-					IARG_END);
-				if (INS_HasFallThrough(instruction)){
-					INS_InsertCall(instruction, IPOINT_AFTER, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
-				}
-				else if (INS_IsBranchOrCall(instruction)){
-					INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, (AFUNPTR)pintool_instruction_analysis_1write_part2, IARG_END);
-				}
-				else{
-					printf("This case is not suppose to happen\n");
-				}
+			ins_insertCall = INS_InsertCall;
+		}
+		
+		if (INS_HasFallThrough(instruction)){
+			ipoint_p2 = IPOINT_AFTER;
+		}
+		else if (INS_IsBranchOrCall(instruction)){
+			ipoint_p2 = IPOINT_TAKEN_BRANCH;
+		}
+
+		if (INS_IsMemoryRead(instruction)){
+			ANALYSIS_SELECTOR_SET_1MR(selector);
+			if (INS_HasMemoryRead2(instruction)){
+				ANALYSIS_SELECTOR_SET_2MR(selector);
 			}
-			else{
-				INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_nomem, 
-					IARG_INST_PTR, 												/* program counter */
-					IARG_UINT32, INS_Opcode(instruction),						/* opcode */
-					IARG_END);
-			}
+		}
+
+		if (INS_IsMemoryWrite(instruction)){
+			ANALYSIS_SELECTOR_SET_1MW(selector);
+		}
+
+		switch(selector){
+		case ANALYSIS_SELECTOR_NO_ARG	: {
+			ins_insertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_no_arg, 
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1read_mem,
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+				IARG_UINT32, INS_MemoryReadSize(instruction),	/* size MR1 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_2MR 		: {
+			printf("ERROR: in %s, this case (2MR) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MW 		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_mem_p1,
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+				IARG_UINT32, INS_MemoryWriteSize(instruction),	/* size MW1 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, (AFUNPTR)pintool_instruction_analysis_1write_mem_Xread_mem_p2, IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_1MW 	: {
+			INS_InsertCall(instruction, IPOINT_BEFORE, (AFUNPTR)pintool_instruction_analysis_1write_mem_1read_mem_p1, 
+				IARG_INST_PTR, 									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_MEMORYWRITE_EA, 							/* @ MW1 				*/
+				IARG_UINT32, INS_MemoryWriteSize(instruction),	/* size MW1 			*/
+				IARG_MEMORYREAD_EA, 							/* @ MR1 				*/
+				IARG_UINT32, INS_MemoryReadSize(instruction),	/* size MR1 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, (AFUNPTR)pintool_instruction_analysis_1write_mem_Xread_mem_p2, IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_2MR_1MW	: {
+			printf("ERROR: in %s, this case (2MR_1MW) is not supported\n", __func__);
+			break;
+		}
+		default 						: {
+			printf("ERROR: in %s, invalid analysis selector\n", __func__);
+			break;
+		}
 		}
 	}
 }
@@ -191,7 +213,6 @@ void pintool_instrumentation_img(IMG image, void* val){
 	RTN 				routine;
 	struct cm_routine*	cm_rtn;
 	char				white_listed;
-
 
 	white_listed = (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0)?CODEMAP_WHITELISTED:CODEMAP_NOT_WHITELISTED;
 	if (codeMap_add_image(tracer.code_map, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str(), white_listed)){
@@ -230,8 +251,8 @@ void pintool_instrumentation_img(IMG image, void* val){
 /* ===================================================================== */
 
 int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
-	trace = traceFiles_create(trace_dir_name);
-	if (trace == NULL){
+	tracer.trace = traceFiles_create(trace_dir_name);
+	if (tracer.trace == NULL){
 		printf("ERROR: in %s, unable to create trace file\n", __func__);
 		return -1;
 	}
@@ -239,6 +260,7 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 	tracer.code_map = codeMap_create();
 	if (tracer.code_map == NULL){
 		printf("ERROR: in %s, unable to create code map\n", __func__);
+		traceFiles_delete(tracer.trace);
 		return -1;
 	}
 
@@ -246,12 +268,25 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 		tracer.white_list = whiteList_create(white_list_file_name);
 		if (tracer.white_list == NULL){
 			printf("ERROR: in %s, unable to create shared library white list\n", __func__);
+			codeMap_delete(tracer.code_map);
+			traceFiles_delete(tracer.trace);
 			return -1;
 		}
 	}
 	else{
 		tracer.white_list = NULL;
 	}
+	
+	tracer.buffer = (struct instruction*)malloc(sizeof(struct instruction) * TRACER_INSTRUCTION_BUFFER_SIZE);
+	tracer.buffer_offset = 0;
+	if (tracer.buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		whiteList_delete(tracer.white_list);
+		codeMap_delete(tracer.code_map);
+		traceFiles_delete(tracer.trace);
+	}
+
+	tracer.current_instruction 	= tracer.buffer;
 
 	return 0;
 }
@@ -262,12 +297,15 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 /* ===================================================================== */
 
 void pintool_clean(INT32 code, void* arg){
-	traceFiles_print_codeMap(trace, tracer.code_map);
-	traceFiles_delete(trace);
+	traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+	free(tracer.buffer);
+
+	traceFiles_print_codeMap(tracer.trace, tracer.code_map);
+	traceFiles_delete(tracer.trace);
 
 	codeMap_delete(tracer.code_map);
 
-    whiteList_delete(tracer.white_list);
+	whiteList_delete(tracer.white_list);
 }
 
 
@@ -276,7 +314,7 @@ void pintool_clean(INT32 code, void* arg){
 /* ===================================================================== */
 
 int main(int argc, char * argv[]){
-    PIN_InitSymbols();
+	PIN_InitSymbols();
 	
 	if (PIN_Init(argc, argv)){
 		printf("ERROR: in %s, unable to init PIN\n", __func__);
@@ -289,11 +327,11 @@ int main(int argc, char * argv[]){
 		return -1;
 	}
 
-    IMG_AddInstrumentFunction(pintool_instrumentation_img, NULL);
-    INS_AddInstrumentFunction(pintool_instrumentation_ins, NULL);
-    PIN_AddFiniFunction(pintool_clean, NULL);
+	IMG_AddInstrumentFunction(pintool_instrumentation_img, NULL);
+	INS_AddInstrumentFunction(pintool_instrumentation_ins, NULL);
+	PIN_AddFiniFunction(pintool_clean, NULL);
 	
-    PIN_StartProgram();
-    
-    return 0;
+	PIN_StartProgram();
+
+	return 0;
 }

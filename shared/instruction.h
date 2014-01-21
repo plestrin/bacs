@@ -2,6 +2,7 @@
 #define INSTRUCTION_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "include/xed-iclass-enum.h"
 #include "address.h"
@@ -15,17 +16,17 @@
 #define INSTRUCTION_MAX_NB_DATA 2
 
 /* Data type value:
- * - bit 1: set to 0 -> INVALID 	set to 1 VALID
- * - bit 2: set to 0 -> MEM 		set to 1 REG
- * - bit 3: set to 0 -> READ 		set to 1 WRITE
+ * - bit 1: set to 0 -> INVALID 	set to 1 -> VALID
+ * - bit 2: set to 0 -> MEM 		set to 1 -> REG
+ * - bit 3: set to 0 -> READ 		set to 1 -> WRITE
  */
 
-#define INSTRUCTION_DATA_TYPE_SET_INVALID(type) (type) &= 0xfffffffe;
-#define INSTRUCTION_DATA_TYPE_SET_VALID(type) 	(type) |= 0x00000001;
-#define INSTRUCTION_DATA_TYPE_SET_MEM(type)		(type) &= 0xfffffffd;
-#define INSTRUCTION_DATA_TYPE_SET_REG(type)		(type) |= 0x00000002;
-#define INSTRUCTION_DATA_TYPE_SET_READ(type)	(type) &= 0xfffffffb;
-#define INSTRUCTION_DATA_TYPE_SET_WRITE(type)	(type) |= 0x00000004;
+#define INSTRUCTION_DATA_TYPE_SET_INVALID(type) (type) &= 0xfffffffe
+#define INSTRUCTION_DATA_TYPE_SET_VALID(type) 	(type) |= 0x00000001
+#define INSTRUCTION_DATA_TYPE_SET_MEM(type)		(type) &= 0xfffffffd
+#define INSTRUCTION_DATA_TYPE_SET_REG(type)		(type) |= 0x00000002
+#define INSTRUCTION_DATA_TYPE_SET_READ(type)	(type) &= 0xfffffffb
+#define INSTRUCTION_DATA_TYPE_SET_WRITE(type)	(type) |= 0x00000004
 
 #define INSTRUCTION_DATA_TYPE_IS_INVALID(type) 	(((type) & 0x00000001) == 0x00000000)
 #define INSTRUCTION_DATA_TYPE_IS_VALID(type) 	(((type) & 0x00000001) == 0x00000001)
@@ -62,6 +63,8 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter();
 void instruction_print(struct multiColumnPrinter* printer, struct instruction *ins);
 
 int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins2);
+
+void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
 
 const char* instruction_opcode_2_string(uint32_t opcode);
 

@@ -149,6 +149,99 @@ int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins
 	return (int32_t)(ins1->pc - ins2->pc);
 }
 
+void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint8_t 	read_tag = 0;
+	uint8_t 	write_tag = 0;
+
+	for (i = 0; i < nb_instruction; i++){
+		#if defined ARCH_32
+		fprintf(file, "{\"pc\":\"%08x\",\"ins\":%u", buffer[i].pc, buffer[i].opcode);
+		#elif defined ARCH_64
+		#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+		fprintf(file, "{\"pc\":\"%llx\",\"ins\":%u", buffer[i].pc, buffer[i].opcode);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
+
+		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
+			if (INSTRUCTION_DATA_TYPE_IS_VALID(buffer[i].data[j].type)){
+				if (INSTRUCTION_DATA_TYPE_IS_READ(buffer[i].data[j].type)){
+					if (!read_tag){
+						fprintf(file, ",\"read\":[");
+						read_tag = 1; 
+					}
+					else{
+						fprintf(file, ",");
+					}
+					if (INSTRUCTION_DATA_TYPE_IS_MEM(buffer[i].data[j].type)){
+						#if defined ARCH_32
+						fprintf(file, "{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.address, buffer[i].data[j].value, buffer[i].data[j].size);
+						#elif defined ARCH_64
+						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+						fprintf(file, "{\"mem\":\"%llx\",\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.address, buffer[i].data[j].value, buffer[i].data[j].size);
+						#else
+						#error Please specify an architecture {ARCH_32 or ARCH_64}
+						#endif
+					}
+					else{
+						/* this case is to be completed */
+					}
+				}
+			}
+			else{
+				break;
+			}
+		}
+		
+		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
+			if (INSTRUCTION_DATA_TYPE_IS_VALID(buffer[i].data[j].type)){
+				if (INSTRUCTION_DATA_TYPE_IS_WRITE(buffer[i].data[j].type)){
+					if (!write_tag && read_tag){
+						fprintf(file, "],\"write\":[");
+						read_tag = 0;
+						write_tag = 1;
+					}
+					else if (!write_tag && !read_tag){
+						fprintf(file, ",\"write\":[");
+						write_tag = 1;
+					}
+					else{
+						fprintf(file, ",");
+					}
+					if (INSTRUCTION_DATA_TYPE_IS_MEM(buffer[i].data[j].type)){
+						#if defined ARCH_32
+						fprintf(file, "{\"mem\":\"%08x\",\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.address, buffer[i].data[j].value, buffer[i].data[j].size);
+						#elif defined ARCH_64
+						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+						fprintf(file, "{\"mem\":\"%llx\",\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.address, buffer[i].data[j].value, buffer[i].data[j].size);
+						#else
+						#error Please specify an architecture {ARCH_32 or ARCH_64}
+						#endif
+					}
+					else{
+						/* this case is to be completed */
+					}
+				}
+			}
+			else{
+				break;
+			}
+		}
+		if (read_tag || write_tag){
+			read_tag = 0;
+			write_tag = 0;
+			fprintf(file, "]},");
+		}
+		else{
+			fprintf(file, "},");
+		}
+	}
+
+	return;
+}
+
 const char* instruction_opcode_2_string(uint32_t opcode){
 	switch((xed_iclass_enum_t)opcode){
 	case XED_ICLASS_INVALID 	: {return "INVALID";}

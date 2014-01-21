@@ -1,17 +1,20 @@
 #ifndef TRACEFILE_H
 #define TRACEFILE_H
 
+#include <stdint.h>
 #include <stdio.h>
 
 #ifdef __linux__
 
 #include "codeMap.h"
+#include "instruction.h"
 
 #endif
 
 #ifdef WIN32
 
 #include "../../shared/codeMap.h"
+#include "../../shared/instruction.h"
 
 #endif
 
@@ -32,6 +35,11 @@ struct traceFiles{
 
 struct traceFiles* traceFiles_create(const char* dir_name);
 void traceFiles_print_codeMap(struct traceFiles* trace, struct codeMap* cm);
+
+static inline void traceFiles_print_instruction(struct traceFiles* trace, struct instruction* buffer, uint32_t nb_instruction){
+	instruction_flush_tracer_buffer(trace->ins_file, buffer, nb_instruction);
+}
+
 void traceFiles_delete(struct traceFiles* trace);
 
 #endif
