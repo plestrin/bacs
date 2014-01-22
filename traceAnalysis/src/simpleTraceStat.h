@@ -17,6 +17,14 @@ struct simpleTraceStat{
 	uint32_t 	nb_mem_write_1;
 	uint32_t 	nb_mem_write_2;
 	uint32_t 	nb_mem_write_4;
+	uint32_t 	nb_reg_read;
+	uint32_t 	nb_reg_read_1;
+	uint32_t 	nb_reg_read_2;
+	uint32_t 	nb_reg_read_4;
+	uint32_t 	nb_reg_write;
+	uint32_t 	nb_reg_write_1;
+	uint32_t 	nb_reg_write_2;
+	uint32_t 	nb_reg_write_4;
 	ADDRESS 	min_pc;
 	ADDRESS 	max_pc;
 };

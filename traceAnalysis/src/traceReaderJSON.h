@@ -16,6 +16,7 @@ enum trace_json_map_key{
 	TRACE_JSON_MAP_KEY_DATA_READ,
 	TRACE_JSON_MAP_KEY_DATA_WRITE,
 	TRACE_JSON_MAP_KEY_DATA_MEM,
+	TRACE_JSON_MAP_KEY_DATA_REG,
 	TRACE_JSON_MAP_KEY_DATA_SIZE,
 	TRACE_JSON_MAP_KEY_DATA_VAL,
 	TRACE_JSON_MAP_KEY_UNKNOWN
@@ -32,6 +33,7 @@ struct traceReaderJSON{
 	enum trace_json_map_key actual_key;
 	int 					actual_map_level;
 	int 					actual_instruction_data_offset;
+	enum trace_json_map_key actual_data_specifier;
 
 	long 					instruction_cursor;
 	struct instruction 		instruction_cache[TRACEREADERJSON_NB_INSTRUCTION_IN_CACHE];

@@ -87,6 +87,7 @@ int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins
 void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
 
 const char* instruction_opcode_2_string(uint32_t opcode);
+const char* reg_2_string(enum reg reg);
 
 
 #endif

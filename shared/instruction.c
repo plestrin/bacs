@@ -82,16 +82,20 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 						current_str += nb_byte_written;
 						*current_offset += nb_byte_written;
 					}
+					else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[i].type)){
+						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{%s ", reg_2_string(ins->data[i].location.reg));
+						current_str += nb_byte_written;
+						*current_offset += nb_byte_written;
+					}
 					else{
-						/* a completer */
-						printf("WARNING: in %s, this case is not implemented\n", __func__);
+						printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
 					}
 
 					switch(ins->data[i].size){
 					case 1 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%02x(1)}", ins->data[i].value & 0x000000ff); break;}
 					case 2 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%04x(2)}", ins->data[i].value & 0x0000ffff); break;}
 					case 4 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%08x(4)}", ins->data[i].value & 0xffffffff); break;}
-					default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+					default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
 					}
 				}
 			}
@@ -128,15 +132,19 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 						#error Please specify an architecture {ARCH_32 or ARCH_64}
 						#endif
 					}
-					else{
-						/* a completer */
-						printf("WARNING: in %s, this case is not implemented\n", __func__);
+					else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[i].type)){
+						printf("\t\tReg: \t%s\n", reg_2_string(ins->data[i].location.reg));
 					}
+					else{
+						printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
+					}
+
+
 					switch(ins->data[i].size){
 					case 1 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x000000ff); break;}
 					case 2 	: {printf("\t\tValue: \t0x%04x\n", ins->data[i].value & 0x0000ffff); break;}
 					case 4 	: {printf("\t\tValue: \t0x%08x\n", ins->data[i].value & 0xffffffff); break;}
-					default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+					default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
 					}
 					printf("\t\tSize: \t%u\n", ins->data[i].size);
 				}
@@ -221,7 +229,7 @@ void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uin
 						#endif
 					}
 					else{
-						/* this case is to be completed */
+						fprintf(file, "{\"reg\":%u,\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.reg, buffer[i].data[j].value, buffer[i].data[j].size);
 					}
 				}
 			}
@@ -1369,6 +1377,30 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_XSETBV 		: {return "XSETBV";}
 	case XED_ICLASS_XTEST 		: {return "XTEST";}
 	case XED_ICLASS_LAST 		: {return "LAST";}
+	}
+
+	return NULL;
+}
+
+const char* reg_2_string(enum reg reg){
+	switch(reg){
+	case REGISTER_INVALID 		: {return "INVALID";}
+	case REGISTER_EAX 			: {return "EAX";}
+	case REGISTER_AX 			: {return "AX";}
+	case REGISTER_AH 			: {return "AH";}
+	case REGISTER_AL 			: {return "AL";}
+	case REGISTER_EBX 			: {return "EBX";}
+	case REGISTER_BX 			: {return "BX";}
+	case REGISTER_BH 			: {return "BH";}
+	case REGISTER_BL 			: {return "BL";}
+	case REGISTER_ECX 			: {return "ECX";}
+	case REGISTER_CX 			: {return "CX";}
+	case REGISTER_CH 			: {return "CH";}
+	case REGISTER_CL 			: {return "CL";}
+	case REGISTER_EDX 			: {return "EDX";}
+	case REGISTER_DX 			: {return "DX";}
+	case REGISTER_DH 			: {return "DH";}
+	case REGISTER_DL 			: {return "DL";}
 	}
 
 	return NULL;

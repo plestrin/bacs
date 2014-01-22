@@ -15,6 +15,7 @@
 #define JSON_MAP_KEY_NAME_DATA_READ 	"read"
 #define JSON_MAP_KEY_NAME_DATA_WRITE 	"write"
 #define JSON_MAP_KEY_NAME_DATA_MEM 		"mem"
+#define JSON_MAP_KEY_NAME_DATA_REG 		"reg"
 #define JSON_MAP_KEY_NAME_DATA_SIZE 	"size"
 #define JSON_MAP_KEY_NAME_DATA_VAL		"val"
 
@@ -210,6 +211,11 @@ static int traceReaderJSON_number(void* ctx, const char* s, size_t l){
 		trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].size = (uint8_t)atoi(s);
 		break;
 	}
+	case TRACE_JSON_MAP_KEY_DATA_REG : {
+		INSTRUCTION_DATA_TYPE_SET_REG(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+		trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].location.reg = (enum reg)atoi(s);
+		break;
+	}
 	default : {
 		printf("ERROR: in %s, wrong data type for the current key\n", __func__);
 		break;
@@ -279,6 +285,9 @@ static int traceReaderJSON_map_key(void* ctx, const unsigned char* stringVal, si
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_DATA_MEM, stringLen)){
 		trace_reader->actual_key = TRACE_JSON_MAP_KEY_DATA_MEM;
 	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_DATA_REG, stringLen)){
+		trace_reader->actual_key = TRACE_JSON_MAP_KEY_DATA_REG;
+	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_DATA_VAL, stringLen)){
 		trace_reader->actual_key = TRACE_JSON_MAP_KEY_DATA_VAL;
 	}
@@ -314,11 +323,27 @@ static int traceReaderJSON_start_map(void* ctx){
 		case TRACE_JSON_MAP_KEY_DATA_READ : {
 			INSTRUCTION_DATA_TYPE_SET_VALID(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
 			INSTRUCTION_DATA_TYPE_SET_READ(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+			trace_reader->actual_data_specifier = TRACE_JSON_MAP_KEY_DATA_READ;
 			break;
 		}
 		case TRACE_JSON_MAP_KEY_DATA_WRITE : {
 			INSTRUCTION_DATA_TYPE_SET_VALID(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
 			INSTRUCTION_DATA_TYPE_SET_WRITE(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+			trace_reader->actual_data_specifier = TRACE_JSON_MAP_KEY_DATA_WRITE;
+			break;
+		}
+		case TRACE_JSON_MAP_KEY_DATA_SIZE : {
+			if (trace_reader->actual_data_specifier == TRACE_JSON_MAP_KEY_DATA_WRITE){
+				INSTRUCTION_DATA_TYPE_SET_VALID(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+				INSTRUCTION_DATA_TYPE_SET_WRITE(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+			}
+			else if (trace_reader->actual_data_specifier == TRACE_JSON_MAP_KEY_DATA_READ){
+				INSTRUCTION_DATA_TYPE_SET_VALID(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+				INSTRUCTION_DATA_TYPE_SET_READ(trace_reader->instruction_cache[trace_reader->cache_top_offset].data[trace_reader->actual_instruction_data_offset].type);
+			}
+			else{
+				printf("ERROR: in %s, incorrect key value for the data specifier. Must be READ or WRITE\n", __func__);
+			}
 			break;
 		}
 		default : {
@@ -345,6 +370,9 @@ static int traceReaderJSON_end_map(void* ctx){
 	}
 	else if (trace_reader->actual_map_level == INSTRUCTION_DATA_MAP_LEVEL){
 		trace_reader->actual_instruction_data_offset ++;
+		if (trace_reader->actual_instruction_data_offset > INSTRUCTION_MAX_NB_DATA){
+			printf("ERROR: in %s, too arguments a buffer overflow has happened\n", __func__);
+		}
 	}
 
 	trace_reader->actual_map_level --;

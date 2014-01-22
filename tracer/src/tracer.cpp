@@ -23,7 +23,7 @@
  *	- d'autres idées sont les bienvenues
  */
 
-struct tracer	tracer;							/* ne pas laisser en statique */
+struct tracer	tracer;	/* ne pas laisser en statique */
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
 KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
@@ -372,6 +372,170 @@ void pintool_instruction_analysis_1write_mem_3read_reg_p1(ADDRINT pc, UINT32 opc
 	tracer.current_instruction->opcode 						= opcode;
 }
 
+void pintool_instruction_analysis_1write_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 size){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name;
+	tracer.current_instruction->data[0].size 				= size;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read, UINT32 value_read, UINT32 size_read){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
+	tracer.current_instruction->data[0].size 				= size_write;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read;
+	tracer.current_instruction->data[1].size 				= size_read;
+	tracer.current_instruction->data[1].value 				= value_read;
+
+	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg, UINT32 size_reg, ADDRINT address_mem, UINT32 size_mem){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg;
+	tracer.current_instruction->data[0].size 				= size_reg;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].location.address 	= address_mem;
+	tracer.current_instruction->data[1].size 				= size_mem;
+	
+	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+
+	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
+	tracer.current_instruction->data[0].size 				= size_write;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read1;
+	tracer.current_instruction->data[1].size 				= size_read1;
+	tracer.current_instruction->data[1].value 				= value_read1;
+
+	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read2;
+	tracer.current_instruction->data[2].size 				= size_read2;
+	tracer.current_instruction->data[2].value 				= value_read2;
+
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read, UINT32 value_reg_read, UINT32 size_reg_read){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
+	tracer.current_instruction->data[0].size 				= size_reg_write;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].location.address 	= address_mem;
+	tracer.current_instruction->data[1].size 				= size_mem;
+	
+	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+
+	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read;
+	tracer.current_instruction->data[2].size 				= size_reg_read;
+	tracer.current_instruction->data[2].value 				= value_reg_read;
+
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
+	tracer.current_instruction->data[0].size 				= size_reg_write;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].location.address 	= address_mem;
+	tracer.current_instruction->data[1].size 				= size_mem;
+	
+	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+
+	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read1;
+	tracer.current_instruction->data[2].size 				= size_reg_read1;
+	tracer.current_instruction->data[2].value 				= value_reg_read1;
+
+	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg_read2;
+	tracer.current_instruction->data[3].size 				= size_reg_read2;
+	tracer.current_instruction->data[3].value 				= value_reg_read2;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_1write_reg_Xread_p2(UINT32 value){
+	tracer.current_instruction->data[0].value = value;
+
+	tracer.current_instruction ++;
+	tracer.buffer_offset ++;
+
+	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
+		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+		tracer.current_instruction = tracer.buffer;
+		tracer.buffer_offset = 0;
+	}
+}
+
+void pintool_instruction_analysis_2write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read, UINT32 value_read, UINT32 size_read){
+	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
+	tracer.current_instruction->data[0].size 				= size_write1;
+
+	tracer.current_instruction->data[1].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
+	tracer.current_instruction->data[1].size 				= size_write2;
+
+	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read;
+	tracer.current_instruction->data[2].size 				= size_read;
+	tracer.current_instruction->data[2].value 				= value_read;
+
+	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
+
+	tracer.current_instruction->pc 							= pc;
+	tracer.current_instruction->opcode 						= opcode;
+}
+
+void pintool_instruction_analysis_2write_reg_Xread_p2(UINT32 value1, UINT32 value2){
+	tracer.current_instruction->data[0].value = value1;
+
+	tracer.current_instruction->data[1].value = value2;
+
+	tracer.current_instruction ++;
+	tracer.buffer_offset ++;
+
+	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
+		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
+		tracer.current_instruction = tracer.buffer;
+		tracer.buffer_offset = 0;
+	}
+}
+
 
 void pintool_routine_analysis(void* cm_routine_ptr){
 	struct cm_routine* routine = (struct cm_routine*)cm_routine_ptr;
@@ -391,9 +555,11 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 	uint32_t 					i;
 	uint8_t 					j;
 	REG 						current_reg;
-	REG 						read_reg1 = REG_INVALID_;
-	REG 						read_reg2 = REG_INVALID_;
-	REG 						read_reg3 = REG_INVALID_;
+	REG 						read_reg1 	= REG_INVALID_;
+	REG 						read_reg2 	= REG_INVALID_;
+	REG 						read_reg3 	= REG_INVALID_;
+	REG 						write_reg1 	= REG_INVALID_;
+	REG 						write_reg2 	= REG_INVALID_;
 	
 
 	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
@@ -448,6 +614,35 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 			}
 			i++;
 			current_reg = INS_RegR(instruction, i);
+		}
+
+		i = 0;
+		j = 0;
+
+		current_reg = INS_RegW(instruction, i);
+		while(REG_valid(current_reg)){
+			if (pintool_monitor_REG(current_reg)){
+				j ++;
+				if (j == 1){
+					write_reg1 = current_reg;
+					ANALYSIS_SELECTOR_SET_1RW(selector);
+				}
+				else if (j == 2){
+					write_reg2 = current_reg;
+					ANALYSIS_SELECTOR_SET_2RW(selector);
+				}
+				else if (j == 3){
+					ANALYSIS_SELECTOR_SET_3RW(selector);
+				}
+				else if (j == 4){
+					ANALYSIS_SELECTOR_SET_4RW(selector);
+				}
+				else{
+					printf("ERROR: in %s, max read register is reached\n", __func__);
+				}
+			}
+			i++;
+			current_reg = INS_RegW(instruction, i);
 		}
 
 		switch(selector){
@@ -627,8 +822,158 @@ void pintool_instrumentation_ins(INS instruction, void* arg){
 			printf("ERROR: in %s, this case (1MR_1MW_3RR) is not supported\n", __func__);
 			break;
 		}
+		case ANALYSIS_SELECTOR_1RW 			: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_2RW 			: {
+			printf("ERROR: in %s, this case (2RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_3RW 			: {
+			printf("ERROR: in %s, this case (3RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_1RW 		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_2RW 		: {
+			printf("ERROR: in %s, this case (1MR_2RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_3RW 		: {
+			printf("ERROR: in %s, this case (1MR_3RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MW_1RW 		: {
+			printf("ERROR: in %s, this case (1MW_1RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MW_2RW 		: {
+			printf("ERROR: in %s, this case (1MW_2RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MW_3RW 		: {
+			printf("ERROR: in %s, this case (1MW_3RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1RR_1RW		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_2RR_1RW		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_3RR_1RW		: {
+			printf("ERROR: in %s, this case (3RR_1RW) is not supported\n", __func__);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1RR_2RW 		: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_1RR_1WR 	: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break;
+		}
+		case ANALYSIS_SELECTOR_1MR_2RR_1WR 	: {
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+				IARG_END);
+			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+				IARG_END);
+			break; 
+		}
 		default 							: {
-			printf("ERROR: in %s, invalid analysis selector: 0x%08x\n", __func__, selector);
+			printf("ERROR: in %s, invalid analysis selector: 0x%08x ins: %s\n", __func__, selector, INS_Mnemonic(instruction).c_str());
+			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
+				IARG_INST_PTR,									/* pc 					*/
+				IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+				IARG_END);
 			break;
 		}
 		}
