@@ -186,7 +186,7 @@ void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uin
 						#endif
 					}
 					else{
-						/* this case is to be completed */
+						fprintf(file, "{\"reg\":%u,\"val\":\"%08x\",\"size\":%u}", buffer[i].data[j].location.reg, buffer[i].data[j].value, buffer[i].data[j].size);
 					}
 				}
 			}

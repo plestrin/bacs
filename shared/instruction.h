@@ -13,7 +13,7 @@
 #include "../misc/multiColumn.h"
 #endif
 
-#define INSTRUCTION_MAX_NB_DATA 2
+#define INSTRUCTION_MAX_NB_DATA 4
 
 /* Data type value:
  * - bit 1: set to 0 -> INVALID 	set to 1 -> VALID
@@ -43,11 +43,31 @@ enum insDataType{
 	INSDATA_REG_WRITE	= 0x00000007
 };
 
+enum reg{
+	REGISTER_INVALID,
+	REGISTER_EAX,
+	REGISTER_AX,
+	REGISTER_AH,
+	REGISTER_AL,
+	REGISTER_EBX,
+	REGISTER_BX,
+	REGISTER_BH,
+	REGISTER_BL,
+	REGISTER_ECX,
+	REGISTER_CX,
+	REGISTER_CH,
+	REGISTER_CL,
+	REGISTER_EDX,
+	REGISTER_DX,
+	REGISTER_DH,
+	REGISTER_DL
+};
+
 struct insData{
 	enum insDataType 	type;
 	union {
 		ADDRESS 		address;
-		uint16_t 		reg;
+		enum reg 		reg;
 	}					location;
 	uint32_t 			value;
 	uint8_t 			size;
@@ -67,5 +87,6 @@ int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins
 void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
 
 const char* instruction_opcode_2_string(uint32_t opcode);
+
 
 #endif
