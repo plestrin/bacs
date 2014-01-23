@@ -1,0 +1,9 @@
+# 	[NAME] 			[BUIL] 																	[CMD]														[ANALYSIS ARG] 																							[CRYPTO STRING]
+
+# TEA 
+	[EX_TEA_O0] 	[make -C /home/pierre/Documents/bacs/algoCrypto/ tea_example_o0] 		[/home/pierre/Documents/bacs/algoCrypto/example/TEA_o0]		[create loop,remove redundant loop,pack epilogue,export loop,extract frag arg ASO,search arg,exit]		[2:TEA encrypt, 2:TEA decrypt]
+	[EX_TEA_O1] 	[make -C /home/pierre/Documents/bacs/algoCrypto/ tea_example_o1] 		[/home/pierre/Documents/bacs/algoCrypto/example/TEA_o1]		[create loop,remove redundant loop,pack epilogue,export loop,extract frag arg ASO,search arg,exit]		[2:TEA encrypt, 2:TEA decrypt]
+
+# AES
+	[EX_AES_O0] 	[make -C /home/pierre/Documents/bacs/algoCrypto/ aes_example_o0] 		[/home/pierre/Documents/bacs/algoCrypto/example/AES_o0]		[create loop,remove redundant loop,pack epilogue,export loop,extract frag arg ASO,search arg,exit]		[1:AES128 inner enc, 1:AES128 inner dec, 1:AES192 inner enc, 1:AES192 inner dec, 1:AES256 inner enc, 1:AES256 inner dec]
+	[EX_AES_O1] 	[make -C /home/pierre/Documents/bacs/algoCrypto/ aes_example_o1] 		[/home/pierre/Documents/bacs/algoCrypto/example/AES_o1]		[create loop,remove redundant loop,pack epilogue,export loop,extract frag arg ASO,search arg,exit]		[1:AES128 inner enc, 1:AES128 inner dec, 1:AES192 inner enc, 1:AES192 inner dec, 1:AES256 inner enc, 1:AES256 inner dec]

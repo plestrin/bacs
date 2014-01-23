@@ -111,7 +111,11 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 
 		parser->exit = 0;
 		while(!parser->exit){
+			#ifdef VERBOSE
 			printf(ANSI_COLOR_CYAN ">>> ");
+			#else
+			printf(">>> ");
+			#endif
 			fflush(stdout);
 
 			if (cmd_counter < argc){
@@ -133,7 +137,9 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 				line[i] = '\0';
 			}
 
+			#ifdef VERBOSE
 			printf(ANSI_COLOR_RESET);
+			#endif
 
 			entry_index = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), line, (int32_t(*)(void*, void*))inputParser_search_cmd);
 			if (entry_index >= 0){
