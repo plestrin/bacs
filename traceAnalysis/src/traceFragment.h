@@ -55,7 +55,7 @@ double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, u
 
 int32_t traceFragment_create_mem_array(struct traceFragment* frag);
 void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access);
-int32_t traceFragment_remove_read_after_write(struct traceFragment* frag);
+void traceFragment_remove_read_after_write(struct traceFragment* frag);
 struct array* traceFragment_extract_mem_arg_adjacent_read(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_write(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess* mem_access, int nb_mem_access);

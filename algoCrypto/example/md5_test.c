@@ -21,7 +21,7 @@
 #endif
 
 int main(){
-	char 		message[] = "Hello world!";
+	char 		message[] = "Hello world! ------------------------------------------------------------------------------------------------------------------";
 	char* 		padded_message;
 	uint32_t 	message_size;
 	uint32_t 	hash[4];

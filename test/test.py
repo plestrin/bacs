@@ -38,6 +38,17 @@ recipe_log 		= []
 line_counter = 0;
 recipe_counter = 0;
 
+
+# VERIFY step
+if action == "TRACE" or action == "ALL":
+	file = open("/proc/sys/kernel/yama/ptrace_scope", "r")
+	if int(file.read()) == 1:
+		print("ERROR: The Operating System configuration prevents Pin from using the default (parent) injection mode")
+		file.close()
+		exit()
+	file.close()
+
+
 # PARSE step
 for line in lines:
 	name 	= None
@@ -95,10 +106,12 @@ for line in lines:
 
 	line_counter = line_counter + 1
 
+
 # PRINT step
 if action == "PRINT":
 	for i in range(recipe_counter):
 		print recipe_name[i], recipe_build[i], recipe_cmd[i], recipe_arg[i], recipe_crypto[i]
+
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
@@ -118,6 +131,7 @@ if action == "BUILD" or action == "ALL":
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 
+
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for i in range(recipe_counter):
@@ -135,6 +149,7 @@ if action == "TRACE" or action == "ALL":
 			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
+
 
 # COMPILE step
 if action == "SEARCH" or action == "ALL":
@@ -207,6 +222,7 @@ if action == "SEARCH" or action == "ALL":
 						print("\t" + crypto_name[j].strip() + " \x1b[31mFAIL " + str(nb_found[j] + k + 1) + "/" + str(nb_expected[j]) + "\x1b[0m")
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
+
 
 # CLEAN step
 for i in range(min(len(recipe_name), len(recipe_cmd), len(recipe_arg), len(recipe_crypto))):

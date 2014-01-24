@@ -294,7 +294,7 @@ struct graphMapping* graphMapping_create(struct graph* graph, enum graphMappingT
 }
 
 int32_t graphMapping_map(struct graph* graph, struct graphMapping* mapping){
-	uint32_t 	new_size;
+	uint32_t 	new_size = 0;
 	uint32_t* 	new_map;
 	uint32_t 	i;
 

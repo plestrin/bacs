@@ -543,10 +543,14 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint8_t 				found_space = 0;
 	struct array*(*extract_routine_read)(struct memAccess*,int);
 	struct array*(*extract_routine_write)(struct memAccess*,int);
+	uint8_t 				remove_raw = 0;
 
 	#define ARG_A_DESC 		"arguments are made of adjacent memory access"
 	#define ARG_AS_DESC 	"same as \"A\" with additional access size consideration (Mandatory for fragmentation)"
 	#define ARG_ASO_DESC	"same as \"AS\" with additional opcode consideration"
+	#define ARG_AR_DESC 	"remove read after write, then same as\"A\""
+	#define ARG_ASR_DESC 	"remove read after write, then same as \"AS\""
+	#define ARG_ASOR_DESC 	"remove read after write, then same as \"ASO\""
 
 	start = 0;
 	stop = array_get_length(&(trace->frag_array));
@@ -595,6 +599,30 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			printf("Selecting extraction routine \"ASO\" : %s\n", ARG_ASO_DESC);
 			#endif
 		}
+		else if (!strncmp(arg, "AR", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+			remove_raw = 1;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"AR\" : %s\n", ARG_AR_DESC);
+			#endif
+		}
+		else if (!strncmp(arg, "ASR", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+			remove_raw = 1;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"ASR\" : %s\n", ARG_ASR_DESC);
+			#endif
+		}
+		else if (!strncmp(arg, "ASOR", i)){
+			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_opcode_read;
+			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+			remove_raw = 1;
+			#ifdef VERBOSE
+			printf("Selecting extraction routine \"ASOR\" : %s\n", ARG_ASOR_DESC);
+			#endif
+		}
 		else{
 			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 			goto arg_error;
@@ -613,7 +641,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			break;
 		}
 
-		/* traceFragment_remove_read_after_write(fragment); */
+		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0) && remove_raw){
+			traceFragment_remove_read_after_write(fragment);
+		}
 
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
 			arg_set.input = extract_routine_read(fragment->read_memory_array, fragment->nb_memory_read_access);
@@ -647,11 +677,17 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	printf(" - \"A\"    : %s\n", ARG_A_DESC);
 	printf(" - \"AS\"   : %s\n", ARG_AS_DESC);
 	printf(" - \"ASO\"  : %s\n", ARG_ASO_DESC);
+	printf(" - \"AR\"   : %s\n", ARG_AR_DESC);
+	printf(" - \"ASR\"  : %s\n", ARG_ASR_DESC);
+	printf(" - \"ASOR\" : %s\n", ARG_ASOR_DESC);
 	return;
 
 	#undef ARG_A_DESC
 	#undef ARG_AS_DESC
 	#undef ARG_ASO_DESC
+	#undef ARG_AR_DESC
+	#undef ARG_ASR_DESC
+	#undef ARG_ASOR_DESC
 }
 
 /* ===================================================================== */

@@ -8,7 +8,6 @@
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); 		/* Order memAccess array in address order and in order order as a second option */
 int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2); 	/* Order memAccess array in address order and in inv order order as a second option */
-int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2); 	/* Search the given address for a lower order */
 
 
 struct traceFragment* codeSegment_create(){
@@ -251,28 +250,42 @@ void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_acce
 	}
 }
 
-int32_t traceFragment_remove_read_after_write(struct traceFragment* frag){
-	int 				result = -1;
-	uint32_t 			i;
+void traceFragment_remove_read_after_write(struct traceFragment* frag){
+	uint32_t			i;
+	uint32_t 			j;
 	uint32_t 			writing_pointer = 0;
-	struct memAccess* 	write_access;
 	struct memAccess* 	new_array;
+	uint32_t 			mask;
+	uint8_t 			found;
 
 
 	if (frag != NULL){
 		if (frag->write_memory_array != NULL && frag->read_memory_array != NULL){
-			qsort(frag->read_memory_array, frag->nb_memory_read_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
-			qsort(frag->write_memory_array, frag->nb_memory_write_access, sizeof(struct memAccess), memAccess_compare_address_then_order);
-
-			/* Warning! This is kind of dumb because it does not take into account the access size */
 			for (i = 0; i < frag->nb_memory_read_access; i++){
-				write_access = (struct memAccess*)bsearch (frag->read_memory_array + i, frag->write_memory_array, frag->nb_memory_write_access, sizeof(struct memAccess), memAccess_compare_address_then_lower_order);
-				if (write_access != NULL){
-					if (frag->read_memory_array[i].order < write_access->order){
-						printf("ERROR: in %s, something screws up in the bsearch - must be due to the asym compare routine\n", __func__);
+				mask = ~(0xffffffff << (frag->read_memory_array[i].size * 8));
+
+				for (j = 0, found = 0; j < frag->nb_memory_write_access; j++){
+					if (frag->read_memory_array[i].order > frag->write_memory_array[j].order){
+						if (frag->read_memory_array[i].address == frag->write_memory_array[j].address){
+							if (frag->read_memory_array[i].size <= frag->write_memory_array[j].size){
+								if ((frag->read_memory_array[i].value & mask) == (frag->write_memory_array[j].value & mask)){
+									found = 1;
+									continue;
+								}
+							}
+						}
+						else if (frag->read_memory_array[i].address > frag->write_memory_array[j].address){
+							if (frag->read_memory_array[i].address + frag->read_memory_array[i].size < frag->write_memory_array[j].address + frag->write_memory_array[j].size){
+								if ((frag->read_memory_array[i].value & mask) == ((frag->write_memory_array[j].value >> (frag->read_memory_array[i].address - frag->write_memory_array[j].address)*8) & mask)){
+									found = 1;
+									continue;
+								}
+							}
+						}
 					}
 				}
-				else{
+
+				if (!found){
 					if (writing_pointer != i){
 						memcpy(frag->read_memory_array + writing_pointer, frag->read_memory_array + i, sizeof(struct memAccess));
 					}
@@ -281,25 +294,29 @@ int32_t traceFragment_remove_read_after_write(struct traceFragment* frag){
 			}
 
 			#ifdef VERBOSE
-			printf("Removing %u read write memory access (before: %u, after: %u)\n", (i - writing_pointer), i, writing_pointer);
+			printf("Removing %u read after write memory access (before: %u, after: %u) in frag: \"%s\"\n", (i - writing_pointer), i, writing_pointer, frag->tag);
 			#endif
 
-			new_array = (struct memAccess*)realloc(frag->read_memory_array, sizeof(struct memAccess) * writing_pointer);
-			if (new_array != NULL){
-				frag->read_memory_array = new_array;
+			if (writing_pointer != 0){
+				new_array = (struct memAccess*)realloc(frag->read_memory_array, sizeof(struct memAccess) * writing_pointer);
+				if (new_array != NULL){
+					frag->read_memory_array = new_array;
+				}
+				else{
+					printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				}
+				frag->nb_memory_read_access = writing_pointer;
 			}
 			else{
-				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				free(frag->read_memory_array);
+				frag->read_memory_array = NULL;
+				frag->nb_memory_read_access = 0;
 			}
-			frag->nb_memory_read_access = writing_pointer;
 		}
 		else{
-			printf("ERROR: in %s, create the mem array before calling theis routine\n", __func__);
+			printf("ERROR: in %s, create the mem array before calling this routine\n", __func__);
 		}
 	}
-
-	return result;
-
 }
 
 #define TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(name, sort_rtn)																																	\
@@ -551,7 +568,7 @@ void traceFragment_clean(struct traceFragment* frag){
 }
 
 /* ===================================================================== */
-/* Comparison functions 	                                         */
+/* Comparison functions 	                                         	 */
 /* ===================================================================== */
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2){
@@ -575,22 +592,5 @@ int memAccess_compare_address_then_inv_order(const void* mem_access1, const void
 	}
 	else{
 		return (int32_t)(((struct memAccess*)mem_access2)->order - ((struct memAccess*)mem_access1)->order);
-	}
-}
-
-int memAccess_compare_address_then_lower_order(const void* mem_access1, const void* mem_access2){
-	if (((struct memAccess*)mem_access1)->address > ((struct memAccess*)mem_access2)->address){
-		return 1;
-	}
-	else if (((struct memAccess*)mem_access2)->address < ((struct memAccess*)mem_access2)->address){
-		return -1;
-	}
-	else{
-		if (((struct memAccess*)mem_access1)->order < ((struct memAccess*)mem_access2)->order){
-			return -1;
-		}
-		else{
-			return 0;
-		}
 	}
 }
