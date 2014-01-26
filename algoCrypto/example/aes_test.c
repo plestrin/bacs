@@ -20,7 +20,7 @@
 
 #endif
 
-/*Those test vectors are taken from: http://www.inconteam.com/software-development/41-encryption/55-aes-test-vectors#aes-ecb */
+/* Those test vectors are taken from: http://www.inconteam.com/software-development/41-encryption/55-aes-test-vectors#aes-ecb */
 
 int main(){
 	unsigned char plaintext[AES_BLOCK_NB_BYTE] = {0xe2, 0xbe, 0xc1, 0x6b, 0x96, 0x9f, 0x40, 0x2e, 0x11, 0x7e, 0x3d, 0xe9, 0x2a, 0x17, 0x93, 0x73};
