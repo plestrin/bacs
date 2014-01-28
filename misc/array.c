@@ -163,7 +163,7 @@ int32_t array_add(struct array* array, void* element){
 		nb_allocated_byte = array->nb_allocated_byte;
 		if (array->nb_filled_byte + array->element_size > nb_allocated_byte){
 			while (array->nb_filled_byte + array->element_size > nb_allocated_byte){
-				nb_allocated_byte += array->element_size;
+				nb_allocated_byte += ARRAY_DEFAULT_ALLOC_SIZE;
 			}
 
 			if (nb_allocated_byte > ARRAY_DEFAULT_PAGE_SIZE){
