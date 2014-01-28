@@ -8,7 +8,6 @@ CFLAGS_O2					:= -W -Wall -pedantic -Wextra -O2
 CFLAGS_O3					:= -W -Wall -pedantic -Wextra -O3
 CFLAGS_Os					:= -W -Wall -pedantic -Wextra -Os
 LDFLAGS						:=
-VPATH						:= $(TEST_DIRECTORY)
 
 TEA_EXAMPLE_NAME			:= TEA
 MD5_EXAMPLE_NAME 			:= MD5
@@ -22,66 +21,66 @@ RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
 all: example_o0 example_o1 example_o2 example_o3 example_os tomCrypt
 
 # *** Example compile rules ***
-example_o0: tea_example_o0 md5_example_o0 rc4_example_o0 aes_example_o0 sha1_example_o0
-example_o1: tea_example_o1 md5_example_o1 rc4_example_o1 aes_example_o1 sha1_example_o1
-example_o2: tea_example_o2 md5_example_o2 rc4_example_o2 aes_example_o2 sha1_example_o2
-example_o3: tea_example_o3 md5_example_o3 rc4_example_o3 aes_example_o3 sha1_example_o3
-example_os: tea_example_os md5_example_os rc4_example_os aes_example_os sha1_example_os
+example_o0: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o0
+example_o1: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o1 $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o1 $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o1 $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o1 $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o1
+example_o2: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o2 $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o2 $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o2 $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o2 $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o2
+example_o3: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o3 $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o3 $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o3 $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o3 $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o3
+example_os: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_os $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_os $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_os $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_os $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_os
 
-tea_example_o0: TEA.o0 $(EXAMPLE_DIRECTORY)tea_test.o0 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o0 $^ $(LDFLAGS)
-md5_example_o0: MD5.o0 $(EXAMPLE_DIRECTORY)md5_test.o0 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o0 $^ $(LDFLAGS)
-rc4_example_o0: RC4.o0 $(EXAMPLE_DIRECTORY)rc4_test.o0 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o0 $^ $(LDFLAGS)
-aes_example_o0: AES.o0 $(EXAMPLE_DIRECTORY)aes_test.o0 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o0 $^ $(LDFLAGS)
-sha1_example_o0: SHA1.o0 $(EXAMPLE_DIRECTORY)sha1_test.o0 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o0 $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o0: TEA.o0 $(EXAMPLE_DIRECTORY)tea_test.o0 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o0: MD5.o0 $(EXAMPLE_DIRECTORY)md5_test.o0 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o0: RC4.o0 $(EXAMPLE_DIRECTORY)rc4_test.o0 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o0: AES.o0 $(EXAMPLE_DIRECTORY)aes_test.o0 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o0: SHA1.o0 $(EXAMPLE_DIRECTORY)sha1_test.o0 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-tea_example_o1: TEA.o1 $(EXAMPLE_DIRECTORY)tea_test.o1 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o1 $^ $(LDFLAGS)
-md5_example_o1: MD5.o1 $(EXAMPLE_DIRECTORY)md5_test.o1 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o1 $^ $(LDFLAGS)
-rc4_example_o1: RC4.o1 $(EXAMPLE_DIRECTORY)rc4_test.o1 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o1 $^ $(LDFLAGS)
-aes_example_o1: AES.o1 $(EXAMPLE_DIRECTORY)aes_test.o1 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o1 $^ $(LDFLAGS)
-sha1_example_o1: SHA1.o1 $(EXAMPLE_DIRECTORY)sha1_test.o1 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o1 $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o1: TEA.o1 $(EXAMPLE_DIRECTORY)tea_test.o1 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o1: MD5.o1 $(EXAMPLE_DIRECTORY)md5_test.o1 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o1: RC4.o1 $(EXAMPLE_DIRECTORY)rc4_test.o1 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o1: AES.o1 $(EXAMPLE_DIRECTORY)aes_test.o1 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o1: SHA1.o1 $(EXAMPLE_DIRECTORY)sha1_test.o1 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-tea_example_o2: TEA.o2 $(EXAMPLE_DIRECTORY)tea_test.o2 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o2 $^ $(LDFLAGS)
-md5_example_o2: MD5.o2 $(EXAMPLE_DIRECTORY)md5_test.o2 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o2 $^ $(LDFLAGS)
-rc4_example_o2: RC4.o2 $(EXAMPLE_DIRECTORY)rc4_test.o2 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o2 $^ $(LDFLAGS)
-aes_example_o2: AES.o2 $(EXAMPLE_DIRECTORY)aes_test.o2 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o2 $^ $(LDFLAGS)
-sha1_example_o2: SHA1.o2 $(EXAMPLE_DIRECTORY)sha1_test.o2 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o2 $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o2: TEA.o2 $(EXAMPLE_DIRECTORY)tea_test.o2 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o2: MD5.o2 $(EXAMPLE_DIRECTORY)md5_test.o2 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o2: RC4.o2 $(EXAMPLE_DIRECTORY)rc4_test.o2 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o2: AES.o2 $(EXAMPLE_DIRECTORY)aes_test.o2 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o2: SHA1.o2 $(EXAMPLE_DIRECTORY)sha1_test.o2 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-tea_example_o3: TEA.o3 $(EXAMPLE_DIRECTORY)tea_test.o3 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o3 $^ $(LDFLAGS)
-md5_example_o3: MD5.o3 $(EXAMPLE_DIRECTORY)md5_test.o3 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o3 $^ $(LDFLAGS)
-rc4_example_o3: RC4.o3 $(EXAMPLE_DIRECTORY)rc4_test.o3 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o3 $^ $(LDFLAGS)
-aes_example_o3: AES.o3 $(EXAMPLE_DIRECTORY)aes_test.o3 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o3 $^ $(LDFLAGS)
-sha1_example_o3: SHA1.o3 $(EXAMPLE_DIRECTORY)sha1_test.o3 ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o3 $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o3: TEA.o3 $(EXAMPLE_DIRECTORY)tea_test.o3 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o3: MD5.o3 $(EXAMPLE_DIRECTORY)md5_test.o3 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o3: RC4.o3 $(EXAMPLE_DIRECTORY)rc4_test.o3 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o3: AES.o3 $(EXAMPLE_DIRECTORY)aes_test.o3 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o3: SHA1.o3 $(EXAMPLE_DIRECTORY)sha1_test.o3 ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-tea_example_os: TEA.os $(EXAMPLE_DIRECTORY)tea_test.os ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_os $^ $(LDFLAGS)
-md5_example_os: MD5.os $(EXAMPLE_DIRECTORY)md5_test.os ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_os $^ $(LDFLAGS)
-rc4_example_os: RC4.os $(EXAMPLE_DIRECTORY)rc4_test.os ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_os $^ $(LDFLAGS)
-aes_example_os: AES.os $(EXAMPLE_DIRECTORY)aes_test.os ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_os $^ $(LDFLAGS)
-sha1_example_os: SHA1.os $(EXAMPLE_DIRECTORY)sha1_test.os ../misc/printBuffer.o
-	$(CC) -o $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_os $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_os: TEA.os $(EXAMPLE_DIRECTORY)tea_test.os ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_os: MD5.os $(EXAMPLE_DIRECTORY)md5_test.os ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_os: RC4.os $(EXAMPLE_DIRECTORY)rc4_test.os ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_os: AES.os $(EXAMPLE_DIRECTORY)aes_test.os ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+$(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_os: SHA1.os $(EXAMPLE_DIRECTORY)sha1_test.os ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 
 # *** TomCrypt compile rules ***
@@ -138,5 +137,3 @@ clean:
 	@ rm -f $(TOMCRYPT_DIRECTORY)*.o
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME)
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME)
-
-

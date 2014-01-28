@@ -4,12 +4,18 @@ import sys
 import subprocess
 import re
 
-PIN_PATH 		= "/home/pierre/Documents/pin-2.13-61206-gcc.4.4.7-linux/pin"
-TOOL_PATH 		= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
-WHITE_LIST_PATH = "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
-MAKEFILE_PATH 	= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
-TRACE_PATH		= "/home/pierre/Documents/bacs/test/"
-LOG_PATH 		= "/home/pierre/Documents/bacs/test/"
+# How to improve this script:
+# 	- parse trace output to check for erros: print if any
+# 	- print a report in HTML
+#	- archive previous reports
+
+PIN_PATH 				= "/home/pierre/Documents/pin-2.13-61206-gcc.4.4.7-linux/pin"
+TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
+WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
+MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"
+MAKEFILE_SEARCH_PATH 	= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
+TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
+LOG_PATH 				= "/home/pierre/Documents/bacs/test/"
 
 if len(sys.argv) != 3:
 	print("ERROR: incorrect number of argument")
@@ -23,10 +29,13 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 	print("ERROR: incorrect action type")
 	exit()
 
-
-file = open(file_name, "r")
-lines= file.readlines()
-file.close();
+try:
+	file = open(file_name, "r")
+	lines= file.readlines()
+	file.close();
+except IOError:
+	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
+	exit()
 
 recipe_name 	= []
 recipe_build 	= []
@@ -43,7 +52,7 @@ recipe_counter = 0;
 if action == "TRACE" or action == "ALL":
 	file = open("/proc/sys/kernel/yama/ptrace_scope", "r")
 	if int(file.read()) == 1:
-		print("ERROR: The Operating System configuration prevents Pin from using the default (parent) injection mode")
+		print("ERROR: the Operating System configuration prevents Pin from using the default (parent) injection mode")
 		file.close()
 		exit()
 	file.close()
@@ -132,6 +141,16 @@ if action == "BUILD" or action == "ALL":
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 
 
+# COMPILE TRACE step
+if action == "TRACE" or action == "ALL":
+	sys.stdout.write("Building Trace program: ...")
+	sys.stdout.flush()
+	return_value = subprocess.call(["make", "-C", MAKEFILE_TRACE_PATH])
+	if return_value != 0:
+		print("ERROR: unable to build Trace program")
+		exit()
+
+
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for i in range(recipe_counter):
@@ -144,24 +163,36 @@ if action == "TRACE" or action == "ALL":
 		sys.stdout.write("Tracing " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
-		return_value = subprocess.call([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = recipe_log[i], stderr = recipe_log[i])
-		if return_value == 0:
+		process = subprocess.Popen([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+		process.wait()
+
+		output_val = process.stdout.read()
+		recipe_log[i].write(output_val)
+		recipe_log[i].write(process.stderr.read())
+
+		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 
+		regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
+		for j in regex.findall(output_val):
+			print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
 
-# COMPILE step
+
+# COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
 	makefile = open("Makefile", "w")
-	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/-DVERBOSE //g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g", MAKEFILE_PATH], stdout = makefile)
+	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/-DVERBOSE //g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g", MAKEFILE_SEARCH_PATH], stdout = makefile)
 	makefile.close()
 	if return_value != 0:
 		print("ERROR: unable to create the Makefile")
 		exit()
-	return_value = subprocess.call("make")
+	sys.stdout.write("Building Search program: ...")
+	sys.stdout.flush()
+	return_value = subprocess.call(["make", "analysis"])
 	if return_value != 0:
-		print("ERROR: unable to build analysis program")
+		print("ERROR: unable to build Search program")
 		exit()
 
 
@@ -182,10 +213,12 @@ if action == "SEARCH" or action == "ALL":
 
 		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		process.wait()
+
+		output_val = process.stdout.read()
+		recipe_log[i].write(output_val)
+		recipe_log[i].write(process.stderr.read())
+
 		if process.returncode == 0:
-			output_val = process.stdout.read()
-			recipe_log[i].write(output_val)
-			recipe_log[i].write(process.stderr.read())
 			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
 
 			crypto_list = recipe_crypto[i].split(',')
