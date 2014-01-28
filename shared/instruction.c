@@ -1401,6 +1401,9 @@ const char* reg_2_string(enum reg reg){
 	case REGISTER_DX 			: {return "DX";}
 	case REGISTER_DH 			: {return "DH";}
 	case REGISTER_DL 			: {return "DL";}
+	case REGISTER_ESI 			: {return "ESI";}
+	case REGISTER_EDI 			: {return "EDI";}
+	case REGISTER_EBP 			: {return "EBP";}
 	}
 
 	return NULL;

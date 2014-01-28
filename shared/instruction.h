@@ -13,7 +13,7 @@
 #include "../misc/multiColumn.h"
 #endif
 
-#define INSTRUCTION_MAX_NB_DATA 4
+#define INSTRUCTION_MAX_NB_DATA 5 /* Do not update this value without taking care of the tracer */
 
 /* Data type value:
  * - bit 1: set to 0 -> INVALID 	set to 1 -> VALID
@@ -43,6 +43,8 @@ enum insDataType{
 	INSDATA_REG_WRITE	= 0x00000007
 };
 
+#define NB_REGISTER 19 /* do not forget to update this value */
+
 enum reg{
 	REGISTER_INVALID,
 	REGISTER_EAX,
@@ -60,7 +62,10 @@ enum reg{
 	REGISTER_EDX,
 	REGISTER_DX,
 	REGISTER_DH,
-	REGISTER_DL
+	REGISTER_DL,
+	REGISTER_ESI,
+	REGISTER_EDI,
+	REGISTER_EBP
 };
 
 struct insData{
