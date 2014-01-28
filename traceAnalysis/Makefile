@@ -17,7 +17,10 @@ INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(CRYPTO_DIR)
 INCLUDE_SHARED	:= -I$(MISC_DIR)
 
 
-all: $(BUILD_DIR)codeMap.o				\
+all: $(PROG_NAME)
+
+$(PROG_NAME):							\
+	$(BUILD_DIR)codeMap.o				\
 	$(BUILD_DIR)instruction.o			\
 	$(BUILD_DIR)analysis.o 				\
 	$(BUILD_DIR)trace.o 				\

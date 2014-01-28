@@ -17,6 +17,12 @@ struct memAccess{
 	uint32_t 	opcode;
 };
 
+struct regAccess{
+	uint32_t 	value;
+	enum reg 	reg;
+	uint8_t 	size;
+};
+
 struct traceFragment{
 	char 				tag[TRACEFRAGMENT_TAG_LENGTH];
 	struct array 		instruction_array;
@@ -24,6 +30,10 @@ struct traceFragment{
 	struct memAccess* 	write_memory_array;
 	uint32_t 			nb_memory_read_access;
 	uint32_t 			nb_memory_write_access;
+	struct regAccess* 	read_register_array;
+	struct regAccess* 	write_register_array;
+	uint32_t 			nb_register_read_access;
+	uint32_t 			nb_register_write_access;
 };
 
 struct traceFragment* codeFragment_create();
@@ -56,6 +66,10 @@ double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, u
 int32_t traceFragment_create_mem_array(struct traceFragment* frag);
 void traceFragment_print_mem_array(struct memAccess* mem_access, int nb_mem_access);
 void traceFragment_remove_read_after_write(struct traceFragment* frag);
+
+int32_t traceFragment_create_reg_array(struct traceFragment* frag);
+void traceFragment_print_reg_array(struct regAccess* reg_access, int nb_reg_access);
+
 struct array* traceFragment_extract_mem_arg_adjacent_read(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_write(struct memAccess* mem_access, int nb_mem_access);
 struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess* mem_access, int nb_mem_access);

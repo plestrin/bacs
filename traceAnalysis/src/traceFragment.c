@@ -40,6 +40,10 @@ int32_t traceFragment_init(struct traceFragment* frag){
 		frag->write_memory_array 		= NULL;
 		frag->nb_memory_read_access 	= 0;
 		frag->nb_memory_write_access 	= 0;
+		frag->read_register_array 		= NULL;
+		frag->write_register_array 		= NULL;
+		frag->nb_register_read_access 	= 0;
+		frag->nb_register_write_access 	= 0;
 	}
 
 	return result;
@@ -69,6 +73,12 @@ int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment
 	if (frag_src->write_memory_array != NULL){
 		printf("WARNING: in %s, this method does not copy the write_memory_array buffer\n", __func__);
 	}
+	if (frag_src->read_register_array != NULL){
+		printf("WARNING: in %s, this method does not copy the read_register_array buffer\n", __func__);
+	}
+	if (frag_src->write_register_array != NULL){
+		printf("WARNING: in %s, this method does not copy the write_register_array buffer\n", __func__);
+	}
 
 	strncpy(frag_dst->tag, frag_src->tag, TRACEFRAGMENT_TAG_LENGTH);
 
@@ -76,6 +86,10 @@ int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment
 	frag_dst->write_memory_array 		= NULL;
 	frag_dst->nb_memory_read_access 	= frag_src->nb_memory_read_access;
 	frag_dst->nb_memory_write_access 	= frag_src->nb_memory_write_access;
+	frag_dst->read_register_array 		= NULL;
+	frag_dst->write_register_array 		= NULL;
+	frag_dst->nb_register_read_access 	= frag_src->nb_register_read_access;
+	frag_dst->nb_register_write_access 	= frag_src->nb_register_write_access;
 
 	return 0;
 }
@@ -294,7 +308,9 @@ void traceFragment_remove_read_after_write(struct traceFragment* frag){
 			}
 
 			#ifdef VERBOSE
-			printf("Removing %u read after write memory access (before: %u, after: %u) in frag: \"%s\"\n", (i - writing_pointer), i, writing_pointer, frag->tag);
+			if (i != writing_pointer){
+				printf("Removing %u read after write memory access (before: %u, after: %u) in frag: \"%s\"\n", (i - writing_pointer), i, writing_pointer, frag->tag);
+			}
 			#endif
 
 			if (writing_pointer != 0){
@@ -316,6 +332,365 @@ void traceFragment_remove_read_after_write(struct traceFragment* frag){
 		else{
 			printf("ERROR: in %s, create the mem array before calling this routine\n", __func__);
 		}
+	}
+}
+
+int32_t traceFragment_create_reg_array(struct traceFragment* frag){
+	uint8_t 				register_read_state[NB_REGISTER];
+	uint8_t 				register_write_state[NB_REGISTER];
+	uint32_t 				i;
+	uint8_t 				j;
+	uint8_t 				index = 0;
+	struct instruction* 	instruction;
+
+	#define REGISTER_STATE_UNINIT 		0
+	#define REGISTER_STATE_VALID  		1
+	#define REGISTER_STATE_WRITTEN 		2 /* only for read access */
+	#define REGISTER_STATE_OVER_WRITTEN 3 /* only for write access */ 
+
+	if (frag != NULL){
+		if (frag->read_register_array != NULL){
+			free(frag->read_register_array);
+		}
+		if (frag->write_register_array != NULL){
+			free(frag->write_register_array);
+		}
+		frag->nb_register_read_access = 0;
+		frag->nb_register_write_access = 0;
+
+		frag->read_register_array = (struct regAccess*)malloc(sizeof(struct regAccess) * NB_REGISTER);
+		frag->write_register_array = (struct regAccess*)malloc(sizeof(struct regAccess) * NB_REGISTER);
+
+		if (frag->read_register_array == NULL || frag->write_register_array == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			if (frag->read_register_array != NULL){
+				free(frag->read_register_array);
+			}
+			if (frag->write_register_array != NULL){
+				free(frag->write_register_array);
+			}
+			return -1;
+		}
+		
+		memset(register_read_state, REGISTER_STATE_UNINIT, NB_REGISTER);
+		memset(register_write_state, REGISTER_STATE_UNINIT, NB_REGISTER);
+
+		#define INDEX_REGISTER_EAX 	0
+		#define INDEX_REGISTER_AX 	1
+		#define INDEX_REGISTER_AH 	2
+		#define INDEX_REGISTER_AL 	3
+		#define INDEX_REGISTER_EBX 	4
+		#define INDEX_REGISTER_BX 	5
+		#define INDEX_REGISTER_BH 	6
+		#define INDEX_REGISTER_BL 	7
+		#define INDEX_REGISTER_ECX 	8
+		#define INDEX_REGISTER_CX 	9
+		#define INDEX_REGISTER_CH 	10
+		#define INDEX_REGISTER_CL 	11
+		#define INDEX_REGISTER_EDX 	12
+		#define INDEX_REGISTER_DX 	13
+		#define INDEX_REGISTER_DH 	14
+		#define INDEX_REGISTER_DL 	15
+		#define INDEX_REGISTER_ESI 	16
+		#define INDEX_REGISTER_EDI 	17
+		#define INDEX_REGISTER_EBP 	18
+
+		#define INIT_REGISTER_ARRAY(array) 																\
+		{																								\
+			(array)[INDEX_REGISTER_EAX].reg = REGISTER_EAX; 											\
+			(array)[INDEX_REGISTER_AX].reg  = REGISTER_AX; 												\
+			(array)[INDEX_REGISTER_AH].reg  = REGISTER_AH; 												\
+			(array)[INDEX_REGISTER_AL].reg  = REGISTER_AL; 												\
+			(array)[INDEX_REGISTER_EBX].reg = REGISTER_EBX; 											\
+			(array)[INDEX_REGISTER_BX].reg  = REGISTER_BX; 												\
+			(array)[INDEX_REGISTER_BH].reg  = REGISTER_BH; 												\
+			(array)[INDEX_REGISTER_BL].reg  = REGISTER_BL; 												\
+			(array)[INDEX_REGISTER_ECX].reg = REGISTER_ECX; 											\
+			(array)[INDEX_REGISTER_CX].reg  = REGISTER_CX; 												\
+			(array)[INDEX_REGISTER_CH].reg  = REGISTER_CH; 												\
+			(array)[INDEX_REGISTER_CL].reg  = REGISTER_CL; 												\
+			(array)[INDEX_REGISTER_EDX].reg = REGISTER_EDX; 											\
+			(array)[INDEX_REGISTER_DX].reg  = REGISTER_DX; 												\
+			(array)[INDEX_REGISTER_DH].reg  = REGISTER_DH; 												\
+			(array)[INDEX_REGISTER_DL].reg  = REGISTER_DL; 												\
+			(array)[INDEX_REGISTER_ESI].reg = REGISTER_ESI; 											\
+			(array)[INDEX_REGISTER_EDI].reg = REGISTER_EDI; 											\
+			(array)[INDEX_REGISTER_EBP].reg = REGISTER_EBP; 											\
+		}
+
+		#define REGISTER_TO_INDEX(reg, index)															\
+		{																								\
+			switch(reg){ 																				\
+			case REGISTER_EAX 	: {index = INDEX_REGISTER_EAX; break;}									\
+			case REGISTER_AX 	: {index = INDEX_REGISTER_AX; break;}									\
+			case REGISTER_AH 	: {index = INDEX_REGISTER_AH; break;}									\
+			case REGISTER_AL 	: {index = INDEX_REGISTER_AL; break;}									\
+			case REGISTER_EBX 	: {index = INDEX_REGISTER_EBX; break;}									\
+			case REGISTER_BX 	: {index = INDEX_REGISTER_BX; break;}									\
+			case REGISTER_BH 	: {index = INDEX_REGISTER_BH; break;}									\
+			case REGISTER_BL 	: {index = INDEX_REGISTER_BL; break;}									\
+			case REGISTER_ECX 	: {index = INDEX_REGISTER_ECX; break;}									\
+			case REGISTER_CX 	: {index = INDEX_REGISTER_CX; break;}									\
+			case REGISTER_CH 	: {index = INDEX_REGISTER_CH; break;}									\
+			case REGISTER_CL 	: {index = INDEX_REGISTER_CL; break;}									\
+			case REGISTER_EDX 	: {index = INDEX_REGISTER_EDX; break;}									\
+			case REGISTER_DX 	: {index = INDEX_REGISTER_DX; break;}									\
+			case REGISTER_DH 	: {index = INDEX_REGISTER_DH; break;}									\
+			case REGISTER_DL 	: {index = INDEX_REGISTER_DL; break;}									\
+			case REGISTER_ESI 	: {index = INDEX_REGISTER_ESI; break;}									\
+			case REGISTER_EDI 	: {index = INDEX_REGISTER_EDI; break;}									\
+			case REGISTER_EBP 	: {index = INDEX_REGISTER_EBP; break;}									\
+			default 			: {printf("ERROR: in %s, incorrect register\n", __func__); break;} 		\
+			}																							\
+		}
+
+		#define REGISTER_SET_STATE_WRITTEN(state)														\
+		{																								\
+			switch (state){																				\
+			case REGISTER_STATE_UNINIT 	: {																\
+				(state) = REGISTER_STATE_WRITTEN;														\
+				break;																					\
+			}																							\
+			case REGISTER_STATE_VALID 	: 																\
+			case REGISTER_STATE_WRITTEN : {																\
+				break;																					\
+			}																							\
+			default 					: {																\
+				printf("ERROR: in %s, incorrect state for register\n", __func__);						\
+				break;																					\
+			}																							\
+			}																							\
+		}
+
+		INIT_REGISTER_ARRAY(frag->read_register_array);
+		INIT_REGISTER_ARRAY(frag->write_register_array);
+
+		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
+			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
+
+			/* READ ACCESS */
+			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
+					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
+					switch (register_read_state[index]){
+					case REGISTER_STATE_UNINIT 	: {
+						frag->read_register_array[index].value = instruction->data[j].value;
+						frag->read_register_array[index].size = instruction->data[j].size;
+						register_read_state[index] = REGISTER_STATE_VALID;
+						break;
+					}
+					case REGISTER_STATE_VALID 	:
+					case REGISTER_STATE_WRITTEN : {
+						break;
+					}
+					default 					: {
+						printf("ERROR: in %s, incorrect state for register read\n", __func__);
+						break;
+					}
+					}
+				}
+			}
+
+			/* WRITE ACCESS */
+			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
+					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
+
+					frag->write_register_array[index].value = instruction->data[j].value;
+					frag->write_register_array[index].size = instruction->data[j].size;
+					register_write_state[index] = REGISTER_STATE_VALID;
+
+					REGISTER_SET_STATE_WRITTEN(register_read_state[index]);
+
+					switch(instruction->data[j].location.reg){
+					case REGISTER_EAX 	: {
+						register_write_state[INDEX_REGISTER_AX] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AX]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
+						break;
+					}
+					case REGISTER_AX 	: {
+						register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
+						break;
+					}
+					case REGISTER_EBX 	: {
+						register_write_state[INDEX_REGISTER_BX] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BX]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
+						break;
+					}
+					case REGISTER_BX 	: {
+						register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
+						break;
+					}
+					case REGISTER_ECX 	: {
+						register_write_state[INDEX_REGISTER_CX] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CX]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
+						break;
+					}
+					case REGISTER_CX 	: {
+						register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
+						break;
+					}
+					case REGISTER_EDX 	: {
+						register_write_state[INDEX_REGISTER_DX] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
+
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DX]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
+						break;
+					}
+					case REGISTER_DX 	: {
+						register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
+						register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
+						
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
+						break;
+					}
+					default 			: {
+						break;
+					}
+					}
+					/* we have to deal with write register, it's a bit more tricky */
+				}
+			}
+		}
+		
+		for (i = 0; i < NB_REGISTER; i++){
+			if (register_read_state[i] == REGISTER_STATE_VALID){
+				if (i != frag->nb_register_read_access){
+					memcpy(frag->read_register_array + frag->nb_register_read_access, frag->read_register_array + i, sizeof(struct regAccess));
+				}
+				frag->nb_register_read_access ++;
+			}
+			if (register_write_state[i] == REGISTER_STATE_VALID){
+				if (i != frag->nb_register_write_access){
+					memcpy(frag->write_register_array + frag->nb_register_write_access, frag->write_register_array + i, sizeof(struct regAccess));
+				}
+				frag->nb_register_write_access ++;
+			}
+		}
+
+		if (frag->nb_register_read_access != NB_REGISTER){
+			if (frag->nb_register_read_access > 0){
+				struct regAccess* new_buffer = (struct regAccess*)realloc(frag->read_register_array, sizeof(struct regAccess) * frag->nb_register_read_access);
+				if (new_buffer != NULL){
+					frag->read_register_array = new_buffer;
+				}
+				else{
+					printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				}
+			}
+			else{
+				free(frag->read_register_array);
+				frag->read_register_array = NULL;
+			}
+		}
+
+		if (frag->nb_register_write_access != NB_REGISTER){
+			if (frag->nb_register_write_access > 0){
+				struct regAccess* new_buffer = (struct regAccess*)realloc(frag->write_register_array, sizeof(struct regAccess) * frag->nb_register_write_access);
+				if (new_buffer != NULL){
+					frag->write_register_array = new_buffer;
+				}
+				else{
+					printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				}
+			}
+			else{
+				free(frag->write_register_array);
+				frag->write_register_array = NULL;
+			}
+		}
+	}
+
+	#undef INDEX_REGISTER_EAX
+	#undef INDEX_REGISTER_AX
+	#undef INDEX_REGISTER_AH
+	#undef INDEX_REGISTER_AL
+	#undef INDEX_REGISTER_EBX
+	#undef INDEX_REGISTER_BX
+	#undef INDEX_REGISTER_BH
+	#undef INDEX_REGISTER_BL
+	#undef INDEX_REGISTER_ECX
+	#undef INDEX_REGISTER_CX
+	#undef INDEX_REGISTER_CH
+	#undef INDEX_REGISTER_CL
+	#undef INDEX_REGISTER_EDX
+	#undef INDEX_REGISTER_DX
+	#undef INDEX_REGISTER_DH
+	#undef INDEX_REGISTER_DL
+	#undef INDEX_REGISTER_ESI
+	#undef INDEX_REGISTER_EDI
+	#undef INDEX_REGISTER_EBP
+
+	#undef REGISTER_STATE_UNINIT
+	#undef REGISTER_STATE_VALID
+	#undef REGISTER_STATE_WRITTEN
+	#undef REGISTER_STATE_OVER_WRITTEN
+
+	#undef INIT_REGISTER_ARRAY
+	#undef REGISTER_TO_INDEX
+	#undef REGISTER_SET_STATE_WRITTEN
+
+	return 0;
+}
+
+void traceFragment_print_reg_array(struct regAccess* reg_access, int nb_reg_access){
+	struct multiColumnPrinter* 	printer;
+	int 						i;
+	char 						value_str[20];
+
+	printer = multiColumnPrinter_create(stdout, 2, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_title(printer, 0, (char*)"REGISTER");
+		multiColumnPrinter_set_title(printer, 1, (char*)"VALUE");
+
+		multiColumnPrinter_print_header(printer);
+
+		for (i = 0; i < nb_reg_access; i++){
+			switch(reg_access[i].size){
+			case 1 	: {snprintf(value_str, 20, "%02x", reg_access[i].value & 0x000000ff); break;}
+			case 2 	: {snprintf(value_str, 20, "%04x", reg_access[i].value & 0x0000ffff); break;}
+			case 4 	: {snprintf(value_str, 20, "%08x", reg_access[i].value & 0xffffffff); break;}
+			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+			}
+
+			multiColumnPrinter_print(printer, reg_2_string(reg_access[i].reg), value_str, NULL);
+		}
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__);
 	}
 }
 
@@ -562,6 +937,12 @@ void traceFragment_clean(struct traceFragment* frag){
 		}
 		if (frag->write_memory_array != NULL){
 			free(frag->write_memory_array);
+		}
+		if (frag->read_register_array != NULL){
+			free(frag->read_register_array);
+		}
+		if (frag->write_register_array != NULL){
+			free(frag->write_register_array);
 		}
 		array_clean(&(frag->instruction_array));
 	}

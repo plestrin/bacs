@@ -623,6 +623,19 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			printf("Selecting extraction routine \"ASOR\" : %s\n", ARG_ASOR_DESC);
 			#endif
 		}
+		/* TEST a supprimer */
+		else if (!strncmp(arg, "TEST", i)){
+			for (i = start; i < stop; i++){
+				fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+				if (traceFragment_create_reg_array(fragment)){
+					printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, i);
+					break;
+				}
+				traceFragment_print_reg_array(fragment->read_register_array, fragment->nb_register_read_access);
+				traceFragment_print_reg_array(fragment->write_register_array, fragment->nb_register_write_access);
+			}
+			return;
+		}
 		else{
 			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 			goto arg_error;
