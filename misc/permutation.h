@@ -1,22 +1,28 @@
 #ifndef PERMUTATION_H
 #define PERMUTATION_H
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
-#include <alloca.h>
 
-#define INIT_PERMUTATION(nb_element) 																														\
-	uint32_t* 	permutation_state; 																															\
-	uint32_t* 	permutation_counter; 																														\
-	uint32_t 	permutation_depth; 																															\
-	uint32_t 	permutation_tmp; 																															\
-	uint32_t 	permutation_nb_element;																														\
+#define PERMUTATION_INIT(nb_element) 																														\
+	uint8_t* 	permutation_state; 																															\
+	uint8_t* 	permutation_counter; 																														\
+	uint8_t 	permutation_depth; 																															\
+	uint8_t 	permutation_tmp; 																															\
+	uint8_t 	permutation_i; 																																\
+	uint8_t 	permutation_nb_element;																														\
 																																							\
-	permutation_state = (uint32_t*)alloca(sizeof(uint32_t) * (nb_element)); 																				\
-	permutation_counter = (uint32_t*)alloca(sizeof(uint32_t) * (nb_element)); 																				\
+	permutation_state = (uint8_t*)malloc(sizeof(uint8_t) * (nb_element)); 																					\
+	permutation_counter = (uint8_t*)malloc(sizeof(uint8_t) * (nb_element)); 																				\
 																																							\
-	for (i = 0; i < (nb_element); i++){ 																													\
-		permutation_state[i] = i; 																															\
-		permutation_counter[i] = 0; 																														\
+	if (permutation_state == NULL || permutation_counter == NULL){ 																							\
+		printf("ERROR: in %s, unable to allocate memory\n", __func__); 																						\
+	} 																																						\
+																																							\
+	for (permutation_i = 0; permutation_i < (nb_element); permutation_i++){ 																				\
+		permutation_state[permutation_i] = permutation_i; 																									\
+		permutation_counter[permutation_i] = 0; 																											\
 	} 																																						\
 																																							\
 	permutation_depth = (nb_element); 																														\
@@ -32,7 +38,7 @@
 	} 																																						\
 																																							\
 	if ((permutation_nb_element - permutation_depth) > permutation_counter[permutation_depth - 1]){															\
-		if ((permutation_nb_element - permutation_depth) & 0x00000001){ 																				\
+		if ((permutation_nb_element - permutation_depth) & 0x01){ 																							\
 			permutation_tmp = permutation_state[permutation_depth - 1]; 																					\
 			permutation_state[permutation_depth - 1] = permutation_state[permutation_nb_element - 1 - permutation_counter[permutation_depth - 1]]; 			\
 			permutation_state[permutation_nb_element - 1 - permutation_counter[permutation_depth - 1]] = permutation_tmp; 									\
@@ -51,6 +57,10 @@
 	} 																																						\
 	else{ 																																					\
 		state = NULL; 																																		\
-	} 																																						\
+	}
+
+#define PERMUTATION_CLEAN() 																																\
+	free(permutation_state); 																																\
+	free(permutation_counter);
 
 #endif

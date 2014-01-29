@@ -4,7 +4,10 @@
 
 #include "argBuffer.h"
 #include "printBuffer.h"
+#include "instruction.h"
 
+
+void argBuffer_print_reg(FILE* file, uint64_t reg);
 void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element);
 
 void argBuffer_print_raw(struct argBuffer* arg){
@@ -21,8 +24,9 @@ void argBuffer_print_raw(struct argBuffer* arg){
 			#endif
 		}
 		else if (arg->location_type == ARG_LOCATION_REGISTER){
-			printf("Argument Register\n");
-			/* a completer */
+			printf("Argument Register\n\t-Register: \t");
+			argBuffer_print_reg(stdout, arg->location.reg);
+			printf("\n");
 		}
 		else{
 			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
@@ -193,6 +197,21 @@ void argBuffer_delete(struct argBuffer* arg){
 	if (arg != NULL){
 		free(arg->data);
 		free(arg);
+	}
+}
+
+void argBuffer_print_reg(FILE* file, uint64_t reg){
+	uint8_t i;
+	uint8_t nb_register;
+
+	nb_register = ARGBUFFER_GET_NB_REG(reg);
+	for (i = 0; i < nb_register; i++){
+		if (i == nb_register - 1){
+			fprintf(file, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		}
+		else{
+			fprintf(file, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		}
 	}
 }
 

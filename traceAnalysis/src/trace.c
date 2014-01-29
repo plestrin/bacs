@@ -541,16 +541,26 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t				stop;
 	uint32_t 				index;
 	uint8_t 				found_space = 0;
-	struct array*(*extract_routine_read)(struct memAccess*,int);
-	struct array*(*extract_routine_write)(struct memAccess*,int);
+	int32_t(*extract_routine_mem_read)(struct array*,struct memAccess*,int);
+	int32_t(*extract_routine_mem_write)(struct array*,struct memAccess*,int);
+	int32_t(*extract_routine_reg_read)(struct array*,struct regAccess*,int);
+	int32_t(*extract_routine_reg_write)(struct array*,struct regAccess*,int);
 	uint8_t 				remove_raw = 0;
 
-	#define ARG_A_DESC 		"arguments are made of adjacent memory access"
-	#define ARG_AS_DESC 	"same as \"A\" with additional access size consideration (Mandatory for fragmentation)"
-	#define ARG_ASO_DESC	"same as \"AS\" with additional opcode consideration"
-	#define ARG_AR_DESC 	"remove read after write, then same as\"A\""
-	#define ARG_ASR_DESC 	"remove read after write, then same as \"AS\""
-	#define ARG_ASOR_DESC 	"remove read after write, then same as \"ASO\""
+	#define ARG_NAME_A_LP 		"A_LP"
+	#define ARG_NAME_AR_LP 		"AR_LP"
+	#define ARG_NAME_AS_LP 		"AS_LP"
+	#define ARG_NAME_ASR_LP 	"ASR_LP"
+	#define ARG_NAME_ASO_LP 	"ASO_LP"
+	#define ARG_NAME_ASOR_LP 	"ASOR_LP"
+
+	#define ARG_DESC_A 			"arguments are made of Adjacent memory access"
+	#define ARG_DESC_AR 		"read after write are Removed, then same as\"A\""
+	#define ARG_DESC_AS 		"same as \"A\" with additional access Size consideration (Mandatory for fragmentation)"
+	#define ARG_DESC_ASR		"read after write are Removed, then same as \"AS\""
+	#define ARG_DESC_ASO 		"same as \"AS\" with additional Opcode consideration"
+	#define ARG_DESC_ASOR 		"read after write are Removed, then same as \"ASO\""
+	#define ARG_DESC_LP 		"Large registers (>= 32bits) are combined together (Pure)"
 
 	start = 0;
 	stop = array_get_length(&(trace->frag_array));
@@ -578,69 +588,76 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			i ++;
 		}
 
-		if (!strncmp(arg, "A", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+		if (!strncmp(arg, ARG_NAME_A_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 0;
+
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"A\" : %s\n", ARG_A_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_A_LP, ARG_DESC_A, ARG_DESC_LP);
 			#endif
 		}
-		else if (!strncmp(arg, "AS", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+		else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 1;
+
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"AS\" : %s\n", ARG_AS_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AR_LP, ARG_DESC_AR, ARG_DESC_LP);
 			#endif
 		}
-		else if (!strncmp(arg, "ASO", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_opcode_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
+		else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 0;
+
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"ASO\" : %s\n", ARG_ASO_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AS_LP, ARG_DESC_AS, ARG_DESC_LP);
 			#endif
 		}
-		else if (!strncmp(arg, "AR", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
-			remove_raw = 1;
+		else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 1;
+
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"AR\" : %s\n", ARG_AR_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LP, ARG_DESC_ASR, ARG_DESC_LP);
 			#endif
 		}
-		else if (!strncmp(arg, "ASR", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
-			remove_raw = 1;
+		else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_opcode_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 0;
+			
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"ASR\" : %s\n", ARG_ASR_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASO_LP, ARG_DESC_ASO, ARG_DESC_LP);
 			#endif
 		}
-		else if (!strncmp(arg, "ASOR", i)){
-			extract_routine_read = traceFragment_extract_mem_arg_adjacent_size_opcode_read;
-			extract_routine_write = traceFragment_extract_mem_arg_adjacent_write;
-			remove_raw = 1;
+		else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
+			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_opcode_read;
+			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
+			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
+			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			remove_raw 					= 1;
+
 			#ifdef VERBOSE
-			printf("Selecting extraction routine \"ASOR\" : %s\n", ARG_ASOR_DESC);
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LP, ARG_DESC_ASOR, ARG_DESC_LP);
 			#endif
-		}
-		/* TEST a supprimer */
-		else if (!strncmp(arg, "TEST", i)){
-			for (i = start; i < stop; i++){
-				fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
-				if (traceFragment_create_reg_array(fragment)){
-					printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, i);
-					break;
-				}
-				traceFragment_print_reg_array(fragment->read_register_array, fragment->nb_register_read_access);
-				traceFragment_print_reg_array(fragment->write_register_array, fragment->nb_register_write_access);
-			}
-			return;
 		}
 		else{
 			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 			goto arg_error;
 		}
-		
 	}
 	else{
 		printf("ERROR: in %s, an argument is expected to select the extraction routine\n", __func__);
@@ -654,26 +671,47 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			break;
 		}
 
+		if (traceFragment_create_reg_array(fragment)){
+			printf("ERROR: in %s, unable to create reg array for fragement %u\n", __func__, i);
+			break;
+		}
+
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0) && remove_raw){
 			traceFragment_remove_read_after_write(fragment);
 		}
 
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
-			arg_set.input = extract_routine_read(fragment->read_memory_array, fragment->nb_memory_read_access);
-			arg_set.output = extract_routine_write(fragment->write_memory_array, fragment->nb_memory_write_access);
-
-			if (arg_set.input != NULL && arg_set.output != NULL){
-				strncpy(arg_set.tag, fragment->tag, ARGSET_TAG_MAX_LENGTH);
-				if (strlen(arg_set.tag) == 0){
-					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", i);
-				}
-
-				if (array_add(&(trace->arg_array), &arg_set) < 0){
-					printf("ERROR: in %s, unable to add arguement to arg array\n", __func__);
-				}
+			arg_set.input = array_create(sizeof(struct argBuffer));
+			if (arg_set.input == NULL){
+				printf("ERROR: in %s, unable to create array\n", __func__);
+				break;
 			}
-			else{
-				printf("ERROR: in %s, read_mem_arg or write_mem_arg array is NULL\n", __func__);
+			arg_set.output = array_create(sizeof(struct argBuffer));
+			if (arg_set.output == NULL){
+				printf("ERROR: in %s, unable to create array\n", __func__);
+				break;
+			}
+
+			if (extract_routine_mem_read(arg_set.input, fragment->read_memory_array, fragment->nb_memory_read_access)){
+				printf("ERROR: in %s, memory read extraction routine return an error code\n", __func__);
+			}
+			if (extract_routine_mem_write(arg_set.output, fragment->write_memory_array, fragment->nb_memory_write_access)){
+				printf("ERROR: in %s, memory write extraction routine return an error code\n", __func__);
+			}
+			if (extract_routine_reg_read(arg_set.input, fragment->read_register_array, fragment->nb_register_read_access)){
+				printf("ERROR: in %s, register read extraction routine return an error code\n", __func__);
+			}
+			if (extract_routine_reg_write(arg_set.output, fragment->write_register_array, fragment->nb_register_write_access)){
+				printf("ERROR: in %s, register write extraction routine return an error code\n", __func__);
+			}
+
+			strncpy(arg_set.tag, fragment->tag, ARGSET_TAG_MAX_LENGTH);
+			if (strlen(arg_set.tag) == 0){
+				snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", i);
+			}
+
+			if (array_add(&(trace->arg_array), &arg_set) < 0){
+				printf("ERROR: in %s, unable to add argument to arg array\n", __func__);
 			}
 		}
 		#ifdef VERBOSE
@@ -687,20 +725,28 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 	arg_error:
 	printf("Expected extraction specifier:\n");
-	printf(" - \"A\"    : %s\n", ARG_A_DESC);
-	printf(" - \"AS\"   : %s\n", ARG_AS_DESC);
-	printf(" - \"ASO\"  : %s\n", ARG_ASO_DESC);
-	printf(" - \"AR\"   : %s\n", ARG_AR_DESC);
-	printf(" - \"ASR\"  : %s\n", ARG_ASR_DESC);
-	printf(" - \"ASOR\" : %s\n", ARG_ASOR_DESC);
+	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 	ARG_DESC_LP);
+	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 	ARG_DESC_LP);
+	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 	ARG_DESC_LP);
+	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 	ARG_DESC_LP);
+	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 	ARG_DESC_LP);
+	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 	ARG_DESC_LP);
 	return;
 
-	#undef ARG_A_DESC
-	#undef ARG_AS_DESC
-	#undef ARG_ASO_DESC
-	#undef ARG_AR_DESC
-	#undef ARG_ASR_DESC
-	#undef ARG_ASOR_DESC
+	#undef ARG_DESC_A
+	#undef ARG_DESC_AR
+	#undef ARG_DESC_AS
+	#undef ARG_DESC_ASR
+	#undef ARG_DESC_ASO
+	#undef ARG_DESC_ASOR
+	#undef ARG_DESC_LP
+
+	#undef ARG_NAME_A_LP
+	#undef ARG_NAME_AR_LP
+	#undef ARG_NAME_AS_LP
+	#undef ARG_NAME_ASR_LP
+	#undef ARG_NAME_ASO_LP
+	#undef ARG_NAME_ASOR_LP
 }
 
 /* ===================================================================== */

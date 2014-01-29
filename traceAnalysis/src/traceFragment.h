@@ -70,10 +70,12 @@ void traceFragment_remove_read_after_write(struct traceFragment* frag);
 int32_t traceFragment_create_reg_array(struct traceFragment* frag);
 void traceFragment_print_reg_array(struct regAccess* reg_access, int nb_reg_access);
 
-struct array* traceFragment_extract_mem_arg_adjacent_read(struct memAccess* mem_access, int nb_mem_access);
-struct array* traceFragment_extract_mem_arg_adjacent_write(struct memAccess* mem_access, int nb_mem_access);
-struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess* mem_access, int nb_mem_access);
-struct array* traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct memAccess* mem_access, int nb_mem_access);
+int32_t traceFragment_extract_mem_arg_adjacent_read(struct array* array, struct memAccess* mem_access, int nb_mem_access);
+int32_t traceFragment_extract_mem_arg_adjacent_write(struct array* array, struct memAccess* mem_access, int nb_mem_access);
+int32_t traceFragment_extract_mem_arg_adjacent_size_read(struct array* array, struct memAccess* mem_access, int nb_mem_access);
+int32_t traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct array* array, struct memAccess* mem_access, int nb_mem_access);
+
+int32_t traceFragment_extract_reg_arg_large_pure(struct array* array, struct regAccess* reg_access, int nb_reg_access);
 
 void traceFragment_delete(struct traceFragment* frag);
 void traceFragment_clean(struct traceFragment* frag);

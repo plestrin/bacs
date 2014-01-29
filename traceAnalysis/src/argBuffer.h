@@ -14,11 +14,32 @@ enum argLocationType{
 	ARG_LOCATION_REGISTER
 };
 
+/* Explanation about the reg attribute in the location union:
+ * 		bits [0 :3 ]: nb register combined (max is 15)
+ * 		bits [4 :8 ]: register 1  compressed name
+ * 		bits [9 :13]: register 2  compressed name
+ * 		bits [14:18]: register 3  compressed name
+ * 		bits [19:23]: register 4  compressed name
+ * 		bits [24:28]: register 5  compressed name
+ * 		bits [29:33]: register 6  compressed name
+ * 		bits [34:38]: register 7  compressed name
+ * 		bits [39:43]: register 8  compressed name
+ * 		bits [44:48]: register 9  compressed name
+ * 		bits [49:53]: register 10 compressed name
+ * 		bits [54:58]: register 11 compressed name
+ * 		bits [59:63]: register 12 compressed name
+ */
+
+#define ARGBUFFER_GET_NB_REG(reg)			((uint32_t)(reg) & 0x0000000f)
+#define ARGBUFFER_SET_NB_REG(reg, val)		(reg) = (((reg) & (uint64_t)0xfffffffffffffff0ULL) | (uint64_t)((val) & 0x0000000f))
+#define ARGBUFFER_GET_REG_NAME(reg, i) 		((uint32_t)((reg) >> ((i) * 5 + 4)) & 0x0000001f)
+#define ARGBUFFER_SET_REG_NAME(reg, i, val) (reg) = (((reg) & (((uint64_t)0xffffffffffffffe0ULL << ((i) * 5 + 4)) | ((uint64_t)0xffffffffffffffffULL >> (64 - ((i) * 5 + 4))))) | ((uint64_t)((val) & 0x0000001f) << ((i) * 5 + 4)))
+
 struct argBuffer{
 	enum argLocationType 	location_type;
 	union {
 		ADDRESS 			address;
-		uint16_t 			reg;
+		uint64_t 			reg;
 	} 						location;
 	uint32_t 				size;
 	int8_t					access_size;

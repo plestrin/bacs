@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <alloca.h>
 
 #include "traceFragment.h"
 #include "argBuffer.h"
 #include "argSet.h"
 #include "multiColumn.h"
+#include "permutation.h"
 
 int memAccess_compare_address_then_order(const void* mem_access1, const void* mem_access2); 		/* Order memAccess array in address order and in order order as a second option */
 int memAccess_compare_address_then_inv_order(const void* mem_access1, const void* mem_access2); 	/* Order memAccess array in address order and in inv order order as a second option */
@@ -570,7 +572,7 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 					case REGISTER_DX 	: {
 						register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
 						register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
-						
+
 						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
 						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
 						break;
@@ -579,7 +581,6 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 						break;
 					}
 					}
-					/* we have to deal with write register, it's a bit more tricky */
 				}
 			}
 		}
@@ -695,10 +696,9 @@ void traceFragment_print_reg_array(struct regAccess* reg_access, int nb_reg_acce
 }
 
 #define TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(name, sort_rtn)																																	\
-struct array* (name)(struct memAccess* mem_access, int nb_mem_access){																															\
+int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_access){																											\
 	int 				i;																																										\
 	int 				j;																																										\
-	struct array* 		array = NULL;																																							\
 	ADDRESS 			mem_address_upper_bound;																																				\
 	ADDRESS 			mem_address_written;																																					\
 	struct argBuffer 	arg;																																									\
@@ -706,12 +706,6 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 																																																\
 	if (mem_access != NULL && nb_mem_access > 0){																																				\
 		qsort(mem_access, nb_mem_access, sizeof(struct memAccess), (sort_rtn));																													\
-																																																\
-		array = array_create(sizeof(struct argBuffer));																																			\
-		if (array == NULL){																																										\
-			printf("ERROR: in %s, unable to create array structure\n", __func__);																												\
-			return array;																																										\
-		}																																														\
 																																																\
 		for (i = 1, j = 0, mem_address_upper_bound = mem_access[0].address + mem_access[0].size; i < nb_mem_access; i++){																		\
 			if (mem_access[i].address > mem_address_upper_bound){																																\
@@ -722,7 +716,7 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 				arg.data 				= (char*)malloc(arg.size);																																\
 				if (arg.data == NULL){																																							\
 					printf("ERROR: in %s, unable to allocate memory\n", __func__);																												\
-					return array;																																								\
+					return -1;																																									\
 				}																																												\
 																																																\
 				mem_address_written = mem_access[j].address;																																	\
@@ -771,14 +765,13 @@ struct array* (name)(struct memAccess* mem_access, int nb_mem_access){										
 		}																																														\
 	}																																															\
 																																																\
-	return array;																																												\
+	return 0;																																													\
 }
 
 TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_read, memAccess_compare_address_then_order)
 TRACEFRAGMENT_EXTRACT_MEM_ARG_ADJACENT(traceFragment_extract_mem_arg_adjacent_write, memAccess_compare_address_then_inv_order)
 
-struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess* mem_access, int nb_mem_access){
-	struct array* 		array = NULL;
+int32_t traceFragment_extract_mem_arg_adjacent_size_read(struct array* array, struct memAccess* mem_access, int nb_mem_access){
 	uint8_t*			taken;
 	int 				i;
 	int 				j;
@@ -792,54 +785,48 @@ struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess*
 		taken = (uint8_t*)calloc(nb_mem_access, sizeof(uint8_t));
 		if (taken == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			return array;
+			return -1;
 		}
 
-		array = array_create(sizeof(struct argBuffer));
-		if (array == NULL){
-			printf("ERROR: in %s, unable to create array structure\n", __func__);
-		}
-		else{
-			for (i = 0; i < nb_mem_access; i++){
-				if (taken[i] == 0){
-					taken[i] = 1;
-					size = mem_access[i].size;
-					for (j = i + 1; j < nb_mem_access; j++){
-						if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size)){
-							if (mem_access[j].address == mem_access[i].address + size){
-								size += mem_access[j].size;
-								taken[j] = 1;
-							}
-							else if (mem_access[j].address > mem_access[i].address + size){
-								break;
-							}
-							else{
-								taken[j] = 2;
-							}
+		for (i = 0; i < nb_mem_access; i++){
+			if (taken[i] == 0){
+				taken[i] = 1;
+				size = mem_access[i].size;
+				for (j = i + 1; j < nb_mem_access; j++){
+					if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size)){
+						if (mem_access[j].address == mem_access[i].address + size){
+							size += mem_access[j].size;
+							taken[j] = 1;
+						}
+						else if (mem_access[j].address > mem_access[i].address + size){
+							break;
+						}
+						else{
+							taken[j] = 2;
 						}
 					}
+				}
 
-					arg.location_type 		= ARG_LOCATION_MEMORY;
-					arg.location.address 	= mem_access[i].address;
-					arg.size 				= size;
-					arg.access_size 		= mem_access[i].size;
-					arg.data 				= (char*)malloc(arg.size);
-					if (arg.data == NULL){
-						printf("ERROR: in %s, unable to allocate memory\n", __func__);
-						return array;
-					}
+				arg.location_type 		= ARG_LOCATION_MEMORY;
+				arg.location.address 	= mem_access[i].address;
+				arg.size 				= size;
+				arg.access_size 		= mem_access[i].size;
+				arg.data 				= (char*)malloc(arg.size);
+				if (arg.data == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
+					return -1;
+				}
 
-					for (k = i, size = 0; k < j; k++){
-						if (taken[k] == 1){
-							memcpy(arg.data + size, &(mem_access[k].value), mem_access[i].size);
-							size += mem_access[i].size;
-							taken[k] = 2;
-						}
+				for (k = i, size = 0; k < j; k++){
+					if (taken[k] == 1){
+						memcpy(arg.data + size, &(mem_access[k].value), mem_access[i].size);
+						size += mem_access[i].size;
+						taken[k] = 2;
 					}
+				}
 
-					if (array_add(array, &arg) < 0){
-						printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-					}
+				if (array_add(array, &arg) < 0){
+					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 				}
 			}
 		}
@@ -847,11 +834,10 @@ struct array* traceFragment_extract_mem_arg_adjacent_size_read(struct memAccess*
 		free(taken);
 	}
 
-	return array;
+	return 0;
 }
 
-struct array* traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct memAccess* mem_access, int nb_mem_access){
-	struct array* 		array = NULL;
+int32_t traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct array* array, struct memAccess* mem_access, int nb_mem_access){
 	uint8_t*			taken;
 	int 				i;
 	int 				j;
@@ -865,54 +851,48 @@ struct array* traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct mem
 		taken = (uint8_t*)calloc(nb_mem_access, sizeof(uint8_t));
 		if (taken == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			return array;
+			return -1;
 		}
 
-		array = array_create(sizeof(struct argBuffer));
-		if (array == NULL){
-			printf("ERROR: in %s, unable to create array structure\n", __func__);
-		}
-		else{
-			for (i = 0; i < nb_mem_access; i++){
-				if (taken[i] == 0){
-					taken[i] = 1;
-					size = mem_access[i].size;
-					for (j = i + 1; j < nb_mem_access; j++){
-						if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size) && (mem_access[j].opcode == mem_access[i].opcode)){
-							if (mem_access[j].address == mem_access[i].address + size){
-								size += mem_access[j].size;
-								taken[j] = 1;
-							}
-							else if (mem_access[j].address > mem_access[i].address + size){
-								break;
-							}
-							else{
-								taken[j] = 2;
-							}
+		for (i = 0; i < nb_mem_access; i++){
+			if (taken[i] == 0){
+				taken[i] = 1;
+				size = mem_access[i].size;
+				for (j = i + 1; j < nb_mem_access; j++){
+					if ((taken[j] == 0) && (mem_access[j].size == mem_access[i].size) && (mem_access[j].opcode == mem_access[i].opcode)){
+						if (mem_access[j].address == mem_access[i].address + size){
+							size += mem_access[j].size;
+							taken[j] = 1;
+						}
+						else if (mem_access[j].address > mem_access[i].address + size){
+							break;
+						}
+						else{
+							taken[j] = 2;
 						}
 					}
+				}
 
-					arg.location_type 		= ARG_LOCATION_MEMORY;
-					arg.location.address 	= mem_access[i].address;
-					arg.size 				= size;
-					arg.access_size 		= mem_access[i].size;
-					arg.data 				= (char*)malloc(arg.size);
-					if (arg.data == NULL){
-						printf("ERROR: in %s, unable to allocate memory\n", __func__);
-						return array;
-					}
+				arg.location_type 		= ARG_LOCATION_MEMORY;
+				arg.location.address 	= mem_access[i].address;
+				arg.size 				= size;
+				arg.access_size 		= mem_access[i].size;
+				arg.data 				= (char*)malloc(arg.size);
+				if (arg.data == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
+					return -1;
+				}
 
-					for (k = i, size = 0; k < j; k++){
-						if (taken[k] == 1){
-							memcpy(arg.data + size, &(mem_access[k].value), mem_access[i].size);
-							size += mem_access[i].size;
-							taken[k] = 2;
-						}
+				for (k = i, size = 0; k < j; k++){
+					if (taken[k] == 1){
+						memcpy(arg.data + size, &(mem_access[k].value), mem_access[i].size);
+						size += mem_access[i].size;
+						taken[k] = 2;
 					}
+				}
 
-					if (array_add(array, &arg) < 0){
-						printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-					}
+				if (array_add(array, &arg) < 0){
+					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 				}
 			}
 		}
@@ -920,7 +900,70 @@ struct array* traceFragment_extract_mem_arg_adjacent_size_opcode_read(struct mem
 		free(taken);
 	}
 
-	return array;
+	return 0;
+}
+
+int32_t traceFragment_extract_reg_arg_large_pure(struct array* array, struct regAccess* reg_access, int nb_reg_access){
+	uint32_t 			i;
+	uint8_t 			j;
+	uint8_t 			k;
+	uint8_t 			nb_large_access;
+	struct regAccess**	large_reg_access;
+	uint32_t 			nb_argBuffer;
+	struct argBuffer 	arg;
+
+	if (nb_reg_access > 0){
+		large_reg_access = (struct regAccess**)alloca(sizeof(struct regAccess*) * nb_reg_access);
+
+		for (i = 0, nb_large_access = 0; i < (uint32_t)nb_reg_access; i++){
+			if (reg_access[i].size == 4){
+				large_reg_access[nb_large_access] = reg_access + i;
+				nb_large_access ++;
+			}
+		}
+
+		if (nb_large_access > 0){
+			nb_argBuffer = 0x00000001 << nb_large_access;
+			for (i = 1; i < nb_argBuffer; i++){
+				uint8_t 	nb_register = __builtin_popcount(i);
+				uint8_t* 	permutation;
+				PERMUTATION_INIT(nb_register)
+
+				arg.location_type 		= ARG_LOCATION_REGISTER;
+				#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+				ARGBUFFER_SET_NB_REG(arg.location.reg, nb_register);
+				arg.size 				= nb_register * 4;
+				arg.access_size 		= 4;
+
+				PERMUTATION_GET_FIRST(permutation)
+				while(permutation != NULL){
+					arg.data = (char*)malloc(arg.size);
+					if (arg.data == NULL){
+						printf("ERROR: in %s, unable to allocate memory\n", __func__);
+						return -1;
+					}
+
+					for (j = 0, k = 0; j < nb_large_access; j++){
+						if ((i >> j) & 0x00000001){
+							*((uint32_t*)arg.data + permutation[k]) = large_reg_access[j]->value;
+							#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+							ARGBUFFER_SET_REG_NAME(arg.location.reg, permutation[k], large_reg_access[j]->reg);
+							k++;
+						}
+					}
+
+					if (array_add(array, &arg) < 0){
+						printf("ERROR: in %s, unable to add element to array structure\n", __func__);
+					}
+
+					PERMUTATION_GET_NEXT(permutation)
+				}
+				PERMUTATION_CLEAN()
+			}
+		}
+	}
+	
+	return 0;
 }
 
 void traceFragment_delete(struct traceFragment* frag){
