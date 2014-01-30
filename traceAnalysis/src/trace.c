@@ -495,6 +495,43 @@ void trace_frag_print_percent(struct trace* trace){
 	}
 }
 
+void trace_frag_print_register(struct trace* trace, char* arg){
+	struct traceFragment* 		fragment;
+	uint32_t 					index;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->frag_array))){
+			fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+			#ifdef VERBOSE
+			printf("Print registers for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(trace->frag_array)));
+			#endif
+
+			if (fragment->read_register_array == NULL || fragment->write_register_array == NULL){
+				#ifdef VERBOSE
+				printf("WARNING: register arrays have not been built for the current fragment. Building them now.\n");
+				#endif
+
+				if (traceFragment_create_reg_array(fragment)){
+					printf("ERROR: in %s, unable to create reg array for the fragement\n", __func__);
+				}
+			}
+
+			printf("*** Input Register(s) ***\n");
+			traceFragment_print_reg_array(fragment->read_register_array, fragment->nb_register_read_access);
+			printf("\n*** Output Register(s) ***\n");
+			traceFragment_print_reg_array(fragment->write_register_array, fragment->nb_register_write_access);
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+		}
+	}
+	else{
+		printf("ERROR: in %s, an index value must be specified\n", __func__);
+	}
+}
+
 void trace_frag_set_tag(struct trace* trace, char* arg){
 	uint32_t 				i;
 	uint32_t 				index;
@@ -812,6 +849,8 @@ void trace_arg_print(struct trace* trace, char* arg){
 
 			multiColumnPrinter_set_column_size(printer, 0, 5);
 			multiColumnPrinter_set_column_size(printer, 1, ARGSET_TAG_MAX_LENGTH);
+			multiColumnPrinter_set_column_size(printer, 2, 8);
+			multiColumnPrinter_set_column_size(printer, 3, 8);
 
 			multiColumnPrinter_set_title(printer, 0, "Index");
 			multiColumnPrinter_set_title(printer, 1, "Tag");
