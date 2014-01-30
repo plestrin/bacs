@@ -46,7 +46,6 @@ struct argBuffer{
 	char* 					data;
 };
 
-void argBuffer_print_raw(struct argBuffer* arg);
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst);
 int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
@@ -55,7 +54,38 @@ int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2);
 void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_); /* à l'occasion on peut supprimer c'est lourd pour pas grand chose */
 void argBuffer_delete(struct argBuffer* arg);
 
+void argBuffer_print_array(struct array* array);
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
 void argBuffer_delete_array(struct array* arg_array);
+
+static inline uint32_t argBuffer_get_nb_mem_in_array(struct array* array){
+	uint32_t 			i;
+	uint32_t 			result = 0;
+	struct argBuffer* 	arg;
+
+	for (i = 0; i < array_get_length(array); i++){
+		arg = (struct argBuffer*)array_get(array, i);
+		if (arg->location_type == ARG_LOCATION_MEMORY){
+			result ++;
+		}
+	}
+
+	return result;
+}
+
+static inline uint32_t argBuffer_get_nb_reg_in_array(struct array* array){
+	uint32_t 			i;
+	uint32_t 			result = 0;
+	struct argBuffer* 	arg;
+
+	for (i = 0; i < array_get_length(array); i++){
+		arg = (struct argBuffer*)array_get(array, i);
+		if (arg->location_type == ARG_LOCATION_REGISTER){
+			result ++;
+		}
+	}
+
+	return result;
+}
 
 #endif

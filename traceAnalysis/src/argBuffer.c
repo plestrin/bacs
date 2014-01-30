@@ -3,49 +3,19 @@
 #include <string.h>
 
 #include "argBuffer.h"
-#include "printBuffer.h"
 #include "instruction.h"
+#include "printBuffer.h"
+#include "multiColumn.h"
 
 
-void argBuffer_print_reg(FILE* file, uint64_t reg);
+void argBuffer_fprint_reg(FILE* file, uint64_t reg);
+void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg);
 void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element);
 
-void argBuffer_print_raw(struct argBuffer* arg){
-	if (arg != NULL){
-		if (arg->location_type == ARG_LOCATION_MEMORY){
-			printf("Argument Memory\n");
-			#if defined ARCH_32
-			printf("\t-Address: \t0x%08x\n", arg->location.address);
-			#elif defined ARCH_64
-			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-			printf("\t-Address: \t0x%llx\n", arg->location.address);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
-		}
-		else if (arg->location_type == ARG_LOCATION_REGISTER){
-			printf("Argument Register\n\t-Register: \t");
-			argBuffer_print_reg(stdout, arg->location.reg);
-			printf("\n");
-		}
-		else{
-			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
-		}
-		
-		printf("\t-Size: \t\t%u\n", arg->size);
 
-		if (arg->access_size == ARGBUFFER_ACCESS_SIZE_UNDEFINED){
-			printf("\t-Access size: \tundefined\n");
-		}
-		else{
-			printf("\t-Access size: \t%d\n", arg->access_size);
-		}
-
-		printf("\t-Value: \t");
-		printBuffer_raw(stdout, arg->data, arg->size);
-		printf("\n");
-	}
-}
+/* ===================================================================== */
+/* argBuffer functions						                             */
+/* ===================================================================== */
 
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst){
 	arg_dst->location_type = arg_src->location_type;
@@ -200,7 +170,7 @@ void argBuffer_delete(struct argBuffer* arg){
 	}
 }
 
-void argBuffer_print_reg(FILE* file, uint64_t reg){
+void argBuffer_fprint_reg(FILE* file, uint64_t reg){
 	uint8_t i;
 	uint8_t nb_register;
 
@@ -213,6 +183,95 @@ void argBuffer_print_reg(FILE* file, uint64_t reg){
 			fprintf(file, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
 		}
 	}
+}
+
+void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg){
+	uint8_t 	i;
+	uint8_t 	nb_register;
+	uint32_t 	pointer = 0;
+
+	nb_register = ARGBUFFER_GET_NB_REG(reg);
+	for (i = 0; i < nb_register; i++){
+		if (i == nb_register - 1){
+			pointer += snprintf(string + pointer, string_length - pointer, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		}
+		else{
+			pointer += snprintf(string + pointer, string_length - pointer, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		}
+		if (pointer >= string_length){
+			break;
+		}
+	}
+}
+
+
+/* ===================================================================== */
+/* argBuffer array functions						                     */
+/* ===================================================================== */
+
+void argBuffer_print_array(struct array* array){
+	struct multiColumnPrinter* 	printer;
+	uint32_t 					i;
+	struct argBuffer* 			arg;
+	#define DESC_SIZE			32
+	char 						desc[DESC_SIZE];
+	char* 						value;
+
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 0, DESC_SIZE);
+		multiColumnPrinter_set_column_size(printer, 1, 4);
+		multiColumnPrinter_set_column_size(printer, 2, 5);
+
+		multiColumnPrinter_set_title(printer, 0, "Description");
+		multiColumnPrinter_set_title(printer, 1, "Size");
+		multiColumnPrinter_set_title(printer, 2, "Asize");
+		multiColumnPrinter_set_title(printer, 3, "Value");
+
+		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT8);
+		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UNBOUND_STRING);
+
+		multiColumnPrinter_print_header(printer);
+
+		for (i = 0; i < array_get_length(array); i++){
+			arg = (struct argBuffer*)array_get(array, i);
+			if (arg->location_type == ARG_LOCATION_MEMORY){
+				#if defined ARCH_32
+				snprintf(desc, DESC_SIZE, "Mem 0x%08x\n", arg->location.address);
+				#elif defined ARCH_64
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				snprintf(desc, DESC_SIZE, "Mem 0x%llx\n", arg->location.address);
+				#else
+				#error Please specify an architecture {ARCH_32 or ARCH_64}
+				#endif
+			}
+			else if (arg->location_type == ARG_LOCATION_REGISTER){
+				argBuffer_snprint_reg(desc, DESC_SIZE, arg->location.reg);
+			}
+			else{
+				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+			}
+
+			value = (char*)malloc(PRINTBUFFER_GET_STRING_SIZE(arg->size));
+			if (value == NULL){
+				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				break;
+			}
+			printBuffer_raw_string(value, PRINTBUFFER_GET_STRING_SIZE(arg->size), arg->data, arg->size);
+
+			multiColumnPrinter_print(printer, desc, arg->size, arg->access_size, value, NULL);
+			
+			free(value);
+		}
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
+	}
+
+	#undef DESC_SIZE
 }
 
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){

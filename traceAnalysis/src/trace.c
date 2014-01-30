@@ -815,7 +815,6 @@ void trace_arg_print(struct trace* trace, char* arg){
 	uint32_t 					index;
 	uint32_t 					i;
 	struct argSet* 				arg_set;
-	struct argBuffer* 			buffer;
 	struct multiColumnPrinter* 	printer;
 
 	if (arg != NULL){
@@ -827,45 +826,67 @@ void trace_arg_print(struct trace* trace, char* arg){
 			printf("Print argSet %u (tag: \"%s\", nb argSet: %u)\n", index, arg_set->tag, array_get_length(&(trace->arg_array)));
 			#endif
 
-			for (i = 0; i < array_get_length(arg_set->input); i++){
-				buffer = (struct argBuffer*)array_get(arg_set->input, i);
-				printf("Input %u/%u ", i + 1, array_get_length(arg_set->input));
-				argBuffer_print_raw(buffer);
-			}
+			#ifdef VERBOSE
+			printf("*** Input argBuffer %u ***", array_get_length(arg_set->input));
+			#endif
+			argBuffer_print_array(arg_set->input);
 
-			for (i = 0; i < array_get_length(arg_set->output); i++){
-				buffer = (struct argBuffer*)array_get(arg_set->output, i);
-				printf("Output %u/%u ", i + 1, array_get_length(arg_set->output));
-				argBuffer_print_raw(buffer);
-			}
+			#ifdef VERBOSE
+			printf("*** Output argBuffer %u ***", array_get_length(arg_set->output));
+			#endif
+			argBuffer_print_array(arg_set->output);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
 		}
 	}
 	else{
-		printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
+		printer = multiColumnPrinter_create(stdout, 8, NULL, NULL, NULL);
 		if (printer != NULL){
 
 			multiColumnPrinter_set_column_size(printer, 0, 5);
 			multiColumnPrinter_set_column_size(printer, 1, ARGSET_TAG_MAX_LENGTH);
-			multiColumnPrinter_set_column_size(printer, 2, 8);
-			multiColumnPrinter_set_column_size(printer, 3, 8);
+			multiColumnPrinter_set_column_size(printer, 2, 9);
+			multiColumnPrinter_set_column_size(printer, 3, 7);
+			multiColumnPrinter_set_column_size(printer, 4, 7);
+			multiColumnPrinter_set_column_size(printer, 5, 9);
+			multiColumnPrinter_set_column_size(printer, 6, 7);
+			multiColumnPrinter_set_column_size(printer, 7, 7);
 
 			multiColumnPrinter_set_title(printer, 0, "Index");
 			multiColumnPrinter_set_title(printer, 1, "Tag");
 			multiColumnPrinter_set_title(printer, 2, "Nb Input");
-			multiColumnPrinter_set_title(printer, 3, "Nb Output");
+			multiColumnPrinter_set_title(printer, 3, "I Mem");
+			multiColumnPrinter_set_title(printer, 4, "I Reg");
+			multiColumnPrinter_set_title(printer, 5, "Nb Output");
+			multiColumnPrinter_set_title(printer, 6, "O Mem");
+			multiColumnPrinter_set_title(printer, 7, "O Reg");
 
 			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
 			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
 			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_UINT32);
+			multiColumnPrinter_set_column_type(printer, 7, MULTICOLUMN_TYPE_UINT32);
 
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+				uint32_t nb_i_mem;
+				uint32_t nb_i_reg;
+				uint32_t nb_o_mem;
+				uint32_t nb_o_reg;
+
 				arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
-				multiColumnPrinter_print(printer, i, arg_set->tag, array_get_length(arg_set->input), array_get_length(arg_set->output), NULL);
+
+				nb_i_mem = argBuffer_get_nb_mem_in_array(arg_set->input);
+				nb_i_reg = argBuffer_get_nb_reg_in_array(arg_set->input);
+				nb_o_mem = argBuffer_get_nb_mem_in_array(arg_set->output);
+				nb_o_reg = argBuffer_get_nb_reg_in_array(arg_set->output);
+
+
+				multiColumnPrinter_print(printer, i, arg_set->tag, array_get_length(arg_set->input), nb_i_mem, nb_i_reg, array_get_length(arg_set->output), nb_o_mem, nb_o_reg, NULL);
 			}
 
 			multiColumnPrinter_delete(printer);

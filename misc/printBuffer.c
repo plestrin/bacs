@@ -38,3 +38,16 @@ void printBuffer_raw_color(char* buffer, uint64_t buffer_length, uint64_t color_
 		printf(ANSI_COLOR_RESET);
 	}
 }
+
+void printBuffer_raw_string(char* string, uint32_t string_length, char* buffer, uint64_t buffer_length){
+	uint64_t 	i;
+	char 		hexa[16] = {'0', '1', '2', '3', '4' , '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	uint32_t 	pointer = 0;
+
+	for (i = 0; i < buffer_length; i ++){
+		pointer += snprintf(string + pointer, string_length - pointer, "%c%c", hexa[(buffer[i] >> 4) & 0x0f], hexa[buffer[i] & 0x0f]);
+		if (pointer >= string_length){
+			break;
+		}
+	}
+}

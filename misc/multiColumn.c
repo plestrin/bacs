@@ -56,6 +56,9 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 				if (MULTICOLUMN_TYPE_IS_VALID(types[i])){
 					printer->columns[i].type = types[i];
 				}
+				else if (types[i] == MULTICOLUMN_TYPE_UNBOUND_STRING && i == nb_column - 1){
+					printer->columns[i].type = types[i];
+				}
 				else{
 					printf("ERROR: in %s, incorrect type value for column %u\n", __func__, i);
 					printer->columns[i].type = MULTICOLUMN_DEFAULT_TYPE;
@@ -97,6 +100,9 @@ void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint
 	if (printer != NULL){
 		if (printer->nb_column > column){
 			if (MULTICOLUMN_TYPE_IS_VALID(type)){
+				printer->columns[column].type = type;
+			}
+			else if (type == MULTICOLUMN_TYPE_UNBOUND_STRING && column == printer->nb_column - 1){
 				printer->columns[column].type = type;
 			}
 			else{
@@ -161,6 +167,7 @@ void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* pr
 
 void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 	char* 		value_str;
+	int8_t 		value_int8;
 	int32_t 	value_int32;
 	uint32_t 	value_uint32;
 	uint64_t 	value_uint64;
@@ -179,10 +186,16 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 				value_str = (char*)va_arg(vl, char*);
 				break;
 			}
+			case MULTICOLUMN_TYPE_INT8 	: {
+				value_str = raw_value;
+				value_int8 = (int8_t)va_arg(vl, int32_t);
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int8);
+				break;
+			}
 			case MULTICOLUMN_TYPE_INT32 	: {
 				value_str = raw_value;
 				value_int32 = (int32_t)va_arg(vl, int32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int32); 
+				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int32);
 				break;
 			}
 			case MULTICOLUMN_TYPE_UINT32 	: {
@@ -212,17 +225,29 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 				#endif
 				break;
 			}
+			case MULTICOLUMN_TYPE_UNBOUND_STRING 	: {
+				value_str = (char*)va_arg(vl, char*);
+				break;
+			}
 			default 						: {
 				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
 				value_str = print_value;
+				multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
 				break;
 			}
 			}
 
-			multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
+			if (printer->columns[i].type != MULTICOLUMN_TYPE_UNBOUND_STRING){
+				multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
+			}
 			
 			if (i == printer->nb_column - 1){
-				fprintf(printer->file, "%s\n", print_value);
+				if (printer->columns[i].type == MULTICOLUMN_TYPE_UNBOUND_STRING){
+					fprintf(printer->file, "%s\n", value_str);
+				}
+				else{
+					fprintf(printer->file, "%s\n", print_value);
+				}
 			}
 			else{
 				fprintf(printer->file, "%s%s", print_value, printer->separator);
