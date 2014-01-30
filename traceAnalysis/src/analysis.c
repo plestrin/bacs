@@ -35,7 +35,6 @@ int main(int argc, char** argv){
 
 	/* ioChecker specific commands*/
 	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", "Display the ioChecker structure", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->checker, ioChecker_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "test ioChecker", "User define test on the ioChecker (CAUTION - debug only)", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->checker, ioChecker_handmade_test) /* DEV */
 
 	/* codeMap specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->code_map, codeMap_check_address)

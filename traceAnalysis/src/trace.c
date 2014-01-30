@@ -1058,7 +1058,7 @@ void trace_arg_search(struct trace* trace, char* arg){
 		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
 
 		#ifdef VERBOSE
-		printf("Searching argSet %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
+		printf("ArgSet %u/%u (tag: \"%s\"):\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
 		#endif
 
 		ioChecker_submit_argBuffers(trace->checker, arg_set->input, arg_set->output);

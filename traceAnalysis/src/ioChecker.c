@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "ioChecker.h"
 #include "primitiveReference.h"
@@ -8,7 +9,9 @@
 #include "TEA.h"
 #include "RC4.h"
 #include "AES.h"
-
+#ifdef VERBOSE
+#include "workPercent.h"
+#endif
 
 void ioChecker_wrapper_md5(void** input, void** output);
 
@@ -33,8 +36,6 @@ void ioChecker_wrapper_aes256_inner_loop_enc(void** input, void** output);
 void ioChecker_wrapper_aes256_inner_loop_dec(void** input, void** output);
 
 
-static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, struct argBuffer* input, struct array* output_args);
-
 struct ioChecker* ioChecker_create(){
 	struct ioChecker* checker;
 
@@ -50,15 +51,15 @@ struct ioChecker* ioChecker_create(){
 }
 
 int32_t ioChecker_init(struct ioChecker* checker){
-	int32_t 					result = -1;
 	struct primitiveReference 	primitive;
+	#ifdef VERBOSE
 	uint32_t 					i;
 	struct primitiveReference* 	primitive_pointer;
-	uint8_t 					nb_explicit_input;
+	#endif
 
 	if (array_init(&(checker->reference_array), sizeof(struct primitiveReference))){
 		printf("ERROR: in %s, unable to create array structure\n", __func__);
-		return result;
+		return -1;
 	}
 
 	#define IOCHECKER_ADD_PRIMITIVE_REFRENCE(name, function)																																		\
@@ -243,20 +244,6 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES256 inner dec", ioChecker_wrapper_aes256_inner_loop_dec)
 	}
 
-	checker->max_nb_input = 0;
-
-	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
-		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
-		if (primitive_pointer != NULL){
-			nb_explicit_input = primitiveReference_get_nb_explicit_input(primitive_pointer);
-
-			checker->max_nb_input = (checker->max_nb_input < nb_explicit_input) ? nb_explicit_input : checker->max_nb_input;
-		}
-		else{
-			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
-		}
-	}
-
 	#ifdef VERBOSE
 	printf("Create IOChecker: {");
 	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
@@ -273,83 +260,74 @@ int32_t ioChecker_init(struct ioChecker* checker){
 			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
 		}
 	}
-	printf("max input: %u\n", checker->max_nb_input);
 	#endif
 
-	result = 0;
-
-	return result;
+	return 0;
 }
 
-void ioChecker_submit_argBuffers(struct ioChecker* checker, struct array* input_args, struct array* output_args){
-	uint8_t 			nb_input;
-	uint8_t 			i;
-	uint8_t 			j;
-	uint8_t 			k;
-	struct argBuffer* 	arg_in;
-	uint8_t* 			current_input;
-	uint8_t 			input_next;
-
-	nb_input = (uint8_t)array_get_length(input_args);
-
-	arg_in = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
-
-	current_input = (uint8_t*)malloc(nb_input);
-
-	if (arg_in == NULL || current_input == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		if (arg_in != NULL){
-			free(arg_in);
-		}
-		if (current_input == NULL){
-			free(current_input);
-		}
-		return;
-	}
-
-	for (i = 1; i <= ((nb_input > checker->max_nb_input) ? checker->max_nb_input : nb_input); i++){
-		memset(current_input, 0, i);
-		input_next = 1;
-
-		while(input_next){
-			for (j = 0; j < i; j++){
-				memcpy(arg_in + j, array_get(input_args, current_input[j]), sizeof(struct argBuffer));
-			}
-			ioChecker_ckeck(checker, i, arg_in, output_args);
-
-			for (k = 0, input_next = 0; k < i; k++){
-				input_next |= (current_input[k] != nb_input - 1);
-			}
-
-			if (input_next){
-				j = i -1;
-				while(current_input[j] == nb_input - 1){
-					j--;
-				}
-				current_input[j] ++;
-				for (k = j + 1; k < i; k++){
-					current_input[k] = 0;
-				}
-			}
-		}
-	}
-
-	free(arg_in);
-	free(current_input);
-}
-
-static int32_t ioChecker_ckeck(struct ioChecker* checker, uint8_t nb_input, struct argBuffer* input, struct array* output_args){
-	uint32_t i;
-	int32_t result = -1;
+void ioChecker_submit_argBuffers(struct ioChecker* checker, struct array* input_arg_array, struct array* output_arg_array){
+	struct primitiveReference* 		primitive;
+	uint8_t 						nb_input;
+	uint8_t 						i;
+	uint8_t 						j;
+	uint8_t 						k;
+	struct argBuffer* 				input_combination;
+	uint32_t* 						input_combination_index;
+	uint32_t 						input_has_next;
+	#ifdef VERBOSE
+	struct workPercent 				work;
+	char 							work_desc[256];
+	#endif
 
 	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
-		if (!primitiveReference_test((struct primitiveReference*)array_get(&(checker->reference_array), i), nb_input, input, output_args)){
-			result = 0;
+		primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
+		nb_input = primitiveReference_get_nb_explicit_input(primitive);
+		input_has_next = 1;
+
+		input_combination = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
+		input_combination_index = (uint32_t*)calloc(nb_input, sizeof(uint32_t));
+
+		if (input_combination == NULL || input_combination_index == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			break;
 		}
-	}
 
-	return result;
+		#ifdef VERBOSE
+		snprintf(work_desc, 256, "\tIOChecker %s: ", primitive->name);
+		workPercent_init(&work, work_desc, WORKPERCENT_ACCURACY_0, pow(array_get_length(input_arg_array), nb_input));
+		#endif
+
+		while(input_has_next){
+			for (j = 0; j < nb_input; j++){
+				memcpy(input_combination + j, array_get(input_arg_array, input_combination_index[j]), sizeof(struct argBuffer));
+			}
+			primitiveReference_test(primitive, nb_input, input_combination, output_arg_array);
+
+			for (k = 0, input_has_next = 0; k < nb_input; k++){
+				input_has_next |= (input_combination_index[k] != array_get_length(input_arg_array) - 1);
+			}
+
+			if (input_has_next){
+				j = nb_input -1;
+				while(input_combination_index[j] == array_get_length(input_arg_array) - 1){
+					j--;
+				}
+				input_combination_index[j] ++;
+				for (k = j + 1; k < nb_input; k++){
+					input_combination_index[k] = 0;
+				}
+			}
+			#ifdef VERBOSE
+			workPercent_notify(&work, 1);
+			#endif
+		}
+		#ifdef VERBOSE
+		workPercent_conclude(&work);
+		#endif
+
+		free(input_combination);
+		free(input_combination_index);
+	}
 }
 
 void ioChecker_print(struct ioChecker* checker){
@@ -357,7 +335,7 @@ void ioChecker_print(struct ioChecker* checker){
 	struct primitiveReference* 	primitive;
 
 	if (checker != NULL){
-		printf("*** IoChecker (max input: %u) ***\n", checker->max_nb_input);
+		printf("*** IoChecker ***\n");
 
 		for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 			primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
@@ -465,62 +443,4 @@ void ioChecker_wrapper_aes256_inner_loop_enc(void** input, void** output){
 
 void ioChecker_wrapper_aes256_inner_loop_dec(void** input, void** output){
 	aes256_inner_loop_dec((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
-}
-
-/* ===================================================================== */
-/* Special debug stuff - don't touch	                                 */
-/* ===================================================================== */
-
-void ioChecker_handmade_test(struct ioChecker* checker){
-	struct argBuffer plt;
-	struct argBuffer key;
-	struct argBuffer cit;
-	unsigned char plt_val[12] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
-	unsigned char key_val[3]  = {0x4b, 0x65, 0x79};
-	unsigned char cit_val[12] = {0xa3, 0xfa, 0x1b, 0xed, 0xd8, 0x14, 0x9d, 0x1d, 0xd5, 0x75, 0x2e, 0x09};
-	struct array* array_in;
-	struct array* array_out;
-
-	plt.location_type = ARG_LOCATION_MEMORY;
-	plt.location.address = 1;
-	plt.size = 12;
-	plt.data = (char*)malloc(12); /* srry but we don't check allocation */
-	memcpy(plt.data, plt_val, 12);
-
-	key.location_type = ARG_LOCATION_MEMORY;
-	key.location.address = 2;
-	key.size = 3;
-	key.data = (char*)malloc(3); /* srry but we don't check allocation */
-	memcpy(key.data, key_val, 3);
-
-	cit.location_type = ARG_LOCATION_MEMORY;
-	cit.location.address = 3;
-	cit.size = 12;
-	cit.data = (char*)malloc(12); /* srry but we don't check allocation */
-	memcpy(cit.data, cit_val, 12);
-
-	argBuffer_print_raw(&plt);
-	argBuffer_print_raw(&key);
-	argBuffer_print_raw(&cit);
-
-	array_in = array_create(sizeof(struct argBuffer));
-	array_out = array_create(sizeof(struct argBuffer));
-
-	if (array_in != NULL && array_out != NULL){
-		array_add(array_in, (void*)&plt); 	/* we should test if the return value is >= 0 */
-		array_add(array_in, (void*)&key); 	/* we should test if the return value is >= 0 */
-		array_add(array_out, (void*)&cit);	/* we should test if the return value is >= 0*/
-
-		ioChecker_submit_argBuffers(checker, array_in, array_out);
-
-		array_delete(array_in);
-		array_delete(array_out);
-
-		free(plt.data);
-		free(key.data);
-		free(cit.data);
-	}
-	else{
-		printf("ERROR: in %s, unable to create arrays\n", __func__);
-	}
 }

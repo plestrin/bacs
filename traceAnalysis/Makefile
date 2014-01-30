@@ -7,7 +7,7 @@ CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE -D$(ARCHI)
 else
 CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
 endif
-LDFLAGS			:= -lyajl
+LDFLAGS			:= -lyajl -lm
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/

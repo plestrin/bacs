@@ -179,7 +179,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 	}
 
 	if (!result){
-		printf("*** IO match for %s ****\n", primitive->name);
+		printf("\n*** IO match for %s ****\n", primitive->name);
 		for (j = 0; j < nb_input; j++){
 			printf("\tArg %u in:  ", j);
 			printBuffer_raw(stdout, input[j].data, input[j].size);
