@@ -57,7 +57,6 @@ void argBuffer_delete(struct argBuffer* arg);
 
 void argBuffer_print_array(struct array* array);
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
-void argBuffer_delete_array(struct array* arg_array);
 
 static inline uint32_t argBuffer_get_nb_mem_in_array(struct array* array){
 	uint32_t 			i;

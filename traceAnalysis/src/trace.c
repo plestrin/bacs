@@ -792,7 +792,6 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 void trace_arg_clean(struct trace* trace){
 	uint32_t 				i;
-	struct argSet* 			arg_set;
 
 	if (trace->arg_set_graph != NULL){
 		argSetGraph_delete(trace->arg_set_graph);
@@ -804,9 +803,7 @@ void trace_arg_clean(struct trace* trace){
 	}
 
 	for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
-		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
-		argBuffer_delete_array(arg_set->input);
-		argBuffer_delete_array(arg_set->output);
+		argSet_clean((struct argSet*)array_get(&(trace->arg_array), i));
 	}
 	array_empty(&(trace->arg_array));
 }

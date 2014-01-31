@@ -347,17 +347,3 @@ int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){
 
 	return 0;
 }
-
-void argBuffer_delete_array(struct array* arg_array){
-	uint32_t 			i;
-	struct argBuffer* 	arg;
-
-	if (arg_array != NULL){
-		for (i = 0; i < array_get_length(arg_array); i++){
-			arg = (struct argBuffer*)array_get(arg_array, i);
-			free(arg->data);
-		}
-
-		array_delete(arg_array);
-	}
-}

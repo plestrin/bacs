@@ -114,3 +114,26 @@ int32_t argSet_combine(struct argSet* set_dst, struct argSet** set_src, uint32_t
 
 	return -1;
 }
+
+void argSet_clean(struct argSet* set){
+	uint32_t 			i;
+	struct argBuffer* 	arg;
+
+	if (set->input != NULL){
+		for (i = 0; i < array_get_length(set->input); i++){
+			arg = (struct argBuffer*)array_get(set->input, i);
+			free(arg->data);
+		}
+		array_delete(set->input);
+		set->input = NULL;
+	}
+
+	if (set->output != NULL){
+		for (i = 0; i < array_get_length(set->output); i++){
+			arg = (struct argBuffer*)array_get(set->output, i);
+			free(arg->data);
+		}
+		array_delete(set->output);
+		set->output = NULL;
+	}
+}
