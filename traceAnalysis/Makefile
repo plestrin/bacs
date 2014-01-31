@@ -34,6 +34,8 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)primitiveReference.o 	\
 	$(BUILD_DIR)ioChecker.o 			\
 	$(BUILD_DIR)loop.o 					\
+	$(BUILD_DIR)memAccess.o 			\
+	$(BUILD_DIR)regAccess.o 			\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
 	$(BUILD_DIR)graph.o 				\

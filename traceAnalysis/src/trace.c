@@ -519,9 +519,9 @@ void trace_frag_print_register(struct trace* trace, char* arg){
 			}
 
 			printf("*** Input Register(s) ***\n");
-			traceFragment_print_reg_array(fragment->read_register_array, fragment->nb_register_read_access);
+			regAccess_print(fragment->read_register_array, fragment->nb_register_read_access);
 			printf("\n*** Output Register(s) ***\n");
-			traceFragment_print_reg_array(fragment->write_register_array, fragment->nb_register_write_access);
+			regAccess_print(fragment->write_register_array, fragment->nb_register_write_access);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
@@ -626,10 +626,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 
 		if (!strncmp(arg, ARG_NAME_A_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -637,10 +637,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			#endif
 		}
 		else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -648,10 +648,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			#endif
 		}
 		else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -659,10 +659,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			#endif
 		}
 		else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -670,10 +670,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			#endif
 		}
 		else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 0;
 			
 			#ifdef VERBOSE
@@ -681,10 +681,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			#endif
 		}
 		else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
-			extract_routine_mem_read 	= traceFragment_extract_mem_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= traceFragment_extract_mem_arg_adjacent_write;
-			extract_routine_reg_read 	= traceFragment_extract_reg_arg_large_pure;
-			extract_routine_reg_write 	=  traceFragment_extract_reg_arg_large_pure;
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
