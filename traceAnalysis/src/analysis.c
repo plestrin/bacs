@@ -71,7 +71,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", "Clean the argSet array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_clean)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "Print arguments from the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", "Set tag value for specific argSet. Specify arg index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "fragment arg", "Fragment argument. Specify arg index and tag value", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_fragment)
 	ADD_CMD_TO_INPUT_PARSER(parser, "create argSetGraph", "Create a dependency graph between argSets", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_create_argSetGraph)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print dot argSetGraph", "Print the argSetGraph in the DOT format. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print_dot_argSetGraph)
 	ADD_CMD_TO_INPUT_PARSER(parser, "pack arg", "Pack arguments that are dependent according to the argSetGraph. Specify packing method [mandatory] and index", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_pack)

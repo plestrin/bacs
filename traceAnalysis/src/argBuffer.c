@@ -10,7 +10,6 @@
 
 void argBuffer_fprint_reg(FILE* file, uint64_t reg);
 void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg);
-void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element);
 
 
 /* ===================================================================== */
@@ -61,20 +60,51 @@ int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst){
 	return 0;
 }
 
+int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2){
+	int32_t result = -1;
+
+	if (arg1->size == arg2->size && arg1->location_type == arg2->location_type){
+		if (!memcmp(arg1->data, arg2->data, arg1->size)){
+			if (arg1->location_type == ARG_LOCATION_MEMORY){
+				if (arg1->location.address == arg2->location.address){
+					result = 0;
+				}
+			}
+			else if (arg1->location_type == ARG_LOCATION_REGISTER){
+				if (arg1->location.reg == arg2->location.reg){
+					result = 0;
+				}
+			}
+			else{
+				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+			}
+		}
+	}
+	
+	return result;
+}
+
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size){
 	uint32_t i;
 
 	if (arg->size >= buffer_size){
-		for (i = 0; i <= (arg->size - buffer_size); i++){
-			if (!memcmp(arg->data + i, buffer, buffer_size)){
-				return i;
+		if (arg->access_size != ARGBUFFER_ACCESS_SIZE_UNDEFINED){
+			for (i = 0; i <= (arg->size - buffer_size); i += arg->access_size){
+				if (!memcmp(arg->data + i, buffer, buffer_size)){
+					return i;
+				}
 			}
 		}
-		return -1;
+		else{
+			for (i = 0; i <= (arg->size - buffer_size); i++){
+				if (!memcmp(arg->data + i, buffer, buffer_size)){
+					return i;
+				}
+			}
+		}
 	}
-	else{
-		return -1;
-	}
+
+	return -1;
 }
 
 struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2){
@@ -316,147 +346,6 @@ int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst){
 	}
 
 	return 0;
-}
-
-int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2){
-	int32_t result = -1;
-
-	if (arg1->size == arg2->size && arg1->location_type == arg2->location_type){
-		if (!memcmp(arg1->data, arg2->data, arg1->size)){
-			if (arg1->location_type == ARG_LOCATION_MEMORY){
-				if (arg1->location.address == arg2->location.address){
-					result = 0;
-				}
-			}
-			else if (arg1->location_type == ARG_LOCATION_REGISTER){
-				if (arg1->location.reg == arg2->location.reg){
-					result = 0;
-				}
-			}
-			else{
-				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
-			}
-		}
-	}
-	
-	return result;
-}
-
-void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element){
-	uint32_t i;
-	uint32_t j;
-	uint32_t nb_partition = (0x00000001 << (nb_element - 1)) - 1;
-	uint32_t verif_size;
-
-	for (i = 0; i < nb_partition; i++){
-		for (j = 0, verif_size = 0; j < nb_element; j++){
-			if (table[i*nb_element*2 + j*2 + 1] != 0){
-				printf("{@:%u, len:%u}", table[i*nb_element*2 + j*2], table[i*nb_element*2 + j*2 + 1]);
-				verif_size += table[i*nb_element*2 + j*2 + 1];
-			}
-		}
-		if (verif_size != nb_element){
-			printf("ERROR (nb_element: %u, get: %u)", nb_element, verif_size);
-		}
-
-		printf("\n");
-	} 
-}
-
-void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_){
-	uint32_t 	nb_element;
-	uint32_t	partition_size;
-	uint32_t 	nb_partition;
-	uint32_t	*table;
-	uint32_t 	i;
-	uint32_t 	j;
-	uint32_t 	k;
-	uint32_t 	offset;
-	uint8_t 	stop;
-
-	if (arg->access_size != ARGBUFFER_ACCESS_SIZE_UNDEFINED){
-		nb_element = arg->size / arg->access_size;
-
-		if (nb_element > 1 && nb_element < ARGBUFFER_FRAGMENT_MAX_NB_ELEMENT){
-			partition_size = 2 * nb_element;
-			nb_partition = (0x00000001 << (nb_element - 1)) - 1;
-
-			table = (uint32_t*)calloc(nb_partition * partition_size, sizeof(uint32_t));
-			if (table == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			}
-			else{
-				offset = 0;
-
-				for (i = 2; i <= nb_element; i++){
-					for (j = 0; j < i; j++){
-						if (j == i - 1){
-							table[offset * partition_size + 2*j + 0] = j;
-							table[offset * partition_size + 2*j + 1] = nb_element - table[offset * partition_size + 2*j + 0];
-						}
-						else{
-							table[offset * partition_size + 2*j + 0] = j;
-							table[offset * partition_size + 2*j + 1] = 1;
-						}
-					}
-
-					do{
-						stop = 1;
-						for (j = i - 1; j > 0; j--){
-							if (table[offset * partition_size + 2 * j + 1] > 1){
-								stop = 0;
-								break;
-							}
-						}
-
-						offset ++;
-
-						if (!stop){
-							for (k = 0; k < i; k++){
-								if (k == j - 1){
-									table[offset * partition_size + 2 * k + 0] = table[(offset - 1) * partition_size + 2 * k + 0];
-									table[offset * partition_size + 2 * k + 1] = table[(offset - 1) * partition_size + 2 * k + 1] + 1;
-								}
-								else if (k >= j){
-									if (k  == i - 1){
-										table[offset * partition_size + 2 * k + 0] = table[offset * partition_size + 2 * (j - 1)] + table[offset * partition_size + 2 * (j - 1) + 1] + (k - j);
-										table[offset * partition_size + 2 * k + 1] = nb_element - table[offset * partition_size + 2 * k + 0];
-									}
-									else{
-										table[offset * partition_size + 2 * k + 0] = table[offset * partition_size + 2 * (j - 1) + 0] + table[offset * partition_size + 2 * (j - 1) + 1] + (k - j);
-										table[offset * partition_size + 2 * k + 1] = 1;
-									}
-								}
-								else{
-									table[offset * partition_size + 2 * k + 0] = table[(offset - 1) * partition_size + 2 * k + 0];
-									table[offset * partition_size + 2 * k + 1] = table[(offset - 1) * partition_size + 2 * k + 1];
-								}
-							}
-						}
-					}while(!stop);
-				}
-			}
-
-			*table_ = table;
-			*nb_element_ = nb_element;
-		}
-		else{
-			#ifdef VERBOSE
-			printf("\t- Cannot fragment input: too many or too few element(s) %u (max is fixed to %u)\n", nb_element, ARGBUFFER_FRAGMENT_MAX_NB_ELEMENT);
-			#endif
-
-			*table_ = NULL;
-			*nb_element_ = 0;
-		}
-	}
-	else{
-		#ifdef VERBOSE
-		printf("\t- Cannot fragment input: undefined size access\n");
-		#endif
-
-		*table_ = NULL;
-		*nb_element_ = 0;
-	}
 }
 
 void argBuffer_delete_array(struct array* arg_array){

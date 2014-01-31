@@ -60,7 +60,6 @@ void trace_frag_extract_arg(struct trace* trace, char* arg);
 void trace_arg_clean(struct trace* trace);
 void trace_arg_print(struct trace* trace, char* arg);
 void trace_arg_set_tag(struct trace* trace, char* arg);
-void trace_arg_fragment(struct trace* trace, char* arg);
 void trace_arg_create_argSetGraph(struct trace* trace);
 void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name);
 void trace_arg_pack(struct trace* trace, char* arg);

@@ -935,52 +935,6 @@ void trace_arg_set_tag(struct trace* trace, char* arg){
 	}
 }
 
-void trace_arg_fragment(struct trace* trace, char* arg){
-	uint32_t 			start;
-	uint32_t			stop;
-	uint32_t 			index;
-	uint32_t			i;
-	struct argSet* 		arg_set;
-	struct array 		new_argSet_array;
-
-	start = 0;
-	stop = array_get_length(&(trace->arg_array));
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		
-		if (index < array_get_length(&(trace->arg_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
-			return;
-		}
-	}
-
-	if (array_init(&new_argSet_array, sizeof(struct argSet))){
-		printf("ERROR: in %s, unable to create array\n", __func__);
-		return;
-	}
-
-	for (i = start; i < stop; i++){
-		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
-
-		#ifdef VERBOSE
-		printf("Fragmenting arg %u/%u (tag: \"%s\") ...\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
-		#endif
-
-		argSet_fragment_input(arg_set, &new_argSet_array);
-	}
-
-	if (array_copy(&new_argSet_array, &(trace->arg_array), 0, array_get_length(&new_argSet_array)) != (int32_t)array_get_length(&new_argSet_array)){
-		printf("ERROR: in %s, unable to copy arrays (may cause memory loss)\n", __func__);
-	}
-
-	array_clean(&new_argSet_array);
-}
-
 void trace_arg_create_argSetGraph(struct trace* trace){
 	if (trace->arg_set_graph != NULL){
 		argSetGraph_delete(trace->arg_set_graph);
@@ -1121,6 +1075,7 @@ void trace_arg_search(struct trace* trace, char* arg){
 	ioChecker_check(trace->checker);
 }
 
+/* this routine isnot incredible - may rewrite using routine from argBuffer */
 void trace_arg_seek(struct trace* trace, char* arg){
 	uint32_t 			i;
 	uint32_t 			j;

@@ -53,7 +53,6 @@ int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
 struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2);
-void argBuffer_create_fragment_table(struct argBuffer* arg, uint32_t** table_, uint32_t* nb_element_); /* à l'occasion on peut supprimer c'est lourd pour pas grand chose */
 void argBuffer_delete(struct argBuffer* arg);
 
 void argBuffer_print_array(struct array* array);
