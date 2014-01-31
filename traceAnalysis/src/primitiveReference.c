@@ -166,6 +166,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 
 	primitive->func(arg_in, arg_out);
 
+	/* maybe we can sort the output to make the research faster */
 	for (j = 0, result = 0; j < primitive->nb_output; j++){
 		for (k = 0; k < array_get_length(output_args); k++){
 			argBuffer_out = (struct argBuffer*)array_get(output_args, k);
@@ -179,7 +180,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 	}
 
 	if (!result){
-		printf("\n*** IO match for %s ****\n", primitive->name);
+		printf("*** IO match for %s ****\n", primitive->name);
 		for (j = 0; j < nb_input; j++){
 			printf("\tArg %u in:  ", j);
 			printBuffer_raw(stdout, input[j].data, input[j].size);

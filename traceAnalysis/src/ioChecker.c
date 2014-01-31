@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 #include "ioChecker.h"
 #include "primitiveReference.h"
@@ -9,9 +8,6 @@
 #include "TEA.h"
 #include "RC4.h"
 #include "AES.h"
-#ifdef VERBOSE
-#include "workPercent.h"
-#endif
 
 void ioChecker_wrapper_md5(void** input, void** output);
 
@@ -34,6 +30,8 @@ void ioChecker_wrapper_aes192_inner_loop_dec(void** input, void** output);
 void ioChecker_wrapper_aes256_key_expand_encrypt(void** input, void** output);
 void ioChecker_wrapper_aes256_inner_loop_enc(void** input, void** output);
 void ioChecker_wrapper_aes256_inner_loop_dec(void** input, void** output);
+
+void ioChecker_thread_job(void* arg);
 
 
 struct ioChecker* ioChecker_create(){
@@ -59,6 +57,12 @@ int32_t ioChecker_init(struct ioChecker* checker){
 
 	if (array_init(&(checker->reference_array), sizeof(struct primitiveReference))){
 		printf("ERROR: in %s, unable to create array structure\n", __func__);
+		return -1;
+	}
+
+	if (workQueue_init(&(checker->queue), IOCHECKER_NB_THREAD)){
+		printf("ERROR: in %s, unable to init work queue\n", __func__);
+		array_clean(&(checker->reference_array));
 		return -1;
 	}
 
@@ -253,7 +257,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 				printf("%s, ", primitive_pointer->name);
 			}
 			else{
-				printf("%s} ", primitive_pointer->name);
+				printf("%s}\n", primitive_pointer->name);
 			}
 		}
 		else{
@@ -265,69 +269,83 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	return 0;
 }
 
-void ioChecker_submit_argBuffers(struct ioChecker* checker, struct array* input_arg_array, struct array* output_arg_array){
+int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_set){
+	struct checkJob* 	job;
+	uint32_t 			i;
+
+	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+		job = (struct checkJob*)malloc(sizeof(struct checkJob));
+		if (job == NULL){
+			printf("ERROR: in %s, unable to alloacte memory\n", __func__);
+			return -1;
+		}
+
+		job->checker 			= checker;
+		job->primitive_index 	= i;
+		job->arg_set 			= arg_set;
+
+		if (workQueue_submit(&(checker->queue), ioChecker_thread_job, job)){
+			printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
+			free(job);
+		}
+	}
+
+	return 0;
+}
+
+void ioChecker_thread_job(void* arg){
+	struct checkJob* 				job = (struct checkJob*)arg;
+	struct ioChecker* 				checker = job->checker;
+	struct argSet* 					arg_set = job->arg_set;
 	struct primitiveReference* 		primitive;
 	uint8_t 						nb_input;
-	uint8_t 						i;
 	uint8_t 						j;
 	uint8_t 						k;
 	struct argBuffer* 				input_combination;
 	uint32_t* 						input_combination_index;
 	uint32_t 						input_has_next;
-	#ifdef VERBOSE
-	struct workPercent 				work;
-	char 							work_desc[256];
-	#endif
 
-	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
-		primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
-		nb_input = primitiveReference_get_nb_explicit_input(primitive);
-		input_has_next = 1;
+	primitive = (struct primitiveReference*)array_get(&(checker->reference_array), job->primitive_index);
+	nb_input = primitiveReference_get_nb_explicit_input(primitive);
+	input_has_next = 1;
 
-		input_combination = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
-		input_combination_index = (uint32_t*)calloc(nb_input, sizeof(uint32_t));
+	input_combination = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
+	input_combination_index = (uint32_t*)calloc(nb_input, sizeof(uint32_t));
 
-		if (input_combination == NULL || input_combination_index == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			break;
+	if (input_combination == NULL || input_combination_index == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
+
+	while(input_has_next){
+		for (j = 0; j < nb_input; j++){
+			memcpy(input_combination + j, array_get(arg_set->input, input_combination_index[j]), sizeof(struct argBuffer));
 		}
-
-		#ifdef VERBOSE
-		snprintf(work_desc, 256, "\tIOChecker %s: ", primitive->name);
-		workPercent_init(&work, work_desc, WORKPERCENT_ACCURACY_0, pow(array_get_length(input_arg_array), nb_input));
-		#endif
-
-		while(input_has_next){
-			for (j = 0; j < nb_input; j++){
-				memcpy(input_combination + j, array_get(input_arg_array, input_combination_index[j]), sizeof(struct argBuffer));
-			}
-			primitiveReference_test(primitive, nb_input, input_combination, output_arg_array);
-
-			for (k = 0, input_has_next = 0; k < nb_input; k++){
-				input_has_next |= (input_combination_index[k] != array_get_length(input_arg_array) - 1);
-			}
-
-			if (input_has_next){
-				j = nb_input -1;
-				while(input_combination_index[j] == array_get_length(input_arg_array) - 1){
-					j--;
-				}
-				input_combination_index[j] ++;
-				for (k = j + 1; k < nb_input; k++){
-					input_combination_index[k] = 0;
-				}
-			}
-			#ifdef VERBOSE
-			workPercent_notify(&work, 1);
+		if (!primitiveReference_test(primitive, nb_input, input_combination, arg_set->output)){
+			#if VERBOSE
+			printf("\x1b[33mSuccess\x1b[0m: found primitive: \"%s\" in argSet: \"%s\"\n", primitive->name, arg_set->tag);
 			#endif
 		}
-		#ifdef VERBOSE
-		workPercent_conclude(&work);
-		#endif
 
-		free(input_combination);
-		free(input_combination_index);
+		for (k = 0, input_has_next = 0; k < nb_input; k++){
+			input_has_next |= (input_combination_index[k] != array_get_length(arg_set->input) - 1);
+		}
+
+		if (input_has_next){
+			j = nb_input -1;
+			while(input_combination_index[j] == array_get_length(arg_set->input) - 1){
+				j--;
+			}
+			input_combination_index[j] ++;
+			for (k = j + 1; k < nb_input; k++){
+				input_combination_index[k] = 0;
+			}
+		}
 	}
+
+	free(input_combination);
+	free(input_combination_index);
+	free(job);
 }
 
 void ioChecker_print(struct ioChecker* checker){
@@ -354,6 +372,7 @@ void ioChecker_clean(struct ioChecker* checker){
 	}
 
 	array_clean(&(checker->reference_array));
+	workQueue_clean(&(checker->queue));
 }
 
 void ioChecker_delete(struct ioChecker* checker){

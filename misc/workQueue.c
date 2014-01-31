@@ -24,8 +24,6 @@ struct workQueue* workQueue_create(uint32_t nb_thread){
 }
 
 int32_t workQueue_init(struct workQueue* queue, uint32_t nb_thread){
-	uint32_t i;
-
 	queue->threads = (pthread_t*)malloc(sizeof(pthread_t) * nb_thread);
 	if (queue->threads == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -44,17 +42,21 @@ int32_t workQueue_init(struct workQueue* queue, uint32_t nb_thread){
 		printf("ERROR: in %s, unable to init mutex\n", __func__);
 	}
 
+	return 0;
+}
+
+void workQueue_start(struct workQueue* queue){
+	uint32_t i;
+
 	if (pthread_mutex_lock(&(queue->thread_waiter))){
 		printf("ERROR: in %s, unable to lock mutex\n", __func__);
 	}
 
-	for (i = 0; i < nb_thread; i++){
+	for (i = 0; i < queue->nb_thread; i++){
 		if (pthread_create(queue->threads + i, NULL, workQueue_thread_exe, (void*)queue)){
 			printf("ERROR: in %s, unable to create thread %u\n", __func__, i);
 		}
 	}
-
-	return 0;
 }
 
 void workQueue_wait(struct workQueue* queue){
@@ -182,6 +184,9 @@ void workQueue_clean(struct workQueue* queue){
 	if (queue->job_head != NULL || queue->job_tail != NULL){
 		printf("ERROR: in %s, the workQueue does not seem empty - impossible to clean\n", __func__);
 	}
+
+	pthread_mutex_destroy(&(queue->queue_protector));
+	pthread_mutex_destroy(&(queue->thread_waiter));
 }
 
 void workQueue_delete(struct workQueue* queue){

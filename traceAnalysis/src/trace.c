@@ -1093,7 +1093,6 @@ void trace_arg_delete_argSetGraph(struct trace* trace){
 
 void trace_arg_search(struct trace* trace, char* arg){
 	uint32_t 			i;
-	struct argSet* 		arg_set;
 	uint32_t 			start;
 	uint32_t			stop;
 	uint32_t 			index;
@@ -1115,14 +1114,11 @@ void trace_arg_search(struct trace* trace, char* arg){
 	}
 
 	for (i = start; i < stop; i++){
-		arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
-
-		#ifdef VERBOSE
-		printf("ArgSet %u/%u (tag: \"%s\"):\n", i, array_get_length(&(trace->arg_array)) - 1, arg_set->tag);
-		#endif
-
-		ioChecker_submit_argBuffers(trace->checker, arg_set->input, arg_set->output);
+		if (ioChecker_submit_argSet(trace->checker, (struct argSet*)array_get(&(trace->arg_array), i))){
+			printf("ERROR: in %s, unable to submit argSet to the ioChecker\n", __func__);
+		}
 	}
+	ioChecker_check(trace->checker);
 }
 
 void trace_arg_seek(struct trace* trace, char* arg){

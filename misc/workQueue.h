@@ -24,6 +24,8 @@ struct workQueue{
 struct workQueue* workQueue_create(uint32_t nb_thread);
 int32_t workQueue_init(struct workQueue* queue, uint32_t nb_thread);
 
+void workQueue_start(struct workQueue* queue);
+
 int32_t workQueue_submit(struct workQueue* queue, void(*routine)(void*), void* arg);
 
 void workQueue_wait(struct workQueue* queue);

@@ -7,7 +7,7 @@ CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE -D$(ARCHI)
 else
 CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
 endif
-LDFLAGS			:= -lyajl -lm
+LDFLAGS			:= -lyajl -pthread
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
@@ -42,6 +42,7 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)readBuffer.o			\
 	$(BUILD_DIR)inputParser.o			\
 	$(BUILD_DIR)workPercent.o			\
+	$(BUILD_DIR)workQueue.o				\
 	$(BUILD_DIR)MD5.o					\
 	$(BUILD_DIR)TEA.o 					\
 	$(BUILD_DIR)RC4.o 					\
