@@ -17,6 +17,25 @@ void argBuffer_print_fragment_table(uint32_t* table, uint32_t nb_element);
 /* argBuffer functions						                             */
 /* ===================================================================== */
 
+void argBuffer_print_metadata(struct argBuffer* arg){
+	if (arg->location_type == ARG_LOCATION_MEMORY){
+		#if defined ARCH_32
+		printf("Mem 0x%08x size: %u", arg->location.address, arg->size);
+		#elif defined ARCH_64
+		#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+		printf("Mem 0x%llx size: %u", arg->location.address, arg->size);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
+	}
+	else if (arg->location_type == ARG_LOCATION_REGISTER){
+		argBuffer_fprint_reg(stdout, arg->location.reg);
+	}
+	else{
+		printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+	}
+}
+
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst){
 	arg_dst->location_type = arg_src->location_type;
 	arg_dst->size = arg_src->size;
@@ -238,10 +257,10 @@ void argBuffer_print_array(struct array* array){
 			arg = (struct argBuffer*)array_get(array, i);
 			if (arg->location_type == ARG_LOCATION_MEMORY){
 				#if defined ARCH_32
-				snprintf(desc, DESC_SIZE, "Mem 0x%08x\n", arg->location.address);
+				snprintf(desc, DESC_SIZE, "Mem 0x%08x", arg->location.address);
 				#elif defined ARCH_64
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(desc, DESC_SIZE, "Mem 0x%llx\n", arg->location.address);
+				snprintf(desc, DESC_SIZE, "Mem 0x%llx", arg->location.address);
 				#else
 				#error Please specify an architecture {ARCH_32 or ARCH_64}
 				#endif

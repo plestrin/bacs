@@ -1153,7 +1153,9 @@ void trace_arg_seek(struct trace* trace, char* arg){
 				for (k = 0; k < ((arg_buffer->size > (MIN_COMPARE_SIZE - 1)) ? (arg_buffer->size - (MIN_COMPARE_SIZE - 1)) : 0); k++){
 					compare_length = (buffer_length > arg_buffer->size - k) ? (arg_buffer->size - k) : buffer_length;
 					if (!memcmp(buffer, arg_buffer->data + k, compare_length)){
-						printf("Found correspondence in argset %u, (tag: \"%s\"), input %u:\n", i, arg_set->tag, j);
+						printf("Found correspondence in argset %u, (tag: \"%s\"), input %u ", i, arg_set->tag, j);
+						argBuffer_print_metadata(arg_buffer);
+						printf("\n");
 						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, k, compare_length);
 						printf("\n");
 					}
@@ -1167,7 +1169,9 @@ void trace_arg_seek(struct trace* trace, char* arg){
 				for (k = 0; k < ((arg_buffer->size > (MIN_COMPARE_SIZE - 1)) ? (arg_buffer->size - (MIN_COMPARE_SIZE - 1)) : 0); k++){
 					compare_length = (buffer_length > arg_buffer->size - k) ? (arg_buffer->size - k) : buffer_length;
 					if (!memcmp(buffer, arg_buffer->data + k, compare_length)){
-						printf("Found correspondence in argset %u, (tag: \"%s\"), output %u:\n", i, arg_set->tag, j);
+						printf("Found correspondence in argset %u, (tag: \"%s\"), output %u ", i, arg_set->tag, j);
+						argBuffer_print_metadata(arg_buffer);
+						printf("\n");
 						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, k, compare_length);
 						printf("\n");
 					}

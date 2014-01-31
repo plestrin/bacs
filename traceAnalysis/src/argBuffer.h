@@ -46,6 +46,8 @@ struct argBuffer{
 	char* 					data;
 };
 
+void argBuffer_print_metadata(struct argBuffer* arg);
+
 int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst);
 int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
