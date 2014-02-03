@@ -47,6 +47,7 @@ void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t c
 void multiColumnPrinter_print_header(struct multiColumnPrinter* printer);
 void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* printer);
 void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...);
+void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size);
 void multiColumnPrinter_delete(struct multiColumnPrinter* printer);
 
 

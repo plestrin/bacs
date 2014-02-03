@@ -258,6 +258,26 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 	}
 }
 
+void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size){
+	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
+	uint32_t	i;
+	
+	if (printer != NULL){
+		fprintf(printer->file, "\r");
+		for (i = 0; i < printer->nb_column; i++){	
+			multiColumnPrinter_constrain_string(string + (i * string_size), print_value, printer->columns[i].size);
+			
+			if (i == printer->nb_column - 1){
+				fprintf(printer->file, "%s", print_value);
+			}
+			else{
+				fprintf(printer->file, "%s%s", print_value, printer->separator);
+			}
+		}
+		fflush(printer->file);
+	}
+}
+
 void multiColumnPrinter_delete(struct multiColumnPrinter* printer){
 	if (printer != NULL){
 		free(printer);
