@@ -4,6 +4,23 @@
 
 #include "argSet.h"
 
+int32_t argSet_init(struct argSet* set, char* tag){
+	set->input = array_create(sizeof(struct argBuffer));
+	if (set->input == NULL){
+		printf("ERROR: in %s, unable to create array\n", __func__);
+		return -1;
+	}
+	set->output = array_create(sizeof(struct argBuffer));
+	if (set->output == NULL){
+		printf("ERROR: in %s, unable to create array\n", __func__);
+		array_delete(set->input);
+		return -1;
+	}
+
+	strncpy(set->tag, tag, ARGSET_TAG_MAX_LENGTH);
+
+	return 0;
+}
 
 int32_t argSet_combine(struct argSet* set_dst, struct argSet** set_src, uint32_t nb_set_src, struct argSet* set_result){
 	uint32_t 			i;

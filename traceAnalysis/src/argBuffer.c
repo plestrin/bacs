@@ -17,21 +17,34 @@ void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg);
 /* ===================================================================== */
 
 void argBuffer_print_metadata(struct argBuffer* arg){
-	if (arg->location_type == ARG_LOCATION_MEMORY){
+	switch(arg->location_type){
+	case ARG_LOCATION_MEMORY : {
 		#if defined ARCH_32
-		printf("Mem 0x%08x size: %u", arg->location.address, arg->size);
+		printf("Mem 0x%08x size: %u", arg->address, arg->size);
 		#elif defined ARCH_64
 		#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-		printf("Mem 0x%llx size: %u", arg->location.address, arg->size);
+		printf("Mem 0x%llx size: %u", arg->address, arg->size);
 		#else
 		#error Please specify an architecture {ARCH_32 or ARCH_64}
 		#endif
+		break;
 	}
-	else if (arg->location_type == ARG_LOCATION_REGISTER){
-		argBuffer_fprint_reg(stdout, arg->location.reg);
+	case ARG_LOCATION_REGISTER : {
+		argBuffer_fprint_reg(stdout, arg->reg);
+		break;
 	}
-	else{
-		printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+	case ARG_LOCATION_MIX : {
+		argBuffer_fprint_reg(stdout, arg->reg);
+		#if defined ARCH_32
+		printf(" (mem 0x%08x)", arg->address);
+		#elif defined ARCH_64
+		#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+		printf(" (mem 0x%llx)", arg->address);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
+		break;
+	}
 	}
 }
 
@@ -40,14 +53,19 @@ int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst){
 	arg_dst->size = arg_src->size;
 	arg_dst->access_size = arg_src->access_size;
 
-	if (arg_src->location_type == ARG_LOCATION_MEMORY){
-		arg_dst->location.address = arg_src->location.address;
+	switch(arg_src->location_type){
+	case ARG_LOCATION_MEMORY : {
+		arg_dst->address = arg_src->address;
+		break;
 	}
-	else if (arg_src->location_type == ARG_LOCATION_REGISTER){
-		arg_dst->location.reg = arg_src->location.reg;
+	case ARG_LOCATION_REGISTER : {
+		arg_dst->reg = arg_src->reg;
+		break;
 	}
-	else{
+	case ARG_LOCATION_MIX : {
 		printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+		break;
+	}
 	}
 
 	arg_dst->data = (char*)malloc(arg_src->size);
@@ -65,18 +83,23 @@ int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2){
 
 	if (arg1->size == arg2->size && arg1->location_type == arg2->location_type){
 		if (!memcmp(arg1->data, arg2->data, arg1->size)){
-			if (arg1->location_type == ARG_LOCATION_MEMORY){
-				if (arg1->location.address == arg2->location.address){
+			switch(arg1->location_type){
+			case ARG_LOCATION_MEMORY : {
+				if (arg1->address == arg2->address){
 					result = 0;
 				}
+				break;
 			}
-			else if (arg1->location_type == ARG_LOCATION_REGISTER){
-				if (arg1->location.reg == arg2->location.reg){
+			case ARG_LOCATION_REGISTER : {
+				if (arg1->reg == arg2->reg){
 					result = 0;
 				}
+				break;
 			}
-			else{
+			case ARG_LOCATION_MIX : {
 				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+				break;
+			}
 			}
 		}
 	}
@@ -114,19 +137,20 @@ struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* ar
 	uint32_t			offset_arg2;
 
 	if (arg1->location_type == arg2->location_type){
-		if (arg1->location_type == ARG_LOCATION_MEMORY){
-			if (arg1->location.address > arg2->location.address){
-				if (arg2->location.address + arg2->size <= arg1->location.address){
+		switch(arg1->location_type){
+		case ARG_LOCATION_MEMORY : {
+			if (arg1->address > arg2->address){
+				if (arg2->address + arg2->size <= arg1->address){
 					return NULL;
 				}
 				offset_arg1 = 0;
-				offset_arg2 = arg1->location.address - arg2->location.address;
+				offset_arg2 = arg1->address - arg2->address;
 			}
 			else{
-				if (arg1->location.address + arg1->size <= arg2->location.address){
+				if (arg1->address + arg1->size <= arg2->address){
 					return NULL;
 				}
-				offset_arg1 = arg2->location.address - arg1->location.address;
+				offset_arg1 = arg2->address - arg1->address;
 				offset_arg2 = 0;
 			}
 
@@ -138,7 +162,7 @@ struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* ar
 				}
 				else{
 					result->location_type = ARG_LOCATION_MEMORY;
-					result->location.address = arg1->location.address + offset_arg1;
+					result->address = arg1->address + offset_arg1;
 					result->size = size;
 					result->access_size = (arg1->access_size == arg2->access_size) ? arg1->access_size : ARGBUFFER_ACCESS_SIZE_UNDEFINED;
 					result->data = (char*)malloc(size);
@@ -150,12 +174,14 @@ struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* ar
 					memcpy(result->data, arg1->data + offset_arg1, size);
 				}
 			}
+			break;
 		}
-		else if(arg1->location_type == ARG_LOCATION_REGISTER){
+		case ARG_LOCATION_REGISTER :
+		case ARG_LOCATION_MIX : {
+
 			/* a completer */
+			break;
 		}
-		else{
-			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
 		}
 	}
 
@@ -167,9 +193,10 @@ int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2){
 	char* 	new_data;
 
 	if (arg1->location_type == arg2->location_type){
-		if (arg1->location_type == ARG_LOCATION_MEMORY){
+		switch(arg1->location_type){
+		case ARG_LOCATION_MEMORY : {
 			/* For now no overlapping permitted - may change it afterward */
-			if (arg2->location.address + arg2->size == arg1->location.address){
+			if (arg2->address + arg2->size == arg1->address){
 				new_data = (char*)malloc(arg1->size + arg2->size);
 				if (new_data == NULL){
 					printf("ERROR: in %s, unable to realloc memory\n", __func__);
@@ -181,12 +208,12 @@ int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2){
 					arg1->data = new_data;
 					arg1->size += arg2->size;
 					arg1->access_size = (arg1->access_size < arg2->access_size) ? arg1->access_size : arg2->access_size;
-					arg1->location.address = arg2->location.address;
+					arg1->address = arg2->address;
 
 					result = 0;
 				}
 			}
-			else if (arg1->location.address + arg1->size == arg2->location.address){
+			else if (arg1->address + arg1->size == arg2->address){
 				new_data = (char*)realloc(arg1->data, arg1->size + arg2->size);
 				if (new_data == NULL){
 					printf("ERROR: in %s, unable to realloc memory\n", __func__);
@@ -200,12 +227,14 @@ int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2){
 					result = 0;
 				}
 			}
+			break;
 		}
-		else if(arg1->location_type == ARG_LOCATION_REGISTER){
+		case ARG_LOCATION_REGISTER :
+		case ARG_LOCATION_MIX : {
+
 			/* a completer */
+			break;
 		}
-		else{
-			printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
 		}
 	}
 
@@ -225,11 +254,21 @@ void argBuffer_fprint_reg(FILE* file, uint64_t reg){
 
 	nb_register = ARGBUFFER_GET_NB_REG(reg);
 	for (i = 0; i < nb_register; i++){
-		if (i == nb_register - 1){
-			fprintf(file, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		if (ARGBUFFER_GET_REG_NAME(reg, i) == ARGBUFFER_MEM_SLOT){
+			if (i == nb_register - 1){
+				fprintf(file, "MEM");
+			}
+			else{
+				fprintf(file, "MEM, ");
+			}
 		}
 		else{
-			fprintf(file, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			if (i == nb_register - 1){
+				fprintf(file, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			}
+			else{
+				fprintf(file, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			}
 		}
 	}
 }
@@ -241,11 +280,21 @@ void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg){
 
 	nb_register = ARGBUFFER_GET_NB_REG(reg);
 	for (i = 0; i < nb_register; i++){
-		if (i == nb_register - 1){
-			pointer += snprintf(string + pointer, string_length - pointer, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+		if (ARGBUFFER_GET_REG_NAME(reg, i) == ARGBUFFER_MEM_SLOT){
+			if (i == nb_register - 1){
+				pointer += snprintf(string + pointer, string_length - pointer, "MEM");
+			}
+			else{
+				pointer += snprintf(string + pointer, string_length - pointer, "MEM, ");
+			}
 		}
 		else{
-			pointer += snprintf(string + pointer, string_length - pointer, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			if (i == nb_register - 1){
+				pointer += snprintf(string + pointer, string_length - pointer, "%s", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			}
+			else{
+				pointer += snprintf(string + pointer, string_length - pointer, "%s, ", reg_2_string((enum reg)ARGBUFFER_GET_REG_NAME(reg, i)));
+			}
 		}
 		if (pointer >= string_length){
 			break;
@@ -285,21 +334,26 @@ void argBuffer_print_array(struct array* array){
 
 		for (i = 0; i < array_get_length(array); i++){
 			arg = (struct argBuffer*)array_get(array, i);
-			if (arg->location_type == ARG_LOCATION_MEMORY){
+			switch(arg->location_type){
+			case ARG_LOCATION_MEMORY : {
 				#if defined ARCH_32
-				snprintf(desc, DESC_SIZE, "Mem 0x%08x", arg->location.address);
+				snprintf(desc, DESC_SIZE, "Mem 0x%08x", arg->address);
 				#elif defined ARCH_64
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(desc, DESC_SIZE, "Mem 0x%llx", arg->location.address);
+				snprintf(desc, DESC_SIZE, "Mem 0x%llx", arg->address);
 				#else
 				#error Please specify an architecture {ARCH_32 or ARCH_64}
 				#endif
+				break;
 			}
-			else if (arg->location_type == ARG_LOCATION_REGISTER){
-				argBuffer_snprint_reg(desc, DESC_SIZE, arg->location.reg);
+			case ARG_LOCATION_REGISTER : {
+				argBuffer_snprint_reg(desc, DESC_SIZE, arg->reg);
+				break;
 			}
-			else{
+			case ARG_LOCATION_MIX : {
 				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+				break;
+			}
 			}
 
 			value = (char*)malloc(PRINTBUFFER_GET_STRING_SIZE(arg->size));

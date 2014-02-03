@@ -154,21 +154,24 @@ static void argSetGraph_node_print_dot(void* node_data, FILE* file, void* arg){
 static void argSetGraph_edge_print_dot(void* edge_data, FILE* file, void* arg){
 	struct argBuffer* 	argBuffer = (struct argBuffer*)edge_data;
 
-	if (argBuffer->location_type == ARG_LOCATION_MEMORY){
+	switch (argBuffer->location_type){
+	case ARG_LOCATION_MEMORY : {
 		#if defined ARCH_32
-		fprintf(file, "[label=<Mem: 0x%08x<BR/>Size: %u>]", argBuffer->location.address, argBuffer->size);
+		fprintf(file, "[label=<Mem: 0x%08x<BR/>Size: %u>]", argBuffer->address, argBuffer->size);
 		#elif defined ARCH_64
 		#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-		fprintf(file, "[label=<Mem: 0x%llx<BR/>Size: %u>]", argBuffer->location.address, argBuffer->size);
+		fprintf(file, "[label=<Mem: 0x%llx<BR/>Size: %u>]", argBuffer->address, argBuffer->size);
 		#else
 		#error Please specify an architecture {ARCH_32 or ARCH_64}
 		#endif
+		break;
 	}
-	else if (argBuffer->location_type == ARG_LOCATION_REGISTER){
+	case ARG_LOCATION_REGISTER :
+	case ARG_LOCATION_MIX : {
 		/* a completer */
-	}
-	else{
 		printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+		break;
+	}
 	}
 }
 

@@ -72,7 +72,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 		for (i = 1, j = 0, mem_address_upper_bound = mem_access[0].address + mem_access[0].size; i < nb_mem_access; i++){																		\
 			if (mem_access[i].address > mem_address_upper_bound){																																\
 				arg.location_type 		= ARG_LOCATION_MEMORY;																																	\
-				arg.location.address 	= mem_access[j].address;																																\
+				arg.address 			= mem_access[j].address;																																\
 				arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																							\
 				arg.access_size 		= ARGBUFFER_ACCESS_SIZE_UNDEFINED;																														\
 				arg.data 				= (char*)malloc(arg.size);																																\
@@ -85,7 +85,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 				while (j <  i){																																									\
 					nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);																						\
 					if (nb_byte > 0){																																							\
-						memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);								\
+						memcpy(arg.data + (mem_address_written - arg.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);										\
 						mem_address_written += nb_byte;																																			\
 					}																																											\
 					j++;																																										\
@@ -103,7 +103,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 		}																																														\
 																																																\
 		arg.location_type 		= ARG_LOCATION_MEMORY;																																			\
-		arg.location.address 	= mem_access[j].address;																																		\
+		arg.address 			= mem_access[j].address;																																		\
 		arg.size 				= (uint32_t)(mem_address_upper_bound - mem_access[j].address);																									\
 		arg.access_size 		= ARGBUFFER_ACCESS_SIZE_UNDEFINED;																																\
 		arg.data 				= (char*)malloc(arg.size);																																		\
@@ -115,7 +115,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 			while (j < i){																																										\
 				nb_byte = (int8_t)((mem_access[j].address + mem_access[j].size) - mem_address_written);																							\
 				if (nb_byte > 0){																																								\
-					memcpy(arg.data + (mem_address_written - arg.location.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);									\
+					memcpy(arg.data + (mem_address_written - arg.address), (char*)&(mem_access[j].value) + (mem_access[j].size - nb_byte), nb_byte);											\
 					mem_address_written += nb_byte;																																				\
 				}																																												\
 				j++;																																											\
@@ -171,7 +171,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 				} 																																												\
 																																																\
 				arg.location_type 		= ARG_LOCATION_MEMORY; 																																	\
-				arg.location.address 	= mem_access[i].address; 																																\
+				arg.address 			= mem_access[i].address; 																																\
 				arg.size 				= size; 																																				\
 				arg.access_size 		= mem_access[i].size; 																																	\
 				arg.data 				= (char*)malloc(arg.size); 																																\
@@ -241,7 +241,7 @@ int32_t (name)(struct array* array, struct memAccess* mem_access, int nb_mem_acc
 				} 																																												\
  																																																\
 				arg.location_type 		= ARG_LOCATION_MEMORY; 																																	\
-				arg.location.address 	= mem_access[i].address; 																																\
+				arg.address 			= mem_access[i].address; 																																\
 				arg.size 				= size; 																																				\
 				arg.access_size 		= mem_access[i].size; 																																	\
 				arg.data 				= (char*)malloc(arg.size); 																																\

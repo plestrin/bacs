@@ -11,8 +11,11 @@
 
 enum argLocationType{
 	ARG_LOCATION_MEMORY,
-	ARG_LOCATION_REGISTER
+	ARG_LOCATION_REGISTER,
+	ARG_LOCATION_MIX
 };
+
+#define ARGBUFFER_MEM_SLOT 0x0000001f
 
 /* Explanation about the reg attribute in the location union:
  * 		bits [0 :3 ]: nb register combined (max is 15)
@@ -37,10 +40,8 @@ enum argLocationType{
 
 struct argBuffer{
 	enum argLocationType 	location_type;
-	union {
-		ADDRESS 			address;
-		uint64_t 			reg;
-	} 						location;
+	ADDRESS 				address;
+	uint64_t 				reg;
 	uint32_t 				size;
 	int8_t					access_size;
 	char* 					data;
@@ -81,6 +82,21 @@ static inline uint32_t argBuffer_get_nb_reg_in_array(struct array* array){
 	for (i = 0; i < array_get_length(array); i++){
 		arg = (struct argBuffer*)array_get(array, i);
 		if (arg->location_type == ARG_LOCATION_REGISTER){
+			result ++;
+		}
+	}
+
+	return result;
+}
+
+static inline uint32_t argBuffer_get_nb_mix_in_array(struct array* array){
+	uint32_t 			i;
+	uint32_t 			result = 0;
+	struct argBuffer* 	arg;
+
+	for (i = 0; i < array_get_length(array); i++){
+		arg = (struct argBuffer*)array_get(array, i);
+		if (arg->location_type == ARG_LOCATION_MIX){
 			result ++;
 		}
 	}

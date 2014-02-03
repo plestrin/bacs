@@ -12,6 +12,8 @@ struct argSet{
 	struct array*	output;
 };
 
+int32_t argSet_init(struct argSet* set, char* tag);
+
 int32_t argSet_combine(struct argSet* set_dst, struct argSet** set_src, uint32_t nb_set_src, struct argSet* set_result);
 
 void argSet_clean(struct argSet* set);
