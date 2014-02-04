@@ -38,7 +38,7 @@ void regAccess_print(struct regAccess* reg_access, int nb_reg_access){
 	}
 }
 
-int32_t regAccess_extract_arg_large_pure(struct array* array, struct regAccess* reg_access, int nb_reg_access){
+int32_t regAccess_extract_arg_large_pure_read(struct array* array, struct regAccess* reg_access, int nb_reg_access){
 	uint32_t 			i;
 	uint8_t 			j;
 	uint8_t 			k;
@@ -101,8 +101,62 @@ int32_t regAccess_extract_arg_large_pure(struct array* array, struct regAccess* 
 	return 0;
 }
 
+int32_t regAccess_extract_arg_large_pure_write(struct array* array, struct regAccess* reg_access, int nb_reg_access){
+	uint32_t 			i;
+	uint8_t 			nb_large_access;
+	struct regAccess**	large_reg_access;
+	struct argBuffer 	arg;
+
+	if (nb_reg_access > 0){
+		large_reg_access = (struct regAccess**)alloca(sizeof(struct regAccess*) * nb_reg_access);
+
+		for (i = 0, nb_large_access = 0; i < (uint32_t)nb_reg_access; i++){
+			if (reg_access[i].size == 4){
+				large_reg_access[nb_large_access] = reg_access + i;
+				nb_large_access ++;
+			}
+		}
+
+		if (nb_large_access > 0){
+			uint8_t 	nb_register = nb_large_access;
+			uint8_t* 	permutation;
+			PERMUTATION_INIT(nb_register)
+
+			arg.location_type 		= ARG_LOCATION_REGISTER;
+			#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+			ARGBUFFER_SET_NB_REG(arg.reg, nb_register);
+			arg.size 				= nb_register * 4;
+			arg.access_size 		= 4;
+
+			PERMUTATION_GET_FIRST(permutation)
+			while(permutation != NULL){
+				arg.data = (char*)malloc(arg.size);
+				if (arg.data == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
+					return -1;
+				}
+
+				for (i = 0; i < nb_register; i++){
+					*((uint32_t*)arg.data + permutation[i]) = large_reg_access[i]->value;
+					#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+					ARGBUFFER_SET_REG_NAME(arg.reg, permutation[i], large_reg_access[i]->reg);
+				}
+
+				if (array_add(array, &arg) < 0){
+					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
+				}
+
+				PERMUTATION_GET_NEXT(permutation)
+			}
+			PERMUTATION_CLEAN()
+		}
+	}
+	
+	return 0;
+}
+
 /* Warning this routine must be called after memory extraction. The array must contain memory arguments */
-int32_t regAccess_extract_arg_large_mix(struct array* array, struct regAccess* reg_access, int nb_reg_access){
+int32_t regAccess_extract_arg_large_mix_read(struct array* array, struct regAccess* reg_access, int nb_reg_access){
 	uint32_t 			i;
 	uint8_t 			j;
 	uint8_t 			k;
@@ -212,6 +266,79 @@ int32_t regAccess_extract_arg_large_mix(struct array* array, struct regAccess* r
 				}
 				PERMUTATION_CLEAN()
 			}
+		}
+	}
+
+	return 0;
+}
+
+/* Warning this routine must be called after memory extraction. The array must contain memory arguments */
+int32_t regAccess_extract_arg_large_mix_write(struct array* array, struct regAccess* reg_access, int nb_reg_access){
+	uint32_t 			i;
+	uint32_t 			l;
+	uint8_t 			nb_large_access;
+	struct regAccess**	large_reg_access;
+	struct argBuffer 	arg;
+	struct argBuffer* 	arg_mem;
+
+	if (nb_reg_access > 0){
+		large_reg_access = (struct regAccess**)alloca(sizeof(struct regAccess*) * nb_reg_access);
+
+		for (i = 0, nb_large_access = 0; i < (uint32_t)nb_reg_access; i++){
+			if (reg_access[i].size == 4){
+				large_reg_access[nb_large_access] = reg_access + i;
+				nb_large_access ++;
+			}
+		}
+
+		if (nb_large_access > 0){
+			uint32_t 	nb_mem = array_get_length(array);
+			uint8_t 	nb_element = nb_large_access + ((nb_mem == 0)?0:1);
+			uint8_t* 	permutation;
+			PERMUTATION_INIT(nb_element)
+
+			arg.location_type 		= ARG_LOCATION_MIX;
+			#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+			ARGBUFFER_SET_NB_REG(arg.reg, nb_element);
+			arg.access_size 		= 4;
+
+			PERMUTATION_GET_FIRST(permutation)
+			while(permutation != NULL){
+				for (l = 0; l < nb_mem; l++){
+					arg_mem = (struct argBuffer*)array_get(array, l);
+					if (arg_mem->access_size == 4){
+						arg.address = arg_mem->address;
+						arg.size  	= (nb_element - 1) * 4 + arg_mem->size;
+
+						arg.data = (char*)malloc(arg.size);
+						if (arg.data == NULL){
+							printf("ERROR: in %s, unable to allocate memory\n", __func__);
+							return -1;
+						}
+
+						for (i = 0; i < nb_large_access; i++){
+							if (permutation[i] < permutation[nb_element - 1]){
+								*((uint32_t*)arg.data + permutation[i]) = large_reg_access[i]->value;
+							}
+							else{
+								*((uint32_t*)(arg.data + arg_mem->size) + (permutation[i] - 1)) = large_reg_access[i]->value;
+							}
+							#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+							ARGBUFFER_SET_REG_NAME(arg.reg, permutation[i], large_reg_access[i]->reg);
+						}
+							
+						memcpy(arg.data + permutation[nb_large_access] * 4, arg_mem->data, arg_mem->size);
+						#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
+						ARGBUFFER_SET_REG_NAME(arg.reg, permutation[nb_large_access], ARGBUFFER_MEM_SLOT);
+
+						if (array_add(array, &arg) < 0){
+							printf("ERROR: in %s, unable to add element to array structure\n", __func__);
+						}
+					}
+				}
+				PERMUTATION_GET_NEXT(permutation)
+			}
+			PERMUTATION_CLEAN()
 		}
 	}
 

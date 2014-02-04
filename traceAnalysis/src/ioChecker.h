@@ -6,18 +6,27 @@
 #include "argSet.h"
 #include "array.h"
 #include "workQueue.h"
+#ifdef VERBOSE
+#include "multiWorkPercent.h"
+#endif
 
 #define IOCHECKER_NB_THREAD 4
 
 struct ioChecker{
-	struct array 		reference_array;
-	struct workQueue 	queue;
+	struct array 				reference_array;
+	struct workQueue 			queue;
+	#ifdef VERBOSE
+	struct multiWorkPercent		multi_percent;
+	#endif
 };
 
 struct checkJob{
-	struct ioChecker* 	checker;
-	uint32_t 			primitive_index;
-	struct argSet* 		arg_set;
+	struct ioChecker* 			checker;
+	uint32_t 					primitive_index;
+	struct argSet* 				arg_set;
+	#ifdef VERBOSE
+	struct multiWorkPercent*	multi_percent;
+	#endif
 };
 
 struct ioChecker* ioChecker_create();

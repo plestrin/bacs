@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "ioChecker.h"
 #include "primitiveReference.h"
@@ -249,6 +250,10 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	}
 
 	#ifdef VERBOSE
+	if (multiWorkPercent_init(&(checker->multi_percent), IOCHECKER_NB_THREAD, WORKPERCENT_ACCURACY_0)){
+		printf("ERROR: in %s, unable to create multiWorkPercent\n", __func__);
+	}
+
 	printf("Create IOChecker: {");
 	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
@@ -283,6 +288,9 @@ int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_se
 		job->checker 			= checker;
 		job->primitive_index 	= i;
 		job->arg_set 			= arg_set;
+		#ifdef VERBOSE
+		job->multi_percent 		= &(checker->multi_percent);
+		#endif
 
 		if (workQueue_submit(&(checker->queue), ioChecker_thread_job, job)){
 			printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
@@ -304,6 +312,9 @@ void ioChecker_thread_job(void* arg){
 	struct argBuffer* 				input_combination;
 	uint32_t* 						input_combination_index;
 	uint32_t 						input_has_next;
+	#ifdef VERBOSE
+	uint32_t 						printer_index = multiWorkPercent_get_thread_index(job->multi_percent);
+	#endif
 
 	primitive = (struct primitiveReference*)array_get(&(checker->reference_array), job->primitive_index);
 	nb_input = primitiveReference_get_nb_explicit_input(primitive);
@@ -317,6 +328,10 @@ void ioChecker_thread_job(void* arg){
 		return;
 	}
 
+	#ifdef VERBOSE
+	multiWorkPercent_start(job->multi_percent, printer_index, pow(array_get_length(arg_set->input), nb_input));
+	#endif
+
 	while(input_has_next){
 		for (j = 0; j < nb_input; j++){
 			memcpy(input_combination + j, array_get(arg_set->input, input_combination_index[j]), sizeof(struct argBuffer));
@@ -326,6 +341,10 @@ void ioChecker_thread_job(void* arg){
 			printf("\x1b[33mSuccess\x1b[0m: found primitive: \"%s\" in argSet: \"%s\"\n", primitive->name, arg_set->tag);
 			#endif
 		}
+
+		#ifdef VERBOSE
+		multiWorkPercent_notify(job->multi_percent, printer_index, 1);
+		#endif
 
 		for (k = 0, input_has_next = 0; k < nb_input; k++){
 			input_has_next |= (input_combination_index[k] != array_get_length(arg_set->input) - 1);
@@ -342,6 +361,10 @@ void ioChecker_thread_job(void* arg){
 			}
 		}
 	}
+
+	#ifdef VERBOSE
+	multiWorkPercent_conclude(job->multi_percent, printer_index);
+	#endif
 
 	free(input_combination);
 	free(input_combination_index);
@@ -372,6 +395,9 @@ void ioChecker_clean(struct ioChecker* checker){
 	}
 
 	array_clean(&(checker->reference_array));
+	#ifdef VERBOSE
+	multiWorkPercent_clean(&(checker->multi_percent));
+	#endif
 	workQueue_clean(&(checker->queue));
 }
 

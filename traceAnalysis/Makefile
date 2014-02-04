@@ -7,7 +7,8 @@ CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE -D$(ARCHI)
 else
 CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
 endif
-LDFLAGS			:= -lyajl -pthread
+CRYPTO_CFLAGS	:= -W -Wall -pedantic -Wextra -O3
+LDFLAGS			:= -lyajl -pthread -lm
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
@@ -44,6 +45,7 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)readBuffer.o			\
 	$(BUILD_DIR)inputParser.o			\
 	$(BUILD_DIR)workPercent.o			\
+	$(BUILD_DIR)multiWorkPercent.o		\
 	$(BUILD_DIR)workQueue.o				\
 	$(BUILD_DIR)MD5.o					\
 	$(BUILD_DIR)TEA.o 					\
@@ -62,7 +64,7 @@ $(BUILD_DIR)%.o: $(SHARED_DIR)%.c
 	$(CC) $(INCLUDE_SHARED) -o $@ -c $< $(CFLAGS)
 
 $(BUILD_DIR)%.o: $(CRYPTO_DIR)%.c
-	$(CC) -DANALYSIS_REFERENCE_IMPLEMENTATION -o $@ -c $< $(CFLAGS)
+	$(CC) -DANALYSIS_REFERENCE_IMPLEMENTATION -o $@ -c $< $(CRYPTO_CFLAGS)
 	
 .PHONY: clean
 

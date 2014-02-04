@@ -630,8 +630,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		if (!strncmp(arg, ARG_NAME_A_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -641,8 +641,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -652,8 +652,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -663,8 +663,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -674,8 +674,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 0;
 			
 			#ifdef VERBOSE
@@ -685,8 +685,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -696,8 +696,8 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		else if (!strncmp(arg, ARG_NAME_ASOR_LM, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_mix;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_mix;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
