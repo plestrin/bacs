@@ -54,6 +54,7 @@ void trace_frag_print_stat(struct trace* trace, char* arg);
 void trace_frag_print_ins(struct trace* trace, char* arg);
 void trace_frag_print_percent(struct trace* trace);
 void trace_frag_print_register(struct trace* trace, char* arg);
+void trace_frag_print_memory(struct trace* trace, char* arg);
 void trace_frag_set_tag(struct trace* trace, char* arg);
 void trace_frag_extract_arg(struct trace* trace, char* arg);
 

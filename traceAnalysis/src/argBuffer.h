@@ -56,7 +56,7 @@ struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* ar
 int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2);
 void argBuffer_delete(struct argBuffer* arg);
 
-void argBuffer_print_array(struct array* array);
+void argBuffer_print_array(struct array* array, enum argLocationType* type);
 int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
 
 static inline uint32_t argBuffer_get_nb_mem_in_array(struct array* array){

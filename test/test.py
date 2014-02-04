@@ -3,6 +3,7 @@
 import sys
 import subprocess
 import re
+import time
 
 # How to improve this script:
 # 	- parse trace output to check for erros: print if any
@@ -134,9 +135,11 @@ if action == "BUILD" or action == "ALL":
 		sys.stdout.write("Building " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
+		time_start = time.time()
 		return_value = subprocess.call(recipe_build[i].split(' '), stdout = recipe_log[i], stderr = recipe_log[i])
+		time_stop  = time.time()
 		if return_value == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
+			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 
@@ -163,15 +166,17 @@ if action == "TRACE" or action == "ALL":
 		sys.stdout.write("Tracing " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
+		time_start = time.time()
 		process = subprocess.Popen([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 		process.wait()
+		time_stop = time.time()
 
 		output_val = process.stdout.read()
 		recipe_log[i].write(output_val)
 		recipe_log[i].write(process.stderr.read())
 
 		if process.returncode == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
+			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 
@@ -211,15 +216,17 @@ if action == "SEARCH" or action == "ALL":
 		cmd = ["./analysis", TRACE_PATH + "trace" + recipe_name[i]]
 		cmd.extend(recipe_arg[i].split(','))
 
+		time_start = time.time()
 		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		process.wait()
+		time_stop = time.time()
 
 		output_val = process.stdout.read()
 		recipe_log[i].write(output_val)
 		recipe_log[i].write(process.stderr.read())
 
 		if process.returncode == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m\n")
+			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 
 			crypto_list = recipe_crypto[i].split(',')
 

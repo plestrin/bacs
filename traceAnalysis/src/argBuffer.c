@@ -307,7 +307,7 @@ void argBuffer_snprint_reg(char* string, uint32_t string_length, uint64_t reg){
 /* argBuffer array functions						                     */
 /* ===================================================================== */
 
-void argBuffer_print_array(struct array* array){
+void argBuffer_print_array(struct array* array, enum argLocationType* type){
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					i;
 	struct argBuffer* 			arg;
@@ -334,38 +334,40 @@ void argBuffer_print_array(struct array* array){
 
 		for (i = 0; i < array_get_length(array); i++){
 			arg = (struct argBuffer*)array_get(array, i);
-			switch(arg->location_type){
-			case ARG_LOCATION_MEMORY : {
-				#if defined ARCH_32
-				snprintf(desc, DESC_SIZE, "Mem 0x%08x", arg->address);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(desc, DESC_SIZE, "Mem 0x%llx", arg->address);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-				break;
-			}
-			case ARG_LOCATION_REGISTER : {
-				argBuffer_snprint_reg(desc, DESC_SIZE, arg->reg);
-				break;
-			}
-			case ARG_LOCATION_MIX : {
-				printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
-				break;
-			}
-			}
+			if (type != NULL && *type == arg->location_type){
+				switch(arg->location_type){
+				case ARG_LOCATION_MEMORY : {
+					#if defined ARCH_32
+					snprintf(desc, DESC_SIZE, "Mem 0x%08x", arg->address);
+					#elif defined ARCH_64
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					snprintf(desc, DESC_SIZE, "Mem 0x%llx", arg->address);
+					#else
+					#error Please specify an architecture {ARCH_32 or ARCH_64}
+					#endif
+					break;
+				}
+				case ARG_LOCATION_REGISTER : {
+					argBuffer_snprint_reg(desc, DESC_SIZE, arg->reg);
+					break;
+				}
+				case ARG_LOCATION_MIX : {
+					printf("ERROR: in %s, incorrect location type in argBuffer\n", __func__);
+					break;
+				}
+				}
 
-			value = (char*)malloc(PRINTBUFFER_GET_STRING_SIZE(arg->size));
-			if (value == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				break;
-			}
-			printBuffer_raw_string(value, PRINTBUFFER_GET_STRING_SIZE(arg->size), arg->data, arg->size);
+				value = (char*)malloc(PRINTBUFFER_GET_STRING_SIZE(arg->size));
+				if (value == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
+					break;
+				}
+				printBuffer_raw_string(value, PRINTBUFFER_GET_STRING_SIZE(arg->size), arg->data, arg->size);
 
-			multiColumnPrinter_print(printer, desc, arg->size, arg->access_size, value, NULL);
-			
-			free(value);
+				multiColumnPrinter_print(printer, desc, arg->size, arg->access_size, value, NULL);
+				
+				free(value);
+			}
 		}
 
 		multiColumnPrinter_delete(printer);

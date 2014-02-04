@@ -532,6 +532,43 @@ void trace_frag_print_register(struct trace* trace, char* arg){
 	}
 }
 
+void trace_frag_print_memory(struct trace* trace, char* arg){
+	struct traceFragment* 		fragment;
+	uint32_t 					index;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		
+		if (index < array_get_length(&(trace->frag_array))){
+			fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
+			#ifdef VERBOSE
+			printf("Print memory for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(trace->frag_array)));
+			#endif
+
+			if (fragment->read_memory_array == NULL || fragment->write_memory_array == NULL){
+				#ifdef VERBOSE
+				printf("WARNING: memory arrays have not been built for the current fragment. Building them now.\n");
+				#endif
+
+				if (traceFragment_create_mem_array(fragment)){
+					printf("ERROR: in %s, unable to create mem array for the fragement\n", __func__);
+				}
+			}
+
+			printf("*** Read Memory ***\n");
+			memAccess_print(fragment->read_memory_array, fragment->nb_memory_read_access);
+			printf("\n*** Write Memory ***\n");
+			memAccess_print(fragment->write_memory_array, fragment->nb_memory_write_access);
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+		}
+	}
+	else{
+		printf("ERROR: in %s, an index value must be specified\n", __func__);
+	}
+}
+
 void trace_frag_set_tag(struct trace* trace, char* arg){
 	uint32_t 				i;
 	uint32_t 				index;
@@ -590,6 +627,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#define ARG_NAME_ASR_LP 	"ASR_LP"
 	#define ARG_NAME_ASO_LP 	"ASO_LP"
 	#define ARG_NAME_ASOR_LP 	"ASOR_LP"
+	#define ARG_NAME_ASR_LM 	"ASR_LM"
 	#define ARG_NAME_ASOR_LM 	"ASOR_LM"
 
 	#define ARG_DESC_A 			"arguments are made of Adjacent memory access"
@@ -693,6 +731,17 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LP, ARG_DESC_ASOR, ARG_DESC_LP);
 			#endif
 		}
+		else if (!strncmp(arg, ARG_NAME_ASR_LM, i)){
+			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
+			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
+			remove_raw 					= 1;
+
+			#ifdef VERBOSE
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LM, ARG_DESC_ASR, ARG_DESC_LM);
+			#endif
+		}
 		else if (!strncmp(arg, ARG_NAME_ASOR_LM, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
 			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
@@ -774,6 +823,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 	ARG_DESC_LP);
 	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 	ARG_DESC_LP);
 	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 	ARG_DESC_LP);
+	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 	ARG_DESC_LM);
 	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 	ARG_DESC_LM);
 	return;
 
@@ -792,6 +842,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#undef ARG_NAME_ASR_LP
 	#undef ARG_NAME_ASO_LP
 	#undef ARG_NAME_ASOR_LP
+	#undef ARG_NAME_ASR_LM
 	#undef ARG_NAME_ASOR_LM
 }
 
@@ -822,9 +873,50 @@ void trace_arg_print(struct trace* trace, char* arg){
 	uint32_t 					i;
 	struct argSet* 				arg_set;
 	struct multiColumnPrinter* 	printer;
+	enum argLocationType 		filter_type;
+	enum argLocationType* 		filter_type_pointer;
+	uint8_t 					found_space = 0;
 
 	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			index = (uint32_t)atoi(arg + i + 1);
+
+			if (!strncmp(arg, "mem", i)){
+				#ifdef VERBOSE
+				printf("Filter MEMORY argBuffer(s) only\n");
+				#endif
+				filter_type = ARG_LOCATION_MEMORY;
+				filter_type_pointer = &filter_type;
+			}
+			else if (!strncmp(arg, "reg", i)){
+				#ifdef VERBOSE
+				printf("Filter REGISTER argBuffer(s) only\n");
+				#endif
+				filter_type = ARG_LOCATION_REGISTER;
+				filter_type_pointer = &filter_type;
+			}
+			else if (!strncmp(arg, "mix", i)){
+				#ifdef VERBOSE
+				printf("Filter MIX argBuffer(s) only\n");
+				#endif
+				filter_type = ARG_LOCATION_MEMORY;
+				filter_type_pointer = &filter_type;
+			}
+			else{
+				printf("ERROR: in %s, unkown argument: \"%s\"\n", __func__, arg);
+				filter_type_pointer = NULL;
+			}
+		}
+		else{
+			index = (uint32_t)atoi(arg);
+			filter_type_pointer = NULL;
+		}
 		
 		if (index < array_get_length(&(trace->arg_array))){
 			arg_set = (struct argSet*)array_get(&(trace->arg_array), index);
@@ -833,14 +925,14 @@ void trace_arg_print(struct trace* trace, char* arg){
 			#endif
 
 			#ifdef VERBOSE
-			printf("*** Input argBuffer %u ***", array_get_length(arg_set->input));
+			printf("*** Input argBuffer(s) %u ***\n", array_get_length(arg_set->input));
 			#endif
-			argBuffer_print_array(arg_set->input);
+			argBuffer_print_array(arg_set->input, filter_type_pointer);
 
 			#ifdef VERBOSE
-			printf("*** Output argBuffer %u ***", array_get_length(arg_set->output));
+			printf("*** Output argBuffer(s) %u ***\n", array_get_length(arg_set->output));
 			#endif
-			argBuffer_print_array(arg_set->output);
+			argBuffer_print_array(arg_set->output, filter_type_pointer);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
