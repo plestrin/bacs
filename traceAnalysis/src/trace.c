@@ -117,7 +117,7 @@ void trace_instruction_export(struct trace* trace){
 	struct instruction* 	instruction;
 	struct traceFragment 	fragment;
 
-	if (traceFragment_init(&fragment)){
+	if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL, NULL)){
 		printf("ERROR: in %s, unable to init traceFragment\n", __func__);
 		return;
 	}
@@ -609,14 +609,15 @@ void trace_frag_set_tag(struct trace* trace, char* arg){
 
 void trace_frag_extract_arg(struct trace* trace, char* arg){
 	uint32_t 				i;
+	uint32_t 				j;
 	struct traceFragment* 	fragment;
 	struct argSet 			arg_set;
 	uint32_t 				start;
 	uint32_t				stop;
 	uint32_t 				index;
 	uint8_t 				found_space = 0;
-	int32_t(*extract_routine_mem_read)(struct array*,struct memAccess*,int);
-	int32_t(*extract_routine_mem_write)(struct array*,struct memAccess*,int);
+	int32_t(*extract_routine_mem_read)(struct array*,struct memAccess*,int,void*);
+	int32_t(*extract_routine_mem_write)(struct array*,struct memAccess*,int,void*);
 	int32_t(*extract_routine_reg_read)(struct array*,struct regAccess*,int);
 	int32_t(*extract_routine_reg_write)(struct array*,struct regAccess*,int);
 	uint8_t 				remove_raw = 0;
@@ -629,6 +630,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#define ARG_NAME_ASOR_LP 	"ASOR_LP"
 	#define ARG_NAME_ASR_LM 	"ASR_LM"
 	#define ARG_NAME_ASOR_LM 	"ASOR_LM"
+	#define ARG_NAME_LASOR_LM 	"LASOR_LM"
 
 	#define ARG_DESC_A 			"arguments are made of Adjacent memory access"
 	#define ARG_DESC_AR 		"read after write are Removed, then same as\"A\""
@@ -636,6 +638,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#define ARG_DESC_ASR		"read after write are Removed, then same as \"AS\""
 	#define ARG_DESC_ASO 		"same as \"AS\" with additional Opcode consideration"
 	#define ARG_DESC_ASOR 		"read after write are Removed, then same as \"ASO\""
+	#define ARG_DESC_LASOR 		"[Specific LOOP] memory access at the same index in different iterations belong to the same argument, then same as \"ASOR\""
 	#define ARG_DESC_LP 		"Large registers (>= 32bits) are combined together (Pure)"
 	#define ARG_DESC_LM 		"Large registers (>= 32bits) are combined together and with the memory arguments (Mix)"
 
@@ -753,6 +756,17 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LM, ARG_DESC_ASOR, ARG_DESC_LM);
 			#endif
 		}
+		else if (!strncmp(arg, ARG_NAME_LASOR_LM, i)){
+			extract_routine_mem_read 	= memAccess_extract_arg_loop_adjacent_size_opcode_read;
+			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write; /* a modifier */
+			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
+			remove_raw 					= 1;
+
+			#ifdef VERBOSE
+			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_LASOR_LM, ARG_DESC_LASOR, ARG_DESC_LM);
+			#endif
+		}
 		else{
 			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 			goto arg_error;
@@ -763,15 +777,15 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		goto arg_error;
 	}
 
-	for (i = start; i < stop; i++){
-		fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+	for (j = start; j < stop; j++){
+		fragment = (struct traceFragment*)array_get(&(trace->frag_array), j);
 		if (traceFragment_create_mem_array(fragment)){
-			printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, i);
+			printf("ERROR: in %s, unable to create mem array for fragment %u\n", __func__, j);
 			break;
 		}
 
 		if (traceFragment_create_reg_array(fragment)){
-			printf("ERROR: in %s, unable to create reg array for fragement %u\n", __func__, i);
+			printf("ERROR: in %s, unable to create reg array for fragement %u\n", __func__, j);
 			break;
 		}
 
@@ -785,10 +799,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 				break;
 			}
 
-			if (extract_routine_mem_read(arg_set.input, fragment->read_memory_array, fragment->nb_memory_read_access)){
+			if (extract_routine_mem_read(arg_set.input, fragment->read_memory_array, fragment->nb_memory_read_access, fragment)){
 				printf("ERROR: in %s, memory read extraction routine return an error code\n", __func__);
 			}
-			if (extract_routine_mem_write(arg_set.output, fragment->write_memory_array, fragment->nb_memory_write_access)){
+			if (extract_routine_mem_write(arg_set.output, fragment->write_memory_array, fragment->nb_memory_write_access, fragment)){
 				printf("ERROR: in %s, memory write extraction routine return an error code\n", __func__);
 			}
 			if (extract_routine_reg_read(arg_set.input, fragment->read_register_array, fragment->nb_register_read_access)){
@@ -799,7 +813,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			}
 
 			if (strlen(arg_set.tag) == 0){
-				snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", i);
+				snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", j);
 			}
 
 			if (array_add(&(trace->arg_array), &arg_set) < 0){
@@ -808,7 +822,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		#ifdef VERBOSE
 		else{
-			printf("Skipping fragment %u/%u (tag: \"%s\"): no read or write argument\n", i, array_get_length(&(trace->frag_array)), fragment->tag);
+			printf("Skipping fragment %u/%u (tag: \"%s\"): no read or write argument\n", j, array_get_length(&(trace->frag_array)), fragment->tag);
 		}
 		#endif
 	}
@@ -817,14 +831,15 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 	arg_error:
 	printf("Expected extraction specifier:\n");
-	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 	ARG_DESC_LP);
-	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 	ARG_DESC_LP);
-	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 	ARG_DESC_LP);
-	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 	ARG_DESC_LP);
-	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 	ARG_DESC_LP);
-	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 	ARG_DESC_LP);
-	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 	ARG_DESC_LM);
-	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 	ARG_DESC_LM);
+	printf(" - \"%s\"     : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 		ARG_DESC_LP);
+	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 		ARG_DESC_LP);
+	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 		ARG_DESC_LP);
+	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 		ARG_DESC_LP);
+	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 		ARG_DESC_LP);
+	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 		ARG_DESC_LP);
+	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 		ARG_DESC_LM);
+	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 		ARG_DESC_LM);
+	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_LASOR_LM, 	ARG_DESC_LASOR, 	ARG_DESC_LM);
 	return;
 
 	#undef ARG_DESC_A
@@ -833,6 +848,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#undef ARG_DESC_ASR
 	#undef ARG_DESC_ASO
 	#undef ARG_DESC_ASOR
+	#undef ARG_DESC_LASOR
 	#undef ARG_DESC_LP
 	#undef ARG_DESC_LM
 
@@ -844,6 +860,7 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 	#undef ARG_NAME_ASOR_LP
 	#undef ARG_NAME_ASR_LM
 	#undef ARG_NAME_ASOR_LM
+	#undef ARG_NAME_LASOR_LM
 }
 
 /* ===================================================================== */

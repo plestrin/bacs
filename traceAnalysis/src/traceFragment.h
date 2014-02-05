@@ -11,21 +11,37 @@
 
 #define TRACEFRAGMENT_TAG_LENGTH 32
 
-struct traceFragment{
-	char 				tag[TRACEFRAGMENT_TAG_LENGTH];
-	struct array 		instruction_array;
-	struct memAccess* 	read_memory_array;
-	struct memAccess* 	write_memory_array;
-	uint32_t 			nb_memory_read_access;
-	uint32_t 			nb_memory_write_access;
-	struct regAccess* 	read_register_array;
-	struct regAccess* 	write_register_array;
-	uint32_t 			nb_register_read_access;
-	uint32_t 			nb_register_write_access;
+enum fragmentType{
+	TRACEFRAGMENT_TYPE_NONE,
+	TRACEFRAGMENT_TYPE_LOOP
 };
 
-struct traceFragment* codeFragment_create();
-int32_t traceFragment_init(struct traceFragment* frag);
+struct fragmentCallback{
+	void(*specific_delete)(void*);
+	void*(*specific_clone)(void*);
+};
+
+struct traceFragment{
+	char 						tag[TRACEFRAGMENT_TAG_LENGTH];
+	struct array 				instruction_array;
+	enum fragmentType 			type;
+	void* 						specific_data;
+	struct fragmentCallback*  	callback;
+	
+
+	struct memAccess* 			read_memory_array;
+	struct memAccess* 			write_memory_array;
+	uint32_t 					nb_memory_read_access;
+	uint32_t 					nb_memory_write_access;
+	struct regAccess* 			read_register_array;
+
+	struct regAccess* 			write_register_array;
+	uint32_t 					nb_register_read_access;
+	uint32_t 					nb_register_write_access;
+};
+
+struct traceFragment* codeFragment_create(enum fragmentType type, void* specific_data, struct fragmentCallback* callback);
+int32_t traceFragment_init(struct traceFragment* frag, enum fragmentType type, void* specific_data, struct fragmentCallback* callback);
 
 static inline void traceFragment_set_tag(struct traceFragment* frag, char* tag){
 	strncpy(frag->tag, tag, TRACEFRAGMENT_TAG_LENGTH);

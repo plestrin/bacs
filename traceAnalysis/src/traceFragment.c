@@ -3,11 +3,11 @@
 
 #include "traceFragment.h"
 
-struct traceFragment* codeSegment_create(){
+struct traceFragment* codeSegment_create(enum fragmentType type, void* specific_data, struct fragmentCallback* callback){
 	struct traceFragment* frag = (struct traceFragment*)malloc(sizeof(struct traceFragment));
 
 	if (frag != NULL){
-		if (traceFragment_init(frag)){
+		if (traceFragment_init(frag, type, specific_data, callback)){
 			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
 			free(frag);
 			frag = NULL;
@@ -20,7 +20,7 @@ struct traceFragment* codeSegment_create(){
 	return frag;
 }
 
-int32_t traceFragment_init(struct traceFragment* frag){
+int32_t traceFragment_init(struct traceFragment* frag, enum fragmentType type, void* specific_data, struct fragmentCallback* callback){
 	int32_t result = -1;
 
 	result = array_init(&frag->instruction_array, sizeof(struct instruction));
@@ -29,10 +29,15 @@ int32_t traceFragment_init(struct traceFragment* frag){
 	}
 	else{
 		frag->tag[0]					= '\0';
+		frag->type 						= type;
+		frag->specific_data 			= specific_data;
+		frag->callback 					= callback;
+
 		frag->read_memory_array 		= NULL;
 		frag->write_memory_array 		= NULL;
 		frag->nb_memory_read_access 	= 0;
 		frag->nb_memory_write_access 	= 0;
+
 		frag->read_register_array 		= NULL;
 		frag->write_register_array 		= NULL;
 		frag->nb_register_read_access 	= 0;
@@ -74,11 +79,21 @@ int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment
 	}
 
 	strncpy(frag_dst->tag, frag_src->tag, TRACEFRAGMENT_TAG_LENGTH);
+	frag_dst->type 						= frag_src->type;
+	frag_dst->callback 					= frag_src->callback;
+
+	if (frag_src->callback != NULL && frag_src->callback->specific_clone != NULL){
+		frag_dst->specific_data 		= frag_src->callback->specific_clone(frag_src->specific_data);
+	}
+	else{
+		frag_dst->specific_data 		= frag_src->specific_data;
+	}
 
 	frag_dst->read_memory_array 		= NULL;
 	frag_dst->write_memory_array 		= NULL;
 	frag_dst->nb_memory_read_access 	= frag_src->nb_memory_read_access;
 	frag_dst->nb_memory_write_access 	= frag_src->nb_memory_write_access;
+
 	frag_dst->read_register_array 		= NULL;
 	frag_dst->write_register_array 		= NULL;
 	frag_dst->nb_register_read_access 	= frag_src->nb_register_read_access;
@@ -632,6 +647,11 @@ void traceFragment_clean(struct traceFragment* frag){
 		if (frag->write_register_array != NULL){
 			free(frag->write_register_array);
 		}
+
+		if (frag->callback != NULL && frag->callback->specific_delete != NULL){
+			frag->callback->specific_delete(frag->specific_data);
+		}
+
 		array_clean(&(frag->instruction_array));
 	}
 }

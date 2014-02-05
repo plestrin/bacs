@@ -328,7 +328,7 @@ int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array*
 
 	if (engine->loops != NULL){
 		for (i = 0; i < engine->nb_loop; i++){
-			if (traceFragment_init(&fragment)){
+			if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length, NULL)){
 				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
 				return result;
 			}
