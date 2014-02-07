@@ -45,6 +45,7 @@ int32_t array_add(struct array* array, void* element);
 void* array_get(struct array* array, uint32_t index);
 int32_t array_search_seq_up(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
 int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t max_index, void* key, int32_t(*compare)(void* element, void* key));
+uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* element1, void* element2));
 int32_t array_clone(struct array* array_src, struct array* array_dst);
 int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t offset, uint32_t nb_element);
 void array_empty(struct array* array);

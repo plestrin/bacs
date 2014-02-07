@@ -48,7 +48,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	return result;
 }
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args){
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args, struct fastOutputSearch* accelerator){
 	int32_t 			result = -1;
 	uint8_t 			i;
 	uint8_t 			j;
@@ -166,16 +166,23 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 
 	primitive->func(arg_in, arg_out);
 
-	/* maybe we can sort the output to make the research faster */
+	
 	for (j = 0, result = 0; j < primitive->nb_output; j++){
-		for (k = 0; k < array_get_length(output_args); k++){
-			argBuffer_out = (struct argBuffer*)array_get(output_args, k);
-			if (argBuffer_search(argBuffer_out, arg_out[j], arg_out_size[j]) >= 0){
-				break;
+		if (accelerator != NULL){
+			if (fastOutputSearch_search(accelerator, arg_out[j], arg_out_size[j])){
+				result = 1;
 			}
 		}
-		if (k == array_get_length(output_args)){
-			result = 1;
+		else{
+			for (k = 0; k < array_get_length(output_args); k++){
+				argBuffer_out = (struct argBuffer*)array_get(output_args, k);
+				if (argBuffer_search(argBuffer_out, arg_out[j], arg_out_size[j]) >= 0){
+					break;
+				}
+			}
+			if (k == array_get_length(output_args)){
+				result = 1;
+			}
 		}
 	}
 

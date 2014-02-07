@@ -29,7 +29,7 @@ test_multiColumn: multiColumn.o test_multiColumn.o
 test_inputParser: inputParser.o array.o multiColumn.o test_inputParser.o
 	$(CC) -o $(TEST_INPUTPARSER) $^ $(LDFLAGS)
 
-test_graph: test_graph.o graph.o array.o graphPrintDot.o
+test_graph: test_graph.o graph.o array.o graphPrintDot.o bsearch.o
 	$(CC) -o $(TEST_GRAPH) $^ $(LDFLAGS)
 
 test_readBuffer: test_readBuffer.o readBuffer.o printBuffer.o
@@ -64,7 +64,7 @@ array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
 inputParser.o: ../inputParser.h ../array.h ../multiColumn.h
-graph.o: ../graph.h ../array.h
+graph.o: ../graph.h ../bsearch.h ../array.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
 readBuffer.o: ../readBuffer.h
 printBuffer.o: ../printBuffer.h

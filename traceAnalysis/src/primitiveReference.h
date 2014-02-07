@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "argBuffer.h"
+#include "fastOutputSearch.h"
 
 #define PRIMITIVEREFERENCE_MAX_NAME_SIZE 			256
 
@@ -47,7 +48,7 @@ struct primitiveReference{
 
 int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, void** output));
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args);
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args, struct fastOutputSearch* accelerator);
 void primitiveReference_print(struct primitiveReference* primitive);
 
 uint8_t primitiveReference_get_nb_explicit_input(struct primitiveReference* primitive);

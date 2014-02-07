@@ -37,9 +37,11 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)loop.o 					\
 	$(BUILD_DIR)memAccess.o 			\
 	$(BUILD_DIR)regAccess.o 			\
+	$(BUILD_DIR)fastOutputSearch.o 		\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
 	$(BUILD_DIR)graph.o 				\
+	$(BUILD_DIR)bsearch.o 				\
 	$(BUILD_DIR)graphPrintDot.o 		\
 	$(BUILD_DIR)printBuffer.o			\
 	$(BUILD_DIR)readBuffer.o			\

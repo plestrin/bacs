@@ -269,28 +269,47 @@ int32_t ioChecker_init(struct ioChecker* checker){
 			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
 		}
 	}
+	printf("IOChecker optimization: %u threads and accelerator for output larger than %u element(s)\n", IOCHECKER_NB_THREAD, IOCHECKER_MIN_SIZE_ACCELERATOR);
 	#endif
 
 	return 0;
 }
 
 int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_set){
-	struct checkJob* 	job;
-	uint32_t 			i;
+	struct checkJob* 			job;
+	uint32_t 					i;
+	struct fastOutputSearch* 	accelerator = NULL;
+	uint32_t 					accelerator_length[] = {8, 16, 24, 32, 40, 48};
+
+	if (array_get_length(arg_set->output) >= IOCHECKER_MIN_SIZE_ACCELERATOR){
+		#ifdef VERBOSE
+		printf("Building accelerator to search arg_set: \"%s\" (%u output(s))\n", arg_set->tag, array_get_length(arg_set->output));
+		#endif
+
+		accelerator = fastOutputSearch_create(arg_set->output, accelerator_length, sizeof(accelerator_length) / sizeof(uint32_t));
+		if (accelerator == NULL){
+			printf("ERROR: in %s, unable to create fastOutputSearch\n", __func__);
+		}
+	}
 
 	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 		job = (struct checkJob*)malloc(sizeof(struct checkJob));
 		if (job == NULL){
-			printf("ERROR: in %s, unable to alloacte memory\n", __func__);
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			return -1;
 		}
 
 		job->checker 			= checker;
 		job->primitive_index 	= i;
 		job->arg_set 			= arg_set;
+		job->accelerator 		= accelerator;
 		#ifdef VERBOSE
 		job->multi_percent 		= &(checker->multi_percent);
 		#endif
+
+		if (accelerator != NULL){
+			fastOutputSearch_incr_ref(accelerator);
+		}
 
 		if (workQueue_submit(&(checker->queue), ioChecker_thread_job, job)){
 			printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
@@ -336,7 +355,7 @@ void ioChecker_thread_job(void* arg){
 		for (j = 0; j < nb_input; j++){
 			memcpy(input_combination + j, array_get(arg_set->input, input_combination_index[j]), sizeof(struct argBuffer));
 		}
-		if (!primitiveReference_test(primitive, nb_input, input_combination, arg_set->output)){
+		if (!primitiveReference_test(primitive, nb_input, input_combination, arg_set->output, job->accelerator)){
 			#if VERBOSE
 			printf("\x1b[33mSuccess\x1b[0m: found primitive: \"%s\" in argSet: \"%s\"\n", primitive->name, arg_set->tag);
 			#endif
@@ -368,6 +387,11 @@ void ioChecker_thread_job(void* arg){
 
 	free(input_combination);
 	free(input_combination_index);
+
+	if (job->accelerator != NULL){
+		fastOutputSearch_delete(job->accelerator);
+	}
+
 	free(job);
 }
 

@@ -334,7 +334,7 @@ void argBuffer_print_array(struct array* array, enum argLocationType* type){
 
 		for (i = 0; i < array_get_length(array); i++){
 			arg = (struct argBuffer*)array_get(array, i);
-			if (type != NULL && *type == arg->location_type){
+			if ((type != NULL && *type == arg->location_type) || type == NULL){
 				switch(arg->location_type){
 				case ARG_LOCATION_MEMORY : {
 					#if defined ARCH_32

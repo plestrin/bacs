@@ -1,8 +1,13 @@
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "array.h"
+
+int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg);
+
 
 struct _array* _array_create(uint32_t element_size){
 	struct _array* _array;
@@ -276,6 +281,37 @@ int32_t array_search_seq_down(struct array* array, uint32_t min_index, uint32_t 
 	}
 
 	return result;
+}
+
+uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* element1, void* element2)){
+	uint32_t* 	mapping;
+	uint32_t 	i;
+	void* 		arg[2];
+
+	arg[0] = array;
+	#pragma GCC diagnostic ignored "-Wpedantic"
+	arg[1] = (void*)compare;
+
+	mapping = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(array));
+	if (mapping != NULL){
+		for (i = 0; i < array_get_length(array); i++){
+			mapping[i] = i;
+		}
+
+		qsort_r(mapping, array_get_length(array), sizeof(uint32_t), (__compar_d_fn_t)array_compare, arg);
+	}
+	else{
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+
+	return mapping;
+}
+
+int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg){
+	struct array* array = arg[0];
+	int32_t(*compare)(void*, void*) = arg[1];
+
+	return compare(array_get(array, *index1), array_get(array, *index2));
 }
 
 int32_t array_clone(struct array* array_src, struct array* array_dst){

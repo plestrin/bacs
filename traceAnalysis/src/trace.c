@@ -1208,41 +1208,46 @@ void trace_arg_seek(struct trace* trace, char* arg){
 	char* 				buffer;
 	uint32_t 			buffer_length;
 
-	buffer = readBuffer_raw(arg, strlen(arg));
-	buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
-	if (buffer == NULL){
-		printf("ERROR: in %s, readBuffer return NULL\n", __func__);
+	if (arg != NULL){
+		buffer = readBuffer_raw(arg, strlen(arg));
+		buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
+		if (buffer == NULL){
+			printf("ERROR: in %s, readBuffer return NULL\n", __func__);
+		}
+		else{
+			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
+				arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
+				
+				/* INPUT */
+				for (j = 0; j < array_get_length(arg_set->input); j++){
+					arg_buffer = (struct argBuffer*)array_get(arg_set->input, j);
+					index = argBuffer_search(arg_buffer, buffer, buffer_length);
+					if (index >= 0){
+						printf("Found correspondence in argset %u, (tag: \"%s\"), input %u ", i, arg_set->tag, j);
+						argBuffer_print_metadata(arg_buffer);
+						printf("\n");
+						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
+						printf("\n");
+					}
+				}
+
+				/* OUTPUT */
+				for (j = 0; j < array_get_length(arg_set->output); j++){
+					arg_buffer = (struct argBuffer*)array_get(arg_set->output, j);
+					index = argBuffer_search(arg_buffer, buffer, buffer_length);
+					if (index >= 0){
+						printf("Found correspondence in argset %u, (tag: \"%s\"), output %u ", i, arg_set->tag, j);
+						argBuffer_print_metadata(arg_buffer);
+						printf("\n");
+						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
+						printf("\n");
+					}
+				}
+			}
+			free(buffer);
+		}
 	}
 	else{
-		for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
-			arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
-			
-			/* INPUT */
-			for (j = 0; j < array_get_length(arg_set->input); j++){
-				arg_buffer = (struct argBuffer*)array_get(arg_set->input, j);
-				index = argBuffer_search(arg_buffer, buffer, buffer_length);
-				if (index >= 0){
-					printf("Found correspondence in argset %u, (tag: \"%s\"), input %u ", i, arg_set->tag, j);
-					argBuffer_print_metadata(arg_buffer);
-					printf("\n");
-					printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
-					printf("\n");
-				}
-			}
-
-			/* OUTPUT */
-			for (j = 0; j < array_get_length(arg_set->output); j++){
-				arg_buffer = (struct argBuffer*)array_get(arg_set->output, j);
-				index = argBuffer_search(arg_buffer, buffer, buffer_length);
-				if (index >= 0){
-					printf("Found correspondence in argset %u, (tag: \"%s\"), output %u ", i, arg_set->tag, j);
-					argBuffer_print_metadata(arg_buffer);
-					printf("\n");
-					printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
-					printf("\n");
-				}
-			}
-		}
-		free(buffer);
+		printf("ERROR: in %s, please specify an argument\n", __func__);
 	}
 }
