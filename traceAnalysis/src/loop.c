@@ -18,6 +18,9 @@ int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
 
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
 
+static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index);
+
+
 struct loopEngine* loopEngine_create(){
 	struct loopEngine* engine;
 
@@ -289,7 +292,7 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 
-	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
 	if (printer == NULL){
 		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
 	}
@@ -308,37 +311,68 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_set_title(printer, 2, (char*)"Offset");
 	multiColumnPrinter_set_title(printer, 3, (char*)"Length");
 	multiColumnPrinter_set_title(printer, 4, (char*)"Epilogue");
+	multiColumnPrinter_set_title(printer, 5, (char*)"State");
 
 	multiColumnPrinter_print_header(printer);
 
 	if (engine->loops != NULL){
 		for (i = 0; i < engine->nb_loop; i++){
-			multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, NULL);
+			if (loopEngine_is_loop_unrolled(engine, i)){
+				multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, "unrolled", NULL);
+			}
+			else{
+				multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, "rolled", NULL);
+			}
 		}
 	}
 
 	multiColumnPrinter_delete(printer);
 }
 
-int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array){
+int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array, int32_t loop_index, int32_t iteration_index){
 	uint32_t 				i;
+	uint32_t 				start_index;
+	uint32_t 				stop_index;
 	int32_t 				result = -1;
 	struct traceFragment 	fragment;
 	uint32_t 				total_length;
 
+	if (loop_index > 0){
+		start_index = loop_index;
+		stop_index = ((uint32_t)loop_index + 1 < engine->nb_loop) ? ((uint32_t)loop_index + 1) : engine->nb_loop;
+	}
+	else{
+		start_index = 0;
+		stop_index = engine->nb_loop;
+	}
+
 	if (engine->loops != NULL){
-		for (i = 0; i < engine->nb_loop; i++){
+		for (i = start_index; i < stop_index; i++){
 			if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length, NULL)){
 				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
 				return result;
 			}
 
-			total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
-			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset,  total_length) !=  (int32_t)total_length){
-				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
-			}
+			if (iteration_index < 0){
+				total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
+				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
+					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+				}
 
-			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
+				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
+			}
+			else if ((uint32_t)iteration_index < engine->loops[i].nb_iteration){
+				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset + engine->loops[i].length * iteration_index, engine->loops[i].length) !=  (int32_t)engine->loops[i].length){
+					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+				}
+
+				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u - it %u", i, iteration_index);
+			}
+			else{
+				printf("ERROR: in %s, iteration index is larger thant the loop number of iteration\n", __func__);
+				traceFragment_clean(&fragment);
+				continue;
+			}
 
 			if (array_add(array, &fragment) < 0){
 				printf("ERROR: in %s, unable to add traceFragment %u to array\n", __func__, i);
@@ -388,6 +422,26 @@ static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine
 	}
 
 	return result;
+}
+
+static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index){
+	uint32_t i;
+	uint32_t j;
+	struct instruction* ins1;
+	struct instruction* ins2;
+
+	for (i = 1; i < engine->loops[index].nb_iteration; i++){
+		for (j = 0; j < engine->loops[index].length; j++){
+			ins1 = (struct instruction*)array_get(&(engine->element_array), engine->loops[index].offset + j);
+			ins2 = (struct instruction*)array_get(&(engine->element_array), engine->loops[index].offset + j + (engine->loops[index].length * i));
+
+			if (ins1->pc != ins2->pc){
+				return 1;
+			}
+		}
+	}
+
+	return 0;
 }
 
 /* ===================================================================== */

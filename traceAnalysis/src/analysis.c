@@ -55,7 +55,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", "Remove the redundant loops from the loops list", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_remove_redundant)
 	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", "Pack loop epilogue to reduce the number of loops (must be run after \"remove redundant loop\")", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_pack_epilogue)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", "Print every loops contained in the loopEngine", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", "Export loop(s) to traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", "Export loop(s) to traceFragment array. Specify export method [mandatory] and loop index", INPUTPARSER_CMD_INTERACTIVE, trace, trace_loop_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", "Delete a previously created loopEngine (loop)", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_delete)
 
 	/* traceFragement specific commands */

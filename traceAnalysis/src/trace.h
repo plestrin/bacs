@@ -46,7 +46,7 @@ void trace_loop_create(struct trace* trace);
 void trace_loop_remove_redundant(struct trace* trace);
 void trace_loop_pack_epilogue(struct trace* trace);
 void trace_loop_print(struct trace* trace);
-void trace_loop_export(struct trace* trace);
+void trace_loop_export(struct trace* trace, char* arg);
 void trace_loop_delete(struct trace* trace);
 
 void trace_frag_clean(struct trace* trace);

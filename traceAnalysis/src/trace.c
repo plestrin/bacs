@@ -319,15 +319,58 @@ void trace_loop_print(struct trace* trace){
 	}
 }
 
-void trace_loop_export(struct trace* trace){
+void trace_loop_export(struct trace* trace, char* arg){
+	int32_t 	loop_index = -1;
+	int32_t 	iteration_index = -1;
+	uint32_t 	i;
+	uint8_t 	found_space;
+
+
+	if (arg != NULL){
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
+			}
+		}
+		if (found_space){
+			loop_index = atoi(arg + i + 1);
+		}
+		else{
+			i ++;
+		}
+
+		if (!strncmp(arg, "ALL", i)){
+
+		}
+		else if (i > 3 && !strncmp(arg, "IT=", 3)){
+			iteration_index = atoi(arg + 3);
+		}
+		else{
+			goto arg_error;
+		}
+	}
+	else{
+		goto arg_error;
+	}
+
 	if (trace->loop_engine != NULL){
-		if (loopEngine_export_traceFragment(trace->loop_engine, &(trace->frag_array))){
+		if (loopEngine_export_traceFragment(trace->loop_engine, &(trace->frag_array), loop_index, iteration_index)){
 			printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
 		}
 	}
 	else{
 		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
 	}
+
+	return;
+
+	arg_error:
+	printf("Expected export specifier:\n");
+	printf(" - \"ALL\"   : export every loop's iteration\n");
+	printf(" - \"IT=xx\" : export the xx iteration of the loop\n");
+
+	return;
 }
 
 void trace_loop_delete(struct trace* trace){
