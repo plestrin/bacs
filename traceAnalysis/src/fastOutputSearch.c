@@ -43,7 +43,7 @@ int32_t fastOutputSearch_init(struct fastOutputSearch* search, struct array* arr
 	uint8_t 			valid_length;
 
 	search->array 			= array;
-	search->reference_count = 0;
+	search->reference_count = 1;
 	if (pthread_mutex_init(&(search->reference_protector), NULL)){
 		printf("ERROR: in %s, unable to init mutex\n", __func__);
 	}
@@ -178,6 +178,8 @@ void fastOutputSearch_clean_(struct fastOutputSearch* search){
 	if (search->decrease_length != NULL){
 		free(search->decrease_length);
 	}
+
+	pthread_mutex_destroy(&(search->reference_protector));
 }
 
 void fastOutputSearch_delete(struct fastOutputSearch* search){

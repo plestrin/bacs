@@ -1191,12 +1191,20 @@ void trace_arg_search(struct trace* trace, char* arg){
 		}
 	}
 
+	#ifndef VERBOSE
+	ioChecker_start(trace->checker);
+	#endif
+
 	for (i = start; i < stop; i++){
 		if (ioChecker_submit_argSet(trace->checker, (struct argSet*)array_get(&(trace->arg_array), i))){
 			printf("ERROR: in %s, unable to submit argSet to the ioChecker\n", __func__);
 		}
 	}
+	#ifdef VERBOSE
 	ioChecker_check(trace->checker);
+	#else
+	ioChecker_wait(trace->checker);
+	#endif
 }
 
 void trace_arg_seek(struct trace* trace, char* arg){

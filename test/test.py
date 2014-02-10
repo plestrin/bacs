@@ -146,7 +146,7 @@ if action == "BUILD" or action == "ALL":
 
 # COMPILE TRACE step
 if action == "TRACE" or action == "ALL":
-	sys.stdout.write("Building Trace program: ...")
+	sys.stdout.write("Building Trace program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "-C", MAKEFILE_TRACE_PATH])
 	if return_value != 0:
@@ -171,17 +171,18 @@ if action == "TRACE" or action == "ALL":
 		process.wait()
 		time_stop = time.time()
 
-		output_val = process.stdout.read()
-		recipe_log[i].write(output_val)
-		recipe_log[i].write(process.stderr.read())
+		output_val = process.communicate()
+		recipe_log[i].write(output_val[0])
+		recipe_log[i].write(output_val[1])
 
 		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 		else:
-			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
+			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+			print(output_val[1])
 
 		regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
-		for j in regex.findall(output_val):
+		for j in regex.findall(output_val[0]):
 			print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
 
 
@@ -193,7 +194,7 @@ if action == "SEARCH" or action == "ALL":
 	if return_value != 0:
 		print("ERROR: unable to create the Makefile")
 		exit()
-	sys.stdout.write("Building Search program: ...")
+	sys.stdout.write("Building Search program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "analysis"])
 	if return_value != 0:
@@ -221,9 +222,9 @@ if action == "SEARCH" or action == "ALL":
 		process.wait()
 		time_stop = time.time()
 
-		output_val = process.stdout.read()
-		recipe_log[i].write(output_val)
-		recipe_log[i].write(process.stderr.read())
+		output_val = process.communicate()
+		recipe_log[i].write(output_val[0])
+		recipe_log[i].write(output_val[1])
 
 		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
@@ -240,7 +241,7 @@ if action == "SEARCH" or action == "ALL":
 				crypto_name.append(j[j.find(':')+1:].strip())
 
 			regex = re.compile("\*\*\* IO match for [a-zA-Z0-9 ]* \*\*\*")
-			for j in regex.findall(output_val):
+			for j in regex.findall(output_val[0]):
 				found = 0
 				for k in range(len(crypto_list)):
 					if crypto_name[k] == j[17:-4].strip():
@@ -261,7 +262,8 @@ if action == "SEARCH" or action == "ALL":
 					for k in range(nb_expected[j] - nb_found[j]):
 						print("\t" + crypto_name[j].strip() + " \x1b[31mFAIL " + str(nb_found[j] + k + 1) + "/" + str(nb_expected[j]) + "\x1b[0m")
 		else:
-			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
+			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+			print(output_val[1])
 
 
 # CLEAN step

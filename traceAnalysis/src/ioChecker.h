@@ -37,8 +37,16 @@ int32_t ioChecker_init(struct ioChecker* checker);
 
 int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_set);
 
+static inline void ioChecker_start(struct ioChecker* checker){
+	workQueue_start(&(checker->queue));
+}
+
 static inline void ioChecker_check(struct ioChecker* checker){
 	workQueue_start(&(checker->queue));
+	workQueue_wait(&(checker->queue));
+}
+
+static inline void ioChecker_wait(struct ioChecker* checker){
 	workQueue_wait(&(checker->queue));
 }
 
