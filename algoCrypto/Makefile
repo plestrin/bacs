@@ -1,5 +1,6 @@
 EXAMPLE_DIRECTORY			:= example/
 TOMCRYPT_DIRECTORY 			:= tomCrypt/
+CRYPTO++_DIRECTORY 			:= crypto++/
 
 CC							:= gcc
 CFLAGS_DEBUG				:= -W -Wall -pedantic -Wextra -g
@@ -17,8 +18,9 @@ SHA1_EXAMPLE_NAME 			:= SHA1
 
 MD5_TOMCRYPT_EXAMPLE_NAME 	:= MD5
 RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
+AES_TOMCRYPT_EXAMPLE_NAME 	:= AES
 
-all: example_o0 example_o1 example_o2 example_o3 example_os tomCrypt
+all: example_o0 example_o1 example_o2 example_o3 example_os tomCrypt crypto++
 
 # *** Example compile rules ***
 example_o0: $(EXAMPLE_DIRECTORY)$(TEA_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(MD5_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(RC4_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(AES_EXAMPLE_NAME)_o0 $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_o0
@@ -84,13 +86,19 @@ $(EXAMPLE_DIRECTORY)$(SHA1_EXAMPLE_NAME)_os: SHA1.os $(EXAMPLE_DIRECTORY)sha1_te
 
 
 # *** TomCrypt compile rules ***
-tomCrypt: tomCrypt_md5_example tomCrypt_rc4_example
+tomCrypt: $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME) $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME) $(TOMCRYPT_DIRECTORY)$(AES_TOMCRYPT_EXAMPLE_NAME)
 
-tomCrypt_md5_example: $(TOMCRYPT_DIRECTORY)md5_tom.o ../misc/printBuffer.o
-	$(CC) -o $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME) $^ $(LDFLAGS) -ltomcrypt
+$(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME): $(TOMCRYPT_DIRECTORY)md5_tom.o ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ltomcrypt
 
-tomCrypt_rc4_example: $(TOMCRYPT_DIRECTORY)rc4_tom.o ../misc/printBuffer.o
-	$(CC) -o $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME) $^ $(LDFLAGS) -ltomcrypt
+$(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME): $(TOMCRYPT_DIRECTORY)rc4_tom.o ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ltomcrypt
+
+$(TOMCRYPT_DIRECTORY)$(AES_TOMCRYPT_EXAMPLE_NAME): $(TOMCRYPT_DIRECTORY)aes_tom.o ../misc/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ltomcrypt
+
+# *** Crypto++ compile rules ***
+crypto++:
 
 
 # *** General compile rules ***
@@ -113,7 +121,7 @@ tomCrypt_rc4_example: $(TOMCRYPT_DIRECTORY)rc4_tom.o ../misc/printBuffer.o
 	$(CC) -o $@ -c $< $(CFLAGS_Os)
 
 
-.PHONY: clean tomCrypt
+.PHONY: clean tomCrypt crypto++
 
 clean:
 	@ rm -f *.o
@@ -137,3 +145,4 @@ clean:
 	@ rm -f $(TOMCRYPT_DIRECTORY)*.o
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(MD5_TOMCRYPT_EXAMPLE_NAME)
 	@ rm -f $(TOMCRYPT_DIRECTORY)$(RC4_TOMCRYPT_EXAMPLE_NAME)
+	@ rm -f $(TOMCRYPT_DIRECTORY)$(AES_TOMCRYPT_EXAMPLE_NAME)

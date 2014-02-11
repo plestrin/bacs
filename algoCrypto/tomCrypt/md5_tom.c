@@ -6,7 +6,7 @@
 #include "../../misc/printBuffer.h"
 
 int main(){
-	char 		message[] = "Hello world!";
+	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	uint32_t 	hash[4];
 	hash_state 	md;
 	
