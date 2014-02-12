@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "codeMap.h"
 #include "instruction.h"
 #include "memAccess.h"
 #include "regAccess.h"
@@ -71,6 +72,8 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag);
 void traceFragment_remove_read_after_write(struct traceFragment* frag);
 
 int32_t traceFragment_create_reg_array(struct traceFragment* frag);
+
+void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm);
 
 void traceFragment_delete(struct traceFragment* frag);
 void traceFragment_clean(struct traceFragment* frag);

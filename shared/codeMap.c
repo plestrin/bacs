@@ -719,7 +719,7 @@ struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address){
 		image_cursor = cm->images;
 
 		while(image_cursor != NULL){
-			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+			if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
 				return image_cursor;
 			}
 
@@ -731,27 +731,22 @@ struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address){
 }
 
 struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address){
-	struct cm_image* 	image_cursor;
+	struct cm_image* 	image;
 	struct cm_section* 	section_cursor;
 
 	if (cm != NULL){
-		image_cursor = cm->images;
+		image = codeMap_search_image(cm, address);
 
-		while(image_cursor != NULL){
-			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
-				section_cursor = image_cursor->sections;
+		if(image != NULL){
+			section_cursor = image->sections;
 
-				while(section_cursor != NULL){
-					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
-						return section_cursor;
-					}
-
-					section_cursor = section_cursor->next;
+			while(section_cursor != NULL){
+				if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
+					return section_cursor;
 				}
-				break;
-			}
 
-			image_cursor = image_cursor->next;
+				section_cursor = section_cursor->next;
+			}
 		}
 	}
 
@@ -759,37 +754,22 @@ struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address){
 }
 
 struct cm_routine* codeMap_search_routine(struct codeMap* cm, ADDRESS address){
-	struct cm_image* 	image_cursor;
-	struct cm_section* 	section_cursor;
+	struct cm_section* 	section;
 	struct cm_routine* 	routine_cursor;
 
 	if (cm != NULL){
-		image_cursor = cm->images;
+		section = codeMap_search_section(cm, address);
 
-		while(image_cursor != NULL){
-			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
-				section_cursor = image_cursor->sections;
+		if (section != NULL){
+			routine_cursor = section->routines;
 
-				while(section_cursor != NULL){
-					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
-						routine_cursor = section_cursor->routines;
-
-						while(routine_cursor != NULL){
-							if (routine_cursor->address_start <= address && routine_cursor->address_stop > address){
-								return routine_cursor;
-							}
-
-							routine_cursor = routine_cursor->next;
-						}
-						break;
-					}
-
-					section_cursor = section_cursor->next;
+			while(routine_cursor != NULL){
+				if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
+					return routine_cursor;
 				}
-				break;
-			}
 
-			image_cursor = image_cursor->next;
+				routine_cursor = routine_cursor->next;
+			}
 		}
 	}
 
@@ -805,18 +785,18 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 		image_cursor = cm->images;
 
 		while(image_cursor != NULL){
-			if (image_cursor->address_start <= address && image_cursor->address_stop >= address){
+			if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
 				if (image_cursor->white_listed == CODEMAP_WHITELISTED){
 					return CODEMAP_WHITELISTED;
 				}
 
 				section_cursor = image_cursor->sections;
 				while(section_cursor != NULL){
-					if (section_cursor->address_start <= address && section_cursor->address_stop >= address){
+					if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
 						routine_cursor = section_cursor->routines;
 
 						while(routine_cursor != NULL){
-							if (routine_cursor->address_start <= address && routine_cursor->address_stop > address){
+							if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
 								return routine_cursor->white_listed;
 							}
 

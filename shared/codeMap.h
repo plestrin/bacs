@@ -78,7 +78,15 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, ADDRESS address);
 
 int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address);
 
-#define CODEMAP_INCREMENT_ROUTINE_EXE(rtn) ((rtn)->nb_execution ++)
+#define CODEMAP_INCREMENT_ROUTINE_EXE(rtn) 			((rtn)->nb_execution ++)
+
+#define CODEMAP_ROUTINE_GET_SECTION(rtn) 			((rtn)->parent)
+#define CODEMAP_ROUTINE_GET_IMAGE(rtn) 				((rtn)->parent->parent)
+#define CODEMAP_SECTION_GET_IMAGE(sec) 				((sec)->parent)
+
+#define CODEMAP_IS_ADDRESS_IN_ROUTINE(rtn, addr)  	((rtn)->address_start <= (addr) && (rtn)->address_stop > (addr))
+#define CODEMAP_IS_ADDRESS_IN_SECTION(sec, addr) 	((sec)->address_start <= (addr) && (sec)->address_stop >= (addr))
+#define CODEMAP_IS_ADDRESS_IN_IMAGE(img, addr) 		((img)->address_start <= (addr) && (img)->address_stop >= (addr))
 
 
 #endif

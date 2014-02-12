@@ -58,7 +58,6 @@ struct trace* trace_create(const char* dir_name){
 
 	}
 
-	/*trace->call_tree = NULL;*/
 	trace->loop_engine = NULL;
 	trace->arg_set_graph = NULL;
 
@@ -71,9 +70,6 @@ void trace_delete(struct trace* trace){
 			loopEngine_delete(trace->loop_engine);
 			trace->loop_engine = NULL;
 		}
-		/*if (trace->call_tree != NULL){
-			graph_delete(trace->call_tree);
-		}*/
 		if (trace->arg_set_graph != NULL){
 			argSetGraph_delete(trace->arg_set_graph);
 			trace->arg_set_graph = NULL;
@@ -323,7 +319,7 @@ void trace_loop_export(struct trace* trace, char* arg){
 	int32_t 	loop_index = -1;
 	int32_t 	iteration_index = -1;
 	uint32_t 	i;
-	uint8_t 	found_space;
+	uint8_t 	found_space = 0;
 
 
 	if (arg != NULL){
@@ -632,7 +628,7 @@ void trace_frag_set_tag(struct trace* trace, char* arg){
 				fragment = (struct traceFragment*)array_get(&(trace->frag_array), index);
 
 				#ifdef VERBOSE
-				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
+				printf("Setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
 				#endif
 
 				strncpy(fragment->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
@@ -647,6 +643,45 @@ void trace_frag_set_tag(struct trace* trace, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
+	}
+}
+
+void trace_frag_locate(struct trace* trace, char* arg){
+	uint32_t 				i;
+	uint32_t 				index;
+	uint32_t 				start;
+	uint32_t 				stop;
+	struct traceFragment* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(trace->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(trace->frag_array));
+	}
+
+	if (trace->code_map != NULL){
+		for (i = start; i < stop; i++){
+			fragment = (struct traceFragment*)array_get(&(trace->frag_array), i);
+
+			#ifdef VERBOSE
+			printf("Locating frag %u (tag: \"%s\")\n", i, fragment->tag);
+			#endif
+			
+			traceFragment_print_location(fragment, trace->code_map);
+		}
+	}
+	else{
+		printf("ERROR: in %s, codeMap is NULL, unable to locate\n", __func__);
 	}
 }
 

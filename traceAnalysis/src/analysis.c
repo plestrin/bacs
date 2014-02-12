@@ -66,6 +66,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", "Print for every traceFragments input and output registers. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_register)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", "Print for every traceFragments input and output registers. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_print_memory)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", "Set tag value for specific fragment. Specify frag index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", "Locate traceFragement (an index may be specified as second arg) in the codeMap", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", "Extract input and output argument(s) from the traceFragment. Specify extraction routine [mandatory] and index", INPUTPARSER_CMD_INTERACTIVE, trace, trace_frag_extract_arg)
 
 	/* argument specific commands */

@@ -5,7 +5,6 @@
 #include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
-/*#include "callTree.h"*/
 #include "graph.h"
 #include "ioChecker.h"
 #include "loop.h"
@@ -24,7 +23,6 @@ struct trace{
 	struct ioChecker*			checker;
 	struct codeMap* 			code_map;
 
-	/*struct graph* 				call_tree;*/
 	struct argSetGraph* 		arg_set_graph;
 	struct loopEngine*			loop_engine;
 
@@ -56,6 +54,7 @@ void trace_frag_print_percent(struct trace* trace);
 void trace_frag_print_register(struct trace* trace, char* arg);
 void trace_frag_print_memory(struct trace* trace, char* arg);
 void trace_frag_set_tag(struct trace* trace, char* arg);
+void trace_frag_locate(struct trace* trace, char* arg);
 void trace_frag_extract_arg(struct trace* trace, char* arg);
 
 void trace_arg_clean(struct trace* trace);

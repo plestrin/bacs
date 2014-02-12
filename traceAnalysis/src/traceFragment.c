@@ -626,6 +626,31 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 	return 0;
 }
 
+void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm){
+	uint32_t 				i;
+	struct instruction* 	ins;
+	struct cm_routine* 		routine  = NULL;
+	struct cm_section* 		section;
+	struct cm_image* 		image;
+
+	for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
+		ins = (struct instruction*)array_get(&(frag->instruction_array), i);
+
+		if (routine == NULL || !CODEMAP_IS_ADDRESS_IN_ROUTINE(routine, ins->pc)){
+			routine = codeMap_search_routine(cm, ins->pc);
+			if (routine != NULL){
+				section = CODEMAP_ROUTINE_GET_SECTION(routine);
+				image = CODEMAP_SECTION_GET_IMAGE(section);
+
+				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\"\n", image->name, section->name, routine->name);
+			}
+			else{
+				printf("WARNING: in %s, instruction at offset %u does not belong to a routine\n", __func__, i);
+			}
+		}
+	}
+}
+
 void traceFragment_delete(struct traceFragment* frag){
 	if (frag != NULL){
 		traceFragment_clean(frag);	
