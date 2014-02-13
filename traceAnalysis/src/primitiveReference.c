@@ -1,13 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <dlfcn.h>
 
 #include "primitiveReference.h"
 #include "printBuffer.h"
 
-int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, void** output)){
-	int32_t result = -1;
-
+int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, char* lib_name, char* func_name){
 	if (nb_input < 1){
 		printf("WARNING: in %s, at least one input argument is expected to perform a match\n", __func__);
 		nb_input = 1;
@@ -20,7 +19,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 
 	if (input_specifier == NULL || output_specifier == NULL){
 		printf("ERROR: in %s, specifier is NULL pointer\n", __func__);
-		return result;
+		return -1;
 	}
 
 	strncpy(primitive->name, name, PRIMITIVEREFERENCE_MAX_NAME_SIZE);
@@ -30,7 +29,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	primitive->input_specifier = (uint32_t*)malloc(nb_input * sizeof(uint32_t));
 	if (primitive->input_specifier == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		return result;
+		return -1;
 	}
 	memcpy(primitive->input_specifier, input_specifier, nb_input * sizeof(uint32_t));
 
@@ -38,14 +37,31 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	if (primitive->output_specifier == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		free(primitive->input_specifier);
-		return result;
+		return -1;
 	}
 	memcpy(primitive->output_specifier, output_specifier, nb_output * sizeof(uint32_t));
 
-	primitive->func = func;
-	result = 0;
+	primitive->lib_handle = dlopen(lib_name, RTLD_LAZY);
+	if (primitive->lib_handle == NULL){
+		printf("ERROR: in %s, unable to load lib: \"%s\"\n", __func__, lib_name);
+		free(primitive->input_specifier);
+		free(primitive->output_specifier);
+		return -1;
+	}
 
-	return result;
+	#pragma GCC diagnostic ignored "-Wpedantic" /* ISO C forbids conversion of object pointer to function pointer type */
+	primitive->func = (void(*)(void**, void**))dlsym(primitive->lib_handle, func_name);
+	if (primitive->func == NULL){
+		printf("ERROR: in %s, unable to get function (\"%s\") address\n", __func__, func_name);
+		dlclose(primitive->lib_handle);
+		free(primitive->input_specifier);
+		free(primitive->output_specifier);
+		return -1;
+	}
+
+
+
+	return 0;
 }
 
 int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args, struct fastOutputSearch* accelerator){
@@ -210,45 +226,57 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 	return result;
 }
 
-void primitiveReference_print(struct primitiveReference* primitive){
-	uint8_t i;
+void primitiveReference_snprint_inputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length){
+	uint8_t 	i;
+	uint32_t 	offset = 0;
 
-	if (primitive != NULL){
-		printf("%s: ", primitive->name);
-		printf("input(s) -> {");
-		for (i = 0; i < primitive->nb_input; i++){
-			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){
-				printf("(explicit %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
-			}
-			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i])){
-				printf("(explicit %u: size multiple of %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
-			}
-			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_UNDEFINED(primitive->input_specifier[i])){
-				printf("(explicit %u: undefined size)", i);
-			}
-			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
-				printf("(implicit %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]));
-			}
-			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
-				printf("(explicit %u: max size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i]));
-			}
-			else{
-				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
-			}
+	if (primitive->nb_input ==0 && buffer_length > 0){
+		buffer[0] = '\0';
+	}
+
+	for (i = 0; i < primitive->nb_input; i++){
+		if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->input_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->input_specifier[i]));
 		}
-		printf("}, output(s) -> {");
-		for (i = 0; i < primitive->nb_output; i++){
-			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
-				printf("(explicit %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
-			}
-			else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
-				printf("(explicit %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]));
-			}
-			else{
-				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
-			}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: size multiple of %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MULTIPLE(primitive->input_specifier[i]));
 		}
-		printf("}\n");
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_UNDEFINED(primitive->input_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: undefined size)", i);
+		}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(imp %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i]));
+		}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: max size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_MAX(primitive->input_specifier[i]));
+		}
+		else{
+			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
+		}
+		if (offset >= buffer_length){
+			break;
+		}
+	}
+}
+
+void primitiveReference_snprint_outputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length){
+	uint8_t 	i;
+	uint32_t 	offset = 0;
+
+	if (primitive->nb_output ==0 && buffer_length > 0){
+		buffer[0] = '\0';
+	}
+		
+	for (i = 0; i < primitive->nb_output; i++){
+		if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: size %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]));
+		}
+		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
+			offset += snprintf(buffer + offset, buffer_length - offset, "(exp %u: size of input %u)", i, PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]));
+		}
+		else{
+			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
+		}
 	}
 }
 
@@ -292,5 +320,9 @@ void primitiveReference_clean(struct primitiveReference* primitive){
 	}
 	if (primitive->output_specifier != NULL){
 		free(primitive->output_specifier);
+	}
+
+	if (dlclose(primitive->lib_handle)){
+		printf("ERROR: in %s, unable to unload lib\n", __func__);
 	}
 }

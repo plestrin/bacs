@@ -37,7 +37,7 @@ struct trace* trace_create(const char* dir_name){
 	}
 
 	snprintf(file_name, TRACE_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, TRACE_CM_FILE_NAME);
-	trace->code_map = cmReaderJSON_parse_trace(file_name);
+	trace->code_map = cmReaderJSON_parse(file_name);
 	if (trace->code_map == NULL){
 		printf("WARNING: in %s, continue without code map information\n", __func__);
 	}

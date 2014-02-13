@@ -44,6 +44,7 @@ test_workQueue: test_workQueue.o workQueue.o
 test_multiWorkPercent: test_multiWorkPercent.o multiWorkPercent.o workQueue.o workPercent.o multiColumn.o
 	$(CC) -o $(TEST_MULTIWORKPERCENT) $^ $(LDFLAGS) -pthread
 
+
 # *** General compile rules ***
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -59,7 +60,7 @@ test_graph.o: ../graph.h ../graphPrintDot.h
 test_readBuffer.o: ../readBuffer.h ../printBuffer.h
 test_permutation.o: ../permutation.h
 test_workQueue.o: ../workQueue.h
-test_multiWorkPercent.: ../multiWorkPercent.h ../workQueue.h
+test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h

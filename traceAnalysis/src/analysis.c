@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "trace.h"
 #include "inputParser.h"
@@ -34,7 +35,9 @@ int main(int argc, char** argv){
 	}
 
 	/* ioChecker specific commands*/
+	ADD_CMD_TO_INPUT_PARSER(parser, "load ioChecker", "Load primitive reference from a file. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace->checker, ioChecker_load)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", "Display the ioChecker structure", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->checker, ioChecker_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", "Remove every primitive reference from the ioChecker", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->checker, ioChecker_empty)
 
 	/* codeMap specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, trace->code_map, codeMap_check_address)
@@ -88,5 +91,6 @@ int main(int argc, char** argv){
 	trace_delete(trace);
 	inputParser_delete(parser);
 
+	pthread_exit(NULL); /* due to dlopen */
 	return 0;
 }

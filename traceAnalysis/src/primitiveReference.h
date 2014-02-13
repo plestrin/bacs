@@ -43,13 +43,16 @@ struct primitiveReference{
 	uint8_t 	nb_output;
 	uint32_t* 	input_specifier;
 	uint32_t* 	output_specifier;
+	void* 		lib_handle;
 	void(*func)(void** input, void** output);
 };
 
-int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, void(*func)(void** input, void** output));
+int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, char* lib_name, char* func_name);
 
 int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args, struct fastOutputSearch* accelerator);
-void primitiveReference_print(struct primitiveReference* primitive);
+
+void primitiveReference_snprint_inputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length);
+void primitiveReference_snprint_outputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length);
 
 uint8_t primitiveReference_get_nb_explicit_input(struct primitiveReference* primitive);
 uint8_t primitiveReference_get_nb_explicit_output(struct primitiveReference* primitive);

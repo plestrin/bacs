@@ -5,6 +5,6 @@
 
 #include "codeMap.h"
 
-struct codeMap* cmReaderJSON_parse_trace(const char* file_name);
+struct codeMap* cmReaderJSON_parse(const char* file_name);
 
 #endif

@@ -35,6 +35,8 @@ struct checkJob{
 struct ioChecker* ioChecker_create();
 int32_t ioChecker_init(struct ioChecker* checker);
 
+void ioChecker_load(struct ioChecker* checker, void* arg);
+
 int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_set);
 
 static inline void ioChecker_start(struct ioChecker* checker){
@@ -51,6 +53,8 @@ static inline void ioChecker_wait(struct ioChecker* checker){
 }
 
 void ioChecker_print(struct ioChecker* checker);
+
+void ioChecker_empty(struct ioChecker* checker);
 
 void ioChecker_clean(struct ioChecker* checker);
 void ioChecker_delete(struct ioChecker* checker);

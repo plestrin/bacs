@@ -8,7 +8,7 @@ else
 CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
 endif
 CRYPTO_CFLAGS	:= -W -Wall -pedantic -Wextra -O3
-LDFLAGS			:= -lyajl -pthread -lm
+LDFLAGS			:= -lyajl -pthread -lm -ldl
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
@@ -27,6 +27,7 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)trace.o 				\
 	$(BUILD_DIR)traceReaderJSON.o 		\
 	$(BUILD_DIR)cmReaderJSON.o 			\
+	$(BUILD_DIR)refReaderJSON.o 		\
 	$(BUILD_DIR)simpleTraceStat.o		\
 	$(BUILD_DIR)traceFragment.o			\
 	$(BUILD_DIR)argBuffer.o 			\
@@ -49,12 +50,10 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)workPercent.o			\
 	$(BUILD_DIR)multiWorkPercent.o		\
 	$(BUILD_DIR)workQueue.o				\
-	$(BUILD_DIR)MD5.o					\
-	$(BUILD_DIR)TEA.o 					\
 	$(BUILD_DIR)RC4.o 					\
 	$(BUILD_DIR)AES.o 					\
 
-	$(CC) -o $(PROG_NAME) $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR)%.o: $(SRC_DIR)%.c
 	$(CC) $(INCLUDE_SRC) -o $@ -c $< $(CFLAGS)

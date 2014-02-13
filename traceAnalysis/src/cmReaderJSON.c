@@ -68,7 +68,7 @@ static yajl_callbacks json_parser_callback = {
 };
 
 
-struct codeMap* cmReaderJSON_parse_trace(const char* file_name){
+struct codeMap* cmReaderJSON_parse(const char* file_name){
 	int 				file;
 	struct stat 		sb;
 	void*				buffer;
@@ -87,7 +87,7 @@ struct codeMap* cmReaderJSON_parse_trace(const char* file_name){
 
 	file = open(file_name, O_RDONLY);
 	if (file == -1){
-		printf("ERROR: in %s; unable to open file %s read only\n", __func__, file_name);
+		printf("ERROR: in %s, unable to open file %s read only\n", __func__, file_name);
 		codeMap_delete(cm_reader.cm);
 		return NULL;
 	}

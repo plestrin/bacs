@@ -5,15 +5,10 @@
 
 #include "ioChecker.h"
 #include "primitiveReference.h"
-#include "MD5.h"
-#include "TEA.h"
+#include "refReaderJSON.h"
+#include "multiColumn.h"
 #include "RC4.h"
 #include "AES.h"
-
-void ioChecker_wrapper_md5(void** input, void** output);
-
-void ioChecker_wrapper_tea_encipher(void** input, void** output);
-void ioChecker_wrapper_tea_decipher(void** input, void** output);
 
 void ioChecker_wrapper_rc4(void** input, void** output);
 
@@ -50,12 +45,6 @@ struct ioChecker* ioChecker_create(){
 }
 
 int32_t ioChecker_init(struct ioChecker* checker){
-	struct primitiveReference 	primitive;
-	#ifdef VERBOSE
-	uint32_t 					i;
-	struct primitiveReference* 	primitive_pointer;
-	#endif
-
 	if (array_init(&(checker->reference_array), sizeof(struct primitiveReference))){
 		printf("ERROR: in %s, unable to create array structure\n", __func__);
 		return -1;
@@ -67,7 +56,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		return -1;
 	}
 
-	#define IOCHECKER_ADD_PRIMITIVE_REFRENCE(name, function)																																		\
+	/*#define IOCHECKER_ADD_PRIMITIVE_REFRENCE(name, function)																																		\
 	if (primitiveReference_init(&primitive, (name), sizeof(input_specifier) / sizeof(uint32_t), sizeof(output_specifier) / sizeof(uint32_t), input_specifier, output_specifier, (function))){		\
 		printf("ERROR: in %s, unable to init primitive reference structure\n", __func__);																											\
 	}																																																\
@@ -75,10 +64,10 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		if (array_add(&(checker->reference_array), &primitive) < 0){																																\
 			printf("ERROR: in %s, unable to add element to array\n", __func__);																														\
 		}																																															\
-	}
+	}*/
 
 	/* MD5 hash */
-	{
+	/*{
 		uint32_t input_specifier[2];
 		uint32_t output_specifier[1];
 
@@ -87,10 +76,10 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], MD5_HASH_NB_BYTE);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("MD5", ioChecker_wrapper_md5)
-	}
+	}*/
 
 	/* TEA cipher */
-	{
+	/*{
 		uint32_t input_specifier[3];
 		uint32_t output_specifier[1];
 
@@ -111,7 +100,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(output_specifier[0], 0);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("TEA decrypt", ioChecker_wrapper_tea_decipher)
-	}
+	}*/
 
 	/* RC4 cipher */
 	/*{
@@ -128,7 +117,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 	}*/
 
 	/* AES 128 */
-	{
+	/*{
 		uint32_t input_specifier[1];
 		uint32_t output_specifier[1];
 
@@ -136,7 +125,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_128_NB_BYTE_ROUND_KEY);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand encrypt", ioChecker_wrapper_aes128_key_expand_encrypt)
-	}
+	}*/
 	/*{
 		uint32_t input_specifier[1];
 		uint32_t output_specifier[1];
@@ -166,7 +155,7 @@ int32_t ioChecker_init(struct ioChecker* checker){
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 key expand decrypt", ioChecker_wrapper_aes128_decrypt)
 	}*/
-	{
+	/*{
 		uint32_t input_specifier[2];
 		uint32_t output_specifier[1];
 
@@ -185,10 +174,10 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES128 inner dec", ioChecker_wrapper_aes128_inner_loop_dec)
-	}
+	}*/
 
 	/* AES 192 */
-	{
+	/*{
 		uint32_t input_specifier[1];
 		uint32_t output_specifier[1];
 
@@ -216,10 +205,10 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES192 inner dec", ioChecker_wrapper_aes192_inner_loop_dec)
-	}
+	}*/
 
 	/* AES 256 */
-	{
+	/*{
 		uint32_t input_specifier[1];
 		uint32_t output_specifier[1];
 
@@ -247,32 +236,28 @@ int32_t ioChecker_init(struct ioChecker* checker){
 		PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_EXACT_VALUE(output_specifier[0], AES_BLOCK_NB_BYTE);
 
 		IOCHECKER_ADD_PRIMITIVE_REFRENCE("AES256 inner dec", ioChecker_wrapper_aes256_inner_loop_dec)
-	}
+	}*/
 
 	#ifdef VERBOSE
 	if (multiWorkPercent_init(&(checker->multi_percent), IOCHECKER_NB_THREAD, WORKPERCENT_ACCURACY_0)){
 		printf("ERROR: in %s, unable to create multiWorkPercent\n", __func__);
 	}
 
-	printf("Create IOChecker: {");
-	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
-		primitive_pointer = (struct primitiveReference*)array_get(&(checker->reference_array), i);
-		if (primitive_pointer != NULL){
-			if (i != (array_get_length(&(checker->reference_array)) - 1)){
-				printf("%s, ", primitive_pointer->name);
-			}
-			else{
-				printf("%s}\n", primitive_pointer->name);
-			}
-		}
-		else{
-			printf("ERROR: in %s, array_get returns a NULL pointer\n", __func__);
-		}
-	}
 	printf("IOChecker optimization: %u threads and accelerator for output larger than %u element(s)\n", IOCHECKER_NB_THREAD, IOCHECKER_MIN_SIZE_ACCELERATOR);
 	#endif
 
 	return 0;
+}
+
+void ioChecker_load(struct ioChecker* checker, void* arg){
+	if (arg != NULL){
+		if (refReaderJSON_parse(arg, &(checker->reference_array))){
+			printf("ERROR: in %s, unable to parse reference file: \"%s\"\n", __func__, (char*)arg);
+		}
+	}
+	else{
+		printf("ERROR: in %s, a valid file name must be specified\n", __func__);
+	}
 }
 
 int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_set){
@@ -404,15 +389,53 @@ void ioChecker_thread_job(void* arg){
 void ioChecker_print(struct ioChecker* checker){
 	uint32_t 					i;
 	struct primitiveReference* 	primitive;
+	struct multiColumnPrinter* 	printer;
+	#define INPUT_BUFFER_LENGTH 	80
+	#define OUTPUT_BUFFER_LENGTH 	32
+	char 						buffer_inputs[INPUT_BUFFER_LENGTH];
+	char 						buffer_outputs[OUTPUT_BUFFER_LENGTH];
 
-	if (checker != NULL){
-		printf("*** IoChecker ***\n");
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 0, 32);
+		multiColumnPrinter_set_column_size(printer, 1, INPUT_BUFFER_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 2, OUTPUT_BUFFER_LENGTH);
+
+		multiColumnPrinter_set_title(printer, 0, (char*)"NAME");
+		multiColumnPrinter_set_title(printer, 1, (char*)"INPUTS");
+		multiColumnPrinter_set_title(printer, 2, (char*)"OUTPUTS");
+
+		multiColumnPrinter_print_header(printer);
 
 		for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 			primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
-			primitiveReference_print(primitive);
+			
+			primitiveReference_snprint_inputs(primitive, buffer_inputs, INPUT_BUFFER_LENGTH);
+			primitiveReference_snprint_outputs(primitive, buffer_outputs, OUTPUT_BUFFER_LENGTH);
+
+			multiColumnPrinter_print(printer, primitive->name, buffer_inputs, buffer_outputs, NULL);
 		}
+
+		multiColumnPrinter_delete(printer);
 	}
+	else{
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__);
+	}
+
+	#undef INPUT_BUFFER_LENGTH
+	#undef OUTPUT_BUFFER_LENGTH
+}
+
+void ioChecker_empty(struct ioChecker* checker){
+	uint32_t 					i;
+	struct primitiveReference* 	primitive;
+
+	for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
+		primitive = (struct primitiveReference*)array_get(&(checker->reference_array), i);
+		primitiveReference_clean(primitive);
+	}
+
+	array_empty(&(checker->reference_array));
 }
 
 void ioChecker_clean(struct ioChecker* checker){
@@ -441,27 +464,6 @@ void ioChecker_delete(struct ioChecker* checker){
 /* ===================================================================== */
 /* Wrapper crypto function(s) 	                                         */
 /* ===================================================================== */
-
-void ioChecker_wrapper_md5(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	md5((uint32_t*)input[0], size, (uint32_t*)output[0]);
-}
-
-void ioChecker_wrapper_tea_encipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	tea_encipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
-}
-
-void ioChecker_wrapper_tea_decipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	tea_decipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
-}
 
 void ioChecker_wrapper_rc4(void** input, void** output){
 	uint64_t input_length;
