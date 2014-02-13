@@ -19,6 +19,8 @@
 #define JSON_MAP_KEY_NAME_MULTI	"multiple_size"
 #define JSON_MAP_KEY_NAME_IMPL	"implicit_size"
 #define JSON_MAP_KEY_NAME_INPUT	"input_size"
+#define JSON_MAP_KEY_NAME_MAX	"max_size"
+#define JSON_MAP_KEY_NAME_UNDEF	"undefined_size"
 
 #define IDLE_MAP_LEVEL 			1
 #define REF_MAP_LEVEL			2
@@ -40,6 +42,8 @@ enum ref_json_map_key{
 	REF_JSON_MAP_KEY_MULTI,
 	REF_JSON_MAP_KEY_IMPL,
 	REF_JSON_MAP_KEY_INPUT,
+	REF_JSON_MAP_KEY_MAX,
+	REF_JSON_MAP_KEY_UNDEF,
 	REF_JSON_MAP_KEY_UNKNOWN
 };
 
@@ -189,6 +193,20 @@ static int refReaderJSON_number(void* ctx, const char* s, size_t l){
 			case REF_ARG_TYPE_OUTPUT 	: {PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_OF_INPUT_ARG(ref_reader->prim_output[ref_reader->prim_nb_output], value); break;}
 		}
 	}
+	else if (ref_reader->actual_key == REF_JSON_MAP_KEY_MAX){
+		switch(ref_reader->actual_arg_type){
+			case REF_ARG_TYPE_UNKNOWN 	: {printf("ERROR: in %s, arg type type has not been specified\n", __func__); break;}
+			case REF_ARG_TYPE_INPUT 	: {PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_MAX(ref_reader->prim_input[ref_reader->prim_nb_input], value); break;}
+			case REF_ARG_TYPE_OUTPUT 	: {PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_MAX(ref_reader->prim_output[ref_reader->prim_nb_output], value); break;}
+		}
+	}
+	else if (ref_reader->actual_key == REF_JSON_MAP_KEY_UNDEF){
+		switch(ref_reader->actual_arg_type){
+			case REF_ARG_TYPE_UNKNOWN 	: {printf("ERROR: in %s, arg type type has not been specified\n", __func__); break;}
+			case REF_ARG_TYPE_INPUT 	: {PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_UNDEFINED(ref_reader->prim_input[ref_reader->prim_nb_input]); break;}
+			case REF_ARG_TYPE_OUTPUT 	: {PRIMITIVEREFERENCE_ARG_SPECIFIER_SET_SIZE_UNDEFINED(ref_reader->prim_output[ref_reader->prim_nb_output]); break;}
+		}
+	}
 	else{
 		printf("ERROR: in %s, wrong data type (number) for the current key\n", __func__);
 	}
@@ -262,6 +280,12 @@ static int refReaderJSON_map_key(void* ctx, const unsigned char* stringVal, size
 	}
 	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_INPUT, stringLen)){
 		ref_reader->actual_key = REF_JSON_MAP_KEY_INPUT;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_MAX, stringLen)){
+		ref_reader->actual_key = REF_JSON_MAP_KEY_MAX;
+	}
+	else if (!strncmp((const char*)stringVal, JSON_MAP_KEY_NAME_UNDEF, stringLen)){
+		ref_reader->actual_key = REF_JSON_MAP_KEY_UNDEF;
 	}
 	else{
 		printf("ERROR: in %s, unknown map key\n", __func__);

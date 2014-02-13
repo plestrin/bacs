@@ -1,0 +1,27 @@
+{
+	"ref":[{
+		"name":"RC4",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_rc4.so",
+		"func":"wrapper_rc4",
+		"arg":[{
+				"type":"input",
+				"undefined_size":0
+			},
+			{
+				"type":"input",
+				"implicit_size":0
+			},
+			{
+				"type":"input",
+				"max_size":256
+			},
+			{
+				"type":"input",
+				"implicit_size":1
+			},
+			{
+				"type":"output",
+				"input_size":0
+			}]
+	}]
+}

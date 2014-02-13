@@ -1,0 +1,18 @@
+Rules to create primitives reference files:
+
+*** autorized key ***
+
+KEY 			| PARENT 		| VALUE 							|
+----------------|---------------|-----------------------------------|
+ref 			| None 			| map 								|
+name 			| ref 			| string 							|
+lib 			| ref 			| string 							|
+func 			| ref 			| string 							|
+arg 			| ref 			| map 								|
+type 			| arg 			| string {"input" | "output"} 		|
+exact_size 		| arg 			| number 							|
+multiple_size 	| arg 			| number 							|
+implicit_size 	| arg 			| number 							|
+input_size 		| arg 			| number 							|
+max_size 		| arg 			| number 							|
+undefined_size 	| arg 			| number (value isn't important)	|
