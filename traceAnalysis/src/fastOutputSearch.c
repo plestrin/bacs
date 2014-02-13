@@ -149,7 +149,7 @@ int32_t fastOutputSearch_search(struct fastOutputSearch* search, char* output, u
 }
 
 void fastOutputSearch_clean(struct fastOutputSearch* search){
-	int32_t reference_count;
+	uint32_t reference_count;
 
 	if (pthread_mutex_lock(&(search->reference_protector))){
 		printf("ERROR: in %s, unable to lock mutex\n", __func__);
@@ -161,7 +161,7 @@ void fastOutputSearch_clean(struct fastOutputSearch* search){
 	if (pthread_mutex_unlock(&(search->reference_protector))){
 		printf("ERROR: in %s, unable to unlock mutex\n", __func__);
 	}
-	if (reference_count <= 0){
+	if (reference_count == 0){
 		fastOutputSearch_clean_(search);
 	}
 }
@@ -183,7 +183,7 @@ void fastOutputSearch_clean_(struct fastOutputSearch* search){
 }
 
 void fastOutputSearch_delete(struct fastOutputSearch* search){
-	int32_t reference_count;
+	uint32_t reference_count;
 
 	if (search != NULL){
 		if (pthread_mutex_lock(&(search->reference_protector))){
@@ -197,7 +197,7 @@ void fastOutputSearch_delete(struct fastOutputSearch* search){
 			printf("ERROR: in %s, unable to unlock mutex\n", __func__);
 		}
 
-		if (reference_count <= 0){
+		if (reference_count == 0){
 			fastOutputSearch_clean_(search);
 			free(search);
 		}

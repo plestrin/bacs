@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 struct job{
 	void* 		arg;
@@ -17,7 +18,7 @@ struct workQueue{
 	struct job* 		job_head;
 	struct job* 		job_tail;
 	uint8_t 			exit_flag;
-	pthread_mutex_t 	thread_waiter;
+	sem_t 				thread_waiter;
 	pthread_mutex_t 	queue_protector;
 };
 

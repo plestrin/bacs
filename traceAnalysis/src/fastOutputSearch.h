@@ -25,7 +25,7 @@ struct fastOutputSearch{
 	struct outputMapping  	mapping[FASTOUTPUTSEARCH_MAX_OUTPUT_LENGTH];
 	uint32_t* 				decrease_length;
 
-	int32_t 				reference_count;
+	uint32_t 				reference_count;
 	pthread_mutex_t 		reference_protector;
 };
 

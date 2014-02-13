@@ -98,6 +98,9 @@ int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_se
 
 			if (workQueue_submit(&(checker->queue), ioChecker_thread_job, job)){
 				printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
+				if (accelerator != NULL){
+					fastOutputSearch_delete(accelerator);
+				}
 				free(job);
 			}
 		}
