@@ -7,14 +7,12 @@ CFLAGS			:= -W -Wall -pedantic -Wextra -g -DVERBOSE -D$(ARCHI)
 else
 CFLAGS			:= -W -Wall -pedantic -Wextra -DVERBOSE -D$(ARCHI) -O2
 endif
-CRYPTO_CFLAGS	:= -W -Wall -pedantic -Wextra -O3
 LDFLAGS			:= -lyajl -pthread -lm -ldl
 SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-CRYPTO_DIR 		:= ../algoCrypto/
-INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(CRYPTO_DIR)
+INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR)
 INCLUDE_SHARED	:= -I$(MISC_DIR)
 
 
@@ -50,8 +48,6 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)workPercent.o			\
 	$(BUILD_DIR)multiWorkPercent.o		\
 	$(BUILD_DIR)workQueue.o				\
-	$(BUILD_DIR)RC4.o 					\
-	$(BUILD_DIR)AES.o 					\
 
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -63,9 +59,6 @@ $(BUILD_DIR)%.o: $(MISC_DIR)%.c
 
 $(BUILD_DIR)%.o: $(SHARED_DIR)%.c
 	$(CC) $(INCLUDE_SHARED) -o $@ -c $< $(CFLAGS)
-
-$(BUILD_DIR)%.o: $(CRYPTO_DIR)%.c
-	$(CC) -DANALYSIS_REFERENCE_IMPLEMENTATION -o $@ -c $< $(CRYPTO_CFLAGS)
 	
 .PHONY: clean
 
