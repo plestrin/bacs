@@ -16,7 +16,7 @@
 struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 	struct multiColumnPrinter* printer;
 
-	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer != NULL){
 		#if defined ARCH_32
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_32);
@@ -25,16 +25,14 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 		#else
 		#error Please specify an architecture {ARCH_32 or ARCH_64}
 		#endif
-		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_UINT32);
 
-		multiColumnPrinter_set_column_size(printer, 3, 64);
-		multiColumnPrinter_set_column_size(printer, 4, 32);
+		multiColumnPrinter_set_column_size(printer, 2, 96);
+		multiColumnPrinter_set_column_size(printer, 3, 32);
 
 		multiColumnPrinter_set_title(printer, 0, "PC");
-		multiColumnPrinter_set_title(printer, 1, "Opcode Val");
-		multiColumnPrinter_set_title(printer, 2, "Opcode Str");
-		multiColumnPrinter_set_title(printer, 3, "Read Access");
-		multiColumnPrinter_set_title(printer, 4, "Write Access");
+		multiColumnPrinter_set_title(printer, 1, "Opcode");
+		multiColumnPrinter_set_title(printer, 2, "Read Access");
+		multiColumnPrinter_set_title(printer, 3, "Write Access");
 	}
 	else{
 		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
@@ -99,7 +97,7 @@ void instruction_print(struct multiColumnPrinter* printer, struct instruction *i
 					}
 				}
 			}
-			multiColumnPrinter_print(printer, ins->pc, ins->opcode, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
+			multiColumnPrinter_print(printer, ins->pc, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
 		}
 		else{
 			printf("*** Instruction ***\n");

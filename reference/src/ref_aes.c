@@ -49,3 +49,55 @@ void wrapper_aes256_inner_loop_enc(void** input, void** output){
 void wrapper_aes256_inner_loop_dec(void** input, void** output){
 	aes256_inner_loop_dec((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
+
+void wrapper_aes_1_round_enc(void** input, void** output){
+	aes_1_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_2_round_enc(void** input, void** output){
+	aes_2_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_3_round_enc(void** input, void** output){
+	aes_3_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_4_round_enc(void** input, void** output){
+	aes_4_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_5_round_enc(void** input, void** output){
+	aes_5_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_6_round_enc(void** input, void** output){
+	aes_6_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_7_round_enc(void** input, void** output){
+	aes_7_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_8_round_enc(void** input, void** output){
+	aes_8_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_9_round_enc(void** input, void** output){
+	aes_9_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_10_round_enc(void** input, void** output){
+	aes_10_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_11_round_enc(void** input, void** output){
+	aes_11_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_12_round_enc(void** input, void** output){
+	aes_12_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
+
+void wrapper_aes_13_round_enc(void** input, void** output){
+	aes_13_round_enc((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
+}
