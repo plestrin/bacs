@@ -4,8 +4,8 @@
 
 #ifdef __linux__
 
-#include "../SHA1.h"
-#include "../../misc/printBuffer.h"
+#include "SHA1.h"
+#include "printBuffer.h"
 
 #endif
 

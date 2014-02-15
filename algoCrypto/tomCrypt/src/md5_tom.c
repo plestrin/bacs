@@ -3,7 +3,7 @@
 #include <string.h>
 #include <tomcrypt.h>
 
-#include "../../misc/printBuffer.h"
+#include "printBuffer.h"
 
 int main(){
 	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";

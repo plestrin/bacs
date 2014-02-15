@@ -4,7 +4,7 @@
 #include <tomcrypt.h>
 
 
-#include "../../misc/printBuffer.h"
+#include "printBuffer.h"
 
 int main(){
 	char 			plaintext[] = "Hello World!";

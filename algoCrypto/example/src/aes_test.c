@@ -4,8 +4,8 @@
 
 #ifdef __linux__
 
-#include "../AES.h"
-#include "../../misc/printBuffer.h"
+#include "AES.h"
+#include "printBuffer.h"
 
 #endif
 

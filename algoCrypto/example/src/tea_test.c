@@ -4,8 +4,8 @@
 
 #ifdef __linux__
 
-#include "../TEA.h"
-#include "../../misc/printBuffer.h"
+#include "TEA.h"
+#include "printBuffer.h"
 
 #endif
 

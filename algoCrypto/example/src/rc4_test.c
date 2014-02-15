@@ -5,8 +5,8 @@
 
 #ifdef __linux__
 
-#include "../RC4.h"
-#include "../../misc/printBuffer.h"
+#include "RC4.h"
+#include "printBuffer.h"
 
 #endif
 

@@ -4,8 +4,8 @@
 
 #ifdef __linux__
 
-#include "../MD5.h"
-#include "../../misc/printBuffer.h"
+#include "MD5.h"
+#include "printBuffer.h"
 
 #endif
 
