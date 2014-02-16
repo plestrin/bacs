@@ -8,41 +8,47 @@ TEST_PERMUTATION 		:= test_permutation
 TEST_WORKQUEUE 			:= test_workQueue
 TEST_MULTIWORKPERCENT 	:= test_multiWorkPercent
 
-CC					:= gcc
-CFLAGS				:= -W -Wall -pedantic -Wextra -g
-LDFLAGS				:=
+CC						:= gcc
+CFLAGS					:= -W -Wall -pedantic -Wextra -g
+LDFLAGS					:=
 
-
-all: test_array test_workPercent test_multiColumn test_inputParser test_graph test_readBuffer test_permutation test_workQueue test_multiWorkPercent
+all: 										\
+	$(TEST_ARRAY) $(TEST_WORKPERCENT) 		\
+	$(TEST_MULTICOLUMN) 					\
+	$(TEST_INPUTPARSER) 					\
+	$(TEST_GRAPH) 							\
+	$(TEST_READBUFFER) 						\
+	$(TEST_PERMUTATION) 					\
+	$(TEST_WORKQUEUE) 						\
+	$(TEST_MULTIWORKPERCENT)
 
 # *** Test compile rules ***
+$(TEST_ARRAY): array.o test_array.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_array: array.o test_array.o
-	$(CC) -o $(TEST_ARRAY) $^ $(LDFLAGS)
+$(TEST_WORKPERCENT): workPercent.o test_workPercent.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_workPercent: workPercent.o test_workPercent.o
-	$(CC) -o $(TEST_WORKPERCENT) $^ $(LDFLAGS)
+$(TEST_MULTICOLUMN): multiColumn.o test_multiColumn.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_multiColumn: multiColumn.o test_multiColumn.o
-	$(CC) -o $(TEST_MULTICOLUMN) $^ $(LDFLAGS)
+$(TEST_INPUTPARSER): test_inputParser.o inputParser.o array.o multiColumn.o termReader.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_inputParser: inputParser.o array.o multiColumn.o test_inputParser.o
-	$(CC) -o $(TEST_INPUTPARSER) $^ $(LDFLAGS)
+$(TEST_GRAPH): test_graph.o graph.o array.o graphPrintDot.o bsearch.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_graph: test_graph.o graph.o array.o graphPrintDot.o bsearch.o
-	$(CC) -o $(TEST_GRAPH) $^ $(LDFLAGS)
+$(TEST_READBUFFER): test_readBuffer.o readBuffer.o printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_readBuffer: test_readBuffer.o readBuffer.o printBuffer.o
-	$(CC) -o $(TEST_READBUFFER) $^ $(LDFLAGS)
+$(TEST_PERMUTATION): test_permutation.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-test_permutation: test_permutation.o
-	$(CC) -o $(TEST_PERMUTATION) $^ $(LDFLAGS)
+$(TEST_WORKQUEUE): test_workQueue.o workQueue.o
+	$(CC) -o $@ $^ $(LDFLAGS) -pthread
 
-test_workQueue: test_workQueue.o workQueue.o
-	$(CC) -o $(TEST_WORKQUEUE) $^ $(LDFLAGS) -pthread
-
-test_multiWorkPercent: test_multiWorkPercent.o multiWorkPercent.o workQueue.o workPercent.o multiColumn.o
-	$(CC) -o $(TEST_MULTIWORKPERCENT) $^ $(LDFLAGS) -pthread
+$(TEST_MULTIWORKPERCENT): test_multiWorkPercent.o multiWorkPercent.o workQueue.o workPercent.o multiColumn.o
+	$(CC) -o $@ $^ $(LDFLAGS) -pthread
 
 
 # *** General compile rules ***
@@ -64,7 +70,7 @@ test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
-inputParser.o: ../inputParser.h ../array.h ../multiColumn.h
+inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h
 graph.o: ../graph.h ../bsearch.h ../array.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
 readBuffer.o: ../readBuffer.h

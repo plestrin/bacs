@@ -4,6 +4,7 @@
 #include "../inputParser.h"
 
 void print(uint32_t* ctx, char* string);
+void print_hello(uint32_t* ctx);
 
 int main(int argc, char** argv){
 	struct inputParser 	parser;
@@ -17,7 +18,7 @@ int main(int argc, char** argv){
 	if (inputParser_add_cmd(&parser, "print", "Print message given as second argument", INPUTPARSER_CMD_INTERACTIVE, &print_context, (void(*)(void))print)){
 		printf("ERROR: in %s, unable to add cmd to inputParser\n", __func__);
 	}
-	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", INPUTPARSER_CMD_NOT_INTERACTIVE, "Hello World", (void(*)(void))print)){
+	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", INPUTPARSER_CMD_NOT_INTERACTIVE, &print_context, (void(*)(void))print_hello)){
 		printf("WARNING: in %s, we add two times the same cmd, the second'll not be reachable\n", __func__);
 	}
 	
@@ -30,5 +31,10 @@ int main(int argc, char** argv){
 
 void print(uint32_t* ctx, char* string){
 	printf("%u - %s\n", *ctx, string);
+	(*ctx) ++;
+}
+
+void print_hello(uint32_t* ctx){
+	printf("%u - Hello World\n", *ctx);
 	(*ctx) ++;
 }

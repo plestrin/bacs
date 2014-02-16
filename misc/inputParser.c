@@ -4,6 +4,7 @@
 
 #include "inputParser.h"
 #include "multiColumn.h"
+#include "termReader.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -51,6 +52,10 @@ int inputParser_init(struct inputParser* parser){
 			}
 			if (inputParser_add_cmd(parser, "exit", "Exit", INPUTPARSER_CMD_NOT_INTERACTIVE, parser, (void(*)(void))inputParser_exit)){
 				printf("WARNING: in %s, unable to add exit entry in the input parser\n", __func__);
+			}
+
+			if(termReader_set_raw_mode()){
+				printf("ERROR: in %s, unable to set terminal raw mode\n", __func__);
 			}
 		}
 	}
@@ -100,46 +105,43 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* desc, char
 }
 
 void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
-	uint32_t 			i;
 	int32_t 			entry_index;
 	struct cmdEntry* 	entry;
 	char 				line[INPUTPARSER_LINE_SIZE];
-	char 				character;
 	uint32_t 			cmd_counter = 0;
 
 	if (parser != NULL){
 
 		parser->exit = 0;
 		while(!parser->exit){
-			#ifdef VERBOSE
-			printf(ANSI_COLOR_CYAN ">>> ");
-			#else
-			printf(">>> ");
-			#endif
-			fflush(stdout);
+			
 
 			if (cmd_counter < argc){
 				strncpy(line, argv[cmd_counter], INPUTPARSER_LINE_SIZE);
-				printf("%s\n", line);
 				cmd_counter ++;
+				#ifdef VERBOSE
+				printf(ANSI_COLOR_CYAN ">>> %s" ANSI_COLOR_RESET "\n", line);
+				#else
+				printf(">>> %s\n", line);
+				#endif
 			}
 			else{
-				i = 0;
-				do{
-					character = fgetc(stdin);
-					switch(character){
-					case '\t' 	: {break;}
-					case '\n' 	: {break;}
-					case EOF	: {printf("ERROR: in %s, fgetc returns EOF on stdin\n", __func__); return;}
-					default 	: {line[i++] = character; break;}
-					}
-				} while(character != '\n' && i < INPUTPARSER_LINE_SIZE - 1);
-				line[i] = '\0';
-			}
+				#ifdef VERBOSE
+				printf(ANSI_COLOR_CYAN ">>> ");
+				#else
+				printf(">>> ");
+				#endif
+				fflush(stdout);
 
-			#ifdef VERBOSE
-			printf(ANSI_COLOR_RESET);
-			#endif
+				if (termReader_get_line(line, INPUTPARSER_LINE_SIZE)){
+					printf("ERROR: in %s, EOF\n", __func__);
+					return;
+				}
+
+				#ifdef VERBOSE
+				printf(ANSI_COLOR_RESET);
+				#endif
+			}
 
 			entry_index = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), line, (int32_t(*)(void*, void*))inputParser_search_cmd);
 			if (entry_index >= 0){

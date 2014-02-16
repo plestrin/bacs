@@ -44,6 +44,7 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)graphPrintDot.o 		\
 	$(BUILD_DIR)printBuffer.o			\
 	$(BUILD_DIR)readBuffer.o			\
+	$(BUILD_DIR)termReader.o			\
 	$(BUILD_DIR)inputParser.o			\
 	$(BUILD_DIR)workPercent.o			\
 	$(BUILD_DIR)multiWorkPercent.o		\
