@@ -5,7 +5,6 @@
 #include "codeMap.h"
 #include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
-#include "graph.h"
 #include "ioChecker.h"
 #include "loop.h"
 
@@ -23,7 +22,6 @@ struct trace{
 	struct ioChecker*			checker;
 	struct codeMap* 			code_map;
 
-	struct argSetGraph* 		arg_set_graph;
 	struct loopEngine*			loop_engine;
 
 	struct array				frag_array;
@@ -34,11 +32,6 @@ struct trace* trace_create(const char* dir_name);
 
 void trace_instruction_print(struct trace* trace);
 void trace_instruction_export(struct trace* trace);
-
-void trace_callTree_create(struct trace* trace);
-void trace_callTree_print_dot(struct trace* trace, char* file_name);
-void trace_callTree_export(struct trace* trace);
-void trace_callTree_delete(struct trace* trace);
 
 void trace_loop_create(struct trace* trace);
 void trace_loop_remove_redundant(struct trace* trace);
@@ -60,10 +53,6 @@ void trace_frag_extract_arg(struct trace* trace, char* arg);
 void trace_arg_clean(struct trace* trace);
 void trace_arg_print(struct trace* trace, char* arg);
 void trace_arg_set_tag(struct trace* trace, char* arg);
-void trace_arg_create_argSetGraph(struct trace* trace);
-void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name);
-void trace_arg_pack(struct trace* trace, char* arg);
-void trace_arg_delete_argSetGraph(struct trace* trace);
 void trace_arg_search(struct trace* trace, char* arg);
 void trace_arg_seek(struct trace* trace, char* arg);
 

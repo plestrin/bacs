@@ -2,7 +2,6 @@ TEST_ARRAY				:= test_array
 TEST_WORKPERCENT 		:= test_workPercent
 TEST_MULTICOLUMN 		:= test_multiColumn
 TEST_INPUTPARSER 		:= test_inputParser
-TEST_GRAPH 				:= test_graph
 TEST_READBUFFER			:= test_readBuffer
 TEST_PERMUTATION 		:= test_permutation
 TEST_WORKQUEUE 			:= test_workQueue
@@ -35,9 +34,6 @@ $(TEST_MULTICOLUMN): multiColumn.o test_multiColumn.o
 $(TEST_INPUTPARSER): test_inputParser.o inputParser.o array.o multiColumn.o termReader.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_GRAPH): test_graph.o graph.o array.o graphPrintDot.o bsearch.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
 $(TEST_READBUFFER): test_readBuffer.o readBuffer.o printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -62,7 +58,6 @@ test_array.o: ../array.h
 test_workPercent.o: ../workPercent.h
 test_multiColumn.o: ../multiColumn.h
 test_inputParser.o: ../inputParser.h
-test_graph.o: ../graph.h ../graphPrintDot.h
 test_readBuffer.o: ../readBuffer.h ../printBuffer.h
 test_permutation.o: ../permutation.h
 test_workQueue.o: ../workQueue.h
@@ -71,8 +66,6 @@ array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
 inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h
-graph.o: ../graph.h ../bsearch.h ../array.h
-graphPrintDot.o: ../graph.h ../graphPrintDot.h
 readBuffer.o: ../readBuffer.h
 printBuffer.o: ../printBuffer.h
 workQueue.o: ../workQueue.h
@@ -87,7 +80,6 @@ clean:
 	@ rm -f $(TEST_WORKPERCENT)
 	@ rm -f $(TEST_MULTICOLUMN)
 	@ rm -f $(TEST_INPUTPARSER)
-	@ rm -f $(TEST_GRAPH)
 	@ rm -f $(TEST_READBUFFER)
 	@ rm -f $(TEST_PERMUTATION)
 	@ rm -f $(TEST_WORKQUEUE)

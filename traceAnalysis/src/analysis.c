@@ -46,13 +46,6 @@ int main(int argc, char** argv){
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_instruction_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", "Export the whole trace as traceFragment", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_instruction_export)
-
-	/* callTree specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create callTree", "Create the routine callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print dot callTree", "Print the callTree in the DOT format to a file. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_callTree_print_dot)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export callTree", "Export the traceFragment(s) of the callTree to the traceFragement array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete callTree", "Delete a previously create callTree", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_callTree_delete)
-
 	/* loop specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", "Create a loopEngine and parse the trace looking for A^n pattern", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", "Remove the redundant loops from the loops list", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_loop_remove_redundant)
@@ -76,13 +69,8 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", "Clean the argSet array", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_clean)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "Print arguments from the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", "Set tag value for specific argSet. Specify arg index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "create argSetGraph", "Create a dependency graph between argSets", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_create_argSetGraph)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print dot argSetGraph", "Print the argSetGraph in the DOT format. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_print_dot_argSetGraph)
-	ADD_CMD_TO_INPUT_PARSER(parser, "pack arg", "Pack arguments that are dependent according to the argSetGraph. Specify packing method [mandatory] and index", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_pack)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete argSetGraph", "Delete a previously created argSetGraph", INPUTPARSER_CMD_NOT_INTERACTIVE, trace, trace_arg_delete_argSetGraph)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", "Seek for a user defined argBuffer in the argSet array. Specify the buffer as second arg (raw format)", INPUTPARSER_CMD_INTERACTIVE, trace, trace_arg_seek)
-
 
 	inputParser_exe(parser, argc - 2, argv + 2);
 

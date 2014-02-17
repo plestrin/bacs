@@ -7,7 +7,6 @@
 #include "argSet.h"
 #include "argBuffer.h"
 #include "simpleTraceStat.h"
-#include "argSetGraph.h"
 #include "printBuffer.h"
 #include "readBuffer.h"
 
@@ -59,7 +58,6 @@ struct trace* trace_create(const char* dir_name){
 	}
 
 	trace->loop_engine = NULL;
-	trace->arg_set_graph = NULL;
 
 	return trace;
 }
@@ -69,10 +67,6 @@ void trace_delete(struct trace* trace){
 		if (trace->loop_engine != NULL){
 			loopEngine_delete(trace->loop_engine);
 			trace->loop_engine = NULL;
-		}
-		if (trace->arg_set_graph != NULL){
-			argSetGraph_delete(trace->arg_set_graph);
-			trace->arg_set_graph = NULL;
 		}
 
 		trace_arg_clean(trace);
@@ -139,112 +133,6 @@ void trace_instruction_export(struct trace* trace){
 	else{
 		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
 	}
-}
-
-/* ===================================================================== */
-/* Calltree functions						                             */
-/* ===================================================================== */
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void trace_callTree_create(struct trace* trace){
-	/*struct instruction*			ins;
-	struct callTree_element		element;
-
-	if (trace->call_tree != NULL){
-		graph_delete(trace->call_tree);
-		printf("WARNING: in %s, deleting the current callTree\n", __func__);
-	}
-	trace->call_tree = graph_create();
-	if (trace->call_tree != NULL){
-		trace->call_tree->callback_node.create_data 		= callTree_create_node;
-		trace->call_tree->callback_node.may_add_element 	= callTree_may_add_element;
-		trace->call_tree->callback_node.add_element 		= callTree_add_element;
-		trace->call_tree->callback_node.element_is_owned 	= callTree_element_is_owned;
-		trace->call_tree->callback_node.print_dot 			= callTree_node_printDot;
-		trace->call_tree->callback_node.delete_data 		= callTree_delete_node;
-
-		element.cm = trace->code_map;
-		if (!traceReaderJSON_reset(&(trace->ins_reader.json))){
-			do{
-				ins = traceReaderJSON_get_next_instruction(&(trace->ins_reader.json));
-				if (ins != NULL){
-					element.ins = ins;
-					if (graph_add_element(trace->call_tree, &element)){
-						printf("ERROR: in %s, unable to add instruction to call tree\n", __func__);
-						break;
-					}
-				}
-			} while (ins != NULL);
-		}
-		else{
-			printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
-			graph_delete(trace->call_tree);
-			trace->call_tree = NULL;
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to create graph\n", __func__);
-	}*/
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void trace_callTree_print_dot(struct trace* trace, char* file_name){
-	/*if (trace->call_tree != NULL){
-		if (file_name != NULL){
-			if (graphPrintDot_print(trace->call_tree, file_name)){
-				printf("ERROR: in %s, unable to print callTree in DOT format to file: \"%s\"\n", __func__, file_name);
-			}
-		}
-		else{
-			printf("ERROR: in %s, please specify a file name\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}*/
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void trace_callTree_export(struct trace* trace){
-	/*int32_t 				i;
-	struct callTree_node* 	node;
-	struct traceFragment 	fragment;
-
-	if (trace->call_tree != NULL){
-		for (i = 0; i < trace->call_tree->nb_node; i++){
-			node = (struct callTree_node*)trace->call_tree->nodes[i].data;
-
-			if (traceFragment_clone(&(node->fragment), &fragment)){
-				printf("ERROR: in %s, unable to clone traceFragment\n", __func__);
-				break;
-			}
-
-			traceFragment_set_tag(&fragment, node->name);
-
-			if (array_add(&(trace->frag_array), &fragment) < 0){
-				printf("ERROR: in %s, unable to add fragment to frag_array\n", __func__);
-				break;
-			}
-		}
-
-		#ifdef VERBOSE
-		printf("CallTree: %d/%d traceFragment(s) have been exported\n", i, trace->call_tree->nb_node);
-		#endif
-	}
-	else{
-		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}*/
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void trace_callTree_delete(struct trace* trace){
-	/*if (trace->call_tree != NULL){
-		graph_delete(trace->call_tree);
-		trace->call_tree = NULL;
-	}
-	else{
-		printf("ERROR: in %s, callTree is NULL\n", __func__);
-	}*/
 }
 
 /* ===================================================================== */
@@ -948,15 +836,6 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 void trace_arg_clean(struct trace* trace){
 	uint32_t 				i;
 
-	if (trace->arg_set_graph != NULL){
-		argSetGraph_delete(trace->arg_set_graph);
-		trace->arg_set_graph = NULL;
-
-		#ifdef VERBOSE
-		printf("The argSetGraph attached to the argSet array has been destroyed\n");
-		#endif
-	}
-
 	for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
 		argSet_clean((struct argSet*)array_get(&(trace->arg_array), i));
 	}
@@ -1134,116 +1013,6 @@ void trace_arg_set_tag(struct trace* trace, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
-	}
-}
-
-void trace_arg_create_argSetGraph(struct trace* trace){
-	if (trace->arg_set_graph != NULL){
-		argSetGraph_delete(trace->arg_set_graph);
-		printf("WARNING: in %s, deleting the current argSetGraph\n", __func__);
-	}
-	trace->arg_set_graph = argSetGraph_create(&(trace->arg_array));
-	if (trace->arg_set_graph == NULL){
-		printf("ERROR: in %s, unable to create argSetGraph\n", __func__);
-	}
-}
-
-void trace_arg_print_dot_argSetGraph(struct trace* trace, char* file_name){
-	if (trace->arg_set_graph != NULL){
-		if (file_name != NULL){
-			if (argSetGraph_print_dot(trace->arg_set_graph, file_name)){
-				printf("ERROR: in %s, unable to print argSetGraph in DOT format to file: \"%s\"\n", __func__, file_name);
-			}
-		}
-		else{
-			printf("ERROR: in %s, please specify a file name\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, argSetGraph is NULL\n", __func__);
-	}
-}
-
-void trace_arg_pack(struct trace* trace, char* arg){
-	uint32_t 				i;
-	uint32_t 				start;
-	uint32_t				stop;
-	uint32_t 				index;
-	uint8_t 				found_space = 0;
-	int32_t (*pack_routine)(struct argSetGraph*,uint32_t);
-
-	#define ARG_S_DESC 		"pack the an argSet with one of his parent. Generate a lot of argSets but smaller ones"
-
-	start = 0;
-	stop = array_get_length(&(trace->arg_array));
-
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
-			}
-		}
-		if (found_space){
-			index = (uint32_t)atoi(arg + i + 1);
-		
-			if (index < array_get_length(&(trace->arg_array))){
-				start = index;
-				stop = index + 1;
-			}
-			else{
-				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
-				return;
-			}
-		}
-		else{
-			i ++;
-		}
-
-		if (!strncmp(arg, "S", i)){
-			pack_routine = argSetGraph_pack_simple;
-			#ifdef VERBOSE
-			printf("Selecting packing routine \"S\" : %s\n", ARG_S_DESC);
-			#endif
-		}
-		else{
-			printf("ERROR: in %s, bad packing routine specifier of length %u\n", __func__, i);
-			goto arg_error;
-		}
-		
-	}
-	else{
-		printf("ERROR: in %s, an argument is expected to select the packing routine\n", __func__);
-		goto arg_error;
-	}
-
-	if (trace->arg_set_graph != NULL){
-		for (i = start; i < stop; i++){
-			if (pack_routine(trace->arg_set_graph, i)){
-				printf("ERROR: in %s, unable to pack argSet %u\n", __func__, i);
-				break;
-			}
-		}
-	}
-
-	return;
-
-	arg_error:
-	printf("Expected packing specifier:\n");
-	printf(" - \"S\"  : %s\n", ARG_S_DESC);
-	return;
-
-	#undef ARG_A_DESC
-	#undef ARG_AS_DESC
-}
-
-void trace_arg_delete_argSetGraph(struct trace* trace){
-	if (trace->arg_set_graph != NULL){
-		argSetGraph_delete(trace->arg_set_graph);
-		trace->arg_set_graph = NULL;
-	}
-	else{
-		printf("ERROR: in %s, argSetGraph is NULL\n", __func__);
 	}
 }
 

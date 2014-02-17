@@ -30,7 +30,6 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)traceFragment.o			\
 	$(BUILD_DIR)argBuffer.o 			\
 	$(BUILD_DIR)argSet.o 				\
-	$(BUILD_DIR)argSetGraph.o 			\
 	$(BUILD_DIR)primitiveReference.o 	\
 	$(BUILD_DIR)ioChecker.o 			\
 	$(BUILD_DIR)loop.o 					\
@@ -39,9 +38,7 @@ $(PROG_NAME):							\
 	$(BUILD_DIR)fastOutputSearch.o 		\
 	$(BUILD_DIR)multiColumn.o 			\
 	$(BUILD_DIR)array.o 				\
-	$(BUILD_DIR)graph.o 				\
 	$(BUILD_DIR)bsearch.o 				\
-	$(BUILD_DIR)graphPrintDot.o 		\
 	$(BUILD_DIR)printBuffer.o			\
 	$(BUILD_DIR)readBuffer.o			\
 	$(BUILD_DIR)termReader.o			\

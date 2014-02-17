@@ -49,15 +49,11 @@ struct argBuffer{
 
 void argBuffer_print_metadata(struct argBuffer* arg);
 
-int32_t argBuffer_clone(struct argBuffer* arg_src, struct argBuffer* arg_dst);
-int32_t argBuffer_equal(struct argBuffer* arg1, struct argBuffer* arg2);
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
 struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2);
-int32_t argBuffer_try_merge(struct argBuffer* arg1, struct argBuffer* arg2);
 void argBuffer_delete(struct argBuffer* arg);
 
 void argBuffer_print_array(struct array* array, enum argLocationType* type);
-int32_t argBuffer_clone_array(struct array* array_src, struct array* array_dst);
 
 static inline uint32_t argBuffer_get_nb_mem_in_array(struct array* array){
 	uint32_t 			i;
