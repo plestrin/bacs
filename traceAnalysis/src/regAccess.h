@@ -14,10 +14,10 @@ struct regAccess{
 
 void regAccess_print(struct regAccess* reg_access, int nb_reg_access);
 
-int32_t regAccess_extract_arg_large_pure_read(struct array* array, struct regAccess* reg_access, int nb_reg_access);
-int32_t regAccess_extract_arg_large_pure_write(struct array* array, struct regAccess* reg_access, int nb_reg_access);
+int32_t regAccess_extract_arg_large_pure_read(struct array* input_arg, struct regAccess* reg_access, int nb_reg_access);
 
-int32_t regAccess_extract_arg_large_mix_read(struct array* array, struct regAccess* reg_access, int nb_reg_access);
-int32_t regAccess_extract_arg_large_mix_write(struct array* array, struct regAccess* reg_access, int nb_reg_access);
+int32_t regAccess_extract_arg_large_mix_read(struct array* input_arg, struct regAccess* reg_access, int nb_reg_access);
+
+int32_t regAccess_extract_arg_large_write(struct array* output_arg, struct regAccess* reg_access, int nb_reg_access);
 
 #endif

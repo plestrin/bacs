@@ -4,15 +4,13 @@
 #include <stdint.h>
 
 #include "argSet.h"
-#include "fastOutputSearch.h"
 #include "array.h"
 #include "workQueue.h"
 #ifdef VERBOSE
 #include "multiWorkPercent.h"
 #endif
 
-#define IOCHECKER_NB_THREAD 							4
-#define IOCHECKER_MIN_SIZE_ACCELERATOR 					512
+#define IOCHECKER_NB_THREAD 	4
 
 struct ioChecker{
 	struct array 				reference_array;
@@ -26,7 +24,6 @@ struct checkJob{
 	struct ioChecker* 			checker;
 	uint32_t 					primitive_index;
 	struct argSet* 				arg_set;
-	struct fastOutputSearch* 	accelerator;
 	#ifdef VERBOSE
 	struct multiWorkPercent*	multi_percent;
 	#endif

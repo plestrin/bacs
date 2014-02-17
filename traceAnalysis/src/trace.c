@@ -636,9 +636,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 		if (!strncmp(arg, ARG_NAME_A_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -647,9 +647,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -658,9 +658,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 0;
 
 			#ifdef VERBOSE
@@ -669,9 +669,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -680,9 +680,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 0;
 			
 			#ifdef VERBOSE
@@ -691,9 +691,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_pure_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -702,9 +702,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_ASR_LM, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -713,9 +713,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_ASOR_LM, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write;
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -724,9 +724,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 		}
 		else if (!strncmp(arg, ARG_NAME_LASOR_LM, i)){
 			extract_routine_mem_read 	= memAccess_extract_arg_loop_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_adjacent_size_opcode_write; /* a modifier */
+			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_mix_write;
+			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
 			remove_raw 					= 1;
 
 			#ifdef VERBOSE
@@ -780,6 +780,10 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 
 			if (strlen(arg_set.tag) == 0){
 				snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", j);
+			}
+
+			if (argSet_sort_output(&arg_set)){
+				printf("ERROR: in %s, unable to sort argSet output\n", __func__);
 			}
 
 			if (array_add(&(trace->arg_array), &arg_set) < 0){
@@ -898,15 +902,7 @@ void trace_arg_print(struct trace* trace, char* arg){
 			printf("Print argSet %u (tag: \"%s\", nb argSet: %u)\n", index, arg_set->tag, array_get_length(&(trace->arg_array)));
 			#endif
 
-			#ifdef VERBOSE
-			printf("*** Input argBuffer(s) %u ***\n", array_get_length(arg_set->input));
-			#endif
-			argBuffer_print_array(arg_set->input, filter_type_pointer);
-
-			#ifdef VERBOSE
-			printf("*** Output argBuffer(s) %u ***\n", array_get_length(arg_set->output));
-			#endif
-			argBuffer_print_array(arg_set->output, filter_type_pointer);
+			argSet_print(arg_set, filter_type_pointer);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(trace->arg_array)));
@@ -960,12 +956,9 @@ void trace_arg_print(struct trace* trace, char* arg){
 
 				arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
 
-				nb_i_mem = argBuffer_get_nb_mem_in_array(arg_set->input);
-				nb_i_reg = argBuffer_get_nb_reg_in_array(arg_set->input);
-				nb_i_mix = argBuffer_get_nb_mix_in_array(arg_set->input);
-				nb_o_mem = argBuffer_get_nb_mem_in_array(arg_set->output);
-				nb_o_reg = argBuffer_get_nb_reg_in_array(arg_set->output);
-				nb_o_mix = argBuffer_get_nb_mix_in_array(arg_set->output);
+				argSet_get_nb_mem(arg_set, &nb_i_mem, &nb_o_mem);
+				argSet_get_nb_reg(arg_set, &nb_i_reg, &nb_o_reg);
+				argSet_get_nb_mix(arg_set, &nb_i_mix, &nb_o_mix);
 
 				multiColumnPrinter_print(printer, i, arg_set->tag, array_get_length(arg_set->input), nb_i_mem, nb_i_reg, nb_i_mix, array_get_length(arg_set->output), nb_o_mem, nb_o_reg, nb_o_mix, NULL);
 			}
@@ -1056,10 +1049,7 @@ void trace_arg_search(struct trace* trace, char* arg){
 
 void trace_arg_seek(struct trace* trace, char* arg){
 	uint32_t 			i;
-	uint32_t 			j;
-	int32_t 			index;
 	struct argSet* 		arg_set;
-	struct argBuffer* 	arg_buffer;
 	char* 				buffer;
 	uint32_t 			buffer_length;
 
@@ -1073,31 +1063,8 @@ void trace_arg_seek(struct trace* trace, char* arg){
 			for (i = 0; i < array_get_length(&(trace->arg_array)); i++){
 				arg_set = (struct argSet*)array_get(&(trace->arg_array), i);
 				
-				/* INPUT */
-				for (j = 0; j < array_get_length(arg_set->input); j++){
-					arg_buffer = (struct argBuffer*)array_get(arg_set->input, j);
-					index = argBuffer_search(arg_buffer, buffer, buffer_length);
-					if (index >= 0){
-						printf("Found correspondence in argset %u, (tag: \"%s\"), input %u ", i, arg_set->tag, j);
-						argBuffer_print_metadata(arg_buffer);
-						printf("\n");
-						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
-						printf("\n");
-					}
-				}
-
-				/* OUTPUT */
-				for (j = 0; j < array_get_length(arg_set->output); j++){
-					arg_buffer = (struct argBuffer*)array_get(arg_set->output, j);
-					index = argBuffer_search(arg_buffer, buffer, buffer_length);
-					if (index >= 0){
-						printf("Found correspondence in argset %u, (tag: \"%s\"), output %u ", i, arg_set->tag, j);
-						argBuffer_print_metadata(arg_buffer);
-						printf("\n");
-						printBuffer_raw_color(arg_buffer->data, arg_buffer->size, index, buffer_length);
-						printf("\n");
-					}
-				}
+				argSet_search_input(arg_set, buffer, buffer_length);
+				argSet_search_output(arg_set, buffer, buffer_length);
 			}
 			free(buffer);
 		}

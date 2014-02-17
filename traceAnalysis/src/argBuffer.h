@@ -6,6 +6,8 @@
 #include "array.h"
 #include "address.h"
 
+#define ARGBUFFER_STRING_DESC_LENGTH		40
+
 #define ARGBUFFER_FRAGMENT_MAX_NB_ELEMENT 	9
 #define ARGBUFFER_ACCESS_SIZE_UNDEFINED 	-1
 
@@ -47,57 +49,16 @@ struct argBuffer{
 	char* 					data;
 };
 
-void argBuffer_print_metadata(struct argBuffer* arg);
+uint32_t argBuffer_print(char* string, uint32_t string_length, struct argBuffer* arg);
 
 int32_t argBuffer_search(struct argBuffer* arg, char* buffer, uint32_t buffer_size);
-struct argBuffer* argBuffer_compare(struct argBuffer* arg1, struct argBuffer* arg2);
-void argBuffer_delete(struct argBuffer* arg);
 
-void argBuffer_print_array(struct array* array, enum argLocationType* type);
+int32_t argBuffer_compare_data(struct argBuffer* arg1, struct argBuffer* arg2);
 
-static inline uint32_t argBuffer_get_nb_mem_in_array(struct array* array){
-	uint32_t 			i;
-	uint32_t 			result = 0;
-	struct argBuffer* 	arg;
 
-	for (i = 0; i < array_get_length(array); i++){
-		arg = (struct argBuffer*)array_get(array, i);
-		if (arg->location_type == ARG_LOCATION_MEMORY){
-			result ++;
-		}
-	}
+#define ARGBUFFER_IS_MEM(arg) 	((arg)->location_type == ARG_LOCATION_MEMORY)
+#define ARGBUFFER_IS_REG(arg) 	((arg)->location_type == ARG_LOCATION_REGISTER)
+#define ARGBUFFER_IS_MIX(arg) 	((arg)->location_type == ARG_LOCATION_MIX)
 
-	return result;
-}
-
-static inline uint32_t argBuffer_get_nb_reg_in_array(struct array* array){
-	uint32_t 			i;
-	uint32_t 			result = 0;
-	struct argBuffer* 	arg;
-
-	for (i = 0; i < array_get_length(array); i++){
-		arg = (struct argBuffer*)array_get(array, i);
-		if (arg->location_type == ARG_LOCATION_REGISTER){
-			result ++;
-		}
-	}
-
-	return result;
-}
-
-static inline uint32_t argBuffer_get_nb_mix_in_array(struct array* array){
-	uint32_t 			i;
-	uint32_t 			result = 0;
-	struct argBuffer* 	arg;
-
-	for (i = 0; i < array_get_length(array); i++){
-		arg = (struct argBuffer*)array_get(array, i);
-		if (arg->location_type == ARG_LOCATION_MIX){
-			result ++;
-		}
-	}
-
-	return result;
-}
 
 #endif

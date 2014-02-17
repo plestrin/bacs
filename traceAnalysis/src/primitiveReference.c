@@ -64,15 +64,13 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	return 0;
 }
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct array* output_args, struct fastOutputSearch* accelerator){
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct argSet* set){
 	int32_t 			result = -1;
 	uint8_t 			i;
 	uint8_t 			j;
-	uint32_t 			k;
 	void** 				arg_in;
 	void** 				arg_out;
 	uint32_t*			arg_out_size;
-	struct argBuffer* 	argBuffer_out;
 
 	arg_in = (void**)alloca(primitive->nb_input * sizeof(void*));
 
@@ -182,23 +180,9 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 
 	primitive->func(arg_in, arg_out);
 
-	
 	for (j = 0, result = 0; j < primitive->nb_output; j++){
-		if (accelerator != NULL){
-			if (fastOutputSearch_search(accelerator, arg_out[j], arg_out_size[j])){
-				result = 1;
-			}
-		}
-		else{
-			for (k = 0; k < array_get_length(output_args); k++){
-				argBuffer_out = (struct argBuffer*)array_get(output_args, k);
-				if (argBuffer_search(argBuffer_out, arg_out[j], arg_out_size[j]) >= 0){
-					break;
-				}
-			}
-			if (k == array_get_length(output_args)){
-				result = 1;
-			}
+		if (argSet_search_output(set, arg_out[j], arg_out_size[j]) < 0){
+			result = 1;
 		}
 	}
 
