@@ -225,7 +225,6 @@ void trace_loop_export(struct trace* trace, char* arg){
 		}
 
 		if (!strncmp(arg, "ALL", i)){
-
 		}
 		else if (i > 3 && !strncmp(arg, "IT=", 3)){
 			iteration_index = atoi(arg + 3);

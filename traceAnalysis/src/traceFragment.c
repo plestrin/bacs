@@ -207,6 +207,7 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 						frag->read_memory_array[nb_read_mem].address	= instruction->data[j].location.address;
 						frag->read_memory_array[nb_read_mem].size 		= instruction->data[j].size;
 						frag->read_memory_array[nb_read_mem].opcode 	= instruction->opcode;
+						frag->read_memory_array[nb_read_mem].group 		= MEMACCESS_UNDEF_GROUP;
 						nb_read_mem ++;
 					}
 					if (INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
@@ -215,6 +216,7 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 						frag->write_memory_array[nb_write_mem].address		= instruction->data[j].location.address;
 						frag->write_memory_array[nb_write_mem].size 		= instruction->data[j].size;
 						frag->write_memory_array[nb_write_mem].opcode 		= instruction->opcode;
+						frag->write_memory_array[nb_write_mem].group 		= MEMACCESS_UNDEF_GROUP;
 						nb_write_mem ++;
 					}
 				}

@@ -355,7 +355,7 @@ int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array*
 					return result;
 				}
 
-				total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
+				total_length = engine->loops[i].length * engine->loops[i].nb_iteration;
 				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
 					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
 				}

@@ -6,12 +6,15 @@
 #include "address.h"
 #include "array.h"
 
+#define MEMACCESS_UNDEF_GROUP 0
+
 struct memAccess{
 	uint32_t 	order;
 	uint32_t 	value;
 	ADDRESS 	address;
 	uint8_t 	size;
 	uint32_t 	opcode;
+	uint32_t 	group;
 };
 
 void memAccess_print(struct memAccess* mem_access, int nb_mem_access);
