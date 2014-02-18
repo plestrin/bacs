@@ -329,11 +329,48 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_delete(printer);
 }
 
-int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array, int32_t loop_index, int32_t iteration_index){
+int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array, uint32_t loop_index, uint32_t iteration_index){
+	struct traceFragment 	fragment;
+
+	if (engine->loops != NULL){
+		if (loop_index < engine->nb_loop){
+			if ((uint32_t)iteration_index < engine->loops[loop_index].nb_iteration){
+				if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL, NULL)){
+					printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+					return -1;
+				}
+
+				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[loop_index].offset + engine->loops[loop_index].length * iteration_index, engine->loops[loop_index].length) !=  (int32_t)engine->loops[loop_index].length){
+					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+				}
+
+				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u - it %u", loop_index, iteration_index);
+
+				if (array_add(frag_array, &fragment) < 0){
+					printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+					traceFragment_clean(&fragment);
+					return -1;
+				}
+			}
+			else{
+				printf("WARNING: in %s, iteration index is larger than the loop number of iteration (%u)\n", __func__, engine->loops[loop_index].nb_iteration);
+			}
+		}
+		else{
+			printf("WARNING: in %s, loopindex is larger than the number of loops (%u)\n", __func__, engine->nb_loop);
+		}
+	}
+	else{
+		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
+	}
+
+	return 0;
+}
+
+int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
 	uint32_t 				i;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
-	int32_t 				result = -1;
 	struct traceFragment 	fragment;
 	uint32_t 				total_length;
 
@@ -348,51 +385,74 @@ int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array*
 
 	if (engine->loops != NULL){
 		for (i = start_index; i < stop_index; i++){
-			
-			if (iteration_index < 0){
-				if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length, NULL)){
-					printf("ERROR: in %s, unable to init traceFragment\n", __func__);
-					return result;
-				}
-
-				total_length = engine->loops[i].length * engine->loops[i].nb_iteration;
-				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
-					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
-				}
-
-				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
-			}
-			else if ((uint32_t)iteration_index < engine->loops[i].nb_iteration){
-				if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL, NULL)){
-					printf("ERROR: in %s, unable to init traceFragment\n", __func__);
-					return result;
-				}
-
-				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset + engine->loops[i].length * iteration_index, engine->loops[i].length) !=  (int32_t)engine->loops[i].length){
-					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
-				}
-
-				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u - it %u", i, iteration_index);
-			}
-			else{
-				printf("ERROR: in %s, iteration index is larger thant the loop number of iteration\n", __func__);
-				continue;
+			if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length, NULL)){
+				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+				return -1;
 			}
 
-			if (array_add(array, &fragment) < 0){
-				printf("ERROR: in %s, unable to add traceFragment %u to array\n", __func__, i);
+			total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
+			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
+				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+			}
+
+			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
+
+			if (array_add(frag_array, &fragment) < 0){
+				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
 				traceFragment_clean(&fragment);
-				return result;
+				return -1;
 			}
 		}
-
-		result = 0;
 	}
 	else{
-		printf("ERROR: in %s, loopEngine does not contain loops- cannot export\n", __func__);
+		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
 	}
 
-	return result;
+	return 0;
+}
+
+int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
+	uint32_t 				i;
+	uint32_t 				start_index;
+	uint32_t 				stop_index;
+	struct traceFragment 	fragment;
+	uint32_t 				total_length;
+
+	if (loop_index > 0){
+		start_index = loop_index;
+		stop_index = ((uint32_t)loop_index + 1 < engine->nb_loop) ? ((uint32_t)loop_index + 1) : engine->nb_loop;
+	}
+	else{
+		start_index = 0;
+		stop_index = engine->nb_loop;
+	}
+
+	if (engine->loops != NULL){
+		for (i = start_index; i < stop_index; i++){
+			if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length, NULL)){
+				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+				return -1;
+			}
+
+			total_length = engine->loops[i].length * engine->loops[i].nb_iteration;
+			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
+				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+			}
+
+			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
+
+			if (array_add(frag_array, &fragment) < 0){
+				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+				traceFragment_clean(&fragment);
+				return -1;
+			}
+		}
+	}
+	else{
+		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
+	}
+
+	return 0;
 }
 
 void loopEngine_clean(struct loopEngine* engine){

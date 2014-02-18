@@ -210,36 +210,43 @@ void trace_loop_export(struct trace* trace, char* arg){
 	uint8_t 	found_space = 0;
 
 
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
+	if (trace->loop_engine != NULL){
+		if (arg != NULL){
+			for (i = 0; i < strlen(arg) - 1; i++){
+				if (arg[i] == ' '){
+					found_space = 1;
+					break;
+				}
 			}
-		}
-		if (found_space){
-			loop_index = atoi(arg + i + 1);
-		}
-		else{
-			i ++;
-		}
+			if (found_space){
+				loop_index = atoi(arg + i + 1);
+			}
+			else{
+				i ++;
+			}
 
-		if (!strncmp(arg, "ALL", i)){
-		}
-		else if (i > 3 && !strncmp(arg, "IT=", 3)){
-			iteration_index = atoi(arg + 3);
+			if (!strncmp(arg, "ALL", i)){
+				if (loopEngine_export_all(trace->loop_engine, &(trace->frag_array), loop_index)){
+					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
+				}
+			}
+			else if (i > 3 && !strncmp(arg, "IT=", 3)){
+				iteration_index = atoi(arg + 3);
+				if (loopEngine_export_it(trace->loop_engine, &(trace->frag_array), loop_index, iteration_index)){
+					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
+				}
+			}
+			else if (!strncmp(arg, "NOEP", i)){
+				if (loopEngine_export_noEp(trace->loop_engine, &(trace->frag_array), loop_index)){
+					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
+				}
+			}
+			else{
+				goto arg_error;
+			}
 		}
 		else{
 			goto arg_error;
-		}
-	}
-	else{
-		goto arg_error;
-	}
-
-	if (trace->loop_engine != NULL){
-		if (loopEngine_export_traceFragment(trace->loop_engine, &(trace->frag_array), loop_index, iteration_index)){
-			printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
 		}
 	}
 	else{
@@ -250,7 +257,8 @@ void trace_loop_export(struct trace* trace, char* arg){
 
 	arg_error:
 	printf("Expected export specifier:\n");
-	printf(" - \"ALL\"   : export every loop's iteration\n");
+	printf(" - \"ALL\"   : export every loop's iteration and the epilogue if it exists\n");
+	printf(" - \"NOEP\"  : export every loop's iteration\n");
 	printf(" - \"IT=xx\" : export the xx iteration of the loop\n");
 
 	return;

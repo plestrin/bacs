@@ -37,7 +37,9 @@ int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);
 int32_t loopEngine_pack_epilogue(struct loopEngine* engine);
 void loopEngine_print_loop(struct loopEngine* engine);
 
-int32_t loopEngine_export_traceFragment(struct loopEngine* engine, struct array* array, int32_t index, int32_t iteration);
+int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array, uint32_t loop_index, uint32_t iteration_index);
+int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_array, int32_t loop_index);
+int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_array, int32_t loop_index);
 
 void loopEngine_clean(struct loopEngine* engine);
 void loopEngine_delete(struct loopEngine* engine);
