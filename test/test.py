@@ -189,7 +189,7 @@ if action == "TRACE" or action == "ALL":
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
 	makefile = open("Makefile", "w")
-	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/-DVERBOSE //g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g", MAKEFILE_SEARCH_PATH], stdout = makefile)
+	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g", MAKEFILE_SEARCH_PATH], stdout = makefile)
 	makefile.close()
 	if return_value != 0:
 		print("ERROR: unable to create the Makefile")
