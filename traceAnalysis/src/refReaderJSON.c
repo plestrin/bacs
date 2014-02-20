@@ -1,13 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
 
 #include "refReaderJSON.h"
 #include "primitiveReference.h"
+#include "mapFile.h"
 
 #define JSON_MAP_KEY_NAME_REF	"ref"
 #define JSON_MAP_KEY_NAME_NAME	"name"
@@ -105,9 +103,8 @@ static yajl_callbacks json_parser_callback = {
 
 
 int32_t refReaderJSON_parse(const char* file_name, struct array* array){
-	int 					file;
-	struct stat 			sb;
 	void*					buffer;
+	uint64_t 				size;
 	yajl_handle 			json_parser_handle;
 	yajl_status 			status;
 	struct refReaderJSON 	ref_reader;
@@ -117,20 +114,7 @@ int32_t refReaderJSON_parse(const char* file_name, struct array* array){
 		return -1;
 	}
 
-	file = open(file_name, O_RDONLY);
-	if (file == -1){
-		printf("ERROR: in %s, unable to open file %s read only\n", __func__, file_name);
-		return -1;
-	}
-
-	if (fstat(file, &sb) < 0){
-		printf("ERROR: in %s, unable to read file size\n", __func__);
-		close(file);
-		return -1;
-	}
-
-	buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, file, 0);
-	close(file);
+	buffer = mapFile_map(file_name, &size);
 	if (buffer == NULL){
 		printf("ERROR: in %s, unable to map file\n", __func__);
 		return -1;
@@ -139,17 +123,17 @@ int32_t refReaderJSON_parse(const char* file_name, struct array* array){
 	json_parser_handle = yajl_alloc(&json_parser_callback, NULL, (void*)&ref_reader);
 	if (json_parser_handle == NULL){
 		printf("ERROR: in %s, unable to allocate YAJL parser\n", __func__);
-		munmap(buffer, sb.st_size);
+		munmap(buffer, size);
 		return -1;
 	}
 
-	status = yajl_parse(json_parser_handle, buffer, sb.st_size);
+	status = yajl_parse(json_parser_handle, buffer, size);
 	if (status != yajl_status_ok){
 		printf("ERROR: in %s, YAJL parser return an error status\n", __func__);
 	}
 
 	yajl_free(json_parser_handle);
-	munmap(buffer, sb.st_size);
+	munmap(buffer, size);
 
 	return 0;
 }

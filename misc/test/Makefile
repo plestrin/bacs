@@ -6,6 +6,7 @@ TEST_READBUFFER			:= test_readBuffer
 TEST_PERMUTATION 		:= test_permutation
 TEST_WORKQUEUE 			:= test_workQueue
 TEST_MULTIWORKPERCENT 	:= test_multiWorkPercent
+TEST_MAPFILE 			:= test_mapFile
 
 CC						:= gcc
 CFLAGS					:= -W -Wall -pedantic -Wextra -g
@@ -15,11 +16,11 @@ all: 										\
 	$(TEST_ARRAY) $(TEST_WORKPERCENT) 		\
 	$(TEST_MULTICOLUMN) 					\
 	$(TEST_INPUTPARSER) 					\
-	$(TEST_GRAPH) 							\
 	$(TEST_READBUFFER) 						\
 	$(TEST_PERMUTATION) 					\
 	$(TEST_WORKQUEUE) 						\
-	$(TEST_MULTIWORKPERCENT)
+	$(TEST_MULTIWORKPERCENT) 				\
+	$(TEST_MAPFILE)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -46,6 +47,9 @@ $(TEST_WORKQUEUE): test_workQueue.o workQueue.o
 $(TEST_MULTIWORKPERCENT): test_multiWorkPercent.o multiWorkPercent.o workQueue.o workPercent.o multiColumn.o
 	$(CC) -o $@ $^ $(LDFLAGS) -pthread
 
+$(TEST_MAPFILE): test_mapFile.o mapFile.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 
 # *** General compile rules ***
 %.o: %.c
@@ -62,6 +66,7 @@ test_readBuffer.o: ../readBuffer.h ../printBuffer.h
 test_permutation.o: ../permutation.h
 test_workQueue.o: ../workQueue.h
 test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
+test_mapFile.o: ../mapFile.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
@@ -84,3 +89,4 @@ clean:
 	@ rm -f $(TEST_PERMUTATION)
 	@ rm -f $(TEST_WORKQUEUE)
 	@ rm -f $(TEST_MULTIWORKPERCENT)
+	@ rm -f $(TEST_MAPFILE)

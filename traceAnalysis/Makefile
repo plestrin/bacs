@@ -34,7 +34,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)readBuffer.o			\
 					$(BUILD_DIR)termReader.o			\
 					$(BUILD_DIR)inputParser.o			\
-					$(BUILD_DIR)workQueue.o
+					$(BUILD_DIR)workQueue.o 			\
+					$(BUILD_DIR)mapFile.o
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g
