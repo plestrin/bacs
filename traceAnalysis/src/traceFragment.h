@@ -34,8 +34,8 @@ struct traceFragment{
 	struct memAccess* 			write_memory_array;
 	uint32_t 					nb_memory_read_access;
 	uint32_t 					nb_memory_write_access;
-	struct regAccess* 			read_register_array;
 
+	struct regAccess* 			read_register_array;
 	struct regAccess* 			write_register_array;
 	uint32_t 					nb_register_read_access;
 	uint32_t 					nb_register_write_access;

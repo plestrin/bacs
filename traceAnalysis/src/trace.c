@@ -762,6 +762,9 @@ void trace_frag_extract_arg(struct trace* trace, char* arg){
 			break;
 		}
 
+		regAccess_propagate_read(fragment->read_register_array, fragment->nb_register_read_access);
+		regAccess_propagate_write(fragment->write_register_array, fragment->nb_register_write_access);
+
 		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0) && remove_raw){
 			traceFragment_remove_read_after_write(fragment);
 		}

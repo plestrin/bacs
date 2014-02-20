@@ -439,8 +439,9 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
 					switch (register_read_state[index]){
 					case REGISTER_STATE_UNINIT 	: {
-						frag->read_register_array[index].value = instruction->data[j].value;
-						frag->read_register_array[index].size = instruction->data[j].size;
+						frag->read_register_array[index].value 	= instruction->data[j].value;
+						frag->read_register_array[index].size 	= instruction->data[j].size;
+						frag->read_register_array[index].order 	= i * INSTRUCTION_MAX_NB_DATA * 2 + j;
 						register_read_state[index] = REGISTER_STATE_VALID;
 						break;
 					}
@@ -462,7 +463,8 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
 
 					frag->write_register_array[index].value = instruction->data[j].value;
-					frag->write_register_array[index].size = instruction->data[j].size;
+					frag->write_register_array[index].size 	= instruction->data[j].size;
+					frag->write_register_array[index].order = i * INSTRUCTION_MAX_NB_DATA * 2 + INSTRUCTION_MAX_NB_DATA + j;
 					register_write_state[index] = REGISTER_STATE_VALID;
 
 					REGISTER_SET_STATE_WRITTEN(register_read_state[index]);

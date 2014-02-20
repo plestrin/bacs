@@ -10,9 +10,13 @@ struct regAccess{
 	uint32_t 	value;
 	enum reg 	reg;
 	uint8_t 	size;
+	uint32_t 	order;
 };
 
 void regAccess_print(struct regAccess* reg_access, int nb_reg_access);
+
+void regAccess_propagate_read(struct regAccess* reg_access, int nb_reg_access);
+void regAccess_propagate_write(struct regAccess* reg_access, int nb_reg_access);
 
 int32_t regAccess_extract_arg_large_pure_read(struct array* input_arg, struct regAccess* reg_access, int nb_reg_access);
 
