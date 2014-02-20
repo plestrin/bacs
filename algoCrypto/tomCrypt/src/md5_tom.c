@@ -16,7 +16,7 @@ int main(){
 
 	printf("Plaintext: \"%s\"\n", message);
 	printf("MD5 hash:  ");
-	printBuffer_raw(stdout, (char*)hash, 16);
+	printBuffer_raw(stdout, (char*)hash, sizeof(hash));
 	printf("\n");
 
 	return 0;

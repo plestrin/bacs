@@ -4,7 +4,6 @@
 
 #include "inputParser.h"
 #include "multiColumn.h"
-#include "termReader.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -54,7 +53,7 @@ int inputParser_init(struct inputParser* parser){
 				printf("WARNING: in %s, unable to add exit entry in the input parser\n", __func__);
 			}
 
-			if(termReader_set_raw_mode()){
+			if(termReader_set_raw_mode(&(parser->term))){
 				printf("ERROR: in %s, unable to set terminal raw mode\n", __func__);
 			}
 		}
@@ -133,7 +132,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 				#endif
 				fflush(stdout);
 
-				if (termReader_get_line(line, INPUTPARSER_LINE_SIZE)){
+				if (termReader_get_line(&(parser->term), line, INPUTPARSER_LINE_SIZE)){
 					printf("ERROR: in %s, EOF\n", __func__);
 					return;
 				}
@@ -162,8 +161,10 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 }
 
 void inputParser_clean(struct inputParser* parser){
-	if (parser != NULL){
-		array_clean(&(parser->cmd_array));
+	array_clean(&(parser->cmd_array));
+
+	if(termReader_reset_mode(&(parser->term))){
+		printf("ERROR: in %s, unable to reset terminal mode\n", __func__);
 	}
 }
 

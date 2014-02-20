@@ -173,6 +173,12 @@ void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uin
 
 		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
 			if (INSTRUCTION_DATA_TYPE_IS_VALID(buffer[i].data[j].type)){
+				/* pour le debug */
+				if (buffer[i].data[j].size != 1 && buffer[i].data[j].size != 2 && buffer[i].data[j].size != 4){
+					printf("ERROR: in %s, incorrect data size: %u for instruction %s\n", __func__, buffer[i].data[j].size, instruction_opcode_2_string(buffer[i].opcode));
+					buffer[i].data[j].type = INSDATA_INVALID;
+					continue;
+				}
 				if (INSTRUCTION_DATA_TYPE_IS_READ(buffer[i].data[j].type)){
 					if (!read_tag){
 						fprintf(file, ",\"read\":[");

@@ -2,6 +2,7 @@
 #define INPUTPARSER_H
 
 #include "array.h"
+#include "termReader.h"
 
 #define INPUTPARSER_NAME_SIZE 64
 #define INPUTPARSER_DESC_SIZE 256
@@ -24,8 +25,9 @@ struct cmdEntry{
   */
 
 struct inputParser{
-	struct array 	cmd_array;
-	char 			exit;
+	struct array 		cmd_array;
+	struct termReader 	term;
+	char 				exit;
 };
 
 struct inputParser* inputParser_create();
