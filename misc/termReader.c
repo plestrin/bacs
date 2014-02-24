@@ -7,6 +7,9 @@
 
 #define TERMREADER_SPECIAL_CHAR_DEL 127
 
+static void termReader_remove_last_blanck(char* buffer, uint32_t length);
+
+
 int32_t termReader_set_raw_mode(struct termReader* term){
 	struct termios settings;
 
@@ -74,6 +77,8 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 	} while(character != '\n' && i < buffer_length - 1);
 	buffer[i] = '\0';
 
+	termReader_remove_last_blanck(buffer, i);
+
 	return 0;
 }
 
@@ -86,4 +91,11 @@ int32_t termReader_reset_mode(struct termReader* term){
 	}
 
 	return 0;
+}
+
+static void termReader_remove_last_blanck(char* buffer, uint32_t length){
+	while(length > 0 && buffer[length - 1] == ' '){
+		buffer[length - 1] = '\0';
+		length--;
+	}
 }

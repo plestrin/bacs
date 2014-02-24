@@ -104,7 +104,7 @@
 	{
 		"name":"AES 7 round enc",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
-		"func":"wrapper_aes_3_round_enc",
+		"func":"wrapper_aes_7_round_enc",
 		"arg":[{
 				"type":"input",
 				"exact_size":16
@@ -207,6 +207,227 @@
 		"name":"AES 13 round enc",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
 		"func":"wrapper_aes_13_round_enc",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":208
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 1 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_1_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 2 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_2_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":32
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 3 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_3_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":48
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 4 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_4_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":64
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 5 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_5_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":80
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 6 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_6_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":96
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 7 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_7_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":112
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 8 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_8_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":128
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 9 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_9_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":144
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 10 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_10_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":160
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 11 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_11_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":176
+			},
+			{
+				"type":"output",
+				"exact_size":16
+			}]
+	},
+	{
+		"name":"AES 12 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_12_round_dec",
+		"arg":[{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"input",
+				"exact_size":48
+			},
+			{
+				"type":"output",
+				"exact_size":192
+			}]
+	},
+	{
+		"name":"AES 13 round dec",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
+		"func":"wrapper_aes_13_round_dec",
 		"arg":[{
 				"type":"input",
 				"exact_size":16
