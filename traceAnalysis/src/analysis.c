@@ -240,31 +240,20 @@ void analysis_instruction_export(struct analysis* analysis){
 /* ===================================================================== */
 
 void analysis_loop_create(struct analysis* analysis){
-	struct instruction* ins;
-
 	if (analysis->loop_engine != NULL){
+		printf("WARNING: in %s, deleting previous loopEngine\n", __func__);
 		loopEngine_delete(analysis->loop_engine);
 	}
 
-	analysis->loop_engine = loopEngine_create();
-	if (analysis->loop_engine == NULL){
-		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+	if (analysis->trace == NULL){
+		printf("ERROR: %s, trace is NULL\n", __func__);
 		return;
 	}
 
-	if (!traceReaderJSON_reset(&(analysis->ins_reader.json))){
-		do{
-			ins = traceReaderJSON_get_next_instruction(&(analysis->ins_reader.json));
-			if (ins != NULL){
-				if (loopEngine_add(analysis->loop_engine, ins)){
-					printf("ERROR: in %s, loopEngine failed to add element\n", __func__);
-					break;
-				}
-			}
-		} while (ins != NULL);
-	}
-	else{
-		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+	analysis->loop_engine = loopEngine_create(analysis->trace);
+	if (analysis->loop_engine == NULL){
+		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+		return;
 	}
 
 	if (loopEngine_process(analysis->loop_engine)){

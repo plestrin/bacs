@@ -5,6 +5,8 @@
 
 #include "trace.h"
 
+static void trace_clean_(struct trace* trace);
+
 struct trace* trace_create(struct array* array){ /*tmp*/
 	struct trace* trace;
 
@@ -41,6 +43,7 @@ int32_t trace_init(struct trace* trace, struct array* array){ /*tmp*/
 	trace->map_size_op 		= operand_counter * sizeof(struct operand);
 	trace->map_size_data 	= data_counter * sizeof(uint8_t);
 	trace->nb_instruction 	= array_get_length(array);
+	trace->reference_count 	= 1;
 
 	trace->instructions = (struct _instruction*)mmap(NULL, trace->map_size_ins, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	trace->operands = (struct operand*)mmap(NULL, trace->map_size_op, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
@@ -202,6 +205,19 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 }
 
 void trace_clean(struct trace* trace){
+	if (trace != NULL && --trace->reference_count == 0){
+		trace_clean_(trace);
+	}
+}
+
+void trace_delete(struct trace* trace){
+	if (trace != NULL && --trace->reference_count == 0){
+		trace_clean_(trace);
+		free(trace);
+	}
+}
+
+static void trace_clean_(struct trace* trace){
 	if (trace->instructions != NULL){
 		munmap(trace->instructions, trace->map_size_ins);
 	}
@@ -210,12 +226,5 @@ void trace_clean(struct trace* trace){
 	}
 	if (trace->data != NULL){
 		munmap(trace->data, trace->map_size_data);
-	}
-}
-
-void trace_delete(struct trace* trace){
-	if (trace != NULL){
-		trace_clean(trace);
-		free(trace);
 	}
 }

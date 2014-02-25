@@ -5,8 +5,11 @@
 
 #include "array.h"
 #include "instruction.h"
+#include "trace.h"
 
 #define LOOP_MINIMAL_CORE_LENGTH 3
+
+/* on va pouvoir faire le gros ménage dans cette section - attention avant de tout peter faire des mesure pour vérifier que tous ce passe bien */
 
 struct loop{
 	uint32_t 				offset;
@@ -23,15 +26,14 @@ struct loopToken{
 };
 
 struct loopEngine{
-	struct array 			element_array;
+	struct trace* 			trace;
 	struct loop* 			loops;
 	uint32_t 				nb_loop;
 };
 
-struct loopEngine* loopEngine_create();
-int32_t loopEngine_init(struct loopEngine* engine);
+struct loopEngine* loopEngine_create(struct trace* trace);
+int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace);
 
-int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instruction);
 int32_t loopEngine_process(struct loopEngine* engine);
 int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine);
 int32_t loopEngine_pack_epilogue(struct loopEngine* engine);

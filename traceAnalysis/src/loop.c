@@ -12,24 +12,25 @@ struct loopIteration{
 	uint32_t length;
 };
 
-int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2);
 int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration);
 int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
+
+static int32_t loopEngine_search_seq_down(struct loopEngine* engine, uint32_t start_index, uint32_t stop_index, uint32_t index);
 
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
 
 static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index);
 
 
-struct loopEngine* loopEngine_create(){
+struct loopEngine* loopEngine_create(struct trace* trace){
 	struct loopEngine* engine;
 
 	engine = (struct loopEngine*)malloc(sizeof(struct loopEngine));
 	if (engine == NULL){
-		printf("ERROR: in %sunable to allocate memory\n", __func__);
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
 	else{
-		if (loopEngine_init(engine)){
+		if (loopEngine_init(engine, trace)){
 			printf("ERROR: in %s, unable to init loopEngine\n", __func__);
 			free(engine);
 			engine = NULL;
@@ -39,43 +40,19 @@ struct loopEngine* loopEngine_create(){
 	return engine;
 }
 
-int32_t loopEngine_init(struct loopEngine* engine){
-	int32_t result = -1;
+int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace){
+	trace_get_reference(trace);
+	engine->trace = trace;
+	engine->loops = NULL;
+	engine->nb_loop = 0;	
 
-	if (engine != NULL){
-		result = array_init(&(engine->element_array), sizeof(struct instruction));
-		if (result){
-			printf("ERROR: in %s, unable to init element array\n", __func__);
-		}
-		else{
-			engine->loops = NULL;
-			engine->nb_loop = 0;	
-		}
-	}
-
-	return result;
+	return 0;
 }
 
-int32_t loopEngine_add(struct loopEngine* engine, struct instruction* instruction){
-	int32_t result;
-
-	result = array_add(&(engine->element_array), instruction);
-	if (result < 0){
-		printf("ERROR: in %s unable to add element to history array\n", __func__);
-	}
-	else{
-		result = 0;
-	}
-
-	return result;
-}
-
-/* This routine is slow - to make it faster we can do some precomputation on the element array (sorting for example) */
 int32_t loopEngine_process(struct loopEngine* engine){
 	int32_t 				result 				= -1;
 	uint32_t 				i;
 	int32_t 				index_prev;
-	void* 					element;
 	uint32_t 				max_index;
 	uint32_t 				min_index;
 	struct loopToken 		new_iteration;
@@ -94,8 +71,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	#endif
 
 	#ifdef VERBOSE
-	printf("LoopEngine: %u element(s), loop core min length: %u\n", array_get_length(&(engine->element_array)), LOOP_MINIMAL_CORE_LENGTH);
-	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, array_get_length(&(engine->element_array)) - LOOP_MINIMAL_CORE_LENGTH);
+	printf("LoopEngine: %u element(s), loop core min length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH);
+	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, engine->trace->nb_instruction - LOOP_MINIMAL_CORE_LENGTH);
 	#endif
 	
 	if (array_init(&token_array, sizeof(struct loopToken))){
@@ -103,22 +80,21 @@ int32_t loopEngine_process(struct loopEngine* engine){
 		return result;
 	}
 
-	token_search_bound = (uint32_t*)calloc(2 * array_get_length(&(engine->element_array)), sizeof(uint32_t));
+	token_search_bound = (uint32_t*)calloc(2 * engine->trace->nb_instruction, sizeof(uint32_t));
 	if (token_search_bound == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		goto exit;
 	}
 
-	for (i = LOOP_MINIMAL_CORE_LENGTH; i < array_get_length(&(engine->element_array)); i++){
-		element = array_get(&(engine->element_array), i);
+	for (i = LOOP_MINIMAL_CORE_LENGTH; i < engine->trace->nb_instruction; i++){
 		index_prev = i + 1 - LOOP_MINIMAL_CORE_LENGTH;
 		token_search_bound[2*i] = array_get_length(&token_array);
 
 		do {
 			max_index = index_prev - 1;
-			min_index = (2*i > array_get_length(&(engine->element_array))) ? 2*i - array_get_length(&(engine->element_array)) : 0;
+			min_index = (2*i > engine->trace->nb_instruction) ? 2*i - engine->trace->nb_instruction : 0;
 
-			index_prev = array_search_seq_down(&(engine->element_array), min_index, max_index, element, (int32_t(*)(void*,void*))loopEngine_search_previous_occurrence);
+			index_prev = loopEngine_search_seq_down(engine, max_index, min_index, i);
 
 			if (index_prev >= 0){
 				iteration.offset = index_prev;
@@ -329,8 +305,9 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_delete(printer);
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array, uint32_t loop_index, uint32_t iteration_index){
-	struct traceFragment 	fragment;
+	/*struct traceFragment 	fragment;
 
 	if (engine->loops != NULL){
 		if (loop_index < engine->nb_loop){
@@ -362,13 +339,14 @@ int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}
+	}*/
 
 	return 0;
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
-	uint32_t 				i;
+	/*uint32_t 				i;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct traceFragment 	fragment;
@@ -406,13 +384,14 @@ int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_arra
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}
+	}*/
 
 	return 0;
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
-	uint32_t 				i;
+	/*uint32_t 				i;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct traceFragment 	fragment;
@@ -450,14 +429,14 @@ int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_arr
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}
+	}*/
 
 	return 0;
 }
 
 void loopEngine_clean(struct loopEngine* engine){
 	if (engine != NULL){
-		array_clean(&(engine->element_array));
+		trace_delete(engine->trace);
 		
 		if (engine->loops != NULL){
 			free(engine->loops);
@@ -473,17 +452,24 @@ void loopEngine_delete(struct loopEngine* engine){
 	}
 }
 
+static int32_t loopEngine_search_seq_down(struct loopEngine* engine, uint32_t start_index, uint32_t stop_index, uint32_t index){
+	int32_t i;
+
+	for (i = start_index; i >= 0 && i >= (int32_t)stop_index; i--){
+		if (engine->trace->instructions[index].opcode == engine->trace->instructions[i].opcode){
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length){
-	struct instruction* ins1;
-	struct instruction* ins2;
 	uint32_t 			i;
 	int32_t	 			result = 0;
 
 	for (i = 0; i < length && result == 0; i++){
-		ins1 = (struct instruction*)array_get(&(engine->element_array), offset1 + i);
-		ins2 = (struct instruction*)array_get(&(engine->element_array), offset2 + i);
-
-		result = (ins1->opcode != ins2->opcode);
+		result = (engine->trace->instructions[offset1 + i].opcode != engine->trace->instructions[offset2 + i].opcode);
 	}
 
 	return result;
@@ -492,15 +478,15 @@ static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine
 static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index){
 	uint32_t i;
 	uint32_t j;
-	struct instruction* ins1;
-	struct instruction* ins2;
+	ADDRESS pc1;
+	ADDRESS pc2;
 
 	for (i = 1; i < engine->loops[index].nb_iteration; i++){
 		for (j = 0; j < engine->loops[index].length; j++){
-			ins1 = (struct instruction*)array_get(&(engine->element_array), engine->loops[index].offset + j);
-			ins2 = (struct instruction*)array_get(&(engine->element_array), engine->loops[index].offset + j + (engine->loops[index].length * i));
+			pc1 = engine->trace->instructions[engine->loops[index].offset + j].pc;
+			pc2 = engine->trace->instructions[engine->loops[index].offset + j + (engine->loops[index].length * i)].pc;
 
-			if (ins1->pc != ins2->pc){
+			if (pc1 != pc2){
 				return 1;
 			}
 		}
@@ -512,10 +498,6 @@ static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t i
 /* ===================================================================== */
 /* Sorting routine(s)	    				                             */
 /* ===================================================================== */
-
-int32_t loopEngine_search_previous_occurrence(struct instruction* ins1, struct instruction* ins2){
-	return (int32_t)(ins1->opcode - ins2->opcode);
-}
 
 int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration){
 	return !(loop->offset == iteration->offset && loop->length == iteration->length);
