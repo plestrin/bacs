@@ -37,4 +37,6 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv);
 void inputParser_clean(struct inputParser* parser);
 void inputParser_delete(struct inputParser* parser);
 
+void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop);
+
 #endif

@@ -7,6 +7,7 @@
 #include "cmReaderJSON.h"
 #include "ioChecker.h"
 #include "loop.h"
+#include "trace.h"
 
 #define ANALYSIS_DIRECTORY_NAME_MAX_LENGTH 256
 #define ANALYSIS_INS_FILE_NAME "ins.json"
@@ -22,6 +23,8 @@ struct analysis{
 		struct traceReaderJSON 	json;
 	} 							ins_reader;
 
+	struct trace* 				trace;
+
 	struct ioChecker*			checker;
 	struct codeMap* 			code_map;
 
@@ -33,7 +36,7 @@ struct analysis{
 
 struct analysis* analysis_create(const char* dir_name);
 
-void analysis_instruction_print(struct analysis* analysis);
+void analysis_instruction_print(struct analysis* analysis, char* arg);
 void analysis_instruction_export(struct analysis* analysis);
 
 void analysis_loop_create(struct analysis* analysis);

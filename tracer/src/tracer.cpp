@@ -103,11 +103,11 @@ static inline enum reg pintool_REG_2_reg(REG reg){
 /* ===================================================================== */
 
 void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
-	tracer.current_instruction->data[0].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[0].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -122,16 +122,16 @@ void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
 }
 
 void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[0].location.address 	= address;
 	tracer.current_instruction->data[0].size 				= size;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address, size);
 
-	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -146,49 +146,49 @@ void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT a
 }
 
 void pintool_instruction_analysis_1write_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address;
 	tracer.current_instruction->data[0].size 				= size;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_write, UINT32 size_write, ADDRINT address_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_write;
 	tracer.current_instruction->data[0].size 				= size_write;
 	
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_read;
 	tracer.current_instruction->data[1].size 				= size_read;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_read, size_read);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1read_reg(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 value, UINT32 size){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name;
 	tracer.current_instruction->data[0].size 				= size;
 	tracer.current_instruction->data[0].value 				= value;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -203,20 +203,20 @@ void pintool_instruction_analysis_1read_reg(ADDRINT pc, UINT32 opcode, UINT32 na
 }
 
 void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[0].location.address 	= address_mem;
 	tracer.current_instruction->data[0].size 				= size_mem;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg;
 	tracer.current_instruction->data[1].size 				= size_reg;
 	tracer.current_instruction->data[1].value 				= value_reg;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -231,60 +231,60 @@ void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode,
 }
 
 void pintool_instruction_analysis_1write_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem;
 	tracer.current_instruction->data[0].size 				= size_mem;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg;
 	tracer.current_instruction->data[1].size 				= size_reg;
 	tracer.current_instruction->data[1].value 				= value_reg;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem_write;
 	tracer.current_instruction->data[0].size 				= size_mem_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem_read;
 	tracer.current_instruction->data[1].size 				= size_mem_read;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem_read, size_mem_read);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg;
 	tracer.current_instruction->data[2].size 				= size_reg;
 	tracer.current_instruction->data[2].value 				= value_reg;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_2read_reg(ADDRINT pc, UINT32 opcode, UINT32 name1, UINT32 value1, UINT32 size1, UINT32 name2, UINT32 value2, UINT32 size2){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name1;
 	tracer.current_instruction->data[0].size 				= size1;
 	tracer.current_instruction->data[0].value 				= value1;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name2;
 	tracer.current_instruction->data[1].size 				= size2;
 	tracer.current_instruction->data[1].value 				= value2;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -299,24 +299,24 @@ void pintool_instruction_analysis_2read_reg(ADDRINT pc, UINT32 opcode, UINT32 na
 }
 
 void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[0].location.address 	= address_mem;
 	tracer.current_instruction->data[0].size 				= size_mem;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
 	tracer.current_instruction->data[1].size 				= size_reg1;
 	tracer.current_instruction->data[1].value 				= value_reg1;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
 	tracer.current_instruction->data[2].size 				= size_reg2;
 	tracer.current_instruction->data[2].value 				= value_reg2;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
@@ -331,224 +331,224 @@ void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode,
 }
 
 void pintool_instruction_analysis_1write_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem;
 	tracer.current_instruction->data[0].size 				= size_mem;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
 	tracer.current_instruction->data[1].size 				= size_reg1;
 	tracer.current_instruction->data[1].value 				= value_reg1;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
 	tracer.current_instruction->data[2].size 				= size_reg2;
 	tracer.current_instruction->data[2].value 				= value_reg2;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem_write;
 	tracer.current_instruction->data[0].size 				= size_mem_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem_read;
 	tracer.current_instruction->data[1].size 				= size_mem_read;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem_read, size_mem_read);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg1;
 	tracer.current_instruction->data[2].size 				= size_reg1;
 	tracer.current_instruction->data[2].value 				= value_reg1;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg2;
 	tracer.current_instruction->data[3].size 				= size_reg2;
 	tracer.current_instruction->data[3].value 				= value_reg2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2, UINT32 name_reg3, UINT32 value_reg3, UINT32 size_reg3){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem;
 	tracer.current_instruction->data[0].size 				= size_mem;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
 	tracer.current_instruction->data[1].size 				= size_reg1;
 	tracer.current_instruction->data[1].value 				= value_reg1;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
 	tracer.current_instruction->data[2].size 				= size_reg2;
 	tracer.current_instruction->data[2].value 				= value_reg2;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg2;
 	tracer.current_instruction->data[3].size 				= size_reg2;
 	tracer.current_instruction->data[3].value 				= value_reg2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 size){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name;
 	tracer.current_instruction->data[0].size 				= size;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg, UINT32 size_reg, ADDRINT address_mem, UINT32 size_mem){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg;
 	tracer.current_instruction->data[0].size 				= size_reg;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem;
 	tracer.current_instruction->data[1].size 				= size_mem;
 	
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
 	tracer.current_instruction->data[0].size 				= size_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read;
 	tracer.current_instruction->data[1].size 				= size_read;
 	tracer.current_instruction->data[1].value 				= value_read;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read, UINT32 value_reg_read, UINT32 size_reg_read){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
 	tracer.current_instruction->data[0].size 				= size_reg_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem;
 	tracer.current_instruction->data[1].size 				= size_mem;
 	
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read;
 	tracer.current_instruction->data[2].size 				= size_reg_read;
 	tracer.current_instruction->data[2].value 				= value_reg_read;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
 	tracer.current_instruction->data[0].size 				= size_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read1;
 	tracer.current_instruction->data[1].size 				= size_read1;
 	tracer.current_instruction->data[1].value 				= value_read1;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read2;
 	tracer.current_instruction->data[2].size 				= size_read2;
 	tracer.current_instruction->data[2].value 				= value_read2;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
 	tracer.current_instruction->data[0].size 				= size_reg_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem;
 	tracer.current_instruction->data[1].size 				= size_mem;
 	
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read1;
 	tracer.current_instruction->data[2].size 				= size_reg_read1;
 	tracer.current_instruction->data[2].value 				= value_reg_read1;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg_read2;
 	tracer.current_instruction->data[3].size 				= size_reg_read2;
 	tracer.current_instruction->data[3].value 				= value_reg_read2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	tracer.current_instruction->data[0].type 				= INSDATA_MEM_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
 	tracer.current_instruction->data[0].location.address 	= address_mem_write;
 	tracer.current_instruction->data[0].size 				= size_mem_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg_write;
 	tracer.current_instruction->data[1].size 				= size_reg_write;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[2].location.address 	= address_mem_read;
 	tracer.current_instruction->data[2].size 				= size_mem_read;
 	
 	PIN_SafeCopy(&(tracer.current_instruction->data[2].value), (void*)address_mem_read, size_mem_read);
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg_read1;
 	tracer.current_instruction->data[3].size 				= size_reg_read1;
 	tracer.current_instruction->data[3].value 				= value_reg_read1;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_reg_read2;
 	tracer.current_instruction->data[4].size 				= size_reg_read2;
 	tracer.current_instruction->data[4].value 				= value_reg_read2;
@@ -558,27 +558,27 @@ void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(A
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_read_reg1, UINT32 value_read_reg1, UINT32 size_read_reg1, UINT32 name_read_reg2, UINT32 value_read_reg2, UINT32 size_read_reg2, UINT32 name_read_reg3, UINT32 value_read_reg3, UINT32 size_read_reg3){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
 	tracer.current_instruction->data[0].size 				= size_write;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_MEM_READ;
+	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
 	tracer.current_instruction->data[1].location.address 	= address_mem;
 	tracer.current_instruction->data[1].size 				= size_mem;
 
 	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read_reg1;
 	tracer.current_instruction->data[2].size 				= size_read_reg1;
 	tracer.current_instruction->data[2].value 				= value_read_reg1;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read_reg2;
 	tracer.current_instruction->data[3].size 				= size_read_reg2;
 	tracer.current_instruction->data[3].value 				= value_read_reg2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_read_reg3;
 	tracer.current_instruction->data[4].size 				= size_read_reg3;
 	tracer.current_instruction->data[4].value 				= value_read_reg3;
@@ -588,71 +588,71 @@ void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, 
 }
 
 void pintool_instruction_analysis_2write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
 	tracer.current_instruction->data[0].size 				= size_write1;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
 	tracer.current_instruction->data[1].size 				= size_write2;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read;
 	tracer.current_instruction->data[2].size 				= size_read;
 	tracer.current_instruction->data[2].value 				= value_read;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_INVALID;
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_2write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
 	tracer.current_instruction->data[0].size 				= size_write1;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
 	tracer.current_instruction->data[1].size 				= size_write2;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read1;
 	tracer.current_instruction->data[2].size 				= size_read1;
 	tracer.current_instruction->data[2].value 				= value_read1;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read2;
 	tracer.current_instruction->data[3].size 				= size_read2;
 	tracer.current_instruction->data[3].value 				= value_read2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_INVALID;
+	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
 
 	tracer.current_instruction->pc 							= pc;
 	tracer.current_instruction->opcode 						= opcode;
 }
 
 void pintool_instruction_analysis_2write_reg_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2, UINT32 name_read3, UINT32 value_read3, UINT32 size_read3){
-	tracer.current_instruction->data[0].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
 	tracer.current_instruction->data[0].size 				= size_write1;
 
-	tracer.current_instruction->data[1].type 				= INSDATA_REG_WRITE;
+	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
 	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
 	tracer.current_instruction->data[1].size 				= size_write2;
 
-	tracer.current_instruction->data[2].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read1;
 	tracer.current_instruction->data[2].size 				= size_read1;
 	tracer.current_instruction->data[2].value 				= value_read1;
 
-	tracer.current_instruction->data[3].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read2;
 	tracer.current_instruction->data[3].size 				= size_read2;
 	tracer.current_instruction->data[3].value 				= value_read2;
 
-	tracer.current_instruction->data[4].type 				= INSDATA_REG_READ;
+	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
 	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_read3;
 	tracer.current_instruction->data[4].size 				= size_read3;
 	tracer.current_instruction->data[4].value 				= value_read3;

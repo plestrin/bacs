@@ -50,7 +50,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis->code_map, codeMap_print)
 
 	/* trace specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print analysis", "Print all the instructions of the trace", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_instruction_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace. Specify an index / range as a second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_instruction_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", "Export the whole trace as traceFragment", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_instruction_export)
 
 	/* loop specific commands */
@@ -142,6 +142,7 @@ struct analysis* analysis_create(const char* dir_name){
 
 	}
 
+	analysis->trace = NULL;
 	analysis->loop_engine = NULL;
 
 	return analysis;
@@ -162,6 +163,11 @@ void analysis_delete(struct analysis* analysis){
 
 		traceReaderJSON_clean(&(analysis->ins_reader.json));
 		codeMap_delete(analysis->code_map);
+
+		if (analysis->trace != NULL){
+			trace_delete(analysis->trace);
+		}
+
 		ioChecker_delete(analysis->checker);
 
 		free(analysis);
@@ -172,19 +178,17 @@ void analysis_delete(struct analysis* analysis){
 /* Trace functions						                                 */
 /* ===================================================================== */
 
-void analysis_instruction_print(struct analysis* analysis){
-	struct instruction* instruction;
+/*reprendre cette méthode est faire un premier commit si tout fonctionne correcetement */
+void analysis_instruction_print(struct analysis* analysis, char* arg){
+	uint32_t start = 0;
+	uint32_t stop = 0;
 
-	if (!traceReaderJSON_reset(&(analysis->ins_reader.json))){
-		do{
-			instruction = traceReaderJSON_get_next_instruction(&(analysis->ins_reader.json));
-			if (instruction != NULL){
-				instruction_print(NULL, instruction);
-			}
-		} while (instruction != NULL);
+	if (analysis->trace != NULL){
+		inputParser_extract_index(arg, &start, &stop);
+		trace_print(analysis->trace, start, stop, NULL);
 	}
 	else{
-		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+		printf("ERROR: in %s, trace is NULL\n", __func__);
 	}
 }
 
@@ -214,6 +218,17 @@ void analysis_instruction_export(struct analysis* analysis){
 			printf("ERROR: in %s, unable to add traceFragment to frag_array\n", __func__);
 			traceFragment_clean(&fragment);
 		}
+
+		/* new earth army */
+		if (analysis->trace != NULL){
+			printf("WARNING: in %s, deleting previous trace\n", __func__);
+			trace_delete(analysis->trace);
+		}
+		analysis->trace = trace_create(&(fragment.instruction_array));
+		if (analysis->trace == NULL){
+			printf("ERROR: in %s, unable to create trace\n", __func__);
+		}
+
 	}
 	else{
 		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);

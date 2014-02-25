@@ -310,7 +310,7 @@ static int traceReaderJSON_start_map(void* ctx){
 	if (trace_reader->actual_map_level == INSTRUCTION_MAP_LEVEL){
 		trace_reader->actual_instruction_data_offset = 0;
 		for (i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
-			trace_reader->instruction_cache[trace_reader->cache_top_offset].data[i].type = INSDATA_INVALID;
+			trace_reader->instruction_cache[trace_reader->cache_top_offset].data[i].type = OPERAND_INVALID;
 		}
 	}
 	else if (trace_reader->actual_map_level == INSTRUCTION_DATA_MAP_LEVEL){

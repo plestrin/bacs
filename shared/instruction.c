@@ -44,110 +44,59 @@ struct multiColumnPrinter* instruction_init_multiColumnPrinter(){
 void instruction_print(struct multiColumnPrinter* printer, struct instruction *ins){
 	uint32_t i;
 
-	if (ins != NULL){
-		if (printer != NULL){
-			char 		read_access[MULTICOLUMN_STRING_MAX_SIZE];
-			char 		write_access[MULTICOLUMN_STRING_MAX_SIZE];
-			uint32_t 	str_read_offset = 0;
-			uint32_t 	str_write_offset = 0;
-			char* 		current_str;
-			uint32_t*	current_offset;
-			uint32_t	nb_byte_written;
+	if (ins != NULL && printer != NULL){
+		char 		read_access[MULTICOLUMN_STRING_MAX_SIZE];
+		char 		write_access[MULTICOLUMN_STRING_MAX_SIZE];
+		uint32_t 	str_read_offset = 0;
+		uint32_t 	str_write_offset = 0;
+		char* 		current_str;
+		uint32_t*	current_offset;
+		uint32_t	nb_byte_written;
 
-			read_access[0] = '\0';
-			write_access[0] = '\0';
+		read_access[0] = '\0';
+		write_access[0] = '\0';
 
-			for ( i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[i].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(ins->data[i].type)){
-						current_str = read_access + str_read_offset;
-						current_offset = &str_read_offset;
-					}
-					else{
-						current_str = write_access + str_write_offset;
-						current_offset = &str_write_offset;
-					}
+		for ( i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
+			if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[i].type)){
+				if (INSTRUCTION_DATA_TYPE_IS_READ(ins->data[i].type)){
+					current_str = read_access + str_read_offset;
+					current_offset = &str_read_offset;
+				}
+				else{
+					current_str = write_access + str_write_offset;
+					current_offset = &str_write_offset;
+				}
 
-					if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
-						#if defined ARCH_32
-						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08x ", ins->data[i].location.address);
-						#elif defined ARCH_64
-						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %llx ", ins->data[i].location.address);
-						#else
-						#error Please specify an architecture {ARCH_32 or ARCH_64}
-						#endif
-						current_str += nb_byte_written;
-						*current_offset += nb_byte_written;
-					}
-					else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[i].type)){
-						nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{%s ", reg_2_string(ins->data[i].location.reg));
-						current_str += nb_byte_written;
-						*current_offset += nb_byte_written;
-					}
-					else{
-						printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
-					}
+				if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
+					#if defined ARCH_32
+					nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08x ", ins->data[i].location.address);
+					#elif defined ARCH_64
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %llx ", ins->data[i].location.address);
+					#else
+					#error Please specify an architecture {ARCH_32 or ARCH_64}
+					#endif
+					current_str += nb_byte_written;
+					*current_offset += nb_byte_written;
+				}
+				else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[i].type)){
+					nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{%s ", reg_2_string(ins->data[i].location.reg));
+					current_str += nb_byte_written;
+					*current_offset += nb_byte_written;
+				}
+				else{
+					printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
+				}
 
-					switch(ins->data[i].size){
+				switch(ins->data[i].size){
 					case 1 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%02x(1)}", ins->data[i].value & 0x000000ff); break;}
 					case 2 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%04x(2)}", ins->data[i].value & 0x0000ffff); break;}
 					case 4 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%08x(4)}", ins->data[i].value & 0xffffffff); break;}
 					default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
-					}
-				}
-			}
-			multiColumnPrinter_print(printer, ins->pc, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
-		}
-		else{
-			printf("*** Instruction ***\n");
-			#if defined ARCH_32
-			printf("\tPC: \t\t0x%08x\n", ins->pc);
-			#elif defined ARCH_64
-			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-			printf("\tPC: \t\t0x%llx\n", ins->pc);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
-			printf("\tOpcode: \t%s (%u)\n", instruction_opcode_2_string(ins->opcode), ins->opcode);
-
-			for ( i = 0; i < INSTRUCTION_MAX_NB_DATA; i++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[i].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(ins->data[i].type)){
-						printf("\tData read:\n");
-					}
-					else{
-						printf("\tData write:\n");
-					}
-
-					if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[i].type)){
-						#if defined ARCH_32
-						printf("\t\tMem: \t0x%08x\n", ins->data[i].location.address);
-						#elif defined ARCH_64
-						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-						printf("\t\tMem: \t0x%llx\n", ins->data[i].location.address);
-						#else
-						#error Please specify an architecture {ARCH_32 or ARCH_64}
-						#endif
-					}
-					else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[i].type)){
-						printf("\t\tReg: \t%s\n", reg_2_string(ins->data[i].location.reg));
-					}
-					else{
-						printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
-					}
-
-
-					switch(ins->data[i].size){
-					case 1 	: {printf("\t\tValue: \t0x%02x\n", ins->data[i].value & 0x000000ff); break;}
-					case 2 	: {printf("\t\tValue: \t0x%04x\n", ins->data[i].value & 0x0000ffff); break;}
-					case 4 	: {printf("\t\tValue: \t0x%08x\n", ins->data[i].value & 0xffffffff); break;}
-					default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
-					}
-					printf("\t\tSize: \t%u\n", ins->data[i].size);
 				}
 			}
 		}
+		multiColumnPrinter_print(printer, ins->pc, instruction_opcode_2_string(ins->opcode), read_access, write_access, NULL);
 	}
 }
 
@@ -176,7 +125,7 @@ void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uin
 				/* pour le debug */
 				if (buffer[i].data[j].size != 1 && buffer[i].data[j].size != 2 && buffer[i].data[j].size != 4){
 					printf("ERROR: in %s, incorrect data size: %u for instruction %s\n", __func__, buffer[i].data[j].size, instruction_opcode_2_string(buffer[i].opcode));
-					buffer[i].data[j].type = INSDATA_INVALID;
+					buffer[i].data[j].type = OPERAND_INVALID;
 					continue;
 				}
 				if (INSTRUCTION_DATA_TYPE_IS_READ(buffer[i].data[j].type)){

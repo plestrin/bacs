@@ -35,12 +35,12 @@
 #define INSTRUCTION_DATA_TYPE_IS_READ(type)		(((type) & 0x00000004) == 0x00000000)
 #define INSTRUCTION_DATA_TYPE_IS_WRITE(type) 	(((type) & 0x00000004) == 0x00000004)
 
-enum insDataType{
-	INSDATA_INVALID 	= 0x00000000,
-	INSDATA_MEM_READ	= 0x00000001,
-	INSDATA_REG_READ 	= 0x00000003,
-	INSDATA_MEM_WRITE	= 0x00000005,
-	INSDATA_REG_WRITE	= 0x00000007
+enum operandType{
+	OPERAND_INVALID 	= 0x00000000,
+	OPERAND_MEM_READ	= 0x00000001,
+	OPERAND_REG_READ 	= 0x00000003,
+	OPERAND_MEM_WRITE	= 0x00000005,
+	OPERAND_REG_WRITE	= 0x00000007
 };
 
 #define NB_REGISTER 19 /* do not forget to update this value */
@@ -68,8 +68,19 @@ enum reg{
 	REGISTER_EBP 		= 0x00000013
 };
 
+struct operand{
+	enum operandType 	type;
+	union {
+		ADDRESS 		address;
+		enum reg 		reg;
+	}					location;
+	uint8_t 			size;
+	uint32_t 			data_offset;
+};
+
+/* a supprimer */
 struct insData{
-	enum insDataType 	type;
+	enum operandType 	type;
 	union {
 		ADDRESS 		address;
 		enum reg 		reg;
@@ -78,10 +89,20 @@ struct insData{
 	uint8_t 			size;
 };
 
+/* a supprimer */
 struct instruction{
 	ADDRESS 		pc;
 	uint32_t 		opcode;
 	struct insData 	data[INSTRUCTION_MAX_NB_DATA];
+	/* offset vers le tablau de truc uint32_t operand_offset*/
+	/* uint32_t nb_operand */
+};
+
+struct _instruction{ /*tmp*/
+	ADDRESS 		pc;
+	uint32_t 		opcode;
+	uint32_t 		operand_offset;
+	uint32_t 		nb_operand;
 };
 
 struct multiColumnPrinter* instruction_init_multiColumnPrinter();
