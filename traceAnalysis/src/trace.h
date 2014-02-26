@@ -41,8 +41,6 @@ void trace_delete(struct trace* trace);
 /* faire un certain nombre de macro pour pas que ça soir trop chiant à manipuler comme structure */
 
 /* pour une intégration continue du bouzin:
- * 2 - utiliser comme source pour les loop - mesurer le gain sur le temps d'execution
- * 3 - implémenter la nouvelle idée pour les boucles - mesurer le gain sur le temps d'execution
  * 4 - utiliser comme source pour les traceFragments
  * 5 - utiliser des tailles variables pour les accès memoire / registre dans l'extraction dans arguments - ou du moins identifier clairement là ou il faudrait interfacer un nouveau truc
  * 6 - faire une stratégie d'inport dynamique pour la trace (ccol mais pas indispensable)

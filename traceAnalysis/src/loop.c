@@ -5,19 +5,10 @@
 #include "loop.h"
 #include "workPercent.h"
 #include "multiColumn.h"
-#include "traceFragment.h"
+#include "traceFragment.h" /*tmp - a voir */
 
-struct loopIteration{
-	uint32_t offset;
-	uint32_t length;
-};
 
-int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration);
 int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
-
-static int32_t loopEngine_search_seq_down(struct loopEngine* engine, uint32_t start_index, uint32_t stop_index, uint32_t index);
-
-static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length);
 
 static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index);
 
@@ -50,97 +41,85 @@ int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace){
 }
 
 int32_t loopEngine_process(struct loopEngine* engine){
-	int32_t 				result 				= -1;
 	uint32_t 				i;
-	int32_t 				index_prev;
-	uint32_t 				max_index;
-	uint32_t 				min_index;
-	struct loopToken 		new_iteration;
-	struct loopToken 		new_instance;
-	int32_t 				instance_index;
-	int32_t 				loop_index;
-	struct loopIteration 	iteration;
-	struct loopToken*		matching_loop;
-	uint32_t 				counter_instance 	= 0;
-	uint32_t				counter_iteration 	= 0;
+	uint32_t 				j;
+	uint32_t 				k;
+	uint32_t 				stack;
+	uint32_t 				length;
+	uint8_t 				loop;
+	uint32_t 				nb_iteration;
 	struct array 			token_array;
-	uint32_t* 				token_search_bound = NULL;
-	struct loopToken* 		current_token;
+	struct loopToken 		token;
+	struct loopToken* 		token_pointer;
+	uint32_t 				iteration_counter = 0;
 	#ifdef VERBOSE
 	struct workPercent 		work;
 	#endif
 
-	#ifdef VERBOSE
-	printf("LoopEngine: %u element(s), loop core min length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH);
-	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, engine->trace->nb_instruction - LOOP_MINIMAL_CORE_LENGTH);
-	#endif
-	
+
 	if (array_init(&token_array, sizeof(struct loopToken))){
 		printf("ERROR: in %s, unable to init token array\n", __func__);
-		return result;
+		return -1;
 	}
 
-	token_search_bound = (uint32_t*)calloc(2 * engine->trace->nb_instruction, sizeof(uint32_t));
-	if (token_search_bound == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		goto exit;
-	}
+	#ifdef VERBOSE
+	printf("LoopEngine: %u element(s), loop core min length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH);
+	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, engine->trace->nb_instruction - 2*LOOP_MINIMAL_CORE_LENGTH + 1);
+	#endif
 
-	for (i = LOOP_MINIMAL_CORE_LENGTH; i < engine->trace->nb_instruction; i++){
-		index_prev = i + 1 - LOOP_MINIMAL_CORE_LENGTH;
-		token_search_bound[2*i] = array_get_length(&token_array);
+	for (i = 0; i < engine->trace->nb_instruction - 2*LOOP_MINIMAL_CORE_LENGTH + 1; i++){
+		for (j = i, stack = 0; j < i + 2*(LOOP_MINIMAL_CORE_LENGTH - 1); j += 2){
+			stack = stack ^ engine->trace->instructions[j].opcode;
+			stack = stack ^ engine->trace->instructions[j + 1].opcode;
+		}
 
-		do {
-			max_index = index_prev - 1;
-			min_index = (2*i > engine->trace->nb_instruction) ? 2*i - engine->trace->nb_instruction : 0;
+		for (; j < engine->trace->nb_instruction - 1; j += 2){
+			stack = stack ^ engine->trace->instructions[j].opcode;
+			stack = stack ^ engine->trace->instructions[j + 1].opcode;
+			if (stack == 0){
+				length 			= (j + 2- i) / 2;
+				loop 			= 1;
+				nb_iteration 	= 1;
+				do{
+					for (k = 0; k < length; k++){
+						if (engine->trace->instructions[i + k].opcode != engine->trace->instructions[i + k + length * nb_iteration].opcode){
+							loop = 0;
+							break;
+						}
+					}
+					nb_iteration += loop;
+				} while(loop && i + (nb_iteration + 1) * length < engine->trace->nb_instruction);
 
-			index_prev = loopEngine_search_seq_down(engine, max_index, min_index, i);
+				if (nb_iteration > 1){
+					loop = 1;
 
-			if (index_prev >= 0){
-				iteration.offset = index_prev;
-				iteration.length = i - index_prev;
-
-				if (loopEngine_compare_instruction_sequence(engine, iteration.offset, i, iteration.length) == 0){
-
-					loop_index = array_search_seq_down(&token_array, token_search_bound[2*iteration.offset], token_search_bound[2*iteration.offset + 1], &iteration, (int32_t(*)(void*,void*))loopEngine_search_matching_loop);
-					if (loop_index >= 0){
-						matching_loop = (struct loopToken*)array_get(&token_array, loop_index);
+					if (i >= length){
+						for (k = 0; k < length; k++){
+							if (engine->trace->instructions[i - length + k].opcode != engine->trace->instructions[i + k].opcode){
+								loop = 0;
+								break;
+							}
+						}
 					}
 					else{
-						new_instance.offset 		= iteration.offset;
-						new_instance.length 		= iteration.length;
-						new_instance.id 			= counter_instance;
-						new_instance.iteration 		= 0;
+						loop = 0;
+					}
 
-						instance_index = array_add(&token_array, &new_instance);
-						if (instance_index < 0){
-							printf("ERROR: in %s, unable to add loop instance to loop array\n", __func__);
+					if (!loop){
+						iteration_counter += nb_iteration;
+
+						token.offset = i;
+						token.length = length;
+						token.nb_iteration = nb_iteration;
+
+						if (array_add(&token_array, &token) < 0){
+							printf("ERROR: in %s, unable to add token to array\n", __func__);
 							continue;
 						}
-
-						counter_instance ++;
-						counter_iteration ++;
-
-						matching_loop = (struct loopToken*)array_get(&token_array, instance_index);
-					}
-
-					new_iteration.offset 		= i;
-					new_iteration.length 		= iteration.length;
-					new_iteration.id 			= matching_loop->id;					
-					new_iteration.iteration 	= matching_loop->iteration + 1;
-
-					if (array_add(&token_array, &new_iteration) < 0){
-						printf("ERROR: in %s, unable to add loop iteration to loop array\n", __func__);
-					}
-					else{
-						counter_iteration ++;
 					}
 				}
 			}
-		} while(index_prev > (int32_t)min_index);
-
-		token_search_bound[2*i + 1] = array_get_length(&token_array);
-
+		}
 		#ifdef VERBOSE
 		workPercent_notify(&work, 1);
 		#endif
@@ -148,51 +127,35 @@ int32_t loopEngine_process(struct loopEngine* engine){
 
 	#ifdef VERBOSE
 	workPercent_conclude(&work);
-	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting\n", counter_iteration, counter_instance);
+	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting\n", iteration_counter, array_get_length(&token_array));
 	#endif
-
-	free(token_search_bound);
-	token_search_bound = NULL;
 
 	if (engine->loops != NULL){
 		free(engine->loops);
 		engine->loops = NULL;
+		engine->nb_loop = 0;
 	}
 
-	engine->loops = (struct loop*)calloc(counter_instance, sizeof(struct loop));
+	engine->loops = (struct loop*)malloc(array_get_length(&token_array) * sizeof(struct loop));
 	if (engine->loops == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		goto exit;
 	}
-
-	for (i = array_get_length(&token_array); i > 0; i--){
-		current_token = (struct loopToken*)array_get(&token_array, i - 1);
-
-		if (engine->loops[current_token->id].nb_iteration == 0){
-			engine->loops[current_token->id].nb_iteration = current_token->iteration + 1;
+	else{
+		for (i = 0; i < array_get_length(&token_array); i++){
+			token_pointer = (struct loopToken*)array_get(&token_array, i);
+			
+			engine->loops[i].offset 		= token_pointer->offset;
+			engine->loops[i].length 		= token_pointer->length;
+			engine->loops[i].nb_iteration 	= token_pointer->nb_iteration;
+			engine->loops[i].epilogue 		= 0;
 		}
-		if (current_token->iteration == 0){
-			engine->loops[current_token->id].offset = current_token->offset;
-			engine->loops[current_token->id].length = current_token->length;
-			engine->loops[current_token->id].epilogue = 0;
-		}
+		engine->nb_loop = array_get_length(&token_array);
 	}
-
-	engine->nb_loop = counter_instance;
-
-
-	result = 0;
-
-	exit:
 
 	array_clean(&token_array);
-	if (token_search_bound != NULL){
-		free(token_search_bound);
-	}
-
-	return result;
+	
+	return 0;
 }
-
 
 int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 	uint32_t 		i;
@@ -452,29 +415,6 @@ void loopEngine_delete(struct loopEngine* engine){
 	}
 }
 
-static int32_t loopEngine_search_seq_down(struct loopEngine* engine, uint32_t start_index, uint32_t stop_index, uint32_t index){
-	int32_t i;
-
-	for (i = start_index; i >= 0 && i >= (int32_t)stop_index; i--){
-		if (engine->trace->instructions[index].opcode == engine->trace->instructions[i].opcode){
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-static int32_t loopEngine_compare_instruction_sequence(struct loopEngine* engine, uint32_t offset1, uint32_t offset2, uint32_t length){
-	uint32_t 			i;
-	int32_t	 			result = 0;
-
-	for (i = 0; i < length && result == 0; i++){
-		result = (engine->trace->instructions[offset1 + i].opcode != engine->trace->instructions[offset2 + i].opcode);
-	}
-
-	return result;
-}
-
 static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index){
 	uint32_t i;
 	uint32_t j;
@@ -498,10 +438,6 @@ static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t i
 /* ===================================================================== */
 /* Sorting routine(s)	    				                             */
 /* ===================================================================== */
-
-int32_t loopEngine_search_matching_loop(struct loopToken* loop, struct loopIteration* iteration){
-	return !(loop->offset == iteration->offset && loop->length == iteration->length);
-}
 
 int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2){
 	struct loop* loop1 = (struct loop*)arg1;

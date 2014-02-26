@@ -7,28 +7,25 @@
 #include "instruction.h"
 #include "trace.h"
 
-#define LOOP_MINIMAL_CORE_LENGTH 3
-
-/* on va pouvoir faire le gros ménage dans cette section - attention avant de tout peter faire des mesure pour vérifier que tous ce passe bien */
+#define LOOP_MINIMAL_CORE_LENGTH 3 /* must be larger or equal than one */
 
 struct loop{
-	uint32_t 				offset;
-	uint32_t 				length;
-	uint32_t 				nb_iteration;
-	uint32_t				epilogue;
+	uint32_t 			offset;
+	uint32_t 			length;
+	uint32_t 			nb_iteration;
+	uint32_t			epilogue;
 };
 
 struct loopToken{
-	uint32_t 				offset;
-	uint32_t 				length;
-	uint32_t 				id;
-	uint32_t 				iteration;
+	uint32_t 			offset;
+	uint32_t 			length;
+	uint32_t 			nb_iteration;
 };
 
 struct loopEngine{
-	struct trace* 			trace;
-	struct loop* 			loops;
-	uint32_t 				nb_loop;
+	struct trace* 		trace;
+	struct loop* 		loops;
+	uint32_t 			nb_loop;
 };
 
 struct loopEngine* loopEngine_create(struct trace* trace);
