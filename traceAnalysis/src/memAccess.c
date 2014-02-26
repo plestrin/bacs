@@ -283,10 +283,12 @@ int32_t memAccess_extract_arg_loop_adjacent_size_opcode_read(struct array* array
 	int 				i;
 	int 				j;
 	uint32_t			size;
-	uint32_t 			loop_length;
+	uint32_t 			loop_length_ins;
+	uint32_t 			loop_length_op;
 
 	if (((struct traceFragment*)frag)->type == TRACEFRAGMENT_TYPE_LOOP){
-		loop_length = (uint32_t)((struct traceFragment*)frag)->specific_data;
+		loop_length_ins = (uint32_t)((struct traceFragment*)frag)->specific_data;
+		loop_length_op = ((struct traceFragment*)frag)->trace.instructions[loop_length_ins].operand_offset;
 	}
 	else{
 		printf("ERROR: in %s, extraction routine expect a loop fragment\n", __func__);
@@ -321,7 +323,7 @@ int32_t memAccess_extract_arg_loop_adjacent_size_opcode_read(struct array* array
 		/* STEP 2: regroup using order */
 		for (i = 0; i < nb_mem_access; i++){
 			for (j = i + 1; j < nb_mem_access; j++){
-				if (mem_access[i].order % (loop_length * INSTRUCTION_MAX_NB_DATA) == mem_access[j].order % (loop_length * INSTRUCTION_MAX_NB_DATA)){
+				if (mem_access[i].order % loop_length_op == mem_access[j].order % loop_length_op){
 					if (mem_access[i].group != mem_access[j].group){
 						memAccess_recursive_arg_grouping(mem_access, nb_mem_access, mem_access[j].group, mem_access[i].group);
 					}

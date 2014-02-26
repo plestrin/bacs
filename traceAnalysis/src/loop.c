@@ -5,7 +5,7 @@
 #include "loop.h"
 #include "workPercent.h"
 #include "multiColumn.h"
-#include "traceFragment.h" /*tmp - a voir */
+#include "traceFragment.h"
 
 
 int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
@@ -268,9 +268,8 @@ void loopEngine_print_loop(struct loopEngine* engine){
 	multiColumnPrinter_delete(printer);
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array, uint32_t loop_index, uint32_t iteration_index){
-	/*struct traceFragment 	fragment;
+	struct traceFragment fragment;
 
 	if (engine->loops != NULL){
 		if (loop_index < engine->nb_loop){
@@ -280,8 +279,9 @@ int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array
 					return -1;
 				}
 
-				if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[loop_index].offset + engine->loops[loop_index].length * iteration_index, engine->loops[loop_index].length) !=  (int32_t)engine->loops[loop_index].length){
-					printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+				if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[loop_index].offset + engine->loops[loop_index].length * iteration_index, engine->loops[loop_index].length)){
+					printf("ERROR: in %s, unable to extract sub trace\n", __func__);
+					return -1;
 				}
 
 				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u - it %u", loop_index, iteration_index);
@@ -302,14 +302,13 @@ int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}*/
+	}
 
 	return 0;
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
-	/*uint32_t 				i;
+	uint32_t 				i;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct traceFragment 	fragment;
@@ -332,8 +331,9 @@ int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_arra
 			}
 
 			total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
-			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
-				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+			if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[i].offset, total_length)){
+				printf("ERROR: in %s, unable to extract sub trace\n", __func__);
+				continue;
 			}
 
 			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
@@ -347,14 +347,13 @@ int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_arra
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}*/
+	}
 
 	return 0;
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter" /* Due to the interface format */
 int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_array, int32_t loop_index){
-	/*uint32_t 				i;
+	uint32_t 				i;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct traceFragment 	fragment;
@@ -377,8 +376,9 @@ int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_arr
 			}
 
 			total_length = engine->loops[i].length * engine->loops[i].nb_iteration;
-			if (array_copy(&(engine->element_array), &(fragment.instruction_array), engine->loops[i].offset, total_length) !=  (int32_t)total_length){
-				printf("ERROR: in %s, unable to copy instruction from element_array to traceFragment\n", __func__);
+			if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[i].offset, total_length)){
+				printf("ERROR: in %s, unable to extract sub trace\n", __func__);
+				continue;
 			}
 
 			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "Loop %u", i);
@@ -392,7 +392,7 @@ int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_arr
 	}
 	else{
 		printf("WARNING: in %s, loopEngine does not contain loops - cannot export\n", __func__);
-	}*/
+	}
 
 	return 0;
 }

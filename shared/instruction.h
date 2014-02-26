@@ -7,12 +7,6 @@
 #include "include/xed-iclass-enum.h"
 #include "address.h"
 
-#if defined __linux__
-#include "multiColumn.h"
-#elif defined WIN32
-#include "../misc/multiColumn.h"
-#endif
-
 #define INSTRUCTION_MAX_NB_DATA 5 /* Do not update this value without taking care of the tracer */
 
 /* Data type value:
@@ -46,26 +40,26 @@ enum operandType{
 #define NB_REGISTER 19 /* do not forget to update this value */
 
 enum reg{
-	REGISTER_INVALID 	= 0x00000000,
-	REGISTER_EAX 		= 0x00000001,
-	REGISTER_AX 		= 0x00000002,
-	REGISTER_AH 		= 0x00000003,
-	REGISTER_AL 		= 0x00000004,
-	REGISTER_EBX 		= 0x00000005,
-	REGISTER_BX 		= 0x00000006,
-	REGISTER_BH 		= 0x00000007,
-	REGISTER_BL 		= 0x00000008,
-	REGISTER_ECX 		= 0x00000009,
-	REGISTER_CX 		= 0x0000000a,
-	REGISTER_CH 		= 0x0000000b,
-	REGISTER_CL 		= 0x0000000c,
-	REGISTER_EDX 		= 0x0000000d,
-	REGISTER_DX 		= 0x0000000e,
-	REGISTER_DH 		= 0x0000000f,
-	REGISTER_DL 		= 0x00000010,
-	REGISTER_ESI 		= 0x00000011,
-	REGISTER_EDI 		= 0x00000012,
-	REGISTER_EBP 		= 0x00000013
+	REGISTER_INVALID 	= 0x00000000,	/* 0  */
+	REGISTER_EAX 		= 0x00000001,	/* 1  */
+	REGISTER_AX 		= 0x00000002,	/* 2  */
+	REGISTER_AH 		= 0x00000003,	/* 3  */
+	REGISTER_AL 		= 0x00000004,	/* 4  */
+	REGISTER_EBX 		= 0x00000005,	/* 5  */
+	REGISTER_BX 		= 0x00000006,	/* 6  */
+	REGISTER_BH 		= 0x00000007,	/* 7  */
+	REGISTER_BL 		= 0x00000008,	/* 8  */
+	REGISTER_ECX 		= 0x00000009,	/* 9  */
+	REGISTER_CX 		= 0x0000000a,	/* 10 */
+	REGISTER_CH 		= 0x0000000b,	/* 11 */
+	REGISTER_CL 		= 0x0000000c,	/* 12 */
+	REGISTER_EDX 		= 0x0000000d,	/* 13 */
+	REGISTER_DX 		= 0x0000000e,	/* 14 */
+	REGISTER_DH 		= 0x0000000f,	/* 15 */
+	REGISTER_DL 		= 0x00000010,	/* 16 */
+	REGISTER_ESI 		= 0x00000011,	/* 17 */
+	REGISTER_EDI 		= 0x00000012,	/* 18 */
+	REGISTER_EBP 		= 0x00000013	/* 19 */
 };
 
 struct operand{
@@ -104,11 +98,6 @@ struct _instruction{ /*tmp*/
 	uint32_t 		operand_offset;
 	uint32_t 		nb_operand;
 };
-
-struct multiColumnPrinter* instruction_init_multiColumnPrinter();
-void instruction_print(struct multiColumnPrinter* printer, struct instruction *ins);
-
-int32_t instruction_compare_pc(struct instruction* ins1, struct instruction* ins2);
 
 void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
 

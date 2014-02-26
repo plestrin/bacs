@@ -194,10 +194,10 @@ void analysis_instruction_print(struct analysis* analysis, char* arg){
 
 void analysis_instruction_export(struct analysis* analysis){
 	struct instruction* 	instruction;
-	struct traceFragment 	fragment;
+	struct array 			array;
 
-	if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL, NULL)){
-		printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+	if (array_init(&array, sizeof(struct instruction))){
+		printf("ERROR: in %s, unable to init array\n", __func__);
 		return;
 	}
 
@@ -205,29 +205,24 @@ void analysis_instruction_export(struct analysis* analysis){
 		do{
 			instruction = traceReaderJSON_get_next_instruction(&(analysis->ins_reader.json));
 			if (instruction != NULL){
-				if (traceFragment_add_instruction(&fragment, instruction) < 0){
-					printf("ERROR: in %s, unable to add instruction to traceFragment\n", __func__);
+				if (array_add(&array, instruction) < 0){
+					printf("ERROR: in %s, unable to add instruction to array\n", __func__);
 					break;
 				}
 			}
 		} while (instruction != NULL);
-
-		traceFragment_set_tag(&fragment, "trace");
-
-		if (array_add(&(analysis->frag_array), &fragment) < 0){
-			printf("ERROR: in %s, unable to add traceFragment to frag_array\n", __func__);
-			traceFragment_clean(&fragment);
-		}
 
 		/* new earth army */
 		if (analysis->trace != NULL){
 			printf("WARNING: in %s, deleting previous trace\n", __func__);
 			trace_delete(analysis->trace);
 		}
-		analysis->trace = trace_create(&(fragment.instruction_array));
+		analysis->trace = trace_create(&array);
 		if (analysis->trace == NULL){
 			printf("ERROR: in %s, unable to create trace\n", __func__);
 		}
+
+		array_clean(&array);
 
 	}
 	else{
@@ -369,11 +364,9 @@ void analysis_loop_delete(struct analysis* analysis){
 
 void analysis_frag_clean(struct analysis* analysis){
 	uint32_t 				i;
-	struct traceFragment* 	fragment;
 
 	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
-		traceFragment_clean(fragment);
+		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
 	}
 	array_empty(&(analysis->frag_array));
 }
@@ -422,33 +415,13 @@ void analysis_frag_print_stat(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_print_ins(struct analysis* analysis, char* arg){
-	struct multiColumnPrinter* 	printer;
-	struct traceFragment* 		fragment;
-	uint32_t 					i;
-	uint32_t 					index;
+	uint32_t index;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
 		
 		if (index < array_get_length(&(analysis->frag_array))){
-			printer = instruction_init_multiColumnPrinter();
-			if (printer != NULL){
-				fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
-				#ifdef VERBOSE
-				printf("Print instructions for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
-				#endif
-
-				multiColumnPrinter_print_header(printer);
-
-				for (i = 0; i < traceFragment_get_nb_instruction(fragment); i++){
-					instruction_print(printer, traceFragment_get_instruction(fragment, i));
-				}
-
-				multiColumnPrinter_delete(printer);
-			}
-			else{
-				printf("ERROR: in %s, init multiColumnPrinter fails\n", __func__);
-			}
+			traceFragment_print_instruction((struct traceFragment*)array_get(&(analysis->frag_array), index));
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));

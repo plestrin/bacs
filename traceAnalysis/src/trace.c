@@ -39,17 +39,19 @@ int32_t trace_init(struct trace* trace, struct array* array){ /*tmp*/
 		}
 	}
 
-	trace->map_size_ins	 	= array_get_length(array) * sizeof(struct _instruction);
-	trace->map_size_op 		= operand_counter * sizeof(struct operand);
-	trace->map_size_data 	= data_counter * sizeof(uint8_t);
+	trace->alloc_size_ins	= array_get_length(array) * sizeof(struct _instruction);
+	trace->alloc_size_op 	= operand_counter * sizeof(struct operand);
+	trace->alloc_size_data 	= data_counter * sizeof(uint8_t);
 	trace->nb_instruction 	= array_get_length(array);
 	trace->reference_count 	= 1;
+	trace->allocation_type 	= TRACEALLOCATION_MMAP;
 
-	trace->instructions = (struct _instruction*)mmap(NULL, trace->map_size_ins, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	trace->operands = (struct operand*)mmap(NULL, trace->map_size_op, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	trace->data = (uint8_t*)mmap(NULL, trace->map_size_data, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	trace->instructions = (struct _instruction*)mmap(NULL, trace->alloc_size_ins, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	trace->operands = (struct operand*)mmap(NULL, trace->alloc_size_op, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	trace->data = (uint8_t*)mmap(NULL, trace->alloc_size_data, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
 	if (trace->instructions == NULL || trace->operands == NULL || trace->data == NULL){
+		printf("ERROR: in %s, unable to map memory\n", __func__);
 		trace_clean(trace);
 		return -1;
 	}
@@ -204,6 +206,77 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 	}
 }
 
+int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
+	uint32_t i;
+	uint32_t j;
+	uint32_t nb_operand;
+	uint32_t nb_data;
+	uint32_t offset_operand;
+	uint32_t offset_data;
+
+	if (offset + length > trace_src->nb_instruction || length == 0){
+		printf("ERROR: in %s, incorrect parameters: offset: %u, length: %u\n", __func__, offset, length);
+		return -1;
+	}
+
+	j = offset + length - 1;
+	while(trace_src->instructions[j].nb_operand == 0 && j > offset){
+		j --;
+	}
+	if (j == offset){
+		nb_operand = 0;
+		nb_data = 0;
+		offset_operand = 0;
+		offset_data = 0;
+	}
+	else{
+		nb_operand = trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand;
+		nb_data = trace_src->operands[trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand - 1].data_offset + trace_src->operands[trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand - 1].size;
+	
+		j = offset;
+		while(trace_src->instructions[j].nb_operand == 0 && j < length){
+			j ++;
+		}
+		nb_operand -= trace_src->instructions[j].operand_offset;
+		nb_data -= trace_src->operands[trace_src->instructions[j].operand_offset].data_offset;
+		offset_operand = trace_src->instructions[j].operand_offset;
+		offset_data = trace_src->operands[offset_operand].data_offset;
+	}
+
+	trace_dst->alloc_size_ins	= length * sizeof(struct _instruction);
+	trace_dst->alloc_size_op 	= nb_operand * sizeof(struct operand);
+	trace_dst->alloc_size_data 	= nb_data * sizeof(uint8_t);
+	trace_dst->nb_instruction 	= length;
+	trace_dst->reference_count 	= 1;
+	trace_dst->allocation_type 	= TRACEALLOCATION_MALLOC;
+
+
+	trace_dst->instructions 	= (struct _instruction*)malloc(trace_dst->alloc_size_ins);
+	trace_dst->operands 		= (struct operand*)malloc(trace_dst->alloc_size_op);
+	trace_dst->data 			= (uint8_t*)malloc(trace_dst->alloc_size_data);
+
+	if (trace_dst->instructions == NULL || trace_dst->operands == NULL || trace_dst->data == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		trace_clean(trace_dst);
+		return -1;
+	}
+
+	memcpy(trace_dst->instructions, trace_src->instructions + offset, trace_dst->alloc_size_ins);
+	memcpy(trace_dst->operands, trace_src->operands + offset_operand, trace_dst->alloc_size_op);
+	memcpy(trace_dst->data, trace_src->data + offset_data, trace_dst->alloc_size_data);
+
+	for (i = 0; i < length; i++){
+		if (trace_dst->instructions[i].nb_operand > 0){
+			trace_dst->instructions[i].operand_offset -= offset_operand;
+			for (j = 0; j < trace_dst->instructions[i].nb_operand; j++){
+				trace_dst->operands[trace_dst->instructions[i].operand_offset + j].data_offset -= offset_data;
+			}
+		}
+	}
+
+	return 0;
+}
+
 void trace_clean(struct trace* trace){
 	if (trace != NULL && --trace->reference_count == 0){
 		trace_clean_(trace);
@@ -218,13 +291,29 @@ void trace_delete(struct trace* trace){
 }
 
 static void trace_clean_(struct trace* trace){
-	if (trace->instructions != NULL){
-		munmap(trace->instructions, trace->map_size_ins);
+	if (trace->allocation_type == TRACEALLOCATION_MMAP){
+		if (trace->instructions != NULL){
+			munmap(trace->instructions, trace->alloc_size_ins);
+		}
+		if (trace->operands != NULL){
+			munmap(trace->operands, trace->alloc_size_op);
+		}
+		if (trace->data != NULL){
+			munmap(trace->data, trace->alloc_size_data);
+		}
 	}
-	if (trace->operands != NULL){
-		munmap(trace->operands, trace->map_size_op);
+	else if (trace->allocation_type == TRACEALLOCATION_MALLOC){
+		if (trace->instructions != NULL){
+			free(trace->instructions);
+		}
+		if (trace->operands != NULL){
+			free(trace->operands);
+		}
+		if (trace->data != NULL){
+			free(trace->data);
+		}
 	}
-	if (trace->data != NULL){
-		munmap(trace->data, trace->map_size_data);
+	else{
+		printf("ERROR: in %s, incorrect allocation type\n", __func__);
 	}
 }

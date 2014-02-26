@@ -3,121 +3,40 @@
 
 #include "traceFragment.h"
 
-struct traceFragment* codeSegment_create(enum fragmentType type, void* specific_data, struct fragmentCallback* callback){
-	struct traceFragment* frag = (struct traceFragment*)malloc(sizeof(struct traceFragment));
-
-	if (frag != NULL){
-		if (traceFragment_init(frag, type, specific_data, callback)){
-			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
-			free(frag);
-			frag = NULL;
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-	}
-
-	return frag;
-}
 
 int32_t traceFragment_init(struct traceFragment* frag, enum fragmentType type, void* specific_data, struct fragmentCallback* callback){
-	int32_t result = -1;
+	frag->tag[0]					= '\0';
+	frag->type 						= type;
+	frag->specific_data 			= specific_data;
+	frag->callback 					= callback;
 
-	result = array_init(&frag->instruction_array, sizeof(struct instruction));
-	if (result){
-		printf("ERROR: in %s, unable to init instruction array\n", __func__);
-	}
-	else{
-		frag->tag[0]					= '\0';
-		frag->type 						= type;
-		frag->specific_data 			= specific_data;
-		frag->callback 					= callback;
+	frag->read_memory_array 		= NULL;
+	frag->write_memory_array 		= NULL;
+	frag->nb_memory_read_access 	= 0;
+	frag->nb_memory_write_access 	= 0;
 
-		frag->read_memory_array 		= NULL;
-		frag->write_memory_array 		= NULL;
-		frag->nb_memory_read_access 	= 0;
-		frag->nb_memory_write_access 	= 0;
-
-		frag->read_register_array 		= NULL;
-		frag->write_register_array 		= NULL;
-		frag->nb_register_read_access 	= 0;
-		frag->nb_register_write_access 	= 0;
-	}
-
-	return result;
-}
-
-struct instruction* traceFragment_get_last_instruction(struct traceFragment* frag){
-	struct instruction* instruction = NULL;
-
-	if (frag != NULL){
-		if (array_get_length(&(frag->instruction_array)) > 0){
-			instruction = (struct instruction*)array_get(&(frag->instruction_array), array_get_length(&(frag->instruction_array)) - 1);
-		}
-	}
-
-	return instruction;
-}
-
-int32_t traceFragment_clone(struct traceFragment* frag_src, struct traceFragment* frag_dst){
-	if (array_clone(&(frag_src->instruction_array), &(frag_dst->instruction_array))){
-		printf("ERROR: in %s, unable to clone array\n", __func__);
-		return -1;
-	}
-	
-	if (frag_src->read_memory_array != NULL){
-		printf("WARNING: in %s, this method does not copy the read_memory_array buffer\n", __func__);
-	}
-	if (frag_src->write_memory_array != NULL){
-		printf("WARNING: in %s, this method does not copy the write_memory_array buffer\n", __func__);
-	}
-	if (frag_src->read_register_array != NULL){
-		printf("WARNING: in %s, this method does not copy the read_register_array buffer\n", __func__);
-	}
-	if (frag_src->write_register_array != NULL){
-		printf("WARNING: in %s, this method does not copy the write_register_array buffer\n", __func__);
-	}
-
-	strncpy(frag_dst->tag, frag_src->tag, TRACEFRAGMENT_TAG_LENGTH);
-	frag_dst->type 						= frag_src->type;
-	frag_dst->callback 					= frag_src->callback;
-
-	if (frag_src->callback != NULL && frag_src->callback->specific_clone != NULL){
-		frag_dst->specific_data 		= frag_src->callback->specific_clone(frag_src->specific_data);
-	}
-	else{
-		frag_dst->specific_data 		= frag_src->specific_data;
-	}
-
-	frag_dst->read_memory_array 		= NULL;
-	frag_dst->write_memory_array 		= NULL;
-	frag_dst->nb_memory_read_access 	= frag_src->nb_memory_read_access;
-	frag_dst->nb_memory_write_access 	= frag_src->nb_memory_write_access;
-
-	frag_dst->read_register_array 		= NULL;
-	frag_dst->write_register_array 		= NULL;
-	frag_dst->nb_register_read_access 	= frag_src->nb_register_read_access;
-	frag_dst->nb_register_write_access 	= frag_src->nb_register_write_access;
+	frag->read_register_array 		= NULL;
+	frag->write_register_array 		= NULL;
+	frag->nb_register_read_access 	= 0;
+	frag->nb_register_write_access 	= 0;
 
 	return 0;
 }
 
 double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode){
-	double 				result = 0;
-	uint32_t 			i;
-	struct instruction*	instruction;
-	int 				j;
-	int 				nb_effective_instruction = 0;
-	int 				nb_found_instruction = 0;
-	char 				excluded;
+	double 		result = 0;
+	uint32_t 	i;
+	int 		j;
+	int 		nb_effective_instruction = 0;
+	int 		nb_found_instruction = 0;
+	char 		excluded;
 
 	if (frag != NULL){
-		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
-			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
+		for (i = 0; i < frag->trace.nb_instruction; i++){
 			excluded = 0;
 			if (excluded_opcode != NULL){
 				for (j = 0; j < nb_excluded_opcode; j++){
-					if (instruction->opcode == excluded_opcode[j]){
+					if (frag->trace.instructions[i].opcode == excluded_opcode[j]){
 						excluded = 1;
 						break;
 					}
@@ -128,7 +47,7 @@ double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, u
 				nb_effective_instruction++;
 				if (opcode != NULL){
 					for (j = 0; j < nb_opcode; j++){
-						if (instruction->opcode == opcode[j]){
+						if (frag->trace.instructions[i].opcode == opcode[j]){
 							nb_found_instruction ++;
 							break;
 						}
@@ -146,21 +65,28 @@ double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, u
 int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 	uint32_t 			nb_read_mem 	= 0;
 	uint32_t 			nb_write_mem 	= 0;
-	int32_t 			result 			= -1;
 	uint32_t 			i;
 	uint32_t 			j;
-	struct instruction* instruction;
+	struct operand* 	operands;
 
 	if (frag != NULL){
-		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
-			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
-			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(instruction->data[j].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
-						nb_read_mem ++;
+		for (i = 0; i < frag->trace.nb_instruction; i++){
+			operands = trace_get_ins_operands(&(frag->trace), i);
+			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(operands[j].type)){
+					if(operands[j].size <= 4){
+						if (INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+							nb_read_mem ++;
+						}
+						else if (INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+							nb_write_mem ++;
+						}
+						else{
+							printf("ERROR: in %s, incorrect operand type\n", __func__);
+						}
 					}
-					if (INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
-						nb_write_mem ++;
+					else{
+						printf("ERROR: in %s, operand size is too big (%u) - this case is not implemented yet\n", __func__, operands[j].size);
 					}
 				}
 			}
@@ -179,7 +105,7 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 			frag->read_memory_array = (struct memAccess*)malloc(sizeof(struct memAccess) * nb_read_mem);
 			if (frag->read_memory_array == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				return result;
+				return -1;
 			}
 		}
 
@@ -187,7 +113,7 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 			frag->write_memory_array = (struct memAccess*)malloc(sizeof(struct memAccess) * nb_write_mem);
 			if (frag->write_memory_array == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				return result;
+				return -1;
 			}
 		}
 
@@ -197,36 +123,42 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 		nb_read_mem = 0;
 		nb_write_mem = 0;
 
-		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
-			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
-			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(instruction->data[j].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
-						frag->read_memory_array[nb_read_mem].order		= i * INSTRUCTION_MAX_NB_DATA + j;
-						frag->read_memory_array[nb_read_mem].value 		= instruction->data[j].value;
-						frag->read_memory_array[nb_read_mem].address	= instruction->data[j].location.address;
-						frag->read_memory_array[nb_read_mem].size 		= instruction->data[j].size;
-						frag->read_memory_array[nb_read_mem].opcode 	= instruction->opcode;
-						frag->read_memory_array[nb_read_mem].group 		= MEMACCESS_UNDEF_GROUP;
-						nb_read_mem ++;
+		for (i = 0; i < frag->trace.nb_instruction; i++){
+			operands = trace_get_ins_operands(&(frag->trace), i);
+			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(operands[j].type)){
+					if (operands[j].size <= 4){
+						if (INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+							frag->read_memory_array[nb_read_mem].order		= frag->trace.instructions[i].operand_offset + j;
+							memcpy(&(frag->read_memory_array[nb_read_mem].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
+							frag->read_memory_array[nb_read_mem].address	= operands[j].location.address;
+							frag->read_memory_array[nb_read_mem].size 		= operands[j].size;
+							frag->read_memory_array[nb_read_mem].opcode 	= frag->trace.instructions[i].opcode;
+							frag->read_memory_array[nb_read_mem].group 		= MEMACCESS_UNDEF_GROUP;
+							nb_read_mem ++;
+						}
+						else if (INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+							frag->write_memory_array[nb_write_mem].order		= frag->trace.instructions[i].operand_offset + j;
+							memcpy(&(frag->write_memory_array[nb_write_mem].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
+							frag->write_memory_array[nb_write_mem].address		= operands[j].location.address;
+							frag->write_memory_array[nb_write_mem].size 		= operands[j].size;
+							frag->write_memory_array[nb_write_mem].opcode 		= frag->trace.instructions[i].opcode;
+							frag->write_memory_array[nb_write_mem].group 		= MEMACCESS_UNDEF_GROUP;
+							nb_write_mem ++;
+						}
+						else{
+							printf("ERROR: in %s, incorrect operand type\n", __func__);
+						}
 					}
-					if (INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
-						frag->write_memory_array[nb_write_mem].order		= i * INSTRUCTION_MAX_NB_DATA + j;
-						frag->write_memory_array[nb_write_mem].value 		= instruction->data[j].value;
-						frag->write_memory_array[nb_write_mem].address		= instruction->data[j].location.address;
-						frag->write_memory_array[nb_write_mem].size 		= instruction->data[j].size;
-						frag->write_memory_array[nb_write_mem].opcode 		= instruction->opcode;
-						frag->write_memory_array[nb_write_mem].group 		= MEMACCESS_UNDEF_GROUP;
-						nb_write_mem ++;
+					else{
+						printf("ERROR: in %s, operand size is too big (%u) - this case is not implemented yet\n", __func__, operands[j].size);
 					}
 				}
 			}
 		}
 	}
 
-	result = 0;
-
-	return result;
+	return 0;
 }
 
 void traceFragment_remove_read_after_write(struct traceFragment* frag){
@@ -301,12 +233,12 @@ void traceFragment_remove_read_after_write(struct traceFragment* frag){
 }
 
 int32_t traceFragment_create_reg_array(struct traceFragment* frag){
-	uint8_t 				register_read_state[NB_REGISTER];
-	uint8_t 				register_write_state[NB_REGISTER];
-	uint32_t 				i;
-	uint8_t 				j;
-	uint8_t 				index = 0;
-	struct instruction* 	instruction;
+	uint8_t 			register_read_state[NB_REGISTER];
+	uint8_t 			register_write_state[NB_REGISTER];
+	uint32_t 			i;
+	uint8_t 			j;
+	uint8_t 			index = 0;
+	struct operand* 	operands;
 
 	#define REGISTER_STATE_UNINIT 		0
 	#define REGISTER_STATE_VALID  		1
@@ -430,121 +362,131 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 		INIT_REGISTER_ARRAY(frag->read_register_array);
 		INIT_REGISTER_ARRAY(frag->write_register_array);
 
-		for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
-			instruction = (struct instruction*)array_get(&(frag->instruction_array), i);
+		for (i = 0; i < frag->trace.nb_instruction; i++){
+			operands = trace_get_ins_operands(&(frag->trace), i);
 
 			/* READ ACCESS */
-			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_READ(instruction->data[j].type)){
-					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
-					switch (register_read_state[index]){
-					case REGISTER_STATE_UNINIT 	: {
-						frag->read_register_array[index].value 	= instruction->data[j].value;
-						frag->read_register_array[index].size 	= instruction->data[j].size;
-						frag->read_register_array[index].order 	= i * INSTRUCTION_MAX_NB_DATA * 2 + j;
-						register_read_state[index] = REGISTER_STATE_VALID;
-						break;
+			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+					if (operands[j].size <= 4){
+						REGISTER_TO_INDEX(operands[j].location.reg, index);
+						switch (register_read_state[index]){
+							case REGISTER_STATE_UNINIT 	: {
+								memcpy(&(frag->read_register_array[index].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
+								frag->read_register_array[index].size 	= operands[j].size;
+								frag->read_register_array[index].order 	= frag->trace.instructions[i].operand_offset + j;
+								register_read_state[index] = REGISTER_STATE_VALID;
+								break;
+							}
+							case REGISTER_STATE_VALID 	:
+							case REGISTER_STATE_WRITTEN : {
+								break;
+							}
+							default 					: {
+								printf("ERROR: in %s, incorrect state for register read\n", __func__);
+								break;
+							}
+						}
 					}
-					case REGISTER_STATE_VALID 	:
-					case REGISTER_STATE_WRITTEN : {
-						break;
-					}
-					default 					: {
-						printf("ERROR: in %s, incorrect state for register read\n", __func__);
-						break;
-					}
+					else{
+						printf("ERROR: in %s, operand size is too big (%u) - this case is not implemented yet\n", __func__, operands[j].size);
 					}
 				}
 			}
 
 			/* WRITE ACCESS */
-			for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(instruction->data[j].type) && INSTRUCTION_DATA_TYPE_IS_WRITE(instruction->data[j].type)){
-					REGISTER_TO_INDEX(instruction->data[j].location.reg, index);
+			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
+				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+					if (operands[j].size <= 4){
+						REGISTER_TO_INDEX(operands[j].location.reg, index);
 
-					frag->write_register_array[index].value = instruction->data[j].value;
-					frag->write_register_array[index].size 	= instruction->data[j].size;
-					frag->write_register_array[index].order = i * INSTRUCTION_MAX_NB_DATA * 2 + INSTRUCTION_MAX_NB_DATA + j;
-					register_write_state[index] = REGISTER_STATE_VALID;
+						memcpy(&(frag->write_register_array[index].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
+						frag->write_register_array[index].size 	= operands[j].size;
+						frag->write_register_array[index].order = frag->trace.instructions[i].operand_offset + j;
+						register_write_state[index] = REGISTER_STATE_VALID;
 
-					REGISTER_SET_STATE_WRITTEN(register_read_state[index]);
+						REGISTER_SET_STATE_WRITTEN(register_read_state[index]);
 
-					switch(instruction->data[j].location.reg){
-					case REGISTER_EAX 	: {
-						register_write_state[INDEX_REGISTER_AX] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
+						switch(operands[j].location.reg){
+							case REGISTER_EAX 	: {
+								register_write_state[INDEX_REGISTER_AX] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
 
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AX]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
-						break;
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AX]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
+								break;
+							}
+							case REGISTER_AX 	: {
+								register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
+								break;
+							}
+							case REGISTER_EBX 	: {
+								register_write_state[INDEX_REGISTER_BX] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BX]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
+								break;
+							}
+							case REGISTER_BX 	: {
+								register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
+								break;
+							}
+							case REGISTER_ECX 	: {
+								register_write_state[INDEX_REGISTER_CX] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CX]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
+								break;
+							}
+							case REGISTER_CX 	: {
+								register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
+								break;
+							}
+							case REGISTER_EDX 	: {
+								register_write_state[INDEX_REGISTER_DX] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DX]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
+								break;
+							}
+							case REGISTER_DX 	: {
+								register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
+								register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
+
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
+								REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
+								break;
+							}
+							default 			: {
+								break;
+							}
+						}
 					}
-					case REGISTER_AX 	: {
-						register_write_state[INDEX_REGISTER_AH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_AL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_AL]);
-						break;
-					}
-					case REGISTER_EBX 	: {
-						register_write_state[INDEX_REGISTER_BX] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BX]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
-						break;
-					}
-					case REGISTER_BX 	: {
-						register_write_state[INDEX_REGISTER_BH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_BL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_BL]);
-						break;
-					}
-					case REGISTER_ECX 	: {
-						register_write_state[INDEX_REGISTER_CX] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CX]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
-						break;
-					}
-					case REGISTER_CX 	: {
-						register_write_state[INDEX_REGISTER_CH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_CL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_CL]);
-						break;
-					}
-					case REGISTER_EDX 	: {
-						register_write_state[INDEX_REGISTER_DX] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DX]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
-						break;
-					}
-					case REGISTER_DX 	: {
-						register_write_state[INDEX_REGISTER_DH] = REGISTER_STATE_OVER_WRITTEN;
-						register_write_state[INDEX_REGISTER_DL] = REGISTER_STATE_OVER_WRITTEN;
-
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DH]);
-						REGISTER_SET_STATE_WRITTEN(register_read_state[INDEX_REGISTER_DL]);
-						break;
-					}
-					default 			: {
-						break;
-					}
+					else{
+						printf("ERROR: in %s, operand size is too big (%u) - this case is not implemented yet\n", __func__, operands[j].size);
 					}
 				}
 			}
@@ -632,16 +574,13 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 
 void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm){
 	uint32_t 				i;
-	struct instruction* 	ins;
 	struct cm_routine* 		routine  = NULL;
 	struct cm_section* 		section;
 	struct cm_image* 		image;
 
-	for (i = 0; i < array_get_length(&(frag->instruction_array)); i++){
-		ins = (struct instruction*)array_get(&(frag->instruction_array), i);
-
-		if (routine == NULL || !CODEMAP_IS_ADDRESS_IN_ROUTINE(routine, ins->pc)){
-			routine = codeMap_search_routine(cm, ins->pc);
+	for (i = 0; i < frag->trace.nb_instruction; i++){
+		if (routine == NULL || !CODEMAP_IS_ADDRESS_IN_ROUTINE(routine, frag->trace.instructions[i].pc)){
+			routine = codeMap_search_routine(cm, frag->trace.instructions[i].pc);
 			if (routine != NULL){
 				section = CODEMAP_ROUTINE_GET_SECTION(routine);
 				image = CODEMAP_SECTION_GET_IMAGE(section);
@@ -681,6 +620,6 @@ void traceFragment_clean(struct traceFragment* frag){
 			frag->callback->specific_delete(frag->specific_data);
 		}
 
-		array_clean(&(frag->instruction_array));
+		trace_clean(&(frag->trace));
 	}
 }
