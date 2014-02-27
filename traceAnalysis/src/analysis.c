@@ -22,11 +22,6 @@
 int main(int argc, char** argv){
 	struct analysis* 			analysis = NULL;
 	struct inputParser* 		parser = NULL;
-	
-	if	(argc < 2){
-		printf("ERROR: in %s, please specify the trace directory as first argument\n", __func__);
-		goto exit;
-	}
 
 	parser = inputParser_create();
 	if (parser == NULL){
@@ -34,7 +29,7 @@ int main(int argc, char** argv){
 		goto exit;
 	}
 	
-	analysis = analysis_create(argv[1]);
+	analysis = analysis_create();
 	if (analysis == NULL){
 		printf("ERROR: in %s, unable to create the analysis structure\n", __func__);
 		goto exit;
@@ -45,13 +40,12 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", "Display the ioChecker structure", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis->checker, ioChecker_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", "Remove every primitive reference from the ioChecker", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis->checker, ioChecker_empty)
 
-	/* codeMap specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis->code_map, codeMap_check_address)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis->code_map, codeMap_print)
-
 	/* trace specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace. Specify an index / range as a second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_instruction_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", "Export the whole trace as traceFragment", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_instruction_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", "Load a trace in the analysis engine. Specify trace path as second argument", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace. Specify an index / range as a second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_check_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", "Delete the current trace", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_delete)
 
 	/* loop specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", "Create a loopEngine and parse the trace looking for A^n pattern", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_create)
@@ -79,7 +73,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", "Seek for a user defined argBuffer in the argSet array. Specify the buffer as second arg (raw format)", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_seek)
 
-	inputParser_exe(parser, argc - 2, argv + 2);
+	inputParser_exe(parser, argc - 1, argv + 1);
 
 	exit:
 
@@ -87,17 +81,16 @@ int main(int argc, char** argv){
 	inputParser_delete(parser);
 
 	pthread_exit(NULL); /* due to dlopen */
+
 	return 0;
 }
-
 
 /* ===================================================================== */
 /* Analysis functions						                             */
 /* ===================================================================== */
 
-struct analysis* analysis_create(const char* dir_name){
+struct analysis* analysis_create(){
 	struct analysis* 	analysis;
-	char				file_name[ANALYSIS_DIRECTORY_NAME_MAX_LENGTH];
 
 	analysis = (struct analysis*)malloc(sizeof(struct analysis));
 	if (analysis == NULL){
@@ -110,20 +103,6 @@ struct analysis* analysis_create(const char* dir_name){
 		printf("ERROR: in %s, unable to create ioChecker\n", __func__);
 		free(analysis);
 		return NULL;
-	}
-
-	snprintf(file_name, ANALYSIS_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, ANALYSIS_INS_FILE_NAME);
-	if (traceReaderJSON_init(&(analysis->ins_reader.json), file_name)){
-		printf("ERROR: in %s, unable to init trace JSON reader\n", __func__);
-		ioChecker_delete(analysis->checker);
-		free(analysis);
-		return NULL;
-	}
-
-	snprintf(file_name, ANALYSIS_DIRECTORY_NAME_MAX_LENGTH, "%s/%s", dir_name, ANALYSIS_CM_FILE_NAME);
-	analysis->code_map = cmReaderJSON_parse(file_name);
-	if (analysis->code_map == NULL){
-		printf("WARNING: in %s, continue without code map information\n", __func__);
 	}
 
 	if (array_init(&(analysis->frag_array), sizeof(struct traceFragment))){
@@ -142,44 +121,72 @@ struct analysis* analysis_create(const char* dir_name){
 
 	}
 
-	analysis->trace = NULL;
-	analysis->loop_engine = NULL;
+	analysis->trace 		= NULL;
+	analysis->code_map 		= NULL;
+	analysis->loop_engine 	= NULL;
 
 	return analysis;
 }
 
 void analysis_delete(struct analysis* analysis){
-	if (analysis != NULL){
-		if (analysis->loop_engine != NULL){
-			loopEngine_delete(analysis->loop_engine);
-			analysis->loop_engine = NULL;
-		}
-
-		analysis_arg_clean(analysis);
-		array_clean(&(analysis->arg_array));
-
-		analysis_frag_clean(analysis);
-		array_clean(&(analysis->frag_array));
-
-		traceReaderJSON_clean(&(analysis->ins_reader.json));
-		codeMap_delete(analysis->code_map);
-
-		if (analysis->trace != NULL){
-			trace_delete(analysis->trace);
-		}
-
-		ioChecker_delete(analysis->checker);
-
-		free(analysis);
+	if (analysis->loop_engine != NULL){
+		loopEngine_delete(analysis->loop_engine);
+		analysis->loop_engine = NULL;
 	}
+
+	analysis_arg_clean(analysis);
+	array_clean(&(analysis->arg_array));
+
+	analysis_frag_clean(analysis);
+	array_clean(&(analysis->frag_array));
+
+	ioChecker_delete(analysis->checker);
+
+	if (analysis->trace != NULL){
+		trace_delete(analysis->trace);
+		analysis->trace = NULL;
+	}
+
+	if (analysis->code_map != NULL){
+		codeMap_delete(analysis->code_map);
+		analysis->code_map = NULL;
+	}
+
+	free(analysis);
 }
 
 /* ===================================================================== */
 /* Trace functions						                                 */
 /* ===================================================================== */
 
-/*reprendre cette méthode est faire un premier commit si tout fonctionne correcetement */
-void analysis_instruction_print(struct analysis* analysis, char* arg){
+void analysis_trace_load(struct analysis* analysis, char* arg){
+	if (arg == NULL){
+		printf("ERROR: in %s, please specify the trace directory\n", __func__);
+		return;
+	}
+
+	if (analysis->trace != NULL){
+		printf("WARNING: in %s, deleting previous trace\n", __func__);
+		trace_delete(analysis->trace);
+	}
+
+	if (analysis->code_map != NULL){
+		printf("WARNING: in %s, deleting previous codeMap\n", __func__);
+		codeMap_delete(analysis->code_map);
+	}
+
+	analysis->trace = trace_create(arg);
+	if (analysis->trace == NULL){
+		printf("ERROR: in %s, unable to create trace\n", __func__);
+	}
+
+	analysis->code_map = cmReaderJSON_parse(arg);
+	if (analysis->code_map == NULL){
+		printf("ERROR: in %s, unable to create codeMap\n", __func__);
+	}
+}
+
+void analysis_trace_print(struct analysis* analysis, char* arg){
 	uint32_t start = 0;
 	uint32_t stop = 0;
 
@@ -192,41 +199,39 @@ void analysis_instruction_print(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_instruction_export(struct analysis* analysis){
-	struct instruction* 	instruction;
-	struct array 			array;
-
-	if (array_init(&array, sizeof(struct instruction))){
-		printf("ERROR: in %s, unable to init array\n", __func__);
-		return;
-	}
-
-	if (!traceReaderJSON_reset(&(analysis->ins_reader.json))){
-		do{
-			instruction = traceReaderJSON_get_next_instruction(&(analysis->ins_reader.json));
-			if (instruction != NULL){
-				if (array_add(&array, instruction) < 0){
-					printf("ERROR: in %s, unable to add instruction to array\n", __func__);
-					break;
-				}
-			}
-		} while (instruction != NULL);
-
-		/* new earth army */
-		if (analysis->trace != NULL){
-			printf("WARNING: in %s, deleting previous trace\n", __func__);
-			trace_delete(analysis->trace);
-		}
-		analysis->trace = trace_create(&array);
-		if (analysis->trace == NULL){
-			printf("ERROR: in %s, unable to create trace\n", __func__);
-		}
-
-		array_clean(&array);
-
+void analysis_trace_check_codeMap(struct analysis* analysis){
+	if (analysis->code_map != NULL){
+		codeMap_check_address(analysis->code_map);
 	}
 	else{
-		printf("ERROR: in %s, unable to reset JSON trace reader\n", __func__);
+		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
+	if (analysis->code_map != NULL){
+		codeMap_print(analysis->code_map, arg);
+	}
+	else{
+		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_delete(struct analysis* analysis){
+	if (analysis->trace != NULL){
+		trace_delete(analysis->trace);
+		analysis->trace = NULL;
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+
+	if (analysis->code_map != NULL){
+		codeMap_delete(analysis->code_map);
+		analysis->code_map = NULL;
+	}
+	else{
+		printf("ERROR: in %s, codeMap is NULL\n", __func__);
 	}
 }
 

@@ -42,6 +42,7 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 		CreateDirectoryA(dir_name, NULL);
 		#endif
 
+		/* file instruction */
 		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_INS_FILE_NAME);
 
 		#ifdef __linux__
@@ -52,58 +53,80 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 		fopen_s(&(result->ins_file), file_name, "w");
 		#endif
 
-		if (result->ins_file == NULL){
-			printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, file_name);
-		}
-		else{
-			fprintf(result->ins_file, "{\"trace\":[");
-			result->ins_header_position = ftell(result->ins_file);
+		/* file operand */
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_OP_FILE_NAME);
+
+		#ifdef __linux__
+		result->op_file = fopen(file_name, "w");
+		#endif
+
+		#ifdef WIN32
+		fopen_s(&(result->op_file), file_name, "w");
+		#endif
+
+		/* file data */
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_DATA_FILE_NAME);
+
+		#ifdef __linux__
+		result->data_file = fopen(file_name, "w");
+		#endif
+
+		#ifdef WIN32
+		fopen_s(&(result->data_file), file_name, "w");
+		#endif
+
+		if (result->ins_file == NULL || result->op_file == NULL || result->data_file == NULL){
+			if (result->ins_file == NULL){
+				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_INS_FILE_NAME);
+			}
+			if (result->op_file == NULL){
+				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_OP_FILE_NAME);
+			}
+			if (result->data_file == NULL){
+				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_DATA_FILE_NAME);
+			}
 		}
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
+
 	return result;
 }
 
 void traceFiles_print_codeMap(struct traceFiles* trace, struct codeMap* cm){
 	char file_name[TRACEFILES_MAX_NAME_SIZE];
 
-	if (trace != NULL){
-		if (cm != NULL){
-			snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", trace->dir_name, TRACEFILES_CM_FILE_NAME);
+	if (cm != NULL){
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", trace->dir_name, TRACEFILES_CM_FILE_NAME);
 
-			#ifdef __linux__
-			trace->cm_file = fopen(file_name, "w");
-			#endif
+		#ifdef __linux__
+		trace->cm_file = fopen(file_name, "w");
+		#endif
 
-			#ifdef WIN32
-			fopen_s(&(trace->cm_file), file_name, "w");
-			#endif
+		#ifdef WIN32
+		fopen_s(&(trace->cm_file), file_name, "w");
+		#endif
 
-			if (trace->cm_file != NULL){
-				codeMap_print_JSON(cm, trace->cm_file);
-				fclose(trace->cm_file);
-			}
-			else{
-				printf("ERROR: in %s, unable to open file: \"%s\"\n", __func__, file_name);
-			}
+		if (trace->cm_file != NULL){
+			codeMap_print_JSON(cm, trace->cm_file);
+			fclose(trace->cm_file);
+		}
+		else{
+			printf("ERROR: in %s, unable to open file: \"%s\"\n", __func__, file_name);
 		}
 	}
 }
 
 void traceFiles_delete(struct traceFiles* trace){
-
-	if (trace != NULL){
-		if (trace->ins_file != NULL){
-			if (ftell(trace->ins_file) != trace->ins_header_position){
-				if (fseek(trace->ins_file, -1, SEEK_CUR)){
-					printf("ERROR: in %s, unable to set cursor position, trace file might be incorrect\n", __func__);
-				}
-			}
-			fprintf(trace->ins_file, "]}");
-			fclose(trace->ins_file);
-		}
-		free(trace);
+	if (trace->ins_file != NULL){
+		fclose(trace->ins_file);
 	}
+	if (trace->op_file != NULL){
+		fclose(trace->op_file);
+	}
+	if (trace->data_file != NULL){
+		fclose(trace->data_file);
+	}
+	free(trace);
 }

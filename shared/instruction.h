@@ -100,6 +100,7 @@ struct _instruction{ /*tmp*/
 };
 
 void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
+void _instruction_flush_tracer_buffer(FILE* file_ins, FILE* file_op, FILE* file_data, struct instruction* buffer, uint32_t nb_instruction);
 
 const char* instruction_opcode_2_string(uint32_t opcode);
 const char* reg_2_string(enum reg reg);

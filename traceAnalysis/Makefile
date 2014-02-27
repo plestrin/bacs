@@ -16,7 +16,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)instruction.o			\
 					$(BUILD_DIR)analysis.o 				\
 					$(BUILD_DIR)trace.o 				\
-					$(BUILD_DIR)traceReaderJSON.o 		\
 					$(BUILD_DIR)cmReaderJSON.o 			\
 					$(BUILD_DIR)refReaderJSON.o 		\
 					$(BUILD_DIR)simpleTraceStat.o		\

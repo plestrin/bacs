@@ -27,8 +27,8 @@ struct trace{
 	enum traceAllocation 	allocation_type;
 };
 
-struct trace* trace_create(struct array* array); /*temp*/
-int32_t trace_init(struct trace* trace, struct array* array); /*temp*/
+struct trace* trace_create(const char* directory_path);
+int32_t trace_init(struct trace* trace, const char* directory_path);
 
 struct multiColumnPrinter* trace_create_multiColumnPrinter();
 void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct multiColumnPrinter* printer);

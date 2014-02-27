@@ -3,30 +3,16 @@
 
 #include "array.h"
 #include "codeMap.h"
-#include "traceReaderJSON.h"
 #include "cmReaderJSON.h"
 #include "ioChecker.h"
 #include "loop.h"
 #include "trace.h"
 
-#define ANALYSIS_DIRECTORY_NAME_MAX_LENGTH 256
-#define ANALYSIS_INS_FILE_NAME "ins.json"
-#define ANALYSIS_CM_FILE_NAME "cm.json"
-
 struct analysis{
-
-	/*a supprimer par la suite - pas besoin de garder de référence */
-	char directory_name[ANALYSIS_DIRECTORY_NAME_MAX_LENGTH];
-
-	/*a supprimer par la suite - pas besoin de garder de référence */
-	union {
-		struct traceReaderJSON 	json;
-	} 							ins_reader;
-
 	struct trace* 				trace;
+	struct codeMap* 			code_map;
 
 	struct ioChecker*			checker;
-	struct codeMap* 			code_map;
 
 	struct loopEngine*			loop_engine;
 
@@ -34,10 +20,13 @@ struct analysis{
 	struct array 				arg_array;
 };
 
-struct analysis* analysis_create(const char* dir_name);
+struct analysis* analysis_create();
 
-void analysis_instruction_print(struct analysis* analysis, char* arg);
-void analysis_instruction_export(struct analysis* analysis);
+void analysis_trace_load(struct analysis* analysis, char* arg);
+void analysis_trace_print(struct analysis* analysis, char* arg);
+void analysis_trace_check_codeMap(struct analysis* analysis);
+void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
+void analysis_trace_delete(struct analysis* analysis);
 
 void analysis_loop_create(struct analysis* analysis);
 void analysis_loop_remove_redundant(struct analysis* analysis);
@@ -61,7 +50,6 @@ void analysis_arg_print(struct analysis* analysis, char* arg);
 void analysis_arg_set_tag(struct analysis* analysis, char* arg);
 void analysis_arg_search(struct analysis* analysis, char* arg);
 void analysis_arg_seek(struct analysis* analysis, char* arg);
-
 
 void analysis_delete(struct analysis* analysis);
 

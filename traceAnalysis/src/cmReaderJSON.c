@@ -6,20 +6,22 @@
 #include "cmReaderJSON.h"
 #include "mapFile.h"
 
+#define JSON_MAP_KEY_NAME_IMAGE			"image"
+#define JSON_MAP_KEY_NAME_SECTION		"section"
+#define JSON_MAP_KEY_NAME_ROUTINE		"routine"
+#define JSON_MAP_KEY_NAME_NAME			"name"
+#define JSON_MAP_KEY_NAME_START			"start"
+#define JSON_MAP_KEY_NAME_STOP			"stop"
+#define JSON_MAP_KEY_NAME_WHITELIST		"whl"
+#define JSON_MAP_KEY_NAME_EXE			"exe"
 
-#define JSON_MAP_KEY_NAME_IMAGE		"image"
-#define JSON_MAP_KEY_NAME_SECTION	"section"
-#define JSON_MAP_KEY_NAME_ROUTINE	"routine"
-#define JSON_MAP_KEY_NAME_NAME		"name"
-#define JSON_MAP_KEY_NAME_START		"start"
-#define JSON_MAP_KEY_NAME_STOP		"stop"
-#define JSON_MAP_KEY_NAME_WHITELIST	"whl"
-#define JSON_MAP_KEY_NAME_EXE		"exe"
+#define IDLE_MAP_LEVEL 					1
+#define IMAGE_MAP_LEVEL					2
+#define SECTION_MAP_LEVEL				3
+#define ROUTINE_MAP_LEVEL				4
 
-#define IDLE_MAP_LEVEL 				1
-#define IMAGE_MAP_LEVEL				2
-#define SECTION_MAP_LEVEL			3
-#define ROUTINE_MAP_LEVEL			4
+#define CMREADERJSON_PATH_MAX_LENGTH 	256
+#define CMREADERJSON_INS_FILE_NAME 		"cm.json"
 
 enum cm_json_map_key{
 	CM_JSON_MAP_KEY_IDLE,
@@ -65,12 +67,13 @@ static yajl_callbacks json_parser_callback = {
 };
 
 
-struct codeMap* cmReaderJSON_parse(const char* file_name){
+struct codeMap* cmReaderJSON_parse(const char* directory_path){
 	void*				buffer;
 	uint64_t 			size;
 	yajl_handle 		json_parser_handle;
 	yajl_status 		status;
 	struct cmReaderJSON cm_reader;
+	char 				file_name[CMREADERJSON_PATH_MAX_LENGTH];
 
 	cm_reader.cm = codeMap_create();
 	if (cm_reader.cm == NULL){
@@ -81,6 +84,7 @@ struct codeMap* cmReaderJSON_parse(const char* file_name){
 	cm_reader.actual_key 		= CM_JSON_MAP_KEY_IDLE;
 	cm_reader.actual_map_level 	= 0;
 
+	snprintf(file_name, CMREADERJSON_PATH_MAX_LENGTH, "%s/%s", directory_path, CMREADERJSON_INS_FILE_NAME);
 	buffer = mapFile_map(file_name, &size);
 	if (buffer == NULL){
 		printf("ERROR: in %s, unable to map file\n", __func__);

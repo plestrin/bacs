@@ -11,6 +11,55 @@
 
 #endif
 
+/* global stuff remove later */
+uint32_t operand_offset = 0;
+uint32_t data_offset = 0;
+
+/* il faudrait peut -être déplcer le bousin */
+void _instruction_flush_tracer_buffer(FILE* file_ins, FILE* file_op, FILE* file_data, struct instruction* buffer, uint32_t nb_instruction){
+	uint32_t 				i;
+	uint32_t 				j;
+	struct _instruction 	ins;
+	struct operand 			op;
+
+	for (i = 0; i < nb_instruction; i++){
+		ins.pc 				= buffer[i].pc;
+		ins.opcode 			= buffer[i].opcode;
+		ins.operand_offset 	= operand_offset;
+
+		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
+			if (INSTRUCTION_DATA_TYPE_IS_VALID(buffer[i].data[j].type)){
+				if (buffer[i].data[j].size != 1 && buffer[i].data[j].size != 2 && buffer[i].data[j].size != 4){
+					printf("ERROR: in %s, incorrect data size: %u for instruction %s\n", __func__, buffer[i].data[j].size, instruction_opcode_2_string(buffer[i].opcode));
+				}
+				else{
+					op.type 		= buffer[i].data[j].type;
+					op.size 		= buffer[i].data[j].size;
+					op.data_offset 	= data_offset;
+
+					if (INSTRUCTION_DATA_TYPE_IS_MEM(buffer[i].data[j].type)){
+						op.location.address = buffer[i].data[j].location.address;
+					}
+					else if (INSTRUCTION_DATA_TYPE_IS_REG(buffer[i].data[j].type)){
+						op.location.reg = buffer[i].data[j].location.reg;
+					}
+					else{
+						printf("ERROR: in %s, incorrect operand type\n", __func__);
+					}
+
+					fwrite(&(buffer[i].data[j].value), 1, buffer[i].data[j].size, file_data);
+					data_offset += buffer[i].data[j].size;
+
+					fwrite(&op, sizeof(struct operand), 1, file_op);
+					operand_offset ++;
+				}
+			}
+		}
+		ins.nb_operand = operand_offset - ins.operand_offset;
+		fwrite(&ins, sizeof(struct _instruction), 1, file_ins);
+	}
+}
+
 void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction){
 	uint32_t 	i;
 	uint32_t 	j;

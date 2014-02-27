@@ -4,15 +4,21 @@
 #include <sys/mman.h>
 
 #include "trace.h"
+#include "mapFile.h"
+
+#define TRACE_PATH_MAX_LENGTH 	256
+#define TRACE_INS_FILE_NAME 	"ins.bin"
+#define TRACE_OP_FILE_NAME 		"op.bin"
+#define TRACE_DATA_FILE_NAME 	"data.bin"
 
 static void trace_clean_(struct trace* trace);
 
-struct trace* trace_create(struct array* array){ /*tmp*/
+struct trace* trace_create(const char* directory_path){
 	struct trace* trace;
 
 	trace = (struct trace*)malloc(sizeof(struct trace));
 	if (trace != NULL){
-		if (trace_init(trace, array)){ /* a completer */
+		if (trace_init(trace, directory_path)){
 			free(trace);
 			trace= NULL;
 		}
@@ -21,34 +27,24 @@ struct trace* trace_create(struct array* array){ /*tmp*/
 	return trace;
 }
 
-int32_t trace_init(struct trace* trace, struct array* array){ /*tmp*/
-	uint32_t 				i;
-	uint32_t 				j;
-	struct instruction* 	ins;
+int32_t trace_init(struct trace* trace, const char* directory_path){
+	char 		file_path[TRACE_PATH_MAX_LENGTH];
+	uint64_t 	map_size;
 
-	int32_t 				operand_counter = 0;
-	int32_t 				data_counter = 0;
+	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_INS_FILE_NAME);
+	trace->instructions = mapFile_map(file_path, &map_size);
+	trace->alloc_size_ins = map_size;
 
-	for (i = 0; i < array_get_length(array); i++){
-		ins = (struct instruction*)array_get(array, i);
-		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-			if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[j].type)){
-				operand_counter ++;
-				data_counter +=  ins->data[j].size;
-			}
-		}
-	}
+	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_OP_FILE_NAME);
+	trace->operands = mapFile_map(file_path, &map_size);
+	trace->alloc_size_op = map_size;
 
-	trace->alloc_size_ins	= array_get_length(array) * sizeof(struct _instruction);
-	trace->alloc_size_op 	= operand_counter * sizeof(struct operand);
-	trace->alloc_size_data 	= data_counter * sizeof(uint8_t);
-	trace->nb_instruction 	= array_get_length(array);
+	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_DATA_FILE_NAME);
+	trace->data = mapFile_map(file_path, &map_size);
+	trace->alloc_size_data = map_size;
+	
 	trace->reference_count 	= 1;
 	trace->allocation_type 	= TRACEALLOCATION_MMAP;
-
-	trace->instructions = (struct _instruction*)mmap(NULL, trace->alloc_size_ins, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	trace->operands = (struct operand*)mmap(NULL, trace->alloc_size_op, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	trace->data = (uint8_t*)mmap(NULL, trace->alloc_size_data, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
 	if (trace->instructions == NULL || trace->operands == NULL || trace->data == NULL){
 		printf("ERROR: in %s, unable to map memory\n", __func__);
@@ -56,39 +52,19 @@ int32_t trace_init(struct trace* trace, struct array* array){ /*tmp*/
 		return -1;
 	}
 
-	operand_counter = 0;
-	data_counter = 0;
-
-	for (i = 0; i < array_get_length(array); i++){
-		ins = (struct instruction*)array_get(array, i);
-		
-		trace->instructions[i].pc = ins->pc;
-		trace->instructions[i].opcode = ins->opcode;
-		trace->instructions[i].operand_offset = operand_counter;
-
-		for (j = 0; j < INSTRUCTION_MAX_NB_DATA; j++){
-			if (INSTRUCTION_DATA_TYPE_IS_VALID(ins->data[j].type)){
-				memcpy(trace->data + data_counter, &(ins->data[j].value), ins->data[j].size);
-
-				trace->operands[operand_counter].type = ins->data[j].type;
-				if (INSTRUCTION_DATA_TYPE_IS_MEM(ins->data[j].type)){
-					trace->operands[operand_counter].location.address = ins->data[j].location.address;
-				}
-				else if (INSTRUCTION_DATA_TYPE_IS_REG(ins->data[j].type)){
-					trace->operands[operand_counter].location.reg = ins->data[j].location.reg;
-				}
-				else{
-					printf("ERROR: in %s, incorrect operand type\n", __func__);
-				}
-				trace->operands[operand_counter].size = ins->data[j].size;
-				trace->operands[operand_counter].data_offset = data_counter;
-
-				data_counter += ins->data[j].size;
-				operand_counter ++;
-			}
-		}
-		trace->instructions[i].nb_operand = operand_counter - trace->instructions[i].operand_offset;
+	if (trace->alloc_size_ins % sizeof(struct _instruction) != 0){
+		printf("ERROR: in %s, incorrect instruction file size %u bytes, must be a multiple of %u\n", __func__, trace->alloc_size_ins, sizeof(struct _instruction));
+		trace_clean(trace);
+		return -1;
 	}
+
+	if (trace->alloc_size_op % sizeof(struct operand) != 0){
+		printf("ERROR: in %s, incorrect operand file size %u bytes, must be a multiple of %u\n", __func__, trace->alloc_size_op, sizeof(struct operand));
+		trace_clean(trace);
+		return -1;
+	}
+
+	trace->nb_instruction = trace->alloc_size_ins / sizeof(struct _instruction);
 
 	return 0;
 }
