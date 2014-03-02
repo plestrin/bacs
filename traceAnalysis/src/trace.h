@@ -44,7 +44,6 @@ void trace_delete(struct trace* trace);
 #define trace_get_ins_op_data(trace, i_ins, i_op)	((trace)->data + (trace)->operands[(trace)->instructions[(i_ins)].operand_offset + (i_op)].data_offset)
 
 /* pour une intégration continue du bouzin:
- * 8 - enregistrer directement la trace dans le bon format (mesurer le gain ou pas en perfomance)
  * 9 - prendre en charge toute les instructions rencontrées et les registres XMM MMX
 
  * - GOOD job, mais maintenant je récupère des arguments gros et pas cools (encore pas mal de plaisir en prévision )

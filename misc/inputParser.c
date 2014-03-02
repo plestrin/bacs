@@ -15,6 +15,8 @@
 
 int32_t inputParser_search_cmd(struct cmdEntry* entry, char* cmd);
 
+uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
+
 static void inputParser_print_help(struct inputParser* parser);
 static void inputParser_exit(struct inputParser* parser);
 
@@ -56,6 +58,7 @@ int inputParser_init(struct inputParser* parser){
 			if(termReader_set_raw_mode(&(parser->term))){
 				printf("ERROR: in %s, unable to set terminal raw mode\n", __func__);
 			}
+			termReader_set_tab_handler(&(parser->term), inputParser_complete_cmd, parser);
 		}
 	}
 
@@ -182,6 +185,35 @@ int32_t inputParser_search_cmd(struct cmdEntry* entry, char* cmd){
 	else{
 		return strncmp(entry->name, cmd, strlen(entry->name));
 	}
+}
+
+uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser){
+	uint32_t 			i;
+	uint32_t 			j;
+	struct cmdEntry* 	entry;
+	uint32_t 			completion_offset = offset;
+	uint32_t 			find_previous = 0;
+
+	for (i = 0; i < array_get_length(&(parser->cmd_array)); i++){
+		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
+		if (!strncmp(entry->name, buffer, offset)){
+			if (find_previous){
+				for (j = offset; j < completion_offset; j++){
+					if (buffer[j] != entry->name[j]){
+						break;
+					}
+				}
+				completion_offset = j;
+			}
+			else{
+				strncpy(buffer + offset, entry->name + offset, ((INPUTPARSER_NAME_SIZE > buffer_length) ? (buffer_length - offset) : (INPUTPARSER_NAME_SIZE - offset)));
+				completion_offset =	strlen(entry->name);
+				find_previous = 1;
+			}
+		}
+	}
+
+	return completion_offset;
 }
 
 static void inputParser_print_help(struct inputParser* parser){
