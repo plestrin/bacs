@@ -10,7 +10,7 @@ import time
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/pierre/Documents/pin-2.13-61206-gcc.4.4.7-linux/pin"
+PIN_PATH 				= "/home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/pin"
 TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
 WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
 MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"
@@ -214,7 +214,7 @@ if action == "SEARCH" or action == "ALL":
 		sys.stdout.write("Searching " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
-		cmd = ["./analysis", TRACE_PATH + "trace" + recipe_name[i]]
+		cmd = ["./analysis"]
 		cmd.extend(recipe_arg[i].split(','))
 
 		time_start = time.time()

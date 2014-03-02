@@ -44,33 +44,27 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 
 		/* file instruction */
 		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_INS_FILE_NAME);
-
 		#ifdef __linux__
 		result->ins_file = fopen(file_name, "w");
 		#endif
-
 		#ifdef WIN32
 		fopen_s(&(result->ins_file), file_name, "w");
 		#endif
 
 		/* file operand */
 		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_OP_FILE_NAME);
-
 		#ifdef __linux__
 		result->op_file = fopen(file_name, "w");
 		#endif
-
 		#ifdef WIN32
 		fopen_s(&(result->op_file), file_name, "w");
 		#endif
 
 		/* file data */
 		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_DATA_FILE_NAME);
-
 		#ifdef __linux__
 		result->data_file = fopen(file_name, "w");
 		#endif
-
 		#ifdef WIN32
 		fopen_s(&(result->data_file), file_name, "w");
 		#endif
@@ -94,23 +88,23 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 	return result;
 }
 
-void traceFiles_print_codeMap(struct traceFiles* trace, struct codeMap* cm){
+void traceFiles_print_codeMap(struct traceFiles* trace_file, struct codeMap* cm){
 	char file_name[TRACEFILES_MAX_NAME_SIZE];
 
 	if (cm != NULL){
-		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", trace->dir_name, TRACEFILES_CM_FILE_NAME);
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", trace_file->dir_name, TRACEFILES_CM_FILE_NAME);
 
 		#ifdef __linux__
-		trace->cm_file = fopen(file_name, "w");
+		trace_file->cm_file = fopen(file_name, "w");
 		#endif
 
 		#ifdef WIN32
-		fopen_s(&(trace->cm_file), file_name, "w");
+		fopen_s(&(trace_file->cm_file), file_name, "w");
 		#endif
 
-		if (trace->cm_file != NULL){
-			codeMap_print_JSON(cm, trace->cm_file);
-			fclose(trace->cm_file);
+		if (trace_file->cm_file != NULL){
+			codeMap_print_JSON(cm, trace_file->cm_file);
+			fclose(trace_file->cm_file);
 		}
 		else{
 			printf("ERROR: in %s, unable to open file: \"%s\"\n", __func__, file_name);
@@ -118,15 +112,15 @@ void traceFiles_print_codeMap(struct traceFiles* trace, struct codeMap* cm){
 	}
 }
 
-void traceFiles_delete(struct traceFiles* trace){
-	if (trace->ins_file != NULL){
-		fclose(trace->ins_file);
+void traceFiles_delete(struct traceFiles* trace_file){
+	if (trace_file->ins_file != NULL){
+		fclose(trace_file->ins_file);
 	}
-	if (trace->op_file != NULL){
-		fclose(trace->op_file);
+	if (trace_file->op_file != NULL){
+		fclose(trace_file->op_file);
 	}
-	if (trace->data_file != NULL){
-		fclose(trace->data_file);
+	if (trace_file->data_file != NULL){
+		fclose(trace_file->data_file);
 	}
-	free(trace);
+	free(trace_file);
 }

@@ -10,20 +10,7 @@
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
 
-/*
- * Todo list:
- *	- essayer de faire un fichier pour logger les infos du tracer (ne pas utiliser printf, car mélange avec la sortie standard de l'application a tracer)
- *	- essayer de ne pas faire trop de truc en statique, car ce n'est pas très beau
- * 	- utiliser une double thread pour l'écriture des traces (avec zlib pour la compression trop fou !!)
- *	- utiliser l'ecriture dans un buffer au lieu de faire une analyse (plus rapide - a voir)
- *	- traiter le cas des instructions qui n'appartiennent pas à une routine et dont l'image est whitelistée
- * 	- 
- *  - pour l'instant on va faire les choses à la crado on verra ensuite pour les raffinements
- * 	- 
- *	- d'autres idées sont les bienvenues
- */
-
-struct tracer	tracer;	/* ne pas laisser en statique */
+struct tracer	tracer;
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
 KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
@@ -91,7 +78,7 @@ static inline enum reg pintool_REG_2_reg(REG reg){
 	case REG_ESI : {return REGISTER_ESI;}
 	case REG_EDI : {return REGISTER_EDI;}
 	case REG_EBP : {return REGISTER_EBP;}
-	default : {printf("ERROR: in %s, this register (%s) is meant to be registered\n", __func__, REG_StringShort(reg).c_str()); break;}
+	default : {printf("ERROR: in %s, this register (%s) is meant to be monitored\n", __func__, REG_StringShort(reg).c_str()); break;}
 	}
 
 	return REGISTER_INVALID;
@@ -103,618 +90,683 @@ static inline enum reg pintool_REG_2_reg(REG reg){
 /* ===================================================================== */
 
 void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
-	tracer.current_instruction->data[0].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
-
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
-
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 0)
 }
 
 void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[0].location.address 	= address;
-	tracer.current_instruction->data[0].size 				= size;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address, size);
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address, size);
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_commit_operand(tracer.trace_buffer, size)
 }
 
 void pintool_instruction_analysis_1write_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address;
-	tracer.current_instruction->data[0].size 				= size;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->pending_write[0].location.address 									= address;
+	tracer.trace_buffer->pending_write[0].size 												= size;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_write, UINT32 size_write, ADDRINT address_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_write;
-	tracer.current_instruction->data[0].size 				= size_write;
-	
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_write + size_read)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_read;
-	tracer.current_instruction->data[1].size 				= size_read;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_read, size_read);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_read, size_read);
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_write;
 }
 
 void pintool_instruction_analysis_1read_reg(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 value, UINT32 size){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name;
-	tracer.current_instruction->data[0].size 				= size;
-	tracer.current_instruction->data[0].value 				= value;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 4)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size)
 }
 
 void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[0].location.address 	= address_mem;
-	tracer.current_instruction->data[0].size 				= size_mem;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address_mem, size_mem);
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg;
-	tracer.current_instruction->data[1].size 				= size_reg;
-	tracer.current_instruction->data[1].value 				= value_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
+	
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
 }
 
 void pintool_instruction_analysis_1write_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem;
-	tracer.current_instruction->data[0].size 				= size_mem;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg;
-	tracer.current_instruction->data[1].size 				= size_reg;
-	tracer.current_instruction->data[1].value 				= value_reg;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem_write;
-	tracer.current_instruction->data[0].size 				= size_mem_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 4)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem_read;
-	tracer.current_instruction->data[1].size 				= size_mem_read;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem_read, size_mem_read);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg;
-	tracer.current_instruction->data[2].size 				= size_reg;
-	tracer.current_instruction->data[2].value 				= value_reg;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem_read, size_mem_read);
+	
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
 }
 
 void pintool_instruction_analysis_2read_reg(ADDRINT pc, UINT32 opcode, UINT32 name1, UINT32 value1, UINT32 size1, UINT32 name2, UINT32 value2, UINT32 size2){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name1;
-	tracer.current_instruction->data[0].size 				= size1;
-	tracer.current_instruction->data[0].value 				= value1;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 8)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name2;
-	tracer.current_instruction->data[1].size 				= size2;
-	tracer.current_instruction->data[1].value 				= value2;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value1;
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_commit_operand(tracer.trace_buffer, size1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size2)
 }
 
 void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[0].location.address 	= address_mem;
-	tracer.current_instruction->data[0].size 				= size_mem;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)address_mem, size_mem);
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
-	tracer.current_instruction->data[1].size 				= size_reg1;
-	tracer.current_instruction->data[1].value 				= value_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
-	tracer.current_instruction->data[2].size 				= size_reg2;
-	tracer.current_instruction->data[2].value 				= value_reg2;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
+	
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
 }
 
 void pintool_instruction_analysis_1write_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem;
-	tracer.current_instruction->data[0].size 				= size_mem;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
-	tracer.current_instruction->data[1].size 				= size_reg1;
-	tracer.current_instruction->data[1].value 				= value_reg1;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
-	tracer.current_instruction->data[2].size 				= size_reg2;
-	tracer.current_instruction->data[2].value 				= value_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem_write;
-	tracer.current_instruction->data[0].size 				= size_mem_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 8)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem_read;
-	tracer.current_instruction->data[1].size 				= size_mem_read;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem_read, size_mem_read);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg1;
-	tracer.current_instruction->data[2].size 				= size_reg1;
-	tracer.current_instruction->data[2].value 				= value_reg1;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem_read, size_mem_read);
+	
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg2;
-	tracer.current_instruction->data[3].size 				= size_reg2;
-	tracer.current_instruction->data[3].value 				= value_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
 }
 
 void pintool_instruction_analysis_1write_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2, UINT32 name_reg3, UINT32 value_reg3, UINT32 size_reg3){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem;
-	tracer.current_instruction->data[0].size 				= size_mem;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 12)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg1;
-	tracer.current_instruction->data[1].size 				= size_reg1;
-	tracer.current_instruction->data[1].value 				= value_reg1;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg2;
-	tracer.current_instruction->data[2].size 				= size_reg2;
-	tracer.current_instruction->data[2].value 				= value_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg2;
-	tracer.current_instruction->data[3].size 				= size_reg2;
-	tracer.current_instruction->data[3].value 				= value_reg2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg3;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg3)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
 void pintool_instruction_analysis_1write_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 size){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name;
-	tracer.current_instruction->data[0].size 				= size;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 4)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name;
+	tracer.trace_buffer->pending_write[0].size 												= size;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg, UINT32 size_reg, ADDRINT address_mem, UINT32 size_mem){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg;
-	tracer.current_instruction->data[0].size 				= size_reg;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem;
-	tracer.current_instruction->data[1].size 				= size_mem;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
 	
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
-
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg;
+	tracer.trace_buffer->pending_write[0].size 												= size_reg;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
-	tracer.current_instruction->data[0].size 				= size_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 8)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read;
-	tracer.current_instruction->data[1].size 				= size_read;
-	tracer.current_instruction->data[1].value 				= value_read;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_write;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read, UINT32 value_reg_read, UINT32 size_reg_read){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
-	tracer.current_instruction->data[0].size 				= size_reg_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem;
-	tracer.current_instruction->data[1].size 				= size_mem;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
 	
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read;
-	tracer.current_instruction->data[2].size 				= size_reg_read;
-	tracer.current_instruction->data[2].value 				= value_reg_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
 }
 
 void pintool_instruction_analysis_1write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
-	tracer.current_instruction->data[0].size 				= size_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 12)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_read1;
-	tracer.current_instruction->data[1].size 				= size_read1;
-	tracer.current_instruction->data[1].value 				= value_read1;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read2;
-	tracer.current_instruction->data[2].size 				= size_read2;
-	tracer.current_instruction->data[2].value 				= value_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_write;
 }
 
 void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_reg_write;
-	tracer.current_instruction->data[0].size 				= size_reg_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 12)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem;
-	tracer.current_instruction->data[1].size 				= size_mem;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
 	
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_reg_read1;
-	tracer.current_instruction->data[2].size 				= size_reg_read1;
-	tracer.current_instruction->data[2].value 				= value_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg_read2;
-	tracer.current_instruction->data[3].size 				= size_reg_read2;
-	tracer.current_instruction->data[3].value 				= value_reg_read2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
 }
 
 void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	tracer.current_instruction->data[0].type 				= OPERAND_MEM_WRITE;
-	tracer.current_instruction->data[0].location.address 	= address_mem_write;
-	tracer.current_instruction->data[0].size 				= size_mem_write;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 12)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_reg_write;
-	tracer.current_instruction->data[1].size 				= size_reg_write;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[2].location.address 	= address_mem_read;
-	tracer.current_instruction->data[2].size 				= size_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem_read, size_mem_read);
 	
-	PIN_SafeCopy(&(tracer.current_instruction->data[2].value), (void*)address_mem_read, size_mem_read);
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_reg_read1;
-	tracer.current_instruction->data[3].size 				= size_reg_read1;
-	tracer.current_instruction->data[3].value 				= value_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_reg_read2;
-	tracer.current_instruction->data[4].size 				= size_reg_read2;
-	tracer.current_instruction->data[4].value 				= value_reg_read2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
+
+	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
+
+	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_reg_write;
+	tracer.trace_buffer->pending_write[1].size 												= size_reg_write;
 }
 
-void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_read_reg1, UINT32 value_read_reg1, UINT32 size_read_reg1, UINT32 name_read_reg2, UINT32 value_read_reg2, UINT32 size_read_reg2, UINT32 name_read_reg3, UINT32 value_read_reg3, UINT32 size_read_reg3){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write;
-	tracer.current_instruction->data[0].size 				= size_write;
+void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2, UINT32 name_reg_read3, UINT32 value_reg_read3, UINT32 size_reg_read3){
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 16)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_MEM_READ;
-	tracer.current_instruction->data[1].location.address 	= address_mem;
-	tracer.current_instruction->data[1].size 				= size_mem;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
 
-	PIN_SafeCopy(&(tracer.current_instruction->data[1].value), (void*)address_mem, size_mem);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= address_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_mem;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read_reg1;
-	tracer.current_instruction->data[2].size 				= size_read_reg1;
-	tracer.current_instruction->data[2].value 				= value_read_reg1;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)address_mem, size_mem);
+	
+	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read_reg2;
-	tracer.current_instruction->data[3].size 				= size_read_reg2;
-	tracer.current_instruction->data[3].value 				= value_read_reg2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_read_reg3;
-	tracer.current_instruction->data[4].size 				= size_read_reg3;
-	tracer.current_instruction->data[4].value 				= value_read_reg3;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read3;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read3)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
+	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
 }
 
 void pintool_instruction_analysis_2write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
-	tracer.current_instruction->data[0].size 				= size_write1;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 12)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
-	tracer.current_instruction->data[1].size 				= size_write2;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read;
-	tracer.current_instruction->data[2].size 				= size_read;
-	tracer.current_instruction->data[2].value 				= value_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_INVALID;
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read;
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
+	tracer.trace_buffer->pending_write[0].size 												= size_write1;
+
+	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
+	tracer.trace_buffer->pending_write[1].size 												= size_write2;
 }
 
 void pintool_instruction_analysis_2write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
-	tracer.current_instruction->data[0].size 				= size_write1;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 16)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
-	tracer.current_instruction->data[1].size 				= size_write2;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read1;
-	tracer.current_instruction->data[2].size 				= size_read1;
-	tracer.current_instruction->data[2].value 				= value_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read2;
-	tracer.current_instruction->data[3].size 				= size_read2;
-	tracer.current_instruction->data[3].value 				= value_read2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_INVALID;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
+	tracer.trace_buffer->pending_write[0].size 												= size_write1;
+
+	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
+	tracer.trace_buffer->pending_write[1].size 												= size_write2;
 }
 
 void pintool_instruction_analysis_2write_reg_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2, UINT32 name_read3, UINT32 value_read3, UINT32 size_read3){
-	tracer.current_instruction->data[0].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[0].location.reg 		= (enum reg)name_write1;
-	tracer.current_instruction->data[0].size 				= size_write1;
+	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 20)
 
-	tracer.current_instruction->data[1].type 				= OPERAND_REG_WRITE;
-	tracer.current_instruction->data[1].location.reg 		= (enum reg)name_write2;
-	tracer.current_instruction->data[1].size 				= size_write2;
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
 
-	tracer.current_instruction->data[2].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[2].location.reg 		= (enum reg)name_read1;
-	tracer.current_instruction->data[2].size 				= size_read1;
-	tracer.current_instruction->data[2].value 				= value_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[3].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[3].location.reg 		= (enum reg)name_read2;
-	tracer.current_instruction->data[3].size 				= size_read2;
-	tracer.current_instruction->data[3].value 				= value_read2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
 
-	tracer.current_instruction->data[4].type 				= OPERAND_REG_READ;
-	tracer.current_instruction->data[4].location.reg 		= (enum reg)name_read3;
-	tracer.current_instruction->data[4].size 				= size_read3;
-	tracer.current_instruction->data[4].value 				= value_read3;
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
 
-	tracer.current_instruction->pc 							= pc;
-	tracer.current_instruction->opcode 						= opcode;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
+
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read3;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read3;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, size_read3)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
+	tracer.trace_buffer->pending_write[0].size 												= size_write1;
+
+	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
+	tracer.trace_buffer->pending_write[1].size 												= size_write2;
 }
 
 void pintool_instruction_analysis_1write_mem_Xread_p2(){
-	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)tracer.current_instruction->data[0].location.address, tracer.current_instruction->data[0].size);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= tracer.trace_buffer->pending_write[0].location.address;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[0].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)tracer.trace_buffer->pending_write[0].location.address, tracer.trace_buffer->pending_write[0].size);
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[0].size)
 }
 
 void pintool_instruction_analysis_1write_reg_Xread_p2(UINT32 value){
-	tracer.current_instruction->data[0].value = value;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= tracer.trace_buffer->pending_write[0].location.reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[0].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value;
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[0].size)
 }
 
 void pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2(UINT32 value){
-	PIN_SafeCopy(&(tracer.current_instruction->data[0].value), (void*)tracer.current_instruction->data[0].location.address, tracer.current_instruction->data[0].size);
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_MEM_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.address 	= tracer.trace_buffer->pending_write[0].location.address;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[0].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[1].value = value;
+	PIN_SafeCopy(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data, (void*)tracer.trace_buffer->pending_write[0].location.address, tracer.trace_buffer->pending_write[0].size);
 
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[0].size)
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= tracer.trace_buffer->pending_write[1].location.reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[1].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[1].size)
 }
 
 void pintool_instruction_analysis_2write_reg_Xread_p2(UINT32 value1, UINT32 value2){
-	tracer.current_instruction->data[0].value = value1;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= tracer.trace_buffer->pending_write[0].location.reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[0].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
 
-	tracer.current_instruction->data[1].value = value2;
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value1;
 
-	tracer.current_instruction ++;
-	tracer.buffer_offset ++;
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[0].size)
 
-	if (tracer.buffer_offset  == TRACER_INSTRUCTION_BUFFER_SIZE){
-		traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-		tracer.current_instruction = tracer.buffer;
-		tracer.buffer_offset = 0;
-	}
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_WRITE;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= tracer.trace_buffer->pending_write[1].location.reg;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= tracer.trace_buffer->pending_write[1].size;
+	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+
+	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value2;
+
+	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[1].size)
 }
 
 void pintool_routine_analysis(void* cm_routine_ptr){
@@ -1310,44 +1362,56 @@ void pintool_instrumentation_img(IMG image, void* val){
 /* ===================================================================== */
 
 int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
-	tracer.trace = traceFiles_create(trace_dir_name);
-	if (tracer.trace == NULL){
+	tracer.trace_file = traceFiles_create(trace_dir_name);
+	if (tracer.trace_file == NULL){
 		printf("ERROR: in %s, unable to create trace file\n", __func__);
-		return -1;
+		goto fail;
 	}
 
 	tracer.code_map = codeMap_create();
 	if (tracer.code_map == NULL){
 		printf("ERROR: in %s, unable to create code map\n", __func__);
-		traceFiles_delete(tracer.trace);
-		return -1;
+		goto fail;
 	}
 
 	if (white_list_file_name != NULL && strcmp(white_list_file_name, "NULL")){
 		tracer.white_list = whiteList_create(white_list_file_name);
 		if (tracer.white_list == NULL){
 			printf("ERROR: in %s, unable to create shared library white list\n", __func__);
-			codeMap_delete(tracer.code_map);
-			traceFiles_delete(tracer.trace);
-			return -1;
+			goto fail;
 		}
 	}
 	else{
 		tracer.white_list = NULL;
 	}
 	
-	tracer.buffer = (struct instruction*)malloc(sizeof(struct instruction) * TRACER_INSTRUCTION_BUFFER_SIZE);
-	tracer.buffer_offset = 0;
-	if (tracer.buffer == NULL){
+	tracer.trace_buffer = (struct traceBuffer*)malloc(sizeof(struct traceBuffer));
+	if (tracer.trace_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		whiteList_delete(tracer.white_list);
-		codeMap_delete(tracer.code_map);
-		traceFiles_delete(tracer.trace);
+		goto fail;
 	}
 
-	tracer.current_instruction 	= tracer.buffer;
+	tracer.trace_buffer->local_offset_ins 	= 0;
+	tracer.trace_buffer->local_offset_op 	= 0;
+	tracer.trace_buffer->local_offset_data 	= 0;
+	tracer.trace_buffer->global_offset_op 	= 0;
+	tracer.trace_buffer->global_offset_data = 0;
 
 	return 0;
+
+	fail:
+
+	if (tracer.trace_file != NULL){
+		traceFiles_delete(tracer.trace_file);
+	}
+	if (tracer.code_map != NULL){
+		codeMap_delete(tracer.code_map);
+	}
+	if (tracer.white_list != NULL){
+		whiteList_delete(tracer.white_list);
+	}
+
+	return -1;
 }
 
 
@@ -1356,11 +1420,11 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 /* ===================================================================== */
 
 void pintool_clean(INT32 code, void* arg){
-	traceFiles_print_instruction(tracer.trace, tracer.buffer, tracer.buffer_offset);
-	free(tracer.buffer);
+	traceBuffer_flush(tracer.trace_buffer, tracer.trace_file);
+	free(tracer.trace_buffer);
 
-	traceFiles_print_codeMap(tracer.trace, tracer.code_map);
-	traceFiles_delete(tracer.trace);
+	traceFiles_print_codeMap(tracer.trace_file, tracer.code_map);
+	traceFiles_delete(tracer.trace_file);
 
 	codeMap_delete(tracer.code_map);
 

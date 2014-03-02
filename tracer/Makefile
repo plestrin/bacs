@@ -1,4 +1,4 @@
-PIN_ROOT 		:= /home/pierre/Documents/pin-2.13-61206-gcc.4.4.7-linux/
+PIN_ROOT 		:= /home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/
 TOOLS_ROOT 		:= $(PIN_ROOT)source/tools/
 CONFIG_ROOT 	:= $(TOOLS_ROOT)Config/
 KIT 			:= 1

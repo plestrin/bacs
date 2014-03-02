@@ -23,17 +23,90 @@
 
 #include "whiteList.h"
 
-#define TRACER_INSTRUCTION_BUFFER_SIZE 1024
+#define TRACER_INSTRUCTION_BUFFER_SIZE 1024 /*tmp*/
+
+#define TRACERBUFFER_SIZE_INS 		 	1024
+#define TRACERBUFFER_SIZE_OP 			2048
+#define TRACERBUFFER_SIZE_DATA 			4096
+#define TRACERBUFFER_NB_PENDING_WRITE	4
+
+
+struct tracePendingWrite{
+	union {
+		ADDRESS 				address;
+		enum reg 				reg;
+	}							location;
+	uint8_t 					size;
+};
+
+struct traceBuffer{
+	struct instruction 			buffer_ins[TRACERBUFFER_SIZE_INS];
+	struct operand 				buffer_op[TRACERBUFFER_SIZE_OP];
+	uint8_t 					buffer_data[TRACERBUFFER_SIZE_DATA];
+
+	uint32_t 					local_offset_ins;
+	uint32_t 					local_offset_op;
+	uint32_t 					local_offset_data;
+
+	uint32_t 					global_offset_op;
+	uint32_t 					global_offset_data;
+
+	struct tracePendingWrite 	pending_write[TRACERBUFFER_NB_PENDING_WRITE];
+};
+
+#define traceBuffer_reserve_instruction(trace_buffer, trace_file, nb_instruction) 													\
+	if ((trace_buffer)->local_offset_ins + (nb_instruction) >= TRACERBUFFER_SIZE_INS){ 												\
+		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 					\
+		(trace_buffer)->local_offset_ins = 0; 																						\
+	}
+
+#define traceBuffer_reserve_operand(trace_buffer, trace_file, nb_operand) 															\
+	if ((trace_buffer)->local_offset_op + (nb_operand) >= TRACERBUFFER_SIZE_OP){ 													\
+		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 						\
+		(trace_buffer)->local_offset_op = 0; 																						\
+	}
+
+#define traceBuffer_reserve_data(trace_buffer, trace_file, nb_data) 																\
+	if ((trace_buffer)->local_offset_data + (nb_data) >= TRACERBUFFER_SIZE_DATA){ 													\
+		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 						\
+		(trace_buffer)->local_offset_data = 0; 																						\
+	}
+
+#define traceBuffer_flush(trace_buffer, trace_file) 																				\
+	if ((trace_buffer)->local_offset_ins != 0){ 																					\
+		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 					\
+		(trace_buffer)->local_offset_ins = 0; 																						\
+	} 																																\
+	if ((trace_buffer)->local_offset_op != 0){ 																						\
+		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 						\
+		(trace_buffer)->local_offset_op = 0; 																						\
+	} 																																\
+	if ((trace_buffer)->local_offset_data != 0){ 																					\
+		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 						\
+		(trace_buffer)->local_offset_data = 0; 																						\
+	}
+
+#define traceBuffer_commit_operand(trace_buffer, size) 																				\
+	(trace_buffer)->local_offset_op 	+= 1; 																						\
+	(trace_buffer)->local_offset_data 	+= (size); 																					\
+	(trace_buffer)->global_offset_op 	+= 1; 																						\
+	(trace_buffer)->global_offset_data 	+= (size);
+
+#define traceBuffer_add_instruction(trace_buffer, trace_file, pc_, opcode_, nb_operand_) 											\
+	traceBuffer_reserve_instruction((trace_buffer), (trace_file), 1) 																\
+ 																																	\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].pc 				= (pc_); 										\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].opcode 			= (opcode_); 									\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].operand_offset 	= (trace_buffer)->global_offset_op; 			\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].nb_operand 		= (nb_operand_); 								\
+ 																																	\
+	(trace_buffer)->local_offset_ins += 1;
 
 struct tracer{
-	struct codeMap* 	code_map;
-	struct whiteList*	white_list;
-	struct traceFiles* 	trace;
-
-	struct instruction* current_instruction;
-
-	struct instruction* buffer;
-	uint32_t 			buffer_offset;
+	struct codeMap* 			code_map;
+	struct whiteList*			white_list;
+	struct traceFiles* 			trace_file;
+	struct traceBuffer*			trace_buffer;
 };
 
 /* Selector for the analysis routine value:

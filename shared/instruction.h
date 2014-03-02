@@ -7,8 +7,6 @@
 #include "include/xed-iclass-enum.h"
 #include "address.h"
 
-#define INSTRUCTION_MAX_NB_DATA 5 /* Do not update this value without taking care of the tracer */
-
 /* Data type value:
  * - bit 1: set to 0 -> INVALID 	set to 1 -> VALID
  * - bit 2: set to 0 -> MEM 		set to 1 -> REG
@@ -72,35 +70,12 @@ struct operand{
 	uint32_t 			data_offset;
 };
 
-/* a supprimer */
-struct insData{
-	enum operandType 	type;
-	union {
-		ADDRESS 		address;
-		enum reg 		reg;
-	}					location;
-	uint32_t 			value;
-	uint8_t 			size;
-};
-
-/* a supprimer */
 struct instruction{
-	ADDRESS 		pc;
-	uint32_t 		opcode;
-	struct insData 	data[INSTRUCTION_MAX_NB_DATA];
-	/* offset vers le tablau de truc uint32_t operand_offset*/
-	/* uint32_t nb_operand */
-};
-
-struct _instruction{ /*tmp*/
 	ADDRESS 		pc;
 	uint32_t 		opcode;
 	uint32_t 		operand_offset;
 	uint32_t 		nb_operand;
 };
-
-void instruction_flush_tracer_buffer(FILE* file, struct instruction* buffer, uint32_t nb_instruction);
-void _instruction_flush_tracer_buffer(FILE* file_ins, FILE* file_op, FILE* file_data, struct instruction* buffer, uint32_t nb_instruction);
 
 const char* instruction_opcode_2_string(uint32_t opcode);
 const char* reg_2_string(enum reg reg);

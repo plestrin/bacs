@@ -43,6 +43,7 @@ int main(int argc, char** argv){
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", "Load a trace in the analysis engine. Specify trace path as second argument", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_load)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace. Specify an index / range as a second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", "Check the current trace for errors. In case you don't trust the tracer!", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_check_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", "Delete the current trace", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_delete)
@@ -193,6 +194,15 @@ void analysis_trace_print(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		inputParser_extract_index(arg, &start, &stop);
 		trace_print(analysis->trace, start, stop, NULL);
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_check(struct analysis* analysis){
+	if (analysis->trace != NULL){
+		trace_check(analysis->trace);
 	}
 	else{
 		printf("ERROR: in %s, trace is NULL\n", __func__);

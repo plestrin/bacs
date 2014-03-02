@@ -37,13 +37,12 @@ struct traceFiles{
 
 
 struct traceFiles* traceFiles_create(const char* dir_name);
-void traceFiles_print_codeMap(struct traceFiles* trace, struct codeMap* cm);
+void traceFiles_print_codeMap(struct traceFiles* trace_file, struct codeMap* cm);
 
-static inline void traceFiles_print_instruction(struct traceFiles* trace, struct instruction* buffer, uint32_t nb_instruction){
-	/*instruction_flush_tracer_buffer(trace->ins_file, buffer, nb_instruction);*/
-	_instruction_flush_tracer_buffer(trace->ins_file, trace->op_file, trace->data_file, buffer, nb_instruction);
-}
+#define traceFiles_flush_instruction(trace_file, buffer, nb_instruction) 	fwrite((buffer), sizeof(struct instruction), (nb_instruction), (trace_file)->ins_file)
+#define traceFiles_flush_operand(trace_file, buffer, nb_operand) 			fwrite((buffer), sizeof(struct operand), (nb_operand), (trace_file)->op_file)
+#define traceFiles_flush_data(trace_file, buffer, nb_data) 					fwrite((buffer), 1, (nb_data), (trace_file)->data_file)
 
-void traceFiles_delete(struct traceFiles* trace);
+void traceFiles_delete(struct traceFiles* trace_file);
 
 #endif

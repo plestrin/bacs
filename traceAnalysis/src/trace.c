@@ -52,8 +52,8 @@ int32_t trace_init(struct trace* trace, const char* directory_path){
 		return -1;
 	}
 
-	if (trace->alloc_size_ins % sizeof(struct _instruction) != 0){
-		printf("ERROR: in %s, incorrect instruction file size %u bytes, must be a multiple of %u\n", __func__, trace->alloc_size_ins, sizeof(struct _instruction));
+	if (trace->alloc_size_ins % sizeof(struct instruction) != 0){
+		printf("ERROR: in %s, incorrect instruction file size %u bytes, must be a multiple of %u\n", __func__, trace->alloc_size_ins, sizeof(struct instruction));
 		trace_clean(trace);
 		return -1;
 	}
@@ -64,9 +64,48 @@ int32_t trace_init(struct trace* trace, const char* directory_path){
 		return -1;
 	}
 
-	trace->nb_instruction = trace->alloc_size_ins / sizeof(struct _instruction);
+	trace->nb_instruction = trace->alloc_size_ins / sizeof(struct instruction);
 
 	return 0;
+}
+
+void trace_check(struct trace* trace){
+	uint32_t i;
+	uint32_t expected_offset;
+
+	#ifdef VERBOSE
+	printf("Trace verification: %u instruction(s), %u operand(s) and %u byte(s) of data\n", trace->nb_instruction, trace->alloc_size_op / sizeof(struct operand), trace->alloc_size_data);
+	#endif
+
+	/* Operand offset verification */
+	for (i = 0, expected_offset = 0; i < trace->nb_instruction; i++){
+		if (trace->instructions[i].nb_operand != 0){
+			if (trace->instructions[i].operand_offset != expected_offset){
+				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u\n", __func__, i, expected_offset, trace->instructions[i].operand_offset);
+			}
+			expected_offset = trace->instructions[i].operand_offset + trace->instructions[i].nb_operand;
+			if (expected_offset * sizeof(struct operand) > trace->alloc_size_op){
+				printf("ERROR: in %s, instruction %u, operand offset is outside the operand buffer\n", __func__, i);
+			}
+		}
+	}
+	if (expected_offset * sizeof(struct operand) != trace->alloc_size_op){
+		printf("ERROR: in %s, the end of the operand buffer is not reached\n", __func__);
+	}
+
+	/* Data offset verification */
+	for (i = 0, expected_offset = 0; i < trace->alloc_size_op / sizeof(struct operand); i++){
+		if (trace->operands[i].data_offset != expected_offset){
+			printf("ERROR: in %s, operand %u, expected data offset %u, but get %u\n", __func__, i, expected_offset, trace->operands[i].data_offset);
+		}
+		expected_offset = trace->operands[i].data_offset + trace->operands[i].size;
+		if (expected_offset > trace->alloc_size_data){
+			printf("ERROR: in %s, operand %u, data offset is outside the data buffer\n", __func__, i);
+		}
+	}
+	if (expected_offset != trace->alloc_size_data){
+		printf("ERROR: in %s, the end of the data buffer is not reached\n", __func__);
+	}
 }
 
 struct multiColumnPrinter* trace_create_multiColumnPrinter(){
@@ -219,7 +258,7 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 		offset_data = trace_src->operands[offset_operand].data_offset;
 	}
 
-	trace_dst->alloc_size_ins	= length * sizeof(struct _instruction);
+	trace_dst->alloc_size_ins	= length * sizeof(struct instruction);
 	trace_dst->alloc_size_op 	= nb_operand * sizeof(struct operand);
 	trace_dst->alloc_size_data 	= nb_data * sizeof(uint8_t);
 	trace_dst->nb_instruction 	= length;
@@ -227,7 +266,7 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 	trace_dst->allocation_type 	= TRACEALLOCATION_MALLOC;
 
 
-	trace_dst->instructions 	= (struct _instruction*)malloc(trace_dst->alloc_size_ins);
+	trace_dst->instructions 	= (struct instruction*)malloc(trace_dst->alloc_size_ins);
 	trace_dst->operands 		= (struct operand*)malloc(trace_dst->alloc_size_op);
 	trace_dst->data 			= (uint8_t*)malloc(trace_dst->alloc_size_data);
 

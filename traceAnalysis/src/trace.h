@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "instruction.h"
-#include "array.h" /* temp */
 #include "multiColumn.h"
 
 enum traceAllocation{
@@ -13,7 +12,7 @@ enum traceAllocation{
 };
 
 struct trace{
-	struct _instruction* 	instructions;
+	struct instruction* 	instructions;
 	struct operand* 		operands;
 	uint8_t* 				data;
 
@@ -30,6 +29,8 @@ struct trace{
 struct trace* trace_create(const char* directory_path);
 int32_t trace_init(struct trace* trace, const char* directory_path);
 
+void trace_check(struct trace* trace);
+
 struct multiColumnPrinter* trace_create_multiColumnPrinter();
 void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct multiColumnPrinter* printer);
 
@@ -42,21 +43,11 @@ void trace_delete(struct trace* trace);
 #define trace_get_ins_operands(trace, index) 		((trace)->operands + (trace)->instructions[(index)].operand_offset)
 #define trace_get_ins_op_data(trace, i_ins, i_op)	((trace)->data + (trace)->operands[(trace)->instructions[(i_ins)].operand_offset + (i_op)].data_offset)
 
-
-/* faire un certain nombre de macro pour pas que ça soir trop chiant à manipuler comme structure */
-
 /* pour une intégration continue du bouzin:
- * 6 - écrire directement la trace dans le bon format (mesurer le gain en performance)
- * 7 - faire une stratégie d'import dynamique pour la trace (cool mais pas indispensable)
  * 8 - enregistrer directement la trace dans le bon format (mesurer le gain ou pas en perfomance)
  * 9 - prendre en charge toute les instructions rencontrées et les registres XMM MMX
 
  * - GOOD job, mais maintenant je récupère des arguments gros et pas cools (encore pas mal de plaisir en prévision )
-
-Bien réfléchir à l'objet traceFragment - ce n'et pas aussi simple que ça.
-
  */
-
-
 
 #endif

@@ -24,6 +24,7 @@ struct analysis* analysis_create();
 
 void analysis_trace_load(struct analysis* analysis, char* arg);
 void analysis_trace_print(struct analysis* analysis, char* arg);
+void analysis_trace_check(struct analysis* analysis);
 void analysis_trace_check_codeMap(struct analysis* analysis);
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
 void analysis_trace_delete(struct analysis* analysis);
