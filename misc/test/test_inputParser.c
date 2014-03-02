@@ -15,10 +15,10 @@ int main(int argc, char** argv){
 		return 0;
 	}
 
-	if (inputParser_add_cmd(&parser, "print", "Print message given as second argument", INPUTPARSER_CMD_INTERACTIVE, &print_context, (void(*)(void))print)){
+	if (inputParser_add_cmd(&parser, "print", "Print a message", "Message to be printed", INPUTPARSER_CMD_TYPE_ARG, &print_context, (void(*)(void))print)){
 		printf("ERROR: in %s, unable to add cmd to inputParser\n", __func__);
 	}
-	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", INPUTPARSER_CMD_NOT_INTERACTIVE, &print_context, (void(*)(void))print_hello)){
+	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, &print_context, (void(*)(void))print_hello)){
 		printf("WARNING: in %s, we add two times the same cmd, the second'll not be reachable\n", __func__);
 	}
 	

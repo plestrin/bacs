@@ -48,10 +48,10 @@ int inputParser_init(struct inputParser* parser){
 			printf("ERROR: in %s, unable to init array\n", __func__);
 		}
 		else{
-			if (inputParser_add_cmd(parser, "help", "Display this help", INPUTPARSER_CMD_NOT_INTERACTIVE, parser,  (void(*)(void))inputParser_print_help)){
+			if (inputParser_add_cmd(parser, "help", "Display this help", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser,  (void(*)(void))inputParser_print_help)){
 				printf("WARNING: in %s, unable to add help entry in the input parser\n", __func__);
 			}
-			if (inputParser_add_cmd(parser, "exit", "Exit", INPUTPARSER_CMD_NOT_INTERACTIVE, parser, (void(*)(void))inputParser_exit)){
+			if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit)){
 				printf("WARNING: in %s, unable to add exit entry in the input parser\n", __func__);
 			}
 
@@ -65,12 +65,12 @@ int inputParser_init(struct inputParser* parser){
 	return result;
 }
 
-int inputParser_add_cmd(struct inputParser* parser, char* name, char* desc, char interactive, void* ctx, void(*func)(void)){
+int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, char type, void* ctx, void(*func)(void)){
 	struct cmdEntry entry;
 	int 			result = -1;
 	int32_t 		duplicate;
 
-	if (parser != NULL){
+	if (parser != NULL && name != NULL && cmd_desc != NULL  && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
 		duplicate = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), name, (int32_t(*)(void*, void*))inputParser_search_cmd);
 		if (duplicate >= 0){
 			printf("ERROR: in %s, \"%s\" is already registered as a command\n", __func__, name);
@@ -81,26 +81,39 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* desc, char
 			printf("WARNING: in %s, name length is larger than INPUTPARSER_NAME_SIZE\n", __func__);
 		}
 
-		if (strlen(desc) > INPUTPARSER_DESC_SIZE){
-			printf("WARNING: in %s, desc length is larger than INPUTPARSER_DESC_SIZE\n", __func__);
+		if (strlen(cmd_desc) > INPUTPARSER_DESC_SIZE){
+			printf("WARNING: in %s, cmd_desc length is larger than INPUTPARSER_DESC_SIZE\n", __func__);
+		}
+
+		if (arg_desc != NULL && strlen(arg_desc) > INPUTPARSER_DESC_SIZE){
+			printf("WARNING: in %s, arg_desc length is larger than INPUTPARSER_DESC_SIZE\n", __func__);
 		}
 
 		strncpy(entry.name, name, INPUTPARSER_NAME_SIZE);
-		strncpy(entry.description, desc, INPUTPARSER_DESC_SIZE);
-
-		if (interactive != INPUTPARSER_CMD_INTERACTIVE && interactive != INPUTPARSER_CMD_NOT_INTERACTIVE){
-			printf("WARNING: in %s, interactive mode is incorrect, setting to default not interactive mode\n", __func__);
-			interactive = INPUTPARSER_CMD_NOT_INTERACTIVE;
+		strncpy(entry.cmd_desc, cmd_desc, INPUTPARSER_DESC_SIZE);
+		if (arg_desc != NULL){
+			strncpy(entry.arg_desc, arg_desc, INPUTPARSER_DESC_SIZE);
+		}
+		else{
+			entry.arg_desc[0] = '\0';
 		}
 
-		entry.interactive = interactive;
-		entry.context = ctx;
-		entry.function = func;
+		if (type != INPUTPARSER_CMD_TYPE_NO_ARG && type != INPUTPARSER_CMD_TYPE_OPT_ARG && type != INPUTPARSER_CMD_TYPE_ARG){
+			printf("WARNING: in %s, interactive mode is incorrect, setting to default not interactive mode\n", __func__);
+			type = INPUTPARSER_CMD_TYPE_NO_ARG;
+		}
+
+		entry.type 		= type;
+		entry.context 	= ctx;
+		entry.function 	= func;
 
 		result = (array_add(&(parser->cmd_array), &entry) < 0);
 		if (result){
 			printf("ERROR: in %s, unable to add element to array\n", __func__);
 		}
+	}
+	else{
+		printf("ERROR: in %s, some mandatory argument(s) are NULL\n", __func__);
 	}
 
 	return result;
@@ -111,6 +124,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 	struct cmdEntry* 	entry;
 	char 				line[INPUTPARSER_LINE_SIZE];
 	uint32_t 			cmd_counter = 0;
+	char* 				cmd_arg;
 
 	if (parser != NULL){
 
@@ -148,8 +162,17 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 			entry_index = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), line, (int32_t(*)(void*, void*))inputParser_search_cmd);
 			if (entry_index >= 0){
 				entry = (struct cmdEntry*)array_get(&(parser->cmd_array), entry_index);
-				if (entry->interactive == INPUTPARSER_CMD_INTERACTIVE){
+				if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
 					((void(*)(void*,char*))(entry->function))(entry->context, inputParser_get_argument(entry->name, line));
+				}
+				else if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
+					cmd_arg = inputParser_get_argument(entry->name, line);
+					if (cmd_arg == NULL){
+						printf("ERROR: in %s, this command requires at least one additionnal argument: %s\n", __func__, entry->arg_desc);
+					}
+					else{
+						((void(*)(void*,char*))(entry->function))(entry->context, cmd_arg);
+					}
 				}
 				else{
 					((void(*)(void*))(entry->function))(entry->context);
@@ -179,7 +202,7 @@ void inputParser_delete(struct inputParser* parser){
 }
 
 int32_t inputParser_search_cmd(struct cmdEntry* entry, char* cmd){
-	if (entry->interactive == INPUTPARSER_CMD_NOT_INTERACTIVE){
+	if (entry->type == INPUTPARSER_CMD_TYPE_NO_ARG){
 		return strncmp(entry->name, cmd, INPUTPARSER_NAME_SIZE);
 	}
 	else{
@@ -221,26 +244,36 @@ static void inputParser_print_help(struct inputParser* parser){
 	struct multiColumnPrinter* 	printer;
 	struct cmdEntry* 			entry;
 
-	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, " ");
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer == NULL){
 		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
 		return;
 	}
 
+	multiColumnPrinter_set_title(printer, 0, "CMD");
+	multiColumnPrinter_set_title(printer, 1, "ARG");
+	multiColumnPrinter_set_title(printer, 2, "CMD DESC");
+	multiColumnPrinter_set_title(printer, 3, "ARG DESC");
+
 	multiColumnPrinter_set_column_size(printer, 0, 24);
 	multiColumnPrinter_set_column_size(printer, 1, 3);
-
-	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UNBOUND_STRING);
+	multiColumnPrinter_set_column_size(printer, 2, 64);
+	multiColumnPrinter_set_column_size(printer, 3, 48);
 
 	printf("List of available command(s):\n");
 
+	multiColumnPrinter_print_header(printer);
+
 	for (i = 0; i < array_get_length(&(parser->cmd_array)); i++){
 		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
-		if (entry->interactive == INPUTPARSER_CMD_INTERACTIVE){
-			multiColumnPrinter_print(printer, entry->name, "ARG", entry->description);
+		if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
+			multiColumnPrinter_print(printer, entry->name, "ARG", entry->cmd_desc, entry->arg_desc);
+		}
+		else if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
+			multiColumnPrinter_print(printer, entry->name, "OPT", entry->cmd_desc, entry->arg_desc);
 		}
 		else{
-			multiColumnPrinter_print(printer, entry->name, "", entry->description);
+			multiColumnPrinter_print(printer, entry->name, "", entry->cmd_desc, "-");
 		}
 	}
 

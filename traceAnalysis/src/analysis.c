@@ -12,9 +12,9 @@
 #include "printBuffer.h"
 #include "readBuffer.h"
 
-#define ADD_CMD_TO_INPUT_PARSER(parser, cmd, desc, interac, arg, func)									\
+#define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)									\
 	{																									\
-		if (inputParser_add_cmd((parser), (cmd), (desc), (interac), (arg), (void(*)(void))(func))){		\
+		if (inputParser_add_cmd((parser), (cmd), (cmd_desc), (arg_desc), (type), (arg), (void(*)(void))(func))){		\
 			printf("ERROR: in %s, unable to add cmd: \"%s\" to inputParser\n", __func__, (cmd));		\
 		}																								\
 	}
@@ -36,43 +36,43 @@ int main(int argc, char** argv){
 	}
 
 	/* ioChecker specific commands*/
-	ADD_CMD_TO_INPUT_PARSER(parser, "load ioChecker", "Load primitive reference from a file. Specify file name as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis->checker, ioChecker_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", "Display the ioChecker structure", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis->checker, ioChecker_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", "Remove every primitive reference from the ioChecker", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis->checker, ioChecker_empty)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load ioChecker", 			"Load primitive reference from a file", 		"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis->checker, 	ioChecker_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", 			"Display the ioChecker structure", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis->checker, 	ioChecker_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", 			"Remove every primitive reference", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis->checker, 	ioChecker_empty)
 
 	/* trace specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", "Load a trace in the analysis engine. Specify trace path as second argument", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", "Print all the instructions of the trace. Specify an index / range as a second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", "Check the current trace for errors. In case you don't trust the tracer!", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_check)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", "Perform basic checks on the codeMap address", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_check_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", "Print the codeMap (informations about routine address). Specify a filter as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_trace_print_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", "Delete the current trace", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_trace_delete)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions", 					"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_check)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_check_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_trace_print_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_delete)
 
 	/* loop specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", "Create a loopEngine and parse the trace looking for A^n pattern", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", "Remove the redundant loops from the loops list", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_remove_redundant)
-	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", "Pack loop epilogue to reduce the number of loops (must be run after \"remove redundant loop\")", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_pack_epilogue)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", "Print every loops contained in the loopEngine", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", "Export loop(s) to traceFragment array. Specify export method [mandatory] and loop index", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_loop_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", "Delete a previously created loopEngine (loop)", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_loop_delete)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_remove_redundant)
+	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", 			"Pack loop epilogue (must be run after \"remove redundant loop\")", NULL, 		INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_pack_epilogue)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_loop_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_delete)
 
 	/* traceFragement specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", "Clean the traceFragment array", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_frag_clean)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", "Print simpleTraceStat about the traceFragment. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_print_stat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", "Print instructions of the traceFragment. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_print_ins)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", "Print for every traceFragments some stat about instructions frequency", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_frag_print_percent)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", "Print for every traceFragments input and output registers. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_print_register)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", "Print for every traceFragments input and output registers. Specify an index as second arg [mandatory]", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_print_memory)
-	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", "Set tag value for specific fragment. Specify frag index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", "Locate traceFragement (an index may be specified as second arg) in the codeMap", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_locate)
-	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", "Extract input and output argument(s) from the traceFragment. Specify extraction routine [mandatory] and index", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_frag_extract_arg)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", 			"Print stats about the traceFragments", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_frag_print_stat)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", 			"Print instructions of a given traceFragment",  "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_ins)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", 		"Print some stat about instructions frequency", NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_frag_print_percent)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", 		"Print register access", 						"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_register)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", 		"Print memory access", 							"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_memory)
+	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_frag_locate)
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction routine & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 			analysis_frag_extract_arg)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_frag_clean)
 
 	/* argument specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", "Clean the argSet array", INPUTPARSER_CMD_NOT_INTERACTIVE, analysis, analysis_arg_clean)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", "Print arguments from the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", "Set tag value for specific argSet. Specify arg index and tag value [respect order]", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", "Search every element in the argSet array. Specify an index as second arg", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", "Seek for a user defined argBuffer in the argSet array. Specify the buffer as second arg (raw format)", INPUTPARSER_CMD_INTERACTIVE, analysis, analysis_arg_seek)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_arg_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", 				"Set tag value for a given argSet",				"ArgSet index & tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_arg_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", 				"Search every elements in the argSet array", 	"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_arg_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_arg_seek)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_arg_clean)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -161,11 +161,6 @@ void analysis_delete(struct analysis* analysis){
 /* ===================================================================== */
 
 void analysis_trace_load(struct analysis* analysis, char* arg){
-	if (arg == NULL){
-		printf("ERROR: in %s, please specify the trace directory\n", __func__);
-		return;
-	}
-
 	if (analysis->trace != NULL){
 		printf("WARNING: in %s, deleting previous trace\n", __func__);
 		trace_delete(analysis->trace);
@@ -310,55 +305,45 @@ void analysis_loop_export(struct analysis* analysis, char* arg){
 
 
 	if (analysis->loop_engine != NULL){
-		if (arg != NULL){
-			for (i = 0; i < strlen(arg) - 1; i++){
-				if (arg[i] == ' '){
-					found_space = 1;
-					break;
-				}
+		for (i = 0; i < strlen(arg) - 1; i++){
+			if (arg[i] == ' '){
+				found_space = 1;
+				break;
 			}
-			if (found_space){
-				loop_index = atoi(arg + i + 1);
-			}
-			else{
-				i ++;
-			}
+		}
+		if (found_space){
+			loop_index = atoi(arg + i + 1);
+		}
+		else{
+			i ++;
+		}
 
-			if (!strncmp(arg, "ALL", i)){
-				if (loopEngine_export_all(analysis->loop_engine, &(analysis->frag_array), loop_index)){
-					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-				}
+		if (!strncmp(arg, "ALL", i)){
+			if (loopEngine_export_all(analysis->loop_engine, &(analysis->frag_array), loop_index)){
+				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
 			}
-			else if (i > 3 && !strncmp(arg, "IT=", 3)){
-				iteration_index = atoi(arg + 3);
-				if (loopEngine_export_it(analysis->loop_engine, &(analysis->frag_array), loop_index, iteration_index)){
-					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-				}
+		}
+		else if (i > 3 && !strncmp(arg, "IT=", 3)){
+			iteration_index = atoi(arg + 3);
+			if (loopEngine_export_it(analysis->loop_engine, &(analysis->frag_array), loop_index, iteration_index)){
+				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
 			}
-			else if (!strncmp(arg, "NOEP", i)){
-				if (loopEngine_export_noEp(analysis->loop_engine, &(analysis->frag_array), loop_index)){
-					printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-				}
-			}
-			else{
-				goto arg_error;
+		}
+		else if (!strncmp(arg, "NOEP", i)){
+			if (loopEngine_export_noEp(analysis->loop_engine, &(analysis->frag_array), loop_index)){
+				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
 			}
 		}
 		else{
-			goto arg_error;
+			printf("Expected export specifier:\n");
+			printf(" - \"ALL\"   : export every loop's iteration and the epilogue if it exists\n");
+			printf(" - \"NOEP\"  : export every loop's iteration\n");
+			printf(" - \"IT=xx\" : export the xx iteration of the loop\n");
 		}
 	}
 	else{
 		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
 	}
-
-	return;
-
-	arg_error:
-	printf("Expected export specifier:\n");
-	printf(" - \"ALL\"   : export every loop's iteration and the epilogue if it exists\n");
-	printf(" - \"NOEP\"  : export every loop's iteration\n");
-	printf(" - \"IT=xx\" : export the xx iteration of the loop\n");
 
 	return;
 }
@@ -376,15 +361,6 @@ void analysis_loop_delete(struct analysis* analysis){
 /* ===================================================================== */
 /* frag functions						                                 */
 /* ===================================================================== */
-
-void analysis_frag_clean(struct analysis* analysis){
-	uint32_t 				i;
-
-	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
-	}
-	array_empty(&(analysis->frag_array));
-}
 
 void analysis_frag_print_stat(struct analysis* analysis, char* arg){
 	uint32_t 					i;
@@ -432,18 +408,12 @@ void analysis_frag_print_stat(struct analysis* analysis, char* arg){
 void analysis_frag_print_ins(struct analysis* analysis, char* arg){
 	uint32_t index;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		
-		if (index < array_get_length(&(analysis->frag_array))){
-			traceFragment_print_instruction((struct traceFragment*)array_get(&(analysis->frag_array), index));
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-		}
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		traceFragment_print_instruction((struct traceFragment*)array_get(&(analysis->frag_array), index));
 	}
 	else{
-		printf("ERROR: in %s, an index value must be specified\n", __func__);
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
 	}
 }
 
@@ -510,36 +480,30 @@ void analysis_frag_print_register(struct analysis* analysis, char* arg){
 	struct traceFragment* 		fragment;
 	uint32_t 					index;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		
-		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+		#ifdef VERBOSE
+		printf("Print registers for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
+		#endif
+
+		if (fragment->read_register_array == NULL || fragment->write_register_array == NULL){
 			#ifdef VERBOSE
-			printf("Print registers for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
+			printf("WARNING: register arrays have not been built for the current fragment. Building them now.\n");
 			#endif
 
-			if (fragment->read_register_array == NULL || fragment->write_register_array == NULL){
-				#ifdef VERBOSE
-				printf("WARNING: register arrays have not been built for the current fragment. Building them now.\n");
-				#endif
-
-				if (traceFragment_create_reg_array(fragment)){
-					printf("ERROR: in %s, unable to create reg array for the fragement\n", __func__);
-				}
+			if (traceFragment_create_reg_array(fragment)){
+				printf("ERROR: in %s, unable to create reg array for the fragement\n", __func__);
 			}
+		}
 
-			printf("*** Input Register(s) ***\n");
-			regAccess_print(fragment->read_register_array, fragment->nb_register_read_access);
-			printf("\n*** Output Register(s) ***\n");
-			regAccess_print(fragment->write_register_array, fragment->nb_register_write_access);
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-		}
+		printf("*** Input Register(s) ***\n");
+		regAccess_print(fragment->read_register_array, fragment->nb_register_read_access);
+		printf("\n*** Output Register(s) ***\n");
+		regAccess_print(fragment->write_register_array, fragment->nb_register_write_access);
 	}
 	else{
-		printf("ERROR: in %s, an index value must be specified\n", __func__);
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
 	}
 }
 
@@ -547,36 +511,30 @@ void analysis_frag_print_memory(struct analysis* analysis, char* arg){
 	struct traceFragment* 		fragment;
 	uint32_t 					index;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		
-		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+		#ifdef VERBOSE
+		printf("Print memory for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
+		#endif
+
+		if (fragment->read_memory_array == NULL || fragment->write_memory_array == NULL){
 			#ifdef VERBOSE
-			printf("Print memory for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
+			printf("WARNING: memory arrays have not been built for the current fragment. Building them now.\n");
 			#endif
 
-			if (fragment->read_memory_array == NULL || fragment->write_memory_array == NULL){
-				#ifdef VERBOSE
-				printf("WARNING: memory arrays have not been built for the current fragment. Building them now.\n");
-				#endif
-
-				if (traceFragment_create_mem_array(fragment)){
-					printf("ERROR: in %s, unable to create mem array for the fragement\n", __func__);
-				}
+			if (traceFragment_create_mem_array(fragment)){
+				printf("ERROR: in %s, unable to create mem array for the fragement\n", __func__);
 			}
+		}
 
-			printf("*** Read Memory ***\n");
-			memAccess_print(fragment->read_memory_array, fragment->nb_memory_read_access);
-			printf("\n*** Write Memory ***\n");
-			memAccess_print(fragment->write_memory_array, fragment->nb_memory_write_access);
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-		}
+		printf("*** Read Memory ***\n");
+		memAccess_print(fragment->read_memory_array, fragment->nb_memory_read_access);
+		printf("\n*** Write Memory ***\n");
+		memAccess_print(fragment->write_memory_array, fragment->nb_memory_write_access);
 	}
 	else{
-		printf("ERROR: in %s, an index value must be specified\n", __func__);
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
 	}
 }
 
@@ -586,35 +544,30 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg){
 	struct traceFragment* 	fragment;
 	uint8_t 				found_space = 0;
 
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
-			}
+	for (i = 0; i < strlen(arg) - 1; i++){
+		if (arg[i] == ' '){
+			found_space = 1;
+			break;
 		}
-		if (found_space){
-			index = (uint32_t)atoi(arg);
+	}
+	if (found_space){
+		index = (uint32_t)atoi(arg);
 
-			if (index < array_get_length(&(analysis->frag_array))){
-				fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+		if (index < array_get_length(&(analysis->frag_array))){
+			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
 
-				#ifdef VERBOSE
-				printf("Setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
-				#endif
+			#ifdef VERBOSE
+			printf("Setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
+			#endif
 
-				strncpy(fragment->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
-			}
-			else{
-				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-			}
+			strncpy(fragment->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
 		}
 		else{
-			printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
 		}
 	}
 	else{
-		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
+		printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
 	}
 }
 
@@ -695,136 +648,140 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	start = 0;
 	stop = array_get_length(&(analysis->frag_array));
 
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
-			}
+	for (i = 0; i < strlen(arg) - 1; i++){
+		if (arg[i] == ' '){
+			found_space = 1;
+			break;
 		}
-		if (found_space){
-			index = (uint32_t)atoi(arg + i + 1);
-		
-			if (index < array_get_length(&(analysis->frag_array))){
-				start = index;
-				stop = index + 1;
-			}
-			else{
-				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-				return;
-			}
+	}
+	if (found_space){
+		index = (uint32_t)atoi(arg + i + 1);
+	
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
 		}
 		else{
-			i ++;
-		}
-
-		if (!strncmp(arg, ARG_NAME_A_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 0;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_A_LP, ARG_DESC_A, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AR_LP, ARG_DESC_AR, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 0;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AS_LP, ARG_DESC_AS, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LP, ARG_DESC_ASR, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 0;
-			
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASO_LP, ARG_DESC_ASO, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LP, ARG_DESC_ASOR, ARG_DESC_LP);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_ASR_LM, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LM, ARG_DESC_ASR, ARG_DESC_LM);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_ASOR_LM, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LM, ARG_DESC_ASOR, ARG_DESC_LM);
-			#endif
-		}
-		else if (!strncmp(arg, ARG_NAME_LASOR_LM, i)){
-			extract_routine_mem_read 	= memAccess_extract_arg_loop_adjacent_size_opcode_read;
-			extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-			extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
-			extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-			remove_raw 					= 1;
-
-			#ifdef VERBOSE
-			printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_LASOR_LM, ARG_DESC_LASOR, ARG_DESC_LM);
-			#endif
-		}
-		else{
-			printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
-			goto arg_error;
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
 		}
 	}
 	else{
-		printf("ERROR: in %s, an argument is expected to select the extraction routine\n", __func__);
-		goto arg_error;
+		i ++;
+	}
+
+	if (!strncmp(arg, ARG_NAME_A_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 0;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_A_LP, ARG_DESC_A, ARG_DESC_LP);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AR_LP, ARG_DESC_AR, ARG_DESC_LP);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 0;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AS_LP, ARG_DESC_AS, ARG_DESC_LP);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LP, ARG_DESC_ASR, ARG_DESC_LP);
+	#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 0;
+			
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASO_LP, ARG_DESC_ASO, ARG_DESC_LP);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LP, ARG_DESC_ASOR, ARG_DESC_LP);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_ASR_LM, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LM, ARG_DESC_ASR, ARG_DESC_LM);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_ASOR_LM, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LM, ARG_DESC_ASOR, ARG_DESC_LM);
+		#endif
+	}
+	else if (!strncmp(arg, ARG_NAME_LASOR_LM, i)){
+		extract_routine_mem_read 	= memAccess_extract_arg_loop_adjacent_size_opcode_read;
+		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
+		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
+		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
+		remove_raw 					= 1;
+
+		#ifdef VERBOSE
+		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_LASOR_LM, ARG_DESC_LASOR, ARG_DESC_LM);
+		#endif
+	}
+	else{
+		printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
+		printf("Expected extraction specifier:\n");
+		printf(" - \"%s\"     : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 		ARG_DESC_LP);
+		printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 		ARG_DESC_LP);
+		printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 		ARG_DESC_LP);
+		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 		ARG_DESC_LP);
+		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 		ARG_DESC_LP);
+		printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 		ARG_DESC_LP);
+		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 		ARG_DESC_LM);
+		printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 		ARG_DESC_LM);
+		printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_LASOR_LM, 	ARG_DESC_LASOR, 	ARG_DESC_LM);
+		return;
 	}
 
 	for (j = start; j < stop; j++){
@@ -886,19 +843,6 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 
 	return;
 
-	arg_error:
-	printf("Expected extraction specifier:\n");
-	printf(" - \"%s\"     : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 		ARG_DESC_LP);
-	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 		ARG_DESC_LP);
-	printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 		ARG_DESC_LP);
-	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 		ARG_DESC_LP);
-	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 		ARG_DESC_LP);
-	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 		ARG_DESC_LP);
-	printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 		ARG_DESC_LM);
-	printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 		ARG_DESC_LM);
-	printf(" - \"%s\" : %s and %s\n", 		ARG_NAME_LASOR_LM, 	ARG_DESC_LASOR, 	ARG_DESC_LM);
-	return;
-
 	#undef ARG_DESC_A
 	#undef ARG_DESC_AR
 	#undef ARG_DESC_AS
@@ -920,18 +864,18 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	#undef ARG_NAME_LASOR_LM
 }
 
+void analysis_frag_clean(struct analysis* analysis){
+	uint32_t 				i;
+
+	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
+		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
+	}
+	array_empty(&(analysis->frag_array));
+}
+
 /* ===================================================================== */
 /* arg functions						                                 */
 /* ===================================================================== */
-
-void analysis_arg_clean(struct analysis* analysis){
-	uint32_t 				i;
-
-	for (i = 0; i < array_get_length(&(analysis->arg_array)); i++){
-		argSet_clean((struct argSet*)array_get(&(analysis->arg_array), i));
-	}
-	array_empty(&(analysis->arg_array));
-}
 
 void analysis_arg_print(struct analysis* analysis, char* arg){
 	uint32_t 					index;
@@ -1064,35 +1008,30 @@ void analysis_arg_set_tag(struct analysis* analysis, char* arg){
 	struct argSet* 		arg_set;
 	uint8_t 			found_space = 0;
 
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
-			}
+	for (i = 0; i < strlen(arg) - 1; i++){
+		if (arg[i] == ' '){
+			found_space = 1;
+			break;
 		}
-		if (found_space){
-			index = (uint32_t)atoi(arg);
+	}
+	if (found_space){
+		index = (uint32_t)atoi(arg);
 
-			if (index < array_get_length(&(analysis->arg_array))){
-				arg_set = (struct argSet*)array_get(&(analysis->arg_array), index);
+		if (index < array_get_length(&(analysis->arg_array))){
+			arg_set = (struct argSet*)array_get(&(analysis->arg_array), index);
 
-				#ifdef VERBOSE
-				printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, arg_set->tag, arg + i + 1);
-				#endif
+			#ifdef VERBOSE
+			printf("Setting tag value for arg %u: old tag: \"%s\", new tag: \"%s\"\n", index, arg_set->tag, arg + i + 1);
+			#endif
 
-				strncpy(arg_set->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
-			}
-			else{
-				printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->arg_array)));
-			}
+			strncpy(arg_set->tag, arg + i + 1, ARGSET_TAG_MAX_LENGTH);
 		}
 		else{
-			printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->arg_array)));
 		}
 	}
 	else{
-		printf("ERROR: in %s, an index and a tag value must be specified\n", __func__);
+		printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
 	}
 }
 
@@ -1140,23 +1079,27 @@ void analysis_arg_seek(struct analysis* analysis, char* arg){
 	char* 				buffer;
 	uint32_t 			buffer_length;
 
-	if (arg != NULL){
-		buffer = readBuffer_raw(arg, strlen(arg));
-		buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
-		if (buffer == NULL){
-			printf("ERROR: in %s, readBuffer return NULL\n", __func__);
-		}
-		else{
-			for (i = 0; i < array_get_length(&(analysis->arg_array)); i++){
-				arg_set = (struct argSet*)array_get(&(analysis->arg_array), i);
-				
-				argSet_search_input(arg_set, buffer, buffer_length);
-				argSet_search_output(arg_set, buffer, buffer_length);
-			}
-			free(buffer);
-		}
+	buffer = readBuffer_raw(arg, strlen(arg));
+	buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
+	if (buffer == NULL){
+		printf("ERROR: in %s, readBuffer return NULL\n", __func__);
 	}
 	else{
-		printf("ERROR: in %s, please specify an argument\n", __func__);
+		for (i = 0; i < array_get_length(&(analysis->arg_array)); i++){
+			arg_set = (struct argSet*)array_get(&(analysis->arg_array), i);
+				
+			argSet_search_input(arg_set, buffer, buffer_length);
+			argSet_search_output(arg_set, buffer, buffer_length);
+		}
+		free(buffer);
 	}
+}
+
+void analysis_arg_clean(struct analysis* analysis){
+	uint32_t 				i;
+
+	for (i = 0; i < array_get_length(&(analysis->arg_array)); i++){
+		argSet_clean((struct argSet*)array_get(&(analysis->arg_array), i));
+	}
+	array_empty(&(analysis->arg_array));
 }

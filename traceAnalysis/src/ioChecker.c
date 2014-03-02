@@ -47,13 +47,8 @@ int32_t ioChecker_init(struct ioChecker* checker){
 }
 
 void ioChecker_load(struct ioChecker* checker, void* arg){
-	if (arg != NULL){
-		if (refReaderJSON_parse(arg, &(checker->reference_array))){
-			printf("ERROR: in %s, unable to parse reference file: \"%s\"\n", __func__, (char*)arg);
-		}
-	}
-	else{
-		printf("ERROR: in %s, a valid file name must be specified\n", __func__);
+	if (refReaderJSON_parse(arg, &(checker->reference_array))){
+		printf("ERROR: in %s, unable to parse reference file: \"%s\"\n", __func__, (char*)arg);
 	}
 }
 
