@@ -57,7 +57,7 @@ uint8_t valid_char[128] = {
 	1, /* 0x2B	Plus */
 	1, /* 0x2C	Comma */
 	0, /* 0x2D	Hyphen */
-	0, /* 0x2E	Period, dot or full stop */
+	1, /* 0x2E	Period, dot or full stop */
 	1, /* 0x2F	Slash or divide */
 	1, /* 0x30	Zero */
 	1, /* 0x31	One */

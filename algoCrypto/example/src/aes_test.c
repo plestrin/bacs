@@ -2,22 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef __linux__
-
 #include "AES.h"
 #include "printBuffer.h"
 
-#endif
-
 #ifdef WIN32
-
-#include "AES.h"
-#include "../../misc/printBuffer.h"
-
-#ifndef __func__
-#define __func__ __FUNCTION__
-#endif
-
+#include "windowsComp.h"
 #endif
 
 /* Those test vectors are taken from: http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf */

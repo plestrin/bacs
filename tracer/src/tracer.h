@@ -3,24 +3,8 @@
 
 #include <stdint.h>
 
-#ifdef __linux__
-
 #include "codeMap.h"
 #include "instruction.h"
-
-#endif
-
-#ifdef WIN32
-
-#include "../../../shared/codeMap.h"
-#include "../../../shared/instruction.h"
-
-#ifndef __func__
-#define __func__ __FUNCTION__
-#endif
-
-#endif
-
 #include "whiteList.h"
 
 #define TRACER_INSTRUCTION_BUFFER_SIZE 1024 /*tmp*/

@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include "pin.H"
 
+#ifdef WIN32
+#include "windowsComp.h"
+#endif
+
 #include "tracer.h"
 #include "traceFiles.h"
 
@@ -1374,7 +1378,7 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
 		goto fail;
 	}
 
-	if (white_list_file_name != NULL && strcmp(white_list_file_name, "NULL")){
+	if (white_list_file_name != NULL && strcmp(white_list_file_name, DEFAULT_WHITE_LIST_FILE_NAME)){
 		tracer.white_list = whiteList_create(white_list_file_name);
 		if (tracer.white_list == NULL){
 			printf("ERROR: in %s, unable to create shared library white list\n", __func__);

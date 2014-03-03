@@ -2,22 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef __linux__
-
 #include "MD5.h"
 #include "printBuffer.h"
 
-#endif
-
 #ifdef WIN32
-
-#include "MD5.h"
-#include "../../misc/printBuffer.h"
-
-#ifndef __func__
-#define __func__ __FUNCTION__
-#endif
-
+#include "windowsComp.h"
 #endif
 
 /* This test vector is taken from http://www.ietf.org/rfc/rfc1321.txt */

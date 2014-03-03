@@ -6,14 +6,7 @@
 #include "multiColumn.h"
 
 #ifdef WIN32
-
-#ifndef __func__
-#define __func__ __FUNCTION__
-#endif
-
-#define snprintf(str, size, format, ...) _snprintf_s((str), (size), _TRUNCATE, (format), __VA_ARGS__)
-#define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
-
+#include "windowsComp.h"
 #endif
 
 static void multiColumnPrinter_constrain_string(char* src, char* dst, uint32_t size);

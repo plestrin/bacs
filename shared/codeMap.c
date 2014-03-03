@@ -3,22 +3,10 @@
 #include <string.h>
 
 #include "codeMap.h"
-
-#if defined __linux__
-
 #include "multiColumn.h"
 
-#elif defined WIN32
-
-#include "../misc/multiColumn.h"
-
-#ifndef __func__
-#define __func__ __FUNCTION__
-#endif
-
-#define snprintf(str, size, format, ...) _snprintf_s((str), (size), _TRUNCATE, (format), __VA_ARGS__)
-#define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
-
+#ifdef WIN32
+#include "windowsComp.h"
 #endif
 
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file);
@@ -451,18 +439,34 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 	if (image != NULL){
 		if (image->white_listed == CODEMAP_WHITELISTED){
 			#if defined ARCH_32
+			#ifdef WIN32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#else
 			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+			#endif
 			#elif defined ARCH_64
+			#ifdef WIN32
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#else
 			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
+			#endif
 			#else
 			#error Please specify an architecture {ARCH_32 or ARCH_64}
 			#endif
 		}
 		else{
 			#if defined ARCH_32
+			#ifdef WIN32
+			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#else
 			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+			#endif
 			#elif defined ARCH_64
+			#ifdef WIN32
+			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#else
 			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
+			#endif
 			#else
 			#error Please specify an architecture {ARCH_32 or ARCH_64}
 			#endif
