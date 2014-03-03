@@ -215,7 +215,12 @@ if action == "SEARCH" or action == "ALL":
 		sys.stdout.write("Searching " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
-		condition1 = hist.hasFilesChanged(["./analysis"])
+		ioChecker_file = recipe_arg[i][recipe_arg[i].find("load ioChecker") + 15:]
+		ioChecker_file = ioChecker_file[:ioChecker_file.find(",")]
+		trace_dir = recipe_arg[i][recipe_arg[i].find("load trace") + 11:]
+		trace_dir = trace_dir[:trace_dir.find(",")]
+
+		condition1 = hist.hasFilesChanged(["./analysis", ioChecker_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
 		condition2 = hist.hasStringChanged("analysis" + recipe_name[i], recipe_arg[i])
 
 		if condition1 or condition2:
