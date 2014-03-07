@@ -1329,12 +1329,12 @@ void pintool_instrumentation_img(IMG image, void* val){
 	struct cm_routine*	cm_rtn;
 	char				white_listed;
 
-	white_listed = (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0)?CODEMAP_WHITELISTED:CODEMAP_NOT_WHITELISTED;
+	white_listed = (whiteList_search(tracer.white_list, IMG_Name(image).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
 	if (codeMap_add_image(tracer.code_map, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str(), white_listed)){
 		printf("ERROR: in %s, unable to add image to code map structure\n", __func__);
 	}
 	else{
-		for (section= IMG_SecHead(image); SEC_Valid(section); section = SEC_Next(section)){
+		for (section = IMG_SecHead(image); SEC_Valid(section); section = SEC_Next(section)){
 			if (SEC_IsExecutable(section) && SEC_Mapped(section)){
 				if (codeMap_add_section(tracer.code_map, SEC_Address(section), SEC_Address(section) + SEC_Size(section), SEC_Name(section).c_str())){
 					printf("ERROR: in %s, unable to add section to code map structure\n", __func__);
@@ -1342,8 +1342,8 @@ void pintool_instrumentation_img(IMG image, void* val){
 				}
 				else{
 					for (routine= SEC_RtnHead(section); RTN_Valid(routine); routine = RTN_Next(routine)){
-						white_listed |= (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0)?CODEMAP_WHITELISTED:CODEMAP_NOT_WHITELISTED;
-						cm_rtn = codeMap_add_routine(tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Size(routine), RTN_Name(routine).c_str(), white_listed);
+						white_listed |= (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
+						cm_rtn = codeMap_add_routine(tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Range(routine), RTN_Name(routine).c_str(), white_listed);
 						if (cm_rtn == NULL){
 							printf("ERROR: in %s, unable to add routine to code map structure\n", __func__);
 							break;

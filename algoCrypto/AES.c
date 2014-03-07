@@ -474,7 +474,7 @@ void aes128_key_expand_encrypt(uint32_t* key, uint32_t* round_key){
     uint32_t tmp;
 
     for (i = 0; i < AES_128_NB_WORD_KEY; i++){
-    	round_key[i] = key[i];
+    	round_key[i] = AES_LOAD_WORD(key[i]);
     }
 	
     for (i = 0; i < AES_128_NB_ROUND; i++){
@@ -491,7 +491,7 @@ void aes192_key_expand_encrypt(uint32_t* key, uint32_t* round_key){
     uint32_t tmp;
 
     for (i = 0; i < AES_192_NB_WORD_KEY; i++){
-        round_key[i] = key[i];
+        round_key[i] = AES_LOAD_WORD(key[i]);
     }
     
     for (i = 0; ; i++){
@@ -513,7 +513,7 @@ void aes256_key_expand_encrypt(uint32_t* key, uint32_t* round_key){
     uint32_t tmp;
 
     for (i = 0; i < AES_256_NB_WORD_KEY; i++){
-        round_key[i] = key[i];
+        round_key[i] = AES_LOAD_WORD(key[i]);
     }
     
     for (i = 0; ; i++){
@@ -559,10 +559,10 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
 	uint32_t 	t3;                                                                                                                                                                 \
 	uint8_t 	i;                                                                                                                                                                  \
                                                                                                                                                                                     \
-	s0 = input[0] ^ round_key[0];                                                                                                                                                   \
-	s1 = input[1] ^ round_key[1];                                                                                                                                                   \
-	s2 = input[2] ^ round_key[2];                                                                                                                                                   \
-	s3 = input[3] ^ round_key[3];                                                                                                                                                   \
+	s0 = AES_LOAD_WORD(input[0]) ^ round_key[0];                                                                                                                                                   \
+	s1 = AES_LOAD_WORD(input[1]) ^ round_key[1];                                                                                                                                                   \
+	s2 = AES_LOAD_WORD(input[2]) ^ round_key[2];                                                                                                                                                   \
+	s3 = AES_LOAD_WORD(input[3]) ^ round_key[3];                                                                                                                                                   \
                                                                                                                                                                                     \
 	for (i = 0; i < (((nb_round)) - 1); i++){                                                                                                                                       \
 		t0 = TE0[(s0 >> 24) & 0x000000ff] ^ TE1[(s1 >> 16) & 0x000000ff] ^ TE2[(s2 >> 8) & 0x000000ff] ^ TE3[s3 & 0x000000ff];                                                      \
@@ -581,10 +581,10 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
 	t2 = ((uint32_t)S[(s2 >> 24) & 0x000000ff] << 24) ^ ((uint32_t)S[(s3 >> 16) & 0x000000ff] << 16) ^ ((uint32_t)S[(s0 >> 8) & 0x000000ff] << 8) ^ (uint32_t)S[s1 & 0x000000ff];   \
 	t3 = ((uint32_t)S[(s3 >> 24) & 0x000000ff] << 24) ^ ((uint32_t)S[(s0 >> 16) & 0x000000ff] << 16) ^ ((uint32_t)S[(s1 >> 8) & 0x000000ff] << 8) ^ (uint32_t)S[s2 & 0x000000ff];   \
                                                                                                                                                                                     \
-	output[0] = t0 ^ round_key[4 * (nb_round) + 0];                                                                                                                                 \
-	output[1] = t1 ^ round_key[4 * (nb_round) + 1];                                                                                                                                 \
-	output[2] = t2 ^ round_key[4 * (nb_round) + 2];                                                                                                                                 \
-	output[3] = t3 ^ round_key[4 * (nb_round) + 3];                                                                                                                                 \
+	output[0] = AES_STORE_WORD(t0 ^ round_key[4 * (nb_round) + 0]);                                                                                                                                 \
+	output[1] = AES_STORE_WORD(t1 ^ round_key[4 * (nb_round) + 1]);                                                                                                                                 \
+	output[2] = AES_STORE_WORD(t2 ^ round_key[4 * (nb_round) + 2]);                                                                                                                                 \
+	output[3] = AES_STORE_WORD(t3 ^ round_key[4 * (nb_round) + 3]);                                                                                                                                 \
 }
 
 
@@ -630,10 +630,10 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
     uint32_t    t3;                                                                                                                                                                 \
     uint8_t     i;                                                                                                                                                                  \
                                                                                                                                                                                     \
-    s0 = input[0] ^ round_key[4 * (nb_round) + 0];                                                                                                                                  \
-    s1 = input[1] ^ round_key[4 * (nb_round) + 1];                                                                                                                                  \
-    s2 = input[2] ^ round_key[4 * (nb_round) + 2];                                                                                                                                  \
-    s3 = input[3] ^ round_key[4 * (nb_round) + 3];                                                                                                                                  \
+    s0 = AES_LOAD_WORD(input[0]) ^ round_key[4 * (nb_round) + 0];                                                                                                                                  \
+    s1 = AES_LOAD_WORD(input[1]) ^ round_key[4 * (nb_round) + 1];                                                                                                                                  \
+    s2 = AES_LOAD_WORD(input[2]) ^ round_key[4 * (nb_round) + 2];                                                                                                                                  \
+    s3 = AES_LOAD_WORD(input[3]) ^ round_key[4 * (nb_round) + 3];                                                                                                                                  \
                                                                                                                                                                                     \
     for (i = ((nb_round) - 1); i > 0; i--){                                                                                                                                         \
         t0 = TD0[(s0 >> 24) & 0x000000ff] ^ TD1[(s3 >> 16) & 0x000000ff] ^ TD2[(s2 >> 8) & 0x000000ff] ^ TD3[s1 & 0x000000ff];                                                      \
@@ -652,10 +652,10 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
     t2 = ((uint32_t)D[(s2 >> 24) & 0x000000ff] << 24) ^ ((uint32_t)D[(s1 >> 16) & 0x000000ff] << 16) ^ ((uint32_t)D[(s0 >> 8) & 0x000000ff] << 8) ^ (uint32_t)D[s3 & 0x000000ff];   \
     t3 = ((uint32_t)D[(s3 >> 24) & 0x000000ff] << 24) ^ ((uint32_t)D[(s2 >> 16) & 0x000000ff] << 16) ^ ((uint32_t)D[(s1 >> 8) & 0x000000ff] << 8) ^ (uint32_t)D[s0 & 0x000000ff];   \
                                                                                                                                                                                     \
-    output[0] = t0 ^ round_key[0];                                                                                                                                                  \
-    output[1] = t1 ^ round_key[1];                                                                                                                                                  \
-    output[2] = t2 ^ round_key[2];                                                                                                                                                  \
-    output[3] = t3 ^ round_key[3];                                                                                                                                                  \
+    output[0] = AES_STORE_WORD(t0 ^ round_key[0]);                                                                                                                                                  \
+    output[1] = AES_STORE_WORD(t1 ^ round_key[1]);                                                                                                                                                  \
+    output[2] = AES_STORE_WORD(t2 ^ round_key[2]);                                                                                                                                                  \
+    output[3] = AES_STORE_WORD(t3 ^ round_key[3]);                                                                                                                                                  \
 }
 
 #define AES_INNER_LOOP_DECRYPT(name, nb_round)                                                                                                                                      \

@@ -30,6 +30,9 @@
 #define AES_BLOCK_NB_BIT 			128
 #define AES_BLOCK_NB_BYTE 			16
 
+#define AES_LOAD_WORD(w) 			(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#define AES_STORE_WORD(w)			(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+
 
 /* 
  * Key schedule - normally the same round key is used for encryption and decryption but here it's a little bit tricky due to our implementation

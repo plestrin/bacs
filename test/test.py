@@ -132,19 +132,22 @@ if action == "BUILD" or action == "ALL":
 		sys.stdout.write("Building " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
-		if recipe_log[i] == None:
-			recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
+		if recipe_build[i] != "":
+			if recipe_log[i] == None:
+				recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
 
-		recipe_log[i].write("\n\n### BULID STDOUT & STDERR ###\n\n")
-		recipe_log[i].flush()
+			recipe_log[i].write("\n\n### BULID STDOUT & STDERR ###\n\n")
+			recipe_log[i].flush()
 
-		time_start = time.time()
-		return_value = subprocess.call(recipe_build[i].split(' '), stdout = recipe_log[i], stderr = recipe_log[i])
-		time_stop  = time.time()
-		if return_value == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+			time_start = time.time()
+			return_value = subprocess.call(recipe_build[i].split(' '), stdout = recipe_log[i], stderr = recipe_log[i])
+			time_stop  = time.time()
+			if return_value == 0:
+				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+			else:
+				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 		else:
-			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
+			sys.stdout.write("no rule\n")
 
 
 # COMPILE TRACE step
@@ -163,33 +166,36 @@ if action == "TRACE" or action == "ALL":
 		sys.stdout.write("Tracing " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
 		sys.stdout.flush()
 
-		if hist.hasFilesChanged([PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, recipe_cmd[i]]):
-			if recipe_log[i] == None:
-				recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
+		if recipe_cmd[i] != "":
+			if hist.hasFilesChanged([PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, recipe_cmd[i]]):
+				if recipe_log[i] == None:
+					recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
 
-			recipe_log[i].write("\n\n### TRACE STDOUT & STDERR ###\n\n")
-			recipe_log[i].flush()
+				recipe_log[i].write("\n\n### TRACE STDOUT & STDERR ###\n\n")
+				recipe_log[i].flush()
 
-			time_start = time.time()
-			process = subprocess.Popen([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-			process.wait()
-			time_stop = time.time()
+				time_start = time.time()
+				process = subprocess.Popen([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+				process.wait()
+				time_stop = time.time()
 
-			output_val = process.communicate()
-			recipe_log[i].write(output_val[0])
-			recipe_log[i].write(output_val[1])
+				output_val = process.communicate()
+				recipe_log[i].write(output_val[0])
+				recipe_log[i].write(output_val[1])
 
-			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+				if process.returncode == 0:
+					sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+				else:
+					sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+					print(output_val[1])
+
+				regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
+				for j in regex.findall(output_val[0]):
+					print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
 			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
-
-			regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
-			for j in regex.findall(output_val[0]):
-				print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
+				sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
 		else:
-			sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
+			sys.stdout.write("no rule\n")
 
 
 # COMPILE SEARCH step
