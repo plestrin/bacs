@@ -36,43 +36,49 @@ int main(int argc, char** argv){
 	}
 
 	/* ioChecker specific commands*/
-	ADD_CMD_TO_INPUT_PARSER(parser, "load ioChecker", 			"Load primitive reference from a file", 		"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis->checker, 	ioChecker_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", 			"Display the ioChecker structure", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis->checker, 	ioChecker_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", 			"Remove every primitive reference", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis->checker, 	ioChecker_empty)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load ioChecker", 			"Load primitive reference from a file", 		"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->io_checker), 	ioChecker_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print ioChecker", 			"Display the ioChecker structure", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->io_checker), 	ioChecker_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean ioChecker", 			"Remove every primitive reference", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->io_checker), 	ioChecker_empty)
+
+	/* cstChecker specific commands*/
+	ADD_CMD_TO_INPUT_PARSER(parser, "load cstChecker", 			"Load constant from a file", 					"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->cst_checker), 	cstChecker_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print cstChecker", 		"Display the cstChecker structure", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->cst_checker), 	cstChecker_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean cstChecker", 		"Remove every constant", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->cst_checker), 	cstChecker_empty)
 
 	/* trace specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_trace_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions", 					"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_trace_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_check)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_check_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_trace_print_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_trace_delete)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions", 					"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search constant", 			"Search constant from the cstChecker in the trace", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_search_constant)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_delete)
 
 	/* loop specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_remove_redundant)
-	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", 			"Pack loop epilogue (must be run after \"remove redundant loop\")", NULL, 		INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_pack_epilogue)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_loop_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_loop_delete)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_remove_redundant)
+	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", 			"Pack loop epilogue (must be run after \"remove redundant loop\")", NULL, 		INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_pack_epilogue)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_delete)
 
 	/* traceFragement specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", 			"Print stats about the traceFragments", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_frag_print_stat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", 			"Print instructions of a given traceFragment",  "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_ins)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", 		"Print some stat about instructions frequency", NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_frag_print_percent)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", 		"Print register access", 						"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_register)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", 		"Print memory access", 							"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_print_memory)
-	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_frag_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_frag_locate)
-	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction routine & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 			analysis_frag_extract_arg)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_frag_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", 			"Print stats about the traceFragments", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_print_stat)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", 			"Print instructions of a given traceFragment",  "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_ins)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", 		"Print some stat about instructions frequency", NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_print_percent)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", 		"Print register access", 						"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_register)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", 		"Print memory access", 							"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_memory)
+	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction routine & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
 	/* argument specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_arg_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", 				"Set tag value for a given argSet",				"ArgSet index & tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_arg_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", 				"Search every elements in the argSet array", 	"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 			analysis_arg_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 			analysis_arg_seek)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 			analysis_arg_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_arg_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "set arg tag", 				"Set tag value for a given argSet",				"ArgSet index & tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_arg_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", 				"Search every elements in the argSet array", 	"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_arg_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_arg_seek)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_arg_clean)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -99,16 +105,24 @@ struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	analysis->checker = ioChecker_create();
-	if (analysis->checker == NULL){
-		printf("ERROR: in %s, unable to create ioChecker\n", __func__);
+	
+	if (ioChecker_init(&(analysis->io_checker))){
+		printf("ERROR: in %s, unable to init ioChecker\n", __func__);
+		free(analysis);
+		return NULL;
+	}
+
+	if (cstChecker_init(&(analysis->cst_checker))){
+		printf("ERROR: in %s, unable to init cstChecker\n", __func__);
+		ioChecker_clean(&(analysis->io_checker));
 		free(analysis);
 		return NULL;
 	}
 
 	if (array_init(&(analysis->frag_array), sizeof(struct traceFragment))){
 		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
-		ioChecker_delete(analysis->checker);
+		cstChecker_clean(&(analysis->cst_checker));
+		ioChecker_clean(&(analysis->io_checker));
 		free(analysis);
 		return NULL;
 	}
@@ -116,7 +130,8 @@ struct analysis* analysis_create(){
 	if (array_init(&(analysis->arg_array), sizeof(struct argSet))){
 		printf("ERROR: in %s, unable to init argSet array\n", __func__);
 		array_clean(&(analysis->frag_array));
-		ioChecker_delete(analysis->checker);
+		cstChecker_clean(&(analysis->cst_checker));
+		ioChecker_clean(&(analysis->io_checker));
 		free(analysis);
 		return NULL;
 
@@ -141,7 +156,8 @@ void analysis_delete(struct analysis* analysis){
 	analysis_frag_clean(analysis);
 	array_clean(&(analysis->frag_array));
 
-	ioChecker_delete(analysis->checker);
+	ioChecker_clean(&(analysis->io_checker));
+	cstChecker_clean(&(analysis->cst_checker));
 
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -219,6 +235,17 @@ void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_search_constant(struct analysis* analysis){
+	if (analysis->trace != NULL){
+		if (cstChecker_check(&(analysis->cst_checker), analysis->trace)){
+			printf("ERROR: in %s, unable to check constant(s)\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
 	}
 }
 
@@ -1058,18 +1085,18 @@ void analysis_arg_search(struct analysis* analysis, char* arg){
 	}
 
 	#ifndef VERBOSE
-	ioChecker_start(analysis->checker);
+	ioChecker_start(&(analysis->io_checker));
 	#endif
 
 	for (i = start; i < stop; i++){
-		if (ioChecker_submit_argSet(analysis->checker, (struct argSet*)array_get(&(analysis->arg_array), i))){
+		if (ioChecker_submit_argSet(&(analysis->io_checker), (struct argSet*)array_get(&(analysis->arg_array), i))){
 			printf("ERROR: in %s, unable to submit argSet to the ioChecker\n", __func__);
 		}
 	}
 	#ifdef VERBOSE
-	ioChecker_check(analysis->checker);
+	ioChecker_check(&(analysis->io_checker));
 	#else
-	ioChecker_wait(analysis->checker);
+	ioChecker_wait(&(analysis->io_checker));
 	#endif
 }
 
@@ -1079,7 +1106,7 @@ void analysis_arg_seek(struct analysis* analysis, char* arg){
 	char* 				buffer;
 	uint32_t 			buffer_length;
 
-	buffer = readBuffer_raw(arg, strlen(arg));
+	buffer = readBuffer_raw(arg, strlen(arg), NULL);
 	buffer_length = READBUFFER_RAW_GET_LENGTH(strlen(arg));
 	if (buffer == NULL){
 		printf("ERROR: in %s, readBuffer return NULL\n", __func__);

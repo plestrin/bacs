@@ -18,12 +18,14 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)trace.o 				\
 					$(BUILD_DIR)cmReaderJSON.o 			\
 					$(BUILD_DIR)refReaderJSON.o 		\
+					$(BUILD_DIR)cstReaderJSON.o 		\
 					$(BUILD_DIR)simpleTraceStat.o		\
 					$(BUILD_DIR)traceFragment.o			\
 					$(BUILD_DIR)argBuffer.o 			\
 					$(BUILD_DIR)argSet.o 				\
 					$(BUILD_DIR)primitiveReference.o 	\
 					$(BUILD_DIR)ioChecker.o 			\
+					$(BUILD_DIR)cstChecker.o 			\
 					$(BUILD_DIR)loop.o 					\
 					$(BUILD_DIR)memAccess.o 			\
 					$(BUILD_DIR)regAccess.o 			\

@@ -3,11 +3,15 @@
 
 #include "readBuffer.h"
 
-char* readBuffer_raw(char* txt, uint64_t txt_length){
+char* readBuffer_raw(const char* txt, uint64_t txt_length, char* buffer){
 	char* 		result;
 	uint64_t	i;
 
-	result = (char*)calloc(READBUFFER_RAW_GET_LENGTH(txt_length), 1);
+	result = buffer;
+	if (result == NULL){
+		result = (char*)calloc(READBUFFER_RAW_GET_LENGTH(txt_length), 1);
+	}
+	
 	if (result == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}

@@ -1,5 +1,5 @@
 #ifndef REFREADERJSON_H
-#define REFEADERJSON_H
+#define REFREADERJSON_H
 
 #include <stdint.h>
 

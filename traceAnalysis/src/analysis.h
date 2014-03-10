@@ -5,14 +5,17 @@
 #include "codeMap.h"
 #include "cmReaderJSON.h"
 #include "ioChecker.h"
+#include "cstChecker.h"
 #include "loop.h"
 #include "trace.h"
+
 
 struct analysis{
 	struct trace* 				trace;
 	struct codeMap* 			code_map;
 
-	struct ioChecker*			checker;
+	struct ioChecker			io_checker;
+	struct cstChecker 			cst_checker;
 
 	struct loopEngine*			loop_engine;
 
@@ -27,6 +30,7 @@ void analysis_trace_print(struct analysis* analysis, char* arg);
 void analysis_trace_check(struct analysis* analysis);
 void analysis_trace_check_codeMap(struct analysis* analysis);
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
+void analysis_trace_search_constant(struct analysis* analysis);
 void analysis_trace_delete(struct analysis* analysis);
 
 void analysis_loop_create(struct analysis* analysis);
