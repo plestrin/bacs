@@ -1,8 +1,9 @@
 EXAMPLE_DIRECTORY			:= example/
 TOMCRYPT_DIRECTORY 			:= tomCrypt/
 CRYPTOPP_DIRECTORY 			:= cryptopp/
+GLADMAN_DIRECTORY 			:= gladman/
 
-all: example tomCrypt cryptopp
+all: example tomCrypt cryptopp gladman
 
 example:
 	@ cd $(EXAMPLE_DIRECTORY) && $(MAKE)
@@ -13,9 +14,13 @@ tomCrypt:
 cryptopp:
 	@ cd $(CRYPTOPP_DIRECTORY) && $(MAKE)
 
-.PHONY: all clean example tomCrypt cryptopp
+gladman:
+	@ cd $(GLADMAN_DIRECTORY) && $(MAKE)
+
+.PHONY: all clean example tomCrypt cryptopp gladman
 
 clean:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE) clean
 	@ cd $(EXAMPLE_DIRECTORY) && $(MAKE) clean
 	@ cd $(CRYPTOPP_DIRECTORY) && $(MAKE) clean
+	@ cd $(GLADMAN_DIRECTORY) && $(MAKE) clean
