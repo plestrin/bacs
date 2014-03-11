@@ -194,6 +194,7 @@ static int cstReaderJSON_string(void* ctx, const unsigned char* stringVal, size_
 					}
 					else{
 						readBuffer_raw((char*)stringVal, stringLen, (char*)cst_reader->actual_cst.content.tab.buffer);
+						readBuffer_reverse_endianness((char*)cst_reader->actual_cst.content.tab.buffer, 4 *cst_reader->actual_cst.content.tab.nb_element);
 						cst_reader->set_content = 1;
 					}
 				}

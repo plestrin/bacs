@@ -6,6 +6,9 @@
 #include "multiColumn.h"
 #include "cstReaderJSON.h"
 #include "printBuffer.h"
+#ifdef VERBOSE
+#include "workPercent.h"
+#endif
 
 char* constantType_to_string(enum constantType type){
 	switch (type){
@@ -204,14 +207,22 @@ void cstChecker_empty(struct cstChecker* checker){
 }
 
 int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
-	uint32_t 				i;
-	uint32_t 				j;
-	uint32_t 				k;
-	uint32_t 				l;
-	union cstResult* 		cst_result;
-	struct constant* 		cst;
-	struct operand* 		operands;
-	struct cstTableAccess	tab_hit;
+	uint32_t 					i;
+	uint32_t 					j;
+	uint32_t 					k;
+	uint32_t 					l;
+	union cstResult* 			cst_result;
+	struct constant* 			cst;
+	struct operand* 			operands;
+	struct cstTableAccess		tab_hit;
+	struct multiColumnPrinter* 	printer;
+	#define STRING_HIT_LENGTH	24
+	#define STRING_INFO_LENGTH 	24
+	char 						string_hit[STRING_HIT_LENGTH];
+	char 						string_info[STRING_INFO_LENGTH];
+	#ifdef VERBOSE
+	struct workPercent 			work;
+	#endif
 
 	cst_result = (union cstResult*)malloc(sizeof(union cstResult) * array_get_length(&(checker->cst_array)));
 	if (cst_result == NULL){
@@ -240,6 +251,12 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			printf("ERROR: in %s, incorrect constant type\n", __func__);
 		}
 	}
+
+	#ifdef VERBOSE
+	if (workPercent_init(&work, "Searching constant(s) ", WORKPERCENT_ACCURACY_0, trace->nb_instruction)){
+		printf("ERROR: in %s, unable to init workPercent\n", __func__);
+	}
+	#endif
 
 	for (j = 0; j < trace->nb_instruction; j++){
 		operands = trace_get_ins_operands(trace, j);
@@ -272,15 +289,37 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 				}
 			}
 		}
+		#ifdef VERBOSE
+		workPercent_notify(&work, 1);
+		#endif
 	}
 
+	#ifdef VERBOSE
+	workPercent_conclude(&work);
+	#endif
+
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_title(printer, 0, (char*)"NAME");
+		multiColumnPrinter_set_title(printer, 1, (char*)"HIT");
+		multiColumnPrinter_set_title(printer, 2, (char*)"INFO");
+
+		multiColumnPrinter_print_header(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+	}
 
 	for (i = 0; i < array_get_length(&(checker->cst_array)); i++){
 		cst = (struct constant*)array_get(&(checker->cst_array), i);
 		
 		if (CONSTANT_IS_CST(cst->type)){
 			if (cst_result[i].cst_hit_counter > 0){
-				printf("- %s: %u hit(s)\n", cst->name, cst_result[i].cst_hit_counter);
+				snprintf(string_hit, STRING_HIT_LENGTH, "%u", cst_result[i].cst_hit_counter);
+				memset(string_info, '\0', STRING_INFO_LENGTH);
+				if (printer != NULL){
+					multiColumnPrinter_print(printer, cst->name, string_hit, string_info, NULL);
+				}
 			}
 		}
 		else if (CONSTANT_IS_TAB(cst->type)){
@@ -290,16 +329,27 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			uint32_t				tab_max_score = 0;
 			struct cstTableAccess* 	access1;
 			struct cstTableAccess* 	access2;
+			uint8_t* 				taken;
+			uint8_t 				element_size = constantType_element_size(cst->type);
 			
+			taken = (uint8_t*)malloc(cst->content.tab.nb_element);
+			if (taken == NULL){
+				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				continue;
+			}
+
 			for (j = 0; j < array_get_length(&(cst_result[i].tab_hit_counter)); j++){
 				access1 = array_get(&(cst_result[i].tab_hit_counter), j);
 				tab_score = 0;
 				tab_address = access1->address - access1->offset;
+				memset(taken, 0, cst->content.tab.nb_element);
+				taken[access1->offset / element_size] = 1;
 
 				for (k = 0; k < array_get_length(&(cst_result[i].tab_hit_counter)); k++){
 					access2 = array_get(&(cst_result[i].tab_hit_counter), k);
-					if (k != j && tab_address + access2->offset == access2->address){
+					if (k != j && tab_address + access2->offset == access2->address && !taken[access2->offset / element_size]){
 						tab_score ++;
+						taken[access2->offset / element_size] = 1;
 					}
 				}
 
@@ -310,16 +360,22 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			}
 
 			if (tab_max_score >= CONSTANT_THRESHOLD_TAB){
+				snprintf(string_hit, STRING_HIT_LENGTH, "%u", tab_max_score);
 				#if defined ARCH_32
-				printf("- %s: %u hit(s) @ 0x%08x\n", cst->name, tab_max_score, tab_max_address);
+				snprintf(string_info, STRING_INFO_LENGTH, "0x%08x", tab_max_address);
 				#elif defined ARCH_64
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				printf("- %s: %u hit(s) @ 0x%llx\n", cst->name, tab_max_score, tab_max_address);
+				snprintf(string_info, STRING_INFO_LENGTH, "0x%llx", tab_max_address);
 				#else
 				#error Please specify an architecture {ARCH_32 or ARCH_64}
 				#endif
+
+				if (printer != NULL){
+					multiColumnPrinter_print(printer, cst->name, string_hit, string_info, NULL);
+				}
 			}
 
+			free(taken);
 			array_clean(&(cst_result[i].tab_hit_counter));
 		}
 		else if (CONSTANT_IS_LST(cst->type)){
@@ -328,9 +384,16 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 		}
 	}
 
+	if (printer != NULL){
+		multiColumnPrinter_delete(printer);
+	}
+
 	free(cst_result);
 
 	return 0;
+
+	#undef STRING_HIT_LENGTH
+	#undef STRING_INFO_LENGTH
 }
 
 void cstChecker_clean(struct cstChecker* checker){

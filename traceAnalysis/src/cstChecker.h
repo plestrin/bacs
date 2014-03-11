@@ -36,6 +36,20 @@ enum constantType{
 char* constantType_to_string(enum constantType type);
 enum constantType constantType_from_string(const char* arg, uint32_t length);
 
+static uint8_t constantType_element_size(enum constantType type){
+	if (CONSTANT_IS_8(type)){
+		return 1;
+	}
+	else if (CONSTANT_IS_16(type)){
+		return 2;
+	}
+	else if (CONSTANT_IS_32(type)){
+		return 4;
+	}
+
+	return 1;
+}
+
 struct constant{
 	char 				name[CONSTANT_NAME_LENGTH];
 	enum constantType 	type;

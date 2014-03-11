@@ -46,3 +46,16 @@ char* readBuffer_raw(const char* txt, uint64_t txt_length, char* buffer){
 
 	return result;
 }
+
+void readBuffer_reverse_endianness(char* buffer, uint64_t buffer_length){
+	uint64_t i;
+
+	if (buffer_length % 4){
+		printf("ERROR: in %s, buffer size (in byte) must be a multiple of 4\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < buffer_length; i += 4){
+		*(uint32_t*)(buffer + i) = (*(uint32_t*)(buffer + i) >> 24) | ((*(uint32_t*)(buffer + i) >> 8) & 0x0000ff00) | ((*(uint32_t*)(buffer + i) << 8) & 0x00ff0000) | (*(uint32_t*)(buffer + i) << 24);
+	}
+}
