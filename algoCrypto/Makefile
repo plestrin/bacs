@@ -1,12 +1,12 @@
-EXAMPLE_DIRECTORY			:= example/
-TOMCRYPT_DIRECTORY 			:= tomCrypt/
-CRYPTOPP_DIRECTORY 			:= cryptopp/
-GLADMAN_DIRECTORY 			:= gladman/
+TEST_DIRECTORY			:= test/
+TOMCRYPT_DIRECTORY 		:= tomCrypt/
+CRYPTOPP_DIRECTORY 		:= cryptopp/
+GLADMAN_DIRECTORY 		:= gladman/
 
-all: example tomCrypt cryptopp gladman
+all: test tomCrypt cryptopp gladman
 
-example:
-	@ cd $(EXAMPLE_DIRECTORY) && $(MAKE)
+test:
+	@ cd $(TEST_DIRECTORY) && $(MAKE)
 
 tomCrypt:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE)
@@ -21,6 +21,6 @@ gladman:
 
 clean:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE) clean
-	@ cd $(EXAMPLE_DIRECTORY) && $(MAKE) clean
+	@ cd $(TEST_DIRECTORY) && $(MAKE) clean
 	@ cd $(CRYPTOPP_DIRECTORY) && $(MAKE) clean
 	@ cd $(GLADMAN_DIRECTORY) && $(MAKE) clean

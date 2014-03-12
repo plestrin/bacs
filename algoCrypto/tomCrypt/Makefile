@@ -4,23 +4,23 @@ CC							:= gcc
 CFLAGS						:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -g
 LDFLAGS						:= -ltomcrypt
 
-MD5_TOMCRYPT_EXAMPLE_NAME 	:= MD5
-RC4_TOMCRYPT_EXAMPLE_NAME 	:= RC4
-AES_TOMCRYPT_EXAMPLE_NAME 	:= AES
-SHA1_TOMCRYPT_EXAMPLE_NAME 	:= SHA1
+MD5_TOMCRYPT_EXAMPLE_NAME 	:= tom_md5
+RC4_TOMCRYPT_EXAMPLE_NAME 	:= tom_rc4
+AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_aes
+SHA1_TOMCRYPT_EXAMPLE_NAME 	:= tom_sha1
 
 all: build/$(MD5_TOMCRYPT_EXAMPLE_NAME) build/$(RC4_TOMCRYPT_EXAMPLE_NAME) build/$(AES_TOMCRYPT_EXAMPLE_NAME) build/$(SHA1_TOMCRYPT_EXAMPLE_NAME)
 
-build/$(MD5_TOMCRYPT_EXAMPLE_NAME): build/md5_tom.o build/printBuffer.o
+build/$(MD5_TOMCRYPT_EXAMPLE_NAME): build/tom_md5.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(RC4_TOMCRYPT_EXAMPLE_NAME): build/rc4_tom.o build/printBuffer.o
+build/$(RC4_TOMCRYPT_EXAMPLE_NAME): build/tom_rc4.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(AES_TOMCRYPT_EXAMPLE_NAME): build/aes_tom.o build/printBuffer.o
+build/$(AES_TOMCRYPT_EXAMPLE_NAME): build/tom_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(SHA1_TOMCRYPT_EXAMPLE_NAME): build/sha1_tom.o build/printBuffer.o
+build/$(SHA1_TOMCRYPT_EXAMPLE_NAME): build/tom_sha1.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.c
