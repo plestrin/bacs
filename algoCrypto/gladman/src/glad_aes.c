@@ -4,7 +4,9 @@
 #include <string.h>
 
 #include "aes.h"
+#include "aesopt.h"
 #include "printBuffer.h"
+#include "multiColumn.h"
 
 #ifdef WIN32
 #include "windowsComp.h"
@@ -30,12 +32,107 @@ int main(){
 	unsigned char ciphertext[16];
 	unsigned char deciphertext[16];
 
+	struct multiColumnPrinter* 	printer;
+
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 0, 24);
+		multiColumnPrinter_set_column_size(printer, 2, 64);
+
+		multiColumnPrinter_set_title(printer, 0, (char*)"NAME");
+		multiColumnPrinter_set_title(printer, 1, (char*)"VALUE");
+		multiColumnPrinter_set_title(printer, 2, (char*)"DESC");
+
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UNBOUND_STRING);
+
+		multiColumnPrinter_print_header(printer);
+
+		#if ENC_UNROLL == FULL
+		multiColumnPrinter_print(printer, "ENC_UNROLL", "FULL", "", NULL);
+		#elif ENC_UNROLL == PARTIAL
+		multiColumnPrinter_print(printer, "ENC_UNROLL", "PARTIAL", "", NULL);
+		#else
+		multiColumnPrinter_print(printer, "ENC_UNROLL", "NONE", "", NULL);
+		#endif
+
+		#if DEC_UNROLL == FULL
+		multiColumnPrinter_print(printer, "DEC_UNROLL", "FULL", "", NULL);
+		#elif DEC_UNROLL  == PARTIAL
+		multiColumnPrinter_print(printer, "DEC_UNROLL", "PARTIAL", "", NULL);
+		#else
+		multiColumnPrinter_print(printer, "DEC_UNROLL", "NONE", "", NULL);
+		#endif
+
+		#ifdef ENC_KS_UNROLL
+		multiColumnPrinter_print(printer, "ENC_KS_UNROLL", "--def--", "", NULL);
+		#else
+		multiColumnPrinter_print(printer, "ENC_KS_UNROLL", "--undef--", "", NULL);
+		#endif
+
+		#ifdef DEC_KS_UNROLL
+		multiColumnPrinter_print(printer, "DEC_KS_UNROLL", "--def--", "", NULL);
+		#else
+		multiColumnPrinter_print(printer, "DEC_KS_UNROLL", "--undef--", "", NULL);
+		#endif
+
+		#ifdef FIXED_TABLES
+		multiColumnPrinter_print(printer, "FIXED_TABLES", "--def--", "The tables used by the code are compiled statically into the binary file", NULL);
+		#else
+		multiColumnPrinter_print(printer, "FIXED_TABLES", "--undef--", "The subroutine aes_init() must be called to compute them before the code is first used", NULL);
+		#endif
+
+		#if ENC_ROUND == FOUR_TABLES
+		multiColumnPrinter_print(printer, "ENC_ROUND", "FOUR_TABLES", "Set tables for the normal encryption round", NULL);
+		#elif ENC_ROUND == ONE_TABLE
+		multiColumnPrinter_print(printer, "ENC_ROUND", "ONE_TABLE", "Set tables for the normal encryption round", NULL);
+		#else
+		multiColumnPrinter_print(printer, "ENC_ROUND", "NO_TABLES", "Set tables for the normal encryption round", NULL);
+		#endif
+
+		#if LAST_ENC_ROUND == FOUR_TABLES
+		multiColumnPrinter_print(printer, "LAST_ENC_ROUND", "FOUR_TABLES", "Set tables for the last encryption round", NULL);
+		#elif LAST_ENC_ROUND == ONE_TABLE
+		multiColumnPrinter_print(printer, "LAST_ENC_ROUND", "ONE_TABLE", "Set tables for the last encryption round", NULL);
+		#else
+		multiColumnPrinter_print(printer, "LAST_ENC_ROUND", "NO_TABLES", "Set tables for the last encryption round", NULL);
+		#endif
+
+		#if DEC_ROUND == FOUR_TABLES
+		multiColumnPrinter_print(printer, "DEC_ROUND", "FOUR_TABLES", "Set tables for the normal decryption round", NULL);
+		#elif DEC_ROUND == ONE_TABLE
+		multiColumnPrinter_print(printer, "DEC_ROUND", "ONE_TABLE", "Set tables for the normal decryption round", NULL);
+		#else
+		multiColumnPrinter_print(printer, "DEC_ROUND", "NO_TABLES", "Set tables for the normal decryption round", NULL);
+		#endif
+
+		#if LAST_DEC_ROUND == FOUR_TABLES
+		multiColumnPrinter_print(printer, "LAST_DEC_ROUND", "FOUR_TABLES", "Set tables for the last decryption round", NULL);
+		#elif LAST_DEC_ROUND == ONE_TABLE
+		multiColumnPrinter_print(printer, "LAST_DEC_ROUND", "ONE_TABLE", "Set tables for the last decryption round", NULL);
+		#else
+		multiColumnPrinter_print(printer, "LAST_DEC_ROUND", "NO_TABLES", "Set tables for the last decryption round", NULL);
+		#endif
+
+		#if KEY_SCHED == FOUR_TABLES
+		multiColumnPrinter_print(printer, "KEY_SCHED", "FOUR_TABLES", "Set tables for the key schedule", NULL);
+		#elif KEY_SCHED == ONE_TABLE
+		multiColumnPrinter_print(printer, "KEY_SCHED", "ONE_TABLE", "Set tables for the key schedule", NULL);
+		#else
+		multiColumnPrinter_print(printer, "KEY_SCHED", "NO_TABLES", "Set tables for the key schedule", NULL);
+		#endif
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+	}
+
 	if (aes_init() != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_init failed\n", __func__);
 		return 0;
 	}
 	
-	printf("Plaintext:      ");
+	printf("\nPlaintext:      ");
 	printBuffer_raw(stdout, (char*)plaintext, 16);
 
 	/* 128 bits AES */
