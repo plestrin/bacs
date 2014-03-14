@@ -9,7 +9,7 @@
 
 #define CONSTANT_NAME_LENGTH 128
 
-#define CONSTANT_THRESHOLD_TAB	3
+#define CONSTANT_THRESHOLD_TAB	4
 
 enum constantType{
 	CST_TYPE_INVALID,
@@ -33,22 +33,10 @@ enum constantType{
 #define CONSTANT_IS_32(type)	((type) == CST_TYPE_CST_32 || (type) == CST_TYPE_TAB_32 || (type) == CST_TYPE_LST_32)
 
 
+uint8_t constantType_element_size(enum constantType type);
 char* constantType_to_string(enum constantType type);
 enum constantType constantType_from_string(const char* arg, uint32_t length);
 
-static uint8_t constantType_element_size(enum constantType type){
-	if (CONSTANT_IS_8(type)){
-		return 1;
-	}
-	else if (CONSTANT_IS_16(type)){
-		return 2;
-	}
-	else if (CONSTANT_IS_32(type)){
-		return 4;
-	}
-
-	return 1;
-}
 
 struct constant{
 	char 				name[CONSTANT_NAME_LENGTH];

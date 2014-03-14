@@ -52,6 +52,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search constant", 			"Search constant from the cstChecker in the trace", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_search_constant)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"export a trace segment as a traceFragment", 	"Range", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_delete)
 
 	/* loop specific commands */
@@ -242,6 +243,34 @@ void analysis_trace_search_constant(struct analysis* analysis){
 	if (analysis->trace != NULL){
 		if (cstChecker_check(&(analysis->cst_checker), analysis->trace)){
 			printf("ERROR: in %s, unable to check constant(s)\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+}
+void analysis_trace_export(struct analysis* analysis, char* arg){
+	uint32_t 				start = 0;
+	uint32_t 				stop = 0;
+	struct traceFragment 	fragment;
+
+	if (analysis->trace != NULL){
+		if (traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL, NULL)){
+			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+		}
+		else{
+			inputParser_extract_index(arg, &start, &stop);
+			if (trace_extract_segment(analysis->trace, &(fragment.trace), start, stop - start)){
+				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
+			}
+			else{
+				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "trace [%u: %u]", start, stop);
+
+				if (array_add(&(analysis->frag_array), &fragment) < 0){
+					printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+					traceFragment_clean(&fragment);
+				}
+			}
 		}
 	}
 	else{

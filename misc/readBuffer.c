@@ -56,6 +56,6 @@ void readBuffer_reverse_endianness(char* buffer, uint64_t buffer_length){
 	}
 
 	for (i = 0; i < buffer_length; i += 4){
-		*(uint32_t*)(buffer + i) = (*(uint32_t*)(buffer + i) >> 24) | ((*(uint32_t*)(buffer + i) >> 8) & 0x0000ff00) | ((*(uint32_t*)(buffer + i) << 8) & 0x00ff0000) | (*(uint32_t*)(buffer + i) << 24);
+		*(uint32_t*)(buffer + i) = __builtin_bswap32(*(uint32_t*)(buffer + i));
 	}
 }

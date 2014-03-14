@@ -31,6 +31,7 @@ void analysis_trace_check(struct analysis* analysis);
 void analysis_trace_check_codeMap(struct analysis* analysis);
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
 void analysis_trace_search_constant(struct analysis* analysis);
+void analysis_trace_export(struct analysis* analysis, char* arg);
 void analysis_trace_delete(struct analysis* analysis);
 
 void analysis_loop_create(struct analysis* analysis);

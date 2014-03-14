@@ -122,7 +122,8 @@ struct multiColumnPrinter* simpleTraceStat_init_MultiColumnPrinter(){
 	printer = multiColumnPrinter_create(stdout, 10, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
-		multiColumnPrinter_set_column_size(printer, 2, TRACEFRAGMENT_TAG_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 1, TRACEFRAGMENT_TAG_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 2, 10);
 		multiColumnPrinter_set_column_size(printer, 3, 10);
 		multiColumnPrinter_set_column_size(printer, 4, 8);
 		multiColumnPrinter_set_column_size(printer, 5, 9);
