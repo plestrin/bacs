@@ -275,7 +275,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 	for (j = 0; j < trace->nb_instruction; j++){
 		operands = trace_get_ins_operands(trace, j);
 		for (k = 0; k < trace->instructions[j].nb_operand; k++){
-			if (INSTRUCTION_DATA_TYPE_IS_READ(operands[k].type)){
+			if (OPERAND_IS_READ(operands[k])){
 				for (i = 0; i < array_get_length(&(checker->cst_array)); i++){
 					cst = (struct constant*)array_get(&(checker->cst_array), i);
 
@@ -285,7 +285,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 								cst_result[i].cst_hit_counter ++;
 							}
 						}
-						else if (CONSTANT_IS_TAB(cst->type) && INSTRUCTION_DATA_TYPE_IS_MEM(operands[k].type)){
+						else if (CONSTANT_IS_TAB(cst->type) && OPERAND_IS_MEM(operands[k])){
 							for (l = 0; l < cst->content.tab.nb_element; l++){
 								if (!memcmp((char*)cst->content.tab.buffer + l * operands[k].size, trace_get_ins_op_data(trace, j, k), operands[k].size)){
 									tab_hit.offset = l * operands[k].size;

@@ -73,12 +73,12 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 		for (i = 0; i < frag->trace.nb_instruction; i++){
 			operands = trace_get_ins_operands(&(frag->trace), i);
 			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(operands[j].type)){
+				if (OPERAND_IS_MEM(operands[j])){
 					if(operands[j].size <= 4){
-						if (INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+						if (OPERAND_IS_READ(operands[j])){
 							nb_read_mem ++;
 						}
-						else if (INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+						else if (OPERAND_IS_WRITE(operands[j])){
 							nb_write_mem ++;
 						}
 						else{
@@ -126,9 +126,9 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 		for (i = 0; i < frag->trace.nb_instruction; i++){
 			operands = trace_get_ins_operands(&(frag->trace), i);
 			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_MEM(operands[j].type)){
+				if (OPERAND_IS_MEM(operands[j])){
 					if (operands[j].size <= 4){
-						if (INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+						if (OPERAND_IS_READ(operands[j])){
 							frag->read_memory_array[nb_read_mem].order		= frag->trace.instructions[i].operand_offset + j;
 							memcpy(&(frag->read_memory_array[nb_read_mem].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
 							frag->read_memory_array[nb_read_mem].address	= operands[j].location.address;
@@ -137,7 +137,7 @@ int32_t traceFragment_create_mem_array(struct traceFragment* frag){
 							frag->read_memory_array[nb_read_mem].group 		= MEMACCESS_UNDEF_GROUP;
 							nb_read_mem ++;
 						}
-						else if (INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+						else if (OPERAND_IS_WRITE(operands[j])){
 							frag->write_memory_array[nb_write_mem].order		= frag->trace.instructions[i].operand_offset + j;
 							memcpy(&(frag->write_memory_array[nb_write_mem].value), trace_get_ins_op_data(&(frag->trace), i, j), operands[j].size);
 							frag->write_memory_array[nb_write_mem].address		= operands[j].location.address;
@@ -367,7 +367,7 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 
 			/* READ ACCESS */
 			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+				if (OPERAND_IS_REG(operands[j]) && OPERAND_IS_READ(operands[j])){
 					if (operands[j].size <= 4){
 						REGISTER_TO_INDEX(operands[j].location.reg, index);
 						switch (register_read_state[index]){
@@ -396,7 +396,7 @@ int32_t traceFragment_create_reg_array(struct traceFragment* frag){
 
 			/* WRITE ACCESS */
 			for (j = 0; j < frag->trace.instructions[i].nb_operand; j++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_REG(operands[j].type) && INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+				if (OPERAND_IS_REG(operands[j]) && OPERAND_IS_WRITE(operands[j])){
 					if (operands[j].size <= 4){
 						REGISTER_TO_INDEX(operands[j].location.reg, index);
 

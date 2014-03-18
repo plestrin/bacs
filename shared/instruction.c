@@ -1161,3 +1161,30 @@ const char* reg_2_string(enum reg reg){
 
 	return NULL;
 }
+
+int32_t reg_is_contained_in(enum reg reg1, enum reg reg2){
+	switch(reg1){
+	case REGISTER_INVALID 			: {return 0;}
+	case REGISTER_EAX 				: {return (REGISTER_EAX == reg2);}
+	case REGISTER_AX 				: {return (REGISTER_EAX == reg2 || REGISTER_AX == reg2);}
+	case REGISTER_AH 				: {return (REGISTER_EAX == reg2 || REGISTER_AX == reg2 || REGISTER_AH == reg2);}
+	case REGISTER_AL 				: {return (REGISTER_EAX == reg2 || REGISTER_AX == reg2 || REGISTER_AL == reg2);}
+	case REGISTER_EBX 				: {return (REGISTER_EBX == reg2);}
+	case REGISTER_BX 				: {return (REGISTER_EBX == reg2 || REGISTER_BX == reg2);}
+	case REGISTER_BH 				: {return (REGISTER_EBX == reg2 || REGISTER_BX == reg2 || REGISTER_BH == reg2);}
+	case REGISTER_BL 				: {return (REGISTER_EBX == reg2 || REGISTER_BX == reg2 || REGISTER_BL == reg2);}
+	case REGISTER_ECX 				: {return (REGISTER_ECX == reg2);}
+	case REGISTER_CX 				: {return (REGISTER_ECX == reg2 || REGISTER_CX == reg2);}
+	case REGISTER_CH 				: {return (REGISTER_ECX == reg2 || REGISTER_CX == reg2 || REGISTER_CH == reg2);}
+	case REGISTER_CL 				: {return (REGISTER_ECX == reg2 || REGISTER_CX == reg2 || REGISTER_CL == reg2);}
+	case REGISTER_EDX 				: {return (REGISTER_EDX == reg2);}
+	case REGISTER_DX 				: {return (REGISTER_EDX == reg2 || REGISTER_DX == reg2);}
+	case REGISTER_DH 				: {return (REGISTER_EDX == reg2 || REGISTER_DX == reg2 || REGISTER_DH == reg2);}
+	case REGISTER_DL 				: {return (REGISTER_EDX == reg2 || REGISTER_DX == reg2 || REGISTER_DL == reg2);}
+	case REGISTER_ESI 				: {return (REGISTER_ESI == reg2);}
+	case REGISTER_EDI 				: {return (REGISTER_EDI == reg2);}
+	case REGISTER_EBP 				: {return (REGISTER_EBP == reg2);}
+	}
+
+	return 0;
+}

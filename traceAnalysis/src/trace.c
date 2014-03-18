@@ -74,7 +74,7 @@ void trace_check(struct trace* trace){
 	uint32_t expected_offset;
 
 	#ifdef VERBOSE
-	printf("Trace verification: %u instruction(s), %u operand(s) and %u byte(s) of data\n", trace->nb_instruction, trace->alloc_size_op / sizeof(struct operand), trace->alloc_size_data);
+	printf("Trace verification: %u instruction(s), %u operand(s) and %u byte(s) of data\n", trace->nb_instruction, trace_get_nb_operand(trace), trace->alloc_size_data);
 	#endif
 
 	/* Operand offset verification */
@@ -94,7 +94,7 @@ void trace_check(struct trace* trace){
 	}
 
 	/* Data offset verification */
-	for (i = 0, expected_offset = 0; i < trace->alloc_size_op / sizeof(struct operand); i++){
+	for (i = 0, expected_offset = 0; i < trace_get_nb_operand(trace); i++){
 		if (trace->operands[i].data_offset != expected_offset){
 			printf("ERROR: in %s, operand %u, expected data offset %u, but get %u\n", __func__, i, expected_offset, trace->operands[i].data_offset);
 		}
@@ -105,6 +105,13 @@ void trace_check(struct trace* trace){
 	}
 	if (expected_offset != trace->alloc_size_data){
 		printf("ERROR: in %s, the end of the data buffer is not reached\n", __func__);
+	}
+
+	/* Operand Valid verification */
+	for (i = 0; i < trace_get_nb_operand(trace); i++){
+		if (OPERAND_IS_INVALID(trace->operands[i])){
+			printf("ERROR: in %s, operand %u is invalid\n", __func__, i);
+		}
 	}
 }
 
@@ -171,11 +178,11 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 		str_write_offset 	= 0;
 
 		for (j = 0; j < trace->instructions[i].nb_operand; j++){
-			if (INSTRUCTION_DATA_TYPE_IS_READ(operands[j].type)){
+			if (OPERAND_IS_READ(operands[j])){
 				current_str = read_access + str_read_offset;
 				current_offset = &str_read_offset;
 			}
-			else if (INSTRUCTION_DATA_TYPE_IS_WRITE(operands[j].type)){
+			else if (OPERAND_IS_WRITE(operands[j])){
 				current_str = write_access + str_write_offset;
 				current_offset = &str_write_offset;
 			}
@@ -184,7 +191,7 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 				break;
 			}
 
-			if (INSTRUCTION_DATA_TYPE_IS_MEM(operands[j].type)){
+			if (OPERAND_IS_MEM(operands[j])){
 				#if defined ARCH_32
 				nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08x ", operands[j].location.address);
 				#elif defined ARCH_64
@@ -196,7 +203,7 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 				current_str += nb_byte_written;
 				*current_offset += nb_byte_written;
 			}
-			else if (INSTRUCTION_DATA_TYPE_IS_REG(operands[j].type)){
+			else if (OPERAND_IS_REG(operands[j])){
 				nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{%s ", reg_2_string(operands[j].location.reg));
 				current_str += nb_byte_written;
 				*current_offset += nb_byte_written;
@@ -331,4 +338,390 @@ static void trace_clean_(struct trace* trace){
 	else{
 		printf("ERROR: in %s, incorrect allocation type\n", __func__);
 	}
+}
+
+/* Beginning of the experimental party */
+
+static void trace_analysis_forward_propagate_mem_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
+	uint32_t i;
+
+	if (nb_operand > 1){
+		if (group[0] && OPERAND_IS_MEM(operands[0])){
+			for (i = 1; i < nb_operand; i++){
+				if (OPERAND_IS_MEM(operands[i])){
+					/* this test is weak improve later */
+					if (operands[i].location.address == operands[0].location.address){
+						if (OPERAND_IS_READ(operands[i])){
+							if (!group[i]){
+								group[i] = group[0];
+							}
+							else{
+								printf("ERROR: in %s, unable to propagate group because element already belongs to one\n", __func__);
+							}
+						}
+						else{
+							break;
+						}
+					}
+				}
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect group value (%u) to propagate or operand type\n", __func__, group[0]);
+		}
+	}
+}
+
+static void trace_analysis_forward_propagate_reg_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
+	uint32_t i;
+
+	if (nb_operand > 1){
+		if (group[0] && OPERAND_IS_REG(operands[0])){
+			for (i = 1; i < nb_operand; i++){
+				if (OPERAND_IS_REG(operands[i])){
+					/* this test is weak improve later */
+					if (reg_is_contained_in((enum reg)operands[i].location.reg, (enum reg)operands[0].location.reg)){
+						if (OPERAND_IS_READ(operands[i])){
+							group[i] = group[0];
+						}
+						else{
+							break;
+						}
+					}
+				}
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect group value (%u) to propagate or operand type\n", __func__, group[0]);
+		}
+	}
+}
+
+static void trace_analysis_backward_propagate_reg_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
+	uint32_t i;
+
+	if (nb_operand > 1){
+		if (group[nb_operand - 1] && OPERAND_IS_REG(operands[nb_operand - 1])){
+			for (i = nb_operand - 1; i > 0; i--){
+				if (OPERAND_IS_REG(operands[i - 1])){
+					/* this test is weak improve later */
+					if (reg_is_contained_in((enum reg)operands[i - 1].location.reg, (enum reg)operands[nb_operand - 1].location.reg)){
+						if (OPERAND_IS_READ(operands[i - 1])){
+							group[i - 1] = group[nb_operand - 1];
+						}
+						else{
+							break;
+						}
+					}
+				}
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect group value (%u) to propagate or operand type\n", __func__, group[0]);
+		}
+	}
+}
+
+static void trace_analysis_print_group(struct trace* trace, uint32_t* group, uint32_t* op_to_ins, uint32_t nb_operand, uint32_t nb_group){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint8_t 	start_group;
+	uint32_t 	nb_grp = 0;
+
+	#define FILTER_INPUT 1
+
+	printf("Group information:\n");
+	#if FILTER_INPUT == 1
+	printf("Filter on INPUT values:\n");
+	#endif
+
+	for (i = 0; i < nb_group; i++){
+		for (j = 0, start_group = 0; j < nb_operand; j++){
+			if (group[j] == i + 1){
+				if (!start_group){
+					if (OPERAND_IS_READ(trace->operands[j])){
+						printf("- Gr: %03u {%02u:R:%s", i+1, op_to_ins[j], instruction_opcode_2_string(trace->instructions[op_to_ins[j]].opcode));
+					}
+					else if (OPERAND_IS_WRITE(trace->operands[j])){
+						#if FILTER_INPUT == 1
+						break;
+						#else
+						printf("- Gr: %03u {%02u:W:%s", i+1, op_to_ins[j], instruction_opcode_2_string(trace->instructions[op_to_ins[j]].opcode));
+						#endif
+					}
+					else{
+						printf("ERROR: in %s, incorrect operand type\n", __func__);
+					}
+					start_group = 1;
+				}
+				else{
+					if (OPERAND_IS_READ(trace->operands[j])){
+						printf(", %02u:R:%s", op_to_ins[j], instruction_opcode_2_string(trace->instructions[op_to_ins[j]].opcode));
+					}
+					else if (OPERAND_IS_WRITE(trace->operands[j])){
+						printf(", %02u:W:%s", op_to_ins[j], instruction_opcode_2_string(trace->instructions[op_to_ins[j]].opcode));
+					}
+					else{
+						printf("ERROR: in %s, incorrect operand type\n", __func__);
+					}
+				}
+			}
+		}
+		if (start_group){
+			printf("}\n");
+			nb_grp ++;
+		}
+	}
+
+	printf("Number of group: %u\n", nb_grp);
+}
+
+#include "array.h"
+
+#define TRACE_ANALYSIS_GRP_MAX_SIZE 32
+
+enum variableRole{
+	ROLE_UNKNOWN,
+	ROLE_READ_IMMEDIATE,
+	ROLE_READ_BASE,
+	ROLE_READ_INDEX
+};
+
+static char* variableRole_2_string(enum variableRole role){
+	switch(role){
+		case ROLE_UNKNOWN 			: {return "UN";}
+		case ROLE_READ_IMMEDIATE 	: {return "R_IM";}
+		case ROLE_READ_BASE 		: {return "R_BA";}
+		case ROLE_READ_INDEX 		: {return "R_IN";}
+	}
+
+	return NULL;
+}
+
+static enum variableRole trace_analysis_get_operand_role(struct trace* trace, uint32_t index_ins, uint32_t index_op){
+	enum variableRole role = ROLE_UNKNOWN;
+
+	switch(trace->instructions[index_ins]){
+		case XED_ICLASS_XOR : {
+			/* a completer mais complexe */
+			break;
+		}
+		default : {
+			break;
+		}
+	}
+
+	return role;
+}
+
+struct action{
+	xed_iclass_enum_t 	opcode;
+	enum variableRole 	role;
+};
+
+static struct array* trace_analysis_extract_instruction_seq(struct trace* trace, uint32_t* group, uint32_t* op_to_ins, uint32_t nb_operand, uint32_t nb_group){
+	uint32_t 			i;
+	uint32_t 			j;
+	uint8_t 			ins_offset;
+	struct array* 		array;
+	struct action 		ins_sequence[TRACE_ANALYSIS_GRP_MAX_SIZE];
+
+	array = array_create(sizeof(struct action) * TRACE_ANALYSIS_GRP_MAX_SIZE);
+	if (array == NULL){
+		printf("ERROR: in %s, unable to create array\n", __func__);
+		return NULL;
+	}
+
+	for (i = 0; i < nb_group; i++){
+		for (j = 0, ins_offset = 0; j < nb_operand; j++){
+			if (group[j] == i + 1){
+				if (ins_offset == 0 && OPERAND_IS_WRITE(trace->operands[j])){
+					break;
+				}
+				/* we suppose that the previous MOV was a read ... we should make further verification */
+				if ((xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode == XED_ICLASS_MOV && OPERAND_IS_WRITE(trace->operands[j]) && ins_sequence[ins_offset - 1].opcode == XED_ICLASS_MOV){
+					ins_offset --;
+				}
+				else{
+					ins_sequence[ins_offset].opcode = (xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode;
+					ins_sequence[ins_offset ++].role = trace_analysis_get_operand_role(trace, op_to_ins[j], j);
+				}
+			}
+
+			if (ins_offset == TRACE_ANALYSIS_GRP_MAX_SIZE - 1){
+				printf("ERROR: in %s, max number of instruction in sequence is reached\n", __func__);
+				break;
+			}
+		}
+		if (ins_offset != 0){
+			ins_sequence[ins_offset].opcode = XED_ICLASS_INVALID;
+			if (array_add(array, &ins_sequence) < 0){
+				printf("ERROR: in %s, unable to add instruction sequence to aray\n", __func__);
+			}
+		}
+	}
+
+	return array;
+}
+
+static void trace_analysis_print_ins_seq(struct array* array){
+	uint32_t 			i;
+	xed_iclass_enum_t 	j;
+	struct action* 		ins_sequence;
+
+	for (i = 0; i < array_get_length(array); i++){
+		ins_sequence = (struct action*)array_get(array, i);
+		j = 0;
+
+		printf("- seq %03u: {", i);
+		while(ins_sequence[j].opcode != XED_ICLASS_INVALID){
+			printf("%s:%s, ", variableRole_2_string(ins_sequence[j].role), instruction_opcode_2_string(ins_sequence[j].opcode));
+			j++;
+		}
+		printf("}\n");
+	}
+}
+
+static uint32_t* trace_analyse_create_op_to_ins(struct trace* trace){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint32_t* 	op_to_ins;
+
+	op_to_ins = (uint32_t*)malloc(sizeof(uint32_t) * trace_get_nb_operand(trace));
+	if (op_to_ins == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+	else{
+		for (i = 0; i < trace->nb_instruction; i++){
+			for (j = 0; j < trace->instructions[i].nb_operand; j++){
+				op_to_ins[trace->instructions[i].operand_offset + j] = i;
+			}
+		}
+	}
+
+	return op_to_ins;
+}
+
+void trace_analyse_operand(struct trace* trace){
+	uint32_t 			i;
+	uint32_t 			j;
+	struct operand* 	operands;
+	uint32_t*			group;
+	uint32_t 			group_id_generator = 1;
+	uint32_t 			nb_operand = trace_get_nb_operand(trace);
+	uint32_t* 			op_to_ins;
+
+	group = (uint32_t*)calloc(nb_operand, sizeof(uint32_t));
+	if (group == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
+
+	op_to_ins = trace_analyse_create_op_to_ins(trace);
+	if (op_to_ins == NULL){
+		printf("ERROR: in %s, unable to create op_to_ins\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < trace->nb_instruction; i++){
+		operands = trace_get_ins_operands(trace, i);
+
+		switch(trace->instructions[i].opcode){
+			case XED_ICLASS_MOV : {
+				struct operand* src_op = NULL;
+				struct operand* dst_op = NULL;
+				uint32_t 		src_grp;
+				/* group value */
+
+				for (j = 0; j < trace->instructions[i].nb_operand; j++){
+					if (OPERAND_IS_READ(operands[j])){
+						if (!group[trace->instructions[i].operand_offset + j]){
+							group[trace->instructions[i].operand_offset + j] = group_id_generator++;
+							if (OPERAND_IS_MEM(operands[j])){
+								trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+							}
+							else if (OPERAND_IS_REG(operands[j])){
+								trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+								trace_analysis_backward_propagate_reg_group(trace->operands, group, trace->instructions[i].operand_offset + j + 1);
+							}
+							else{
+								printf("ERROR: in %s, incorrect operand type\n", __func__);
+							}
+						}
+						if (src_op == NULL){
+							src_op = operands + j;
+							src_grp = group[trace->instructions[i].operand_offset + j];
+						}
+					}
+					else if (OPERAND_IS_WRITE(operands[j])){
+						if (dst_op == NULL){
+							dst_op = operands + j;
+							if (src_op != NULL && src_op->size == dst_op->size && !memcmp(trace->data + src_op->data_offset, trace->data + dst_op->data_offset, src_op->size)){
+								group[trace->instructions[i].operand_offset + j] = src_grp;
+								if (OPERAND_IS_MEM(operands[j])){
+									trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+								}
+								else if (OPERAND_IS_REG(operands[j])){
+									trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+								}
+								else{
+									printf("ERROR: in %s, incorrect operand type\n", __func__);
+								}
+							}
+							else{
+								printf("ERROR: in %s, incorrect instruction operands\n", __func__);
+							}
+						}
+						else{
+							printf("ERROR: in %s, too many write operand for a MOV instruction\n", __func__);
+						}
+					}
+					else{
+						printf("ERROR: in %s, incorrect operand type\n", __func__);
+					}
+				}
+
+				break;
+			}
+			default 			: {
+				for (j = 0; j < trace->instructions[i].nb_operand; j++){
+					if (!group[trace->instructions[i].operand_offset + j]){
+						group[trace->instructions[i].operand_offset + j] = group_id_generator++;
+						if (OPERAND_IS_MEM(operands[j])){
+							trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+						}
+						else if (OPERAND_IS_REG(operands[j])){
+							trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+							if (OPERAND_IS_READ(operands[j])){
+								trace_analysis_backward_propagate_reg_group(trace->operands, group, trace->instructions[i].operand_offset + j + 1);
+							}
+						}
+						else{
+							printf("ERROR: in %s, incorrect operand type\n", __func__);
+						}
+					}
+				}
+
+				break;
+			}
+		}		
+	}
+
+	trace_analysis_print_group(trace, group, op_to_ins, nb_operand, group_id_generator - 1);
+	{
+		struct array* array;
+
+		array = trace_analysis_extract_instruction_seq(trace, group, op_to_ins, nb_operand, group_id_generator - 1);
+		if (array == NULL){
+			printf("ERROR: in %s, unable to extract instruction sequence\n", __func__);
+		}
+		else{
+			trace_analysis_print_ins_seq(array);
+			array_delete(array);
+		}
+
+	}
+
+	free(op_to_ins);
+	free(group);
 }

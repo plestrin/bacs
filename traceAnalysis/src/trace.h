@@ -39,14 +39,43 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 void trace_clean(struct trace* trace);
 void trace_delete(struct trace* trace);
 
-#define trace_get_reference(trace) 					(trace)->reference_count ++
+#define trace_get_reference(trace) 					((trace)->reference_count ++)
 #define trace_get_ins_operands(trace, index) 		((trace)->operands + (trace)->instructions[(index)].operand_offset)
 #define trace_get_ins_op_data(trace, i_ins, i_op)	((trace)->data + (trace)->operands[(trace)->instructions[(i_ins)].operand_offset + (i_op)].data_offset)
 
-/* pour une intégration continue du bouzin:
- * 9 - prendre en charge toute les instructions rencontrées et les registres XMM MMX
+#define trace_get_nb_operand(trace) 				((trace)->alloc_size_op / sizeof(struct operand))
 
- * - GOOD job, mais maintenant je récupère des arguments gros et pas cools (encore pas mal de plaisir en prévision )
- */
+static inline uint32_t trace_get_ins_nb_read_op(struct trace* trace, uint32_t index){
+	uint32_t 		nb;
+	uint32_t 		i;
+	struct operand 	operands;
+
+	for (i = 0, nb = 0; i < trace->instructions[index].nb_operand; i++){
+		operands = trace_get_ins_operands(trace, index);
+		if (OPERAND_IS_READ(operands[i])){
+			nb ++;
+		}
+	}
+
+	return nb;
+}
+
+static inline uint32_t trace_get_ins_nb_write_op(struct trace* trace, uint32_t index){
+	uint32_t 		nb;
+	uint32_t 		i;
+	struct operand 	operands;
+
+	for (i = 0, nb = 0; i < trace->instructions[index].nb_operand; i++){
+		operands = trace_get_ins_operands(trace, index);
+		if (OPERAND_IS_WRITE(operands[i])){
+			nb ++;
+		}
+	}
+
+	return nb;
+}
+
+/* temp */
+void trace_analyse_operand(struct trace* trace);
 
 #endif

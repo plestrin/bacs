@@ -61,52 +61,50 @@ int32_t simpleTraceStat_process(struct simpleTraceStat* stat, struct traceFragme
 			}
 
 			for ( i = 0; i < frag->trace.instructions[j].nb_operand; i++){
-				if (INSTRUCTION_DATA_TYPE_IS_VALID(operands[i].type)){
-					if (INSTRUCTION_DATA_TYPE_IS_READ(operands[i].type)){
-						if (INSTRUCTION_DATA_TYPE_IS_MEM(operands[i].type)){
-							stat->nb_mem_read ++;
-							switch(operands[i].size){
+				if (OPERAND_IS_READ(operands[i])){
+					if (OPERAND_IS_MEM(operands[i])){
+						stat->nb_mem_read ++;
+						switch(operands[i].size){
 							case 1 	: {stat->nb_mem_read_1 ++; break;}
 							case 2 	: {stat->nb_mem_read_2 ++; break;}
 							case 4 	: {stat->nb_mem_read_4 ++; break;}
 							default : {printf("WARNING: in %s, unexpected mem read data size: %u (ins: %s, operand: %u)\n", __func__, operands[i].size, instruction_opcode_2_string(frag->trace.instructions[j].opcode), i); break;}
-							}
 						}
-						else if (INSTRUCTION_DATA_TYPE_IS_REG(operands[i].type)){
-							stat->nb_reg_read ++;
-							switch(operands[i].size){
+					}
+					else if (OPERAND_IS_REG(operands[i])){
+						stat->nb_reg_read ++;
+						switch(operands[i].size){
 							case 1 	: {stat->nb_reg_read_1 ++; break;}
 							case 2 	: {stat->nb_reg_read_2 ++; break;}
 							case 4 	: {stat->nb_reg_read_4 ++; break;}
 							default : {printf("WARNING: in %s, unexpected reg read data size: %u (ins: %s, operand: %u)\n", __func__, operands[i].size, instruction_opcode_2_string(frag->trace.instructions[j].opcode), i); break;}
-							}
-						}
-						else{
-							printf("ERROR: in %s, unexpected data type\n", __func__);
 						}
 					}
 					else{
-						if (INSTRUCTION_DATA_TYPE_IS_MEM(operands[i].type)){
-							stat->nb_mem_write ++;
-							switch(operands[i].size){
+						printf("ERROR: in %s, unexpected data type\n", __func__);
+					}
+				}
+				else{
+					if (OPERAND_IS_MEM(operands[i])){
+						stat->nb_mem_write ++;
+						switch(operands[i].size){
 							case 1 	: {stat->nb_mem_write_1 ++; break;}
 							case 2 	: {stat->nb_mem_write_2 ++; break;}
 							case 4 	: {stat->nb_mem_write_4 ++; break;}
 							default : {printf("WARNING: in %s, unexpected mem write data size: %u (ins: %s, operand: %u)\n", __func__, operands[i].size, instruction_opcode_2_string(frag->trace.instructions[j].opcode), i); break;}
-							}
 						}
-						else if (INSTRUCTION_DATA_TYPE_IS_REG(operands[i].type)){
-							stat->nb_reg_write ++;
-							switch(operands[i].size){
+					}
+					else if (OPERAND_IS_REG(operands[i])){
+						stat->nb_reg_write ++;
+						switch(operands[i].size){
 							case 1 	: {stat->nb_reg_write_1 ++; break;}
 							case 2 	: {stat->nb_reg_write_2 ++; break;}
 							case 4 	: {stat->nb_reg_write_4 ++; break;}
 							default : {printf("WARNING: in %s, unexpected reg write data size: %u (ins: %s, operand: %u)\n", __func__, operands[i].size, instruction_opcode_2_string(frag->trace.instructions[j].opcode), i); break;}
-							}
 						}
-						else{
-							printf("ERROR: in %s, unexpected data type\n", __func__);
-						}
+					}
+					else{
+						printf("ERROR: in %s, unexpected data type\n", __func__);
 					}
 				}
 			}

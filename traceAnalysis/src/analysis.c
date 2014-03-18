@@ -72,6 +72,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction routine & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
+	ADD_CMD_TO_INPUT_PARSER(parser, "analyse frag operand", 	"Analyse teh operand of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_analyse_operand)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
 	/* argument specific commands */
@@ -918,6 +919,40 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	#undef ARG_NAME_ASR_LM
 	#undef ARG_NAME_ASOR_LM
 	#undef ARG_NAME_LASOR_LM
+}
+
+void analysis_frag_analyse_operand(struct analysis* analysis, char* arg){
+	uint32_t 				i;
+	uint32_t 				index;
+	uint32_t 				start;
+	uint32_t 				stop;
+	struct traceFragment* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
+
+		#ifdef VERBOSE
+		printf("Analyse operand(s) of frag %u (tag: \"%s\")\n", i, fragment->tag);
+		#endif
+			
+		traceFragment_analyse_operand(fragment);
+	}
 }
 
 void analysis_frag_clean(struct analysis* analysis){

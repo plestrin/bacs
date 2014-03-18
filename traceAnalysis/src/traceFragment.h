@@ -62,6 +62,10 @@ static inline void traceFragment_print_instruction(struct traceFragment* frag){
 	trace_print(&(frag->trace), 0, frag->trace.nb_instruction, NULL);
 }
 
+static inline void traceFragment_analyse_operand(struct traceFragment* frag){
+	trace_analyse_operand(&(frag->trace));
+}
+
 void traceFragment_delete(struct traceFragment* frag);
 void traceFragment_clean(struct traceFragment* frag);
 
