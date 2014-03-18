@@ -784,541 +784,553 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* Instrumentation function                                              */
 /* ===================================================================== */
 
-void pintool_instrumentation_ins(INS instruction, void* arg){
+void pintool_instrumentation_trace(TRACE trace, void* arg){
 	void (*ins_insertCall)		(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
-	IPOINT 						ipoint_p2 	= IPOINT_BEFORE;
-	uint32_t 					selector 	= ANALYSIS_SELECTOR_NO_ARG;
+	IPOINT 						ipoint_p2;
+	uint32_t 					selector;
 	uint32_t 					i;
 	uint8_t 					j;
 	REG 						current_reg;
-	REG 						read_reg1 	= REG_INVALID_;
-	REG 						read_reg2 	= REG_INVALID_;
-	REG 						read_reg3 	= REG_INVALID_;
-	REG 						write_reg1 	= REG_INVALID_;
-	REG 						write_reg2 	= REG_INVALID_;
-	
+	REG 						read_reg1;
+	REG 						read_reg2;
+	REG 						read_reg3;
+	REG 						write_reg1;
+	REG 						write_reg2;
+	BBL 						basic_block;
+	INS 						instruction;
 
-	if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)INS_Address(instruction)) == CODEMAP_NOT_WHITELISTED){
+	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
+		if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
+			for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
+				ipoint_p2 	= IPOINT_BEFORE;
+				selector 	= ANALYSIS_SELECTOR_NO_ARG;
+				read_reg1 	= REG_INVALID_;
+				read_reg2 	= REG_INVALID_;
+				read_reg3 	= REG_INVALID_;
+				write_reg1 	= REG_INVALID_;
+				write_reg2 	= REG_INVALID_;
 
-		if (INS_IsPredicated(instruction)){
-			ins_insertCall = INS_InsertPredicatedCall;
-		}
-		else{
-			ins_insertCall = INS_InsertCall;
-		}
-		
-		if (INS_HasFallThrough(instruction)){
-			ipoint_p2 = IPOINT_AFTER;
-		}
-		else if (INS_IsBranchOrCall(instruction)){
-			ipoint_p2 = IPOINT_TAKEN_BRANCH;
-		}
-
-		if (INS_IsMemoryRead(instruction)){
-			ANALYSIS_SELECTOR_SET_1MR(selector);
-			if (INS_HasMemoryRead2(instruction)){
-				ANALYSIS_SELECTOR_SET_2MR(selector);
-			}
-		}
-
-		if (INS_IsMemoryWrite(instruction)){
-			ANALYSIS_SELECTOR_SET_1MW(selector);
-		}
-
-		i = 0;
-		j = 0;
-
-		current_reg = INS_RegR(instruction, i);
-		while(REG_valid(current_reg)){
-			if (pintool_monitor_REG(current_reg)){
-				j ++;
-				if (j == 1){
-					read_reg1 = current_reg;
-					ANALYSIS_SELECTOR_SET_1RR(selector);
-				}
-				else if (j == 2){
-					read_reg2 = current_reg;
-					ANALYSIS_SELECTOR_SET_2RR(selector);
-				}
-				else if (j == 3){
-					read_reg3 = current_reg;
-					ANALYSIS_SELECTOR_SET_3RR(selector);
+				if (INS_IsPredicated(instruction)){
+					ins_insertCall = INS_InsertPredicatedCall;
 				}
 				else{
-					printf("ERROR: in %s, max read register is reached\n", __func__);
+					ins_insertCall = INS_InsertCall;
+				}
+				
+				if (INS_HasFallThrough(instruction)){
+					ipoint_p2 = IPOINT_AFTER;
+				}
+				else if (INS_IsBranchOrCall(instruction)){
+					ipoint_p2 = IPOINT_TAKEN_BRANCH;
+				}
+
+				if (INS_IsMemoryRead(instruction)){
+					ANALYSIS_SELECTOR_SET_1MR(selector);
+					if (INS_HasMemoryRead2(instruction)){
+						ANALYSIS_SELECTOR_SET_2MR(selector);
+					}
+				}
+
+				if (INS_IsMemoryWrite(instruction)){
+					ANALYSIS_SELECTOR_SET_1MW(selector);
+				}
+
+				i = 0;
+				j = 0;
+
+				current_reg = INS_RegR(instruction, i);
+				while(REG_valid(current_reg)){
+					if (pintool_monitor_REG(current_reg)){
+						j ++;
+						if (j == 1){
+							read_reg1 = current_reg;
+							ANALYSIS_SELECTOR_SET_1RR(selector);
+						}
+						else if (j == 2){
+							read_reg2 = current_reg;
+							ANALYSIS_SELECTOR_SET_2RR(selector);
+						}
+						else if (j == 3){
+							read_reg3 = current_reg;
+							ANALYSIS_SELECTOR_SET_3RR(selector);
+						}
+						else{
+							printf("ERROR: in %s, max read register is reached\n", __func__);
+						}
+					}
+					i++;
+					current_reg = INS_RegR(instruction, i);
+				}
+
+				i = 0;
+				j = 0;
+
+				current_reg = INS_RegW(instruction, i);
+				while(REG_valid(current_reg)){
+					if (pintool_monitor_REG(current_reg)){
+						j ++;
+						if (j == 1){
+							write_reg1 = current_reg;
+							ANALYSIS_SELECTOR_SET_1RW(selector);
+						}
+						else if (j == 2){
+							write_reg2 = current_reg;
+							ANALYSIS_SELECTOR_SET_2RW(selector);
+						}
+						else if (j == 3){
+							ANALYSIS_SELECTOR_SET_3RW(selector);
+						}
+						else if (j == 4){
+							ANALYSIS_SELECTOR_SET_4RW(selector);
+						}
+						else{
+							printf("ERROR: in %s, max read register is reached\n", __func__);
+						}
+					}
+					i++;
+					current_reg = INS_RegW(instruction, i);
+				}
+
+				switch(selector){
+					case ANALYSIS_SELECTOR_NO_ARG			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR				: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2MR 				: {
+						printf("ERROR: in %s, this case (2MR) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW 				: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1MW 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_p1), 
+							IARG_INST_PTR, 									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA, 							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_MEMORYREAD_EA, 							/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2MR_1MW			: {
+						printf("ERROR: in %s, this case (2MR_1MW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1RR 				: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1RR			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_1read_reg),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_1RR			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1MW_1RR 		: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2RR 				: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_2RR 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_2read_reg),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_2RR 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1MW_2RR 		: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_3RR 				: {
+						printf("ERROR: in %s, this case (3RR) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_3RR			: {
+						printf("ERROR: in %s, this case (1MR_3RR) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_3RR 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_3read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1MW_3RR 		: {
+						printf("ERROR: in %s, this case (1MR_1MW_3RR) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1RW 				: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1RW 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_1RW 			: {
+						printf("ERROR: in %s, this case (1MW_1RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1RR_1RW			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_1RR_1RW 		: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2RR_1RW			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_2RR_1RW 		: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break; 
+					}
+					#if 0
+					case ANALYSIS_SELECTOR_1MR_1MW_2RR_1RW 	: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_MEMORYWRITE_EA,							/* @ MW1  				*/
+							IARG_MEMORYWRITE_SIZE,							/* MW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break; 
+					}
+					#endif
+					case ANALYSIS_SELECTOR_3RR_1RW			: {
+						printf("ERROR: in %s, this case (3RR_1RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_3RR_1RW 		: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2RW 				: {
+						printf("ERROR: in %s, this case (2RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_2RW 			: {
+						printf("ERROR: in %s, this case (1MR_2RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_2RW 			: {
+						printf("ERROR: in %s, this case (1MW_2RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1RR_2RW 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_END);
+						break;
+					}
+					case ANALYSIS_SELECTOR_2RR_2RW 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_2read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_END);
+						break;
+					}
+					#if 0
+					case ANALYSIS_SELECTOR_3RR_2RW 			: {
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_END);
+						break;
+					}
+					#endif
+					case ANALYSIS_SELECTOR_3RW 				: {
+						printf("ERROR: in %s, this case (3RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MR_3RW 			: {
+						printf("ERROR: in %s, this case (1MR_3RW) is not supported\n", __func__);
+						break;
+					}
+					case ANALYSIS_SELECTOR_1MW_3RW 			: {
+						printf("ERROR: in %s, this case (1MW_3RW) is not supported\n", __func__);
+						break;
+					}
+					default 								: {
+						printf("ERROR: in %s, invalid analysis selector: 0x%08x ins: %s\n", __func__, selector, INS_Mnemonic(instruction).c_str());
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
+							IARG_INST_PTR,									/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+							IARG_END);
+						break;
+					}
 				}
 			}
-			i++;
-			current_reg = INS_RegR(instruction, i);
-		}
-
-		i = 0;
-		j = 0;
-
-		current_reg = INS_RegW(instruction, i);
-		while(REG_valid(current_reg)){
-			if (pintool_monitor_REG(current_reg)){
-				j ++;
-				if (j == 1){
-					write_reg1 = current_reg;
-					ANALYSIS_SELECTOR_SET_1RW(selector);
-				}
-				else if (j == 2){
-					write_reg2 = current_reg;
-					ANALYSIS_SELECTOR_SET_2RW(selector);
-				}
-				else if (j == 3){
-					ANALYSIS_SELECTOR_SET_3RW(selector);
-				}
-				else if (j == 4){
-					ANALYSIS_SELECTOR_SET_4RW(selector);
-				}
-				else{
-					printf("ERROR: in %s, max read register is reached\n", __func__);
-				}
-			}
-			i++;
-			current_reg = INS_RegW(instruction, i);
-		}
-
-		switch(selector){
-		case ANALYSIS_SELECTOR_NO_ARG			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR				: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2MR 				: {
-			printf("ERROR: in %s, this case (2MR) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW 				: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1MW 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_p1), 
-				IARG_INST_PTR, 									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA, 							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_MEMORYREAD_EA, 							/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2MR_1MW			: {
-			printf("ERROR: in %s, this case (2MR_1MW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1RR 				: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1RR			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_1read_reg),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_1RR			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1MW_1RR 		: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2RR 				: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_2RR 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_2read_reg),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_2RR 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1MW_2RR 		: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-				IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_3RR 				: {
-			printf("ERROR: in %s, this case (3RR) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_3RR			: {
-			printf("ERROR: in %s, this case (1MR_3RR) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_3RR 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_3read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-				IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-				IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1MW_3RR 		: {
-			printf("ERROR: in %s, this case (1MR_1MW_3RR) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1RW 				: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1RW 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_1RW 			: {
-			printf("ERROR: in %s, this case (1MW_1RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1RR_1RW			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_1RR_1RW 		: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2RR_1RW			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_2RR_1RW 		: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break; 
-		}
-		#if 0
-		case ANALYSIS_SELECTOR_1MR_1MW_2RR_1RW 	: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_MEMORYWRITE_EA,							/* @ MW1  				*/
-				IARG_MEMORYWRITE_SIZE,							/* MW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break; 
-		}
-		#endif
-		case ANALYSIS_SELECTOR_3RR_1RW			: {
-			printf("ERROR: in %s, this case (3RR_1RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_3RR_1RW 		: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-				IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-				IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2RW 				: {
-			printf("ERROR: in %s, this case (2RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_2RW 			: {
-			printf("ERROR: in %s, this case (1MR_2RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_2RW 			: {
-			printf("ERROR: in %s, this case (1MW_2RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1RR_2RW 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
-				IARG_END);
-			break;
-		}
-		case ANALYSIS_SELECTOR_2RR_2RW 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_2read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
-				IARG_END);
-			break;
-		}
-		#if 0
-		case ANALYSIS_SELECTOR_3RR_2RW 			: {
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-				IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-				IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-				IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-				IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-				IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-				IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
-				IARG_END);
-			ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-				IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-				IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
-				IARG_END);
-			break;
-		}
-		#endif
-		case ANALYSIS_SELECTOR_3RW 				: {
-			printf("ERROR: in %s, this case (3RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MR_3RW 			: {
-			printf("ERROR: in %s, this case (1MR_3RW) is not supported\n", __func__);
-			break;
-		}
-		case ANALYSIS_SELECTOR_1MW_3RW 			: {
-			printf("ERROR: in %s, this case (1MW_3RW) is not supported\n", __func__);
-			break;
-		}
-		default 								: {
-			printf("ERROR: in %s, invalid analysis selector: 0x%08x ins: %s\n", __func__, selector, INS_Mnemonic(instruction).c_str());
-			ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
-				IARG_INST_PTR,									/* pc 					*/
-				IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
-				IARG_END);
-			break;
-		}
 		}
 	}
 }
@@ -1455,7 +1467,7 @@ int main(int argc, char * argv[]){
 	}
 
 	IMG_AddInstrumentFunction(pintool_instrumentation_img, NULL);
-	INS_AddInstrumentFunction(pintool_instrumentation_ins, NULL);
+	TRACE_AddInstrumentFunction(pintool_instrumentation_trace, NULL);
 	PIN_AddFiniFunction(pintool_clean, NULL);
 	
 	PIN_StartProgram();
