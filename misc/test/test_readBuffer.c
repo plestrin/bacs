@@ -24,7 +24,7 @@ int main(){
 	input_size --;
 	input[input_size] = '\0';
 
-	buffer = readBuffer_raw(input, input_size);
+	buffer = readBuffer_raw(input, input_size, NULL);
 	buffer_size = READBUFFER_RAW_GET_LENGTH(input_size);
 	if (buffer == NULL){
 		printf("ERROR: in %s, readBuffer return NULL\n", __func__);
