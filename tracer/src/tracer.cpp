@@ -785,30 +785,21 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 /* ===================================================================== */
 
 void pintool_instrumentation_trace(TRACE trace, void* arg){
-	void (*ins_insertCall)		(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
-	IPOINT 						ipoint_p2;
-	uint32_t 					selector;
-	uint32_t 					i;
-	uint8_t 					j;
-	REG 						current_reg;
-	REG 						read_reg1;
-	REG 						read_reg2;
-	REG 						read_reg3;
-	REG 						write_reg1;
-	REG 						write_reg2;
-	BBL 						basic_block;
-	INS 						instruction;
+	void (*ins_insertCall)	(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
+	IPOINT 					ipoint_p2;
+	uint32_t 				selector;
+	uint32_t 				i;
+	REG 					read_reg[ANALYSIS_MAX_OPERAND_REG_READ];
+	REG 					write_reg[ANALYSIS_MAX_OPERAND_REG_WRITE];
+	BBL 					basic_block;
+	INS 					instruction;
+	REG 					tmp_reg;
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
 		if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
 			for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
-				ipoint_p2 	= IPOINT_BEFORE;
-				selector 	= ANALYSIS_SELECTOR_NO_ARG;
-				read_reg1 	= REG_INVALID_;
-				read_reg2 	= REG_INVALID_;
-				read_reg3 	= REG_INVALID_;
-				write_reg1 	= REG_INVALID_;
-				write_reg2 	= REG_INVALID_;
+				ipoint_p2 		= IPOINT_BEFORE;
+				selector 		= ANALYSIS_SELECTOR_NO_OPERAND;
 
 				if (INS_IsPredicated(instruction)){
 					ins_insertCall = INS_InsertPredicatedCall;
@@ -824,75 +815,75 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					ipoint_p2 = IPOINT_TAKEN_BRANCH;
 				}
 
-				if (INS_IsMemoryRead(instruction)){
-					ANALYSIS_SELECTOR_SET_1MR(selector);
-					if (INS_HasMemoryRead2(instruction)){
-						ANALYSIS_SELECTOR_SET_2MR(selector);
+				tmp_reg = INS_MemoryBaseReg(instruction);
+				if (REG_valid(tmp_reg) && pintool_monitor_REG(tmp_reg)){
+					if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
+						printf("ERROR: in %s, the max number of reg read operand has been reached\n", __func__);
+					}
+					else{
+						read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+						ANALYSIS_SELECTOR_INC_RR(selector);
 					}
 				}
 
-				if (INS_IsMemoryWrite(instruction)){
-					ANALYSIS_SELECTOR_SET_1MW(selector);
+				tmp_reg = INS_MemoryIndexReg(instruction);
+				if (REG_valid(tmp_reg) && pintool_monitor_REG(tmp_reg)){
+					if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
+						printf("ERROR: in %s, the max number of reg read operand has been reached\n", __func__);
+					}
+					else{
+						read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+						ANALYSIS_SELECTOR_INC_RR(selector);
+					}
 				}
 
-				i = 0;
-				j = 0;
-
-				current_reg = INS_RegR(instruction, i);
-				while(REG_valid(current_reg)){
-					if (pintool_monitor_REG(current_reg)){
-						j ++;
-						if (j == 1){
-							read_reg1 = current_reg;
-							ANALYSIS_SELECTOR_SET_1RR(selector);
+				for (i = 0; i < INS_OperandCount(instruction); i++){
+					if (INS_OperandIsMemory(instruction, i)){
+						if (INS_OperandRead(instruction, i)){
+							if (ANALYSIS_SELECTOR_GET_MR_COUNT(selector) == ANALYSIS_MAX_OPERAND_MEM_READ){
+								printf("ERROR: in %s, the max number of mem read operand has been reached\n", __func__);
+							}
+							else{
+								ANALYSIS_SELECTOR_INC_MR(selector);
+							}
 						}
-						else if (j == 2){
-							read_reg2 = current_reg;
-							ANALYSIS_SELECTOR_SET_2RR(selector);
-						}
-						else if (j == 3){
-							read_reg3 = current_reg;
-							ANALYSIS_SELECTOR_SET_3RR(selector);
-						}
-						else{
-							printf("ERROR: in %s, max read register is reached\n", __func__);
+						if (INS_OperandWritten(instruction, i)){
+							if (ANALYSIS_SELECTOR_GET_MW_COUNT(selector) == ANALYSIS_MAX_OPERAND_MEM_WRITE){
+								printf("ERROR: in %s, the max number of mem write operand has been reached\n", __func__);
+							}
+							else{
+								ANALYSIS_SELECTOR_INC_MW(selector);
+							}
 						}
 					}
-					i++;
-					current_reg = INS_RegR(instruction, i);
-				}
+					else if(INS_OperandIsReg(instruction, i)){
+						tmp_reg = INS_OperandReg(instruction, i);
 
-				i = 0;
-				j = 0;
-
-				current_reg = INS_RegW(instruction, i);
-				while(REG_valid(current_reg)){
-					if (pintool_monitor_REG(current_reg)){
-						j ++;
-						if (j == 1){
-							write_reg1 = current_reg;
-							ANALYSIS_SELECTOR_SET_1RW(selector);
-						}
-						else if (j == 2){
-							write_reg2 = current_reg;
-							ANALYSIS_SELECTOR_SET_2RW(selector);
-						}
-						else if (j == 3){
-							ANALYSIS_SELECTOR_SET_3RW(selector);
-						}
-						else if (j == 4){
-							ANALYSIS_SELECTOR_SET_4RW(selector);
-						}
-						else{
-							printf("ERROR: in %s, max read register is reached\n", __func__);
+						if (pintool_monitor_REG(tmp_reg)){
+							if (INS_OperandRead(instruction, i)){
+								if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
+									printf("ERROR: in %s, the max number of reg read operand has been reached\n", __func__);
+								}
+								else{
+									read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+									ANALYSIS_SELECTOR_INC_RR(selector);
+								}
+							}
+							if (INS_OperandWritten(instruction, i)){
+								if (ANALYSIS_SELECTOR_GET_RW_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_WRITE){
+									printf("ERROR: in %s, the max number of reg write operand has been reached\n", __func__);
+								}
+								else{
+									write_reg[ANALYSIS_SELECTOR_GET_RW_COUNT(selector)] = tmp_reg;
+									ANALYSIS_SELECTOR_INC_RW(selector);
+								}
+							}
 						}
 					}
-					i++;
-					current_reg = INS_RegW(instruction, i);
 				}
 
 				switch(selector){
-					case ANALYSIS_SELECTOR_NO_ARG			: {
+					case ANALYSIS_SELECTOR_NO_OPERAND		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
@@ -942,9 +933,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						break;
 					}
@@ -954,9 +945,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
 							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						break;
 					}
@@ -966,9 +957,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
 							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -981,9 +972,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
 							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -992,12 +983,12 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						break;
 					}
@@ -1007,12 +998,12 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
 							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						break;
 					}
@@ -1022,12 +1013,12 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
 							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -1040,12 +1031,12 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
 							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -1064,15 +1055,15 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
 							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -1085,11 +1076,11 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1097,13 +1088,13 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1115,14 +1106,14 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1130,16 +1121,16 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1147,17 +1138,17 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1165,19 +1156,19 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break; 
 					}
@@ -1188,19 +1179,19 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
 							IARG_MEMORYWRITE_EA,							/* @ MW1  				*/
 							IARG_MEMORYWRITE_SIZE,							/* MW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break; 
 					}
@@ -1213,22 +1204,22 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
 							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1248,17 +1239,17 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1266,20 +1257,20 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_2read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1288,23 +1279,23 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
 							IARG_INST_PTR,									/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg1),		/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg1),		/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg2),		/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg2),		/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg1),		/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg1,						/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg1),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg2),		/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg2,						/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg2),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg3),		/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg3,						/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg3),		/* RR3 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
+							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
+							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
+							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
+							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
+							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg1,						/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg2,						/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
 							IARG_END);
 						break;
 					}

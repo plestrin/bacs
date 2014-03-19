@@ -482,7 +482,7 @@ static void trace_analysis_print_group(struct trace* trace, uint32_t* group, uin
 
 enum variableRole{
 	ROLE_UNKNOWN,
-	ROLE_READ_IMMEDIATE,
+	ROLE_READ_DIRECT,
 	ROLE_READ_BASE,
 	ROLE_READ_INDEX
 };
@@ -490,7 +490,7 @@ enum variableRole{
 static char* variableRole_2_string(enum variableRole role){
 	switch(role){
 		case ROLE_UNKNOWN 			: {return "UN";}
-		case ROLE_READ_IMMEDIATE 	: {return "R_IM";}
+		case ROLE_READ_DIRECT 		: {return "R_DI";}
 		case ROLE_READ_BASE 		: {return "R_BA";}
 		case ROLE_READ_INDEX 		: {return "R_IN";}
 	}
@@ -501,9 +501,11 @@ static char* variableRole_2_string(enum variableRole role){
 static enum variableRole trace_analysis_get_operand_role(struct trace* trace, uint32_t index_ins, uint32_t index_op){
 	enum variableRole role = ROLE_UNKNOWN;
 
-	switch(trace->instructions[index_ins]){
+	switch(trace->instructions[index_ins].opcode){
 		case XED_ICLASS_XOR : {
-			/* a completer mais complexe */
+			if (OPERAND_IS_MEM(trace->operands[index_op])){
+				role = ROLE_READ_DIRECT;
+			}
 			break;
 		}
 		default : {

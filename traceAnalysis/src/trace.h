@@ -48,7 +48,7 @@ void trace_delete(struct trace* trace);
 static inline uint32_t trace_get_ins_nb_read_op(struct trace* trace, uint32_t index){
 	uint32_t 		nb;
 	uint32_t 		i;
-	struct operand 	operands;
+	struct operand* operands;
 
 	for (i = 0, nb = 0; i < trace->instructions[index].nb_operand; i++){
 		operands = trace_get_ins_operands(trace, index);
@@ -63,7 +63,7 @@ static inline uint32_t trace_get_ins_nb_read_op(struct trace* trace, uint32_t in
 static inline uint32_t trace_get_ins_nb_write_op(struct trace* trace, uint32_t index){
 	uint32_t 		nb;
 	uint32_t 		i;
-	struct operand 	operands;
+	struct operand*	operands;
 
 	for (i = 0, nb = 0; i < trace->instructions[index].nb_operand; i++){
 		operands = trace_get_ins_operands(trace, index);
