@@ -11,6 +11,8 @@
  * - bit 1: set to 0 -> INVALID 	set to 1 -> VALID
  * - bit 2: set to 0 -> MEM 		set to 1 -> REG
  * - bit 3: set to 0 -> READ 		set to 1 -> WRITE
+ * - bit 4: set to 0 -> NO_BASE 	set to 1 -> BASE
+ * - bit 5: set to 0 -> NO_INDEX 	set to 1 -> INDEX
  */
 
 #define OPERAND_TYPE_SET_INVALID(type) 	(type) &= 0xfffffffe
@@ -42,11 +44,13 @@
 #define OPERAND_IS_WRITE(op) 			OPERAND_TYPE_IS_WRITE((op).type)
 
 enum operandType{
-	OPERAND_INVALID 	= 0x00000000,
-	OPERAND_MEM_READ	= 0x00000001,
-	OPERAND_REG_READ 	= 0x00000003,
-	OPERAND_MEM_WRITE	= 0x00000005,
-	OPERAND_REG_WRITE	= 0x00000007
+	OPERAND_INVALID 		= 0x00000000,
+	OPERAND_MEM_READ		= 0x00000001,
+	OPERAND_REG_READ 		= 0x00000003,
+	OPERAND_MEM_WRITE		= 0x00000005,
+	OPERAND_REG_WRITE		= 0x00000007,
+	OPERAND_REG_READ_BASE 	= 0x0000000b,
+	OPERAND_REG_READ_INDEX 	= 0x00000013
 };
 
 #define NB_REGISTER 19 /* do not forget to update this value */

@@ -75,6 +75,7 @@ struct traceBuffer{
 	(trace_buffer)->global_offset_data 	+= (size);
 
 #define traceBuffer_add_instruction(trace_buffer, trace_file, pc_, opcode_, nb_operand_) 											\
+	traceBuffer_reserve_operand((trace_buffer), (trace_file), (nb_operand_))														\
 	traceBuffer_reserve_instruction((trace_buffer), (trace_file), 1) 																\
  																																	\
 	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].pc 				= (pc_); 										\
@@ -84,6 +85,16 @@ struct traceBuffer{
  																																	\
 	(trace_buffer)->local_offset_ins += 1;
 
+#define traceBuffer_add_read_register_operand(trace_buffer, regDesc, value)															\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].type 			= OPERAND_REG_READ;									\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].location.reg 	= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc);	\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].size 			= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc); 	\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].data_offset 		= (trace_buffer)->global_offset_data; 				\
+																																	\
+	*(uint32_t*)((trace_buffer)->buffer_data + (trace_buffer)->local_offset_data) = (value); 										\
+																																	\
+	traceBuffer_commit_operand((trace_buffer), ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc))
+
 struct tracer{
 	struct codeMap* 			code_map;
 	struct whiteList*			white_list;
@@ -91,14 +102,29 @@ struct tracer{
 	struct traceBuffer*			trace_buffer;
 };
 
+#define ANALYSIS_REGISTER_READ_STD 		0x00
+#define ANALYSIS_REGISTER_READ_BASE 	0x01
+#define ANALYSIS_REGISTER_READ_INDEX 	0x02
+
+/* Register descriptor for the analysis routine
+ * - bit [0 :15] 	: enum reg
+ * - bit [16:23] 	: register size
+ * - bit [24:31] 	: register access mode (STD = 0x00, BASE = 0x01, INDEX = 0x02)
+ */
+
+#define ANALYSIS_PACK_REGISTER_DESCRIPTOR(reg, size, type) 	(((reg) & 0x0000ffff) | (((size) & 0x000000ff) << 16) | (((type) & 0x00000003) << 24))
+#define ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(desc)			((enum reg)((desc) & 0x0000ffff))
+#define ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(desc)			(((desc) >> 16) & 0x000000ff)
+#define ANALYSIS_REGISTER_DESCRIPTOR_GET_TYPE(desc) 		(((desc) >> 24) & 0x00000003)
+
 #define ANALYSIS_MAX_OPERAND_MEM_READ 	2
 #define ANALYSIS_MAX_OPERAND_MEM_WRITE 	1
 #define ANALYSIS_MAX_OPERAND_REG_READ 	3
 #define ANALYSIS_MAX_OPERAND_REG_WRITE 	4
 
 /* Selector for the analysis routine value:
- * - bit [0:7] 		: number of memory read
- * - bit [8:15] 	: number of memory write
+ * - bit [0 :7 ] 	: number of memory read
+ * - bit [8 :15] 	: number of memory write
  * - bit [16:23]	: number of register read
  * - bit [24:31] 	: number of regsiter write
  */

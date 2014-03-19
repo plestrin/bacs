@@ -98,7 +98,6 @@ void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
 }
 
 void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
@@ -114,7 +113,6 @@ void pintool_instruction_analysis_1read_mem(ADDRINT pc, UINT32 opcode, ADDRINT a
 }
 
 void pintool_instruction_analysis_1write_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address, UINT32 size){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
@@ -124,7 +122,6 @@ void pintool_instruction_analysis_1write_mem_p1(ADDRINT pc, UINT32 opcode, ADDRI
 }
 
 void pintool_instruction_analysis_1write_mem_1read_mem_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_write, UINT32 size_write, ADDRINT address_read, UINT32 size_read){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_write + size_read)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
@@ -142,24 +139,15 @@ void pintool_instruction_analysis_1write_mem_1read_mem_p1(ADDRINT pc, UINT32 opc
 	tracer.trace_buffer->pending_write[0].size 												= size_write;
 }
 
-void pintool_instruction_analysis_1read_reg(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 value, UINT32 size){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+void pintool_instruction_analysis_1read_reg(ADDRINT pc, UINT32 opcode, UINT32 regDesc, UINT32 value){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc, value)
 }
 
-void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc, UINT32 value_reg){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
@@ -173,37 +161,21 @@ void pintool_instruction_analysis_1read_mem_1read_reg(ADDRINT pc, UINT32 opcode,
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc, value_reg)
 }
 
-void pintool_instruction_analysis_1write_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+void pintool_instruction_analysis_1write_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc, UINT32 value_reg){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc, value_reg)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
-void pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg, UINT32 value_reg, UINT32 size_reg){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 regDesc, UINT32 value_reg){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
@@ -217,46 +189,22 @@ void pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1(ADDRINT pc, 
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc, value_reg)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
 }
 
-void pintool_instruction_analysis_2read_reg(ADDRINT pc, UINT32 opcode, UINT32 name1, UINT32 value1, UINT32 size1, UINT32 name2, UINT32 value2, UINT32 size2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+void pintool_instruction_analysis_2read_reg(ADDRINT pc, UINT32 opcode, UINT32 regDesc1, UINT32 value1, UINT32 regDesc2, UINT32 value2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc1, value1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc2, value2)
 }
 
-void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc1, UINT32 value_reg1, UINT32 regDesc2, UINT32 value_reg2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
@@ -270,55 +218,23 @@ void pintool_instruction_analysis_1read_mem_2read_reg(ADDRINT pc, UINT32 opcode,
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc1, value_reg1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc2, value_reg2)
 }
 
-void pintool_instruction_analysis_1write_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_1write_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc1, UINT32 value_reg1, UINT32 regDesc2, UINT32 value_reg2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc1, value_reg1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc2, value_reg2)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
-void pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+void pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 regDesc1, UINT32 value_reg1, UINT32 regDesc2, UINT32 value_reg2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
@@ -332,77 +248,36 @@ void pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1(ADDRINT pc, 
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc1, value_reg1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc2, value_reg2)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
 }
 
-void pintool_instruction_analysis_1write_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg1, UINT32 value_reg1, UINT32 size_reg1, UINT32 name_reg2, UINT32 value_reg2, UINT32 size_reg2, UINT32 name_reg3, UINT32 value_reg3, UINT32 size_reg3){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+void pintool_instruction_analysis_1write_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc1, UINT32 value_reg1, UINT32 regDesc2, UINT32 value_reg2, UINT32 regDesc3, UINT32 value_reg3){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 12)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg2)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg3;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg3)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc1, value_reg1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc2, value_reg2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc3, value_reg3)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem;
 }
 
-void pintool_instruction_analysis_1write_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name, UINT32 size){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 1)
+void pintool_instruction_analysis_1write_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 1)
 
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name;
-	tracer.trace_buffer->pending_write[0].size 												= size;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc);
 }
 
-void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg, UINT32 size_reg, ADDRINT address_mem, UINT32 size_mem){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc, ADDRINT address_mem, UINT32 size_mem){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 4)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
@@ -416,31 +291,22 @@ void pintool_instruction_analysis_1write_reg_1read_mem_p1(ADDRINT pc, UINT32 opc
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg;
-	tracer.trace_buffer->pending_write[0].size 												= size_reg;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc);
 }
 
-void pintool_instruction_analysis_1write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 2)
+void pintool_instruction_analysis_1write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, UINT32 regDesc_read, UINT32 value_read){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 2)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read, value_read)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write;
-	tracer.trace_buffer->pending_write[0].size 												= size_write;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read, UINT32 value_reg_read, UINT32 size_reg_read){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc_read, UINT32 value_reg_read){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 8)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
@@ -454,49 +320,25 @@ void pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1(ADDRINT pc, 
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read, value_reg_read)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
-	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_1write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write, UINT32 size_write, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_1write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, UINT32 regDesc_read1, UINT32 value_read1, UINT32 regDesc_read2, UINT32 value_read2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 12)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_read2)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write;
-	tracer.trace_buffer->pending_write[0].size 												= size_write;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc_read1, UINT32 value_reg_read1, UINT32 regDesc_read2, UINT32 value_reg_read2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 12)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
@@ -510,30 +352,14 @@ void pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, 
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_reg_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_reg_read2)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
-	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(ADDRINT pc, UINT32 opcode, ADDRINT address_mem_write, UINT32 size_mem_write, UINT32 regDesc_write, ADDRINT address_mem_read, UINT32 size_mem_read, UINT32 regDesc_read1, UINT32 value_reg_read1, UINT32 regDesc_read2, UINT32 value_reg_read2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem_write + size_mem_read + 12)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
@@ -547,33 +373,17 @@ void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(A
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem_read)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_reg_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_reg_read2)
 
 	tracer.trace_buffer->pending_write[0].location.address 									= address_mem_write;
 	tracer.trace_buffer->pending_write[0].size 												= size_mem_write;
 
-	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_reg_write;
-	tracer.trace_buffer->pending_write[1].size 												= size_reg_write;
+	tracer.trace_buffer->pending_write[1].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[1].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_reg_write, UINT32 size_reg_write, ADDRINT address_mem, UINT32 size_mem, UINT32 name_reg_read1, UINT32 value_reg_read1, UINT32 size_reg_read1, UINT32 name_reg_read2, UINT32 value_reg_read2, UINT32 size_reg_read2, UINT32 name_reg_read3, UINT32 value_reg_read3, UINT32 size_reg_read3){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc_read1, UINT32 value_reg_read1, UINT32 regDesc_read2, UINT32 value_reg_read2, UINT32 regDesc_read3, UINT32 value_reg_read3){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 16)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
@@ -587,128 +397,57 @@ void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, 
 	
 	traceBuffer_commit_operand(tracer.trace_buffer, size_mem)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_reg_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_reg_read2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read3, value_reg_read3)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read1;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read2)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_reg_read3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_reg_read3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_reg_read3;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_reg_read3)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_reg_write;
-	tracer.trace_buffer->pending_write[0].size 												= size_reg_write;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
-void pintool_instruction_analysis_2write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read, UINT32 value_read, UINT32 size_read){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 3)
+void pintool_instruction_analysis_2write_reg_1read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write1, UINT32 regDesc_write2, UINT32 regDesc_read, UINT32 value_read){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 12)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 3)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read, value_read)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write1);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write1);
 
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
-	tracer.trace_buffer->pending_write[0].size 												= size_write1;
-
-	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
-	tracer.trace_buffer->pending_write[1].size 												= size_write2;
+	tracer.trace_buffer->pending_write[1].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write2);
+	tracer.trace_buffer->pending_write[1].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write2);
 }
 
-void pintool_instruction_analysis_2write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 4)
+void pintool_instruction_analysis_2write_reg_2read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write1, UINT32 regDesc_write2, UINT32 regDesc_read1, UINT32 value_read1, UINT32 regDesc_read2, UINT32 value_read2){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 16)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_read2)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write1);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write1);
 
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
-	tracer.trace_buffer->pending_write[0].size 												= size_write1;
-
-	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
-	tracer.trace_buffer->pending_write[1].size 												= size_write2;
+	tracer.trace_buffer->pending_write[1].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write2);
+	tracer.trace_buffer->pending_write[1].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write2);
 }
 
-void pintool_instruction_analysis_2write_reg_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 name_write1, UINT32 size_write1, UINT32 name_write2, UINT32 size_write2, UINT32 name_read1, UINT32 value_read1, UINT32 size_read1, UINT32 name_read2, UINT32 value_read2, UINT32 size_read2, UINT32 name_read3, UINT32 value_read3, UINT32 size_read3){
-	traceBuffer_reserve_operand(tracer.trace_buffer, tracer.trace_file, 5)
+void pintool_instruction_analysis_2write_reg_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write1, UINT32 regDesc_write2, UINT32 regDesc_read1, UINT32 value_read1, UINT32 regDesc_read2, UINT32 value_read2, UINT32 regDesc_read3, UINT32 value_read3){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 20)
 
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 5)
 
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read1;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_read2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read3, value_read3)
 
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read1;
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write1);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write1);
 
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read1)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read2;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read2;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read2)
-
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].type 				= OPERAND_REG_READ;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].location.reg 		= (enum reg)name_read3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].size 				= size_read3;
-	tracer.trace_buffer->buffer_op[tracer.trace_buffer->local_offset_op].data_offset 		= tracer.trace_buffer->global_offset_data;
-
-	*(uint32_t*)(tracer.trace_buffer->buffer_data + tracer.trace_buffer->local_offset_data) = value_read3;
-
-	traceBuffer_commit_operand(tracer.trace_buffer, size_read3)
-
-	tracer.trace_buffer->pending_write[0].location.reg 										= (enum reg)name_write1;
-	tracer.trace_buffer->pending_write[0].size 												= size_write1;
-
-	tracer.trace_buffer->pending_write[1].location.reg 										= (enum reg)name_write2;
-	tracer.trace_buffer->pending_write[1].size 												= size_write2;
+	tracer.trace_buffer->pending_write[1].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write2);
+	tracer.trace_buffer->pending_write[1].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write2);
 }
 
 void pintool_instruction_analysis_1write_mem_Xread_p2(){
@@ -790,6 +529,7 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 	uint32_t 				selector;
 	uint32_t 				i;
 	REG 					read_reg[ANALYSIS_MAX_OPERAND_REG_READ];
+	uint8_t 				read_register_type[ANALYSIS_MAX_OPERAND_REG_READ];
 	REG 					write_reg[ANALYSIS_MAX_OPERAND_REG_WRITE];
 	BBL 					basic_block;
 	INS 					instruction;
@@ -822,6 +562,7 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					else{
 						read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+						read_register_type[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = ANALYSIS_REGISTER_READ_BASE;
 						ANALYSIS_SELECTOR_INC_RR(selector);
 					}
 				}
@@ -833,6 +574,7 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					else{
 						read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+						read_register_type[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = ANALYSIS_REGISTER_READ_INDEX;
 						ANALYSIS_SELECTOR_INC_RR(selector);
 					}
 				}
@@ -866,6 +608,7 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 								}
 								else{
 									read_reg[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = tmp_reg;
+									read_register_type[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = ANALYSIS_REGISTER_READ_STD;
 									ANALYSIS_SELECTOR_INC_RR(selector);
 								}
 							}
@@ -885,17 +628,17 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 				switch(selector){
 					case ANALYSIS_SELECTOR_NO_OPERAND		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction), 																									/* opcode 				*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR				: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
 							IARG_END);
 						break;
 					}
@@ -905,22 +648,22 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1MW 				: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_p1), 
-							IARG_INST_PTR, 									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA, 							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_MEMORYREAD_EA, 							/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
+							IARG_INST_PTR, 																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA, 																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_MEMORYREAD_EA, 																													/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -931,112 +674,100 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1RR 				: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RR			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_1read_reg),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_1RR			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_UINT32,ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_1RR 		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR 				: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_2RR 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_2read_reg),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_2RR 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_2RR 		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1 				*/
-							IARG_MEMORYREAD_SIZE,							/* size MR1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1 				*/
+							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -1051,19 +782,16 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1MW_3RR 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_3read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1 				*/
-							IARG_MEMORYWRITE_SIZE,							/* size MW1 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
+							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
+							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
 						break;
@@ -1074,27 +802,25 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1RW 				: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1104,94 +830,81 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1RR_1RW			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RR_1RW 		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR_1RW			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_2RR_1RW 		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break; 
 					}
 					#if 0
 					case ANALYSIS_SELECTOR_1MR_1MW_2RR_1RW 	: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_MEMORYWRITE_EA,							/* @ MW1  				*/
-							IARG_MEMORYWRITE_SIZE,							/* MW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_MEMORYWRITE_EA,																													/* @ MW1  				*/
+							IARG_MEMORYWRITE_SIZE,																													/* MW1 size 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break; 
 					}
@@ -1202,24 +915,20 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1MR_3RR_1RW 		: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_MEMORYREAD_EA,								/* @ MR1  				*/
-							IARG_MEMORYREAD_SIZE,							/* MR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
+							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
+							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1237,65 +946,53 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					case ANALYSIS_SELECTOR_1RR_2RW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[1]), pintool_REG_size(write_reg[1]), 0),						/* RW2 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
 							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR_2RW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_2read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[1]), pintool_REG_size(write_reg[1]), 0),						/* RW2 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
 							IARG_END);
 						break;
 					}
 					#if 0
 					case ANALYSIS_SELECTOR_3RR_2RW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction),			/* opcode 				*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[0]),	/* RW1 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[0]),	/* RW1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(write_reg[1]),	/* RW2 name 			*/
-							IARG_UINT32, pintool_REG_size(write_reg[1]),	/* RW2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[0]),	/* RR1 name 			*/
-							IARG_REG_VALUE, read_reg[0],					/* RR1 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[0]),		/* RR1 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[1]),	/* RR2 name 			*/
-							IARG_REG_VALUE, read_reg[1],					/* RR2 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[1]),		/* RR2 size 			*/
-							IARG_UINT32, pintool_REG_2_reg(read_reg[2]),	/* RR3 name 			*/
-							IARG_REG_VALUE, read_reg[2],					/* RR3 value 			*/
-							IARG_UINT32, pintool_REG_size(read_reg[2]),		/* RR3 size 			*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),									/* RW1 desc 			*/
+							ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[1]), pintool_REG_size(write_reg[1]), 0),									/* RW2 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]) ,	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]) ,	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]) ,	/* RR3 desc 			*/
+							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],					/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],					/* RW2 value 			*/
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
+							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
 							IARG_END);
 						break;
 					}
@@ -1315,8 +1012,8 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					default 								: {
 						printf("ERROR: in %s, invalid analysis selector: 0x%08x ins: %s\n", __func__, selector, INS_Mnemonic(instruction).c_str());
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
-							IARG_INST_PTR,									/* pc 					*/
-							IARG_UINT32, INS_Opcode(instruction), 			/* opcode 				*/
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction), 																									/* opcode 				*/
 							IARG_END);
 						break;
 					}
