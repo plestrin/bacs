@@ -36,63 +36,63 @@ struct traceBuffer{
 	struct tracePendingWrite 	pending_write[TRACERBUFFER_NB_PENDING_WRITE];
 };
 
-#define traceBuffer_reserve_instruction(trace_buffer, trace_file, nb_instruction) 													\
-	if ((trace_buffer)->local_offset_ins + (nb_instruction) >= TRACERBUFFER_SIZE_INS){ 												\
-		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 					\
-		(trace_buffer)->local_offset_ins = 0; 																						\
+#define traceBuffer_reserve_instruction(trace_buffer, trace_file, nb_instruction) 																				\
+	if ((trace_buffer)->local_offset_ins + (nb_instruction) >= TRACERBUFFER_SIZE_INS){ 																			\
+		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 												\
+		(trace_buffer)->local_offset_ins = 0; 																													\
 	}
 
-#define traceBuffer_reserve_operand(trace_buffer, trace_file, nb_operand) 															\
-	if ((trace_buffer)->local_offset_op + (nb_operand) >= TRACERBUFFER_SIZE_OP){ 													\
-		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 						\
-		(trace_buffer)->local_offset_op = 0; 																						\
+#define traceBuffer_reserve_operand(trace_buffer, trace_file, nb_operand) 																						\
+	if ((trace_buffer)->local_offset_op + (nb_operand) >= TRACERBUFFER_SIZE_OP){ 																				\
+		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 													\
+		(trace_buffer)->local_offset_op = 0; 																													\
 	}
 
-#define traceBuffer_reserve_data(trace_buffer, trace_file, nb_data) 																\
-	if ((trace_buffer)->local_offset_data + (nb_data) >= TRACERBUFFER_SIZE_DATA){ 													\
-		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 						\
-		(trace_buffer)->local_offset_data = 0; 																						\
+#define traceBuffer_reserve_data(trace_buffer, trace_file, nb_data) 																							\
+	if ((trace_buffer)->local_offset_data + (nb_data) >= TRACERBUFFER_SIZE_DATA){ 																				\
+		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 													\
+		(trace_buffer)->local_offset_data = 0; 																													\
 	}
 
-#define traceBuffer_flush(trace_buffer, trace_file) 																				\
-	if ((trace_buffer)->local_offset_ins != 0){ 																					\
-		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 					\
-		(trace_buffer)->local_offset_ins = 0; 																						\
-	} 																																\
-	if ((trace_buffer)->local_offset_op != 0){ 																						\
-		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 						\
-		(trace_buffer)->local_offset_op = 0; 																						\
-	} 																																\
-	if ((trace_buffer)->local_offset_data != 0){ 																					\
-		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 						\
-		(trace_buffer)->local_offset_data = 0; 																						\
+#define traceBuffer_flush(trace_buffer, trace_file) 																											\
+	if ((trace_buffer)->local_offset_ins != 0){ 																												\
+		traceFiles_flush_instruction((trace_file), (trace_buffer)->buffer_ins, (trace_buffer)->local_offset_ins); 												\
+		(trace_buffer)->local_offset_ins = 0; 																													\
+	} 																																							\
+	if ((trace_buffer)->local_offset_op != 0){ 																													\
+		traceFiles_flush_operand((trace_file), (trace_buffer)->buffer_op, (trace_buffer)->local_offset_op); 													\
+		(trace_buffer)->local_offset_op = 0; 																													\
+	} 																																							\
+	if ((trace_buffer)->local_offset_data != 0){ 																												\
+		traceFiles_flush_data((trace_file), (trace_buffer)->buffer_data, (trace_buffer)->local_offset_data); 													\
+		(trace_buffer)->local_offset_data = 0; 																													\
 	}
 
-#define traceBuffer_commit_operand(trace_buffer, size) 																				\
-	(trace_buffer)->local_offset_op 	+= 1; 																						\
-	(trace_buffer)->local_offset_data 	+= (size); 																					\
-	(trace_buffer)->global_offset_op 	+= 1; 																						\
+#define traceBuffer_commit_operand(trace_buffer, size) 																											\
+	(trace_buffer)->local_offset_op 	+= 1; 																													\
+	(trace_buffer)->local_offset_data 	+= (size); 																												\
+	(trace_buffer)->global_offset_op 	+= 1; 																													\
 	(trace_buffer)->global_offset_data 	+= (size);
 
-#define traceBuffer_add_instruction(trace_buffer, trace_file, pc_, opcode_, nb_operand_) 											\
-	traceBuffer_reserve_operand((trace_buffer), (trace_file), (nb_operand_))														\
-	traceBuffer_reserve_instruction((trace_buffer), (trace_file), 1) 																\
- 																																	\
-	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].pc 				= (pc_); 										\
-	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].opcode 			= (opcode_); 									\
-	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].operand_offset 	= (trace_buffer)->global_offset_op; 			\
-	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].nb_operand 		= (nb_operand_); 								\
- 																																	\
+#define traceBuffer_add_instruction(trace_buffer, trace_file, pc_, opcode_, nb_operand_) 																		\
+	traceBuffer_reserve_operand((trace_buffer), (trace_file), (nb_operand_))																					\
+	traceBuffer_reserve_instruction((trace_buffer), (trace_file), 1) 																							\
+ 																																								\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].pc 				= (pc_); 																	\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].opcode 			= (opcode_); 																\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].operand_offset 	= (trace_buffer)->global_offset_op; 										\
+	(trace_buffer)->buffer_ins[(trace_buffer)->local_offset_ins].nb_operand 		= (nb_operand_); 															\
+ 																																								\
 	(trace_buffer)->local_offset_ins += 1;
 
-#define traceBuffer_add_read_register_operand(trace_buffer, regDesc, value)															\
-	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].type 			= OPERAND_REG_READ;									\
-	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].location.reg 	= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc);	\
-	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].size 			= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc); 	\
-	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].data_offset 		= (trace_buffer)->global_offset_data; 				\
-																																	\
-	*(uint32_t*)((trace_buffer)->buffer_data + (trace_buffer)->local_offset_data) = (value); 										\
-																																	\
+#define traceBuffer_add_read_register_operand(trace_buffer, regDesc, value)																						\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].type 				= (enum operandType)(OPERAND_REG_READ | (((regDesc) >> 21) & 0x00000018));	\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].location.reg 		= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc);							\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].size 				= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc); 							\
+	(trace_buffer)->buffer_op[(trace_buffer)->local_offset_op].data_offset 			= (trace_buffer)->global_offset_data; 										\
+																																								\
+	*(uint32_t*)((trace_buffer)->buffer_data + (trace_buffer)->local_offset_data) 	= (value); 																	\
+																																								\
 	traceBuffer_commit_operand((trace_buffer), ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc))
 
 struct tracer{

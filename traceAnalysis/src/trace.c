@@ -498,18 +498,22 @@ static char* variableRole_2_string(enum variableRole role){
 	return NULL;
 }
 
-static enum variableRole trace_analysis_get_operand_role(struct trace* trace, uint32_t index_ins, uint32_t index_op){
+static enum variableRole trace_analysis_get_operand_role(struct trace* trace, uint32_t index_op){
 	enum variableRole role = ROLE_UNKNOWN;
 
-	switch(trace->instructions[index_ins].opcode){
-		case XED_ICLASS_XOR : {
-			if (OPERAND_IS_MEM(trace->operands[index_op])){
-				role = ROLE_READ_DIRECT;
-			}
-			break;
+
+	if (OPERAND_IS_MEM(trace->operands[index_op])){
+		role = ROLE_READ_DIRECT;
+	}
+	else{
+		if (OPERAND_IS_BASE(trace->operands[index_op])){
+			role = ROLE_READ_BASE;
 		}
-		default : {
-			break;
+		else if (OPERAND_IS_INDEX(trace->operands[index_op])){
+			role = ROLE_READ_INDEX;
+		}
+		else{
+			role = ROLE_READ_DIRECT;
 		}
 	}
 
@@ -521,9 +525,51 @@ struct action{
 	enum variableRole 	role;
 };
 
-static struct array* trace_analysis_extract_instruction_seq(struct trace* trace, uint32_t* group, uint32_t* op_to_ins, uint32_t nb_operand, uint32_t nb_group){
+static uint32_t trace_analysis_extract_spec_seq(struct trace* trace, uint32_t* group, uint32_t group_id, uint32_t* op_to_ins, struct action* sequence, uint32_t sequence_size, uint32_t input, enum variableRole parent_role){
+	uint32_t j;
+	uint32_t nb_operand = trace_get_nb_operand(trace);
+	uint32_t seq_offset = 0;
+
+	for (j = 0; j < nb_operand; j++){
+		if (group[j] == group_id){
+			if (input && seq_offset == 0 && OPERAND_IS_WRITE(trace->operands[j])){
+				break;
+			}
+
+			if (seq_offset == sequence_size){
+				printf("ERROR: in %s, sequence size has been reached\n", __func__);
+				break;
+			}
+
+			/* we suppose that the previous MOV was a read ... we should make further verification */
+			if ((xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode == XED_ICLASS_MOV && OPERAND_IS_WRITE(trace->operands[j]) && sequence[seq_offset - 1].opcode == XED_ICLASS_MOV){
+				seq_offset --;
+			}
+			else{
+				if ((xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode == XED_ICLASS_MOV && (trace_analysis_get_operand_role(trace, j) == ROLE_READ_INDEX || trace_analysis_get_operand_role(trace, j) == ROLE_READ_BASE)){
+					seq_offset += trace_analysis_extract_spec_seq(trace, group, group[trace->instructions[op_to_ins[j]].operand_offset], op_to_ins, sequence + seq_offset, sequence_size - seq_offset, 0, trace_analysis_get_operand_role(trace, j));
+				}
+				else{
+					if (parent_role == ROLE_UNKNOWN || parent_role == ROLE_READ_DIRECT){
+						sequence[seq_offset].opcode = (xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode;
+						sequence[seq_offset ++].role = trace_analysis_get_operand_role(trace, j);
+					}
+					else{
+						if (trace_analysis_get_operand_role(trace, j) == ROLE_READ_DIRECT){
+							sequence[seq_offset].opcode = (xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode;
+							sequence[seq_offset ++].role = parent_role;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return seq_offset;
+}
+
+static struct array* trace_analysis_extract_instruction_seq(struct trace* trace, uint32_t* group, uint32_t* op_to_ins, uint32_t nb_group){
 	uint32_t 			i;
-	uint32_t 			j;
 	uint8_t 			ins_offset;
 	struct array* 		array;
 	struct action 		ins_sequence[TRACE_ANALYSIS_GRP_MAX_SIZE];
@@ -535,26 +581,7 @@ static struct array* trace_analysis_extract_instruction_seq(struct trace* trace,
 	}
 
 	for (i = 0; i < nb_group; i++){
-		for (j = 0, ins_offset = 0; j < nb_operand; j++){
-			if (group[j] == i + 1){
-				if (ins_offset == 0 && OPERAND_IS_WRITE(trace->operands[j])){
-					break;
-				}
-				/* we suppose that the previous MOV was a read ... we should make further verification */
-				if ((xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode == XED_ICLASS_MOV && OPERAND_IS_WRITE(trace->operands[j]) && ins_sequence[ins_offset - 1].opcode == XED_ICLASS_MOV){
-					ins_offset --;
-				}
-				else{
-					ins_sequence[ins_offset].opcode = (xed_iclass_enum_t)trace->instructions[op_to_ins[j]].opcode;
-					ins_sequence[ins_offset ++].role = trace_analysis_get_operand_role(trace, op_to_ins[j], j);
-				}
-			}
-
-			if (ins_offset == TRACE_ANALYSIS_GRP_MAX_SIZE - 1){
-				printf("ERROR: in %s, max number of instruction in sequence is reached\n", __func__);
-				break;
-			}
-		}
+		ins_offset = trace_analysis_extract_spec_seq(trace, group, i+1, op_to_ins, ins_sequence, TRACE_ANALYSIS_GRP_MAX_SIZE - 1, 1, ROLE_UNKNOWN);
 		if (ins_offset != 0){
 			ins_sequence[ins_offset].opcode = XED_ICLASS_INVALID;
 			if (array_add(array, &ins_sequence) < 0){
@@ -629,6 +656,7 @@ void trace_analyse_operand(struct trace* trace){
 		operands = trace_get_ins_operands(trace, i);
 
 		switch(trace->instructions[i].opcode){
+			/* je pense qu'avec les nouvelles informations ça ne devrait pas être trop dure de reécrire ça correctement */
 			case XED_ICLASS_MOV : {
 				struct operand* src_op = NULL;
 				struct operand* dst_op = NULL;
@@ -713,7 +741,7 @@ void trace_analyse_operand(struct trace* trace){
 	{
 		struct array* array;
 
-		array = trace_analysis_extract_instruction_seq(trace, group, op_to_ins, nb_operand, group_id_generator - 1);
+		array = trace_analysis_extract_instruction_seq(trace, group, op_to_ins, group_id_generator - 1);
 		if (array == NULL){
 			printf("ERROR: in %s, unable to extract instruction sequence\n", __func__);
 		}

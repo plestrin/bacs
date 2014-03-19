@@ -42,6 +42,8 @@
 #define OPERAND_IS_REG(op)				OPERAND_TYPE_IS_REG((op).type)
 #define OPERAND_IS_READ(op)				OPERAND_TYPE_IS_READ((op).type)
 #define OPERAND_IS_WRITE(op) 			OPERAND_TYPE_IS_WRITE((op).type)
+#define OPERAND_IS_BASE(op) 			((op).type == OPERAND_REG_READ_BASE)
+#define OPERAND_IS_INDEX(op) 			((op).type == OPERAND_REG_READ_INDEX)
 
 enum operandType{
 	OPERAND_INVALID 		= 0x00000000,
