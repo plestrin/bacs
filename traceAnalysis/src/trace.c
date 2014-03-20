@@ -342,7 +342,7 @@ static void trace_clean_(struct trace* trace){
 
 /* Beginning of the experimental party */
 
-static void trace_analysis_forward_propagate_mem_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
+static void trace_analysis_propagate_mem_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
 	uint32_t i;
 
 	if (nb_operand > 1){
@@ -372,45 +372,44 @@ static void trace_analysis_forward_propagate_mem_group(struct operand* operands,
 	}
 }
 
-static void trace_analysis_forward_propagate_reg_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
+static void trace_analysis_propagate_reg_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
 	uint32_t i;
+	uint32_t j;
+	uint32_t k;
+	uint8_t other_register[NB_REGISTER];
 
 	if (nb_operand > 1){
 		if (group[0] && OPERAND_IS_REG(operands[0])){
-			for (i = 1; i < nb_operand; i++){
-				if (OPERAND_IS_REG(operands[i])){
-					/* this test is weak improve later */
-					if (reg_is_contained_in((enum reg)operands[i].location.reg, (enum reg)operands[0].location.reg)){
-						if (OPERAND_IS_READ(operands[i])){
-							group[i] = group[0];
-						}
-						else{
-							break;
-						}
-					}
+			for (j =0; j < NB_REGISTER; j++){
+				if (reg_is_contained_in((enum reg)operands[0].location.reg, (enum reg)(j + 1))){
+					other_register[j] = 1;
+				}
+				else{
+					other_register[j] = 0;
 				}
 			}
-		}
-		else{
-			printf("ERROR: in %s, incorrect group value (%u) to propagate or operand type\n", __func__, group[0]);
-		}
-	}
-}
 
-static void trace_analysis_backward_propagate_reg_group(struct operand* operands, uint32_t* group, uint32_t nb_operand){
-	uint32_t i;
-
-	if (nb_operand > 1){
-		if (group[nb_operand - 1] && OPERAND_IS_REG(operands[nb_operand - 1])){
-			for (i = nb_operand - 1; i > 0; i--){
-				if (OPERAND_IS_REG(operands[i - 1])){
-					/* this test is weak improve later */
-					if (reg_is_contained_in((enum reg)operands[i - 1].location.reg, (enum reg)operands[nb_operand - 1].location.reg)){
-						if (OPERAND_IS_READ(operands[i - 1])){
-							group[i - 1] = group[nb_operand - 1];
-						}
-						else{
-							break;
+			for (i = 1; i < nb_operand; i++){
+				if (OPERAND_IS_REG(operands[i])){
+					for (j = 0; j < NB_REGISTER; j++){
+						if (other_register[j]){
+							if (reg_is_contained_in((enum reg)operands[i].location.reg, (enum reg)(j + 1))){
+								if ((group[i] == 0 || reg_is_contained_in((enum reg)operands[i].location.reg, (enum reg)operands[0].location.reg)) && OPERAND_IS_READ(operands[i])){
+									group[i] = group[0];
+									break;
+								}
+								else if (group[i]){
+									printf("WARNING: in %s, the register %s already belongs to a group\n", __func__, reg_2_string((enum reg)operands[i].location.reg));
+									other_register[j] = 0;
+								}
+								else{
+									for (k = 0; k < NB_REGISTER; k++){
+										if (reg_is_contained_in((enum reg)(k + 1), (enum reg)operands[i].location.reg)){
+											other_register[k] = 0;
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -478,7 +477,7 @@ static void trace_analysis_print_group(struct trace* trace, uint32_t* group, uin
 
 #include "array.h"
 
-#define TRACE_ANALYSIS_GRP_MAX_SIZE 32
+#define TRACE_ANALYSIS_GRP_MAX_SIZE 64
 
 enum variableRole{
 	ROLE_UNKNOWN,
@@ -490,9 +489,9 @@ enum variableRole{
 static char* variableRole_2_string(enum variableRole role){
 	switch(role){
 		case ROLE_UNKNOWN 			: {return "UN";}
-		case ROLE_READ_DIRECT 		: {return "R_DI";}
-		case ROLE_READ_BASE 		: {return "R_BA";}
-		case ROLE_READ_INDEX 		: {return "R_IN";}
+		case ROLE_READ_DIRECT 		: {return "DI";}
+		case ROLE_READ_BASE 		: {return "BA";}
+		case ROLE_READ_INDEX 		: {return "IN";}
 	}
 
 	return NULL;
@@ -668,17 +667,16 @@ void trace_analyse_operand(struct trace* trace){
 						if (!group[trace->instructions[i].operand_offset + j]){
 							group[trace->instructions[i].operand_offset + j] = group_id_generator++;
 							if (OPERAND_IS_MEM(operands[j])){
-								trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+								trace_analysis_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 							}
 							else if (OPERAND_IS_REG(operands[j])){
-								trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
-								trace_analysis_backward_propagate_reg_group(trace->operands, group, trace->instructions[i].operand_offset + j + 1);
+								trace_analysis_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 							}
 							else{
 								printf("ERROR: in %s, incorrect operand type\n", __func__);
 							}
 						}
-						if (src_op == NULL){
+						if (src_op == NULL && !OPERAND_IS_BASE(operands[j]) && !OPERAND_IS_INDEX(operands[j])){
 							src_op = operands + j;
 							src_grp = group[trace->instructions[i].operand_offset + j];
 						}
@@ -689,10 +687,10 @@ void trace_analyse_operand(struct trace* trace){
 							if (src_op != NULL && src_op->size == dst_op->size && !memcmp(trace->data + src_op->data_offset, trace->data + dst_op->data_offset, src_op->size)){
 								group[trace->instructions[i].operand_offset + j] = src_grp;
 								if (OPERAND_IS_MEM(operands[j])){
-									trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+									trace_analysis_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 								}
 								else if (OPERAND_IS_REG(operands[j])){
-									trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+									trace_analysis_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 								}
 								else{
 									printf("ERROR: in %s, incorrect operand type\n", __func__);
@@ -718,13 +716,10 @@ void trace_analyse_operand(struct trace* trace){
 					if (!group[trace->instructions[i].operand_offset + j]){
 						group[trace->instructions[i].operand_offset + j] = group_id_generator++;
 						if (OPERAND_IS_MEM(operands[j])){
-							trace_analysis_forward_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
+							trace_analysis_propagate_mem_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 						}
 						else if (OPERAND_IS_REG(operands[j])){
-							trace_analysis_forward_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
-							if (OPERAND_IS_READ(operands[j])){
-								trace_analysis_backward_propagate_reg_group(trace->operands, group, trace->instructions[i].operand_offset + j + 1);
-							}
+							trace_analysis_propagate_reg_group(trace->operands + trace->instructions[i].operand_offset + j, group + trace->instructions[i].operand_offset + j, nb_operand - (trace->instructions[i].operand_offset + j));
 						}
 						else{
 							printf("ERROR: in %s, incorrect operand type\n", __func__);

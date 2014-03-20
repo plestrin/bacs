@@ -7,7 +7,8 @@
 #include "instruction.h"
 #include "trace.h"
 
-#define LOOP_MINIMAL_CORE_LENGTH 3 /* must be larger or equal than one */
+#define LOOP_MINIMAL_CORE_LENGTH 3 		/* Length of the iteration body: must be larger or equal than one */
+#define LOOP_MAXIMAL_CORE_LENGTH 500 	/* Length of the iteration body */
 
 struct loop{
 	uint32_t 			offset;

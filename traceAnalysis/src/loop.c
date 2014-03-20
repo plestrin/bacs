@@ -63,7 +63,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	}
 
 	#ifdef VERBOSE
-	printf("LoopEngine: %u element(s), loop core min length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH);
+	printf("LoopEngine: %u element(s), loop core min length: %u, max length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH, LOOP_MAXIMAL_CORE_LENGTH);
 	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, engine->trace->nb_instruction - 2*LOOP_MINIMAL_CORE_LENGTH + 1);
 	#endif
 
@@ -73,7 +73,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 			stack = stack ^ engine->trace->instructions[j + 1].opcode;
 		}
 
-		for (; j < engine->trace->nb_instruction - 1; j += 2){
+		for (; j < i + (2 * LOOP_MAXIMAL_CORE_LENGTH) - 1 && j < engine->trace->nb_instruction - 1; j += 2){
 			stack = stack ^ engine->trace->instructions[j].opcode;
 			stack = stack ^ engine->trace->instructions[j + 1].opcode;
 			if (stack == 0){
