@@ -383,6 +383,19 @@ void pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1(A
 	tracer.trace_buffer->pending_write[1].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
 }
 
+void pintool_instruction_analysis_1write_reg_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, UINT32 regDesc_read1, UINT32 value_read1, UINT32 regDesc_read2, UINT32 value_read2, UINT32 regDesc_read3, UINT32 value_read3){
+	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, 16)
+
+	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 4)
+
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read1, value_read1)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read2, value_read2)
+	traceBuffer_add_read_register_operand(tracer.trace_buffer, regDesc_read3, value_read3)
+
+	tracer.trace_buffer->pending_write[0].location.reg 										= ANALYSIS_REGISTER_DESCRIPTOR_GET_REG(regDesc_write);
+	tracer.trace_buffer->pending_write[0].size 												= ANALYSIS_REGISTER_DESCRIPTOR_GET_SIZE(regDesc_write);
+}
+
 void pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1(ADDRINT pc, UINT32 opcode, UINT32 regDesc_write, ADDRINT address_mem, UINT32 size_mem, UINT32 regDesc_read1, UINT32 value_reg_read1, UINT32 regDesc_read2, UINT32 value_reg_read2, UINT32 regDesc_read3, UINT32 value_reg_read3){
 	traceBuffer_reserve_data(tracer.trace_buffer, tracer.trace_file, size_mem + 16)
 
@@ -888,7 +901,6 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_END);
 						break; 
 					}
-					#if 0
 					case ANALYSIS_SELECTOR_1MR_1MW_2RR_1RW 	: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
@@ -908,9 +920,21 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_END);
 						break; 
 					}
-					#endif
 					case ANALYSIS_SELECTOR_3RR_1RW			: {
-						printf("ERROR: in %s, this case (3RR_1RW) is not supported\n", __func__);
+						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_3read_reg_p1),
+							IARG_INST_PTR,																															/* pc 					*/
+							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
+							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
+							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
+							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
+							IARG_END);
+						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
+							IARG_END);
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_3RR_1RW 		: {
@@ -976,18 +1000,17 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_END);
 						break;
 					}
-					#if 0
 					case ANALYSIS_SELECTOR_3RR_2RW 			: {
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
-							ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),									/* RW1 desc 			*/
-							ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[1]), pintool_REG_size(write_reg[1]), 0),									/* RW2 desc 			*/
-							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]) ,	/* RR1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[1]), pintool_REG_size(write_reg[1]), 0),						/* RW2 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
-							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]) ,	/* RR2 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
-							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]) ,	/* RR3 desc 			*/
+							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
 							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
 						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
@@ -996,7 +1019,6 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_END);
 						break;
 					}
-					#endif
 					case ANALYSIS_SELECTOR_3RW 				: {
 						printf("ERROR: in %s, this case (3RW) is not supported\n", __func__);
 						break;
@@ -1041,7 +1063,7 @@ void pintool_instrumentation_img(IMG image, void* val){
 					break;
 				}
 				else{
-					for (routine= SEC_RtnHead(section); RTN_Valid(routine); routine = RTN_Next(routine)){
+					for (routine = SEC_RtnHead(section); RTN_Valid(routine); routine = RTN_Next(routine)){
 						white_listed |= (whiteList_search(tracer.white_list, RTN_Name(routine).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
 						cm_rtn = codeMap_add_routine(tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Range(routine), RTN_Name(routine).c_str(), white_listed);
 						if (cm_rtn == NULL){

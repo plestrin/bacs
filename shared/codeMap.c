@@ -479,10 +479,8 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 			if (section != NULL){
 				fprintf(file, ",");
 			}
-			else{
-				fprintf(file, "]}");
-			}
-		}	
+		}
+		fprintf(file, "]}");
 	}
 }
 

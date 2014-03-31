@@ -71,6 +71,7 @@ struct codeMap* cmReaderJSON_parse(const char* directory_path){
 	void*				buffer;
 	uint64_t 			size;
 	yajl_handle 		json_parser_handle;
+	unsigned char* 		json_parser_error;
 	yajl_status 		status;
 	struct cmReaderJSON cm_reader;
 	char 				file_name[CMREADERJSON_PATH_MAX_LENGTH];
@@ -102,7 +103,9 @@ struct codeMap* cmReaderJSON_parse(const char* directory_path){
 
 	status = yajl_parse(json_parser_handle, buffer, size);
 	if (status != yajl_status_ok){
-		printf("ERROR: in %s, YAJL parser return an error status\n", __func__);
+		json_parser_error = yajl_get_error(json_parser_handle, 1, buffer, size);
+		printf("ERROR: in %s, YAJL parser return an error status:\n%s\n", __func__, (char*)json_parser_error);
+		yajl_free_error(json_parser_handle, json_parser_error);
 	}
 
 	yajl_free(json_parser_handle);
