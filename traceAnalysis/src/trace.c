@@ -81,7 +81,7 @@ void trace_check(struct trace* trace){
 	for (i = 0, expected_offset = 0; i < trace->nb_instruction; i++){
 		if (trace->instructions[i].nb_operand != 0){
 			if (trace->instructions[i].operand_offset != expected_offset){
-				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u\n", __func__, i, expected_offset, trace->instructions[i].operand_offset);
+				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u - (previous instruction nb operand(s): %u, opcode: %s, offset: %u)\n", __func__, i, expected_offset, trace->instructions[i].operand_offset, trace->instructions[i - 1].nb_operand, instruction_opcode_2_string(trace->instructions[i - 1].opcode), trace->instructions[i - 1].operand_offset);
 			}
 			expected_offset = trace->instructions[i].operand_offset + trace->instructions[i].nb_operand;
 			if (expected_offset * sizeof(struct operand) > trace->alloc_size_op){

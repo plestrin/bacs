@@ -13,11 +13,13 @@
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
+#define DEFAULT_DYN_OFFSET_VALUE 		"0"
 
 struct tracer	tracer;
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
 KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
+KNOB<UINT32> 	knob_dyn_offset(KNOB_MODE_WRITEONCE, "pintool", "s", DEFAULT_DYN_OFFSET_VALUE, "(Optional) Start tracing after X dynamic instruction(s)");
 
 static inline uint8_t pintool_monitor_REG(REG reg){
 	if (reg == REG_EAX ||
@@ -92,6 +94,20 @@ static inline enum reg pintool_REG_2_reg(REG reg){
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
+
+void pintool_instruction_analysis_debug(UINT32 value){
+	printf("BOUMMMMMMMMMMMMMMMMMMMMMMMMMM: 0x%08x\n", value);
+}
+
+ADDRINT pintool_instruction_analysis_test_dyn_offset(){
+	return tracer.dyn_offset == 0;
+}
+
+ADDRINT pintool_instruction_analysis_test_and_dec_dyn_offset(){
+	ADDRINT result = tracer.dyn_offset == 0;
+	tracer.dyn_offset -= 0x00000001 & (!result);
+	return result;
+}
 
 void pintool_instruction_analysis_no_arg(ADDRINT pc, UINT32 opcode){
 	traceBuffer_add_instruction(tracer.trace_buffer, tracer.trace_file, pc, opcode, 0)
@@ -538,7 +554,6 @@ void pintool_routine_analysis(void* cm_routine_ptr){
 
 void pintool_instrumentation_trace(TRACE trace, void* arg){
 	void (*ins_insertCall)	(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
-	IPOINT 					ipoint_p2;
 	uint32_t 				selector;
 	uint32_t 				i;
 	REG 					read_reg[ANALYSIS_MAX_OPERAND_REG_READ];
@@ -551,21 +566,23 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
 		if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
 			for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
-				ipoint_p2 		= IPOINT_BEFORE;
-				selector 		= ANALYSIS_SELECTOR_NO_OPERAND;
+				selector = ANALYSIS_SELECTOR_NO_OPERAND;
 
 				if (INS_IsPredicated(instruction)){
-					ins_insertCall = INS_InsertPredicatedCall;
+					if (tracer.dyn_offset){
+						ins_insertCall = INS_InsertThenPredicatedCall;
+					}
+					else{
+						ins_insertCall = INS_InsertPredicatedCall;
+					}
 				}
 				else{
-					ins_insertCall = INS_InsertCall;
-				}
-				
-				if (INS_HasFallThrough(instruction)){
-					ipoint_p2 = IPOINT_AFTER;
-				}
-				else if (INS_IsBranchOrCall(instruction)){
-					ipoint_p2 = IPOINT_TAKEN_BRANCH;
+					if (tracer.dyn_offset){
+						ins_insertCall = INS_InsertThenCall;
+					 }
+					 else{
+					 	ins_insertCall = INS_InsertCall;
+					 }
 				}
 
 				tmp_reg = INS_MemoryBaseReg(instruction);
@@ -640,6 +657,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 
 				switch(selector){
 					case ANALYSIS_SELECTOR_NO_OPERAND		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction), 																									/* opcode 				*/
@@ -647,6 +667,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR				: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -660,16 +683,34 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW 				: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
 							IARG_MEMORYWRITE_EA,																													/* @ MW1 				*/
 							IARG_MEMORYWRITE_SIZE,																													/* size MW1 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_p1), 
 							IARG_INST_PTR, 																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -678,7 +719,19 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_MEMORYREAD_EA, 																													/* @ MR1 				*/
 							IARG_MEMORYREAD_SIZE,																													/* size MR1 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						
 						break;
 					}
 					case ANALYSIS_SELECTOR_2MR_1MW			: {
@@ -686,6 +739,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1RR 				: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -695,6 +751,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RR			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_1read_reg),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -706,6 +765,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_1RR			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -714,10 +776,24 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32,ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_1RR 		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_1read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -728,10 +804,24 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR 				: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_reg),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -743,6 +833,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_2RR 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1read_mem_2read_reg),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -756,6 +849,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_2RR 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -766,10 +862,24 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_2RR 		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1read_mem_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -782,7 +892,18 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_3RR 				: {
@@ -794,6 +915,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_3RR 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_3read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -806,7 +930,18 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
 							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_Xread_p2), IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_3RR 		: {
@@ -814,17 +949,36 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1RW 				: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(write_reg[0]), pintool_REG_size(write_reg[0]), 0),						/* RW1 desc 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RW 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -832,9 +986,22 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_MEMORYREAD_EA,																														/* @ MR1  				*/
 							IARG_MEMORYREAD_SIZE,																													/* MR1 size 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MW_1RW 			: {
@@ -842,6 +1009,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1RR_1RW			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -849,12 +1019,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_1RR_1RW 		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_1read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -864,12 +1050,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR_1RW			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -879,12 +1081,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_2RR_1RW 		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -896,12 +1114,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break; 
 					}
 					case ANALYSIS_SELECTOR_1MR_1MW_2RR_1RW 	: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_1read_mem_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -915,12 +1149,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_mem_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break; 
 					}
 					case ANALYSIS_SELECTOR_3RR_1RW			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_3read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -932,12 +1182,28 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
 							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_1MR_3RR_1RW 		: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_1write_reg_1read_mem_3read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -951,9 +1217,22 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
 							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_1write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RW 				: {
@@ -969,6 +1248,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						break;
 					}
 					case ANALYSIS_SELECTOR_1RR_2RW 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_1read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -977,13 +1259,30 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[0]), pintool_REG_size(read_reg[0]), read_register_type[0]),	/* RR1 desc 			*/
 							IARG_REG_VALUE, read_reg[0],																											/* RR1 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_2RR_2RW 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_2read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -994,13 +1293,30 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[1]), pintool_REG_size(read_reg[1]), read_register_type[1]),	/* RR2 desc 			*/
 							IARG_REG_VALUE, read_reg[1],																											/* RR2 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_3RR_2RW 			: {
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_2write_reg_3read_reg_p1),
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction),																									/* opcode 				*/
@@ -1013,10 +1329,24 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 							IARG_UINT32, ANALYSIS_PACK_REGISTER_DESCRIPTOR(pintool_REG_2_reg(read_reg[2]), pintool_REG_size(read_reg[2]), read_register_type[2]),	/* RR3 desc 			*/
 							IARG_REG_VALUE, read_reg[2],																											/* RR3 value 			*/
 							IARG_END);
-						ins_insertCall(instruction, ipoint_p2, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
-							IARG_REG_VALUE, write_reg[0],																											/* RW1 value 			*/
-							IARG_REG_VALUE, write_reg[1],																											/* RW2 value 			*/
-							IARG_END);
+						if (INS_IsBranchOrCall(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
+						if (INS_HasFallThrough(instruction)){
+							if (tracer.dyn_offset){
+								INS_InsertIfCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+							}
+							ins_insertCall(instruction, IPOINT_AFTER, AFUNPTR(pintool_instruction_analysis_2write_reg_Xread_p2),
+								IARG_REG_VALUE, write_reg[0],																										/* RW1 value 			*/
+								IARG_REG_VALUE, write_reg[1],																										/* RW2 value 			*/
+								IARG_END);
+						}
 						break;
 					}
 					case ANALYSIS_SELECTOR_3RW 				: {
@@ -1033,6 +1363,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					}
 					default 								: {
 						printf("ERROR: in %s, invalid analysis selector: 0x%08x ins: %s\n", __func__, selector, INS_Mnemonic(instruction).c_str());
+						if (tracer.dyn_offset){
+							INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+						}
 						ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
 							IARG_INST_PTR,																															/* pc 					*/
 							IARG_UINT32, INS_Opcode(instruction), 																									/* opcode 				*/
@@ -1087,7 +1420,9 @@ void pintool_instrumentation_img(IMG image, void* val){
 /* Init function                                                    	 */
 /* ===================================================================== */
 
-int pintool_init(const char* trace_dir_name, const char* white_list_file_name){
+int pintool_init(const char* trace_dir_name, const char* white_list_file_name, const uint32_t dyn_offset){
+	tracer.dyn_offset = dyn_offset;
+
 	tracer.trace_file = traceFiles_create(trace_dir_name);
 	if (tracer.trace_file == NULL){
 		printf("ERROR: in %s, unable to create trace file\n", __func__);
@@ -1170,9 +1505,9 @@ int main(int argc, char * argv[]){
 		return -1;
 	}
 
-	if (pintool_init(knob_trace.Value().c_str(), knob_white_list.Value().c_str())){
+	if (pintool_init(knob_trace.Value().c_str(), knob_white_list.Value().c_str(), knob_dyn_offset.Value())){
 		printf("ERROR: in %s, unable to init the tool\n", __func__);
-		printf("%s",  KNOB_BASE::StringKnobSummary().c_str());
+		printf("%s", KNOB_BASE::StringKnobSummary().c_str());
 		return -1;
 	}
 

@@ -2,8 +2,9 @@ TEST_DIRECTORY			:= test/
 TOMCRYPT_DIRECTORY 		:= tomCrypt/
 CRYPTOPP_DIRECTORY 		:= cryptopp/
 GLADMAN_DIRECTORY 		:= gladman/
+OPENSSL_DIRECTORY 		:= openssl/
 
-all: test tomCrypt cryptopp gladman
+all: test tomCrypt cryptopp gladman openssl
 
 test:
 	@ cd $(TEST_DIRECTORY) && $(MAKE)
@@ -17,10 +18,14 @@ cryptopp:
 gladman:
 	@ cd $(GLADMAN_DIRECTORY) && $(MAKE)
 
-.PHONY: all clean example tomCrypt cryptopp gladman
+openssl:
+	@ cd $(OPENSSL_DIRECTORY) && $(MAKE)
+
+.PHONY: all clean example tomCrypt cryptopp gladman openssl
 
 clean:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE) clean
 	@ cd $(TEST_DIRECTORY) && $(MAKE) clean
 	@ cd $(CRYPTOPP_DIRECTORY) && $(MAKE) clean
 	@ cd $(GLADMAN_DIRECTORY) && $(MAKE) clean
+	@ cd $(OPENSSL_DIRECTORY) && $(MAKE) clean

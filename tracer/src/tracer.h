@@ -100,6 +100,7 @@ struct tracer{
 	struct whiteList*			white_list;
 	struct traceFiles* 			trace_file;
 	struct traceBuffer*			trace_buffer;
+	uint32_t 					dyn_offset;
 };
 
 #define ANALYSIS_REGISTER_READ_STD 		0x00
