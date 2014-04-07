@@ -59,8 +59,6 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 		return -1;
 	}
 
-
-
 	return 0;
 }
 

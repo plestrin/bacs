@@ -56,7 +56,6 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	struct workPercent 		work;
 	#endif
 
-
 	if (array_init(&token_array, sizeof(struct loopToken))){
 		printf("ERROR: in %s, unable to init token array\n", __func__);
 		return -1;
@@ -157,7 +156,13 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	return 0;
 }
 
-int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
+#define loop_include_in(a, b) 		(((a).offset >= (b).offset) && ((a).offset + ((a).length * (a).nb_iteration) + (a).epilogue <= (b).offset + ((b).length * (b).nb_iteration) + (b).epilogue))
+#define loop_not_include(a, b) 		(((a).offset < (b).offset) || ((a).offset + ((a).length * (a).nb_iteration) + (a).epilogue > (b).offset + ((b).length * (b).nb_iteration) + (b).epilogue))
+#define loop_nested_in(a, b) 		((((a).offset - (b).offset) % (b).length) + ((a).length * (a).nb_iteration) + (a).epilogue <= (b).length)
+#define loop_not_nested_in(a, b) 	((((a).offset - (b).offset) % (b).length) + ((a).length * (a).nb_iteration) + (a).epilogue > (b).length)
+#define loop_epilogue_of(a, b)		(((a).offset == 1 + (b).offset + (b).epilogue) && ((a).length == (b).length) && ((a).nb_iteration == (b).nb_iteration))
+
+int32_t loopEngine_remove_redundant_loop_strict(struct loopEngine* engine){
 	uint32_t 		i;
 	uint32_t 		counter;
 	struct loop* 	realloc_loops;
@@ -166,7 +171,7 @@ int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
 
 		for (i = 1, counter = 1; i < engine->nb_loop; i++){
-			if (engine->loops[i].offset + (engine->loops[i].length * engine->loops[i].nb_iteration) + engine->loops[i].epilogue > engine->loops[counter - 1].offset + (engine->loops[counter - 1].length * engine->loops[counter - 1].nb_iteration) + engine->loops[counter - 1].epilogue){
+			if (loop_not_include(engine->loops[i], engine->loops[counter - 1])){
 				if (i != counter){
 					memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
 				}
@@ -184,29 +189,32 @@ int32_t loopEngine_remove_redundant_loop(struct loopEngine* engine){
 		}
 
 		#ifdef VERBOSE
-		printf("LoopEngine: removed redundant loop(s) -> remaining %u loop(s)\n", engine->nb_loop);
+		printf("LoopEngine: removed redundant loop(s) STRICT -> remaining %u loop(s)\n", engine->nb_loop);
 		#endif
 	}
 
 	return 0;
 }
 
-/* We expect that loopEngine_remove_redundant_loop has just been previously run */
-int32_t loopEngine_pack_epilogue(struct loopEngine* engine){
+int32_t loopEngine_remove_redundant_loop_packed(struct loopEngine* engine){
 	uint32_t 		i;
 	uint32_t 		counter;
 	struct loop* 	realloc_loops;
 
 	if (engine->loops != NULL){
+		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
+
 		for (i = 1, counter = 1; i < engine->nb_loop; i++){
-			if (engine->loops[i].offset == 1 + engine->loops[counter - 1].offset + engine->loops[counter -1].epilogue && engine->loops[i].length == engine->loops[counter - 1].length && engine->loops[i].nb_iteration == engine->loops[counter - 1].nb_iteration){
-				engine->loops[counter - 1].epilogue ++;
-			}
-			else{
-				if (i != counter){
-					memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
+			if (loop_not_include(engine->loops[i], engine->loops[counter - 1])){
+				if (loop_epilogue_of(engine->loops[i], engine->loops[counter - 1])){
+					engine->loops[counter - 1].epilogue ++;
 				}
-				counter ++;
+				else{
+					if (i != counter){
+						memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
+					}
+					counter ++;
+				}
 			}
 		}
 
@@ -220,7 +228,66 @@ int32_t loopEngine_pack_epilogue(struct loopEngine* engine){
 		}
 
 		#ifdef VERBOSE
-		printf("LoopEngine: packed epilogue-> remaining %u loop(s)\n", engine->nb_loop);
+		printf("LoopEngine: removed redundant loop(s) PACKED -> remaining %u loop(s)\n", engine->nb_loop);
+		#endif
+	}
+
+	return 0;
+}
+
+int32_t loopEngine_remove_redundant_loop_nested(struct loopEngine* engine){
+	uint32_t 		i;
+	uint32_t 		j;
+	uint32_t 		counter;
+	uint32_t 		min_overlapping_index;
+	uint8_t 		redundant;
+	uint8_t 		epilogue;
+	struct loop* 	realloc_loops;
+
+	if (engine->loops != NULL){
+		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
+
+		for (i = 1, counter = 1, min_overlapping_index = 0; i < engine->nb_loop; i++){
+			for (j = counter, redundant = 0; j > min_overlapping_index; j--){
+				if (loop_include_in(engine->loops[i], engine->loops[j - 1]) && loop_not_nested_in(engine->loops[i], engine->loops[j - 1])){
+					redundant = 1;
+					break;
+				}
+			}
+
+			if (!redundant){
+				for (j = counter, epilogue = 0; j > min_overlapping_index; j--){
+					if (loop_epilogue_of(engine->loops[i], engine->loops[j - 1])){
+						engine->loops[j - 1].epilogue ++;
+						epilogue = 1;
+						break;
+					}
+				}
+
+				if (!epilogue){
+					if (i != counter){
+						memcpy(engine->loops + counter, engine->loops + i, sizeof(struct loop));
+					}
+					counter ++;
+				}
+			}
+
+			while (engine->loops[min_overlapping_index].offset + (engine->loops[min_overlapping_index].length * engine->loops[min_overlapping_index].nb_iteration) + engine->loops[min_overlapping_index].epilogue < engine->loops[i].offset){
+				min_overlapping_index ++;
+			}
+		}
+
+		engine->nb_loop = counter;
+		realloc_loops = (struct loop*)realloc(engine->loops, engine->nb_loop * sizeof(struct loop));
+		if (realloc_loops == NULL){
+			printf("ERROR: in %s, unable to realloc loops\n", __func__);
+		}
+		else{
+			engine->loops = realloc_loops;
+		}
+
+		#ifdef VERBOSE
+		printf("LoopEngine: removed redundant loop(s) NESTED -> remaining %u loop(s)\n", engine->nb_loop);
 		#endif
 	}
 

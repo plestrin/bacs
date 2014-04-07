@@ -57,8 +57,7 @@ int main(int argc, char** argv){
 
 	/* loop specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_remove_redundant)
-	ADD_CMD_TO_INPUT_PARSER(parser, "pack epilogue", 			"Pack loop epilogue (must be run after \"remove redundant loop\")", NULL, 		INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_pack_epilogue)
+	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					"Removing method", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_remove_redundant)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_delete)
@@ -323,21 +322,28 @@ void analysis_loop_create(struct analysis* analysis){
 	}
 }
 
-void analysis_loop_remove_redundant(struct analysis* analysis){
+void analysis_loop_remove_redundant(struct analysis* analysis, char* arg){
 	if (analysis->loop_engine != NULL){
-		if (loopEngine_remove_redundant_loop(analysis->loop_engine)){
-			printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
+		if (!strcmp(arg, "STRICT")){
+			if (loopEngine_remove_redundant_loop_strict(analysis->loop_engine)){
+				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
+			}
 		}
-	}
-	else{
-		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
-	}
-}
-
-void analysis_loop_pack_epilogue(struct analysis* analysis){
-	if (analysis->loop_engine != NULL){
-		if (loopEngine_pack_epilogue(analysis->loop_engine)){
-			printf("ERROR: in %s, unable to pack epilogue\n", __func__);
+		else if (!strcmp(arg, "PACKED")){
+			if (loopEngine_remove_redundant_loop_packed(analysis->loop_engine)){
+				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
+			}
+		}
+		else if (!strcmp(arg, "NESTED")){
+			if (loopEngine_remove_redundant_loop_nested(analysis->loop_engine)){
+				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
+			}
+		}
+		else{
+			printf("Expected remove redundant loop specifier:\n");
+			printf(" - \"STRICT\" : nested loop(s) are deleted. No epilogue packing\n");
+			printf(" - \"PACKED\" : nested loop(s) are deleted. Epilogue packing\n");
+			printf(" - \"NESTED\" : nested loop(s) are not deleted. Epilogue packing\n");
 		}
 	}
 	else{
