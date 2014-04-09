@@ -235,27 +235,55 @@ int32_t loopEngine_remove_redundant_loop_packed(struct loopEngine* engine){
 	return 0;
 }
 
+#define LOOP_MAX_NB_DOMINANT_LOOP 16
+
 int32_t loopEngine_remove_redundant_loop_nested(struct loopEngine* engine){
 	uint32_t 		i;
 	uint32_t 		j;
+	uint32_t 		k;
 	uint32_t 		counter;
 	uint32_t 		min_overlapping_index;
-	uint8_t 		redundant;
 	uint8_t 		epilogue;
 	struct loop* 	realloc_loops;
+	uint32_t 		dominant_loop_index[LOOP_MAX_NB_DOMINANT_LOOP];
+	uint8_t 		dominant_loop_state[LOOP_MAX_NB_DOMINANT_LOOP];
+	uint32_t 		nb_dominant_loop;
+	uint32_t 		nb_true_dominant_loop;
 
 	if (engine->loops != NULL){
 		qsort(engine->loops, engine->nb_loop, sizeof(struct loop), loopEngine_sort_redundant_loop);
 
 		for (i = 1, counter = 1, min_overlapping_index = 0; i < engine->nb_loop; i++){
-			for (j = counter, redundant = 0; j > min_overlapping_index; j--){
-				if (loop_include_in(engine->loops[i], engine->loops[j - 1]) && loop_not_nested_in(engine->loops[i], engine->loops[j - 1])){
-					redundant = 1;
-					break;
+			for (j = counter, nb_dominant_loop = 0, nb_true_dominant_loop = 0; j > min_overlapping_index; j--){
+				if (loop_include_in(engine->loops[i], engine->loops[j - 1])){
+					if (loop_nested_in(engine->loops[i], engine->loops[j - 1])){
+						if (nb_true_dominant_loop){
+							for (k = 0; k < nb_dominant_loop; k++){
+								if (dominant_loop_state[k] && loop_not_nested_in(engine->loops[dominant_loop_index[k]], engine->loops[j - 1])){
+									dominant_loop_state[k] = 0;
+									nb_true_dominant_loop --;
+								}
+							}
+						}
+						else{
+							break;
+						}
+					}
+					else{
+						if (nb_dominant_loop < LOOP_MAX_NB_DOMINANT_LOOP){
+							dominant_loop_index[nb_dominant_loop] = j - 1;
+							dominant_loop_state[nb_dominant_loop] = 1;
+							nb_dominant_loop ++;
+							nb_true_dominant_loop ++;
+						}
+						else{
+							printf("ERROR: in %s, constant LOOP_MAX_NB_DOMINANT_LOOP=%u is too small, increment\n", __func__, LOOP_MAX_NB_DOMINANT_LOOP);
+						}
+					}
 				}
 			}
 
-			if (!redundant){
+			if (nb_true_dominant_loop == 0){
 				for (j = counter, epilogue = 0; j > min_overlapping_index; j--){
 					if (loop_epilogue_of(engine->loops[i], engine->loops[j - 1])){
 						engine->loops[j - 1].epilogue ++;
