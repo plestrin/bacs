@@ -1,5 +1,5 @@
 PROG_NAME		:= analysis
-DEBUG 			:= 1
+DEBUG 			:= 0
 VERBOSE 		:= 1
 ARCHI			:= ARCH_32
 CC				:= gcc

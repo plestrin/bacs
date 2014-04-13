@@ -40,85 +40,92 @@ int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace){
 	return 0;
 }
 
+#define PREDICATE_NOT_EQUAL(a, b)		((((a) - (b)) | ((b) - (a))) >> 31)
+#define PREDICATE_EQUAL_ZERO(a) 		((~((a) |(-(a)))) >> 31)
+
 int32_t loopEngine_process(struct loopEngine* engine){
 	uint32_t 				i;
 	uint32_t 				j;
 	uint32_t 				k;
-	uint32_t 				stack;
-	uint32_t 				length;
-	uint8_t 				loop;
-	uint32_t 				nb_iteration;
 	struct array 			token_array;
 	struct loopToken 		token;
 	struct loopToken* 		token_pointer;
 	uint32_t 				iteration_counter = 0;
+	uint32_t 				pop_count;
+	uint32_t* 				iteration_count;
+	uint32_t 				loop_max_length = (engine->trace->nb_instruction > 2*LOOP_MAXIMAL_CORE_LENGTH) ? LOOP_MAXIMAL_CORE_LENGTH : (engine->trace->nb_instruction / 2);
 	#ifdef VERBOSE
 	struct workPercent 		work;
 	#endif
 
+	iteration_count = (uint32_t*)malloc(sizeof(uint32_t) * (engine->trace->nb_instruction - LOOP_MINIMAL_CORE_LENGTH + 1));
+	if (iteration_count == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
+
 	if (array_init(&token_array, sizeof(struct loopToken))){
 		printf("ERROR: in %s, unable to init token array\n", __func__);
+		free(iteration_count);
 		return -1;
 	}
 
 	#ifdef VERBOSE
 	printf("LoopEngine: %u element(s), loop core min length: %u, max length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH, LOOP_MAXIMAL_CORE_LENGTH);
-	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, engine->trace->nb_instruction - 2*LOOP_MINIMAL_CORE_LENGTH + 1);
+	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, loop_max_length - LOOP_MINIMAL_CORE_LENGTH + 1);
 	#endif
 
-	for (i = 0; i < engine->trace->nb_instruction - 2*LOOP_MINIMAL_CORE_LENGTH + 1; i++){
-		for (j = i, stack = 0; j < i + 2*(LOOP_MINIMAL_CORE_LENGTH - 1); j += 2){
-			stack = stack ^ engine->trace->instructions[j].opcode;
-			stack = stack ^ engine->trace->instructions[j + 1].opcode;
+	for (i = LOOP_MINIMAL_CORE_LENGTH; i <= loop_max_length; i++){
+		for (k = 0, pop_count = 0; k < i; k++){
+			pop_count += PREDICATE_NOT_EQUAL(engine->trace->instructions[k].opcode, engine->trace->instructions[i + k].opcode);
 		}
 
-		for (; j < i + (2 * LOOP_MAXIMAL_CORE_LENGTH) - 1 && j < engine->trace->nb_instruction - 1; j += 2){
-			stack = stack ^ engine->trace->instructions[j].opcode;
-			stack = stack ^ engine->trace->instructions[j + 1].opcode;
-			if (stack == 0){
-				length 			= (j + 2- i) / 2;
-				loop 			= 1;
-				nb_iteration 	= 1;
-				do{
-					for (k = 0; k < length; k++){
-						if (engine->trace->instructions[i + k].opcode != engine->trace->instructions[i + k + length * nb_iteration].opcode){
-							loop = 0;
-							break;
-						}
-					}
-					nb_iteration += loop;
-				} while(loop && i + (nb_iteration + 1) * length < engine->trace->nb_instruction);
+		iteration_count[i] = PREDICATE_EQUAL_ZERO(pop_count);
 
-				if (nb_iteration > 1){
-					loop = 1;
+		for (j = 1; j < i; j++){
+			pop_count -= PREDICATE_NOT_EQUAL(engine->trace->instructions[j - 1].opcode, engine->trace->instructions[j + i -1].opcode);
+			pop_count += PREDICATE_NOT_EQUAL(engine->trace->instructions[j + i - 1].opcode, engine->trace->instructions[j + (2*i) -1].opcode);
 
-					if (i >= length){
-						for (k = 0; k < length; k++){
-							if (engine->trace->instructions[i - length + k].opcode != engine->trace->instructions[i + k].opcode){
-								loop = 0;
-								break;
-							}
-						}
-					}
-					else{
-						loop = 0;
-					}
+			iteration_count[j + i] = PREDICATE_EQUAL_ZERO(pop_count);
+		}
 
-					if (!loop){
-						iteration_counter += nb_iteration;
+		for (; j <= engine->trace->nb_instruction - (2*i); j++){
+			pop_count -= PREDICATE_NOT_EQUAL(engine->trace->instructions[j - 1].opcode, engine->trace->instructions[j + i -1].opcode);
+			pop_count += PREDICATE_NOT_EQUAL(engine->trace->instructions[j + i - 1].opcode, engine->trace->instructions[j + (2*i) -1].opcode);
 
-						token.offset = i;
-						token.length = length;
-						token.nb_iteration = nb_iteration;
+			if (pop_count == 0){
+				iteration_count[j + i] = iteration_count[j] + 1;
+			}
+			else{
+				iteration_count[j + i] = 0;
+				if (iteration_count[j]){
+					iteration_counter += iteration_count[j] + 1;
 
-						if (array_add(&token_array, &token) < 0){
-							printf("ERROR: in %s, unable to add token to array\n", __func__);
-							continue;
-						}
+					token.offset = j - (iteration_count[j] * i);
+					token.length = i;
+					token.nb_iteration = iteration_count[j] + 1;
+
+					if (array_add(&token_array, &token) < 0){
+						printf("ERROR: in %s, unable to add token to array\n", __func__);
 					}
 				}
 			}
 		}
+
+		for (; j <= engine->trace->nb_instruction - i; j++){
+			if (iteration_count[j]){
+				iteration_counter += iteration_count[j] + 1;
+
+				token.offset = j - (iteration_count[j] * i);
+				token.length = i;
+				token.nb_iteration = iteration_count[j] + 1;
+
+				if (array_add(&token_array, &token) < 0){
+					printf("ERROR: in %s, unable to add token to array\n", __func__);
+				}
+			}
+		}
+
 		#ifdef VERBOSE
 		workPercent_notify(&work, 1);
 		#endif
@@ -128,6 +135,8 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	workPercent_conclude(&work);
 	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting\n", iteration_counter, array_get_length(&token_array));
 	#endif
+
+	free(iteration_count);
 
 	if (engine->loops != NULL){
 		free(engine->loops);

@@ -188,6 +188,10 @@ void cstChecker_print(struct cstChecker* checker){
 					content_size = 4 * cst->content.list.nb_element;
 					break;
 				}
+				default 				: {
+					printf("ERROR: in %s, incorrect constant type\n", __func__);
+					continue;
+				}
 			}
 
 			content_string_length = PRINTBUFFER_GET_STRING_SIZE(content_size);
