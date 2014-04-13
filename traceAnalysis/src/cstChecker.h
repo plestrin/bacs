@@ -11,32 +11,32 @@
 
 #define CONSTANT_THRESHOLD_TAB	4
 
+/* Constant type value:
+ * - bit 0 		: set to 0 -> INVALID 	set to 1 -> VALID
+ * - bit [4:5]	: set to 0 -> CST 		set to 1 -> TAB 		set to 2 -> LST
+ * - bit [8:15] : size (example: 1=8bits, 2=16bits, 4=32bits)
+ */
+
 enum constantType{
-	CST_TYPE_INVALID,
-	CST_TYPE_CST_8,
-	CST_TYPE_CST_16,
-	CST_TYPE_CST_32,
-	CST_TYPE_TAB_8,
-	CST_TYPE_TAB_16,
-	CST_TYPE_TAB_32,
-	CST_TYPE_LST_8,
-	CST_TYPE_LST_16,
-	CST_TYPE_LST_32
+	CST_TYPE_INVALID 	= 0x00000000,
+	CST_TYPE_CST_8 		= 0x00000101,
+	CST_TYPE_CST_16 	= 0x00000201,
+	CST_TYPE_CST_32 	= 0x00000401,
+	CST_TYPE_TAB_8 		= 0x00000111,
+	CST_TYPE_TAB_16 	= 0x00000211,
+	CST_TYPE_TAB_32 	= 0x00000411,
+	CST_TYPE_LST_8 		= 0x00000121,
+	CST_TYPE_LST_16 	= 0x00000221,
+	CST_TYPE_LST_32 	= 0x00000421
 };
 
-#define CONSTANT_IS_CST(type) 	((type) == CST_TYPE_CST_8 || (type) == CST_TYPE_CST_16 || (type) == CST_TYPE_CST_32)
-#define CONSTANT_IS_TAB(type) 	((type) == CST_TYPE_TAB_8 || (type) == CST_TYPE_TAB_16 || (type) == CST_TYPE_TAB_32)
-#define CONSTANT_IS_LST(type) 	((type) == CST_TYPE_LST_8 || (type) == CST_TYPE_LST_16 || (type) == CST_TYPE_LST_32)
+#define CONSTANT_IS_CST(type) 				(((type) & 0x00000031) == 0x00000001)
+#define CONSTANT_IS_TAB(type) 				(((type) & 0x00000031) == 0x00000011)
+#define CONSTANT_IS_LST(type) 				(((type) & 0x00000031) == 0x00000021)
+#define CONSTANT_GET_ELEMENT_SIZE(type) 	(((type) >> 8) & 0x000000ff)
 
-#define CONSTANT_IS_8(type)		((type) == CST_TYPE_CST_8  || (type) == CST_TYPE_TAB_8  || (type) == CST_TYPE_LST_8 )
-#define CONSTANT_IS_16(type)	((type) == CST_TYPE_CST_16 || (type) == CST_TYPE_TAB_16 || (type) == CST_TYPE_LST_16)
-#define CONSTANT_IS_32(type)	((type) == CST_TYPE_CST_32 || (type) == CST_TYPE_TAB_32 || (type) == CST_TYPE_LST_32)
-
-
-uint8_t constantType_element_size(enum constantType type);
 char* constantType_to_string(enum constantType type);
 enum constantType constantType_from_string(const char* arg, uint32_t length);
-
 
 struct constant{
 	char 				name[CONSTANT_NAME_LENGTH];

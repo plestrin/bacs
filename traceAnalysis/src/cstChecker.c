@@ -10,20 +10,6 @@
 #include "workPercent.h"
 #endif
 
-uint8_t constantType_element_size(enum constantType type){
-	if (CONSTANT_IS_8(type)){
-		return 1;
-	}
-	else if (CONSTANT_IS_16(type)){
-		return 2;
-	}
-	else if (CONSTANT_IS_32(type)){
-		return 4;
-	}
-
-	return 1;
-}
-
 char* constantType_to_string(enum constantType type){
 	switch (type){
 		case CST_TYPE_INVALID 	: {return "INVALID";}
@@ -33,9 +19,9 @@ char* constantType_to_string(enum constantType type){
 		case CST_TYPE_TAB_8 	: {return "TAB_8";}
 		case CST_TYPE_TAB_16 	: {return "TAB_16";}
 		case CST_TYPE_TAB_32 	: {return "TAB_32";}
-		case CST_TYPE_LST_8 	: {return "LST 8";}
-		case CST_TYPE_LST_16 	: {return "LST 16";}
-		case CST_TYPE_LST_32 	: {return "LST 32";}
+		case CST_TYPE_LST_8 	: {return "LST_8";}
+		case CST_TYPE_LST_16 	: {return "LST_16";}
+		case CST_TYPE_LST_32 	: {return "LST_32";}
 	}
 
 	return NULL;
@@ -271,7 +257,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 	}
 
 	#ifdef VERBOSE
-	if (workPercent_init(&work, "Searching constant(s) ", WORKPERCENT_ACCURACY_0, trace->nb_instruction)){
+	if (workPercent_init(&work, "Searching constant(s) ", WORKPERCENT_ACCURACY_1, trace->nb_instruction)){
 		printf("ERROR: in %s, unable to init workPercent\n", __func__);
 	}
 	#endif
@@ -283,7 +269,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 				for (i = 0; i < array_get_length(&(checker->cst_array)); i++){
 					cst = (struct constant*)array_get(&(checker->cst_array), i);
 
-					if ((CONSTANT_IS_8(cst->type) && operands[k].size == 1) || (CONSTANT_IS_16(cst->type) && operands[k].size == 2) || (CONSTANT_IS_32(cst->type) && operands[k].size == 4)){
+					if (CONSTANT_GET_ELEMENT_SIZE(cst->type) == operands[k].size){
 						if (CONSTANT_IS_CST(cst->type)){
 							if (!memcmp(&(cst->content.value), trace_get_ins_op_data(trace, j, k), operands[k].size)){
 								cst_result[i].cst_hit_counter ++;
@@ -292,7 +278,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 						else if (CONSTANT_IS_TAB(cst->type) && OPERAND_IS_MEM(operands[k])){
 							for (l = 0; l < cst->content.tab.nb_element; l++){
 								if (!memcmp((char*)cst->content.tab.buffer + l * operands[k].size, trace_get_ins_op_data(trace, j, k), operands[k].size)){
-									tab_hit.offset = l * operands[k].size;
+									tab_hit.offset = l;
 									tab_hit.address = operands[k].location.address;
 									if (array_add(&(cst_result[i].tab_hit_counter), &tab_hit) < 0){
 										printf("ERROR: in %s, unable to add element to array\n", __func__);
@@ -348,7 +334,7 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			struct cstTableAccess* 	access1;
 			struct cstTableAccess* 	access2;
 			uint8_t* 				taken;
-			uint8_t 				element_size = constantType_element_size(cst->type);
+			uint8_t 				element_size = CONSTANT_GET_ELEMENT_SIZE(cst->type);
 			
 			taken = (uint8_t*)malloc(cst->content.tab.nb_element);
 			if (taken == NULL){
@@ -358,22 +344,29 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 
 			for (j = 0; j < array_get_length(&(cst_result[i].tab_hit_counter)); j++){
 				access1 = array_get(&(cst_result[i].tab_hit_counter), j);
-				tab_score = 0;
-				tab_address = access1->address - access1->offset;
-				memset(taken, 0, cst->content.tab.nb_element);
-				taken[access1->offset / element_size] = 1;
+				if (access1->address != 0){
+					tab_score = 1;
+					tab_address = access1->address - (access1->offset * element_size);
+					memset(taken, 0, cst->content.tab.nb_element);
+					taken[access1->offset] = 1;
 
-				for (k = 0; k < array_get_length(&(cst_result[i].tab_hit_counter)); k++){
-					access2 = array_get(&(cst_result[i].tab_hit_counter), k);
-					if (k != j && tab_address + access2->offset == access2->address && !taken[access2->offset / element_size]){
-						tab_score ++;
-						taken[access2->offset / element_size] = 1;
+					for (k = j + 1; k < array_get_length(&(cst_result[i].tab_hit_counter)); k++){
+						access2 = array_get(&(cst_result[i].tab_hit_counter), k);
+						if (access2->address != 0 && tab_address + (access2->offset * element_size) == access2->address){
+							if(!taken[access2->offset]){
+								tab_score ++;
+								taken[access2->offset] = 1;
+							}
+							access2->address = 0;
+						}
 					}
-				}
 
-				if (tab_score > tab_max_score){
-					tab_max_score = tab_score;
-					tab_max_address = tab_address;
+					if (tab_score > tab_max_score){
+						tab_max_score = tab_score;
+						tab_max_address = tab_address;
+					}
+
+					access1->address = 0;
 				}
 			}
 
