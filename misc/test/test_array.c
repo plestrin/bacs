@@ -2,15 +2,17 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 #include "../array.h"
 
-#define OBJECT_SIZE 88
-#define NB_OBJECT 	36523
-#define ARRAY2_INITAL_FILL 819
-#define COPY_OFFSET 46
-#define COPY_LENGTH 903
-#define ARRAY2_FINAL_FILL 456
+#define OBJECT_SIZE 		88
+#define NB_OBJECT 			36523
+#define ARRAY2_INITAL_FILL 	819
+#define COPY_OFFSET 		46
+#define COPY_LENGTH 		903
+#define ARRAY2_FINAL_FILL 	456
+#define NB_QUERY 			512001238
 
 int main(){
 	struct array 	array1;
@@ -18,6 +20,9 @@ int main(){
 	char 			obj[OBJECT_SIZE];
 	uint32_t 		i;
 	char* 			fetch;
+	struct timespec start_time;
+	struct timespec stop_time;
+	double 			duration;
 
 	if (array_init(&array1, OBJECT_SIZE)){
 		printf("ERROR: in %s, unable to init array1\n", __func__);
@@ -105,8 +110,26 @@ int main(){
 				printf("ERROR: in %s, fetched object differs from original object %u\n", __func__, i);
 			}
 		}
-
 	}
+
+	printf("\n*** TEST 3 ***\n");
+	printf("Nb query: %u\n", NB_QUERY);
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time)){
+		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+	}
+
+	for (i = 0, fetch = 0; i < NB_QUERY; i++){
+		fetch = (uint32_t)fetch + (char*)array_get(&array1, rand() % NB_OBJECT);
+	}
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
+		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+	}
+
+	duration = (stop_time.tv_sec - start_time.tv_sec) + (stop_time.tv_nsec - start_time.tv_nsec) / 1000000000.;
+
+	printf("Execution time: %.3f s\n", duration);
 
 	array_clean(&array1);
 	array_clean(&array2);

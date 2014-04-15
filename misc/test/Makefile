@@ -11,7 +11,7 @@ TEST_DBSCAN 			:= test_dbscan
 TEST_PAGETABLE 			:= test_pageTable
 
 CC						:= gcc
-CFLAGS					:= -W -Wall -pedantic -Wextra -g
+CFLAGS					:= -W -Wall -pedantic -Wextra -O3
 LDFLAGS					:=
 
 all: 										\

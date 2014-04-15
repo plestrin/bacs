@@ -13,8 +13,7 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-int32_t inputParser_search_cmd(struct cmdEntry* entry, char* cmd);
-
+int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
 uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
 
 static void inputParser_print_help(struct inputParser* parser);
@@ -71,7 +70,7 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 	int32_t 		duplicate;
 
 	if (parser != NULL && name != NULL && cmd_desc != NULL  && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
-		duplicate = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), name, (int32_t(*)(void*, void*))inputParser_search_cmd);
+		duplicate = inputParser_search_cmd(parser, name);
 		if (duplicate >= 0){
 			printf("ERROR: in %s, \"%s\" is already registered as a command\n", __func__, name);
 			return result;
@@ -159,7 +158,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 				#endif
 			}
 
-			entry_index = array_search_seq_up(&(parser->cmd_array), 0, array_get_length(&(parser->cmd_array)), line, (int32_t(*)(void*, void*))inputParser_search_cmd);
+			entry_index = inputParser_search_cmd(parser, line);
 			if (entry_index >= 0){
 				entry = (struct cmdEntry*)array_get(&(parser->cmd_array), entry_index);
 				if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
@@ -201,13 +200,26 @@ void inputParser_delete(struct inputParser* parser){
 	}
 }
 
-int32_t inputParser_search_cmd(struct cmdEntry* entry, char* cmd){
-	if (entry->type == INPUTPARSER_CMD_TYPE_NO_ARG){
-		return strncmp(entry->name, cmd, INPUTPARSER_NAME_SIZE);
+int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
+	uint32_t 			i;
+	int32_t 			compare_result;
+	struct cmdEntry* 	entry;
+
+	for (i = 0; i < array_get_length(&(parser->cmd_array)); i++){
+		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
+		if (entry->type == INPUTPARSER_CMD_TYPE_NO_ARG){
+			compare_result = strncmp(entry->name, cmd, INPUTPARSER_NAME_SIZE);
+		}
+		else{
+			compare_result = strncmp(entry->name, cmd, strlen(entry->name));
+		}
+
+		if (compare_result == 0){
+			return i;
+		}
 	}
-	else{
-		return strncmp(entry->name, cmd, strlen(entry->name));
-	}
+
+	return -1;
 }
 
 uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser){
