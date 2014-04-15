@@ -8,6 +8,7 @@ TEST_WORKQUEUE 			:= test_workQueue
 TEST_MULTIWORKPERCENT 	:= test_multiWorkPercent
 TEST_MAPFILE 			:= test_mapFile
 TEST_DBSCAN 			:= test_dbscan
+TEST_PAGETABLE 			:= test_pageTable
 
 CC						:= gcc
 CFLAGS					:= -W -Wall -pedantic -Wextra -g
@@ -22,7 +23,8 @@ all: 										\
 	$(TEST_WORKQUEUE) 						\
 	$(TEST_MULTIWORKPERCENT) 				\
 	$(TEST_MAPFILE) 						\
-	$(TEST_DBSCAN)
+	$(TEST_DBSCAN) 							\
+	$(TEST_PAGETABLE)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -55,6 +57,9 @@ $(TEST_MAPFILE): test_mapFile.o mapFile.o
 $(TEST_DBSCAN): test_dbscan.o dbscan.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_PAGETABLE): test_pageTable.o pageTable.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 
 # *** General compile rules ***
 %.o: %.c
@@ -73,6 +78,7 @@ test_workQueue.o: ../workQueue.h
 test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
 test_mapFile.o: ../mapFile.h
 test_dbscan.o: ../dbscan.h ../array.h
+test_pageTable.o: ../pageTable.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
@@ -82,6 +88,7 @@ printBuffer.o: ../printBuffer.h
 workQueue.o: ../workQueue.h
 multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
 dbscan.o: ../dbscan.h ../array.h
+pageTable.o: ../pageTable.h
 
 clean:
 	@ rm -f *.o
@@ -98,3 +105,4 @@ clean:
 	@ rm -f $(TEST_MULTIWORKPERCENT)
 	@ rm -f $(TEST_MAPFILE)
 	@ rm -f $(TEST_DBSCAN)
+	@ rm -f $(TEST_PAGETABLE)
