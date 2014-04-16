@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define _ARRAY_DEFAULT_ALLOC_PAGE 	64
+#define _ARRAY_DEFAULT_ALLOC_PAGE 	64 		/* how to set this value properly ?? for best efficiency try some test */
 #define ARRAY_DEFAULT_ALLOC_SIZE 	4096 	/* how to set this value properly ?? for best efficiency try some test */
 #define ARRAY_DEFAULT_PAGE_SIZE 	131072 	/* same for this value - MUST be a multiple of ARRAY_DEFAULT_ALLOC_SIZE - It is faster to choose a power of two */
 
