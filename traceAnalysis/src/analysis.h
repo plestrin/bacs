@@ -57,6 +57,8 @@ void analysis_arg_search(struct analysis* analysis, char* arg);
 void analysis_arg_seek(struct analysis* analysis, char* arg);
 void analysis_arg_clean(struct analysis* analysis);
 
+void analysis_ir_create(struct analysis* analysis, char* arg);
+
 void analysis_delete(struct analysis* analysis);
 
 #endif

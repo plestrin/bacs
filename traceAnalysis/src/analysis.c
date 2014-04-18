@@ -11,6 +11,7 @@
 #include "simpleTraceStat.h"
 #include "printBuffer.h"
 #include "readBuffer.h"
+#include "ir.h"
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)									\
 	{																									\
@@ -80,6 +81,9 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "search arg", 				"Search every elements in the argSet array", 	"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_arg_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_arg_seek)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_arg_clean)
+	
+	/* ir specific commands */
+	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a trace fragment", 	"Index", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_ir_create)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -1199,4 +1203,28 @@ void analysis_arg_clean(struct analysis* analysis){
 		argSet_clean((struct argSet*)array_get(&(analysis->arg_array), i));
 	}
 	array_empty(&(analysis->arg_array));
+}
+
+/* ===================================================================== */
+/* arg functions						                                 */
+/* ===================================================================== */
+
+void analysis_ir_create(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+	struct traceFragment* 	fragment;
+	struct ir* 				ir;
+
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+		
+		/* warning passing only the trace is not as good as it might seems. Refrence counting does not work */
+		ir = ir_create(&(fragment->trace));
+		/* do some stuff */
+		ir_printDot(ir);
+		ir_delete(ir);
+	}
+	else{
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+	}
 }

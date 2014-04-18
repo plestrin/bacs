@@ -58,12 +58,14 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 	(graph)->dotPrint_node_data = node_data; 																									\
 	(graph)->dotPrint_edge_data = edge_data;
 
+struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);
 void graph_remove_node(struct graph* graph, struct node* node);
 
 #define graph_get_head_node(graph) 		((graph)->node_linkedList)
 #define node_get_next(node) 			((node)->next)
 
+struct edge* graph_add_edge_(struct graph* graph, struct node* node_src, struct node* node_dst);
 struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct node* node_dst, void* data);
 void graph_remove_edge(struct graph* graph, struct edge* edge);
 

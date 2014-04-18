@@ -24,7 +24,7 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size){
 	return graph;
 }
 
-struct node* graph_add_node(struct graph* graph, void* data){
+struct node* graph_add_node_(struct graph* graph){
 	struct node* node;
 
 	node = graph_allocate_node(graph);
@@ -32,7 +32,6 @@ struct node* graph_add_node(struct graph* graph, void* data){
 		printf("ERROR: in %s, unable to allocate node\n", __func__);
 	}
 	else{
-		graph_node_set_data(graph, node, data)
 		node->nb_edge_src 			= 0;
 		node->nb_edge_dst 			= 0;
 		node->next 					= graph->node_linkedList;
@@ -46,6 +45,20 @@ struct node* graph_add_node(struct graph* graph, void* data){
 
 		graph->node_linkedList = node;
 		graph->nb_node ++;
+	}
+	
+	return node;
+}
+
+struct node* graph_add_node(struct graph* graph, void* data){
+	struct node* node;
+
+	node = graph_add_node_(graph);
+	if (node != NULL){
+		graph_node_set_data(graph, node, data)
+	}
+	else{
+		printf("ERROR: in %s, node is NULL\n", __func__);
 	}
 	
 	return node;
@@ -78,7 +91,7 @@ void graph_remove_node(struct graph* graph, struct node* node){
 	graph_free_node(graph, node);
 }
 
-struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct node* node_dst, void* data){
+struct edge* graph_add_edge_(struct graph* graph, struct node* node_src, struct node* node_dst){
 	struct edge* edge;
 
 	edge = graph_allocate_edge(graph);
@@ -86,7 +99,6 @@ struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct n
 		printf("ERROR: in %s, unable to allocate edge\n", __func__);
 	}
 	else{
-		graph_edge_set_data(graph, edge, data)
 		edge->src_node = node_src;
 		edge->dst_node = node_dst;
 		edge->src_prev = NULL;
@@ -112,6 +124,20 @@ struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct n
 
 	}
 
+	return edge;
+}
+
+struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct node* node_dst, void* data){
+	struct edge* edge;
+
+	edge = graph_add_edge_(graph, node_src, node_dst);
+	if (edge != NULL){
+		graph_edge_set_data(graph, edge, data)
+	}
+	else{
+		printf("ERROR: in %s, edge is NULL\n", __func__);
+	}
+	
 	return edge;
 }
 

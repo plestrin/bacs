@@ -29,6 +29,9 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)loop.o 					\
 					$(BUILD_DIR)memAccess.o 			\
 					$(BUILD_DIR)regAccess.o 			\
+					$(BUILD_DIR)ir.o 					\
+					$(BUILD_DIR)irImporterDynTrace.o 	\
+					$(BUILD_DIR)irRenameEngine.o 		\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
 					$(BUILD_DIR)printBuffer.o			\
@@ -36,7 +39,10 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)termReader.o			\
 					$(BUILD_DIR)inputParser.o			\
 					$(BUILD_DIR)workQueue.o 			\
-					$(BUILD_DIR)mapFile.o
+					$(BUILD_DIR)mapFile.o 				\
+					$(BUILD_DIR)graph.o 				\
+					$(BUILD_DIR)graphPrintDot.o
+
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g
