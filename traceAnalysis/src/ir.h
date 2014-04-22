@@ -10,7 +10,8 @@
 
 enum irOpcode{
 	IR_MOVZX,
-	IR_SHR /*temp*/
+	IR_SHR,
+	IR_XOR
 };
 
 char* irOpcode_2_string(enum irOpcode opcode);

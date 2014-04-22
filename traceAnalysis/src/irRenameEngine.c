@@ -76,7 +76,7 @@ int32_t irRenameEngine_set_new_ref(struct irRenameEngine* engine, struct operand
 
 int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node){
 	struct aliasNodeTree 	alias_cmp;
-	struct aliasNodeTree* 	alias_result;
+	struct aliasNodeTree** 	alias_result;
 	struct aliasNodeTree* 	alias_new;
 
 	if (OPERAND_IS_MEM(*operand)){
@@ -84,15 +84,15 @@ int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* op
 		alias_cmp.address = operand->location.address;
 		alias_cmp.engine = engine;
 
-		alias_result = (struct aliasNodeTree*)tfind(&alias_cmp, &(engine->memory_bintree), compare_alias_to_alias);
+		alias_result = (struct aliasNodeTree**)tfind(&alias_cmp, &(engine->memory_bintree), compare_alias_to_alias);
 		if (alias_result != NULL){
-			if (alias_result->ir_node != NULL){
-				ir_node_get_operation(alias_result->ir_node)->data --;
-				if (ir_node_get_operation(alias_result->ir_node)->data == 0){
-					ir_operation_set_inner(engine->ir, alias_result->ir_node);
+			if ((*alias_result)->ir_node != NULL){
+				ir_node_get_operation((*alias_result)->ir_node)->data --;
+				if (ir_node_get_operation((*alias_result)->ir_node)->data == 0){
+					ir_operation_set_inner(engine->ir, (*alias_result)->ir_node);
 				}
 			}
-			alias_result->ir_node = node;
+			(*alias_result)->ir_node = node;
 			ir_node_get_operation(node)->data ++;
 		}
 		else{

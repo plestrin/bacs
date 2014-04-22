@@ -192,6 +192,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
 		case IR_MOVZX 	: {return "movzx";}
 		case IR_SHR 	: {return "shr";}
+		case IR_XOR 	: {return "xor";}
 	}
 
 	return NULL;
