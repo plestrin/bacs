@@ -10,7 +10,7 @@
 
 int32_t loopEngine_sort_redundant_loop(const void* arg1, const void* arg2);
 
-static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index);
+static int32_t loopEngine_is_loop_rolled(struct loopEngine* engine, uint32_t index);
 
 
 struct loopEngine* loopEngine_create(struct trace* trace){
@@ -71,7 +71,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	}
 
 	#ifdef VERBOSE
-	printf("LoopEngine: %u element(s), loop core min length: %u, max length: %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH, LOOP_MAXIMAL_CORE_LENGTH);
+	printf("LoopEngine: %u element(s), loop core min length: %u, max length: %u, min # iteration(s): %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH, LOOP_MAXIMAL_CORE_LENGTH, LOOP_MINIMAL_NB_ITERATION);
 	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, loop_max_length - LOOP_MINIMAL_CORE_LENGTH + 1);
 	#endif
 
@@ -98,7 +98,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 			}
 			else{
 				iteration_count[j + i] = 0;
-				if (iteration_count[j]){
+				if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
 					iteration_counter += iteration_count[j] + 1;
 
 					token.offset = j - (iteration_count[j] * i);
@@ -113,7 +113,7 @@ int32_t loopEngine_process(struct loopEngine* engine){
 		}
 
 		for (; j <= engine->trace->nb_instruction - i; j++){
-			if (iteration_count[j]){
+			if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
 				iteration_counter += iteration_count[j] + 1;
 
 				token.offset = j - (iteration_count[j] * i);
@@ -334,6 +334,8 @@ int32_t loopEngine_remove_redundant_loop_nested(struct loopEngine* engine){
 void loopEngine_print_loop(struct loopEngine* engine){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
+	uint32_t 					coverage = 0;
+	uint32_t 					offset = 0;
 
 	printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
 	if (printer == NULL){
@@ -360,13 +362,24 @@ void loopEngine_print_loop(struct loopEngine* engine){
 
 	if (engine->loops != NULL){
 		for (i = 0; i < engine->nb_loop; i++){
-			if (loopEngine_is_loop_unrolled(engine, i)){
-				multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, "unrolled", NULL);
-			}
-			else{
+			if (loopEngine_is_loop_rolled(engine, i)){
 				multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, "rolled", NULL);
 			}
+			else{
+				multiColumnPrinter_print(printer, i, engine->loops[i].nb_iteration, engine->loops[i].offset, engine->loops[i].length, engine->loops[i].epilogue, "unrolled", NULL);
+			}
+
+			if (engine->loops[i].offset > offset){
+				coverage += (engine->loops[i].nb_iteration * engine->loops[i].length) + engine->loops[i].epilogue;
+				offset = engine->loops[i].offset + (engine->loops[i].nb_iteration * engine->loops[i].length) + engine->loops[i].epilogue;
+			}
+			else{
+				coverage += (engine->loops[i].offset + (engine->loops[i].nb_iteration * engine->loops[i].length) + engine->loops[i].epilogue) - offset;
+				offset = engine->loops[i].offset + (engine->loops[i].nb_iteration * engine->loops[i].length) + engine->loops[i].epilogue;
+			}
 		}
+
+		printf("Loop coverage: %u/%u (%.3f%%) WARNING this value is wrong if no sorting has been performed\n", coverage, engine->trace->nb_instruction, 100*((double)coverage/(double)engine->trace->nb_instruction));
 	}
 
 	multiColumnPrinter_delete(printer);
@@ -519,7 +532,7 @@ void loopEngine_delete(struct loopEngine* engine){
 	}
 }
 
-static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t index){
+static int32_t loopEngine_is_loop_rolled(struct loopEngine* engine, uint32_t index){
 	uint32_t i;
 	uint32_t j;
 	ADDRESS pc1;
@@ -531,12 +544,12 @@ static int32_t loopEngine_is_loop_unrolled(struct loopEngine* engine, uint32_t i
 			pc2 = engine->trace->instructions[engine->loops[index].offset + j + (engine->loops[index].length * i)].pc;
 
 			if (pc1 != pc2){
-				return 1;
+				return 0;
 			}
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 /* ===================================================================== */
