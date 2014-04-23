@@ -1221,6 +1221,7 @@ void analysis_ir_create(struct analysis* analysis, char* arg){
 		/* warning passing only the trace is not as good as it might seems. Refrence counting does not work */
 		ir = ir_create(&(fragment->trace));
 		/* do some stuff */
+		ir_pack_input_register(ir);
 		ir_printDot(ir);
 		ir_delete(ir);
 	}

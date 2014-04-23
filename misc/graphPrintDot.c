@@ -33,11 +33,14 @@ int32_t graphPrintDot_print(struct graph* graph, const char* name){
 		if (file != NULL){
 			fprintf(file, "digraph G {\n");
 			
+			/* Write every node at the beginning of file. Else strange dot bug (missing parts) */
 			for(node = graph_get_head_node(graph); node != NULL; node = node_get_next(node)){
 				fprintf(file, "%u ", (uint32_t)node);
 				graphPrintDot_print_node_data(graph, node, file)
 				fprintf(file, "\n");
+			}
 
+			for(node = graph_get_head_node(graph); node != NULL; node = node_get_next(node)){
 				for (edge = node_get_head_edge_src(node); edge != NULL; edge = edge_get_next_src(edge)){
 					fprintf(file, "%u -> %u ", (uint32_t)edge->src_node, (uint32_t)edge->dst_node);
 					graphPrintDot_print_edge_data(graph, edge, file)

@@ -130,6 +130,132 @@ void ir_operation_set_inner(struct ir* ir, struct node* node){
 	}
 }
 
+/* ===================================================================== */
+/* Format functions						                          	     */
+/* ===================================================================== */
+
+void ir_pack_input_register(struct ir* ir){
+	struct node* 		input_eax = NULL;
+	struct node* 		input_ebx = NULL;
+	struct node* 		input_ecx = NULL;
+	struct node* 		input_edx = NULL;
+	struct node* 		input_cursor;
+	struct irOperation* operation;
+
+	#ifdef VERBOSE
+	printf("IR format: packing input register : ... ");
+	fflush(stdout);
+	#endif
+	
+	input_cursor = ir->input_linkedList;
+	while(input_cursor != NULL){
+		operation = ir_node_get_operation(input_cursor);
+		if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
+			if (operation->operation_type.input.operand->location.reg == REGISTER_EAX){
+				input_eax = input_cursor;
+			}
+			else if (operation->operation_type.input.operand->location.reg == REGISTER_EBX){
+				input_ebx = input_cursor;
+			}
+			else if (operation->operation_type.input.operand->location.reg == REGISTER_ECX){
+				input_ecx = input_cursor;
+			}
+			else if (operation->operation_type.input.operand->location.reg == REGISTER_EDX){
+				input_edx = input_cursor;
+			}
+		}
+		input_cursor = operation->operation_type.input.next;
+	}
+
+	input_cursor = ir->input_linkedList;
+	while(input_cursor != NULL){
+		operation = ir_node_get_operation(input_cursor);
+		if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
+			if (input_eax != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_AH || operation->operation_type.input.operand->location.reg == REGISTER_AL)){
+				operation->type = IR_OPERATION_TYPE_INNER;
+				operation->operation_type.inner.opcode = IR_PART;
+
+				if (operation->operation_type.input.prev == NULL){
+					ir->input_linkedList = operation->operation_type.input.next;
+				}
+				else{
+					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
+				}
+
+				if (operation->operation_type.input.next != NULL){
+					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+				}
+
+				if (ir_add_dependence(ir, input_eax, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence\n", __func__);
+				}
+			}
+			else if (input_ebx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_BH || operation->operation_type.input.operand->location.reg == REGISTER_BL)){
+				operation->type = IR_OPERATION_TYPE_INNER;
+				operation->operation_type.inner.opcode = IR_PART;
+
+				if (operation->operation_type.input.prev == NULL){
+					ir->input_linkedList = operation->operation_type.input.next;
+				}
+				else{
+					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
+				}
+
+				if (operation->operation_type.input.next != NULL){
+					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+				}
+
+				if (ir_add_dependence(ir, input_ebx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence\n", __func__);
+				}
+			}
+			else if (input_ecx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_CH || operation->operation_type.input.operand->location.reg == REGISTER_CL)){
+				operation->type = IR_OPERATION_TYPE_INNER;
+				operation->operation_type.inner.opcode = IR_PART;
+
+				if (operation->operation_type.input.prev == NULL){
+					ir->input_linkedList = operation->operation_type.input.next;
+				}
+				else{
+					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
+				}
+
+				if (operation->operation_type.input.next != NULL){
+					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+				}
+
+				if (ir_add_dependence(ir, input_ecx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence\n", __func__);
+				}
+			}
+			else if (input_edx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_DH || operation->operation_type.input.operand->location.reg == REGISTER_DL)){
+				operation->type = IR_OPERATION_TYPE_INNER;
+				operation->operation_type.inner.opcode = IR_PART;
+
+				if (operation->operation_type.input.prev == NULL){
+					ir->input_linkedList = operation->operation_type.input.next;
+				}
+				else{
+					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
+				}
+
+				if (operation->operation_type.input.next != NULL){
+					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+				}
+
+				if (ir_add_dependence(ir, input_edx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence\n", __func__);
+				}
+			}
+		}
+		input_cursor = operation->operation_type.input.next;
+	}
+
+	#ifdef VERBOSE
+	printf("OK\n");
+	#endif
+
+}
 
 /* ===================================================================== */
 /* Printing functions						                             */
@@ -142,16 +268,16 @@ void ir_dotPrint_node(void* data, FILE* file){
 		case IR_OPERATION_TYPE_INPUT 		: {
 			if (OPERAND_IS_MEM(*(operation->operation_type.input.operand))){
 				#if defined ARCH_32
-				fprintf(file, "[label=\"@%08x\"]", operation->operation_type.input.operand->location.address);
+				fprintf(file, "[shape=\"box\",label=\"@%08x\"]", operation->operation_type.input.operand->location.address);
 				#elif defined ARCH_64
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				fprintf(file, "[label=\"@%llx\"]", operation->operation_type.input.operand->location.address);
+				fprintf(file, "[shape=\"box\",label=\"@%llx\"]", operation->operation_type.input.operand->location.address);
 				#else
 				#error Please specify an architecture {ARCH_32 or ARCH_64}
 				#endif
 			}
 			else if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
-				fprintf(file, "[label=\"%s\"]", reg_2_string(operation->operation_type.input.operand->location.reg));
+				fprintf(file, "[shape=\"box\",label=\"%s\"]", reg_2_string(operation->operation_type.input.operand->location.reg));
 			}
 			else{
 				printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
@@ -160,7 +286,7 @@ void ir_dotPrint_node(void* data, FILE* file){
 			break;
 		}
 		case IR_OPERATION_TYPE_OUTPUT 		: {
-			fprintf(file, "[label=\"O:%s\"]", irOpcode_2_string(operation->operation_type.output.opcode));
+			fprintf(file, "[shape=\"invhouse\",label=\"%s\"]", irOpcode_2_string(operation->operation_type.output.opcode));
 			break;
 		}
 		case IR_OPERATION_TYPE_INNER 		: {
@@ -190,7 +316,9 @@ void ir_dotPrint_edge(void* data, FILE* file){
 
 char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
+		case IR_ADD 	: {return "add";}
 		case IR_MOVZX 	: {return "movzx";}
+		case IR_PART 	: {return "part";}
 		case IR_SHR 	: {return "shr";}
 		case IR_XOR 	: {return "xor";}
 	}

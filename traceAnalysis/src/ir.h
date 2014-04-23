@@ -9,7 +9,9 @@
 #include "graphPrintDot.h"
 
 enum irOpcode{
+	IR_ADD,
 	IR_MOVZX,
+	IR_PART,
 	IR_SHR,
 	IR_XOR
 };
@@ -70,6 +72,8 @@ struct node* ir_add_input(struct ir* ir, struct operand* operand);
 struct node* ir_add_output(struct ir* ir, enum irOpcode opcode);
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 void ir_operation_set_inner(struct ir* ir, struct node* operation);
+
+void ir_pack_input_register(struct ir* ir);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL)
 

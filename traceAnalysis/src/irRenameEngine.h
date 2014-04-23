@@ -17,13 +17,13 @@ struct aliasNodeTree{
 
 struct irRenameEngine{
 	void* 					memory_bintree;
-	struct aliasNodeTree 	register_table[NB_REGISTER];
+	struct node* 			register_table[NB_REGISTER];
 	struct ir* 				ir;
 };
 
 #define irRenameEngine_init(engine, ir_) 													\
 	(engine).memory_bintree = NULL; 														\
-	memset(&((engine).register_table), 0, sizeof(struct aliasNodeTree)*NB_REGISTER); 		\
+	memset(&((engine).register_table), 0, sizeof(struct node*)*NB_REGISTER); 				\
 	(engine).ir = (ir_);
 
 void irRenameEngine_free_memory_node(void* alias);
