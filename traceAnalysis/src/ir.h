@@ -48,13 +48,13 @@ struct irOperation{
 		} 						inner;
 	} 							operation_type;
 	uint32_t 					data;
-};
+} __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
 
 struct irDependence{
 	enum irDependenceType 		type;
-};
+} __attribute__((__may_alias__));
 
 #define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
 
