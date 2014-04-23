@@ -202,6 +202,7 @@ int32_t argSet_search_input(struct argSet* set, char* buffer, uint32_t buffer_le
 	return -1;
 }
 
+/* This routine works only for 32 bits arg */
 int32_t argSet_search_output(struct argSet* set, char* buffer, uint32_t buffer_length){
 	uint32_t 	i;
 	uint32_t* 	arg_index;

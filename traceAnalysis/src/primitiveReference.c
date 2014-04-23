@@ -63,7 +63,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 }
 
 int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct argSet* set){
-	int32_t 			result = -1;
+	int32_t 			result;
 	uint8_t 			i;
 	uint8_t 			j;
 	void** 				arg_in;
@@ -80,11 +80,11 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 					j ++;
 				}
 				else{
-					return result;
+					return -1;
 				}
 			}
 			else{
-				return result;
+				return -1;
 			}
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MULTIPLE(primitive->input_specifier[i])){
@@ -94,11 +94,11 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 					j ++;
 				}
 				else{
-					return result;
+					return -1;
 				}
 			}
 			else{
-				return result;
+				return -1;
 			}
 
 		}
@@ -108,7 +108,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 				j ++;
 			}
 			else{
-				return result;
+				return -1;
 			}
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_IMPLICIT_SIZE(primitive->input_specifier[i])){
@@ -116,7 +116,7 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 				arg_in[i] = (void*)&(input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->input_specifier[i])].size);
 			}
 			else{
-				return result;
+				return -1;
 			}
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_MAX(primitive->input_specifier[i])){
@@ -126,53 +126,43 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 					j ++;
 				}
 				else{
-					return result;
+					return -1;
 				}
 			}
 			else{
-				return result;
+				return -1;
 			}
 		}
 		else{
-			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
-			return result;
+			printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+			return -1;
 		}	
 	}
 
 	if (j != nb_input || i != primitive->nb_input){
-		return result;
+		return -1;
 	}
 
 	arg_out = (void**)alloca(primitive->nb_output * sizeof(void*));
 	arg_out_size = (uint32_t*)alloca(primitive->nb_output * sizeof(uint32_t));
 
-	memset(arg_out, 0, primitive->nb_output * sizeof(void*));
-
 	for (i = 0; i < primitive->nb_output; i++){
 		if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_EXACT_VALUE(primitive->output_specifier[i])){
 			arg_out_size[i] = PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_SIZE_EXACT_VALUE(primitive->output_specifier[i]);
-			arg_out[i] = malloc(arg_out_size[i]);
-			if (arg_out[i] == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				goto exit;
-			}
+			arg_out[i] = alloca(arg_out_size[i]);
 		}
 		else if (PRIMITIVEREFERENCE_ARG_SPECIFIER_IS_SIZE_OF_INPUT_ARG(primitive->output_specifier[i])){
 			if (PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i]) < nb_input){
 				arg_out_size[i] = input[PRIMITIVEREFERENCE_ARG_SPECIFIER_GET_INPUT_INDEX(primitive->output_specifier[i])].size;
-				arg_out[i] = malloc(arg_out_size[i]);
-				if (arg_out[i] == NULL){
-					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					goto exit;
-				}
+				arg_out[i] = alloca(arg_out_size[i]);
 			}
 			else{
-				goto exit;
+				return -1;
 			}
 		}
 		else{
 			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
-			goto exit;
+			return -1;
 		}	
 	}
 
@@ -180,11 +170,11 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 
 	for (j = 0, result = 0; j < primitive->nb_output; j++){
 		if (argSet_search_output(set, arg_out[j], arg_out_size[j]) < 0){
-			result = 1;
+			result = -1;
 		}
 	}
 
-	if (!result){
+	if (result == 0){
 		printf("\n*** IO match for %s ****\n", primitive->name);
 		for (j = 0; j < nb_input; j++){
 			printf("\tArg %u in:  ", j);
@@ -195,13 +185,6 @@ int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb
 			printf("\tArg %u out: ", j);
 			printBuffer_raw(stdout, arg_out[j], arg_out_size[j]);
 			printf("\n");
-		}
-	}
-
-	exit:
-	for (i = 0; i < primitive->nb_output; i++){
-		if (arg_out[i] != NULL){
-			free(arg_out[i]);
 		}
 	}
 
