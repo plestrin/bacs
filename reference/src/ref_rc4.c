@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#define ANALYSIS_REFERENCE_IMPLEMENTATION
+
 #include "RC4.h"
 
 void wrapper_rc4(void** input, void** output){

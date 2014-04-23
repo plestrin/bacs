@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#define ANALYSIS_REFERENCE_IMPLEMENTATION
+
 #include "AES.h"
 
 void wrapper_aes128_key_expand_encrypt(void** input, void** output){

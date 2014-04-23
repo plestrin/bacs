@@ -21,4 +21,19 @@
 
 void md5(uint32_t* data, uint64_t data_length, uint32_t* hash);
 
+#ifdef ANALYSIS_REFERENCE_IMPLEMENTATION
+
+/* 
+ * - state_input	: (A | B | C | D) at the beginning of the given round (128 bits)
+ * - data 			: block of data (512 bits)
+ * - state_output	: (A | B | C | D) at the end of the given round (128 bits)
+ */
+
+void md5_round1(uint32_t* state_input, uint32_t* data, uint32_t* state_output);
+void md5_round2(uint32_t* state_input, uint32_t* data, uint32_t* state_output);
+void md5_round3(uint32_t* state_input, uint32_t* data, uint32_t* state_output);
+void md5_round4(uint32_t* state_input, uint32_t* data, uint32_t* state_output);
+
+#endif
+
 #endif

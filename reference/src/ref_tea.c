@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#define ANALYSIS_REFERENCE_IMPLEMENTATION
+
 #include "TEA.h"
 
 void wrapper_tea_encipher(void** input, void** output){

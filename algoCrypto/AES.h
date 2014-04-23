@@ -61,6 +61,7 @@ void aes192_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes256_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes256_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
+#ifdef ANALYSIS_REFERENCE_IMPLEMENTATION
 /* 
  * Designed for the analysis program (loop centric approach)
  * - input			: 128 bits
@@ -105,5 +106,6 @@ void aes_11_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes_12_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes_13_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
+#endif
 
 #endif

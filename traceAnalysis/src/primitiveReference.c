@@ -43,7 +43,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 
 	primitive->lib_handle = dlopen(lib_name, RTLD_LAZY);
 	if (primitive->lib_handle == NULL){
-		printf("ERROR: in %s, unable to load lib: \"%s\"\n", __func__, lib_name);
+		printf("ERROR: in %s, unable to load lib: \"%s\" -> %s\n", __func__, lib_name, dlerror());
 		free(primitive->input_specifier);
 		free(primitive->output_specifier);
 		return -1;
