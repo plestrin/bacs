@@ -9,7 +9,7 @@
 
 #define LOOP_MINIMAL_CORE_LENGTH 	3 		/* Min length of the iteration body: must be larger or equal than one */
 #define LOOP_MAXIMAL_CORE_LENGTH 	500 	/* Max length of the iteration body */
-#define LOOP_MINIMAL_NB_ITERATION 	2
+#define LOOP_MINIMAL_NB_ITERATION 	2 		/* Min number of iteration */
 
 struct loop{
 	uint32_t 		offset;
@@ -33,7 +33,9 @@ struct loopEngine{
 struct loopEngine* loopEngine_create(struct trace* trace);
 int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace);
 
-int32_t loopEngine_process(struct loopEngine* engine);
+int32_t loopEngine_process_strict(struct loopEngine* engine);
+int32_t loopEngine_process_norder(struct loopEngine* engine);
+
 int32_t loopEngine_remove_redundant_loop_strict(struct loopEngine* engine);
 int32_t loopEngine_remove_redundant_loop_packed(struct loopEngine* engine);
 int32_t loopEngine_remove_redundant_loop_nested(struct loopEngine* engine);

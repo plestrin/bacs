@@ -57,7 +57,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_delete)
 
 	/* loop specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		"Creation method", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					"Removing method", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_remove_redundant)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_loop_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_loop_export)
@@ -71,7 +71,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", 		"Print memory access", 							"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_memory)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
-	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction routine & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction method & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
 	ADD_CMD_TO_INPUT_PARSER(parser, "analyse frag operand", 	"Analyse teh operand of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_analyse_operand)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
@@ -304,7 +304,7 @@ void analysis_trace_delete(struct analysis* analysis){
 /* Loop functions						                                 */
 /* ===================================================================== */
 
-void analysis_loop_create(struct analysis* analysis){
+void analysis_loop_create(struct analysis* analysis, char* arg){
 	if (analysis->loop_engine != NULL){
 		printf("WARNING: in %s, deleting previous loopEngine\n", __func__);
 		loopEngine_delete(analysis->loop_engine);
@@ -312,17 +312,29 @@ void analysis_loop_create(struct analysis* analysis){
 
 	if (analysis->trace == NULL){
 		printf("ERROR: %s, trace is NULL\n", __func__);
-		return;
 	}
+	else{
+		analysis->loop_engine = loopEngine_create(analysis->trace);
+		if (analysis->loop_engine == NULL){
+			printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+			return;
+		}
 
-	analysis->loop_engine = loopEngine_create(analysis->trace);
-	if (analysis->loop_engine == NULL){
-		printf("ERROR: in %s, unable to init loopEngine\n", __func__);
-		return;
-	}
-
-	if (loopEngine_process(analysis->loop_engine)){
-		printf("ERROR: in %s, unable to process loopEngine\n", __func__);
+		if (!strcmp(arg, "STRICT")){
+			if (loopEngine_process_strict(analysis->loop_engine)){
+				printf("ERROR: in %s, unable to process strict loopEngine\n", __func__);
+			}
+		}
+		else if (!strcmp(arg, "NORDER")){
+			if (loopEngine_process_norder(analysis->loop_engine)){
+				printf("ERROR: in %s, unable to process norder loopEngine\n", __func__);
+			}
+		}
+		else{
+			printf("Expected loop creation specifier:\n");
+			printf(" - \"STRICT\" : compare exact instruction sequence\n");
+			printf(" - \"NORDER\" : does not take into account instructions order\n");
+		}
 	}
 }
 

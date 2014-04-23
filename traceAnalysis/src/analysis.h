@@ -34,7 +34,7 @@ void analysis_trace_search_constant(struct analysis* analysis);
 void analysis_trace_export(struct analysis* analysis, char* arg);
 void analysis_trace_delete(struct analysis* analysis);
 
-void analysis_loop_create(struct analysis* analysis);
+void analysis_loop_create(struct analysis* analysis, char* arg);
 void analysis_loop_remove_redundant(struct analysis* analysis, char* arg);
 void analysis_loop_print(struct analysis* analysis);
 void analysis_loop_export(struct analysis* analysis, char* arg);

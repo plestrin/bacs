@@ -41,9 +41,9 @@ int32_t loopEngine_init(struct loopEngine* engine, struct trace* trace){
 }
 
 #define PREDICATE_NOT_EQUAL(a, b)		((((a) - (b)) | ((b) - (a))) >> 31)
-#define PREDICATE_EQUAL_ZERO(a) 		((~((a) |(-(a)))) >> 31)
+#define PREDICATE_EQUAL_ZERO(a) 		((uint32_t)(~((a) | (-(a)))) >> 31)
 
-int32_t loopEngine_process(struct loopEngine* engine){
+int32_t loopEngine_process_strict(struct loopEngine* engine){
 	uint32_t 				i;
 	uint32_t 				j;
 	uint32_t 				k;
@@ -137,6 +137,164 @@ int32_t loopEngine_process(struct loopEngine* engine){
 	#endif
 
 	free(iteration_count);
+
+	if (engine->loops != NULL){
+		free(engine->loops);
+		engine->loops = NULL;
+		engine->nb_loop = 0;
+	}
+
+	engine->loops = (struct loop*)malloc(array_get_length(&token_array) * sizeof(struct loop));
+	if (engine->loops == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+	else{
+		for (i = 0; i < array_get_length(&token_array); i++){
+			token_pointer = (struct loopToken*)array_get(&token_array, i);
+			
+			engine->loops[i].offset 		= token_pointer->offset;
+			engine->loops[i].length 		= token_pointer->length;
+			engine->loops[i].nb_iteration 	= token_pointer->nb_iteration;
+			engine->loops[i].epilogue 		= 0;
+		}
+		engine->nb_loop = array_get_length(&token_array);
+	}
+
+	array_clean(&token_array);
+	
+	return 0;
+}
+
+int32_t loopEngine_process_norder(struct loopEngine* engine){
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				k;
+	struct array 			token_array;
+	struct loopToken 		token;
+	struct loopToken* 		token_pointer;
+	uint32_t 				iteration_counter = 0;
+	uint32_t 				pop_count;
+	uint32_t* 				iteration_count;
+	int32_t* 				occurence_counter;
+	uint32_t 				loop_max_length = (engine->trace->nb_instruction > 2*LOOP_MAXIMAL_CORE_LENGTH) ? LOOP_MAXIMAL_CORE_LENGTH : (engine->trace->nb_instruction / 2);
+	#ifdef VERBOSE
+	struct workPercent 		work;
+	#endif
+
+	iteration_count = (uint32_t*)malloc(sizeof(uint32_t) * (engine->trace->nb_instruction - LOOP_MINIMAL_CORE_LENGTH + 1));
+	occurence_counter = (int32_t*)malloc(sizeof(int32_t) * 2048); /* upper bound for the xed instruction enumeration */
+	
+	if (iteration_count == NULL || occurence_counter == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		if (iteration_count != NULL){
+			free(iteration_count);
+		}
+		if (occurence_counter != NULL){
+			free(occurence_counter);
+		}
+		return -1;
+	}
+
+	if (array_init(&token_array, sizeof(struct loopToken))){
+		printf("ERROR: in %s, unable to init token array\n", __func__);
+		free(iteration_count);
+		free(occurence_counter);
+		return -1;
+	}
+
+	#ifdef VERBOSE
+	printf("LoopEngine: %u element(s), loop core min length: %u, max length: %u, min # iteration(s): %u\n", engine->trace->nb_instruction, LOOP_MINIMAL_CORE_LENGTH, LOOP_MAXIMAL_CORE_LENGTH, LOOP_MINIMAL_NB_ITERATION);
+	workPercent_init(&work, "LoopEngine initial traversal: ", WORKPERCENT_ACCURACY_1, loop_max_length - LOOP_MINIMAL_CORE_LENGTH + 1);
+	#endif
+
+	for (i = LOOP_MINIMAL_CORE_LENGTH; i <= loop_max_length; i++){
+		memset(occurence_counter, 0, sizeof(int32_t) * 2048);
+		for (k = 0, pop_count = 0; k < i; k++){
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[k].opcode]);
+			occurence_counter[engine->trace->instructions[k].opcode] ++;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[k].opcode]);
+
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[i + k].opcode]);
+			occurence_counter[engine->trace->instructions[i + k].opcode] --;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[i + k].opcode]);
+		}
+
+		iteration_count[i] = PREDICATE_EQUAL_ZERO(pop_count);
+
+		for (j = 1; j < i; j++){
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j - 1].opcode] --;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j - 1].opcode]);
+
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + i - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j + i - 1].opcode] += 2;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + i - 1].opcode]);
+
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode] --;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode]);
+
+			iteration_count[j + i] = PREDICATE_EQUAL_ZERO(pop_count);
+		}
+
+		for (; j <= engine->trace->nb_instruction - (2*i); j++){
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j - 1].opcode] --;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j - 1].opcode]);
+
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + i - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j + i - 1].opcode] += 2;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + i - 1].opcode]);
+			
+			pop_count += PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode]);
+			occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode] --;
+			pop_count -= PREDICATE_EQUAL_ZERO(occurence_counter[engine->trace->instructions[j + (2*i) - 1].opcode]);
+
+			if (pop_count == 0){
+				iteration_count[j + i] = iteration_count[j] + 1;
+			}
+			else{
+				iteration_count[j + i] = 0;
+				if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
+					iteration_counter += iteration_count[j] + 1;
+
+					token.offset = j - (iteration_count[j] * i);
+					token.length = i;
+					token.nb_iteration = iteration_count[j] + 1;
+
+					if (array_add(&token_array, &token) < 0){
+						printf("ERROR: in %s, unable to add token to array\n", __func__);
+					}
+				}
+			}
+		}
+
+		for (; j <= engine->trace->nb_instruction - i; j++){
+			if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
+				iteration_counter += iteration_count[j] + 1;
+
+				token.offset = j - (iteration_count[j] * i);
+				token.length = i;
+				token.nb_iteration = iteration_count[j] + 1;
+
+				if (array_add(&token_array, &token) < 0){
+					printf("ERROR: in %s, unable to add token to array\n", __func__);
+				}
+			}
+		}
+
+		#ifdef VERBOSE
+		workPercent_notify(&work, 1);
+		#endif
+	}
+
+	#ifdef VERBOSE
+	workPercent_conclude(&work);
+	printf("LoopEngine: found %u iteration(s) distributed over %u raw loop(s) - formatting\n", iteration_counter, array_get_length(&token_array));
+	#endif
+
+	free(iteration_count);
+	free(occurence_counter);
 
 	if (engine->loops != NULL){
 		free(engine->loops);
