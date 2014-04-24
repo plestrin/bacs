@@ -10,9 +10,13 @@
 
 enum irOpcode{
 	IR_ADD,
+	IR_AND,
 	IR_MOVZX,
+	IR_NOT,
+	IR_OR,
 	IR_PART,
 	IR_SHR,
+	IR_ROR,
 	IR_XOR
 };
 
