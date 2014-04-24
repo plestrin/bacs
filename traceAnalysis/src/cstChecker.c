@@ -212,13 +212,10 @@ void cstChecker_empty(struct cstChecker* checker){
 
 int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 	uint32_t 					i;
-	uint32_t 					j;
 	uint32_t 					k;
 	uint32_t 					l;
 	union cstResult* 			cst_result;
 	struct constant* 			cst;
-	struct operand* 			operands;
-	struct cstTableAccess		tab_hit;
 	struct multiColumnPrinter* 	printer;
 	#define STRING_HIT_LENGTH	24
 	#define STRING_INFO_LENGTH 	24
@@ -241,8 +238,28 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			cst_result[i].cst_hit_counter = 0;
 		}
 		else if (CONSTANT_IS_TAB(cst->type)){
-			if (array_init(&(cst_result[i].tab_hit_counter), sizeof(struct cstTableAccess))){
-				printf("ERROR: in %s, unable to init array\n", __func__);
+			cst_result[i].tab_hit_counter.table_hit = 0;
+			cst_result[i].tab_hit_counter.table_address = 0;
+			if (cst->content.tab.nb_element <= 32){
+				cst_result[i].tab_hit_counter.pt = pageTable_create(2 * sizeof(uint32_t));
+			}
+			else if (cst->content.tab.nb_element <= 64){
+				cst_result[i].tab_hit_counter.pt = pageTable_create(3 * sizeof(uint32_t));
+			}
+			else if (cst->content.tab.nb_element <= 128){
+				cst_result[i].tab_hit_counter.pt = pageTable_create(5 * sizeof(uint32_t));
+			}
+			else if (cst->content.tab.nb_element <= 256){
+				cst_result[i].tab_hit_counter.pt = pageTable_create(9 * sizeof(uint32_t));
+			}
+			else{
+				printf("ERROR: in %s, this case is not implemented yet: nb_element=%u\n", __func__, cst->content.tab.nb_element);
+				return -1;
+			}
+
+			if (cst_result[i].tab_hit_counter.pt == NULL){
+				printf("ERROR: in %s, unable to create pageTable\n", __func__);
+				return -1;
 			}
 		}
 		else if (CONSTANT_IS_LST(cst->type)){
@@ -257,42 +274,62 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 	}
 
 	#ifdef VERBOSE
-	if (workPercent_init(&work, "Searching constant(s) ", WORKPERCENT_ACCURACY_1, trace->nb_instruction)){
+	if (workPercent_init(&work, "Searching constant(s) ", WORKPERCENT_ACCURACY_1, trace_get_nb_operand(trace))){
 		printf("ERROR: in %s, unable to init workPercent\n", __func__);
 	}
 	#endif
 
-	for (j = 0; j < trace->nb_instruction; j++){
-		operands = trace_get_ins_operands(trace, j);
-		for (k = 0; k < trace->instructions[j].nb_operand; k++){
-			if (OPERAND_IS_READ(operands[k])){
-				for (i = 0; i < array_get_length(&(checker->cst_array)); i++){
-					cst = (struct constant*)array_get(&(checker->cst_array), i);
-
-					if (CONSTANT_GET_ELEMENT_SIZE(cst->type) == operands[k].size){
-						if (CONSTANT_IS_CST(cst->type)){
-							if (!memcmp(&(cst->content.value), trace_get_ins_op_data(trace, j, k), operands[k].size)){
-								cst_result[i].cst_hit_counter ++;
-							}
+	for (k = 0; k < trace_get_nb_operand(trace); k++){
+		if (OPERAND_IS_READ(trace->operands[k])){
+			for (i = 0; i < array_get_length(&(checker->cst_array)); i++){
+				cst = (struct constant*)array_get(&(checker->cst_array), i);
+				
+				if (CONSTANT_GET_ELEMENT_SIZE(cst->type) == trace->operands[k].size){
+					if (CONSTANT_IS_CST(cst->type)){
+						if (!memcmp(&(cst->content.value), trace_get_op_data(trace, k), trace->operands[k].size)){
+							cst_result[i].cst_hit_counter ++;
 						}
-						else if (CONSTANT_IS_TAB(cst->type) && OPERAND_IS_MEM(operands[k])){
-							for (l = 0; l < cst->content.tab.nb_element; l++){
-								if (!memcmp((char*)cst->content.tab.buffer + l * operands[k].size, trace_get_ins_op_data(trace, j, k), operands[k].size)){
-									tab_hit.offset = l;
-									tab_hit.address = operands[k].location.address;
-									if (array_add(&(cst_result[i].tab_hit_counter), &tab_hit) < 0){
-										printf("ERROR: in %s, unable to add element to array\n", __func__);
+					}
+					else if (CONSTANT_IS_TAB(cst->type) && OPERAND_IS_MEM(trace->operands[k])){
+						uint32_t 	hit_value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+						uint32_t* 	hit_ptr;
+						ADDRESS 	prev_hit_address;
+
+						for (l = 0; l < cst->content.tab.nb_element; l++){
+							if (!memcmp((char*)cst->content.tab.buffer + l * trace->operands[k].size, trace_get_op_data(trace, k), trace->operands[k].size)){
+								hit_ptr = (uint32_t*)pageTable_get_or_add_element(cst_result[i].tab_hit_counter.pt, trace->operands[k].location.address - l*trace->operands[k].size, &hit_value);
+								if (hit_ptr == NULL){
+									printf("ERROR: in %s, unable to get or add element in pageTable\n", __func__);
+								}
+								else{
+									if (((hit_ptr[1 + l / 32] >> (l % 32)) & 0x00000001) == 0x00000000){
+										hit_ptr[0] ++;
+									}
+									hit_ptr[1 + l / 32] |= 0x00000001 << (l % 32);
+									if (hit_ptr[0] > cst_result[i].tab_hit_counter.table_hit){
+										cst_result[i].tab_hit_counter.table_hit = hit_ptr[0];
+										cst_result[i].tab_hit_counter.table_address = trace->operands[k].location.address - l*trace->operands[k].size;
 									}
 								}
 							}
 						}
-						else if (CONSTANT_IS_LST(cst->type)){
-							/* a completer */
+						
+						prev_hit_address = trace->operands[k].location.address + 1;
+						hit_ptr = (uint32_t*)pageTable_get_prev(cst_result[i].tab_hit_counter.pt, &prev_hit_address);
+						while (hit_ptr != NULL && (trace->operands[k].location.address - prev_hit_address) < cst->content.tab.nb_element * trace->operands[k].size){
+							if (memcmp((char*)cst->content.tab.buffer + (trace->operands[k].location.address - prev_hit_address), trace_get_op_data(trace, k), trace->operands[k].size)){
+								pageTable_remove_element(cst_result[i].tab_hit_counter.pt, prev_hit_address);
+							}
+							hit_ptr = (uint32_t*)pageTable_get_prev(cst_result[i].tab_hit_counter.pt, &prev_hit_address);
 						}
+					}
+					else if (CONSTANT_IS_LST(cst->type)){
+						/* a completer */
 					}
 				}
 			}
 		}
+
 		#ifdef VERBOSE
 		workPercent_notify(&work, 1);
 		#endif
@@ -327,56 +364,13 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 			}
 		}
 		else if (CONSTANT_IS_TAB(cst->type)){
-			ADDRESS 				tab_address;
-			ADDRESS 				tab_max_address;
-			uint32_t				tab_score;
-			uint32_t				tab_max_score = 0;
-			struct cstTableAccess* 	access1;
-			struct cstTableAccess* 	access2;
-			uint8_t* 				taken;
-			uint8_t 				element_size = CONSTANT_GET_ELEMENT_SIZE(cst->type);
-			
-			taken = (uint8_t*)malloc(cst->content.tab.nb_element);
-			if (taken == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				continue;
-			}
-
-			for (j = 0; j < array_get_length(&(cst_result[i].tab_hit_counter)); j++){
-				access1 = array_get(&(cst_result[i].tab_hit_counter), j);
-				if (access1->address != 0){
-					tab_score = 1;
-					tab_address = access1->address - (access1->offset * element_size);
-					memset(taken, 0, cst->content.tab.nb_element);
-					taken[access1->offset] = 1;
-
-					for (k = j + 1; k < array_get_length(&(cst_result[i].tab_hit_counter)); k++){
-						access2 = array_get(&(cst_result[i].tab_hit_counter), k);
-						if (access2->address != 0 && tab_address + (access2->offset * element_size) == access2->address){
-							if(!taken[access2->offset]){
-								tab_score ++;
-								taken[access2->offset] = 1;
-							}
-							access2->address = 0;
-						}
-					}
-
-					if (tab_score > tab_max_score){
-						tab_max_score = tab_score;
-						tab_max_address = tab_address;
-					}
-
-					access1->address = 0;
-				}
-			}
-
-			if (tab_max_score >= CONSTANT_THRESHOLD_TAB){
-				snprintf(string_hit, STRING_HIT_LENGTH, "%u", tab_max_score);
+			if (cst_result[i].tab_hit_counter.table_hit >= CONSTANT_THRESHOLD_TAB){
+				snprintf(string_hit, STRING_HIT_LENGTH, "%u", cst_result[i].tab_hit_counter.table_hit);
 				#if defined ARCH_32
-				snprintf(string_info, STRING_INFO_LENGTH, "0x%08x", tab_max_address);
+				snprintf(string_info, STRING_INFO_LENGTH, "0x%08x", cst_result[i].tab_hit_counter.table_address);
 				#elif defined ARCH_64
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(string_info, STRING_INFO_LENGTH, "0x%llx", tab_max_address);
+				snprintf(string_info, STRING_INFO_LENGTH, "0x%llx", cst_result[i].tab_hit_counter.table_address);
 				#else
 				#error Please specify an architecture {ARCH_32 or ARCH_64}
 				#endif
@@ -386,11 +380,10 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace){
 				}
 			}
 
-			free(taken);
-			array_clean(&(cst_result[i].tab_hit_counter));
+			pageTable_delete(cst_result[i].tab_hit_counter.pt);
 		}
 		else if (CONSTANT_IS_LST(cst->type)){
-			/*a completer */
+			/* a completer */
 			free(cst_result[i].lst_hit_counter);
 		}
 	}

@@ -29,8 +29,7 @@ int main(){
 		}
 	}
 
-	read_address = 0;
-	read_value = (uint32_t*)pageTable_get_next(pt, &read_address);
+	read_value = (uint32_t*)pageTable_get_first(pt, &read_address);
 	while(read_value != NULL){
 		printf("Read value: %u \t@ 0x%08x\n", *read_value, read_address);
 		read_value = (uint32_t*)pageTable_get_next(pt, &read_address);
@@ -40,11 +39,10 @@ int main(){
 
 	pageTable_remove_element(pt, elements_address[INDEX_TO_REMOVE]);
 
-	read_address = 0;
-	read_value = (uint32_t*)pageTable_get_next(pt, &read_address);
+	read_value = (uint32_t*)pageTable_get_last(pt, &read_address);
 	while(read_value != NULL){
 		printf("Read value: %u \t@ 0x%08x\n", *read_value, read_address);
-		read_value = (uint32_t*)pageTable_get_next(pt, &read_address);
+		read_value = (uint32_t*)pageTable_get_prev(pt, &read_address);
 	}
 
 	printf("Memory consumption: %u byte(s)\n", pageTable_get_memory_consumption(pt));

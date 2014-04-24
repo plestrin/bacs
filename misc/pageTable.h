@@ -29,7 +29,11 @@ int32_t pageTable_init(struct pageTable* pt, size_t data_size);
 
 int32_t pageTable_add_element(struct pageTable* pt, uint32_t index, void* data);
 void* pageTable_get_element(struct pageTable* pt, uint32_t index);
+void* pageTable_get_or_add_element(struct pageTable* pt, uint32_t index, void* data);
+void* pageTable_get_first(struct pageTable* pt, uint32_t* index);
 void* pageTable_get_next(struct pageTable* pt, uint32_t* index);
+void* pageTable_get_last(struct pageTable* pt, uint32_t* index);
+void* pageTable_get_prev(struct pageTable* pt, uint32_t* index);
 void pageTable_remove_element(struct pageTable* pt, uint32_t index);
 
 void pageTable_clean(struct pageTable* pt);

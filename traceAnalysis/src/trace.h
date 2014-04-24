@@ -42,6 +42,7 @@ void trace_delete(struct trace* trace);
 #define trace_get_reference(trace) 					((trace)->reference_count ++)
 #define trace_get_ins_operands(trace, index) 		((trace)->operands + (trace)->instructions[(index)].operand_offset)
 #define trace_get_ins_op_data(trace, i_ins, i_op)	((trace)->data + (trace)->operands[(trace)->instructions[(i_ins)].operand_offset + (i_op)].data_offset)
+#define trace_get_op_data(trace, index) 			((trace)->data + (trace)->operands[(index)].data_offset)
 
 #define trace_get_nb_operand(trace) 				((trace)->alloc_size_op / sizeof(struct operand))
 

@@ -5,6 +5,7 @@
 
 #include "trace.h"
 #include "array.h"
+#include "pageTable.h"
 #include "address.h"
 
 #define CONSTANT_NAME_LENGTH 128
@@ -72,15 +73,16 @@ int32_t cstChecker_check(struct cstChecker* checker, struct trace* trace);
 void cstChecker_clean(struct cstChecker* checker);
 void cstChecker_delete(struct cstChecker* checker);
 
-union cstResult{
-	uint32_t 		cst_hit_counter;
-	uint32_t*  		lst_hit_counter;
-	struct array 	tab_hit_counter;
+struct cstTableAccess{
+	uint32_t 				table_hit;
+	ADDRESS 				table_address;
+	struct pageTable* 		pt;
 };
 
-struct cstTableAccess{
-	uint32_t 	offset;
-	ADDRESS 	address;
+union cstResult{
+	uint32_t 				cst_hit_counter;
+	uint32_t*  				lst_hit_counter;
+	struct cstTableAccess 	tab_hit_counter;
 };
 
 #endif

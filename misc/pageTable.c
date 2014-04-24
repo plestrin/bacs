@@ -164,6 +164,136 @@ void* pageTable_get_element(struct pageTable* pt, uint32_t index){
 	}
 }
 
+void* pageTable_get_or_add_element(struct pageTable* pt, uint32_t index, void* data){
+	struct pageIndex* 	sub_page1;
+	struct pageIndex* 	sub_page2;
+	struct pageData* 	sub_page3;
+
+	uint8_t 			index1 = PAGETABLE_GET_INDEX1(index);
+	uint8_t 			index2 = PAGETABLE_GET_INDEX2(index);
+	uint8_t 			index3 = PAGETABLE_GET_INDEX3(index);
+	uint8_t 			index4 = PAGETABLE_GET_INDEX4(index);
+
+	if (pt->main_pages[index1] == NULL){
+		pt->main_pages[index1] = (struct pageIndex*)malloc(sizeof(struct pageIndex));
+		if (pt->main_pages[index1] == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			return NULL;
+		}
+		else{
+			sub_page1 = pt->main_pages[index1];
+			sub_page1->nb_element = 0;
+			memset(sub_page1->pages, 0, 256*sizeof(void*));
+
+			#ifdef PAGETABLE_TRACK_MEMORY_CONSUMPTION
+			pt->memory_consumption += sizeof(struct pageIndex);
+			#endif
+		}	
+	}
+	else{
+		sub_page1 = pt->main_pages[index1];
+	}
+
+	if (sub_page1->pages[index2] == NULL){
+		sub_page1->pages[index2] = malloc(sizeof(struct pageIndex));
+		if (sub_page1->pages[index2] == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			return NULL;
+		}
+		else{
+			sub_page1->nb_element ++;
+			sub_page2 = (struct pageIndex*)sub_page1->pages[index2];
+			sub_page2->nb_element = 0;
+			memset(sub_page2->pages, 0, 256*sizeof(void*));
+
+			#ifdef PAGETABLE_TRACK_MEMORY_CONSUMPTION
+			pt->memory_consumption += sizeof(struct pageIndex);
+			#endif
+		}	
+	}
+	else{
+		sub_page2 = (struct pageIndex*)sub_page1->pages[index2];
+	}
+
+	if (sub_page2->pages[index3] == NULL){
+		sub_page2->pages[index3] = (struct pageData*)malloc(sizeof(struct pageData) + 256 * (pt->data_size - 1));
+		if (sub_page2->pages[index3] == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			return NULL;
+		}
+		else{
+			sub_page2->nb_element ++;
+			sub_page3 = (struct pageData*)sub_page2->pages[index3];
+			sub_page3->nb_element = 0;
+			memset(sub_page3->set_vector, 0, 8*sizeof(uint32_t));
+
+			#ifdef PAGETABLE_TRACK_MEMORY_CONSUMPTION
+			pt->memory_consumption += sizeof(struct pageData) + 256 * (pt->data_size - 1);
+			#endif
+		}	
+	}
+	else{
+		sub_page3 = (struct pageData*)sub_page2->pages[index3];
+	}
+
+	if (!PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
+		memcpy(sub_page3->data + pt->data_size * index4, data, pt->data_size);
+		PAGETABLE_SET_VALUE(index4, sub_page3->set_vector);
+		sub_page3->nb_element ++;
+	}
+	
+
+	return sub_page3->data + pt->data_size * index4;
+}
+
+void* pageTable_get_first(struct pageTable* pt, uint32_t* index){
+	struct pageIndex* 	sub_page1;
+	struct pageIndex* 	sub_page2;
+	struct pageData* 	sub_page3;
+
+	uint8_t 			index1;
+	uint8_t 			index2;
+	uint8_t 			index3;
+	uint8_t 			index4;
+
+	for (index1 = 0; ; index1++){
+		if (pt->main_pages[index1] != NULL){
+			sub_page1 = pt->main_pages[index1];
+			for (index2 = 0; ; index2++){
+				if (sub_page1->pages[index2] != NULL){
+					sub_page2 = sub_page1->pages[index2];
+					for (index3 = 0; ; index3++){
+						if (sub_page2->pages[index3] != NULL){
+							sub_page3 = sub_page2->pages[index3];
+							for (index4 = 0; ; index4++){
+								if (PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
+									*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+
+									return sub_page3->data + pt->data_size * index4;
+								}
+								if (index4 == 255){
+									break;
+								}
+							}
+						}
+						if (index3 == 255){
+							break;
+						}
+					}
+				}
+				if (index2 == 255){
+					break;
+				}
+			}
+		}
+		if (index1 == 255){
+			break;
+		}
+	}
+
+	return NULL;
+}
+
 void* pageTable_get_next(struct pageTable* pt, uint32_t* index){
 	struct pageIndex* 	sub_page1;
 	struct pageIndex* 	sub_page2;
@@ -230,13 +360,145 @@ void* pageTable_get_next(struct pageTable* pt, uint32_t* index){
 			sub_page3 = (struct pageData*)sub_page2->pages[index3];
 		}
 		if (sub_page3 == NULL){
-			sub_page2 = 0;
+			sub_page2 = NULL;
 			goto search_index2;
 		}
 	}
 
 	while(!PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector) && index4 != 255){
 		index4 ++;
+	}
+	if (!PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
+		sub_page3 = NULL;
+		goto search_index3;
+	}
+	
+	*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+
+	return sub_page3->data + pt->data_size * index4;
+}
+
+void* pageTable_get_last(struct pageTable* pt, uint32_t* index){
+	struct pageIndex* 	sub_page1;
+	struct pageIndex* 	sub_page2;
+	struct pageData* 	sub_page3;
+
+	uint8_t 			index1;
+	uint8_t 			index2;
+	uint8_t 			index3;
+	uint8_t 			index4;
+
+	for (index1 = 255; ; index1--){
+		if (pt->main_pages[index1] != NULL){
+			sub_page1 = pt->main_pages[index1];
+			for (index2 = 255; ; index2--){
+				if (sub_page1->pages[index2] != NULL){
+					sub_page2 = sub_page1->pages[index2];
+					for (index3 = 255; ; index3--){
+						if (sub_page2->pages[index3] != NULL){
+							sub_page3 = sub_page2->pages[index3];
+							for (index4 = 255; ; index4--){
+								if (PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
+									*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+
+									return sub_page3->data + pt->data_size * index4;
+								}
+								if (index4 == 0){
+									break;
+								}
+							}
+						}
+						if (index3 == 0){
+							break;
+						}
+					}
+				}
+				if (index2 == 0){
+					break;
+				}
+			}
+		}
+		if (index1 == 0){
+			break;
+		}
+	}
+
+	return NULL;
+}
+
+void* pageTable_get_prev(struct pageTable* pt, uint32_t* index){
+	struct pageIndex* 	sub_page1;
+	struct pageIndex* 	sub_page2;
+	struct pageData* 	sub_page3;
+
+	uint8_t 			index1;
+	uint8_t 			index2;
+	uint8_t 			index3;
+	uint8_t 			index4;
+
+	if (*index == 0x00000000){
+		return NULL;
+	}
+
+	*index = *index - 1;
+
+	index1 = PAGETABLE_GET_INDEX1(*index);
+	index2 = PAGETABLE_GET_INDEX2(*index);
+	index3 = PAGETABLE_GET_INDEX3(*index);
+	index4 = PAGETABLE_GET_INDEX4(*index);
+
+	sub_page1 = pt->main_pages[index1];
+	if (sub_page1 == NULL){
+		search_index1:
+
+		index2 = 255;
+		index3 = 255;
+		index4 = 255;
+		
+		while(sub_page1 == NULL && index1 != 0){
+			index1 --;
+			sub_page1 = pt->main_pages[index1];
+		}
+		if (sub_page1 == NULL){
+			return NULL;
+		}
+	}
+
+	sub_page2 = (struct pageIndex*)sub_page1->pages[index2];
+	if (sub_page2 == NULL){
+		search_index2:
+
+		index3 = 255;
+		index4 = 255;
+		
+		while(sub_page2 == NULL && index2 != 0){
+			index2 --;
+			sub_page2 = (struct pageIndex*)sub_page1->pages[index2];
+		}
+		if (sub_page2 == NULL){
+			sub_page1 = NULL;
+			goto search_index1;
+		}
+	}
+
+	sub_page3 = (struct pageData*)sub_page2->pages[index3];
+	if (sub_page3 == NULL){
+		search_index3:
+
+		index4 = 255;
+
+		while(sub_page3 == NULL && index3 != 0){
+			index3 --;
+			sub_page3 = (struct pageData*)sub_page2->pages[index3];
+		}
+		if (sub_page3 == NULL){
+			sub_page2 = NULL;
+			goto search_index2;
+		}
+	}
+
+	while(!PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector) && index4 != 0){
+		index4 --;
 	}
 	if (!PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
 		sub_page3 = NULL;

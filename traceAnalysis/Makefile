@@ -34,6 +34,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irRenameEngine.o 		\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
+					$(BUILD_DIR)pageTable.o 			\
 					$(BUILD_DIR)printBuffer.o			\
 					$(BUILD_DIR)readBuffer.o			\
 					$(BUILD_DIR)termReader.o			\
