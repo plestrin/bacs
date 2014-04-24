@@ -585,7 +585,14 @@ void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm
 				section = CODEMAP_ROUTINE_GET_SECTION(routine);
 				image = CODEMAP_SECTION_GET_IMAGE(section);
 
-				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\"\n", image->name, section->name, routine->name);
+				#if defined ARCH_32
+				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\", Offset: 0x%08x\n", image->name, section->name, routine->name, frag->trace.instructions[i].pc - routine->address_start);
+				#elif defined ARCH_64
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\", Offset: 0x%llx\n", image->name, section->name, routine->name, frag->trace.instructions[i].pc - routine->address_start);
+				#else
+				#error Please specify an architecture {ARCH_32 or ARCH_64}
+				#endif
 			}
 			else{
 				printf("WARNING: in %s, instruction at offset %u does not belong to a routine\n", __func__, i);
