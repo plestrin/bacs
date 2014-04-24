@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction method & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
-	ADD_CMD_TO_INPUT_PARSER(parser, "analyse frag operand", 	"Analyse teh operand of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_analyse_operand)
+	ADD_CMD_TO_INPUT_PARSER(parser, "analyse frag operand", 	"Analyse the operand of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_analyse_operand)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
 	/* argument specific commands */
@@ -83,7 +83,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_arg_clean)
 	
 	/* ir specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a trace fragment", 	"Index", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_ir_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a trace fragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_ir_create)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -702,24 +702,17 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	int32_t(*extract_routine_mem_write)(struct array*,struct memAccess*,int,void*);
 	int32_t(*extract_routine_reg_read)(struct array*,struct regAccess*,int);
 	int32_t(*extract_routine_reg_write)(struct array*,struct regAccess*,int);
-	uint8_t 				remove_raw = 0;
 
-	#define ARG_NAME_A_LP 		"A_LP"
 	#define ARG_NAME_AR_LP 		"AR_LP"
-	#define ARG_NAME_AS_LP 		"AS_LP"
 	#define ARG_NAME_ASR_LP 	"ASR_LP"
-	#define ARG_NAME_ASO_LP 	"ASO_LP"
 	#define ARG_NAME_ASOR_LP 	"ASOR_LP"
 	#define ARG_NAME_ASR_LM 	"ASR_LM"
 	#define ARG_NAME_ASOR_LM 	"ASOR_LM"
 	#define ARG_NAME_LASOR_LM 	"LASOR_LM"
 
-	#define ARG_DESC_A 			"arguments are made of Adjacent memory access"
-	#define ARG_DESC_AR 		"read after write are Removed, then same as\"A\""
-	#define ARG_DESC_AS 		"same as \"A\" with additional access Size consideration (Mandatory for fragmentation)"
-	#define ARG_DESC_ASR		"read after write are Removed, then same as \"AS\""
-	#define ARG_DESC_ASO 		"same as \"AS\" with additional Opcode consideration"
-	#define ARG_DESC_ASOR 		"read after write are Removed, then same as \"ASO\""
+	#define ARG_DESC_AR 		"arguments are made of Adjacent memory access"
+	#define ARG_DESC_ASR		"same as \"AR\" with additional access Size consideration"
+	#define ARG_DESC_ASOR 		"same as \"ASR\" with additional Opcode consideration"
 	#define ARG_DESC_LASOR 		"[Specific LOOP] memory access at the same index in different iterations belong to the same argument, then same as \"ASOR\""
 	#define ARG_DESC_LP 		"Large registers (>= 32bits) are combined together (Pure)"
 	#define ARG_DESC_LM 		"Large registers (>= 32bits) are combined together and with the memory arguments (Mix)"
@@ -749,37 +742,14 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		i ++;
 	}
 
-	if (!strncmp(arg, ARG_NAME_A_LP, i)){
+	if (!strncmp(arg, ARG_NAME_AR_LP, i)){
 		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 0;
-
-		#ifdef VERBOSE
-		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_A_LP, ARG_DESC_A, ARG_DESC_LP);
-		#endif
-	}
-	else if (!strncmp(arg, ARG_NAME_AR_LP, i)){
-		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AR_LP, ARG_DESC_AR, ARG_DESC_LP);
-		#endif
-	}
-	else if (!strncmp(arg, ARG_NAME_AS_LP, i)){
-		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
-		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 0;
-
-		#ifdef VERBOSE
-		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AS_LP, ARG_DESC_AS, ARG_DESC_LP);
 		#endif
 	}
 	else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
@@ -787,29 +757,16 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LP, ARG_DESC_ASR, ARG_DESC_LP);
 	#endif
-	}
-	else if (!strncmp(arg, ARG_NAME_ASO_LP, i)){
-		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
-		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 0;
-			
-		#ifdef VERBOSE
-		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASO_LP, ARG_DESC_ASO, ARG_DESC_LP);
-		#endif
 	}
 	else if (!strncmp(arg, ARG_NAME_ASOR_LP, i)){
 		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_opcode_read;
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LP, ARG_DESC_ASOR, ARG_DESC_LP);
@@ -820,7 +777,6 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASR_LM, ARG_DESC_ASR, ARG_DESC_LM);
@@ -831,7 +787,6 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_ASOR_LM, ARG_DESC_ASOR, ARG_DESC_LM);
@@ -842,7 +797,6 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_mix_read;
 		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-		remove_raw 					= 1;
 
 		#ifdef VERBOSE
 		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_LASOR_LM, ARG_DESC_LASOR, ARG_DESC_LM);
@@ -851,11 +805,8 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	else{
 		printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 		printf("Expected extraction specifier:\n");
-		printf(" - \"%s\"     : %s and %s\n", 	ARG_NAME_A_LP, 		ARG_DESC_A, 		ARG_DESC_LP);
 		printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 		ARG_DESC_LP);
-		printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AS_LP, 	ARG_DESC_AS, 		ARG_DESC_LP);
 		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 		ARG_DESC_LP);
-		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASO_LP, 	ARG_DESC_ASO, 		ARG_DESC_LP);
 		printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 		ARG_DESC_LP);
 		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 		ARG_DESC_LM);
 		printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LM, 	ARG_DESC_ASOR, 		ARG_DESC_LM);
@@ -871,14 +822,14 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		}
 
 		if (traceFragment_create_reg_array(fragment)){
-			printf("ERROR: in %s, unable to create reg array for fragement %u\n", __func__, j);
+			printf("ERROR: in %s, unable to create reg array for fragment %u\n", __func__, j);
 			break;
 		}
 
 		regAccess_propagate_read(fragment->read_register_array, fragment->nb_register_read_access);
 		regAccess_propagate_write(fragment->write_register_array, fragment->nb_register_write_access);
 
-		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0) && remove_raw){
+		if ((fragment->nb_memory_read_access > 0) && (fragment->nb_memory_write_access > 0)){
 			traceFragment_remove_read_after_write(fragment);
 		}
 
@@ -913,30 +864,19 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 				printf("ERROR: in %s, unable to add argument to arg array\n", __func__);
 			}
 		}
-		#ifdef VERBOSE
-		else{
-			printf("Skipping fragment %u/%u (tag: \"%s\"): no read or write argument\n", j, array_get_length(&(analysis->frag_array)), fragment->tag);
-		}
-		#endif
 	}
 
 	return;
 
-	#undef ARG_DESC_A
 	#undef ARG_DESC_AR
-	#undef ARG_DESC_AS
 	#undef ARG_DESC_ASR
-	#undef ARG_DESC_ASO
 	#undef ARG_DESC_ASOR
 	#undef ARG_DESC_LASOR
 	#undef ARG_DESC_LP
 	#undef ARG_DESC_LM
 
-	#undef ARG_NAME_A_LP
 	#undef ARG_NAME_AR_LP
-	#undef ARG_NAME_AS_LP
 	#undef ARG_NAME_ASR_LP
-	#undef ARG_NAME_ASO_LP
 	#undef ARG_NAME_ASOR_LP
 	#undef ARG_NAME_ASR_LM
 	#undef ARG_NAME_ASOR_LM

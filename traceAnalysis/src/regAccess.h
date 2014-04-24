@@ -6,6 +6,8 @@
 #include "instruction.h"
 #include "array.h"
 
+#define REGACCESS_MAX_NB_BRUTE_FORCE 5
+
 struct regAccess{
 	uint32_t 	value;
 	enum reg 	reg;

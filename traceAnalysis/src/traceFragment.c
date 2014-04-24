@@ -170,65 +170,57 @@ void traceFragment_remove_read_after_write(struct traceFragment* frag){
 	uint8_t 			found;
 
 
-	if (frag != NULL){
-		if (frag->write_memory_array != NULL && frag->read_memory_array != NULL){
-			for (i = 0; i < frag->nb_memory_read_access; i++){
-				mask = ~(0xffffffff << (frag->read_memory_array[i].size * 8));
+	if (frag->write_memory_array != NULL && frag->read_memory_array != NULL){
+		for (i = 0; i < frag->nb_memory_read_access; i++){
+			mask = ~(0xffffffff << (frag->read_memory_array[i].size * 8));
 
-				for (j = 0, found = 0; j < frag->nb_memory_write_access; j++){
-					if (frag->read_memory_array[i].order > frag->write_memory_array[j].order){
-						if (frag->read_memory_array[i].address == frag->write_memory_array[j].address){
-							if (frag->read_memory_array[i].size <= frag->write_memory_array[j].size){
-								if ((frag->read_memory_array[i].value & mask) == (frag->write_memory_array[j].value & mask)){
-									found = 1;
-									continue;
-								}
+			for (j = 0, found = 0; j < frag->nb_memory_write_access; j++){
+				if (frag->read_memory_array[i].order > frag->write_memory_array[j].order){
+					if (frag->read_memory_array[i].address == frag->write_memory_array[j].address){
+						if (frag->read_memory_array[i].size <= frag->write_memory_array[j].size){
+							if ((frag->read_memory_array[i].value & mask) == (frag->write_memory_array[j].value & mask)){
+								found = 1;
+								continue;
 							}
 						}
-						else if (frag->read_memory_array[i].address > frag->write_memory_array[j].address){
-							if (frag->read_memory_array[i].address + frag->read_memory_array[i].size < frag->write_memory_array[j].address + frag->write_memory_array[j].size){
-								if ((frag->read_memory_array[i].value & mask) == ((frag->write_memory_array[j].value >> (frag->read_memory_array[i].address - frag->write_memory_array[j].address)*8) & mask)){
-									found = 1;
-									continue;
-								}
+					}
+					else if (frag->read_memory_array[i].address > frag->write_memory_array[j].address){
+						if (frag->read_memory_array[i].address + frag->read_memory_array[i].size < frag->write_memory_array[j].address + frag->write_memory_array[j].size){
+							if ((frag->read_memory_array[i].value & mask) == ((frag->write_memory_array[j].value >> (frag->read_memory_array[i].address - frag->write_memory_array[j].address)*8) & mask)){
+								found = 1;
+								continue;
 							}
 						}
 					}
 				}
-
-				if (!found){
-					if (writing_pointer != i){
-						memcpy(frag->read_memory_array + writing_pointer, frag->read_memory_array + i, sizeof(struct memAccess));
-					}
-					writing_pointer ++;
-				}
 			}
 
-			#ifdef VERBOSE
-			if (i != writing_pointer){
-				printf("Removing %u read after write memory access (before: %u, after: %u) in frag: \"%s\"\n", (i - writing_pointer), i, writing_pointer, frag->tag);
+			if (!found){
+				if (writing_pointer != i){
+					memcpy(frag->read_memory_array + writing_pointer, frag->read_memory_array + i, sizeof(struct memAccess));
+				}
+				writing_pointer ++;
 			}
-			#endif
+		}
 
-			if (writing_pointer != 0){
-				new_array = (struct memAccess*)realloc(frag->read_memory_array, sizeof(struct memAccess) * writing_pointer);
-				if (new_array != NULL){
-					frag->read_memory_array = new_array;
-				}
-				else{
-					printf("ERROR: in %s, unable to realloc memory\n", __func__);
-				}
-				frag->nb_memory_read_access = writing_pointer;
+		if (writing_pointer != 0){
+			new_array = (struct memAccess*)realloc(frag->read_memory_array, sizeof(struct memAccess) * writing_pointer);
+			if (new_array != NULL){
+				frag->read_memory_array = new_array;
 			}
 			else{
-				free(frag->read_memory_array);
-				frag->read_memory_array = NULL;
-				frag->nb_memory_read_access = 0;
+				printf("ERROR: in %s, unable to realloc memory\n", __func__);
 			}
+			frag->nb_memory_read_access = writing_pointer;
 		}
 		else{
-			printf("ERROR: in %s, create the mem array before calling this routine\n", __func__);
+			free(frag->read_memory_array);
+			frag->read_memory_array = NULL;
+			frag->nb_memory_read_access = 0;
 		}
+	}
+	else{
+		printf("ERROR: in %s, create the mem array before calling this routine\n", __func__);
 	}
 }
 
