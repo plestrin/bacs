@@ -6,6 +6,7 @@
 
 int32_t traceFragment_init(struct traceFragment* frag, enum fragmentType type, void* specific_data, struct fragmentCallback* callback){
 	frag->tag[0]					= '\0';
+	frag->ir 						= NULL;
 	frag->type 						= type;
 	frag->specific_data 			= specific_data;
 	frag->callback 					= callback;
@@ -602,6 +603,9 @@ void traceFragment_delete(struct traceFragment* frag){
 
 void traceFragment_clean(struct traceFragment* frag){
 	if (frag != NULL){
+		if (frag->ir != NULL){
+			ir_delete(frag->ir)
+		}
 		if (frag->read_memory_array != NULL){
 			free(frag->read_memory_array);
 		}

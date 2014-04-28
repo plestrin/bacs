@@ -49,6 +49,9 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg);
 void analysis_frag_locate(struct analysis* analysis, char* arg);
 void analysis_frag_extract_arg(struct analysis* analysis, char* arg);
 void analysis_frag_analyse_operand(struct analysis* analysis, char* arg);
+void analysis_frag_create_ir(struct analysis* analysis, char* arg);
+void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
+void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg);
 void analysis_frag_clean(struct analysis* analysis);
 
 void analysis_arg_print(struct analysis* analysis, char* arg);
@@ -56,8 +59,6 @@ void analysis_arg_set_tag(struct analysis* analysis, char* arg);
 void analysis_arg_search(struct analysis* analysis, char* arg);
 void analysis_arg_seek(struct analysis* analysis, char* arg);
 void analysis_arg_clean(struct analysis* analysis);
-
-void analysis_ir_create(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 

@@ -5,6 +5,7 @@
 
 #include "instruction.h"
 #include "trace.h"
+#include "argSet.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 
@@ -44,6 +45,7 @@ struct irOperation{
 		} 						input;
 		struct {
 			enum irOpcode 		opcode;
+			struct operand* 	operand;
 			struct node* 		next;
 			struct node* 		prev;
 		} 						output;
@@ -73,17 +75,18 @@ struct ir* ir_create(struct trace* trace);
 int32_t ir_init(struct ir* ir, struct trace* trace);
 
 struct node* ir_add_input(struct ir* ir, struct operand* operand);
-struct node* ir_add_output(struct ir* ir, enum irOpcode opcode);
+struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand);
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 void ir_operation_set_inner(struct ir* ir, struct node* operation);
 
 void ir_pack_input_register(struct ir* ir);
 
+void ir_extract_arg(struct ir* ir, struct argSet* set);
+
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL)
 
 #define ir_clean(ir) 													\
 	graph_clean(&(ir->graph));											\
-	/*trace_delete(ir->trace);*/
 
 #define ir_delete(ir) 													\
 	ir_clean(ir); 														\

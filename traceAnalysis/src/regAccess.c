@@ -256,7 +256,6 @@ int32_t regAccess_extract_arg_large_pure_read(struct array* input_arg, struct re
 			}
 		}
 
-
 		if (nb_large_access > 0){
 			if (nb_large_access <= REGACCESS_MAX_NB_BRUTE_FORCE){
 				nb_argBuffer = 0x00000001 << nb_large_access;

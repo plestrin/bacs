@@ -25,8 +25,8 @@ void irRenameEngine_free_memory_node(void* alias){
 	} 																																									\
 	(register_entry) = (new_node);
 
-#define irImporterDynTrace_add_part_variable(ir, src_node, dst_node) 																									\
-	(dst_node) = irImporterDynTrace_add_operation((ir), IR_PART);																										\
+#define irImporterDynTrace_add_part_variable(ir, src_node, dst_node, operand) 																									\
+	(dst_node) = irImporterDynTrace_add_operation((ir), IR_PART, (operand));																										\
 	if ((dst_node) == NULL){ 																																			\
 		printf("ERROR: in %s, unable to add operation to IR\n", __func__); 																								\
 	} 																																									\
@@ -62,14 +62,16 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 				}
 				case REGISTER_AH 	: {
 					if (engine->register_table[REGISTER_EAX - 1] != NULL){
-						printf("Might produce part operation AH\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EAX - 1], engine->register_table[REGISTER_AH - 1], operand)
 					}
+					node = engine->register_table[REGISTER_AH - 1];
 					break;
 				}
 				case REGISTER_AL 	: {
 					if (engine->register_table[REGISTER_EAX - 1] != NULL){
-						printf("Might produce part operation AL\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EAX - 1], engine->register_table[REGISTER_AL - 1], operand)
 					}
+					node = engine->register_table[REGISTER_AL - 1];
 					break;
 				}
 				case REGISTER_EBX 	: {
@@ -80,14 +82,16 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 				}
 				case REGISTER_BH 	: {
 					if (engine->register_table[REGISTER_EBX - 1] != NULL){
-						printf("Might produce part operation BH\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EBX - 1], engine->register_table[REGISTER_BH - 1], operand)
 					}
+					node = engine->register_table[REGISTER_BH - 1];
 					break;
 				}
 				case REGISTER_BL 	: {
 					if (engine->register_table[REGISTER_EBX - 1] != NULL){
-						printf("Might produce part operation BL\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EBX - 1], engine->register_table[REGISTER_BL - 1], operand)
 					}
+					node = engine->register_table[REGISTER_BL - 1];
 					break;
 				}
 				case REGISTER_ECX 	: {
@@ -98,14 +102,16 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 				}
 				case REGISTER_CH 	: {
 					if (engine->register_table[REGISTER_ECX - 1] != NULL){
-						printf("Might produce part operation CH\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_ECX - 1], engine->register_table[REGISTER_CH - 1], operand)
 					}
+					node = engine->register_table[REGISTER_CH - 1];
 					break;
 				}
 				case REGISTER_CL 	: {
 					if (engine->register_table[REGISTER_ECX - 1] != NULL){
-						printf("Might produce part operation CL\n");
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_ECX - 1], engine->register_table[REGISTER_CL - 1], operand)
 					}
+					node = engine->register_table[REGISTER_CL - 1];
 					break;
 				}
 				case REGISTER_EDX 	: {
@@ -116,14 +122,14 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 				}
 				case REGISTER_DH 	: {
 					if (engine->register_table[REGISTER_EDX - 1] != NULL){
-						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EDX - 1], engine->register_table[REGISTER_DH - 1])
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EDX - 1], engine->register_table[REGISTER_DH - 1], operand)
 					}
 					node = engine->register_table[REGISTER_DH - 1];
 					break;
 				}
 				case REGISTER_DL 	: {
 					if (engine->register_table[REGISTER_EDX - 1] != NULL){
-						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EDX - 1], engine->register_table[REGISTER_DL - 1])
+						irImporterDynTrace_add_part_variable(engine->ir, engine->register_table[REGISTER_EDX - 1], engine->register_table[REGISTER_DL - 1], operand)
 					}
 					node = engine->register_table[REGISTER_DL - 1];
 					break;
@@ -173,37 +179,91 @@ int32_t irRenameEngine_set_new_ref(struct irRenameEngine* engine, struct operand
 		}
 	}
 	else if (OPERAND_IS_REG(*operand)){
-		engine->register_table[operand->location.reg - 1] = node;
-		ir_node_get_operation(node)->data ++;
-		#if 0
+		irRenameEngine_reset_register(engine->register_table[operand->location.reg - 1], node)
 		switch(operand->location.reg){
-			case REGISTER_EAX 	: 
-			case REGISTER_AX 	: 
-			case REGISTER_AH 	: 
-			case REGISTER_AL 	: 
-			case REGISTER_EBX 	: 
-			case REGISTER_BX 	: 
-			case REGISTER_BH 	: 
-			case REGISTER_BL 	: 
-			case REGISTER_ECX 	: 
-			case REGISTER_CX 	: 
-			case REGISTER_CH 	: 
-			case REGISTER_CL 	: 
-			case REGISTER_EDX 	: 
-			case REGISTER_DX 	: 
-			case REGISTER_DH 	: 
-			case REGISTER_DL 	: 
-			case REGISTER_ESI 	: 
-			case REGISTER_EDI 	: 
+			case REGISTER_EAX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_AX - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_AH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_AL - 1], NULL)
+				break;
+			}
+			case REGISTER_AX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_AH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_AL - 1], NULL)
+
+				break;
+			}
+			case REGISTER_AH 	: {
+				break;
+			}
+			case REGISTER_AL 	: {
+				break;
+			}
+			case REGISTER_EBX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_BX - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_BH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_BL - 1], NULL)
+				break;
+			}
+			case REGISTER_BX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_BH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_BL - 1], NULL)
+				break;
+			}
+			case REGISTER_BH 	: {
+				break;
+			}
+			case REGISTER_BL 	: {
+				break;
+			}
+			case REGISTER_ECX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_CX - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_CH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_CL - 1], NULL)
+				break;
+			}
+			case REGISTER_CX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_CH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_CL - 1], NULL)
+				break;
+			}
+			case REGISTER_CH 	: {
+				break;
+			}
+			case REGISTER_CL 	: {
+				break;
+			}
+			case REGISTER_EDX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_DX - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_DH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_DL - 1], NULL)
+				break;
+			}
+			case REGISTER_DX 	: {
+				irRenameEngine_reset_register(engine->register_table[REGISTER_DH - 1], NULL)
+				irRenameEngine_reset_register(engine->register_table[REGISTER_DL - 1], NULL)
+				break;
+			}
+			case REGISTER_DH 	: {
+				break;
+			}
+			case REGISTER_DL 	: {
+				break;
+			}
+			case REGISTER_ESI 	: {
+				break;
+			}
+			case REGISTER_EDI 	: {
+				break;
+			}
 			case REGISTER_EBP 	: {
-				
 				break;
 			}
 			default : {
 				printf("WARNING: in %s, this case is not supposed to happen\n", __func__);
 			}
 		}
-		#endif
+		ir_node_get_operation(node)->data ++;
 	}
 	else{
 		printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);

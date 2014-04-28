@@ -6,10 +6,12 @@
 
 #include "codeMap.h"
 #include "instruction.h"
+#include "ir.h"
 #include "memAccess.h"
 #include "regAccess.h"
 #include "array.h"
 #include "trace.h"
+#include "argSet.h"
 
 #define TRACEFRAGMENT_TAG_LENGTH 32
 
@@ -26,11 +28,11 @@ struct fragmentCallback{
 struct traceFragment{
 	char 						tag[TRACEFRAGMENT_TAG_LENGTH];
 	struct trace 				trace;
+	struct ir* 					ir;
 	enum fragmentType 			type;
 	void* 						specific_data;
 	struct fragmentCallback*  	callback;
 	
-
 	struct memAccess* 			read_memory_array;
 	struct memAccess* 			write_memory_array;
 	uint32_t 					nb_memory_read_access;
@@ -64,6 +66,35 @@ static inline void traceFragment_print_instruction(struct traceFragment* frag){
 
 static inline void traceFragment_analyse_operand(struct traceFragment* frag){
 	trace_analyse_operand(&(frag->trace));
+}
+
+static inline void traceFragment_create_ir(struct traceFragment* frag){
+	if (frag->ir != NULL){
+		printf("WARNING: in %s, an IR has already been built for the current fragment - deleting\n", __func__);
+		ir_delete(frag->ir);
+	}
+	frag->ir = ir_create(&(frag->trace));
+	if (frag->ir != NULL){
+		ir_pack_input_register(frag->ir);
+	}
+}
+
+static inline void traceFragment_printDot_ir(struct traceFragment* frag){
+	if (frag->ir != NULL){
+		ir_printDot(frag->ir);
+	}
+	else{
+		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+	}
+}
+
+static inline void traceFragment_extract_arg_ir(struct traceFragment* frag, struct argSet* set){
+	if (frag->ir != NULL){
+		 ir_extract_arg(frag->ir, set);
+	}
+	else{
+		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+	}
 }
 
 void traceFragment_delete(struct traceFragment* frag);

@@ -1,0 +1,32 @@
+List of results (at least one problem per test case is reported):
+
+TEST_TEA_O0: 	ok
+TEST_TEA_O1: 	~ 			the 0x0000000000000000 can be formed with multiple input combination
+TEST_TEA_O2: 	~ 			the 0x0000000000000000 can be formed with multiple input combination
+TEST_TEA_O3: 	~ 			the 0x0000000000000000 can be formed with multiple input combination
+TEST_TEA_Os: 	fail 		the key buffer is read in a first loop and written on the stack in a more convenient way (reverse order)
+TEST_TEA_WD: 	fail 		state vector (2 x 32 bits) is fragmented in the stack (24 bits gap)
+TEST_TEA_WR: 	fail 		(large operand size 8) state vector is reversed and fragmented (1 access with MOV - 3 access with ADD)
+TEST_AES_O0: 	ok
+TEST_AES_O1: 	ok
+TEST_AES_O2: 	ok
+TEST_AES_O3: 	ok
+TEST_AES_Os: 	ok
+TOM_AES: 		fail 		(128 bits) - The state vector part that resides on the stack is concat with an other operand (pointer) - Solved by instruction sequence characterization
+PP_AES128: 		fail  		(large operand size 16) - DEC - state in 2 mem and 2 regs - Solved by instruction sequence characterization
+PP_AES192: 		fail 		(large operand size 16) - DEC - state in 2 mem and 2 regs - Solved by instruction sequence characterization
+PP_AES256: 		fail 		(large operand size 16) - DEC - state in 2 mem and 2 regs - Solved by instruction sequence characterization
+GLAD_AES_V0:
+GLAD_AES_V1:
+GLAD_AES_V2:
+GLAD_AES_V3:
+GLAD_AES_V4:
+GLAD_AES_V5:
+OPEN_AES:
+TEST_MD5_O0:
+TEST_MD5_O1:
+TEST_MD5_O2:
+TEST_MD5_O3:
+TEST_MD5_Os:
+TEST_MD5_WD:
+TEST_MD5_WR:

@@ -73,6 +73,9 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction method & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
 	ADD_CMD_TO_INPUT_PARSER(parser, "analyse frag operand", 	"Analyse the operand of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_analyse_operand)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_create_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_printDot_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "extract arg ir", 			"Extract argument from the IR representation", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_extract_arg_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
 	/* argument specific commands */
@@ -82,9 +85,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_arg_seek)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_arg_clean)
 	
-	/* ir specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a trace fragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_ir_create)
-
 	inputParser_exe(parser, argc - 1, argv + 1);
 
 	exit:
@@ -572,7 +572,7 @@ void analysis_frag_print_register(struct analysis* analysis, char* arg){
 			#endif
 
 			if (traceFragment_create_reg_array(fragment)){
-				printf("ERROR: in %s, unable to create reg array for the fragement\n", __func__);
+				printf("ERROR: in %s, unable to create reg array for the fragment\n", __func__);
 			}
 		}
 
@@ -603,7 +603,7 @@ void analysis_frag_print_memory(struct analysis* analysis, char* arg){
 			#endif
 
 			if (traceFragment_create_mem_array(fragment)){
-				printf("ERROR: in %s, unable to create mem array for the fragement\n", __func__);
+				printf("ERROR: in %s, unable to create mem array for the fragment\n", __func__);
 			}
 		}
 
@@ -917,6 +917,67 @@ void analysis_frag_analyse_operand(struct analysis* analysis, char* arg){
 	}
 }
 
+void analysis_frag_create_ir(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		traceFragment_create_ir((struct traceFragment*)array_get(&(analysis->frag_array), index));
+	}
+	else{
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+	}
+}
+
+void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		traceFragment_printDot_ir((struct traceFragment*)array_get(&(analysis->frag_array), index));
+	}
+	else{
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+	}
+}
+
+void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+	struct argSet 			arg_set;
+	struct traceFragment* 	fragment;
+
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+		if (argSet_init(&arg_set, fragment->tag)){
+			printf("ERROR: in %s, unable to init argSet\n", __func__);
+		}
+		else{
+			traceFragment_extract_arg_ir(fragment, &arg_set);
+
+			if (array_get_length(arg_set.input) > 0 && array_get_length(arg_set.output) > 0){
+				if (strlen(arg_set.tag) == 0){
+					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", index);
+				}
+
+				if (argSet_sort_output(&arg_set)){
+					printf("ERROR: in %s, unable to sort argSet output\n", __func__);
+				}
+
+				if (array_add(&(analysis->arg_array), &arg_set) < 0){
+					printf("ERROR: in %s, unable to add argument to arg array\n", __func__);
+				}
+			}
+			else{
+				argSet_clean(&arg_set);
+			}
+		}
+	}
+	else{
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+	}
+}
+
 void analysis_frag_clean(struct analysis* analysis){
 	uint32_t 				i;
 
@@ -1155,29 +1216,4 @@ void analysis_arg_clean(struct analysis* analysis){
 		argSet_clean((struct argSet*)array_get(&(analysis->arg_array), i));
 	}
 	array_empty(&(analysis->arg_array));
-}
-
-/* ===================================================================== */
-/* arg functions						                                 */
-/* ===================================================================== */
-
-void analysis_ir_create(struct analysis* analysis, char* arg){
-	uint32_t 				index;
-	struct traceFragment* 	fragment;
-	struct ir* 				ir;
-
-	index = (uint32_t)atoi(arg);	
-	if (index < array_get_length(&(analysis->frag_array))){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
-		
-		/* warning passing only the trace is not as good as it might seems. Refrence counting does not work */
-		ir = ir_create(&(fragment->trace));
-		/* do some stuff */
-		ir_pack_input_register(ir);
-		ir_printDot(ir);
-		ir_delete(ir);
-	}
-	else{
-		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-	}
 }

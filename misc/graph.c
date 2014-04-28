@@ -121,7 +121,6 @@ struct edge* graph_add_edge_(struct graph* graph, struct node* node_src, struct 
 		node_dst->nb_edge_dst ++;
 
 		graph->nb_edge ++;
-
 	}
 
 	return edge;
