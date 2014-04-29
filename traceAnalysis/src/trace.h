@@ -76,7 +76,4 @@ static inline uint32_t trace_get_ins_nb_write_op(struct trace* trace, uint32_t i
 	return nb;
 }
 
-/* temp */
-void trace_analyse_operand(struct trace* trace);
-
 #endif

@@ -48,7 +48,6 @@ void analysis_frag_print_memory(struct analysis* analysis, char* arg);
 void analysis_frag_set_tag(struct analysis* analysis, char* arg);
 void analysis_frag_locate(struct analysis* analysis, char* arg);
 void analysis_frag_extract_arg(struct analysis* analysis, char* arg);
-void analysis_frag_analyse_operand(struct analysis* analysis, char* arg);
 void analysis_frag_create_ir(struct analysis* analysis, char* arg);
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg);
