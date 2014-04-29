@@ -12,6 +12,8 @@
 
 uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_operand, uint32_t index);
 uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_operand, uint32_t index);
+uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
+uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
 uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand);
 uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand);
 
@@ -57,6 +59,33 @@ struct node* irImporterDynTrace_get_ir_dst_variable(struct ir* ir, struct irRena
 /* ===================================================================== */
 /* Instruction type function						                     */
 /* ===================================================================== */
+
+void import_std_in_1ir_1or(struct ir* ir, struct irRenameEngine* engine, struct instruction* instruction, struct operand* operands, enum irOpcode opcode){
+	uint32_t 		input0_operand_index;
+	uint32_t 		output0_operand_index;
+	struct node* 	input0_variable;
+	struct node* 	output0_variable;
+
+	input0_operand_index = irImporterDynTrace_get_input_register(operands, instruction->nb_operand, 0);
+	output0_operand_index = irImporterDynTrace_get_output_register(operands, instruction->nb_operand, 0);
+
+	if (input0_operand_index != instruction->nb_operand && output0_operand_index != instruction->nb_operand){
+		input0_variable = irImporterDynTrace_get_ir_src_variable(ir, engine, operands + input0_operand_index);
+		output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, engine, operands + output0_operand_index, opcode);
+
+		if (input0_variable != NULL && output0_variable != NULL){
+			if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to access operand(s) IR variable\n", __func__);
+		}
+	}
+	else{
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+	}
+}
 
 void import_std_in_1imr_1omr(struct ir* ir, struct irRenameEngine* engine, struct instruction* instruction, struct operand* operands, enum irOpcode opcode){
 	uint32_t 		input0_operand_index;
@@ -162,6 +191,10 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 			}
 			case XED_ICLASS_AND : {
 				import_std_ins_1imr_1ioptmr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_AND);
+				break;
+			}
+			case XED_ICLASS_BSWAP : {
+				import_std_in_1ir_1or(ir, &engine, ir->trace->instructions + i, operands, IR_BSWAP);
 				break;
 			}
 			case XED_ICLASS_LEA : {
@@ -284,8 +317,20 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_ROR);
 				break;
 			}
+			case XED_ICLASS_SAR : {
+				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_SAR);
+				break;
+			}
+			case XED_ICLASS_SHL : {
+				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_SHL);
+				break;
+			}
 			case XED_ICLASS_SHR : {
 				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_SHR);
+				break;
+			}
+			case XED_ICLASS_SUB : {
+				import_std_ins_1imr_1ioptmr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_SUB);
 				break;
 			}
 			case XED_ICLASS_XOR : {
@@ -362,6 +407,37 @@ uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_ope
 
 	for (i = 0, j = 0; i < nb_operand; i++){
 		if (OPERAND_IS_WRITE(operands[i])){
+			if (j++ == index){
+				break;
+			}
+		}
+	}
+
+	return i;
+}
+
+
+uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
+	uint32_t i;
+	uint32_t j;
+
+	for (i = 0, j = 0; i < nb_operand; i++){
+		if (OPERAND_IS_READ(operands[i]) && !OPERAND_IS_INDEX(operands[i]) && !OPERAND_IS_BASE(operands[i]) && OPERAND_IS_REG(operands[i])){
+			if (j++ == index){
+				break;
+			}
+		}
+	}
+
+	return i;
+}
+
+uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
+	uint32_t i;
+	uint32_t j;
+
+	for (i = 0, j = 0; i < nb_operand; i++){
+		if (OPERAND_IS_WRITE(operands[i]) && OPERAND_IS_REG(operands[i])){
 			if (j++ == index){
 				break;
 			}

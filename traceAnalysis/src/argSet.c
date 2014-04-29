@@ -146,10 +146,9 @@ void argSet_get_nb_reg(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out){
 	*nb_out = result_out;
 }
 
-void argSet_get_nb_mix(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out){
+void argSet_get_nb_mix(struct argSet* set, uint32_t* nb_in){
 	uint32_t 			i;
 	uint32_t 			result_in = 0;
-	uint32_t 			result_out = 0;
 
 	for (i = 0; i < array_get_length(set->input); i++){
 		if (ARGBUFFER_IS_MIX((struct argBuffer*)array_get(set->input, i))){
@@ -157,14 +156,7 @@ void argSet_get_nb_mix(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out){
 		}
 	}
 
-	for (i = 0; i < array_get_length(set->output); i++){
-		if (ARGBUFFER_IS_MIX((struct argBuffer*)array_get(set->output, i))){
-			result_out ++;
-		}
-	}
-
 	*nb_in = result_in;
-	*nb_out = result_out;
 }
 
 int32_t argSet_sort_output(struct argSet* set){

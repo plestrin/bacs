@@ -12,11 +12,15 @@
 enum irOpcode{
 	IR_ADD,
 	IR_AND,
+	IR_BSWAP,
 	IR_MOVZX,
 	IR_NOT,
 	IR_OR,
 	IR_PART,
+	IR_SAR,
+	IR_SHL,
 	IR_SHR,
+	IR_SUB,
 	IR_ROR,
 	IR_XOR
 };
@@ -77,9 +81,11 @@ int32_t ir_init(struct ir* ir, struct trace* trace);
 struct node* ir_add_input(struct ir* ir, struct operand* operand);
 struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand);
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
-void ir_operation_set_inner(struct ir* ir, struct node* operation);
 
-void ir_pack_input_register(struct ir* ir);
+void ir_convert_output_to_inner(struct ir* ir, struct node* node);
+void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
+
+void ir_print_io(struct ir* ir);
 
 void ir_extract_arg(struct ir* ir, struct argSet* set);
 

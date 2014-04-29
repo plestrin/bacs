@@ -19,7 +19,7 @@ void argSet_print(struct argSet* set, enum argLocationType* type);
 
 void argSet_get_nb_mem(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out);
 void argSet_get_nb_reg(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out);
-void argSet_get_nb_mix(struct argSet* set, uint32_t* nb_in, uint32_t* nb_out);
+void argSet_get_nb_mix(struct argSet* set, uint32_t* nb_in);
 
 int32_t argSet_sort_output(struct argSet* set);
 

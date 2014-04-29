@@ -6,6 +6,7 @@
 #include "irImporterDynTrace.h"
 #include "array.h"
 #include "permutation.h"
+#include "multiColumn.h"
 
 void ir_dotPrint_node(void* data, FILE* file);
 void ir_dotPrint_edge(void* data, FILE* file);
@@ -110,7 +111,7 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 	return edge;
 }
 
-void ir_operation_set_inner(struct ir* ir, struct node* node){
+void ir_convert_output_to_inner(struct ir* ir, struct node* node){
 	enum irOpcode 			opcode;
 	struct irOperation* 	operation;
 
@@ -133,130 +134,25 @@ void ir_operation_set_inner(struct ir* ir, struct node* node){
 	}
 }
 
-/* ===================================================================== */
-/* Format functions						                          	     */
-/* ===================================================================== */
-
-void ir_pack_input_register(struct ir* ir){
-	struct node* 		input_eax = NULL;
-	struct node* 		input_ebx = NULL;
-	struct node* 		input_ecx = NULL;
-	struct node* 		input_edx = NULL;
-	struct node* 		input_cursor;
+void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode){
 	struct irOperation* operation;
 
-	#ifdef VERBOSE
-	printf("IR format: packing input register : ... ");
-	fflush(stdout);
-	#endif
-	
-	input_cursor = ir->input_linkedList;
-	while(input_cursor != NULL){
-		operation = ir_node_get_operation(input_cursor);
-		if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
-			if (operation->operation_type.input.operand->location.reg == REGISTER_EAX){
-				input_eax = input_cursor;
-			}
-			else if (operation->operation_type.input.operand->location.reg == REGISTER_EBX){
-				input_ebx = input_cursor;
-			}
-			else if (operation->operation_type.input.operand->location.reg == REGISTER_ECX){
-				input_ecx = input_cursor;
-			}
-			else if (operation->operation_type.input.operand->location.reg == REGISTER_EDX){
-				input_edx = input_cursor;
-			}
+	operation = ir_node_get_operation(node);
+	if (operation->type == IR_OPERATION_TYPE_INPUT){
+		operation->type = IR_OPERATION_TYPE_INNER;
+		operation->operation_type.inner.opcode = opcode;
+
+		if (operation->operation_type.input.prev == NULL){
+			ir->output_linkedList = operation->operation_type.input.next;
 		}
-		input_cursor = operation->operation_type.input.next;
-	}
-
-	input_cursor = ir->input_linkedList;
-	while(input_cursor != NULL){
-		operation = ir_node_get_operation(input_cursor);
-		if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
-			if (input_eax != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_AH || operation->operation_type.input.operand->location.reg == REGISTER_AL)){
-				operation->type = IR_OPERATION_TYPE_INNER;
-				operation->operation_type.inner.opcode = IR_PART;
-
-				if (operation->operation_type.input.prev == NULL){
-					ir->input_linkedList = operation->operation_type.input.next;
-				}
-				else{
-					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
-				}
-
-				if (operation->operation_type.input.next != NULL){
-					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
-				}
-
-				if (ir_add_dependence(ir, input_eax, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence\n", __func__);
-				}
-			}
-			else if (input_ebx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_BH || operation->operation_type.input.operand->location.reg == REGISTER_BL)){
-				operation->type = IR_OPERATION_TYPE_INNER;
-				operation->operation_type.inner.opcode = IR_PART;
-
-				if (operation->operation_type.input.prev == NULL){
-					ir->input_linkedList = operation->operation_type.input.next;
-				}
-				else{
-					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
-				}
-
-				if (operation->operation_type.input.next != NULL){
-					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
-				}
-
-				if (ir_add_dependence(ir, input_ebx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence\n", __func__);
-				}
-			}
-			else if (input_ecx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_CH || operation->operation_type.input.operand->location.reg == REGISTER_CL)){
-				operation->type = IR_OPERATION_TYPE_INNER;
-				operation->operation_type.inner.opcode = IR_PART;
-
-				if (operation->operation_type.input.prev == NULL){
-					ir->input_linkedList = operation->operation_type.input.next;
-				}
-				else{
-					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
-				}
-
-				if (operation->operation_type.input.next != NULL){
-					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
-				}
-
-				if (ir_add_dependence(ir, input_ecx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence\n", __func__);
-				}
-			}
-			else if (input_edx != NULL && (operation->operation_type.input.operand->location.reg == REGISTER_DH || operation->operation_type.input.operand->location.reg == REGISTER_DL)){
-				operation->type = IR_OPERATION_TYPE_INNER;
-				operation->operation_type.inner.opcode = IR_PART;
-
-				if (operation->operation_type.input.prev == NULL){
-					ir->input_linkedList = operation->operation_type.input.next;
-				}
-				else{
-					ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
-				}
-
-				if (operation->operation_type.input.next != NULL){
-					ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
-				}
-
-				if (ir_add_dependence(ir, input_edx, input_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence\n", __func__);
-				}
-			}
+		else{
+			ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
 		}
-		input_cursor = operation->operation_type.input.next;
-	}
 
-	#ifdef VERBOSE
-	printf("OK\n");
-	#endif
+		if (operation->operation_type.input.next != NULL){
+			ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+		}
+	}
 }
 
 /* ===================================================================== */
@@ -767,14 +663,110 @@ char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
 		case IR_ADD 	: {return "add";}
 		case IR_AND 	: {return "and";}
+		case IR_BSWAP 	: {return "bswap";}
 		case IR_NOT 	: {return "not";}
 		case IR_MOVZX 	: {return "movzx";}
 		case IR_OR 		: {return "or";}
 		case IR_PART 	: {return "part";}
 		case IR_ROR 	: {return "ror";}
+		case IR_SAR 	: {return "sar";}
+		case IR_SHL 	: {return "shl";}
 		case IR_SHR 	: {return "shr";}
+		case IR_SUB 	: {return "sub";}
 		case IR_XOR 	: {return "xor";}
 	}
 
 	return NULL;
+}
+
+void ir_print_io(struct ir* ir){
+	struct node* 				node_cursor;
+	struct irOperation* 		operation_cursor;
+	struct multiColumnPrinter* 	printer;
+	char 						value_str[20];
+	char 						desc_str[20];
+
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
+
+		multiColumnPrinter_set_title(printer, 0, (char*)"VALUE");
+		multiColumnPrinter_set_title(printer, 1, (char*)"DESC");
+		multiColumnPrinter_set_title(printer, 2, (char*)"SIZE");
+
+		printf("*** INPUT ***\n");
+		multiColumnPrinter_print_header(printer);
+		node_cursor = ir->input_linkedList;
+		while(node_cursor != NULL){
+			operation_cursor = ir_node_get_operation(node_cursor);
+
+			switch(operation_cursor->operation_type.input.operand->size){
+			case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x000000ff); break;}
+			case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x0000ffff); break;}
+			case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0xffffffff); break;}
+			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+			}
+
+			if (OPERAND_IS_MEM(*(operation_cursor->operation_type.input.operand))){
+				#if defined ARCH_32
+				snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.input.operand->location.address);
+				#elif defined ARCH_64
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.input.operand->location.address);
+				#else
+				#error Please specify an architecture {ARCH_32 or ARCH_64}
+				#endif
+			}
+			else if (OPERAND_IS_REG(*(operation_cursor->operation_type.input.operand))){
+				snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.input.operand->location.reg));
+			}
+			else{
+				printf("WARNING: in %s, unexpected operand type\n", __func__);
+			}
+
+			multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.input.operand->size, NULL);
+
+			node_cursor = operation_cursor->operation_type.input.next;
+		}
+
+		printf("\n*** OUTPUT ***\n");
+		multiColumnPrinter_print_header(printer);
+		node_cursor = ir->output_linkedList;
+		while(node_cursor != NULL){
+			operation_cursor = ir_node_get_operation(node_cursor);
+
+			switch(operation_cursor->operation_type.output.operand->size){
+			case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x000000ff); break;}
+			case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x0000ffff); break;}
+			case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0xffffffff); break;}
+			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+			}
+
+			if (OPERAND_IS_MEM(*(operation_cursor->operation_type.output.operand))){
+				#if defined ARCH_32
+				snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.output.operand->location.address);
+				#elif defined ARCH_64
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.output.operand->location.address);
+				#else
+				#error Please specify an architecture {ARCH_32 or ARCH_64}
+				#endif
+			}
+			else if (OPERAND_IS_REG(*(operation_cursor->operation_type.output.operand))){
+				snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.output.operand->location.reg));
+			}
+			else{
+				printf("WARNING: in %s, unexpected operand type\n", __func__);
+			}
+
+			multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.output.operand->size, NULL);
+			
+			node_cursor = operation_cursor->operation_type.output.next;
+		}
+
+		multiColumnPrinter_delete(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__);
+	}
 }

@@ -70,9 +70,6 @@ static inline void traceFragment_create_ir(struct traceFragment* frag){
 		ir_delete(frag->ir);
 	}
 	frag->ir = ir_create(&(frag->trace));
-	if (frag->ir != NULL){
-		ir_pack_input_register(frag->ir);
-	}
 }
 
 static inline void traceFragment_printDot_ir(struct traceFragment* frag){
@@ -84,9 +81,18 @@ static inline void traceFragment_printDot_ir(struct traceFragment* frag){
 	}
 }
 
+static inline void traceFragment_print_io(struct traceFragment* frag){
+	if (frag->ir != NULL){
+		ir_print_io(frag->ir);
+	}
+	else{
+		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+	}
+}
+
 static inline void traceFragment_extract_arg_ir(struct traceFragment* frag, struct argSet* set){
 	if (frag->ir != NULL){
-		 ir_extract_arg(frag->ir, set);
+		ir_extract_arg(frag->ir, set);
 	}
 	else{
 		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
