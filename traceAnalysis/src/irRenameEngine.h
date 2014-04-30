@@ -29,7 +29,10 @@ enum aliasType{
 struct aliasMem{
 	struct node* 			ir_node;
 	ADDRESS 				address;
+	uint8_t 				size;
 	struct irRenameEngine* 	engine;
+	struct alias* 			next;
+	struct alias* 			prev;
 };
 
 struct aliasReg{
@@ -37,11 +40,11 @@ struct aliasReg{
 };
 
 struct alias{
-	enum aliasType 		type;
+	enum aliasType 			type;
 	union{
-		struct aliasMem mem;
-		struct aliasReg reg;
-	} 					alias_type;
+		struct aliasMem 	mem;
+		struct aliasReg 	reg;
+	} 						alias_type;
 };
 
 struct irRenameEngine{

@@ -334,9 +334,9 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 	uint32_t* 			mapping;
 	uint32_t 			i;
 	struct irOperation* operation;
-	ADDRESS 			start_address;
-	uint32_t 			size;
-	uint32_t 			access_size;
+	ADDRESS 			start_address = 0;
+	uint32_t 			size = 0;
+	uint32_t 			access_size = 0;
 	struct argBuffer 	arg;
 
 	mapping = array_create_mapping(&(cluster->node_array), (int32_t(*)(void*,void*))argCluster_compare_address);

@@ -241,10 +241,11 @@ if action == "SEARCH" or action == "ALL":
 
 			time_start = time.time()
 			process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			output_val = process.communicate()
 			process.wait()
 			time_stop = time.time()
 
-			output_val = process.communicate()
+			
 			recipe_log[i].write(output_val[0])
 			recipe_log[i].write(output_val[1])
 

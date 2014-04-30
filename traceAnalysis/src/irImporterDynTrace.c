@@ -10,12 +10,12 @@
 #include "graph.h"
 #include "irRenameEngine.h"
 
-uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_operand, uint32_t index);
-uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_operand, uint32_t index);
-uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
-uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
-uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand);
-uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand);
+static uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_operand, uint32_t index);
+static uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_operand, uint32_t index);
+static uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
+static uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index);
+static uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand);
+static uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand);
 
 struct node* irImporterDynTrace_get_ir_src_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand);
 struct node* irImporterDynTrace_get_ir_dst_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode);
@@ -386,7 +386,7 @@ struct node* irImporterDynTrace_get_ir_dst_variable(struct ir* ir, struct irRena
 	return variable;
 }
 
-uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_operand, uint32_t index){
+static uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_operand, uint32_t index){
 	uint32_t i;
 	uint32_t j;
 
@@ -401,7 +401,7 @@ uint32_t irImporterDynTrace_get_input(struct operand* operands, uint32_t nb_oper
 	return i;
 }
 
-uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_operand, uint32_t index){
+static uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_operand, uint32_t index){
 	uint32_t i;
 	uint32_t j;
 
@@ -417,7 +417,7 @@ uint32_t irImporterDynTrace_get_output(struct operand* operands, uint32_t nb_ope
 }
 
 
-uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
+static uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
 	uint32_t i;
 	uint32_t j;
 
@@ -432,7 +432,7 @@ uint32_t irImporterDynTrace_get_input_register(struct operand* operands, uint32_
 	return i;
 }
 
-uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
+static uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32_t nb_operand, uint32_t index){
 	uint32_t i;
 	uint32_t j;
 
@@ -447,7 +447,7 @@ uint32_t irImporterDynTrace_get_output_register(struct operand* operands, uint32
 	return i;
 }
 
-uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand){
+static uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand){
 	uint32_t i;
 
 	for (i = 0; i < nb_operand; i++){
@@ -459,7 +459,7 @@ uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_opera
 	return i;
 }
 
-uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand){
+static uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand){
 	uint32_t i;
 
 	for (i = 0; i < nb_operand; i++){
