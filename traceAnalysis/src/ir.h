@@ -13,6 +13,7 @@ enum irOpcode{
 	IR_ADD,
 	IR_AND,
 	IR_BSWAP,
+	IR_DEC, 	/* tmp */
 	IR_MOVZX,
 	IR_NOT,
 	IR_OR,

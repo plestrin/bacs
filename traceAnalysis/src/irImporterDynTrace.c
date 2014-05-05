@@ -17,44 +17,43 @@ static uint32_t irImporterDynTrace_get_output_register(struct operand* operands,
 static uint32_t irImporterDynTrace_get_base(struct operand* operands, uint32_t nb_operand);
 static uint32_t irImporterDynTrace_get_index(struct operand* operands, uint32_t nb_operand);
 
-struct node* irImporterDynTrace_get_ir_src_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand);
-struct node* irImporterDynTrace_get_ir_dst_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode);
+struct node* irImporterDynTrace_get_ir_src_variable(struct irRenameEngine* engine, struct operand* operand);
+struct node* irImporterDynTrace_get_ir_src_variable_dependence_index_base(struct irRenameEngine* engine, struct operand* operands, uint32_t nb_operand, uint32_t index);
+struct node* irImporterDynTrace_get_ir_dst_variable(struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode);
 
-#define irImporterDynTrace_add_dependence_base_and_index(ir, engine, operands, nb_operand, mem_variable) 																	\
-	{ 																																										\
-		uint32_t 		index_operand_index; 																																\
-		uint32_t 		base_operand_index; 																																\
-		struct node* 	base_variable 	= NULL; 																															\
-		struct node* 	index_variable 	= NULL; 																															\
-																																											\
-		base_operand_index 		= irImporterDynTrace_get_base((operands), (nb_operand)); 																					\
-		index_operand_index 	= irImporterDynTrace_get_index((operands), (nb_operand)); 																					\
-																																											\
-		if (base_operand_index != (nb_operand)){ 																															\
-			base_variable = irImporterDynTrace_get_ir_src_variable((ir), (engine), (operands) + base_operand_index); 														\
-			if (base_variable != NULL){ 																																	\
-				if (irImporterDynTrace_add_dependence((ir), base_variable, (mem_variable), IR_DEPENDENCE_TYPE_BASE) == NULL){ 												\
-					printf("ERROR: in %s, unable to add dependence to IR\n", __func__); 																					\
-				} 																																							\
-			} 																																								\
-			else{ 																																							\
-				printf("ERROR: in %s, unable to access base IR variable\n", __func__); 																						\
-			} 																																								\
-		} 																																									\
-																																											\
-		if (index_operand_index != (nb_operand)){ 																															\
-			index_variable = irImporterDynTrace_get_ir_src_variable((ir), (engine), (operands )+ index_operand_index); 														\
-			if (index_variable != NULL){ 																																	\
-				if (irImporterDynTrace_add_dependence((ir), index_variable, (mem_variable), IR_DEPENDENCE_TYPE_INDEX) == NULL){ 											\
-					printf("ERROR: in %s, unable to add dependence to IR\n", __func__); 																					\
-				} 																																							\
-			} 																																								\
-			else{ 																																							\
-				printf("ERROR: in %s, unable to access index IR variable\n", __func__); 																					\
-			} 																																								\
-		} 																																									\
+void irImporterDynTrace_add_dependence_base_and_index(struct irRenameEngine* engine, struct operand* operands, uint32_t nb_operand, struct node* mem_variable){
+	uint32_t 		index_operand_index;
+	uint32_t 		base_operand_index;
+	struct node* 	base_variable 	= NULL;
+	struct node* 	index_variable 	= NULL;
+
+	base_operand_index 		= irImporterDynTrace_get_base(operands, nb_operand);
+	index_operand_index 	= irImporterDynTrace_get_index(operands, nb_operand);
+
+	if (base_operand_index != nb_operand){
+		base_variable = irImporterDynTrace_get_ir_src_variable(engine, operands + base_operand_index);
+		if (base_variable != NULL){
+			if (irImporterDynTrace_add_dependence(engine->ir, base_variable, mem_variable, IR_DEPENDENCE_TYPE_BASE) == NULL){
+				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to access base IR variable\n", __func__);
+		}
 	}
 
+	if (index_operand_index != nb_operand){
+		index_variable = irImporterDynTrace_get_ir_src_variable(engine, operands + index_operand_index);
+		if (index_variable != NULL){
+			if (irImporterDynTrace_add_dependence(engine->ir, index_variable, mem_variable, IR_DEPENDENCE_TYPE_INDEX) == NULL){
+				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to access index IR variable\n", __func__);
+		}
+	}
+}
 
 /* ===================================================================== */
 /* Instruction type function						                     */
@@ -70,8 +69,35 @@ void import_std_in_1ir_1or(struct ir* ir, struct irRenameEngine* engine, struct 
 	output0_operand_index = irImporterDynTrace_get_output_register(operands, instruction->nb_operand, 0);
 
 	if (input0_operand_index != instruction->nb_operand && output0_operand_index != instruction->nb_operand){
-		input0_variable = irImporterDynTrace_get_ir_src_variable(ir, engine, operands + input0_operand_index);
-		output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, engine, operands + output0_operand_index, opcode);
+		input0_variable = irImporterDynTrace_get_ir_src_variable(engine, operands + input0_operand_index);
+		output0_variable = irImporterDynTrace_get_ir_dst_variable(engine, operands + output0_operand_index, opcode);
+
+		if (input0_variable != NULL && output0_variable != NULL){
+			if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to access operand(s) IR variable\n", __func__);
+		}
+	}
+	else{
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+	}
+}
+
+void import_std_in_1imr_1or(struct ir* ir, struct irRenameEngine* engine, struct instruction* instruction, struct operand* operands, enum irOpcode opcode){
+	uint32_t 		input0_operand_index;
+	uint32_t 		output0_operand_index;
+	struct node* 	input0_variable;
+	struct node* 	output0_variable;
+
+	input0_operand_index = irImporterDynTrace_get_input(operands, instruction->nb_operand, 0);
+	output0_operand_index = irImporterDynTrace_get_output_register(operands, instruction->nb_operand, 0);
+
+	if (input0_operand_index != instruction->nb_operand && output0_operand_index != instruction->nb_operand){
+		input0_variable = irImporterDynTrace_get_ir_src_variable_dependence_index_base(engine, operands, instruction->nb_operand, input0_operand_index);
+		output0_variable = irImporterDynTrace_get_ir_dst_variable(engine, operands + output0_operand_index, opcode);
 
 		if (input0_variable != NULL && output0_variable != NULL){
 			if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -97,12 +123,9 @@ void import_std_in_1imr_1omr(struct ir* ir, struct irRenameEngine* engine, struc
 	output0_operand_index = irImporterDynTrace_get_output(operands, instruction->nb_operand, 0);
 
 	if (input0_operand_index != instruction->nb_operand && output0_operand_index != instruction->nb_operand){
-		input0_variable = irImporterDynTrace_get_ir_src_variable(ir, engine, operands + input0_operand_index);
-		if (input0_variable != NULL && OPERAND_IS_MEM(operands[input0_operand_index])){
-			irImporterDynTrace_add_dependence_base_and_index(ir, engine, operands, instruction->nb_operand, input0_variable)
-		}
+		input0_variable = irImporterDynTrace_get_ir_src_variable_dependence_index_base(engine, operands, instruction->nb_operand, input0_operand_index);
 
-		output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, engine, operands + output0_operand_index, opcode);
+		output0_variable = irImporterDynTrace_get_ir_dst_variable(engine, operands + output0_operand_index, opcode);
 		if (input0_variable != NULL && output0_variable != NULL){
 			if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
@@ -130,25 +153,16 @@ void import_std_ins_1imr_1ioptmr_1omr(struct ir* ir, struct irRenameEngine* engi
 	output0_operand_index = irImporterDynTrace_get_output(operands, instruction->nb_operand, 0);
 
 	if (input0_operand_index != instruction->nb_operand && output0_operand_index != instruction->nb_operand){
-		input0_variable = irImporterDynTrace_get_ir_src_variable(ir, engine, operands + input0_operand_index);
-		if (input0_variable != NULL && OPERAND_IS_MEM(operands[input0_operand_index])){
-			irImporterDynTrace_add_dependence_base_and_index(ir, engine, operands, instruction->nb_operand, input0_variable)
-		}
+		input0_variable = irImporterDynTrace_get_ir_src_variable_dependence_index_base(engine, operands, instruction->nb_operand, input0_operand_index);
 
 		if (input1_operand_index != instruction->nb_operand){
-			input1_variable = irImporterDynTrace_get_ir_src_variable(ir, engine, operands + input1_operand_index);
-			if (input1_variable != NULL && OPERAND_IS_MEM(operands[input1_operand_index])){
-				irImporterDynTrace_add_dependence_base_and_index(ir, engine, operands, instruction->nb_operand, input1_variable)
-			}
+			input1_variable = irImporterDynTrace_get_ir_src_variable_dependence_index_base(engine, operands, instruction->nb_operand, input1_operand_index);
 		}
 		else{
 			input1_variable = NULL;
 		}
 
-		output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, engine, operands + output0_operand_index, opcode);
-		if (output0_variable != NULL && OPERAND_IS_MEM(operands[output0_operand_index])){
-			irImporterDynTrace_add_dependence_base_and_index(ir, engine, operands, instruction->nb_operand, output0_variable)
-		}
+		output0_variable = irImporterDynTrace_get_ir_dst_variable(engine, operands + output0_operand_index, opcode);
 
 		if (input0_variable != NULL && output0_variable != NULL){
 			if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -186,18 +200,65 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 
 		switch(ir->trace->instructions[i].opcode){
 			case XED_ICLASS_ADD : {
+				/*
+					ADD 	r/m8 	imm8
+					ADD 	r/m16 	imm8
+					ADD 	r/m32 	imm8
+					ADD 	r/m16 	imm16
+					ADD 	r/m32 	imm32
+					ADD 	r/m8 	r8
+					ADD 	r/m16 	r16
+					ADD 	r/m32 	r32
+					ADD 	r8 		r/m8
+					ADD 	r16 	r/m16
+					ADD 	r32 	r/m32
+				*/
+
 				import_std_ins_1imr_1ioptmr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_ADD);
 				break;
 			}
 			case XED_ICLASS_AND : {
+				/*
+					AND 	r/m8 	imm8
+					AND 	r/m16 	imm8
+					AND 	r/m32 	imm8
+					AND 	r/m16 	imm16
+					AND 	r/m32 	imm32
+					AND 	r/m8 	r8
+					AND 	r/m16 	r16
+					AND 	r/m32 	r32
+					AND 	r8 		r/m8
+					AND 	r16 	r/m16
+					AND 	r32 	r/m32
+				*/
+
 				import_std_ins_1imr_1ioptmr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_AND);
 				break;
 			}
 			case XED_ICLASS_BSWAP : {
+				/*
+					BSWAP 	r32
+				*/
+
 				import_std_in_1ir_1or(ir, &engine, ir->trace->instructions + i, operands, IR_BSWAP);
 				break;
 			}
+			case XED_ICLASS_DEC : {
+				/*
+					DEC 	r/m8
+					DEC 	r/m16
+					DEC 	r/m32
+				*/
+
+				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_DEC);
+				break;
+			}
 			case XED_ICLASS_LEA : {
+				/*
+					LEA 	r16 	m
+					LEA 	r32 	m
+				*/
+
 				uint32_t 		base_operand_index;
 				uint32_t 		index_operand_index;
 				uint32_t 		output0_operand_index;
@@ -207,11 +268,11 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 
 				base_operand_index 		= irImporterDynTrace_get_base(operands, ir->trace->instructions[i].nb_operand);
 				index_operand_index 	= irImporterDynTrace_get_index(operands, ir->trace->instructions[i].nb_operand);
-				output0_operand_index 	= irImporterDynTrace_get_output(operands, ir->trace->instructions[i].nb_operand, 0);
+				output0_operand_index 	= irImporterDynTrace_get_output_register(operands, ir->trace->instructions[i].nb_operand, 0);
 
 				if (output0_operand_index != ir->trace->instructions[i].nb_operand){
 					if (base_operand_index != ir->trace->instructions[i].nb_operand){
-						base_variable = irImporterDynTrace_get_ir_src_variable(ir, &engine, operands + base_operand_index);
+						base_variable = irImporterDynTrace_get_ir_src_variable(&engine, operands + base_operand_index);
 						if (base_variable == NULL){
 							printf("ERROR: in %s, unable to access operand(s) IR variable\n", __func__);
 						}
@@ -221,7 +282,7 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 					}
 
 					if (index_operand_index != ir->trace->instructions[i].nb_operand){
-						index_variable = irImporterDynTrace_get_ir_src_variable(ir, &engine, operands + index_operand_index);
+						index_variable = irImporterDynTrace_get_ir_src_variable(&engine, operands + index_operand_index);
 						if (index_variable == NULL){
 							printf("ERROR: in %s, unable to access operand(s) IR variable\n", __func__);
 						}
@@ -230,7 +291,7 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 						index_variable = NULL;
 					}
 
-					output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, &engine, operands + output0_operand_index, IR_ADD);
+					output0_variable = irImporterDynTrace_get_ir_dst_variable(&engine, operands + output0_operand_index, IR_ADD);
 					if (output0_variable != NULL){
 						if (base_variable != NULL){
 							if (irImporterDynTrace_add_dependence(ir, base_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -261,10 +322,8 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 				output0_operand_index 	= irImporterDynTrace_get_output(operands, ir->trace->instructions[i].nb_operand, 0);
 
 				if (input0_operand_index != ir->trace->instructions[i].nb_operand && output0_operand_index != ir->trace->instructions[i].nb_operand){
-					input0_variable = irImporterDynTrace_get_ir_src_variable(ir, &engine, operands + input0_operand_index);
+					input0_variable = irImporterDynTrace_get_ir_src_variable_dependence_index_base(&engine, operands, ir->trace->instructions[i].nb_operand, input0_operand_index);
 					if (input0_variable != NULL){
-						irImporterDynTrace_add_dependence_base_and_index(ir, &engine, operands, ir->trace->instructions[i].nb_operand, input0_variable)
-
 						if (irRenameEngine_set_ref(&engine, operands + output0_operand_index, input0_variable)){
 							printf("ERROR: in %s, unable to set reference in the renameEngine\n", __func__);
 						}
@@ -279,34 +338,23 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 				break;
 			}
 			case XED_ICLASS_NOT : {
+				/*
+					NOT 	r/m8
+					NOT 	r/m16
+					NOT 	r/m32
+				*/
+
 				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_NOT);
 				break;
 			}
 			case XED_ICLASS_MOVZX : {
-				uint32_t 		input0_operand_index;
-				uint32_t 		output0_operand_index;
-				struct node* 	input0_variable;
-				struct node* 	output0_variable;
+				/*
+					MOVZX 	r16 	r/m8
+					MOVZX 	r32 	r/m8
+					MOVZX 	r32 	r/m16
+				*/
 
-				input0_operand_index = irImporterDynTrace_get_input(operands, ir->trace->instructions[i].nb_operand, 0);
-				output0_operand_index = irImporterDynTrace_get_output(operands, ir->trace->instructions[i].nb_operand, 0);
-
-				if (input0_operand_index != ir->trace->instructions[i].nb_operand && output0_operand_index != ir->trace->instructions[i].nb_operand){
-					input0_variable = irImporterDynTrace_get_ir_src_variable(ir, &engine, operands + input0_operand_index);
-					output0_variable = irImporterDynTrace_get_ir_dst_variable(ir, &engine, operands + output0_operand_index, IR_MOVZX);
-
-					if (input0_variable != NULL && output0_variable != NULL){
-						if (irImporterDynTrace_add_dependence(ir, input0_variable, output0_variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-						}
-					}
-					else{
-						printf("ERROR: in %s, unable to access operand(s) IR variable\n", __func__);
-					}
-				}
-				else{
-					printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(ir->trace->instructions[i].opcode));
-				}
+				import_std_in_1imr_1or(ir, &engine, ir->trace->instructions + i, operands, IR_MOVZX);
 				break;
 			}
 			case XED_ICLASS_OR : {
@@ -349,12 +397,12 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 	return 0;
 }
 
-struct node* irImporterDynTrace_get_ir_src_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand){
+struct node* irImporterDynTrace_get_ir_src_variable(struct irRenameEngine* engine, struct operand* operand){
 	struct node* variable;
 
 	variable = irRenameEngine_get_ref(engine, operand);
 	if (variable == NULL){
-		variable = irImporterDynTrace_add_input(ir, operand);
+		variable = irImporterDynTrace_add_input(engine->ir, operand);
 		if (variable != NULL){
 			ir_node_get_operation(variable)->data = 1;
 			if (irRenameEngine_set_new_ref(engine, operand, variable)){
@@ -369,10 +417,34 @@ struct node* irImporterDynTrace_get_ir_src_variable(struct ir* ir, struct irRena
 	return variable;
 }
 
-struct node* irImporterDynTrace_get_ir_dst_variable(struct ir* ir, struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode){
+struct node* irImporterDynTrace_get_ir_src_variable_dependence_index_base(struct irRenameEngine* engine, struct operand* operands, uint32_t nb_operand, uint32_t index){
 	struct node* variable;
 
-	variable = irImporterDynTrace_add_operation(ir, opcode, operand);
+	variable = irRenameEngine_get_ref(engine, operands + index);
+	if (variable == NULL){
+		variable = irImporterDynTrace_add_input(engine->ir, operands + index);
+		if (variable != NULL){
+			ir_node_get_operation(variable)->data = 1;
+			if (irRenameEngine_set_new_ref(engine, operands + index, variable)){
+				printf("ERROR: in %s, unable to add new reference in the renaming engine\n", __func__);
+			}
+
+			if (OPERAND_IS_MEM(operands[index])){
+				irImporterDynTrace_add_dependence_base_and_index(engine, operands, nb_operand, variable);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to add input to IR\n", __func__);
+		}
+	}
+
+	return variable;
+}
+
+struct node* irImporterDynTrace_get_ir_dst_variable(struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode){
+	struct node* variable;
+
+	variable = irImporterDynTrace_add_operation(engine->ir, opcode, operand);
 	if (variable == NULL){
 		printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 	}

@@ -159,7 +159,7 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 /* Argument functions						                         	 */
 /* ===================================================================== */
 
-#define ARGCLUSTER_MAX_OPCODE_SEQUENCE 	16
+#define ARGCLUSTER_MAX_OPCODE_SEQUENCE 	32
 #define ARGCLUSTER_MAX_SIZE_BRUTE_FORCE 4
 
 struct argCluster{
@@ -306,6 +306,9 @@ void argCluster_split_mem_base(struct array* cluster_array, uint32_t index){
 		if (array_add(cluster_array, &new_cluster) < 0){
 			printf("ERROR: in %s, unable to add argCluster to cluster_array\n", __func__);
 			argCluster_clean(&new_cluster);
+		}
+		else{
+			cluster = (struct argCluster*)array_get(cluster_array, index);
 		}
 
 		next:;
@@ -557,7 +560,7 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 			argCluster_brute_force_small(ir->trace, cluster_ptr, set->input);
 		}
 
-		argCluster_clean(cluster_ptr);
+		argCluster_clean((struct argCluster*)array_get(&cluster_array, i));
 	}
 
 	array_clean(&cluster_array);
@@ -664,8 +667,9 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_ADD 	: {return "add";}
 		case IR_AND 	: {return "and";}
 		case IR_BSWAP 	: {return "bswap";}
-		case IR_NOT 	: {return "not";}
+		case IR_DEC 	: {return "dec";}
 		case IR_MOVZX 	: {return "movzx";}
+		case IR_NOT 	: {return "not";}
 		case IR_OR 		: {return "or";}
 		case IR_PART 	: {return "part";}
 		case IR_ROR 	: {return "ror";}

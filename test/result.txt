@@ -12,6 +12,8 @@ TEST_AES_O1: 	ok
 TEST_AES_O2: 	ok
 TEST_AES_O3: 	ok
 TEST_AES_Os: 	ok
+TEST_AES_WD: 	ok
+TEST_AES_WR: 	fail 		(128 bits) - One part of the state vector is located in a register AND in the stack at the beginning of the loop. Seq instruction unable to merge those two varaibles
 TOM_AES: 		fail 		(128 bits) - The state vector part that resides on the stack is concat with an other operand (pointer) - Solved by instruction sequence characterization
 PP_AES128: 		fail  		(large operand size 16) - DEC - state in 2 mem and 2 regs - Solved by instruction sequence characterization
 PP_AES192: 		fail 		(large operand size 16) - DEC - state in 2 mem and 2 regs - Solved by instruction sequence characterization
