@@ -184,6 +184,7 @@ uint8_t argCluster_create_opcode_seq(struct node* node, enum irOpcode* seq);
 int32_t argCluster_compare_opcode_seq(enum irOpcode* seq1, uint8_t nb_opcode1, enum irOpcode* seq2, uint8_t nb_opcode2);
 void argCluster_split_mem_base(struct array* cluster_array, uint32_t index);
 void argCluster_create_adjacent_arg_strict(struct trace* trace, struct argCluster* cluster, struct argSet* set);
+void argCluster_create_adjacent_arg_max(struct trace* trace, struct argCluster* cluster, struct argSet* set);
 void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct argSet* set);
 
 int32_t argCluster_compare_address(struct node** node1, struct node** node2);
@@ -410,6 +411,71 @@ void argCluster_create_adjacent_arg_strict(struct trace* trace, struct argCluste
 	free(mapping);
 }
 
+void argCluster_create_adjacent_arg_max(struct trace* trace, struct argCluster* cluster, struct argSet* set){
+	uint32_t* 				mapping;
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				k;
+	struct irOperation* 	operation;
+	ADDRESS 				start_address 	= 0;
+	uint32_t 				size 			= 0;
+	uint32_t 				access_size 	= 0;
+	struct inputArgument 	arg;
+	uint32_t 				copy_size;
+
+	mapping = array_create_mapping(&(cluster->node_array), (int32_t(*)(void*,void*))argCluster_compare_address);
+	if (mapping == NULL){
+		printf("ERROR: in %s, unable to create array mapping\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < argCluster_get_size(cluster); i = k){
+		operation 		= ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, mapping[i]));
+		start_address 	= operation->operation_type.input.operand->location.address;
+		size 			= operation->operation_type.input.operand->size;
+		access_size 	= ARGUMENT_ACCESS_SIZE_UNDEFINED;
+
+		for (k = i + 1; k < argCluster_get_size(cluster); k++){
+			operation = ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, mapping[k]));
+
+			if (start_address + size >= operation->operation_type.input.operand->location.address){
+				size += operation->operation_type.input.operand->location.address + operation->operation_type.input.operand->size - (start_address + size);
+			}
+			else{
+				break;
+			}
+		}
+
+		if (inputArgument_init(&arg, size, 1, access_size)){
+			printf("ERROR: in %s, unable to init input argument\n", __func__);
+			continue;
+		}
+
+		arg.desc[0].type 				= ARGFRAG_MEM;
+		arg.desc[0].location.address 	= start_address;
+		arg.desc[0].size 				= size;
+
+		for (j = i, size = 0; j < k; j++){
+			operation = ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, mapping[j]));
+			
+			if (operation->operation_type.input.operand->location.address + operation->operation_type.input.operand->size > start_address + size){
+				copy_size = operation->operation_type.input.operand->location.address + operation->operation_type.input.operand->size - (start_address + size);
+
+				memcpy(arg.data + size, trace->data + operation->operation_type.input.operand->data_offset + (operation->operation_type.input.operand->size - copy_size), copy_size);
+				size += copy_size;
+			}
+		}
+
+		if (argSet_add_input(set, &arg) < 0){
+			printf("ERROR: in %s, unable to add element to array structure\n", __func__);
+			inputArgument_clean(&arg);
+		}
+
+	}
+
+	free(mapping);
+}
+
 void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct argSet* set){
 	uint32_t 				nb_combination;
 	uint32_t 				i;
@@ -547,6 +613,7 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 					argCluster_create_adjacent_arg_strict(ir->trace, cluster_ptr, set);
 				}
 				else{
+					argCluster_create_adjacent_arg_max(ir->trace, cluster_ptr, set);
 					argCluster_split_mem_base(&cluster_array, i);
 				}
 			}
