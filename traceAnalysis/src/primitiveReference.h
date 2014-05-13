@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "argBuffer.h"
+#include "argument.h"
 #include "argSet.h"
 
 #define PRIMITIVEREFERENCE_MAX_NAME_SIZE 			256
@@ -49,7 +49,7 @@ struct primitiveReference{
 
 int32_t primitiveReference_init(struct primitiveReference* primitive, char* name, uint8_t nb_input, uint8_t nb_output, uint32_t* input_specifier, uint32_t* output_specifier, char* lib_name, char* func_name);
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct argSet* set);
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct inputArgument* input, struct argSet* set);
 
 void primitiveReference_snprint_inputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length);
 void primitiveReference_snprint_outputs(struct primitiveReference* primitive, char* buffer, uint32_t buffer_length);

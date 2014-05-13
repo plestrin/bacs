@@ -62,7 +62,7 @@ int32_t primitiveReference_init(struct primitiveReference* primitive, char* name
 	return 0;
 }
 
-int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct argBuffer* input, struct argSet* set){
+int32_t primitiveReference_test(struct primitiveReference* primitive, uint8_t nb_input, struct inputArgument* input, struct argSet* set){
 	int32_t 			result;
 	uint8_t 			i;
 	uint8_t 			j;

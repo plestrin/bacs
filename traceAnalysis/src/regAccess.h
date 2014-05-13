@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "argSet.h"
 #include "instruction.h"
 #include "array.h"
 
@@ -20,10 +21,10 @@ void regAccess_print(struct regAccess* reg_access, int nb_reg_access);
 void regAccess_propagate_read(struct regAccess* reg_access, int nb_reg_access);
 void regAccess_propagate_write(struct regAccess* reg_access, int nb_reg_access);
 
-int32_t regAccess_extract_arg_large_pure_read(struct array* input_arg, struct regAccess* reg_access, int nb_reg_access);
+int32_t regAccess_extract_arg_large_pure_read(struct argSet* set, struct regAccess* reg_access, int nb_reg_access);
 
-int32_t regAccess_extract_arg_large_mix_read(struct array* input_arg, struct regAccess* reg_access, int nb_reg_access);
+int32_t regAccess_extract_arg_large_mix_read(struct argSet* set, struct regAccess* reg_access, int nb_reg_access);
 
-int32_t regAccess_extract_arg_large_write(struct array* output_arg, struct regAccess* reg_access, int nb_reg_access);
+int32_t regAccess_extract_arg_large_write(struct argSet* set, struct regAccess* reg_access, int nb_reg_access);
 
 #endif

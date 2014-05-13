@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "argSet.h"
 #include "address.h"
 #include "array.h"
 
@@ -19,14 +20,12 @@ struct memAccess{
 
 void memAccess_print(struct memAccess* mem_access, int nb_mem_access);
 
-int32_t memAccess_extract_arg_adjacent_read(struct array* array, struct memAccess* mem_access, int nb_mem_access, void* frag);
+int32_t memAccess_extract_arg_adjacent_size_read(struct argSet* set, struct memAccess* mem_access, int nb_mem_access, void* frag);
 
-int32_t memAccess_extract_arg_adjacent_size_read(struct array* array, struct memAccess* mem_access, int nb_mem_access, void* frag);
+int32_t memAccess_extract_arg_adjacent_size_opcode_read(struct argSet* set, struct memAccess* mem_access, int nb_mem_access, void* frag);
 
-int32_t memAccess_extract_arg_adjacent_size_opcode_read(struct array* array, struct memAccess* mem_access, int nb_mem_access, void* frag);
+int32_t memAccess_extract_arg_loop_adjacent_size_opcode_read(struct argSet* set, struct memAccess* mem_access, int nb_mem_access, void* frag);
 
-int32_t memAccess_extract_arg_loop_adjacent_size_opcode_read(struct array* array, struct memAccess* mem_access, int nb_mem_access, void* frag);
-
-int32_t memAccess_extract_arg_large_write(struct array* array, struct memAccess* mem_access, int nb_mem_access, void* frag);
+int32_t memAccess_extract_arg_large_write(struct argSet* set, struct memAccess* mem_access, int nb_mem_access, void* frag);
 
 #endif

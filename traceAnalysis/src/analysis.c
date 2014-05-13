@@ -6,8 +6,8 @@
 #include "analysis.h"
 #include "inputParser.h"
 #include "instruction.h"
+#include "argument.h"
 #include "argSet.h"
-#include "argBuffer.h"
 #include "simpleTraceStat.h"
 #include "printBuffer.h"
 #include "readBuffer.h"
@@ -698,20 +698,18 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	uint32_t				stop;
 	uint32_t 				index;
 	uint8_t 				found_space = 0;
-	int32_t(*extract_routine_mem_read)(struct array*,struct memAccess*,int,void*);
-	int32_t(*extract_routine_mem_write)(struct array*,struct memAccess*,int,void*);
-	int32_t(*extract_routine_reg_read)(struct array*,struct regAccess*,int);
-	int32_t(*extract_routine_reg_write)(struct array*,struct regAccess*,int);
+	int32_t(*extract_routine_mem_read)(struct argSet*,struct memAccess*,int,void*);
+	int32_t(*extract_routine_mem_write)(struct argSet*,struct memAccess*,int,void*);
+	int32_t(*extract_routine_reg_read)(struct argSet*,struct regAccess*,int);
+	int32_t(*extract_routine_reg_write)(struct argSet*,struct regAccess*,int);
 
-	#define ARG_NAME_AR_LP 		"AR_LP"
 	#define ARG_NAME_ASR_LP 	"ASR_LP"
 	#define ARG_NAME_ASOR_LP 	"ASOR_LP"
 	#define ARG_NAME_ASR_LM 	"ASR_LM"
 	#define ARG_NAME_ASOR_LM 	"ASOR_LM"
 	#define ARG_NAME_LASOR_LM 	"LASOR_LM"
 
-	#define ARG_DESC_AR 		"arguments are made of Adjacent memory access"
-	#define ARG_DESC_ASR		"same as \"AR\" with additional access Size consideration"
+	#define ARG_DESC_ASR		"arguments are made of Adjacent memory access of the same Size"
 	#define ARG_DESC_ASOR 		"same as \"ASR\" with additional Opcode consideration"
 	#define ARG_DESC_LASOR 		"[Specific LOOP] memory access at the same index in different iterations belong to the same argument, then same as \"ASOR\""
 	#define ARG_DESC_LP 		"Large registers (>= 32bits) are combined together (Pure)"
@@ -742,17 +740,7 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 		i ++;
 	}
 
-	if (!strncmp(arg, ARG_NAME_AR_LP, i)){
-		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_read;
-		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
-		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
-		extract_routine_reg_write 	= regAccess_extract_arg_large_write;
-
-		#ifdef VERBOSE
-		printf("Extraction routine \"%s\" : %s and %s\n", ARG_NAME_AR_LP, ARG_DESC_AR, ARG_DESC_LP);
-		#endif
-	}
-	else if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
+	if (!strncmp(arg, ARG_NAME_ASR_LP, i)){
 		extract_routine_mem_read 	= memAccess_extract_arg_adjacent_size_read;
 		extract_routine_mem_write 	= memAccess_extract_arg_large_write;
 		extract_routine_reg_read 	= regAccess_extract_arg_large_pure_read;
@@ -805,7 +793,6 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	else{
 		printf("ERROR: in %s, bad extraction routine specifier of length %u\n", __func__, i);
 		printf("Expected extraction specifier:\n");
-		printf(" - \"%s\"    : %s and %s\n", 	ARG_NAME_AR_LP, 	ARG_DESC_AR, 		ARG_DESC_LP);
 		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LP, 	ARG_DESC_ASR, 		ARG_DESC_LP);
 		printf(" - \"%s\"  : %s and %s\n", 		ARG_NAME_ASOR_LP, 	ARG_DESC_ASOR, 		ARG_DESC_LP);
 		printf(" - \"%s\"   : %s and %s\n", 	ARG_NAME_ASR_LM, 	ARG_DESC_ASR, 		ARG_DESC_LM);
@@ -839,25 +826,21 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 				break;
 			}
 
-			if (extract_routine_mem_read(arg_set.input, fragment->read_memory_array, fragment->nb_memory_read_access, fragment)){
+			if (extract_routine_mem_read(&arg_set, fragment->read_memory_array, fragment->nb_memory_read_access, fragment)){
 				printf("ERROR: in %s, memory read extraction routine return an error code\n", __func__);
 			}
-			if (extract_routine_mem_write(arg_set.output, fragment->write_memory_array, fragment->nb_memory_write_access, fragment)){
+			if (extract_routine_mem_write(&arg_set, fragment->write_memory_array, fragment->nb_memory_write_access, fragment)){
 				printf("ERROR: in %s, memory write extraction routine return an error code\n", __func__);
 			}
-			if (extract_routine_reg_read(arg_set.input, fragment->read_register_array, fragment->nb_register_read_access)){
+			if (extract_routine_reg_read(&arg_set, fragment->read_register_array, fragment->nb_register_read_access)){
 				printf("ERROR: in %s, register read extraction routine return an error code\n", __func__);
 			}
-			if (extract_routine_reg_write(arg_set.output, fragment->write_register_array, fragment->nb_register_write_access)){
+			if (extract_routine_reg_write(&arg_set, fragment->write_register_array, fragment->nb_register_write_access)){
 				printf("ERROR: in %s, register write extraction routine return an error code\n", __func__);
 			}
 
 			if (strlen(arg_set.tag) == 0){
 				snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", j);
-			}
-
-			if (argSet_sort_output(&arg_set)){
-				printf("ERROR: in %s, unable to sort argSet output\n", __func__);
 			}
 
 			if (array_add(&(analysis->arg_array), &arg_set) < 0){
@@ -868,14 +851,12 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 
 	return;
 
-	#undef ARG_DESC_AR
 	#undef ARG_DESC_ASR
 	#undef ARG_DESC_ASOR
 	#undef ARG_DESC_LASOR
 	#undef ARG_DESC_LP
 	#undef ARG_DESC_LM
 
-	#undef ARG_NAME_AR_LP
 	#undef ARG_NAME_ASR_LP
 	#undef ARG_NAME_ASOR_LP
 	#undef ARG_NAME_ASR_LM
@@ -982,13 +963,9 @@ void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
 		else{
 			traceFragment_extract_arg_ir(fragment, &arg_set);
 
-			if (array_get_length(arg_set.input) > 0 && array_get_length(arg_set.output) > 0){
+			if (argSet_get_nb_input(&arg_set) > 0 && argSet_get_nb_output(&arg_set) > 0){
 				if (strlen(arg_set.tag) == 0){
 					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", index);
-				}
-
-				if (argSet_sort_output(&arg_set)){
-					printf("ERROR: in %s, unable to sort argSet output\n", __func__);
 				}
 
 				if (array_add(&(analysis->arg_array), &arg_set) < 0){
@@ -1020,8 +997,8 @@ void analysis_arg_print(struct analysis* analysis, char* arg){
 	uint32_t 					i;
 	struct argSet* 				arg_set;
 	struct multiColumnPrinter* 	printer;
-	enum argLocationType 		filter_type;
-	enum argLocationType* 		filter_type_pointer;
+	enum argFragType 			filter_type;
+	enum argFragType* 			filter_type_pointer;
 	uint8_t 					found_space = 0;
 
 	if (arg != NULL){
@@ -1038,21 +1015,14 @@ void analysis_arg_print(struct analysis* analysis, char* arg){
 				#ifdef VERBOSE
 				printf("Filter MEMORY argBuffer(s) only\n");
 				#endif
-				filter_type = ARG_LOCATION_MEMORY;
+				filter_type = ARGFRAG_MEM;
 				filter_type_pointer = &filter_type;
 			}
 			else if (!strncmp(arg, "reg", i)){
 				#ifdef VERBOSE
 				printf("Filter REGISTER argBuffer(s) only\n");
 				#endif
-				filter_type = ARG_LOCATION_REGISTER;
-				filter_type_pointer = &filter_type;
-			}
-			else if (!strncmp(arg, "mix", i)){
-				#ifdef VERBOSE
-				printf("Filter MIX argBuffer(s) only\n");
-				#endif
-				filter_type = ARG_LOCATION_MEMORY;
+				filter_type = ARGFRAG_REG;
 				filter_type_pointer = &filter_type;
 			}
 			else{
@@ -1078,54 +1048,27 @@ void analysis_arg_print(struct analysis* analysis, char* arg){
 		}
 	}
 	else{
-		printer = multiColumnPrinter_create(stdout, 9, NULL, NULL, NULL);
+		printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 		if (printer != NULL){
-
 			multiColumnPrinter_set_column_size(printer, 0, 5);
 			multiColumnPrinter_set_column_size(printer, 1, ARGSET_TAG_MAX_LENGTH);
 			multiColumnPrinter_set_column_size(printer, 2, 9);
-			multiColumnPrinter_set_column_size(printer, 3, 7);
-			multiColumnPrinter_set_column_size(printer, 4, 7);
-			multiColumnPrinter_set_column_size(printer, 5, 7);
-			multiColumnPrinter_set_column_size(printer, 6, 9);
-			multiColumnPrinter_set_column_size(printer, 7, 7);
-			multiColumnPrinter_set_column_size(printer, 8, 7);
+			multiColumnPrinter_set_column_size(printer, 3, 9);
 
 			multiColumnPrinter_set_title(printer, 0, "Index");
 			multiColumnPrinter_set_title(printer, 1, "Tag");
 			multiColumnPrinter_set_title(printer, 2, "Nb Input");
-			multiColumnPrinter_set_title(printer, 3, "I Mem");
-			multiColumnPrinter_set_title(printer, 4, "I Reg");
-			multiColumnPrinter_set_title(printer, 5, "I Mix");
-			multiColumnPrinter_set_title(printer, 6, "Nb Output");
-			multiColumnPrinter_set_title(printer, 7, "O Mem");
-			multiColumnPrinter_set_title(printer, 8, "O Reg");
+			multiColumnPrinter_set_title(printer, 3, "Nb Output");
 
 			multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_UINT32);
 			multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_UINT32);
 			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 7, MULTICOLUMN_TYPE_UINT32);
-			multiColumnPrinter_set_column_type(printer, 8, MULTICOLUMN_TYPE_UINT32);
 
 			multiColumnPrinter_print_header(printer);
 
 			for (i = 0; i < array_get_length(&(analysis->arg_array)); i++){
-				uint32_t nb_i_mem;
-				uint32_t nb_i_reg;
-				uint32_t nb_i_mix;
-				uint32_t nb_o_mem;
-				uint32_t nb_o_reg;
-
 				arg_set = (struct argSet*)array_get(&(analysis->arg_array), i);
-
-				argSet_get_nb_mem(arg_set, &nb_i_mem, &nb_o_mem);
-				argSet_get_nb_reg(arg_set, &nb_i_reg, &nb_o_reg);
-				argSet_get_nb_mix(arg_set, &nb_i_mix);
-
-				multiColumnPrinter_print(printer, i, arg_set->tag, array_get_length(arg_set->input), nb_i_mem, nb_i_reg, nb_i_mix, array_get_length(arg_set->output), nb_o_mem, nb_o_reg, NULL);
+				multiColumnPrinter_print(printer, i, arg_set->tag, argSet_get_nb_input(arg_set), argSet_get_nb_output(arg_set), NULL);
 			}
 
 			multiColumnPrinter_delete(printer);

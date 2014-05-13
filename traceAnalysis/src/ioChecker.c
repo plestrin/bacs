@@ -56,7 +56,7 @@ int32_t ioChecker_submit_argSet(struct ioChecker* checker, struct argSet* arg_se
 	struct checkJob* 			job;
 	uint32_t 					i;
 
-	if (array_get_length(arg_set->input) > 0  && array_get_length(arg_set->output) > 0){
+	if (argSet_get_nb_input(arg_set) > 0  && argSet_get_nb_output(arg_set) > 0){
 		for (i = 0; i < array_get_length(&(checker->reference_array)); i++){
 			job = (struct checkJob*)malloc(sizeof(struct checkJob));
 			if (job == NULL){
@@ -89,7 +89,7 @@ void ioChecker_thread_job(void* arg){
 	uint8_t 						nb_input;
 	uint8_t 						j;
 	uint8_t 						k;
-	struct argBuffer* 				input_combination;
+	struct inputArgument* 			input_combination;
 	uint32_t* 						input_combination_index;
 	uint32_t 						input_has_next;
 	#ifdef VERBOSE
@@ -100,7 +100,7 @@ void ioChecker_thread_job(void* arg){
 	nb_input = primitiveReference_get_nb_explicit_input(primitive);
 	input_has_next = 1;
 
-	input_combination = (struct argBuffer*)malloc(sizeof(struct argBuffer) * nb_input);
+	input_combination = (struct inputArgument*)malloc(sizeof(struct inputArgument) * nb_input);
 	input_combination_index = (uint32_t*)calloc(nb_input, sizeof(uint32_t));
 
 	if (input_combination == NULL || input_combination_index == NULL){
@@ -109,12 +109,12 @@ void ioChecker_thread_job(void* arg){
 	}
 
 	#ifdef VERBOSE
-	multiWorkPercent_start(job->multi_percent, printer_index, pow(array_get_length(arg_set->input), nb_input));
+	multiWorkPercent_start(job->multi_percent, printer_index, pow(argSet_get_nb_input(arg_set), nb_input));
 	#endif
 
 	while(input_has_next){
 		for (j = 0; j < nb_input; j++){
-			memcpy(input_combination + j, array_get(arg_set->input, input_combination_index[j]), sizeof(struct argBuffer));
+			memcpy(input_combination + j, array_get(arg_set->input, input_combination_index[j]), sizeof(struct inputArgument));
 		}
 		if (!primitiveReference_test(primitive, nb_input, input_combination, arg_set)){
 			#if VERBOSE
@@ -127,12 +127,12 @@ void ioChecker_thread_job(void* arg){
 		#endif
 
 		for (k = 0, input_has_next = 0; k < nb_input; k++){
-			input_has_next |= (input_combination_index[k] != array_get_length(arg_set->input) - 1);
+			input_has_next |= (input_combination_index[k] != argSet_get_nb_input(arg_set) - 1);
 		}
 
 		if (input_has_next){
 			j = nb_input -1;
-			while(input_combination_index[j] == array_get_length(arg_set->input) - 1){
+			while(input_combination_index[j] == argSet_get_nb_input(arg_set) - 1){
 				j--;
 			}
 			input_combination_index[j] ++;

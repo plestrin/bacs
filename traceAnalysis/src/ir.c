@@ -162,6 +162,12 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 #define ARGCLUSTER_MAX_OPCODE_SEQUENCE 	32
 #define ARGCLUSTER_MAX_SIZE_BRUTE_FORCE 4
 
+enum argLocationType{
+	ARG_LOCATION_MEMORY 		= 0x00000001,
+	ARG_LOCATION_REGISTER 		= 0x00000002,
+	ARG_LOCATION_MIX 			= 0x00000003
+};
+
 struct argCluster{
 	enum argLocationType 	location_type;
 
@@ -334,13 +340,13 @@ int32_t argCluster_compare_address(struct node** node1, struct node** node2){
 }
 
 void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* cluster, struct array* input){
-	uint32_t* 			mapping;
-	uint32_t 			i;
-	struct irOperation* operation;
-	ADDRESS 			start_address = 0;
-	uint32_t 			size = 0;
-	uint32_t 			access_size = 0;
-	struct argBuffer 	arg;
+	uint32_t* 				mapping;
+	uint32_t 				i;
+	struct irOperation* 	operation;
+	ADDRESS 				start_address 	= 0;
+	uint32_t 				size 			= 0;
+	uint32_t 				access_size 	= 0;
+	struct inputArgument 	arg;
 
 	mapping = array_create_mapping(&(cluster->node_array), (int32_t(*)(void*,void*))argCluster_compare_address);
 	if (mapping == NULL){
@@ -377,15 +383,14 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 		}
 	}
 
-	arg.location_type 	= ARG_LOCATION_MEMORY;
-	arg.address 		= start_address;
-	arg.size 			= size;
-	arg.access_size 	= access_size;
-	arg.data 			= (char*)malloc(arg.size);
-	if (arg.data == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	if (inputArgument_init(&arg, size, 1, access_size)){
+		printf("ERROR: in %s, unable to init input argument\n", __func__);
 		goto quit;
 	}
+
+	arg.desc[0].type 				= ARGFRAG_MEM;
+	arg.desc[0].location.address 	= start_address;
+	arg.desc[0].size 				= size;
 
 	for (i = 0, size = 0; i < argCluster_get_size(cluster); i++){
 		operation = ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, mapping[i]));
@@ -398,7 +403,7 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 
 	if (array_add(input, &arg) < 0){
 		printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-		free(arg.data);
+		inputArgument_clean(&arg);
 	}
 
 	quit:
@@ -406,14 +411,14 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 }
 
 void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct array* input){
-	uint32_t 			nb_combination;
-	uint32_t 			i;
-	uint32_t 			j;
-	uint32_t 			k;
-	uint8_t* 			permutation;
-	struct argBuffer 	arg;
-	uint32_t 			access_size;
-	struct irOperation* operation;
+	uint32_t 				nb_combination;
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				k;
+	uint8_t* 				permutation;
+	struct inputArgument 	arg;
+	uint32_t 				access_size;
+	struct irOperation* 	operation;
 
 	for (i = 0; i < argCluster_get_size(cluster); i++){
 		operation = ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, i));
@@ -435,30 +440,24 @@ void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluste
 		
 		PERMUTATION_INIT(nb_operand)
 
-		arg.location_type 		= ARG_LOCATION_MEMORY;
-		arg.address 			= 0;
-		arg.size 				= access_size * nb_operand;
-		arg.access_size 		= access_size;
-
 		PERMUTATION_GET_FIRST(permutation)
 		while(permutation != NULL){
-			arg.data = (char*)malloc(arg.size);
-			if (arg.data == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			if (inputArgument_init(&arg, nb_operand * access_size, nb_operand, access_size)){
+				printf("ERROR: in %s, unable to init input argument\n", __func__);
 				break;
 			}
 
 			for (j = 0, k = 0; j < argCluster_get_size(cluster); j++){
 				if ((i >> j) & 0x00000001){
 					operation = ir_node_get_operation(*(struct node**)argCluster_get_node(cluster, j));
-					memcpy(arg.data + permutation[k]*access_size, trace->data + operation->operation_type.input.operand->data_offset, access_size);
+					inputArgument_set_operand(&arg, permutation[k], permutation[k]*access_size, operation->operation_type.input.operand, (char*)(trace->data + operation->operation_type.input.operand->data_offset));
 					k++;
 				}
 			}
 
 			if (array_add(input, &arg) < 0){
 				printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-				free(arg.data);
+				inputArgument_clean(&arg);
 			}
 
 			PERMUTATION_GET_NEXT(permutation)
@@ -470,7 +469,6 @@ void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluste
 void ir_extract_arg(struct ir* ir, struct argSet* set){
 	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
-	struct argBuffer 		arg;
 	struct array 			cluster_array;
 	uint32_t 				i;
 	struct argCluster 		new_cluster;
@@ -569,38 +567,10 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 	node_cursor = ir->output_linkedList;
 	while(node_cursor != NULL){
 		operation_cursor = ir_node_get_operation(node_cursor);
-
-		if (OPERAND_IS_MEM(*(operation_cursor->operation_type.output.operand))){
-			arg.location_type = ARG_LOCATION_MEMORY;
-			arg.address = operation_cursor->operation_type.output.operand->location.address;
-		}
-		else if (OPERAND_IS_REG(*(operation_cursor->operation_type.output.operand))){
-			arg.location_type = ARG_LOCATION_REGISTER;
-			#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
-			ARGBUFFER_SET_NB_REG(arg.reg, 1);
-			#pragma GCC diagnostic ignored "-Wlong-long" /* ISO C90 does not support long long integer constant and pragma in macro */
-			ARGBUFFER_SET_REG_NAME(arg.reg, 0, operation_cursor->operation_type.output.operand->location.reg);
-		}
-		else{
-			printf("ERROR: in %s, incorrect operand type\n", __func__);
-			goto next_output;
+		if (argSet_add_output(set, operation_cursor->operation_type.output.operand, ir->trace->data + operation_cursor->operation_type.output.operand->data_offset)){
+			printf("ERROR: in %s, unable to add output argument to argSet\n", __func__);
 		}
 
-		arg.size 		= operation_cursor->operation_type.output.operand->size;
-		arg.access_size = operation_cursor->operation_type.output.operand->size;
-		arg.data 		= (char*)malloc(arg.size);
-		if (arg.data == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
-			goto next_output;
-		}
-		memcpy(arg.data, ir->trace->data + operation_cursor->operation_type.output.operand->data_offset, arg.size);
-
-		if (array_add(set->output, &arg) < 0){
-			printf("ERROR: in %s, unable to add element to array structure\n", __func__);
-			free(arg.data);
-		}
-		
-		next_output:
 		node_cursor = operation_cursor->operation_type.output.next;
 	}
 }

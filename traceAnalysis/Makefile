@@ -21,7 +21,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)cstReaderJSON.o 		\
 					$(BUILD_DIR)simpleTraceStat.o		\
 					$(BUILD_DIR)traceFragment.o			\
-					$(BUILD_DIR)argBuffer.o 			\
+					$(BUILD_DIR)argument.o 				\
 					$(BUILD_DIR)argSet.o 				\
 					$(BUILD_DIR)primitiveReference.o 	\
 					$(BUILD_DIR)ioChecker.o 			\
