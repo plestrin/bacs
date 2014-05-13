@@ -1,7 +1,10 @@
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <alloca.h>
+#include <search.h>
 
 #include "argSet.h"
 #include "multiColumn.h"
@@ -19,6 +22,8 @@ int32_t argSet_init(struct argSet* set, char* tag){
 		array_delete(set->input);
 		return -1;
 	}
+
+	set->input_tree_root = NULL;
 
 	strncpy(set->tag, tag, ARGSET_TAG_MAX_LENGTH);
 
@@ -47,12 +52,12 @@ void argSet_print(struct argSet* set, enum argFragType* type){
 		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UNBOUND_STRING);
 
 		#ifdef VERBOSE
-		printf("*** Input argBuffer(s) %u ***\n", array_get_length(set->input));
+		printf("*** Input argBuffer(s) %u ***\n", argSet_get_nb_input(set));
 		#endif
 
 		multiColumnPrinter_print_header(printer);
 
-		for (i = 0; i < array_get_length(set->input); i++){
+		for (i = 0; i < argSet_get_nb_input(set); i++){
 			arg_input = (struct inputArgument*)array_get(set->input, i);
 			if ((type != NULL && ((*type == ARGFRAG_MEM && inputArgument_is_mem(arg_input)) || (*type == ARGFRAG_REG && inputArgument_is_reg(arg_input)))) || type == NULL){
 				inputArgument_print(arg_input, printer);
@@ -60,12 +65,12 @@ void argSet_print(struct argSet* set, enum argFragType* type){
 		}
 
 		#ifdef VERBOSE
-		printf("\n*** Output argBuffer(s) %u ***\n", array_get_length(set->output));
+		printf("\n*** Output argBuffer(s) %u ***\n", argSet_get_nb_output(set));
 		#endif
 
 		multiColumnPrinter_print_header(printer);
 
-		for (i = 0; i < array_get_length(set->output); i++){
+		for (i = 0; i < argSet_get_nb_output(set); i++){
 			arg_output = (struct outputArgument*)array_get(set->output, i);
 			if ((type != NULL && *type == arg_output->desc.type) || type == NULL){
 				outputArgument_print(arg_output, printer);
@@ -79,13 +84,41 @@ void argSet_print(struct argSet* set, enum argFragType* type){
 	}
 }
 
+int32_t argSet_add_input(struct argSet* set, struct inputArgument* arg){
+	struct inputStub** stub;
+
+	arg->stub->array = NULL;
+	arg->stub->id.pointer = arg;
+
+	stub = (struct inputStub**)tsearch(arg->stub, &(set->input_tree_root), (int(*)(const void*,const void*))inputArgument_compare);
+	if (stub != NULL){
+		if (*stub == arg->stub){
+			arg->stub->array = set->input;
+			arg->stub->id.index = array_add(set->input, arg);
+			if (arg->stub->id.index < 0){
+				printf("ERROR: in %s, unable to add element to array\n", __func__);
+				return -1;
+			}
+		}
+		else{
+			inputArgument_clean(arg);
+		}
+	}
+	else{
+		printf("ERROR: in %s, tsearch returned a NULL pointer\n", __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
 int32_t argSet_search_input(struct argSet* set, char* buffer, uint32_t buffer_length){
 	uint32_t 				i;
 	struct inputArgument* 	arg;
 	int32_t 				index;
 	char 					desc[ARGUMENT_STRING_DESC_LENGTH];
 
-	for (i = 0; i < array_get_length(set->input); i++){
+	for (i = 0; i < argSet_get_nb_input(set); i++){
 		arg = (struct inputArgument*)array_get(set->input, i);
 		index = inputArgument_search(arg, buffer, buffer_length);
 		if (index >= 0){
@@ -171,13 +204,8 @@ int32_t argSet_search_output(struct argSet* set, char* buffer, uint32_t buffer_l
 }
 
 void argSet_clean(struct argSet* set){
-	uint32_t 				i;
-	struct inputArgument* 	arg;
+	tdestroy(set->input_tree_root, free);
 
-	for (i = 0; i < array_get_length(set->input); i++){
-		arg = (struct inputArgument*)array_get(set->input, i);
-		inputArgument_clean(arg);
-	}
 	array_delete(set->input);
 	set->input = NULL;
 

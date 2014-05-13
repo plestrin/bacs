@@ -12,12 +12,14 @@ struct argSet{
 	char 			tag[ARGSET_TAG_MAX_LENGTH];
 	struct array*	input;
 	struct array*	output;
+	void* 			input_tree_root;
 };
 
 int32_t argSet_init(struct argSet* set, char* tag);
 
 void argSet_print(struct argSet* set, enum argFragType* type);
 
+int32_t argSet_add_input(struct argSet* set, struct inputArgument* arg);
 int32_t argSet_search_input(struct argSet* set, char* buffer, uint32_t buffer_length);
 
 int32_t argSet_add_output(struct argSet* set, struct operand* operand, uint8_t* data);

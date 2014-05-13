@@ -281,7 +281,7 @@ int32_t regAccess_extract_arg_large_pure_read(struct argSet* set, struct regAcce
 							}
 						}
 
-						if (array_add(set->input, &arg) < 0){
+						if (argSet_add_input(set, &arg) < 0){
 							printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 							inputArgument_clean(&arg);
 						}
@@ -366,7 +366,7 @@ int32_t regAccess_extract_arg_large_mix_read(struct argSet* set, struct regAcces
 										arg.desc[permutation[k]].location.address 	= arg_mem->desc[0].location.address;
 										arg.desc[permutation[k]].size 				= arg_mem->size;
 
-										if (array_add(set->input, &arg) < 0){
+										if (argSet_add_input(set, &arg) < 0){
 											printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 											inputArgument_clean(&arg);
 										}
@@ -394,7 +394,7 @@ int32_t regAccess_extract_arg_large_mix_read(struct argSet* set, struct regAcces
 								}
 							}
 
-							if (array_add(set->input, &arg) < 0){
+							if (argSet_add_input(set, &arg) < 0){
 								printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 								inputArgument_clean(&arg);
 							}

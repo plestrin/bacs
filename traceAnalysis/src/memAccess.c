@@ -110,7 +110,7 @@ int32_t memAccess_extract_arg_adjacent_size_read(struct argSet* set, struct memA
 					}
 				}
 
-				if (array_add(set->input, &arg) < 0){
+				if (argSet_add_input(set, &arg) < 0){
 					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 					inputArgument_clean(&arg);
 				}
@@ -169,7 +169,7 @@ int32_t memAccess_extract_arg_adjacent_size_opcode_read(struct argSet* set, stru
 					}
 				}
 
-				if (array_add(set->input, &arg) < 0){
+				if (argSet_add_input(set, &arg) < 0){
 					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 					inputArgument_clean(&arg);
 				}
@@ -355,7 +355,7 @@ void memAccess_extract_group(struct argSet* set, struct memAccess* mem_access, i
 					printf("ERROR: in %s, incorrect size, expect %u but get %u\n", __func__, arg.size, size);
 				}
 
-				if (array_add(set->input, &arg) < 0){
+				if (argSet_add_input(set, &arg) < 0){
 					printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 					inputArgument_clean(&arg);
 				}

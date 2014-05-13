@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "instruction.h"
+#include "array.h"
 #include "multiColumn.h"
 
 #define ARGUMENT_STRING_DESC_LENGTH		40
@@ -23,6 +24,14 @@ struct argFragDesc{
 	uint8_t  			size;
 };
 
+struct inputStub{
+	struct array* 		array;
+	union{
+		int32_t 		index;
+		void* 			pointer;
+	} 					id;
+};
+
 struct inputArgument{
 	void* 				dyn_mem;
 	struct argFragDesc* desc;
@@ -30,6 +39,7 @@ struct inputArgument{
 	uint32_t 			size;
 	int8_t 				access_size;
 	char* 				data;
+	struct inputStub* 	stub;
 };
 
 int32_t inputArgument_init(struct inputArgument* arg, uint32_t size, uint8_t nb_desc, int8_t access_size);
@@ -40,6 +50,8 @@ int32_t inputArgument_search(struct inputArgument* arg, char* buffer, uint32_t b
 
 int32_t inputArgument_is_mem(struct inputArgument* arg);
 int32_t inputArgument_is_reg(struct inputArgument* arg);
+
+int32_t inputArgument_compare(struct inputStub* stub1, struct inputStub* stub2);
 
 #define inputArgument_clean(arg) 	free((arg)->dyn_mem)
 

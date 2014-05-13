@@ -183,8 +183,8 @@ struct argCluster{
 uint8_t argCluster_create_opcode_seq(struct node* node, enum irOpcode* seq);
 int32_t argCluster_compare_opcode_seq(enum irOpcode* seq1, uint8_t nb_opcode1, enum irOpcode* seq2, uint8_t nb_opcode2);
 void argCluster_split_mem_base(struct array* cluster_array, uint32_t index);
-void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* cluster, struct array* input);
-void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct array* input);
+void argCluster_create_adjacent_arg_strict(struct trace* trace, struct argCluster* cluster, struct argSet* set);
+void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct argSet* set);
 
 int32_t argCluster_compare_address(struct node** node1, struct node** node2);
 
@@ -339,7 +339,7 @@ int32_t argCluster_compare_address(struct node** node1, struct node** node2){
 	}
 }
 
-void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* cluster, struct array* input){
+void argCluster_create_adjacent_arg_strict(struct trace* trace, struct argCluster* cluster, struct argSet* set){
 	uint32_t* 				mapping;
 	uint32_t 				i;
 	struct irOperation* 	operation;
@@ -401,7 +401,7 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 		}
 	}
 
-	if (array_add(input, &arg) < 0){
+	if (argSet_add_input(set, &arg) < 0){
 		printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 		inputArgument_clean(&arg);
 	}
@@ -410,7 +410,7 @@ void argCluster_create_adjacent_arg(struct trace* trace, struct argCluster* clus
 	free(mapping);
 }
 
-void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct array* input){
+void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluster, struct argSet* set){
 	uint32_t 				nb_combination;
 	uint32_t 				i;
 	uint32_t 				j;
@@ -455,7 +455,7 @@ void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluste
 				}
 			}
 
-			if (array_add(input, &arg) < 0){
+			if (argSet_add_input(set, &arg) < 0){
 				printf("ERROR: in %s, unable to add element to array structure\n", __func__);
 				inputArgument_clean(&arg);
 			}
@@ -544,7 +544,7 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 		if (argCluster_get_size(cluster_ptr) > ARGCLUSTER_MAX_SIZE_BRUTE_FORCE){
 			if (cluster_ptr->location_type == ARG_LOCATION_MEMORY){
 				if (cluster_ptr->mem_base_set){
-					argCluster_create_adjacent_arg(ir->trace, cluster_ptr, set->input);
+					argCluster_create_adjacent_arg_strict(ir->trace, cluster_ptr, set);
 				}
 				else{
 					argCluster_split_mem_base(&cluster_array, i);
@@ -555,7 +555,7 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 			}
 		}
 		else{
-			argCluster_brute_force_small(ir->trace, cluster_ptr, set->input);
+			argCluster_brute_force_small(ir->trace, cluster_ptr, set);
 		}
 
 		argCluster_clean((struct argCluster*)array_get(&cluster_array, i));

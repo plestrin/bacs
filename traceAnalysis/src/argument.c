@@ -7,13 +7,14 @@
 #include "printBuffer.h"
 
 int32_t inputArgument_init(struct inputArgument* arg, uint32_t size, uint8_t nb_desc, int8_t access_size){
-	arg->dyn_mem = malloc(sizeof(struct argFragDesc) * nb_desc + size);
+	arg->dyn_mem = calloc(sizeof(struct inputStub) + sizeof(struct argFragDesc) * nb_desc + size, 1);
 	if (arg->dyn_mem != NULL){
-		arg->desc 			= (struct argFragDesc*)arg->dyn_mem;
+		arg->desc 			= (struct argFragDesc*)((char*)arg->dyn_mem + sizeof(struct inputStub));
 		arg->nb_desc 		= nb_desc;
-		arg->data 			= (char*)arg->dyn_mem + sizeof(struct argFragDesc) * nb_desc;
+		arg->data 			= (char*)arg->dyn_mem + sizeof(struct inputStub) + sizeof(struct argFragDesc) * nb_desc;
 		arg->size 			= size;
 		arg->access_size 	= access_size;
+		arg->stub 			= (struct inputStub*)arg->dyn_mem;
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -167,6 +168,41 @@ int32_t inputArgument_is_reg(struct inputArgument* arg){
 	}
 
 	return 1;
+}
+
+int32_t inputArgument_compare(struct inputStub* stub1, struct inputStub* stub2){
+	struct inputArgument* arg1;
+	struct inputArgument* arg2;
+
+	if (stub1->array != NULL){
+		arg1 = (struct inputArgument*)array_get(stub1->array, stub1->id.index);
+	}
+	else{
+		arg1 = (struct inputArgument*)stub1->id.pointer;
+	}
+
+	if (stub2->array != NULL){
+		arg2 = (struct inputArgument*)array_get(stub2->array, stub2->id.index);
+	}
+	else{
+		arg2 = (struct inputArgument*)stub2->id.pointer;
+	}
+
+	if (arg1->size > arg2->size){
+		return 1;
+	}
+	else if (arg1->size < arg2->size){
+		return -1;
+	}
+
+	if (arg1->nb_desc > arg2->nb_desc){
+		return 1;
+	}
+	else if (arg1->nb_desc < arg2->nb_desc){
+		return -1;
+	}
+
+	return memcmp((char*)arg1->dyn_mem + sizeof(struct inputStub), (char*)arg2->dyn_mem + sizeof(struct inputStub), sizeof(struct argFragDesc) * arg1->nb_desc + arg1->size);
 }
 
 int32_t outputArgument_init(struct outputArgument* arg, struct operand* operand, char* data){
