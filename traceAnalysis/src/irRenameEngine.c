@@ -427,45 +427,44 @@ int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* op
 		alias_cmp.alias_type.mem.address 	= operand->location.address;
 		alias_cmp.alias_type.mem.engine 	= engine;
 
-		alias_result = (struct alias**)tfind(&alias_cmp, &(engine->memory_bintree), compare_alias_to_alias);
+		alias_result = (struct alias**)tsearch(&alias_cmp, &(engine->memory_bintree), compare_alias_to_alias);
 		if (alias_result != NULL){
+			if (*alias_result != &alias_cmp){
+				alias_cursor = *alias_result;
+				while (alias_cursor != NULL){
+					if (alias_cursor->alias_type.mem.size > operand->size){
+						printf("WARNING: in %s, writting mem while larger access are valid\n", __func__);
+					}
+					else{
+						irRenameEngine_reset_mem_variable(engine, alias_cursor, operand, node);
+						ir_node_get_operation(node)->data ++;
+						break;
+					}
+					alias_cursor = alias_cursor->alias_type.mem.next;
+				}
+			}
+			else{
+				alias_new = alias_allocate(engine);
+				if (alias_new == NULL){
+					printf("ERROR: in %s, unable to allocate alias\n", __func__);
+					return -1;
+				}
 
-			alias_cursor = *alias_result;
-			while (alias_cursor != NULL){
-				if (alias_cursor->alias_type.mem.size > operand->size){
-					printf("WARNING: in %s, writting mem while larger access are valid\n", __func__);
-				}
-				else{
-					irRenameEngine_reset_mem_variable(engine, alias_cursor, operand, node);
-					ir_node_get_operation(node)->data ++;
-					break;
-				}
-				alias_cursor = alias_cursor->alias_type.mem.next;
+				alias_new->type 					= ALIAS_MEM_WRITE;
+				alias_new->alias_type.mem.ir_node 	= node;
+				alias_new->alias_type.mem.address 	= operand->location.address;
+				alias_new->alias_type.mem.size 		= operand->size;
+				alias_new->alias_type.mem.engine 	= engine;
+				alias_new->alias_type.mem.next 		= NULL;
+				alias_new->alias_type.mem.prev 		= NULL; 
+
+				ir_node_get_operation(node)->data ++;
+				*alias_result = alias_new;
 			}
 		}
 		else{
-			alias_new = alias_allocate(engine);
-			if (alias_new == NULL){
-				printf("ERROR: in %s, unable to allocate alias\n", __func__);
-				return -1;
-			}
-
-			alias_new->type 					= ALIAS_MEM_WRITE;
-			alias_new->alias_type.mem.ir_node 	= node;
-			alias_new->alias_type.mem.address 	= operand->location.address;
-			alias_new->alias_type.mem.size 		= operand->size;
-			alias_new->alias_type.mem.engine 	= engine;
-			alias_new->alias_type.mem.next 		= NULL;
-			alias_new->alias_type.mem.prev 		= NULL; 
-
-			if (*(void**)tsearch(alias_new, &(engine->memory_bintree), compare_alias_to_alias) != alias_new){
-				printf("ERROR: in %s, unable to add element to the binary tree\n", __func__);
-				alias_free(engine, alias_new);
-				return -1;
-			}
-			else{
-				ir_node_get_operation(node)->data ++;
-			}
+			printf("ERROR: in %s, unable to add element to the binary tree\n", __func__);
+			return -1;
 		}
 	}
 	else if (OPERAND_IS_REG(*operand)){
