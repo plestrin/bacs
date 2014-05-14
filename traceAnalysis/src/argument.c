@@ -63,10 +63,10 @@ uint32_t inputArgument_print_desc(char* string, uint32_t string_length, struct i
 			switch(arg->desc[i].type){
 				case ARGFRAG_MEM : {
 					#if defined ARCH_32
-					offset += snprintf(string + offset, string_length - offset, "Mem 0x%08x size: %u", arg->desc[i].location.address, arg->desc[i].size);
+					offset += snprintf(string + offset, string_length - offset, "0x%08x(%u)", arg->desc[i].location.address, arg->desc[i].size);
 					#elif defined ARCH_64
 					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-					offset += snprintf(string + offset, string_length - offset, "Mem 0x%llx size: %u", arg->desc[i].location.address, arg->desc[i].size);
+					offset += snprintf(string + offset, string_length - offset, "0x%llx(%u)", arg->desc[i].location.address, arg->desc[i].size);
 					#else
 					#error Please specify an architecture {ARCH_32 or ARCH_64}
 					#endif
@@ -82,10 +82,10 @@ uint32_t inputArgument_print_desc(char* string, uint32_t string_length, struct i
 			switch(arg->desc[i].type){
 				case ARGFRAG_MEM : {
 					#if defined ARCH_32
-					offset += snprintf(string + offset, string_length - offset, "Mem 0x%08x size: %u ", arg->desc[i].location.address, arg->desc[i].size);
+					offset += snprintf(string + offset, string_length - offset, "0x%08x(%u) ", arg->desc[i].location.address, arg->desc[i].size);
 					#elif defined ARCH_64
 					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-					offset += snprintf(string + offset, string_length - offset, "Mem 0x%llx size: %u ", arg->desc[i].location.address, arg->desc[i].size);
+					offset += snprintf(string + offset, string_length - offset, "0x%llx(%u) ", arg->desc[i].location.address, arg->desc[i].size);
 					#else
 					#error Please specify an architecture {ARCH_32 or ARCH_64}
 					#endif
@@ -238,10 +238,10 @@ uint32_t outputArgument_print_desc(char* string, uint32_t string_length, struct 
 	switch(arg->desc.type){
 		case ARGFRAG_MEM : {
 			#if defined ARCH_32
-			offset = snprintf(string, string_length, "Mem 0x%08x size: %u", arg->desc.location.address, arg->desc.size);
+			offset = snprintf(string, string_length, "0x%08x(%u)", arg->desc.location.address, arg->desc.size);
 			#elif defined ARCH_64
 			#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-			offset = snprintf(string, string_length, "Mem 0x%llx size: %u", arg->desc.location.address, arg->desc.size);
+			offset = snprintf(string, string_length, "0x%llx(%u)", arg->desc.location.address, arg->desc.size);
 			#else
 			#error Please specify an architecture {ARCH_32 or ARCH_64}
 			#endif

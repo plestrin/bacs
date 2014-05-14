@@ -572,7 +572,7 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
 	s2 = AES_LOAD_WORD(input[2]) ^ round_key[2];                                                                                                                                    \
 	s3 = AES_LOAD_WORD(input[3]) ^ round_key[3];                                                                                                                                    \
                                                                                                                                                                                     \
-	for (i = 0; i < (((nb_round)) - 1); i++){                                                                                                                                       \
+	for (i = 0; i < ((nb_round) - 1); i++){                                                                                                                                         \
 		t0 = TE0[(s0 >> 24) & 0x000000ff] ^ TE1[(s1 >> 16) & 0x000000ff] ^ TE2[(s2 >> 8) & 0x000000ff] ^ TE3[s3 & 0x000000ff];                                                      \
 		t1 = TE0[(s1 >> 24) & 0x000000ff] ^ TE1[(s2 >> 16) & 0x000000ff] ^ TE2[(s3 >> 8) & 0x000000ff] ^ TE3[s0 & 0x000000ff];                                                      \
 		t2 = TE0[(s2 >> 24) & 0x000000ff] ^ TE1[(s3 >> 16) & 0x000000ff] ^ TE2[(s0 >> 8) & 0x000000ff] ^ TE3[s1 & 0x000000ff];                                                      \
@@ -608,7 +608,7 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
     uint32_t    t3;                                                                                                                                                                 \
     uint8_t     i;                                                                                                                                                                  \
                                                                                                                                                                                     \
-    for (i = 0; i < (((nb_round)) - 1); i++){                                                                                                                                       \
+    for (i = 0; i < ((nb_round) - 1); i++){                                                                                                                                         \
         t0 = TE0[(s0 >> 24) & 0x000000ff] ^ TE1[(s1 >> 16) & 0x000000ff] ^ TE2[(s2 >> 8) & 0x000000ff] ^ TE3[s3 & 0x000000ff];                                                      \
         t1 = TE0[(s1 >> 24) & 0x000000ff] ^ TE1[(s2 >> 16) & 0x000000ff] ^ TE2[(s3 >> 8) & 0x000000ff] ^ TE3[s0 & 0x000000ff];                                                      \
         t2 = TE0[(s2 >> 24) & 0x000000ff] ^ TE1[(s3 >> 16) & 0x000000ff] ^ TE2[(s0 >> 8) & 0x000000ff] ^ TE3[s1 & 0x000000ff];                                                      \
@@ -696,6 +696,36 @@ void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){            
     output[3] = s3;                                                                                                                                                                 \
 }
 
+#define AES_INNER_LOOP_DECRYPT_REV(name, nb_round)                                                                                                                                  \
+void (name)(uint32_t* input, uint32_t* round_key, uint32_t* output){                                                                                                                \
+    uint32_t    s0 = input[0];                                                                                                                                                      \
+    uint32_t    s1 = input[1];                                                                                                                                                      \
+    uint32_t    s2 = input[2];                                                                                                                                                      \
+    uint32_t    s3 = input[3];                                                                                                                                                      \
+    uint32_t    t0;                                                                                                                                                                 \
+    uint32_t    t1;                                                                                                                                                                 \
+    uint32_t    t2;                                                                                                                                                                 \
+    uint32_t    t3;                                                                                                                                                                 \
+    uint8_t     i;                                                                                                                                                                  \
+                                                                                                                                                                                    \
+    for (i = 0; i < ((nb_round) - 1); i++){                                                                                                                                         \
+        t0 = TD0[(s0 >> 24) & 0x000000ff] ^ TD1[(s3 >> 16) & 0x000000ff] ^ TD2[(s2 >> 8) & 0x000000ff] ^ TD3[s1 & 0x000000ff];                                                      \
+        t1 = TD0[(s1 >> 24) & 0x000000ff] ^ TD1[(s0 >> 16) & 0x000000ff] ^ TD2[(s3 >> 8) & 0x000000ff] ^ TD3[s2 & 0x000000ff];                                                      \
+        t2 = TD0[(s2 >> 24) & 0x000000ff] ^ TD1[(s1 >> 16) & 0x000000ff] ^ TD2[(s0 >> 8) & 0x000000ff] ^ TD3[s3 & 0x000000ff];                                                      \
+        t3 = TD0[(s3 >> 24) & 0x000000ff] ^ TD1[(s2 >> 16) & 0x000000ff] ^ TD2[(s1 >> 8) & 0x000000ff] ^ TD3[s0 & 0x000000ff];                                                      \
+                                                                                                                                                                                    \
+        s0 = t0 ^ round_key[4 * i + 0];                                                                                                                                             \
+        s1 = t1 ^ round_key[4 * i + 1];                                                                                                                                             \
+        s2 = t2 ^ round_key[4 * i + 2];                                                                                                                                             \
+        s3 = t3 ^ round_key[4 * i + 3];                                                                                                                                             \
+    }                                                                                                                                                                               \
+                                                                                                                                                                                    \
+    output[0] = s0;                                                                                                                                                                 \
+    output[1] = s1;                                                                                                                                                                 \
+    output[2] = s2;                                                                                                                                                                 \
+    output[3] = s3;                                                                                                                                                                 \
+}
+
 AES_KEY_EXPAND_DECRYPT(aes128_key_expand_decrypt, aes128_key_expand_encrypt, AES_128_NB_ROUND)
 AES_KEY_EXPAND_DECRYPT(aes192_key_expand_decrypt, aes192_key_expand_encrypt, AES_192_NB_ROUND)
 AES_KEY_EXPAND_DECRYPT(aes256_key_expand_decrypt, aes256_key_expand_encrypt, AES_256_NB_ROUND)
@@ -745,5 +775,19 @@ AES_INNER_LOOP_DECRYPT(aes_10_round_dec, 11)
 AES_INNER_LOOP_DECRYPT(aes_11_round_dec, 12)
 AES_INNER_LOOP_DECRYPT(aes_12_round_dec, 13)
 AES_INNER_LOOP_DECRYPT(aes_13_round_dec, 14)
+
+AES_INNER_LOOP_DECRYPT_REV(aes_1_round_dec_rev , 2 )
+AES_INNER_LOOP_DECRYPT_REV(aes_2_round_dec_rev , 3 )
+AES_INNER_LOOP_DECRYPT_REV(aes_3_round_dec_rev , 4 )
+AES_INNER_LOOP_DECRYPT_REV(aes_4_round_dec_rev , 5 )
+AES_INNER_LOOP_DECRYPT_REV(aes_5_round_dec_rev , 6 )
+AES_INNER_LOOP_DECRYPT_REV(aes_6_round_dec_rev , 7 )
+AES_INNER_LOOP_DECRYPT_REV(aes_7_round_dec_rev , 8 )
+AES_INNER_LOOP_DECRYPT_REV(aes_8_round_dec_rev , 9 )
+AES_INNER_LOOP_DECRYPT_REV(aes_9_round_dec_rev , 10)
+AES_INNER_LOOP_DECRYPT_REV(aes_10_round_dec_rev, 11)
+AES_INNER_LOOP_DECRYPT_REV(aes_11_round_dec_rev, 12)
+AES_INNER_LOOP_DECRYPT_REV(aes_12_round_dec_rev, 13)
+AES_INNER_LOOP_DECRYPT_REV(aes_13_round_dec_rev, 14)
 
 #endif

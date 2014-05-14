@@ -106,6 +106,20 @@ void aes_11_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes_12_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 void aes_13_round_dec(uint32_t* input, uint32_t* round_key, uint32_t* output);
 
+void aes_1_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_2_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_3_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_4_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_5_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_6_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_7_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_8_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_9_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_10_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_11_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_12_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void aes_13_round_dec_rev(uint32_t* input, uint32_t* round_key, uint32_t* output);
+
 #endif
 
 #endif
