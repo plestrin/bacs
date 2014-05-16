@@ -48,7 +48,8 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions", 					"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (trace format)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print asm", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print_asm)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print_codeMap)
@@ -66,6 +67,7 @@ int main(int argc, char** argv){
 	/* traceFragement specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", 			"Print stats about the traceFragments", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_print_stat)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", 			"Print instructions of a given traceFragment",  "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_ins)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag asm", 			"Print assembly code of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_asm)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", 		"Print some stat about instructions frequency", NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_print_percent)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag register", 		"Print register access", 						"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_register)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag memory", 		"Print memory access", 							"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_print_memory)
@@ -210,6 +212,19 @@ void analysis_trace_print(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		inputParser_extract_index(arg, &start, &stop);
 		trace_print(analysis->trace, start, stop, NULL);
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_print_asm(struct analysis* analysis, char* arg){
+	uint32_t start = 0;
+	uint32_t stop = 0;
+
+	if (analysis->trace != NULL){
+		inputParser_extract_index(arg, &start, &stop);
+		trace_print_asm(analysis->trace, start, stop);
 	}
 	else{
 		printf("ERROR: in %s, trace is NULL\n", __func__);
@@ -490,6 +505,18 @@ void analysis_frag_print_ins(struct analysis* analysis, char* arg){
 	index = (uint32_t)atoi(arg);	
 	if (index < array_get_length(&(analysis->frag_array))){
 		traceFragment_print_instruction((struct traceFragment*)array_get(&(analysis->frag_array), index));
+	}
+	else{
+		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+	}
+}
+
+void analysis_frag_print_asm(struct analysis* analysis, char* arg){
+	uint32_t index;
+
+	index = (uint32_t)atoi(arg);	
+	if (index < array_get_length(&(analysis->frag_array))){
+		traceFragment_print_assembly((struct traceFragment*)array_get(&(analysis->frag_array), index));
 	}
 	else{
 		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));

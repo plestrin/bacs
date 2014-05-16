@@ -50,7 +50,25 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 		fopen_s(&(result->data_file), file_name, "wb");
 		#endif
 
-		if (result->ins_file == NULL || result->op_file == NULL || result->data_file == NULL){
+		/* file blockId */
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_BLOCKID_FILE_NAME);
+		#ifdef __linux__
+		result->blockId_file = fopen(file_name, "wb");
+		#endif
+		#ifdef WIN32
+		fopen_s(&(result->blockId_file), file_name, "wb");
+		#endif
+
+		/* file block */
+		snprintf(file_name, TRACEFILES_MAX_NAME_SIZE, "%s/%s", dir_name, TRACEFILES_BLOCK_FILE_NAME);
+		#ifdef __linux__
+		result->block_file = fopen(file_name, "wb");
+		#endif
+		#ifdef WIN32
+		fopen_s(&(result->block_file), file_name, "wb");
+		#endif
+
+		if (result->ins_file == NULL || result->op_file == NULL || result->data_file == NULL || result->blockId_file == NULL || result->block_file == NULL){
 			if (result->ins_file == NULL){
 				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_INS_FILE_NAME);
 			}
@@ -59,6 +77,12 @@ struct traceFiles* traceFiles_create(const char* dir_name){
 			}
 			if (result->data_file == NULL){
 				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_DATA_FILE_NAME);
+			}
+			if (result->blockId_file == NULL){
+				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_BLOCKID_FILE_NAME);
+			}
+			if (result->block_file == NULL){
+				printf("ERROR: in %s, unable to create file \"%s\"\n", __func__, TRACEFILES_BLOCK_FILE_NAME);
 			}
 		}
 	}
@@ -102,6 +126,12 @@ void traceFiles_delete(struct traceFiles* trace_file){
 	}
 	if (trace_file->data_file != NULL){
 		fclose(trace_file->data_file);
+	}
+	if (trace_file->blockId_file != NULL){
+		fclose(trace_file->blockId_file);
+	}
+	if (trace_file->block_file != NULL){
+		fclose(trace_file->block_file);
 	}
 	free(trace_file);
 }

@@ -7,13 +7,15 @@ SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR)
-INCLUDE_SHARED	:= -I$(MISC_DIR)
+XED_DIR 		:= /home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/extras/xed2-ia32/
+INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
+INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
-LDFLAGS			:= -lyajl -pthread  -ldl
+LDFLAGS			:= -lyajl -pthread -ldl $(XED_DIR)lib/libxed.a
 CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI)
 OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)instruction.o			\
+					$(BUILD_DIR)assembly.o 				\
 					$(BUILD_DIR)analysis.o 				\
 					$(BUILD_DIR)trace.o 				\
 					$(BUILD_DIR)cmReaderJSON.o 			\

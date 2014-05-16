@@ -27,6 +27,7 @@ struct analysis* analysis_create();
 
 void analysis_trace_load(struct analysis* analysis, char* arg);
 void analysis_trace_print(struct analysis* analysis, char* arg);
+void analysis_trace_print_asm(struct analysis* analysis, char* arg);
 void analysis_trace_check(struct analysis* analysis);
 void analysis_trace_check_codeMap(struct analysis* analysis);
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
@@ -42,6 +43,7 @@ void analysis_loop_delete(struct analysis* analysis);
 
 void analysis_frag_print_stat(struct analysis* analysis, char* arg);
 void analysis_frag_print_ins(struct analysis* analysis, char* arg);
+void analysis_frag_print_asm(struct analysis* analysis, char* arg);
 void analysis_frag_print_percent(struct analysis* analysis);
 void analysis_frag_print_register(struct analysis* analysis, char* arg);
 void analysis_frag_print_memory(struct analysis* analysis, char* arg);

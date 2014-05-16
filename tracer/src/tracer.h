@@ -6,6 +6,7 @@
 #include "codeMap.h"
 #include "instruction.h"
 #include "whiteList.h"
+#include "assembly.h"
 
 #define TRACERBUFFER_SIZE_INS 		 	1024
 #define TRACERBUFFER_SIZE_OP 			2048
@@ -101,6 +102,7 @@ struct tracer{
 	struct traceFiles* 			trace_file;
 	struct traceBuffer*			trace_buffer;
 	uint32_t 					dyn_offset;
+	struct asmWriter 			asm_writer;
 };
 
 #define ANALYSIS_REGISTER_READ_STD 		0x00

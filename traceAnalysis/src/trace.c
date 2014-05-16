@@ -10,6 +10,8 @@
 #define TRACE_INS_FILE_NAME 	"ins.bin"
 #define TRACE_OP_FILE_NAME 		"op.bin"
 #define TRACE_DATA_FILE_NAME 	"data.bin"
+#define TRACE_BLOCKID_FILE_NAME "blockId.bin"
+#define TRACE_BLOCK_FILE_NAME 	"block.bin"
 
 static void trace_clean_(struct trace* trace);
 
@@ -28,19 +30,20 @@ struct trace* trace_create(const char* directory_path){
 }
 
 int32_t trace_init(struct trace* trace, const char* directory_path){
-	char 		file_path[TRACE_PATH_MAX_LENGTH];
+	char 		file1_path[TRACE_PATH_MAX_LENGTH];
+	char 		file2_path[TRACE_PATH_MAX_LENGTH];
 	uint64_t 	map_size;
 
-	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_INS_FILE_NAME);
-	trace->instructions = mapFile_map(file_path, &map_size);
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_INS_FILE_NAME);
+	trace->instructions = mapFile_map(file1_path, &map_size);
 	trace->alloc_size_ins = map_size;
 
-	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_OP_FILE_NAME);
-	trace->operands = mapFile_map(file_path, &map_size);
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_OP_FILE_NAME);
+	trace->operands = mapFile_map(file1_path, &map_size);
 	trace->alloc_size_op = map_size;
 
-	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_DATA_FILE_NAME);
-	trace->data = mapFile_map(file_path, &map_size);
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_DATA_FILE_NAME);
+	trace->data = mapFile_map(file1_path, &map_size);
 	trace->alloc_size_data = map_size;
 	
 	trace->reference_count 	= 1;
@@ -65,6 +68,12 @@ int32_t trace_init(struct trace* trace, const char* directory_path){
 	}
 
 	trace->nb_instruction = trace->alloc_size_ins / sizeof(struct instruction);
+
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCKID_FILE_NAME);
+	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
+	if (assembly_init(&(trace->assembly), file1_path, file2_path)){
+		printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+	}
 
 	return 0;
 }
@@ -111,6 +120,16 @@ void trace_check(struct trace* trace){
 	for (i = 0; i < trace_get_nb_operand(trace); i++){
 		if (OPERAND_IS_INVALID(trace->operands[i])){
 			printf("ERROR: in %s, operand %u is invalid\n", __func__, i);
+		}
+	}
+
+	/* Assembly verification */
+	if (trace->nb_instruction != assembly_get_nb_instruction(&(trace->assembly))){
+		printf("ERROR: in %s, the number of instruction is different between the trace (%u) and the assembly (%u)\n", __func__, trace->nb_instruction, assembly_get_nb_instruction(&(trace->assembly)));
+	}
+	else{
+		if (assembly_check(&(trace->assembly))){
+			printf("ERROR: in %s, assembly check failed\n", __func__);
 		}
 	}
 }
@@ -228,6 +247,30 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 	}
 }
 
+void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
+	uint32_t 					i;
+	struct instructionIterator 	it;
+	char 						buffer[MULTICOLUMN_STRING_MAX_SIZE];
+
+	if (assembly_get_instruction(&(trace->assembly), &it, start)){
+		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
+		return;
+	}
+
+	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
+	printf("%s\n", buffer);
+
+	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(&(trace->assembly)); i++){
+		if (assembly_get_next_instruction(&(trace->assembly), &it)){
+			printf("ERROR: in %s, unable to fetch next instruction %u from the assembly\n", __func__, i);
+			break;
+		}
+
+		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
+		printf("%s\n", buffer);
+	}
+}
+
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
 	uint32_t i;
 	uint32_t j;
@@ -279,7 +322,6 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 
 	if (trace_dst->instructions == NULL || trace_dst->operands == NULL || trace_dst->data == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		trace_clean(trace_dst);
 		return -1;
 	}
 
@@ -294,6 +336,11 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 				trace_dst->operands[trace_dst->instructions[i].operand_offset + j].data_offset -= offset_data;
 			}
 		}
+	}
+
+	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length)){
+		printf("ERROR: in %s, unable to extract assembly segment\n", __func__);
+		return -1;
 	}
 
 	return 0;
@@ -338,4 +385,6 @@ static void trace_clean_(struct trace* trace){
 	else{
 		printf("ERROR: in %s, incorrect allocation type\n", __func__);
 	}
+
+	assembly_clean(&(trace->assembly));
 }

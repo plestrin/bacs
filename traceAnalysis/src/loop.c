@@ -589,7 +589,7 @@ int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_arra
 	struct traceFragment 	fragment;
 	uint32_t 				total_length;
 
-	if (loop_index > 0){
+	if (loop_index >= 0){
 		start_index = loop_index;
 		stop_index = ((uint32_t)loop_index + 1 < engine->nb_loop) ? ((uint32_t)loop_index + 1) : engine->nb_loop;
 	}
@@ -634,7 +634,7 @@ int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_arr
 	struct traceFragment 	fragment;
 	uint32_t 				total_length;
 
-	if (loop_index > 0){
+	if (loop_index >= 0){
 		start_index = loop_index;
 		stop_index = ((uint32_t)loop_index + 1 < engine->nb_loop) ? ((uint32_t)loop_index + 1) : engine->nb_loop;
 	}

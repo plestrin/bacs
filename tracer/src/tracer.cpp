@@ -541,6 +541,10 @@ void pintool_instruction_analysis_2write_reg_Xread_p2(UINT32 value1, UINT32 valu
 	traceBuffer_commit_operand(tracer.trace_buffer, tracer.trace_buffer->pending_write[1].size)
 }
 
+void pintool_basic_block_analysis(UINT32 blockId){
+	traceFiles_write_blockId(tracer.trace_file, &blockId);
+}
+
 void pintool_routine_analysis(void* cm_routine_ptr){
 	struct cm_routine* routine = (struct cm_routine*)cm_routine_ptr;
 	
@@ -562,9 +566,19 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 	BBL 					basic_block;
 	INS 					instruction;
 	REG 					tmp_reg;
+	struct asmBlockHeader 	block_header;
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
 		if (codeMap_is_instruction_whiteListed(tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
+			block_header.id 		= asmWrite_get_BlockId(&(tracer.asm_writer));
+			block_header.size 		= BBL_Size(basic_block);
+			block_header.nb_ins 	= BBL_NumIns(basic_block);
+			block_header.address 	= BBL_Address(basic_block);
+
+			traceFiles_write_block(tracer.trace_file, &block_header)
+
+			BBL_InsertCall(basic_block, IPOINT_ANYWHERE, (AFUNPTR)pintool_basic_block_analysis, IARG_UINT32, block_header.id, IARG_END);
+
 			for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
 				selector = ANALYSIS_SELECTOR_NO_OPERAND;
 
@@ -1457,6 +1471,8 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name, c
 	tracer.trace_buffer->local_offset_data 	= 0;
 	tracer.trace_buffer->global_offset_op 	= 0;
 	tracer.trace_buffer->global_offset_data = 0;
+
+	asmWriter_init(&(tracer.asm_writer));
 
 	return 0;
 

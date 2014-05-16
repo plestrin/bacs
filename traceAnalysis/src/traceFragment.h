@@ -64,6 +64,11 @@ static inline void traceFragment_print_instruction(struct traceFragment* frag){
 	trace_print(&(frag->trace), 0, frag->trace.nb_instruction, NULL);
 }
 
+static inline void traceFragment_print_assembly(struct traceFragment* frag){
+	trace_print_asm(&(frag->trace), 0, frag->trace.nb_instruction);
+}
+
+
 static inline void traceFragment_create_ir(struct traceFragment* frag){
 	if (frag->ir != NULL){
 		printf("WARNING: in %s, an IR has already been built for the current fragment - deleting\n", __func__);
