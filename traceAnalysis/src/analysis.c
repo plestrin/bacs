@@ -74,11 +74,14 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract frag arg", 		"Extract input and output argument(s)", 		"Extraction method & frag index", INPUTPARSER_CMD_TYPE_ARG, 	analysis, 					analysis_frag_extract_arg)
-	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_create_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
+
+	/* ir specific commands */
+	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_create_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_printDot_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag io", 			"Print IR input and output", 					"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_print_io)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search unrolled", 			"Search unrolled loop(s) in the IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_search_unrolled)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract arg ir", 			"Extract argument from the IR representation", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_extract_arg_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_frag_clean)
 
 	/* argument specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_arg_print)
@@ -891,15 +894,35 @@ void analysis_frag_extract_arg(struct analysis* analysis, char* arg){
 	#undef ARG_NAME_LASOR_LM
 }
 
-void analysis_frag_create_ir(struct analysis* analysis, char* arg){
-	uint32_t index;
-	uint32_t start;
-	uint32_t stop;
+void analysis_frag_clean(struct analysis* analysis){
 	uint32_t i;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
+	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
+		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
+	}
+	array_empty(&(analysis->frag_array));
+}
+
+/* ===================================================================== */
+/* ir functions						                                	 */
+/* ===================================================================== */
+
+void analysis_frag_create_ir(struct analysis* analysis, char* arg){
+	int32_t 	index = -1;
+	uint8_t 	found_space = 0;
+	uint32_t 	start;
+	uint32_t 	stop;
+	uint32_t 	i;
+
+	for (i = 0; i < strlen(arg) - 1; i++){
+		if (arg[i] == ' '){
+			found_space = 1;
+			break;
+		}
+	}
+	if (found_space){
+		index = atoi(arg + i + 1);
+		if (index < (int32_t)array_get_length(&(analysis->frag_array))){
 			start = index;
 			stop = index + 1;
 		}
@@ -909,13 +932,28 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 		}
 	}
 	else{
+		i ++;
 		start = 0;
 		stop = array_get_length(&(analysis->frag_array));
 	}
 
-	for (i = start; i < stop; i++){	
-		traceFragment_create_ir((struct traceFragment*)array_get(&(analysis->frag_array), i));
+	if (!strncmp(arg, "ASM", i)){
+		for (i = start; i < stop; i++){	
+			traceFragment_create_ir((struct traceFragment*)array_get(&(analysis->frag_array), i), IR_CREATE_ASM);
+		}
 	}
+	else if (!strncmp(arg, "TRACE", i)){
+		for (i = start; i < stop; i++){	
+			traceFragment_create_ir((struct traceFragment*)array_get(&(analysis->frag_array), i), IR_CREATE_TRACE);
+		}
+	}
+	else{
+		printf("Expected creation specifier:\n");
+		printf(" - \"ASM\"   : create the IR from ASM code\n");
+		printf(" - \"TRACE\" : create the IR from the execution trace\n");
+	}
+
+	return;
 }
 
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
@@ -954,6 +992,33 @@ void analysis_frag_print_io(struct analysis* analysis, char* arg){
 
 	for (i = start; i < stop; i++){	
 		traceFragment_print_io((struct traceFragment*)array_get(&(analysis->frag_array), i));
+	}
+}
+
+void analysis_frag_search_unrolled(struct analysis* analysis, char* arg){
+	uint32_t index;
+	uint32_t start;
+	uint32_t stop;
+	uint32_t i;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){	
+		traceFragment_search_unrolled((struct traceFragment*)array_get(&(analysis->frag_array), i));
 	}
 }
 
@@ -1006,14 +1071,6 @@ void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_clean(struct analysis* analysis){
-	uint32_t i;
-
-	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
-	}
-	array_empty(&(analysis->frag_array));
-}
 
 /* ===================================================================== */
 /* arg functions						                                 */

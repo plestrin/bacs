@@ -7,6 +7,6 @@
 
 #include "graph.h"
 
-int32_t graphPrintDot_print(struct graph* graph, const char* name);
+int32_t graphPrintDot_print(struct graph* graph, const char* name, void* arg);
 
 #endif

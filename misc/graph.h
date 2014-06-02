@@ -22,6 +22,9 @@ struct edge{
 	char 			data[GRAPH_DATA_PADDING_ALIGNEMENT];
 };
 
+#define edge_get_src(edge) ((edge)->src_node)
+#define edge_get_dst(edge) ((edge)->dst_node)
+
 struct node{
 	struct node* 	prev;
 	struct node* 	next;
@@ -39,8 +42,10 @@ struct graph{
 	uint32_t 		node_data_size;
 	uint32_t 		edge_data_size;
 
-	void(*dotPrint_node_data)(void*,FILE*);
-	void(*dotPrint_edge_data)(void*,FILE*);
+	void(*dotPrint_prologue)(FILE*,void*);
+	void(*dotPrint_node_data)(void*,FILE*,void*);
+	void(*dotPrint_edge_data)(void*,FILE*,void*);
+	void(*dotPrint_epilogue)(FILE*,void*);
 };
 
 struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
@@ -51,12 +56,16 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 	(graph)->nb_edge 			= 0; 																											\
 	(graph)->node_data_size 	= ((node_data_size_) > GRAPH_DATA_PADDING_ALIGNEMENT) ? (node_data_size_) : GRAPH_DATA_PADDING_ALIGNEMENT; 		\
 	(graph)->edge_data_size 	= ((edge_data_size_) > GRAPH_DATA_PADDING_ALIGNEMENT) ? (edge_data_size_) : GRAPH_DATA_PADDING_ALIGNEMENT; 		\
+	(graph)->dotPrint_prologue 	= NULL; 																										\
 	(graph)->dotPrint_node_data = NULL; 																										\
-	(graph)->dotPrint_edge_data = NULL;
+	(graph)->dotPrint_edge_data = NULL; 																										\
+	(graph)->dotPrint_epilogue 	= NULL;
 
-#define graph_register_dotPrint_callback(graph, node_data, edge_data) 																			\
+#define graph_register_dotPrint_callback(graph, prologue, node_data, edge_data, epilogue) 														\
+	(graph)->dotPrint_prologue 	= prologue; 																									\
 	(graph)->dotPrint_node_data = node_data; 																									\
-	(graph)->dotPrint_edge_data = edge_data;
+	(graph)->dotPrint_edge_data = edge_data; 																									\
+	(graph)->dotPrint_epilogue 	= epilogue;
 
 struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);
@@ -73,6 +82,28 @@ void graph_remove_edge(struct graph* graph, struct edge* edge);
 #define node_get_head_edge_dst(node) 	((node)->dst_edge_linkedList)
 #define edge_get_next_src(edge) 		((edge)->src_next)
 #define edge_get_next_dst(edge) 		((edge)->dst_next)
+
+static inline struct edge* node_get_edge_dst(struct node* node, uint32_t i){
+	struct edge* edge_dst = node_get_head_edge_dst(node);
+
+	while (i != 0 && edge_dst != NULL){
+		edge_dst = edge_get_next_dst(edge_dst);
+		i --;
+	}
+
+	return edge_dst;
+}
+
+static inline struct edge* node_get_edge_src(struct node* node, uint32_t i){
+	struct edge* edge_src = node_get_head_edge_src(node);
+
+	while (i != 0 && edge_src != NULL){
+		edge_src = edge_get_next_src(edge_src);
+		i --;
+	}
+
+	return edge_src;
+}
 
 #define graph_clean(graph) 																														\
 	while((graph)->node_linkedList != NULL){ 																									\

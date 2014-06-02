@@ -262,7 +262,7 @@ int32_t regAccess_extract_arg_large_pure_read(struct argSet* set, struct regAcce
 					uint8_t 	nb_register = __builtin_popcount(i);
 					uint8_t* 	permutation;
 
-					PERMUTATION_INIT(nb_register)
+					PERMUTATION_CREATE(nb_register, malloc)
 
 					PERMUTATION_GET_FIRST(permutation)
 					while(permutation != NULL){
@@ -288,7 +288,7 @@ int32_t regAccess_extract_arg_large_pure_read(struct argSet* set, struct regAcce
 
 						PERMUTATION_GET_NEXT(permutation)
 					}
-					PERMUTATION_CLEAN()
+					PERMUTATION_DELETE()
 				}
 			}
 			else{
@@ -330,7 +330,7 @@ int32_t regAccess_extract_arg_large_mix_read(struct argSet* set, struct regAcces
 				for (i = 1; i < nb_argBuffer; i++){
 					uint8_t 	nb_element = __builtin_popcount(i);
 					uint8_t* 	permutation;
-					PERMUTATION_INIT(nb_element)
+					PERMUTATION_CREATE(nb_element, malloc)
 
 					if ((i >> nb_large_access) & 0x00000001){
 						if (nb_element != 1){
@@ -402,7 +402,7 @@ int32_t regAccess_extract_arg_large_mix_read(struct argSet* set, struct regAcces
 							PERMUTATION_GET_NEXT(permutation)
 						}
 					}
-					PERMUTATION_CLEAN()
+					PERMUTATION_DELETE()
 				}
 			}
 			else{

@@ -4,19 +4,20 @@
 
 #include "ir.h"
 #include "irImporterDynTrace.h"
+#include "irImporterAsm.h"
 #include "array.h"
 #include "permutation.h"
 #include "multiColumn.h"
 
-void ir_dotPrint_node(void* data, FILE* file);
-void ir_dotPrint_edge(void* data, FILE* file);
+void ir_dotPrint_node(void* data, FILE* file, void* arg);
+void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
-struct ir* ir_create(struct trace* trace){
+struct ir* ir_create(struct trace* trace, enum irCreateMethod create_method){
 	struct ir* ir;
 
 	ir =(struct ir*)malloc(sizeof(struct ir));
 	if (ir != NULL){
-		if(ir_init(ir, trace)){
+		if(ir_init(ir, trace, create_method)){
 			printf("ERROR: in %s, unable to init ir\n", __func__);
 			free(ir);
 			ir = NULL;
@@ -29,16 +30,28 @@ struct ir* ir_create(struct trace* trace){
 	return ir;
 }
 
-int32_t ir_init(struct ir* ir, struct trace* trace){
+int32_t ir_init(struct ir* ir, struct trace* trace, enum irCreateMethod create_method){
 	ir->trace 				= trace;
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
-	graph_register_dotPrint_callback(&(ir->graph), ir_dotPrint_node, ir_dotPrint_edge)
+	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
 	ir->input_linkedList 	= NULL;
 	ir->output_linkedList 	= NULL;
 
-	if (irImporterDynTrace_import(ir)){
-		printf("ERROR: in %s, trace import has failed\n", __func__);
-		return -1;
+	switch(create_method){
+		case IR_CREATE_TRACE : {
+			if (irImporterDynTrace_import(ir)){
+				printf("ERROR: in %s, trace dynTrace import has failed\n", __func__);
+				return -1;
+			}
+			break;
+		}
+		case IR_CREATE_ASM : {
+			if (irImporterAsm_import(ir)){
+				printf("ERROR: in %s, trace asm import has failed\n", __func__);
+				return -1;
+			}
+			break;
+		}
 	}
 	
 	return 0;
@@ -504,7 +517,7 @@ void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluste
 	for (i = 1; i < nb_combination; i++){
 		uint8_t nb_operand = __builtin_popcount(i);
 		
-		PERMUTATION_INIT(nb_operand)
+		PERMUTATION_CREATE(nb_operand, malloc)
 
 		PERMUTATION_GET_FIRST(permutation)
 		while(permutation != NULL){
@@ -528,7 +541,7 @@ void argCluster_brute_force_small(struct trace* trace, struct argCluster* cluste
 
 			PERMUTATION_GET_NEXT(permutation)
 		}
-		PERMUTATION_CLEAN()
+		PERMUTATION_DELETE()
 	}
 }
 
@@ -646,7 +659,8 @@ void ir_extract_arg(struct ir* ir, struct argSet* set){
 /* Printing functions						                             */
 /* ===================================================================== */
 
-void ir_dotPrint_node(void* data, FILE* file){
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void ir_dotPrint_node(void* data, FILE* file, void* arg){
 	struct irOperation* operation = (struct irOperation*)data;
 
 	switch(operation->type){
@@ -681,7 +695,8 @@ void ir_dotPrint_node(void* data, FILE* file){
 	}
 }
 
-void ir_dotPrint_edge(void* data, FILE* file){
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 	struct irDependence* dependence = (struct irDependence*)data;
 
 	switch(dependence->type){

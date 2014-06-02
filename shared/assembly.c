@@ -386,6 +386,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	uint32_t 			possible_new_id 	= 0;
 	struct asmBlock* 	new_block;
 	void* 				bintree_root 		= NULL;
+	void* 				realloc_mapping;
 
 	while(down < up){
 		idx_block_start  = (up + down) / 2;
@@ -510,9 +511,6 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		return -1;
 	}
 
-	/* pour le debug */
-	printf("{length=%u, offset=%u, bb_start=%u, bb_stop=%u, ins_start=%u, ins_stop=%u, nb_dyn_block=%u, size=%u}\n", length, offset, idx_block_start, idx_block_stop, idx_ins_start, idx_ins_stop, assembly_dst->nb_dyn_block, size);
-	
 	new_block = (struct asmBlock*)assembly_dst->mapping_block;
 	if (idx_block_start == idx_block_stop){
 		new_block->header.id 		= possible_new_id ++;
@@ -590,6 +588,17 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 
 	tdestroy(bintree_root, assembly_clean_tree_node);
+
+	realloc_mapping = realloc(assembly_dst->mapping_block, size);
+	if (realloc_mapping == NULL){
+		printf("ERROR: in %s, unable to realloc memory\n", __func__);
+	}
+	else if (realloc_mapping != assembly_dst->mapping_block){
+		for (i = 0; i < assembly_dst->nb_dyn_block; i++){
+			assembly_dst->dyn_blocks[i].block = (struct asmBlock*)((char*)realloc_mapping + (uint32_t)((char*)assembly_dst->dyn_blocks[i].block - (char*)assembly_dst->mapping_block));
+		}
+		assembly_dst->mapping_block = realloc_mapping;
+	}
 
 	return 0;
 }

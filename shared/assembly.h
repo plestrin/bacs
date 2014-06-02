@@ -55,6 +55,8 @@ struct instructionIterator{
 	ADDRESS 				instruction_address;
 };
 
+#define instructionIterator_get_instruction_index(it) ((it)->instruction_index)
+
 struct assembly* assembly_create(const char* file_name_id, const char* file_name_block);
 int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const char* file_name_block);
 

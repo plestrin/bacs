@@ -10,21 +10,23 @@
 #include "graphPrintDot.h"
 
 enum irOpcode{
-	IR_ADD,
-	IR_AND,
-	IR_BSWAP,
-	IR_DEC, 	/* tmp */
-	IR_MOVZX,
-	IR_NOT,
-	IR_OR,
-	IR_PART,
-	IR_SAR,
-	IR_SHL,
-	IR_SHR,
-	IR_SUB,
-	IR_ROR,
-	IR_XOR
+	IR_ADD 		= 0,
+	IR_AND 		= 1,
+	IR_BSWAP 	= 2,
+	IR_DEC 		= 3, 	/* tmp */
+	IR_MOVZX 	= 4,
+	IR_NOT 		= 5,
+	IR_OR 		= 6,
+	IR_PART 	= 7,
+	IR_SAR 		= 8,
+	IR_SHL 		= 9,
+	IR_SHR 		= 10,
+	IR_SUB 		= 11,
+	IR_ROR 		= 12,
+	IR_XOR 		= 13
 };
+
+#define IR_NB_OPCODE 14
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -76,8 +78,13 @@ struct ir{
 	struct node* 				output_linkedList;
 };
 
-struct ir* ir_create(struct trace* trace);
-int32_t ir_init(struct ir* ir, struct trace* trace);
+enum irCreateMethod{
+	IR_CREATE_TRACE,
+	IR_CREATE_ASM
+};
+
+struct ir* ir_create(struct trace* trace, enum irCreateMethod create_method);
+int32_t ir_init(struct ir* ir, struct trace* trace, enum irCreateMethod create_method);
 
 struct node* ir_add_input(struct ir* ir, struct operand* operand);
 struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand);
@@ -90,7 +97,7 @@ void ir_print_io(struct ir* ir);
 
 void ir_extract_arg(struct ir* ir, struct argSet* set);
 
-#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL)
+#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
 #define ir_clean(ir) 													\
 	graph_clean(&(ir->graph));											\

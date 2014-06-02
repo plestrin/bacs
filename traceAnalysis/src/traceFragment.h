@@ -7,6 +7,7 @@
 #include "codeMap.h"
 #include "instruction.h"
 #include "ir.h"
+#include "unrolledLoop.h"
 #include "memAccess.h"
 #include "regAccess.h"
 #include "array.h"
@@ -69,12 +70,12 @@ static inline void traceFragment_print_assembly(struct traceFragment* frag){
 }
 
 
-static inline void traceFragment_create_ir(struct traceFragment* frag){
+static inline void traceFragment_create_ir(struct traceFragment* frag, enum irCreateMethod create_method){
 	if (frag->ir != NULL){
 		printf("WARNING: in %s, an IR has already been built for the current fragment - deleting\n", __func__);
 		ir_delete(frag->ir);
 	}
-	frag->ir = ir_create(&(frag->trace));
+	frag->ir = ir_create(&(frag->trace), create_method);
 }
 
 static inline void traceFragment_printDot_ir(struct traceFragment* frag){
@@ -89,6 +90,15 @@ static inline void traceFragment_printDot_ir(struct traceFragment* frag){
 static inline void traceFragment_print_io(struct traceFragment* frag){
 	if (frag->ir != NULL){
 		ir_print_io(frag->ir);
+	}
+	else{
+		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+	}
+}
+
+static inline void traceFragment_search_unrolled(struct traceFragment* frag){
+	if (frag->ir != NULL){
+		ir_search_unrolled(frag->ir);
 	}
 	else{
 		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
