@@ -7,6 +7,8 @@
 #include "unrolledLoop.h"
 #include "permutation.h"
 
+int32_t compare_divergentMapping(const void* arg1, const void* arg2);
+
 void irMapping_dotPrint_node_number(void* data, FILE* file, void* arg);
 void irMapping_dotPrint_node_color(void* data, FILE* file, void* arg);
 void irMapping_dotPrint_edge(void* data, FILE* file, void* arg);
@@ -270,7 +272,7 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 					div_score += parent_mappings[i].container->div_score;
 				}
 				else{
-					div_score += value;
+					div_score += (value == 1)? 1 : 0;
 				}
 			}
 
@@ -288,7 +290,7 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 								if (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y == current_divergent->node_y){
 									divergent_offset[i] ++;
 									score -= current_divergent->container->div_score;
-									printf("Found duplicate: removing %d (x: %p, y: %p)\n", current_divergent->container->div_score, (void*)ir_node_get_operation(current_divergent->node_x), (void*)ir_node_get_operation(current_divergent->node_y));
+									printf("WARNING: in %s, found duplicate: removing %d (x: %p, y: %p)\n", __func__, current_divergent->container->div_score, (void*)ir_node_get_operation(current_divergent->node_x), (void*)ir_node_get_operation(current_divergent->node_y));
 								}
 								else if (smallest_divergent->node_x > current_divergent->node_x || (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y > current_divergent->node_y)){
 									smallest_divergent = current_divergent;
@@ -299,6 +301,14 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 					}
 				}
 				if (smallest_divergent != NULL){
+					for (i = 0; i < nb_parent; i++){
+						if (mapping_is_valid(parent_mappings + i)){
+							if (smallest_divergent->node_x == parent_mappings[i].node_x && smallest_divergent->node_y == parent_mappings[i].node_y){
+								score -= smallest_divergent->container->div_score;
+								printf("WARNING: in %s, found duplicate: removing %d (x: %p, y: %p)\n", __func__, smallest_divergent->container->div_score, (void*)ir_node_get_operation(smallest_divergent->node_x), (void*)ir_node_get_operation(smallest_divergent->node_y));
+							}
+						}
+					}
 					*smallest_offset_ptr = *smallest_offset_ptr + 1;
 				}
 			}
@@ -312,6 +322,7 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 			PERMUTATION_GET_NEXT(permutation)
 		}
 
+		/* STEP 6: save the best mapping in the container */
 		ir_mapping_container->opcode_mapping_container[opcode].node_mapping_container[index].score 						= max_score + 1;
 		ir_mapping_container->opcode_mapping_container[opcode].node_mapping_container[index].div_score 					= max_div_score + 1;
 		ir_mapping_container->opcode_mapping_container[opcode].node_mapping_container[index].parent_mapping_offset 		= array_get_length(&(ir_mapping_container->mapping_array));
@@ -327,10 +338,9 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 					divergent_parent[nb_divergent_parent].node_x 		= max_parent_mappings[i].node_x;
 					divergent_parent[nb_divergent_parent].node_y 		= max_parent_mappings[i].node_y;
 					divergent_parent[nb_divergent_parent].num_factor 	= 1;
-					divergent_parent[nb_divergent_parent].dem_factor 	= max_parent_mappings[i].node_x->nb_edge_src;
+					divergent_parent[nb_divergent_parent].den_factor 	= (max_parent_mappings[i].node_x->nb_edge_src > max_parent_mappings[i].node_y->nb_edge_src) ? max_parent_mappings[i].node_x->nb_edge_src : max_parent_mappings[i].node_y->nb_edge_src;
 					divergent_parent[nb_divergent_parent].container 	= max_parent_mappings[i].container;
 					nb_divergent_parent ++;
-					printf("Pushing div with score of %d (x: %p, y: %p)\n", max_parent_mappings[i].container->div_score, (void*)ir_node_get_operation(max_parent_mappings[i].node_x), (void*)ir_node_get_operation(max_parent_mappings[i].node_y));
 				}
 
 				if (max_parent_mappings[i].container->parent_nb_div_mapping > 0){
@@ -340,8 +350,12 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 		}
 
 		if (nb_divergent_parent > 1){
-			/* sort the divergent parent list */
-			printf("WARNING: in %s, this case is not implemented yet: sort the parent divergence list\n", __func__);
+			qsort (divergent_parent, nb_divergent_parent, sizeof(struct divergentMapping), compare_divergentMapping);
+            for (i = 1; i < nb_divergent_parent; i++){
+            	if (divergent_parent[i].node_x == divergent_parent[i - 1].node_x && divergent_parent[i].node_y == divergent_parent[i - 1].node_y){
+            		printf("WARNING: in %s, this case is not implemented yet: duplicate in sorted divergence parent list\n", __func__);
+            	}
+            }
 		}
 
 		if (nb_divergent_parent == 0 && nb_parent_divergence_list < 2){
@@ -374,14 +388,9 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 								smallest_divergent = current_divergent;
 								smallest_offset_ptr = divergent_offset + i;
 							}
-							else{
-								if (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y == current_divergent->node_y){
-									printf("WARNING: in %s, this case is not implemented yet: divergence equality in merging\n", __func__);
-								}
-								else if (smallest_divergent->node_x > current_divergent->node_x || (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y > current_divergent->node_y)){
-									smallest_divergent = current_divergent;
-									smallest_offset_ptr = divergent_offset + i;
-								}
+							else if (smallest_divergent->node_x > current_divergent->node_x || (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y > current_divergent->node_y)){
+								smallest_divergent = current_divergent;
+								smallest_offset_ptr = divergent_offset + i;
 							}
 						}
 					}
@@ -391,25 +400,72 @@ int32_t irMappingContainer_map(struct irMappingContainer* ir_mapping_container, 
 						smallest_divergent = divergent_parent + divergent_parent_offset;
 						smallest_offset_ptr = &divergent_parent_offset;
 					}
-					else{
-						if (smallest_divergent->node_x == divergent_parent[divergent_parent_offset].node_x && smallest_divergent->node_y == divergent_parent[divergent_parent_offset].node_y){
-							printf("WARNING: in %s, this case is not implemented yet: divergence equality in merging\n", __func__);
-						}
-						else if (smallest_divergent->node_x > divergent_parent[divergent_parent_offset].node_x || (smallest_divergent->node_x == divergent_parent[divergent_parent_offset].node_x && smallest_divergent->node_y > divergent_parent[divergent_parent_offset].node_y)){
-							smallest_divergent = divergent_parent + divergent_parent_offset;
-							smallest_offset_ptr = &divergent_parent_offset;
-						}
+					else if (smallest_divergent->node_x > divergent_parent[divergent_parent_offset].node_x || (smallest_divergent->node_x == divergent_parent[divergent_parent_offset].node_x && smallest_divergent->node_y > divergent_parent[divergent_parent_offset].node_y)){
+						smallest_divergent = divergent_parent + divergent_parent_offset;
+						smallest_offset_ptr = &divergent_parent_offset;
 					}
 				}
 
 				if (smallest_divergent != NULL){
-					if (array_add(&(ir_mapping_container->divergence_array), smallest_divergent) < 0){
-						printf("ERROR: in %s, unable to add element to the divergence_array\n", __func__);
+					uint32_t new_num_factor = smallest_divergent->num_factor;
+					uint32_t new_den_factor = smallest_divergent->den_factor;
+
+					if ((divergent_parent_offset < nb_divergent_parent) && (smallest_divergent != divergent_parent + divergent_parent_offset) && (smallest_divergent->node_x == divergent_parent[divergent_parent_offset].node_x && smallest_divergent->node_y == divergent_parent[divergent_parent_offset].node_y)){
+						if (new_den_factor == divergent_parent[divergent_parent_offset].den_factor){
+							new_num_factor += divergent_parent[divergent_parent_offset].num_factor;
+						}
+						else{
+							new_num_factor = (new_num_factor * divergent_parent[divergent_parent_offset].den_factor) + (divergent_parent[divergent_parent_offset].num_factor * new_den_factor);
+							new_den_factor = new_den_factor * divergent_parent[divergent_parent_offset].den_factor;
+						}
+						divergent_parent_offset ++;
+						printf("WARNING: in %s, merging div case (%u/%u)\n", __func__, new_num_factor, new_den_factor);
+					}
+					if ((divergent_parent_offset >= nb_divergent_parent) || (smallest_divergent != divergent_parent + divergent_parent_offset)){
+						if (max_parent_mappings[smallest_offset_ptr - divergent_offset].node_x->nb_edge_src > 1 || max_parent_mappings[smallest_offset_ptr - divergent_offset].node_y->nb_edge_src > 1){
+							new_den_factor = new_den_factor * ((max_parent_mappings[smallest_offset_ptr - divergent_offset].node_x->nb_edge_src > max_parent_mappings[smallest_offset_ptr - divergent_offset].node_y->nb_edge_src) ? max_parent_mappings[smallest_offset_ptr - divergent_offset].node_x->nb_edge_src : max_parent_mappings[smallest_offset_ptr - divergent_offset].node_y->nb_edge_src);
+						}
+					}
+					for (i = 0; i < nb_parent; i++){
+						if (mapping_is_valid(max_parent_mappings + i)){
+							if (divergent_offset[i] < max_parent_mappings[i].container->parent_nb_div_mapping){
+								current_divergent = (struct divergentMapping*)array_get(&(ir_mapping_container->divergence_array), divergent_offset[i] + max_parent_mappings[i].container->parent_div_mapping_offset);
+								if ((current_divergent != smallest_divergent) && (smallest_divergent->node_x == current_divergent->node_x && smallest_divergent->node_y == current_divergent->node_y)){
+									if (max_parent_mappings[i].node_x->nb_edge_src > 1 || max_parent_mappings[i].node_y->nb_edge_src > 1){
+										printf("WARNING: in %s, this case is not implemented yet: update dem 2\n", __func__);
+									}
+									if (new_den_factor == current_divergent->den_factor){
+										new_num_factor += current_divergent->num_factor;
+									}
+									else{
+										new_num_factor = (new_num_factor * current_divergent->den_factor) + (current_divergent->num_factor * new_den_factor);
+										new_den_factor = new_den_factor * current_divergent->den_factor;
+									}
+									divergent_offset[i] ++;
+									printf("WARNING: in %s, merging div case (%u/%u)\n", __func__, new_num_factor, new_den_factor);
+								}
+							}
+						}
+					}
+
+					if (new_num_factor != new_den_factor){
+						int32_t div_handle;
+
+						div_handle = array_add(&(ir_mapping_container->divergence_array), smallest_divergent);
+						if (div_handle < 0){
+							printf("ERROR: in %s, unable to add element to the divergence_array\n", __func__);
+						}
+						else{
+							smallest_divergent = (struct divergentMapping*)array_get(&(ir_mapping_container->divergence_array), div_handle);
+							smallest_divergent->num_factor = new_num_factor;
+							smallest_divergent->den_factor = new_den_factor;
+						}
+					}
+					else{
+						printf("WARNING: in %s, removing divergence\n", __func__);
 					}
 					*smallest_offset_ptr = *smallest_offset_ptr + 1;
-					/*we need to update the factor */
 				}
-
 			}
 		}
 
@@ -446,6 +502,40 @@ void mappingResult_add_mapping(struct mappingResult* mapping_result, struct irMa
 	operation_x = ir_node_get_operation(mapping->node_x);
 	operation_y = ir_node_get_operation(mapping->node_y);
 
+
+	/* pour le debug */
+	printf("%d: ", mapping->container->score);
+	switch(operation_x->type){
+		case IR_OPERATION_TYPE_OUTPUT 	: {
+			printf("%s %p", irOpcode_2_string(operation_x->operation_type.output.opcode), (void*)operation_x);
+			break;
+		}
+		case IR_OPERATION_TYPE_INNER 	: {
+			printf("%s %p", irOpcode_2_string(operation_x->operation_type.inner.opcode), (void*)operation_x);
+			break;
+		}
+		default : {
+			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
+			break;
+		}
+	}
+	printf(" - ");
+	switch(operation_y->type){
+		case IR_OPERATION_TYPE_OUTPUT 	: {
+			printf("%s %p", irOpcode_2_string(operation_y->operation_type.output.opcode), (void*)operation_y);
+			break;
+		}
+		case IR_OPERATION_TYPE_INNER 	: {
+			printf("%s %p", irOpcode_2_string(operation_y->operation_type.inner.opcode), (void*)operation_y);
+			break;
+		}
+		default : {
+			printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
+			break;
+		}
+	}
+	printf("\n");
+
 	if (operation_x->data == 0xffffffff){
 		struct mappingLLElement new_mapping_ll_x;
 		int32_t 				index_mapping_ll_x;
@@ -481,30 +571,74 @@ void mappingResult_add_mapping(struct mappingResult* mapping_result, struct irMa
 	mapping_ll_x = array_get(&(mapping_result->mapping_ll_elem), operation_x->data);
 	mapping_ll_y = array_get(&(mapping_result->mapping_ll_elem), operation_y->data);
 
-	if (mapping_ll_x->node_prev != NULL){
-		if (mapping_ll_y->node_next != NULL){
-			if (mapping_ll_x->node_prev == mapping->node_y && mapping_ll_y->node_next == mapping->node_x){
-				return;
-			}
-			else{
-				printf("ERROR: in %s, this case is not meant to happen\n", __func__);
-			}
-		}
-		else{
-			printf("ERROR: in %s, this case is not meant to happen (x prev not NULL and y next NULL)\n", __func__);
-		}
-	}
-	else{
-		if (mapping_ll_y->node_next == NULL){
-			mapping_ll_x->node_prev = mapping->node_y;
-			mapping_ll_y->node_next = mapping->node_x;
-		}
-		else{
-			printf("ERROR: in %s, this case is not meant to happen (x prev NULL and y next not NULL)\n", __func__);
-		}
+	if (mapping_ll_x->node_next != NULL && mapping_ll_y->node_prev != NULL && mapping_ll_x->node_next == mapping->node_y && mapping_ll_y->node_prev == mapping->node_x){
+		return;
 	}
 
+	if (mapping_ll_x->node_prev != NULL && mapping_ll_y->node_next != NULL && mapping_ll_x->node_prev == mapping->node_y && mapping_ll_y->node_next == mapping->node_x){
+		return;
+	}
+
+	if (mapping_ll_x->node_next == NULL && mapping_ll_y->node_prev == NULL){
+		mapping_ll_x->node_next = mapping->node_y;
+		mapping_ll_y->node_prev = mapping->node_x;
+		goto parent_mapping;
+	}
+
+	if (mapping_ll_x->node_prev == NULL && mapping_ll_y->node_next == NULL){
+		mapping_ll_x->node_prev = mapping->node_y;
+		mapping_ll_y->node_next = mapping->node_x;
+		goto parent_mapping;
+	}
+
+	if (mapping_ll_x->node_next == NULL && mapping_ll_y->node_next == NULL){
+		struct irOperation* 			sub_operation_x;
+		struct irOperation* 			sub_operation_y;
+		struct mappingLLElement* 		sub_mapping_ll_x;
+		struct mappingLLElement* 		sub_mapping_ll_y;
+
+		sub_operation_x = ir_node_get_operation(mapping_ll_x->node_prev);
+		sub_operation_y = ir_node_get_operation(mapping_ll_y->node_prev);
+		sub_mapping_ll_x = array_get(&(mapping_result->mapping_ll_elem), sub_operation_x->data);
+		sub_mapping_ll_y = array_get(&(mapping_result->mapping_ll_elem), sub_operation_y->data);
+
+		if (sub_mapping_ll_x->node_prev == NULL){
+			sub_mapping_ll_x->node_prev = sub_mapping_ll_x->node_next;
+			mapping_ll_x->node_next = mapping_ll_x->node_prev;
+
+			mapping_ll_x->node_prev = mapping->node_y;
+			mapping_ll_y->node_next = mapping->node_x;
+			goto parent_mapping;
+		}
+		else if (sub_mapping_ll_y->node_prev == NULL){
+			sub_mapping_ll_y->node_prev = sub_mapping_ll_y->node_next;
+			mapping_ll_y->node_next = mapping_ll_y->node_prev;
+
+			mapping_ll_x->node_next = mapping->node_y;
+			mapping_ll_y->node_prev = mapping->node_x;
+			goto parent_mapping;
+		}
+
+		printf("ERROR: in %s, unable to invert result order\n", __func__);
+		return;
+	}
+
+	if (mapping_ll_x->node_prev == NULL && mapping_ll_y->node_prev == NULL){
+		printf("WARNING: in %s, this case is not implemented yet\n", __func__);
+		/* je sais que 
+
+		mapping_ll_y->node_next != NULL
+		mapping_ll_x->node_next != NULL
+		*/
+
+		goto parent_mapping;
+	}
+
+	printf("ERROR: in %s, this case is not meant to happen\n", __func__);
+	return;
+
 	/* STEP 2: call recursively this method for every parent mappings */
+	parent_mapping:
 	for (i = 0; i < mapping->container->parent_nb_mapping; i++){
 		mappingResult_add_mapping(mapping_result, ir_mapping_container, (struct mapping*)array_get(&(ir_mapping_container->mapping_array), mapping->container->parent_mapping_offset + i));
 	}
@@ -555,15 +689,23 @@ struct mappingResult* irMappingContainer_extract_result(struct irMappingContaine
 					max_score 				= ir_mapping_container->opcode_mapping_container[i].node_mapping_container[x + (y * (y - 1)) / 2].score;
 					max_mapping.node_x 		= ir_mapping_container->opcode_mapping_container[i].node_list[x];
 					max_mapping.node_y 		= ir_mapping_container->opcode_mapping_container[i].node_list[y];
-					max_mapping.container = ir_mapping_container->opcode_mapping_container[i].node_mapping_container + (x + (y * (y - 1)) / 2);
+					max_mapping.container 	= ir_mapping_container->opcode_mapping_container[i].node_mapping_container + (x + (y * (y - 1)) / 2);
 				}
 			}
 		}
 	}
 
 	/* pour le debug */
-	printf("Found a max score of %d\n", max_score);
+	printf("Found a max score of %d for mapping: (%p - %p)\n", max_score, (void*)ir_node_get_operation(max_mapping.node_x), (void*)ir_node_get_operation(max_mapping.node_y));
+	#if 0
+	for (i = 0; i < max_mapping.container->parent_nb_mapping; i++){
+		struct mapping* parent_mapping;
 
+		parent_mapping = (struct mapping*)array_get(&(ir_mapping_container->mapping_array), max_mapping.container->parent_mapping_offset + i);
+		printf("\t%d: %p - %p\n", parent_mapping->container->score, (void*)ir_node_get_operation(parent_mapping->node_x), (void*)ir_node_get_operation(parent_mapping->node_y));
+	}
+	#endif
+	
 	/* STEP 4: traverse the best mapping  */
 	mappingResult_add_mapping(mapping_result, ir_mapping_container, &max_mapping);
 
@@ -660,6 +802,33 @@ void ir_search_unrolled(struct ir* ir){
 	}
 
 	irMappingContainer_delete(ir_mapping_container);
+}
+
+/* ===================================================================== */
+/* Sorting functions						                             */
+/* ===================================================================== */
+
+int32_t compare_divergentMapping(const void* arg1, const void* arg2){
+	struct divergentMapping* dm1 = (struct divergentMapping*)arg1;
+	struct divergentMapping* dm2 = (struct divergentMapping*)arg2;
+
+	if (dm1->node_x < dm2->node_x){
+		return -1;
+	}
+	else if (dm1->node_x > dm2->node_x){
+		return 1;
+	}
+	else{
+		if (dm1->node_y < dm2->node_y){
+			return -1;
+		}
+		else if (dm1->node_y > dm2->node_y){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
 }
 
 /* ===================================================================== */
@@ -829,11 +998,13 @@ void irMapping_dotPrint_mapping(FILE* file, void* arg){
 	uint32_t 					index;
 
 	for (i = 0; i < IR_NB_OPCODE; i++){
-		for (y = 0; y < ir_mapping_container->opcode_mapping_container[i].nb_element; y++){
-			for (x = 0; x < y; x++){
-				index = x + (y * (y - 1)) / 2;
-				if (ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].score > 0){
-					fprintf(file, "%u -> %u [label=\"%d (%d)\" style=dotted dir=none]\n", (uint32_t)ir_mapping_container->opcode_mapping_container[i].node_list[x], (uint32_t)(uint32_t)ir_mapping_container->opcode_mapping_container[i].node_list[y], ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].score, ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].div_score);
+		if (i == IR_NOT){
+			for (y = 0; y < ir_mapping_container->opcode_mapping_container[i].nb_element; y++){
+				for (x = 0; x < y; x++){
+					index = x + (y * (y - 1)) / 2;
+					if (ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].score > 0){
+						fprintf(file, "%u -> %u [label=\"%d (%d)\" style=dotted dir=none]\n", (uint32_t)ir_mapping_container->opcode_mapping_container[i].node_list[x], (uint32_t)(uint32_t)ir_mapping_container->opcode_mapping_container[i].node_list[y], ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].score, ir_mapping_container->opcode_mapping_container[i].node_mapping_container[index].div_score);
+					}
 				}
 			}
 		}

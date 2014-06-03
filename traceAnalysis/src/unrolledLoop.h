@@ -18,12 +18,11 @@ struct mapping{
 #define mapping_is_valid(mapping) 		((mapping)->container != NULL)
 #define mapping_set_invalid(mapping) 	((mapping)->container = NULL)
 
-/* il faut plutot mettre l'adresse / offset du mapping -> pour pouvoir accéder au score à travers le container */
 struct divergentMapping{
 	struct node* 					node_x;
 	struct node* 					node_y;
 	uint32_t 						num_factor;
-	uint32_t 						dem_factor;
+	uint32_t 						den_factor;
 	struct nodeMappingContainer* 	container;
 };
 
