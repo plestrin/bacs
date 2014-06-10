@@ -7,11 +7,13 @@
 #define NODE_DESCRIPTION_LENGTH 32
 #define EDGE_DESCRIPTION_LENGTH 16
 
-void asterix_dotPrint_node(void* data, FILE* file){
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void asterix_dotPrint_node(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 
-void asterix_dotPrint_edge(void* data, FILE* file){
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void asterix_dotPrint_edge(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 
@@ -25,7 +27,7 @@ int main(){
 	struct node* 	node_abraracourcix;
 
 	graph = graph_create(NODE_DESCRIPTION_LENGTH, EDGE_DESCRIPTION_LENGTH);
-	graph_register_dotPrint_callback(graph, asterix_dotPrint_node, asterix_dotPrint_edge)
+	graph_register_dotPrint_callback(graph, NULL, asterix_dotPrint_node, asterix_dotPrint_edge, NULL)
 
 	/* add nodes */
 	snprintf(node_desc, NODE_DESCRIPTION_LENGTH, "asterix");
@@ -74,7 +76,7 @@ int main(){
 	}
 
 	/* print graph */
-	if (graphPrintDot_print(graph, "asterix.dot")){
+	if (graphPrintDot_print(graph, "asterix.dot", NULL)){
 		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 	}
 

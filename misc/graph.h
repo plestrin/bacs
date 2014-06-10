@@ -62,10 +62,10 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 	(graph)->dotPrint_epilogue 	= NULL;
 
 #define graph_register_dotPrint_callback(graph, prologue, node_data, edge_data, epilogue) 														\
-	(graph)->dotPrint_prologue 	= prologue; 																									\
-	(graph)->dotPrint_node_data = node_data; 																									\
-	(graph)->dotPrint_edge_data = edge_data; 																									\
-	(graph)->dotPrint_epilogue 	= epilogue;
+	(graph)->dotPrint_prologue 	= (prologue); 																									\
+	(graph)->dotPrint_node_data = (node_data); 																									\
+	(graph)->dotPrint_edge_data = (edge_data); 																									\
+	(graph)->dotPrint_epilogue 	= (epilogue);
 
 struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);

@@ -28,7 +28,7 @@ int main(){
 	}
 
 	{
-		PERMUTATION_INIT(NUMBER_OF_ELEMENT_TO_PERMUTE)
+		PERMUTATION_CREATE(NUMBER_OF_ELEMENT_TO_PERMUTE, malloc)
 		PERMUTATION_GET_FIRST(state)
 		while(state != NULL){
 			for (i = 0; i < NUMBER_OF_ELEMENT_TO_PERMUTE; i++){
@@ -43,7 +43,7 @@ int main(){
 			PERMUTATION_GET_NEXT(state)
 			counter++;
 		}
-		PERMUTATION_CLEAN()
+		PERMUTATION_DELETE()
 	}
 
 	if (counter != nb_perm){

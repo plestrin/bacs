@@ -7,7 +7,6 @@ TEST_PERMUTATION 		:= test_permutation
 TEST_WORKQUEUE 			:= test_workQueue
 TEST_MULTIWORKPERCENT 	:= test_multiWorkPercent
 TEST_MAPFILE 			:= test_mapFile
-TEST_DBSCAN 			:= test_dbscan
 TEST_PAGETABLE 			:= test_pageTable
 TEST_GRAPH 				:= test_graph
 
@@ -24,7 +23,6 @@ all: 										\
 	$(TEST_WORKQUEUE) 						\
 	$(TEST_MULTIWORKPERCENT) 				\
 	$(TEST_MAPFILE) 						\
-	$(TEST_DBSCAN) 							\
 	$(TEST_PAGETABLE) 						\
 	$(TEST_GRAPH)
 
@@ -56,9 +54,6 @@ $(TEST_MULTIWORKPERCENT): test_multiWorkPercent.o multiWorkPercent.o workQueue.o
 $(TEST_MAPFILE): test_mapFile.o mapFile.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_DBSCAN): test_dbscan.o dbscan.o array.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
 $(TEST_PAGETABLE): test_pageTable.o pageTable.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -82,7 +77,6 @@ test_permutation.o: ../permutation.h
 test_workQueue.o: ../workQueue.h
 test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
 test_mapFile.o: ../mapFile.h
-test_dbscan.o: ../dbscan.h ../array.h
 test_pageTable.o: ../pageTable.h
 test_graph.o: ../graph.h ../graphPrintDot.h
 array.o: ../array.h
@@ -93,7 +87,6 @@ readBuffer.o: ../readBuffer.h
 printBuffer.o: ../printBuffer.h
 workQueue.o: ../workQueue.h
 multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
-dbscan.o: ../dbscan.h ../array.h
 pageTable.o: ../pageTable.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
@@ -112,6 +105,5 @@ clean:
 	@ rm -f $(TEST_WORKQUEUE)
 	@ rm -f $(TEST_MULTIWORKPERCENT)
 	@ rm -f $(TEST_MAPFILE)
-	@ rm -f $(TEST_DBSCAN)
 	@ rm -f $(TEST_PAGETABLE)
 	@ rm -f $(TEST_GRAPH)
