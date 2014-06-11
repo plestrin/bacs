@@ -9,6 +9,7 @@ TEST_MULTIWORKPERCENT 	:= test_multiWorkPercent
 TEST_MAPFILE 			:= test_mapFile
 TEST_PAGETABLE 			:= test_pageTable
 TEST_GRAPH 				:= test_graph
+TEST_GRAPHMINING 		:= test_graphMining
 
 CC						:= gcc
 CFLAGS					:= -W -Wall -pedantic -Wextra -g
@@ -24,7 +25,8 @@ all: 										\
 	$(TEST_MULTIWORKPERCENT) 				\
 	$(TEST_MAPFILE) 						\
 	$(TEST_PAGETABLE) 						\
-	$(TEST_GRAPH)
+	$(TEST_GRAPH) 							\
+	$(TEST_GRAPHMINING)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -60,6 +62,9 @@ $(TEST_PAGETABLE): test_pageTable.o pageTable.o
 $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_GRAPHMINING): test_graphMining.o graph.o graphMining.o graphPrintDot.o array.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 
 # *** General compile rules ***
 %.o: %.c
@@ -79,6 +84,7 @@ test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
 test_mapFile.o: ../mapFile.h
 test_pageTable.o: ../pageTable.h
 test_graph.o: ../graph.h ../graphPrintDot.h
+test_graph.o: ../graph.h ../graphPrintDot.h ../graphMining.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
@@ -89,6 +95,7 @@ workQueue.o: ../workQueue.h
 multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
 pageTable.o: ../pageTable.h
 graph.o: ../graph.h
+graphMining.o: ../graphMining.h ../array.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
 
 clean:
@@ -107,3 +114,4 @@ clean:
 	@ rm -f $(TEST_MAPFILE)
 	@ rm -f $(TEST_PAGETABLE)
 	@ rm -f $(TEST_GRAPH)
+	@ rm -f $(TEST_GRAPHMINING)
