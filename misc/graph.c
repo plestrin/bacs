@@ -38,7 +38,7 @@ struct node* graph_add_node_(struct graph* graph){
 		node->prev 					= NULL;
 		node->src_edge_linkedList 	= NULL;
 		node->dst_edge_linkedList 	= NULL;
-		node->mining_ptr 			= NULL; 
+		node->ptr 					= NULL;
 
 		if (node->next != NULL){
 			node->next->prev = node;
