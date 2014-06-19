@@ -54,7 +54,8 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_check_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_trace_print_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search constant", 			"Search constant from the cstChecker in the trace", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_search_constant)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"export a trace segment as a traceFragment", 	"Range", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_trace_locate_pc)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_trace_delete)
 
 	/* loop specific commands */
@@ -311,6 +312,27 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+}
+
+void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
+	ADDRESS 	pc;
+	uint32_t 	i;
+
+	pc = strtoul((const char*)arg, NULL, 16);
+
+	#if defined ARCH_32
+	printf("Instance of EIP: 0x%08x:\n", pc);
+	#elif defined ARCH_64
+	printf("Instance of EIP: 0x%llx:\n", pc);
+	#else
+	#error Please specify an architecture {ARCH_32 or ARCH_64}
+	#endif
+	
+	for (i = 0; i < analysis->trace->nb_instruction; i++){
+		if (analysis->trace->instructions[i].pc == pc){
+			printf("\t- Found EIP in trace at offset: %u\n", i);
+		}
 	}
 }
 
