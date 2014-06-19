@@ -360,6 +360,10 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 				import_std_ins_1imr_1ioptmr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_OR);
 				break;
 			}
+			case XED_ICLASS_ROL : {
+				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_ROL);
+				break;
+			}
 			case XED_ICLASS_ROR : {
 				import_std_in_1imr_1omr(ir, &engine, ir->trace->instructions + i, operands, IR_ROR);
 				break;

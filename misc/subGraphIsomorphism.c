@@ -21,7 +21,7 @@ struct possibleAssignement{
 };
 
 static struct possibleAssignement* possibleAssignement_create(uint32_t nb_node, uint32_t nb_assignement);
-static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle);
+static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error);
 static struct possibleAssignement* possibleAssignement_duplicate(struct possibleAssignement* possible_assignement, uint32_t new_assignement_index, struct node* new_assignement_value);
 static void possibleAssignement_update(struct possibleAssignement* possible_assignement, struct subGraphIsoHandle* sub_graph_handle, uint32_t nb_assignement);
 
@@ -144,6 +144,7 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 	struct possibleAssignement* possible_assignement;
 	struct node** 				assignement;
 	struct array*				assignement_array = NULL;
+	uint8_t 					error;
 
 	if (sub_graph_handle->graph->nb_node > 0){
 		assignement_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
@@ -151,9 +152,11 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 			printf("ERROR: in %s, unable to create array\n", __func__);
 		}
 		else{
-			possible_assignement = possibleAssignement_create_init_first(graph_handle, sub_graph_handle);
+			possible_assignement = possibleAssignement_create_init_first(graph_handle, sub_graph_handle, &error);
 			if (possible_assignement == NULL){
-				printf("ERROR: in %s, unable to create first possible assignement\n", __func__);
+				if (error){
+					printf("ERROR: in %s, unable to create first possible assignement\n", __func__);
+				}
 			}
 			else{
 				assignement = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
@@ -262,12 +265,16 @@ static struct possibleAssignement* possibleAssignement_create(uint32_t nb_node, 
 	return possible_assignement;
 }
 
-static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
+static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error){
 	uint32_t 					nb_assignement = 0;
 	uint32_t 					i;
 	uint32_t 					j;
 	struct labelFastAccess* 	label_fast_access;
 	struct possibleAssignement* possible_assignement;
+
+	if (error != NULL){
+		*error = 0;
+	}
 
 	for	(i = 0; i < sub_graph_handle->graph->nb_node; i++){
 		label_fast_access = (struct labelFastAccess*)bsearch(&(sub_graph_handle->label_tab[i].label), graph_handle->label_fast, graph_handle->nb_label, sizeof(struct labelFastAccess), compare_key_labelFastAccess);
@@ -295,6 +302,9 @@ static struct possibleAssignement* possibleAssignement_create_init_first(struct 
 	}
 	else{
 		printf("ERROR: in %s, unable to create possibleAssignement structure\n", __func__);
+		if (error != NULL){
+			*error = 1;
+		}
 	}
 
 	return possible_assignement;

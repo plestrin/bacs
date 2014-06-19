@@ -724,6 +724,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_NOT 	: {return "not";}
 		case IR_OR 		: {return "or";}
 		case IR_PART 	: {return "part";}
+		case IR_ROL 	: {return "rol";}
 		case IR_ROR 	: {return "ror";}
 		case IR_SAR 	: {return "sar";}
 		case IR_SHL 	: {return "shl";}

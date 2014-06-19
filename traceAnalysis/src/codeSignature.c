@@ -3,9 +3,10 @@
 
 #include "codeSignature.h"
 
-static void codeSignature_construct_md5p1_signature(struct codeSignature* code_signature); /* tmp */
-static void codeSignature_construct_md5p3_signature(struct codeSignature* code_signature); /* tmp */
-static void codeSignature_construct_md5p4_signature(struct codeSignature* code_signature); /* tmp */
+static void codeSignature_construct_md5p1_signature(struct codeSignature* code_signature); 			/* tmp */
+static void codeSignature_construct_md5p1_rich_signature(struct codeSignature* code_signature);		/* tmp */
+static void codeSignature_construct_md5p3_signature(struct codeSignature* code_signature); 			/* tmp */
+static void codeSignature_construct_md5p4_signature(struct codeSignature* code_signature); 			/* tmp */
 
 uint32_t signatureNode_get_label(struct node* node);
 uint32_t irNode_get_label(struct node* node);
@@ -40,6 +41,8 @@ int32_t codeSignature_init_collection(struct codeSignatureCollection* collection
 	}
 
 	codeSignature_construct_md5p1_signature(&code_signature);
+	codeSignature_add_signature_to_collection(collection, &code_signature);
+	codeSignature_construct_md5p1_rich_signature(&code_signature);
 	codeSignature_add_signature_to_collection(collection, &code_signature);
 	codeSignature_construct_md5p3_signature(&code_signature);
 	codeSignature_add_signature_to_collection(collection, &code_signature);
@@ -143,7 +146,7 @@ static void codeSignature_construct_md5p1_signature(struct codeSignature* code_s
 	node_n1 = graph_add_node(&(code_signature->graph), &signature_node);
 	signature_node.opcode = IR_OR;
 	node_o1 = graph_add_node(&(code_signature->graph), &signature_node);
-	signature_node.opcode = IR_ROR;
+	signature_node.opcode = IR_ROL;
 	node_r1 = graph_add_node(&(code_signature->graph), &signature_node);
 
 	/* add edges */
@@ -155,6 +158,47 @@ static void codeSignature_construct_md5p1_signature(struct codeSignature* code_s
 	graph_add_edge_(&(code_signature->graph), node_r1, node_b2);
 
 	snprintf(code_signature->name, CODESIGNATURE_NAME_MAX_SIZE, "%s", "md5p1");
+	code_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(code_signature->graph), signatureNode_get_label);
+}
+
+static void codeSignature_construct_md5p1_rich_signature(struct codeSignature* code_signature){
+	struct signatureNode 	signature_node;
+	struct node* 			node_a1;
+	struct node* 			node_b1;
+	struct node* 			node_b2;
+	struct node* 			node_r1;
+	struct node* 			node_x1;
+	struct node* 			node_x2;
+
+	graph_init(&(code_signature->graph), sizeof(struct signatureNode), 0);
+	/*graph_register_dotPrint_callback(&(code_signature->graph), NULL, dotPrint_node, dotPrint_edge, NULL)*/
+
+	signature_node.input_number 		= 0;
+	signature_node.input_frag_order 	= 0;
+	signature_node.output_number 		= 0;
+	signature_node.output_frag_order 	= 0;
+	signature_node.is_input 			= 0;
+
+	/* add nodes */
+	signature_node.opcode = IR_AND;
+	node_a1 = graph_add_node(&(code_signature->graph), &signature_node);
+	signature_node.opcode = IR_ADD;
+	node_b1 = graph_add_node(&(code_signature->graph), &signature_node);
+	node_b2 = graph_add_node(&(code_signature->graph), &signature_node);
+	signature_node.opcode = IR_ROL;
+	node_r1 = graph_add_node(&(code_signature->graph), &signature_node);
+	signature_node.opcode = IR_XOR;
+	node_x1 = graph_add_node(&(code_signature->graph), &signature_node);
+	node_x2 = graph_add_node(&(code_signature->graph), &signature_node);
+
+	/* add edges */
+	graph_add_edge_(&(code_signature->graph), node_x1, node_a1);
+	graph_add_edge_(&(code_signature->graph), node_a1, node_x2);
+	graph_add_edge_(&(code_signature->graph), node_x2, node_b1);
+	graph_add_edge_(&(code_signature->graph), node_b1, node_r1);
+	graph_add_edge_(&(code_signature->graph), node_r1, node_b2);
+
+	snprintf(code_signature->name, CODESIGNATURE_NAME_MAX_SIZE, "%s", "md5p1_rich");
 	code_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(code_signature->graph), signatureNode_get_label);
 }
 
@@ -180,7 +224,7 @@ static void codeSignature_construct_md5p3_signature(struct codeSignature* code_s
 	signature_node.opcode = IR_ADD;
 	node_b1 = graph_add_node(&(code_signature->graph), &signature_node);
 	node_b2 = graph_add_node(&(code_signature->graph), &signature_node);
-	signature_node.opcode = IR_ROR;
+	signature_node.opcode = IR_ROL;
 	node_r1 = graph_add_node(&(code_signature->graph), &signature_node);
 
 	/* add edges */
@@ -217,7 +261,7 @@ static void codeSignature_construct_md5p4_signature(struct codeSignature* code_s
 	signature_node.opcode = IR_ADD;
 	node_b1 = graph_add_node(&(code_signature->graph), &signature_node);
 	node_b2 = graph_add_node(&(code_signature->graph), &signature_node);
-	signature_node.opcode = IR_ROR;
+	signature_node.opcode = IR_ROL;
 	node_r1 = graph_add_node(&(code_signature->graph), &signature_node);
 
 	/* add edges */

@@ -18,15 +18,16 @@ enum irOpcode{
 	IR_NOT 		= 5,
 	IR_OR 		= 6,
 	IR_PART 	= 7,
-	IR_SAR 		= 8,
-	IR_SHL 		= 9,
-	IR_SHR 		= 10,
-	IR_SUB 		= 11,
-	IR_ROR 		= 12,
-	IR_XOR 		= 13
+	IR_ROL 		= 8,
+	IR_ROR 		= 9,
+	IR_SAR 		= 10,
+	IR_SHL 		= 11,
+	IR_SHR 		= 12,
+	IR_SUB 		= 13,
+	IR_XOR 		= 14
 };
 
-#define IR_NB_OPCODE 14
+#define IR_NB_OPCODE 15
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
