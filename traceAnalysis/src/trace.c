@@ -289,10 +289,15 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 		j --;
 	}
 	if (j == offset){
-		nb_operand = 0;
-		nb_data = 0;
-		offset_operand = 0;
-		offset_data = 0;
+		nb_operand = trace_src->instructions[j].nb_operand;
+		if (nb_operand > 0){
+			nb_data = trace_src->operands[trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand - 1].data_offset + trace_src->operands[trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand - 1].size - trace_src->operands[trace_src->instructions[j].operand_offset].data_offset;
+		}
+		else{
+			nb_data = 0;
+		}
+		offset_operand = trace_src->instructions[j].operand_offset;
+		offset_data = trace_src->operands[offset_operand].data_offset;
 	}
 	else{
 		nb_operand = trace_src->instructions[j].operand_offset + trace_src->instructions[j].nb_operand;
