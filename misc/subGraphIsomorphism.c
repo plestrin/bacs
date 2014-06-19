@@ -143,21 +143,23 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
 	struct possibleAssignement* possible_assignement;
 	struct node** 				assignement;
-	struct array*				assignement_array;
+	struct array*				assignement_array = NULL;
 
-	assignement_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-	if (assignement_array == NULL){
-		printf("ERROR: in %s, unable to create array\n", __func__);
-	}
-	else{
-		possible_assignement = possibleAssignement_create_init_first(graph_handle, sub_graph_handle);
-		if (possible_assignement == NULL){
-			printf("ERROR: in %s, unable to create first possible assignement\n", __func__);
+	if (sub_graph_handle->graph->nb_node > 0){
+		assignement_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+		if (assignement_array == NULL){
+			printf("ERROR: in %s, unable to create array\n", __func__);
 		}
 		else{
-			assignement = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-			graphIso_recursive_search(sub_graph_handle, assignement, 0, possible_assignement, assignement_array);
-			possibleAssignement_delete(possible_assignement);
+			possible_assignement = possibleAssignement_create_init_first(graph_handle, sub_graph_handle);
+			if (possible_assignement == NULL){
+				printf("ERROR: in %s, unable to create first possible assignement\n", __func__);
+			}
+			else{
+				assignement = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+				graphIso_recursive_search(sub_graph_handle, assignement, 0, possible_assignement, assignement_array);
+				possibleAssignement_delete(possible_assignement);
+			}
 		}
 	}
 

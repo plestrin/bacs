@@ -7,7 +7,6 @@
 #include "codeMap.h"
 #include "instruction.h"
 #include "ir.h"
-#include "unrolledLoop.h"
 #include "memAccess.h"
 #include "regAccess.h"
 #include "array.h"
@@ -90,15 +89,6 @@ static inline void traceFragment_printDot_ir(struct traceFragment* frag){
 static inline void traceFragment_print_io(struct traceFragment* frag){
 	if (frag->ir != NULL){
 		ir_print_io(frag->ir);
-	}
-	else{
-		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
-	}
-}
-
-static inline void traceFragment_search_unrolled(struct traceFragment* frag){
-	if (frag->ir != NULL){
-		ir_search_unrolled(frag->ir);
 	}
 	else{
 		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);

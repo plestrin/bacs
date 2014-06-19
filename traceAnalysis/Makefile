@@ -35,7 +35,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irImporterDynTrace.o 	\
 					$(BUILD_DIR)irImporterAsm.o 		\
 					$(BUILD_DIR)irRenameEngine.o 		\
-					$(BUILD_DIR)unrolledLoop.o 			\
+					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
 					$(BUILD_DIR)pageTable.o 			\
@@ -46,7 +46,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)workQueue.o 			\
 					$(BUILD_DIR)mapFile.o 				\
 					$(BUILD_DIR)graph.o 				\
-					$(BUILD_DIR)graphPrintDot.o
+					$(BUILD_DIR)graphPrintDot.o 		\
+					$(BUILD_DIR)subGraphIsomorphism.o
 
 
 ifeq ($(DEBUG),1)
