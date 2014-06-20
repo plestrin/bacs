@@ -33,7 +33,8 @@ char* irOpcode_2_string(enum irOpcode opcode);
 enum irOperationType{
 	IR_OPERATION_TYPE_INPUT,
 	IR_OPERATION_TYPE_OUTPUT,
-	IR_OPERATION_TYPE_INNER
+	IR_OPERATION_TYPE_INNER,
+	IR_OPERATION_TYPE_IMM
 };
 
 enum irDependenceType{
@@ -59,11 +60,19 @@ struct irOperation{
 		struct {
 			enum irOpcode 		opcode;
 		} 						inner;
+		struct {
+			uint16_t 			width;
+			uint8_t 			signe;
+			uint64_t 			value;
+		} 						imm;
 	} 							operation_type;
 	uint32_t 					data;
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
+
+#define ir_imm_operation_get_signed_value(op) 		((int32_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->operation_type.imm.width))))
+#define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->operation_type.imm.width)))
 
 struct irDependence{
 	enum irDependenceType 		type;
@@ -88,6 +97,7 @@ int32_t ir_init(struct ir* ir, struct trace* trace, enum irCreateMethod create_m
 
 struct node* ir_add_input(struct ir* ir, struct operand* operand);
 struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand);
+struct node* ir_add_immediate(struct ir* ir, uint16_t width, uint8_t signe, uint64_t value);
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 
 void ir_convert_output_to_inner(struct ir* ir, struct node* node);

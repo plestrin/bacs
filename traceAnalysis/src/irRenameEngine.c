@@ -27,6 +27,7 @@ static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, 
 static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand);
 static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine, struct alias* alias_dst, struct operand* operand);
 
+
 static void irRenameEngine_reset_reg_variable(struct ir* ir, struct alias* alias, struct node* ir_node){
 	if (alias->alias_type.reg.ir_node != NULL){
 		ir_node_get_operation(alias->alias_type.reg.ir_node)->data --;
@@ -203,9 +204,22 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 		}
 	}
 	else if (OPERAND_IS_REG(*operand)){
-		node = engine->register_table[operand->location.reg - 1].alias_type.reg.ir_node;
+		node = irRenameEngine_get_register_ref(engine, operand->location.reg, operand);
+	}
+	else{
+		printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
+	}
+
+	return node;
+}
+
+struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum reg reg, struct operand* operand){
+	struct node* node = NULL;
+
+	if (reg != REGISTER_INVALID){
+		node = engine->register_table[reg - 1].alias_type.reg.ir_node;
 		if (node == NULL){
-			switch(operand->location.reg){
+			switch(reg){
 				case REGISTER_EAX 	: {
 					if (engine->register_table[REGISTER_AH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_AH - 1].type)){
@@ -369,9 +383,6 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 			}
 		}
 	}
-	else{
-		printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
-	}
 
 	return node;
 }
@@ -413,6 +424,18 @@ int32_t irRenameEngine_set_new_ref(struct irRenameEngine* engine, struct operand
 	}
 
 	return 0;
+}
+
+int32_t irRenameEngine_set_register_new_ref(struct irRenameEngine* engine, enum reg reg, struct node* node){
+	if (reg != REGISTER_INVALID){
+		engine->register_table[reg - 1].type 					= ALIAS_REG_READ;
+		engine->register_table[reg - 1].alias_type.reg.ir_node 	= node;
+		ir_node_get_operation(node)->data ++;
+		return 0;
+	}
+	else{
+		return -1;
+	}
 }
 
 int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node){

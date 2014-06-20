@@ -107,6 +107,25 @@ struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* 
 	return node;
 }
 
+struct node* ir_add_immediate(struct ir* ir, uint16_t width, uint8_t signe, uint64_t value){
+	struct node* 			node;
+	struct irOperation* 	operation;
+
+	node = graph_add_node_(&(ir->graph));
+	if (node == NULL){
+		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+	}
+	else{
+		operation = ir_node_get_operation(node);
+		operation->type 						= IR_OPERATION_TYPE_IMM;
+		operation->operation_type.imm.width 	= width;
+		operation->operation_type.imm.signe 	= signe;
+		operation->operation_type.imm.value 	= value;
+	}
+
+	return node;
+}
+
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type){
 	struct edge* 			edge;
 	struct irDependence* 	dependence;
@@ -177,22 +196,27 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 
 	switch(operation->type){
 		case IR_OPERATION_TYPE_INPUT 		: {
-			if (OPERAND_IS_MEM(*(operation->operation_type.input.operand))){
-				#if defined ARCH_32
-				fprintf(file, "[shape=\"box\",label=\"@%08x\"]", operation->operation_type.input.operand->location.address);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				fprintf(file, "[shape=\"box\",label=\"@%llx\"]", operation->operation_type.input.operand->location.address);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-			}
-			else if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
-				fprintf(file, "[shape=\"box\",label=\"%s\"]", reg_2_string(operation->operation_type.input.operand->location.reg));
+			if (operation->operation_type.input.operand != NULL){
+				if (OPERAND_IS_MEM(*(operation->operation_type.input.operand))){
+					#if defined ARCH_32
+					fprintf(file, "[shape=\"box\",label=\"@%08x\"]", operation->operation_type.input.operand->location.address);
+					#elif defined ARCH_64
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					fprintf(file, "[shape=\"box\",label=\"@%llx\"]", operation->operation_type.input.operand->location.address);
+					#else
+					#error Please specify an architecture {ARCH_32 or ARCH_64}
+					#endif
+				}
+				else if (OPERAND_IS_REG(*(operation->operation_type.input.operand))){
+					fprintf(file, "[shape=\"box\",label=\"%s\"]", reg_2_string(operation->operation_type.input.operand->location.reg));
+				}
+				else{
+					printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
+					break;
+				}
 			}
 			else{
-				printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
-				break;
+				fprintf(file, "[shape=\"box\",label=\"NULL\"]");
 			}
 			break;
 		}
@@ -202,6 +226,17 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		}
 		case IR_OPERATION_TYPE_INNER 		: {
 			fprintf(file, "[label=\"%s\"]", irOpcode_2_string(operation->operation_type.inner.opcode));
+			break;
+		}
+		case IR_OPERATION_TYPE_IMM 			: {
+			if (operation->operation_type.imm.signe){
+				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+				#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
+				fprintf(file, "[shape=\"diamond\",label=\"%d\"]", ir_imm_operation_get_signed_value(operation));
+			}
+			else{
+				fprintf(file, "[shape=\"diamond\",label=\"%llu\"]", ir_imm_operation_get_unsigned_value(operation));
+			}
 			break;
 		}
 	}
@@ -269,31 +304,33 @@ void ir_print_io(struct ir* ir){
 		while(node_cursor != NULL){
 			operation_cursor = ir_node_get_operation(node_cursor);
 
-			switch(operation_cursor->operation_type.input.operand->size){
-			case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x000000ff); break;}
-			case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x0000ffff); break;}
-			case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0xffffffff); break;}
-			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
-			}
+			if (operation_cursor->operation_type.input.operand != NULL){
+				switch(operation_cursor->operation_type.input.operand->size){
+				case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x000000ff); break;}
+				case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0x0000ffff); break;}
+				case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.input.operand->data_offset) & 0xffffffff); break;}
+				default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+				}
 
-			if (OPERAND_IS_MEM(*(operation_cursor->operation_type.input.operand))){
-				#if defined ARCH_32
-				snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.input.operand->location.address);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.input.operand->location.address);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-			}
-			else if (OPERAND_IS_REG(*(operation_cursor->operation_type.input.operand))){
-				snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.input.operand->location.reg));
-			}
-			else{
-				printf("WARNING: in %s, unexpected operand type\n", __func__);
-			}
+				if (OPERAND_IS_MEM(*(operation_cursor->operation_type.input.operand))){
+					#if defined ARCH_32
+					snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.input.operand->location.address);
+					#elif defined ARCH_64
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.input.operand->location.address);
+					#else
+					#error Please specify an architecture {ARCH_32 or ARCH_64}
+					#endif
+				}
+				else if (OPERAND_IS_REG(*(operation_cursor->operation_type.input.operand))){
+					snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.input.operand->location.reg));
+				}
+				else{
+					printf("WARNING: in %s, unexpected operand type\n", __func__);
+				}
 
-			multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.input.operand->size, NULL);
+				multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.input.operand->size, NULL);
+			}
 
 			node_cursor = operation_cursor->operation_type.input.next;
 		}
@@ -304,31 +341,33 @@ void ir_print_io(struct ir* ir){
 		while(node_cursor != NULL){
 			operation_cursor = ir_node_get_operation(node_cursor);
 
-			switch(operation_cursor->operation_type.output.operand->size){
-			case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x000000ff); break;}
-			case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x0000ffff); break;}
-			case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0xffffffff); break;}
-			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
-			}
+			if (operation_cursor->operation_type.input.operand != NULL){
+				switch(operation_cursor->operation_type.output.operand->size){
+				case 1 	: {snprintf(value_str, 20, "%02x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x000000ff); break;}
+				case 2 	: {snprintf(value_str, 20, "%04x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0x0000ffff); break;}
+				case 4 	: {snprintf(value_str, 20, "%08x", *(uint32_t*)(ir->trace->data + operation_cursor->operation_type.output.operand->data_offset) & 0xffffffff); break;}
+				default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
+				}
 
-			if (OPERAND_IS_MEM(*(operation_cursor->operation_type.output.operand))){
-				#if defined ARCH_32
-				snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.output.operand->location.address);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.output.operand->location.address);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-			}
-			else if (OPERAND_IS_REG(*(operation_cursor->operation_type.output.operand))){
-				snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.output.operand->location.reg));
-			}
-			else{
-				printf("WARNING: in %s, unexpected operand type\n", __func__);
-			}
+				if (OPERAND_IS_MEM(*(operation_cursor->operation_type.output.operand))){
+					#if defined ARCH_32
+					snprintf(desc_str, 20, "0x%08x", operation_cursor->operation_type.output.operand->location.address);
+					#elif defined ARCH_64
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					snprintf(desc_str, 20, "0x%llx", operation_cursor->operation_type.output.operand->location.address);
+					#else
+					#error Please specify an architecture {ARCH_32 or ARCH_64}
+					#endif
+				}
+				else if (OPERAND_IS_REG(*(operation_cursor->operation_type.output.operand))){
+					snprintf(desc_str, 20, "%s", reg_2_string(operation_cursor->operation_type.output.operand->location.reg));
+				}
+				else{
+					printf("WARNING: in %s, unexpected operand type\n", __func__);
+				}
 
-			multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.output.operand->size, NULL);
+				multiColumnPrinter_print(printer, value_str, desc_str, operation_cursor->operation_type.output.operand->size, NULL);
+			}
 			
 			node_cursor = operation_cursor->operation_type.output.next;
 		}

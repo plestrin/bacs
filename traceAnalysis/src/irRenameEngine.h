@@ -61,8 +61,12 @@ struct irRenameEngine{
 void irRenameEngine_free_memory_node(void* alias);
 
 struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operand* operand);
+struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum reg reg, struct operand* operand);
+
 int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node);
+
 int32_t irRenameEngine_set_new_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node);
+int32_t irRenameEngine_set_register_new_ref(struct irRenameEngine* engine, enum reg reg, struct node* node);
 
 #define irRenameEngine_clean(engine) 														\
 	tdestroy((engine).memory_bintree, irRenameEngine_free_memory_node);
