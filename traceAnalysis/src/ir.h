@@ -5,7 +5,6 @@
 
 #include "instruction.h"
 #include "trace.h"
-#include "argSet.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 
@@ -96,8 +95,6 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 
 void ir_print_io(struct ir* ir);
 
-void ir_extract_arg(struct ir* ir, struct argSet* set);
-
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
 #define ir_clean(ir) 													\
@@ -106,5 +103,8 @@ void ir_extract_arg(struct ir* ir, struct argSet* set);
 #define ir_delete(ir) 													\
 	ir_clean(ir); 														\
 	free(ir);
+
+
+#include "irIOExtract.h"
 
 #endif
