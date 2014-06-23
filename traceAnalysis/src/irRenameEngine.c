@@ -491,155 +491,161 @@ int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* op
 		}
 	}
 	else if (OPERAND_IS_REG(*operand)){
-		irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (operand->location.reg - 1), node);
-		switch(operand->location.reg){
-			case REGISTER_EAX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AX - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AL - 1), NULL);
-				break;
-			}
-			case REGISTER_AX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AL - 1), NULL);
-				if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register AX while EAX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_AH 	: {
-				if (engine->register_table[REGISTER_AX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register AH while AX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register AH while EAX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_AL 	: {
-				if (engine->register_table[REGISTER_AX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register AL while AX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register AL while EAX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_EBX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BX - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BL - 1), NULL);
-				break;
-			}
-			case REGISTER_BX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BL - 1), NULL);
-				if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register BX while EBX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_BH 	: {
-				if (engine->register_table[REGISTER_BX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register BH while BX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register BH while EBX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_BL 	: {
-				if (engine->register_table[REGISTER_BX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register BL while BX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register BL while EBX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_ECX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CX - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CL - 1), NULL);
-				break;
-			}
-			case REGISTER_CX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CL - 1), NULL);
-				if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register CX while ECX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_CH 	: {
-				if (engine->register_table[REGISTER_CX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register CH while CX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register CH while ECX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_CL 	: {
-				if (engine->register_table[REGISTER_CX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register CL while CX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register CL while ECX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_EDX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DX - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DL - 1), NULL);
-				break;
-			}
-			case REGISTER_DX 	: {
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DH - 1), NULL);
-				irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DL - 1), NULL);
-				if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register DX while EDX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_DH 	: {
-				if (engine->register_table[REGISTER_DX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register DH while DX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register DH while EDX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_DL 	: {
-				if (engine->register_table[REGISTER_DX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register DL while DX is valid\n", __func__);
-				}
-				if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
-					printf("WARNING: in %s, writting register DL while EDX is valid\n", __func__);
-				}
-				break;
-			}
-			case REGISTER_ESI 	: {
-				break;
-			}
-			case REGISTER_EDI 	: {
-				break;
-			}
-			case REGISTER_EBP 	: {
-				break;
-			}
-			default : {
-				printf("WARNING: in %s, this case is not supposed to happen\n", __func__);
-			}
-		}
-		ir_node_get_operation(node)->data ++;
+		return irRenameEngine_set_register_ref(engine, operand->location.reg, node);
 	}
 	else{
 		printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
 		return -1;
 	}
+
+	return 0;
+}
+
+int32_t irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum reg reg, struct node* node){
+	irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (reg - 1), node);
+	switch(reg){
+		case REGISTER_EAX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AX - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AL - 1), NULL);
+			break;
+		}
+		case REGISTER_AX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_AL - 1), NULL);
+			if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register AX while EAX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_AH 	: {
+			if (engine->register_table[REGISTER_AX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register AH while AX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register AH while EAX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_AL 	: {
+			if (engine->register_table[REGISTER_AX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register AL while AX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register AL while EAX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_EBX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BX - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BL - 1), NULL);
+			break;
+		}
+		case REGISTER_BX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_BL - 1), NULL);
+			if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register BX while EBX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_BH 	: {
+			if (engine->register_table[REGISTER_BX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register BH while BX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register BH while EBX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_BL 	: {
+			if (engine->register_table[REGISTER_BX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register BL while BX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register BL while EBX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_ECX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CX - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CL - 1), NULL);
+			break;
+		}
+		case REGISTER_CX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_CL - 1), NULL);
+			if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register CX while ECX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_CH 	: {
+			if (engine->register_table[REGISTER_CX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register CH while CX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register CH while ECX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_CL 	: {
+			if (engine->register_table[REGISTER_CX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register CL while CX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register CL while ECX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_EDX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DX - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DL - 1), NULL);
+			break;
+		}
+		case REGISTER_DX 	: {
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DH - 1), NULL);
+			irRenameEngine_reset_reg_variable(engine->ir, engine->register_table + (REGISTER_DL - 1), NULL);
+			if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register DX while EDX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_DH 	: {
+			if (engine->register_table[REGISTER_DX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register DH while DX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register DH while EDX is valid\n", __func__);
+				}
+			break;
+		}
+		case REGISTER_DL 	: {
+			if (engine->register_table[REGISTER_DX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register DL while DX is valid\n", __func__);
+			}
+			if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
+				printf("WARNING: in %s, writting register DL while EDX is valid\n", __func__);
+			}
+			break;
+		}
+		case REGISTER_ESI 	: {
+			break;
+		}
+		case REGISTER_EDI 	: {
+			break;
+		}
+		case REGISTER_EBP 	: {
+			break;
+		}
+		default : {
+			printf("WARNING: in %s, this case is not supposed to happen\n", __func__);
+		}
+	}
+	ir_node_get_operation(node)->data ++;
 
 	return 0;
 }

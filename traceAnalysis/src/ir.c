@@ -232,10 +232,10 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			if (operation->operation_type.imm.signe){
 				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 				#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
-				fprintf(file, "[shape=\"diamond\",label=\"%d\"]", ir_imm_operation_get_signed_value(operation));
+				fprintf(file, "[shape=\"diamond\",label=\"0x%x\"]", ir_imm_operation_get_signed_value(operation));
 			}
 			else{
-				fprintf(file, "[shape=\"diamond\",label=\"%llu\"]", ir_imm_operation_get_unsigned_value(operation));
+				fprintf(file, "[shape=\"diamond\",label=\"0x%llx\"]", ir_imm_operation_get_unsigned_value(operation));
 			}
 			break;
 		}
@@ -256,6 +256,10 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 		}
 		case IR_DEPENDENCE_TYPE_INDEX 	: {
 			fprintf(file, "[label=\"index\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_DISP 	: {
+			fprintf(file, "[label=\"disp\"]");
 			break;
 		}
 	}

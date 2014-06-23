@@ -64,6 +64,7 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum reg reg, struct operand* operand);
 
 int32_t irRenameEngine_set_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node);
+int32_t irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum reg reg, struct node* node);
 
 int32_t irRenameEngine_set_new_ref(struct irRenameEngine* engine, struct operand* operand, struct node* node);
 int32_t irRenameEngine_set_register_new_ref(struct irRenameEngine* engine, enum reg reg, struct node* node);
