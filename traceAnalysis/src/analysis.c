@@ -82,6 +82,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 					analysis_frag_printDot_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag io", 			"Print IR input and output", 					"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_print_io)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract arg ir", 			"Extract argument from the IR representation", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_extract_arg_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (usefull for signature)", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_frag_normalize_ir)
 
 	/* argument specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_arg_print)
@@ -91,7 +92,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 					analysis_arg_clean)
 	
 	/* code signature specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for agiven IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_code_signature_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 					analysis_code_signature_search)
 	
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -1076,6 +1077,40 @@ void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
 			else{
 				argSet_clean(&arg_set);
 			}
+		}
+	}
+}
+
+void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+	uint32_t 				start;
+	uint32_t 				stop;
+	uint32_t 				i;
+	struct traceFragment* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
+		if (fragment->ir != NULL){
+			ir_normalize(fragment->ir);
+		}
+		else{
+			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
 		}
 	}
 }

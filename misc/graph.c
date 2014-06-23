@@ -65,6 +65,79 @@ struct node* graph_add_node(struct graph* graph, void* data){
 	return node;
 }
 
+void graph_merge_node(struct graph* graph, struct node* node1, struct node* node2){
+	struct edge* edge_cursor;
+	struct edge* edge_current;
+
+	edge_cursor = node_get_head_edge_src(node2);
+	while (edge_cursor != NULL){
+		edge_current = edge_cursor;
+		edge_cursor = edge_get_next_src(edge_cursor);
+
+		if (edge_get_dst(edge_current) == node1){
+			graph_remove_edge(graph, edge_current);
+		}
+		else{
+			if (edge_current->src_prev == NULL){
+				node2->src_edge_linkedList = edge_current->src_next;
+			}
+			else{
+				edge_current->src_prev->src_next = edge_current->src_next;
+			}
+			if (edge_current->src_next != NULL){
+				edge_current->src_next->src_prev = edge_current->src_prev;
+			}
+
+			edge_current->src_node = node1;
+			edge_current->src_prev = NULL;
+			edge_current->src_next = node1->src_edge_linkedList;
+
+			if (edge_current->src_next != NULL){
+				edge_current->src_next->src_prev = edge_current;
+			}
+
+			node2->nb_edge_src --;
+			node1->nb_edge_src ++;
+			node1->src_edge_linkedList = edge_current;
+		}
+	}
+
+	edge_cursor = node_get_head_edge_dst(node2);
+	while (edge_cursor != NULL){
+		edge_current = edge_cursor;
+		edge_cursor = edge_get_next_dst(edge_cursor);
+
+		if (edge_get_src(edge_current) == node1){
+			graph_remove_edge(graph, edge_current);
+		}
+		else{
+			if (edge_current->dst_prev == NULL){
+				node2->dst_edge_linkedList = edge_current->dst_next;
+			}
+			else{
+				edge_current->dst_prev->dst_next = edge_current->dst_next;
+			}
+			if (edge_current->dst_next != NULL){
+				edge_current->dst_next->dst_prev = edge_current->dst_prev;
+			}
+
+			edge_current->dst_node = node1;
+			edge_current->dst_prev = NULL;
+			edge_current->dst_next = node1->dst_edge_linkedList;
+
+			if (edge_current->dst_next != NULL){
+				edge_current->dst_next->dst_prev = edge_current;
+			}
+
+			node2->nb_edge_dst --;
+			node1->nb_edge_dst ++;
+			node1->dst_edge_linkedList = edge_current;
+		}
+	}
+
+	graph_remove_node(graph, node2);
+}
+
 void graph_remove_node(struct graph* graph, struct node* node){
 	graph->nb_node --;
 

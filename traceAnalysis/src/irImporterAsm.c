@@ -170,7 +170,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 					displacement = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
 					if (displacement != 0){
 						input_variables->disp_variable = irImporterAsm_add_imm(engine->ir, xed_decoded_inst_get_memory_displacement_width(xedd, nb_memops) * 8, 0, displacement);
-						if (input_variables->variables[input_variables->nb_input] == NULL){
+						if (input_variables->disp_variable == NULL){
 							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 						}
 					}

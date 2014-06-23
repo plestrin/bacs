@@ -104,6 +104,10 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 void ir_convert_output_to_inner(struct ir* ir, struct node* node);
 void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
 
+void ir_normalize(struct ir* ir);
+void ir_normalize_translate_rol(struct ir* ir);
+void ir_normalize_merge_transitive_add(struct ir* ir);
+
 void ir_print_io(struct ir* ir);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)

@@ -187,6 +187,142 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 }
 
 /* ===================================================================== */
+/* Normalize functions						                             */
+/* ===================================================================== */
+
+
+#define IR_NORMALIZE_TRANSLATE_ROL 			1
+#define IR_NORMALIZE_TRANSLATE_SUB 			1
+#define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 	1
+
+void ir_normalize(struct ir* ir){
+	#ifdef IR_NORMALIZE_TRANSLATE_ROL
+	ir_normalize_translate_rol(ir);
+	#endif
+	#ifdef IR_NORMALIZE_TRANSLATE_SUB
+	/* a completer */
+	#endif
+	#ifdef IR_NORMALIZE_MERGE_TRANSITIVE_ADD
+	ir_normalize_merge_transitive_add(ir);
+	#endif
+}
+
+void ir_normalize_translate_rol(struct ir* ir){
+	struct node* 			node_cursor;
+	struct edge* 			edge_cursor;
+	struct irOperation* 	operation;
+	struct irOperation* 	imm_value;
+	
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation = ir_node_get_operation(node_cursor);
+		if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+			if (operation->operation_type.output.opcode == IR_ROL){
+				operation->operation_type.output.opcode = IR_ROR;
+			}
+			else{
+				continue;
+			}
+		}
+		else if (operation->type == IR_OPERATION_TYPE_INNER){
+			if (operation->operation_type.inner.opcode == IR_ROL){
+				operation->operation_type.inner.opcode = IR_ROR;
+			}
+			else{
+				continue;
+			}
+		}
+		else{
+			continue;
+		}
+		
+		switch(node_cursor->nb_edge_dst){
+			case 1 : {
+				break;
+			}
+			case 2 : {
+				/* WARNING this is not perfect since we don't know the operand size */
+				edge_cursor = node_get_head_edge_dst(node_cursor);
+				while(edge_cursor != NULL && ir_node_get_operation(edge_get_src(edge_cursor))->type != IR_OPERATION_TYPE_IMM){
+					edge_cursor = edge_get_next_dst(edge_cursor);
+				}
+				if (edge_cursor != NULL){
+					imm_value = ir_node_get_operation(edge_get_src(edge_cursor));
+					imm_value->operation_type.imm.value = 32 - imm_value->operation_type.imm.value;
+				}
+				else{
+					printf("WARNING: in %s, this case (ROL with 2 operands but no IMM) is not supposed to happen\n", __func__);
+				}
+				break;
+			}
+			default : {
+				printf("WARNING: in %s, this case (ROL with %u operand(s)) is not supposed to happen\n", __func__, node_cursor->nb_edge_dst);
+				break;
+			}
+		}
+	}
+}
+
+void ir_normalize_merge_transitive_add(struct ir* ir){
+	struct node* 			node_cursor1;
+	struct node* 			node_cursor2;
+	struct edge* 			edge_cursor2;
+	struct irOperation* 	operation;
+
+	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
+		operation = ir_node_get_operation(node_cursor1);
+		if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+			if (operation->operation_type.output.opcode != IR_ADD){
+				continue;
+			}
+		}
+		else if (operation->type == IR_OPERATION_TYPE_INNER){
+			if (operation->operation_type.inner.opcode != IR_ADD){
+				continue;
+			}
+		}
+		else{
+			continue;
+		}
+
+		start:
+		for(edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+			node_cursor2  = edge_get_src(edge_cursor2);
+			if (node_cursor2->nb_edge_src == 1){
+				operation = ir_node_get_operation(node_cursor2);
+				if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+					if (operation->operation_type.output.opcode != IR_ADD){
+						continue;
+					}
+					else{
+						if (operation->operation_type.output.prev == NULL){
+							ir->output_linkedList = operation->operation_type.output.next;
+						}
+						else{
+							ir_node_get_operation(operation->operation_type.output.prev)->operation_type.output.next = operation->operation_type.output.next;
+						}
+
+						if (operation->operation_type.output.next != NULL){
+							ir_node_get_operation(operation->operation_type.output.next)->operation_type.output.prev = operation->operation_type.output.prev;
+						}
+					}
+				}
+				else if (operation->type == IR_OPERATION_TYPE_INNER){
+					if (operation->operation_type.inner.opcode != IR_ADD){
+						continue;
+					}
+				}
+				else{
+					continue;
+				}
+
+				graph_merge_node(&(ir->graph), node_cursor1, node_cursor2);
+				goto start;
+			}
+		}
+	}
+}
+
+/* ===================================================================== */
 /* Printing functions						                             */
 /* ===================================================================== */
 

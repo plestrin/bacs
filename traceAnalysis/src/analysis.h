@@ -60,6 +60,7 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg);
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_print_io(struct analysis* analysis, char* arg);
 void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg);
+void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 
 void analysis_arg_print(struct analysis* analysis, char* arg);
 void analysis_arg_set_tag(struct analysis* analysis, char* arg);
