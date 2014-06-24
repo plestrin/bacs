@@ -504,7 +504,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		if (assembly_dst->dyn_blocks != NULL){
 			free(assembly_dst->dyn_blocks);
 		}
-		if ( assembly_dst->mapping_block != NULL){
+		if (assembly_dst->mapping_block != NULL){
 			free( assembly_dst->mapping_block);
 		}
 
@@ -546,9 +546,9 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 			new_block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size);
 			new_block->header.id 		= possible_new_id ++;
 			new_block->header.size 		= idx_ins_stop;
-			new_block->header.nb_ins 	= assembly_src->dyn_blocks[idx_block_stop].instruction_count - ((offset + length) > assembly_src->nb_dyn_instruction) ? assembly_src->nb_dyn_instruction : (offset + length);
+			new_block->header.nb_ins 	= (((offset + length) > assembly_src->nb_dyn_instruction) ? assembly_src->nb_dyn_instruction : (offset + length)) - assembly_src->dyn_blocks[idx_block_stop].instruction_count;
 			new_block->header.address 	= assembly_src->dyn_blocks[idx_block_stop].block->header.address;
-			memcpy(&(new_block->data), &(assembly_src->dyn_blocks[idx_block_start].block->data), idx_ins_stop);
+			memcpy(&(new_block->data), &(assembly_src->dyn_blocks[idx_block_stop].block->data), idx_ins_stop);
 			size += sizeof(struct asmBlockHeader) + new_block->header.size;
 
 			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].block = new_block;
