@@ -375,15 +375,14 @@ void ir_normalize_translate_sub_imm(struct ir* ir){
 
 /* WARNING this routine might be incorrect (see below) */
 void ir_normalize_replace_xor_ff(struct ir* ir){
-	struct node* 			node_cursor1;
-	struct node* 			node_cursor2;
-	struct edge* 			edge_cursor2;
+	struct node* 			node_cursor;
+	struct edge* 			edge_cursor;
 	struct irOperation* 	operation;
 	enum irOpcode* 			opcode_ptr;
 
-	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
-		if (node_cursor1->nb_edge_dst == 2){
-			operation = ir_node_get_operation(node_cursor1);
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		if (node_cursor->nb_edge_dst == 2){
+			operation = ir_node_get_operation(node_cursor);
 			if (operation->type == IR_OPERATION_TYPE_OUTPUT){
 				if (operation->operation_type.output.opcode != IR_XOR){
 					continue;
@@ -404,17 +403,17 @@ void ir_normalize_replace_xor_ff(struct ir* ir){
 				continue;
 			}
 
-			for(edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-				node_cursor2  = edge_get_src(edge_cursor2);
-				if (node_cursor2->nb_edge_src == 1){
-					operation = ir_node_get_operation(node_cursor2);
-					if (operation->type == IR_OPERATION_TYPE_IMM){
-						/* This is not correct the size of the XOR must be known (signed unsigned stuff ?) */
-						if (operation->operation_type.imm.value == 0xffffffff){
-							ir_remove_node(ir, node_cursor2);
-							*opcode_ptr = IR_NOT;
-							break;
+			for(edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				operation = ir_node_get_operation(edge_get_src(edge_cursor));
+				if (operation->type == IR_OPERATION_TYPE_IMM){
+					/* This is not correct the size of the XOR must be known (signed unsigned stuff ?) */
+					#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
+					if (ir_imm_operation_get_unsigned_value(operation) == 0xffffffff){
+						if (edge_get_src(edge_cursor)->nb_edge_src == 1){
+							ir_remove_node(ir, edge_get_src(edge_cursor));
 						}
+						*opcode_ptr = IR_NOT;
+						break;
 					}
 				}
 			}
