@@ -601,10 +601,6 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 			for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
 				selector = ANALYSIS_SELECTOR_NO_OPERAND;
 
-				if (INS_IsNop(instruction)){
-					continue;
-				}
-
 				if (INS_IsPredicated(instruction)){
 					if (tracer.dyn_offset){
 						ins_insertCall = INS_InsertThenPredicatedCall;
@@ -620,6 +616,17 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					 else{
 					 	ins_insertCall = INS_InsertCall;
 					 }
+				}
+
+				if (INS_IsNop(instruction)){
+					if (tracer.dyn_offset){
+						INS_InsertIfCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_test_and_dec_dyn_offset), IARG_END);
+					}
+					ins_insertCall(instruction, IPOINT_BEFORE, AFUNPTR(pintool_instruction_analysis_no_arg), 
+						IARG_INST_PTR,																																/* pc 					*/
+						IARG_UINT32, INS_Opcode(instruction), 																										/* opcode 				*/
+						IARG_END);
+					continue;
 				}
 
 				tmp_reg = INS_MemoryBaseReg(instruction);
