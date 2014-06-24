@@ -101,6 +101,8 @@ struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* 
 struct node* ir_add_immediate(struct ir* ir, uint16_t width, uint8_t signe, uint64_t value);
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 
+void ir_remove_node(struct ir* ir, struct node* node);
+
 void ir_convert_output_to_inner(struct ir* ir, struct node* node);
 void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
 
@@ -109,6 +111,7 @@ void ir_normalize_translate_rol_imm(struct ir* ir);
 void ir_normalize_translate_sub_imm(struct ir* ir);
 void ir_normalize_replace_xor_ff(struct ir* ir);
 void ir_normalize_merge_transitive_add(struct ir* ir);
+void ir_normalize_propagate_expression(struct ir* ir);
 
 void ir_print_io(struct ir* ir);
 

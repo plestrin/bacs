@@ -70,7 +70,14 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 
 struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);
-void graph_merge_node(struct graph* graph, struct node* node1, struct node* node2);
+
+void graph_transfert_src_edge(struct graph* graph, struct node* node1, struct node* node2);
+void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct node* node2);
+
+#define graph_merge_node(graph, node1, node2) 																									\
+	graph_transfert_src_edge(graph, node1, node2); 																								\
+	graph_transfert_dst_edge(graph, node1, node2);
+
 void graph_remove_node(struct graph* graph, struct node* node);
 
 #define graph_get_head_node(graph) 		((graph)->node_linkedList)

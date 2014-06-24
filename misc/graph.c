@@ -65,7 +65,7 @@ struct node* graph_add_node(struct graph* graph, void* data){
 	return node;
 }
 
-void graph_merge_node(struct graph* graph, struct node* node1, struct node* node2){
+void graph_transfert_src_edge(struct graph* graph, struct node* node1, struct node* node2){
 	struct edge* edge_cursor;
 	struct edge* edge_current;
 
@@ -101,6 +101,11 @@ void graph_merge_node(struct graph* graph, struct node* node1, struct node* node
 			node1->src_edge_linkedList = edge_current;
 		}
 	}
+}
+
+void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct node* node2){
+	struct edge* edge_cursor;
+	struct edge* edge_current;
 
 	edge_cursor = node_get_head_edge_dst(node2);
 	while (edge_cursor != NULL){
@@ -134,8 +139,6 @@ void graph_merge_node(struct graph* graph, struct node* node1, struct node* node
 			node1->dst_edge_linkedList = edge_current;
 		}
 	}
-
-	graph_remove_node(graph, node2);
 }
 
 void graph_remove_node(struct graph* graph, struct node* node){

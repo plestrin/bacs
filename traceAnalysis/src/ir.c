@@ -142,6 +142,54 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 	return edge;
 }
 
+void ir_remove_node(struct ir* ir, struct node* node){
+	struct irOperation* operation;
+	struct edge* 		edge_cursor;
+	struct edge* 		edge_current;
+
+	operation = ir_node_get_operation(node);
+	switch(operation->type){
+		case IR_OPERATION_TYPE_INPUT : {
+			if (operation->operation_type.input.prev != NULL){
+				ir_node_get_operation(operation->operation_type.input.prev)->operation_type.input.next = operation->operation_type.input.next;
+			}
+			else{
+				ir->input_linkedList = operation->operation_type.input.next;
+			}
+			if (operation->operation_type.input.next != NULL){
+				ir_node_get_operation(operation->operation_type.input.next)->operation_type.input.prev = operation->operation_type.input.prev;
+			}
+			break;
+		}
+		case IR_OPERATION_TYPE_OUTPUT : {
+			if (operation->operation_type.output.prev != NULL){
+				ir_node_get_operation(operation->operation_type.output.prev)->operation_type.output.next = operation->operation_type.output.next;
+			}
+			else{
+				ir->output_linkedList = operation->operation_type.output.next;
+			}
+			if (operation->operation_type.output.next != NULL){
+				ir_node_get_operation(operation->operation_type.output.next)->operation_type.output.prev = operation->operation_type.output.prev;
+			}
+			break;
+		}
+		default : {
+			break;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; ){
+		edge_current = edge_cursor;
+		edge_cursor = edge_get_next_dst(edge_cursor);
+
+		if (ir_node_get_operation(edge_get_src(edge_current))->type == IR_OPERATION_TYPE_IMM){
+			graph_remove_node(&(ir->graph), edge_get_src(edge_current));
+		}
+	}
+
+	graph_remove_node(&(ir->graph), node);
+}
+
 void ir_convert_output_to_inner(struct ir* ir, struct node* node){
 	enum irOpcode 			opcode;
 	struct irOperation* 	operation;
@@ -194,19 +242,23 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 #define IR_NORMALIZE_TRANSLATE_SUB_IMM 		1 	/* IR must be obtained either by TRACE or ASM */
 #define IR_NORMALIZE_REPLACE_XOR_FF 		1 	/* IR must be obtained by ASM */
 #define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 	1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_PROPAGATE_EXPRESSION 	1 	/* IR must be obtained either by TRACE or ASM */
 
 void ir_normalize(struct ir* ir){
-	#ifdef IR_NORMALIZE_TRANSLATE_ROL_IMM
+	#if IR_NORMALIZE_TRANSLATE_ROL_IMM == 1
 	ir_normalize_translate_rol_imm(ir);
 	#endif
-	#ifdef IR_NORMALIZE_TRANSLATE_SUB_IMM
+	#if IR_NORMALIZE_TRANSLATE_SUB_IMM == 1
 	ir_normalize_translate_sub_imm(ir);
 	#endif
-	#ifdef IR_NORMALIZE_REPLACE_XOR_FF
+	#if IR_NORMALIZE_REPLACE_XOR_FF == 1
 	ir_normalize_replace_xor_ff(ir);
 	#endif
-	#ifdef IR_NORMALIZE_MERGE_TRANSITIVE_ADD
+	#if IR_NORMALIZE_MERGE_TRANSITIVE_ADD == 1
 	ir_normalize_merge_transitive_add(ir);
+	#endif
+	#if IR_NORMALIZE_PROPAGATE_EXPRESSION == 1
+	ir_normalize_propagate_expression(ir);
 	#endif
 }
 
@@ -359,7 +411,7 @@ void ir_normalize_replace_xor_ff(struct ir* ir){
 					if (operation->type == IR_OPERATION_TYPE_IMM){
 						/* This is not correct the size of the XOR must be known (signed unsigned stuff ?) */
 						if (operation->operation_type.imm.value == 0xffffffff){
-							graph_remove_node(&(ir->graph), node_cursor2);
+							ir_remove_node(ir, node_cursor2);
 							*opcode_ptr = IR_NOT;
 							break;
 						}
@@ -424,7 +476,106 @@ void ir_normalize_merge_transitive_add(struct ir* ir){
 				}
 
 				graph_merge_node(&(ir->graph), node_cursor1, node_cursor2);
+				ir_remove_node(ir, node_cursor2);
 				goto start;
+			}
+		}
+	}
+}
+
+void ir_normalize_propagate_expression(struct ir* ir){
+	struct node* 			node_cursor1;
+	struct node* 			node_cursor2;
+	struct edge* 			edge_cursor1;
+	struct edge* 			edge_cursor2;
+	struct irOperation* 	operation1;
+	struct irOperation* 	operation2;
+	uint32_t 				i;
+	uint8_t* 				taken;
+	uint32_t 				max_nb_edge_dst = 0;
+	uint32_t 				nb_match;
+	enum irOpcode* 			opcode_ptr1;
+	enum irOpcode* 			opcode_ptr2;
+
+	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
+		if (node_cursor1->nb_edge_dst > max_nb_edge_dst){
+			max_nb_edge_dst = node_cursor1->nb_edge_dst;
+		}
+	}
+
+	taken = (uint8_t*)alloca(sizeof(uint8_t) * max_nb_edge_dst);
+
+	start:
+	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
+		operation1 = ir_node_get_operation(node_cursor1);
+		if (operation1->type == IR_OPERATION_TYPE_OUTPUT || operation1->type == IR_OPERATION_TYPE_INNER){
+
+			if (operation1->type == IR_OPERATION_TYPE_OUTPUT){
+				opcode_ptr1 = &(operation1->operation_type.output.opcode);
+			}
+			else{
+				opcode_ptr1 = &(operation1->operation_type.inner.opcode);
+			}
+
+			for(node_cursor2 = node_get_next(node_cursor1); node_cursor2 != NULL; node_cursor2 = node_get_next(node_cursor2)){
+				operation2 = ir_node_get_operation(node_cursor2);
+				if (operation2->type == IR_OPERATION_TYPE_OUTPUT || operation2->type == IR_OPERATION_TYPE_INNER){
+
+					if (operation2->type == IR_OPERATION_TYPE_OUTPUT){
+						opcode_ptr2 = &(operation2->operation_type.output.opcode);
+					}
+					else{
+						opcode_ptr2 = &(operation2->operation_type.inner.opcode);
+					}
+
+					if (*opcode_ptr1 == *opcode_ptr2 && node_cursor1->nb_edge_dst == node_cursor2->nb_edge_dst){
+						memset(taken, 0, sizeof(uint8_t) * node_cursor1->nb_edge_dst);
+
+						for (edge_cursor1 = node_get_head_edge_dst(node_cursor1); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+							for (edge_cursor2 = node_get_head_edge_dst(node_cursor2), i = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2), i++){
+								if (!taken[i]){
+									if (edge_get_src(edge_cursor1) == edge_get_src(edge_cursor2)){
+										taken[i] = 1;
+										break;
+									}
+									else if (ir_node_get_operation(edge_get_src(edge_cursor1))->type == IR_OPERATION_TYPE_IMM && ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
+										struct irOperation* operation11;
+										struct irOperation* operation22;
+
+										operation11 = ir_node_get_operation(edge_get_src(edge_cursor1));
+										operation22 = ir_node_get_operation(edge_get_src(edge_cursor2));
+
+										if (operation11->operation_type.imm.width == operation22->operation_type.imm.width && operation11->operation_type.imm.signe == operation22->operation_type.imm.signe && operation11->operation_type.imm.value == operation22->operation_type.imm.value){
+											taken[i] = 1;
+											break;
+										}
+									}
+								}
+							}
+
+							if (edge_cursor2 == NULL){
+								break;
+							}
+						}
+
+						for (i = 0, nb_match = 0; i < node_cursor1->nb_edge_dst; i++){
+							nb_match += taken[i];
+						}
+
+						if (nb_match == node_cursor1->nb_edge_dst){
+							if (operation1->type == IR_OPERATION_TYPE_OUTPUT){
+								graph_transfert_src_edge(&(ir->graph), node_cursor1, node_cursor2);
+								ir_remove_node(ir, node_cursor2);
+							}
+							else{
+								graph_transfert_src_edge(&(ir->graph), node_cursor2, node_cursor1);
+								ir_remove_node(ir, node_cursor1);
+							}
+							goto start;
+							return;
+						}
+					}
+				}
 			}
 		}
 	}
