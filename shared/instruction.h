@@ -55,7 +55,7 @@ enum operandType{
 	OPERAND_REG_READ_INDEX 	= 0x00000013
 };
 
-#define NB_REGISTER 19 /* do not forget to update this value */
+#define NB_REGISTER 20 /* do not forget to update this value */
 
 enum reg{
 	REGISTER_INVALID 	= 0x00000000,	/* 0  */
@@ -77,7 +77,8 @@ enum reg{
 	REGISTER_DL 		= 0x00000010,	/* 16 */
 	REGISTER_ESI 		= 0x00000011,	/* 17 */
 	REGISTER_EDI 		= 0x00000012,	/* 18 */
-	REGISTER_EBP 		= 0x00000013	/* 19 */
+	REGISTER_EBP 		= 0x00000013,	/* 19 */
+	REGISTER_ESP 		= 0x00000014 	/* 20 */
 };
 
 struct operand{

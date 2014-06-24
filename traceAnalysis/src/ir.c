@@ -190,24 +190,28 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 /* Normalize functions						                             */
 /* ===================================================================== */
 
-
-#define IR_NORMALIZE_TRANSLATE_ROL 			1
-#define IR_NORMALIZE_TRANSLATE_SUB 			1
-#define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 	1
+#define IR_NORMALIZE_TRANSLATE_ROL_IMM 		1	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_TRANSLATE_SUB_IMM 		1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_REPLACE_XOR_FF 		1 	/* IR must be obtained by ASM */
+#define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 	1 	/* IR must be obtained either by TRACE or ASM */
 
 void ir_normalize(struct ir* ir){
-	#ifdef IR_NORMALIZE_TRANSLATE_ROL
-	ir_normalize_translate_rol(ir);
+	#ifdef IR_NORMALIZE_TRANSLATE_ROL_IMM
+	ir_normalize_translate_rol_imm(ir);
 	#endif
-	#ifdef IR_NORMALIZE_TRANSLATE_SUB
-	/* a completer */
+	#ifdef IR_NORMALIZE_TRANSLATE_SUB_IMM
+	ir_normalize_translate_sub_imm(ir);
+	#endif
+	#ifdef IR_NORMALIZE_REPLACE_XOR_FF
+	ir_normalize_replace_xor_ff(ir);
 	#endif
 	#ifdef IR_NORMALIZE_MERGE_TRANSITIVE_ADD
 	ir_normalize_merge_transitive_add(ir);
 	#endif
 }
 
-void ir_normalize_translate_rol(struct ir* ir){
+/* WARNING this routine might be incorrect (see below) */
+void ir_normalize_translate_rol_imm(struct ir* ir){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
 	struct irOperation* 	operation;
@@ -257,6 +261,110 @@ void ir_normalize_translate_rol(struct ir* ir){
 			default : {
 				printf("WARNING: in %s, this case (ROL with %u operand(s)) is not supposed to happen\n", __func__, node_cursor->nb_edge_dst);
 				break;
+			}
+		}
+	}
+}
+
+/* WARNING this routine might be incorrect (see below) */
+void ir_normalize_translate_sub_imm(struct ir* ir){
+	struct node* 			node_cursor;
+	struct edge* 			edge_cursor;
+	struct irOperation* 	operation;
+	struct irOperation* 	imm_value;
+	enum irOpcode* 			opcode_ptr;
+	
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation = ir_node_get_operation(node_cursor);
+		if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+			if (operation->operation_type.output.opcode == IR_SUB){
+				opcode_ptr = &(operation->operation_type.output.opcode);
+			}
+			else{
+				continue;
+			}
+		}
+		else if (operation->type == IR_OPERATION_TYPE_INNER){
+			if (operation->operation_type.inner.opcode == IR_SUB){
+				opcode_ptr = &(operation->operation_type.inner.opcode);
+			}
+			else{
+				continue;
+			}
+		}
+		else{
+			continue;
+		}
+		
+		switch(node_cursor->nb_edge_dst){
+			case 1 : {
+				*opcode_ptr = IR_ADD;
+				break;
+			}
+			case 2 : {
+				edge_cursor = node_get_head_edge_dst(node_cursor);
+				while(edge_cursor != NULL && ir_node_get_operation(edge_get_src(edge_cursor))->type != IR_OPERATION_TYPE_IMM){
+					edge_cursor = edge_get_next_dst(edge_cursor);
+				}
+				if (edge_cursor != NULL){
+					imm_value = ir_node_get_operation(edge_get_src(edge_cursor));
+					imm_value->operation_type.imm.value = (uint64_t)(-imm_value->operation_type.imm.value); /* I am not sure if this is correct */
+					*opcode_ptr = IR_SUB;
+				}
+				break;
+			}
+			default : {
+				printf("WARNING: in %s, this case (SUB with %u operand(s)) is not supposed to happen\n", __func__, node_cursor->nb_edge_dst);
+				break;
+			}
+		}
+	}
+}
+
+/* WARNING this routine might be incorrect (see below) */
+void ir_normalize_replace_xor_ff(struct ir* ir){
+	struct node* 			node_cursor1;
+	struct node* 			node_cursor2;
+	struct edge* 			edge_cursor2;
+	struct irOperation* 	operation;
+	enum irOpcode* 			opcode_ptr;
+
+	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
+		if (node_cursor1->nb_edge_dst == 2){
+			operation = ir_node_get_operation(node_cursor1);
+			if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+				if (operation->operation_type.output.opcode != IR_XOR){
+					continue;
+				}
+				else{
+					opcode_ptr = &(operation->operation_type.output.opcode);
+				}
+			}
+			else if (operation->type == IR_OPERATION_TYPE_INNER){
+				if (operation->operation_type.inner.opcode != IR_XOR){
+					continue;
+				}
+				else{
+					opcode_ptr = &(operation->operation_type.inner.opcode);
+				}
+			}
+			else{
+				continue;
+			}
+
+			for(edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+				node_cursor2  = edge_get_src(edge_cursor2);
+				if (node_cursor2->nb_edge_src == 1){
+					operation = ir_node_get_operation(node_cursor2);
+					if (operation->type == IR_OPERATION_TYPE_IMM){
+						/* This is not correct the size of the XOR must be known (signed unsigned stuff ?) */
+						if (operation->operation_type.imm.value == 0xffffffff){
+							graph_remove_node(&(ir->graph), node_cursor2);
+							*opcode_ptr = IR_NOT;
+							break;
+						}
+					}
+				}
 			}
 		}
 	}

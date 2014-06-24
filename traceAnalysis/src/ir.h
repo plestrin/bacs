@@ -105,7 +105,9 @@ void ir_convert_output_to_inner(struct ir* ir, struct node* node);
 void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
 
 void ir_normalize(struct ir* ir);
-void ir_normalize_translate_rol(struct ir* ir);
+void ir_normalize_translate_rol_imm(struct ir* ir);
+void ir_normalize_translate_sub_imm(struct ir* ir);
+void ir_normalize_replace_xor_ff(struct ir* ir);
 void ir_normalize_merge_transitive_add(struct ir* ir);
 
 void ir_print_io(struct ir* ir);

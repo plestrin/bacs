@@ -377,8 +377,12 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_EBP 	: {
 					break;
 				}
-				default : {
-					printf("WARNING: in %s, this case is not supposed to happen\n", __func__);
+				case REGISTER_ESP 	: {
+					break;
+				}
+				default 			: {
+					printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+					break;
 				}
 			}
 		}

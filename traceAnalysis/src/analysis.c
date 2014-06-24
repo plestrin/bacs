@@ -287,6 +287,7 @@ void analysis_trace_search_constant(struct analysis* analysis){
 		printf("ERROR: in %s, trace is NULL\n", __func__);
 	}
 }
+
 void analysis_trace_export(struct analysis* analysis, char* arg){
 	uint32_t 				start = 0;
 	uint32_t 				stop = 0;
@@ -302,7 +303,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
 			}
 			else{
-				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "trace [%u: %u]", start, stop);
+				snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "trace [%u:%u]", start, stop);
 
 				if (array_add(&(analysis->frag_array), &fragment) < 0){
 					printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);

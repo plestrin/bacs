@@ -71,10 +71,12 @@ int32_t irImporterAsm_import(struct ir* ir){
 			}
 			case XED_ICLASS_POP : {
 				/* a completer */
+				printf("WARNING: in %s, this case is not implemented yet (POP instruction) @ %u\n", __func__, i);
 				break;
 			}
 			case XED_ICLASS_PUSH : {
 				/* a completer */
+				printf("WARNING: in %s, this case is not implemented yet (PUSH instruction) @ %u\n", __func__, i);
 				break;
 			}
 			default :{
@@ -107,8 +109,6 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 	const xed_operand_t* 	xed_op;
 	xed_operand_enum_t 		op_name;
 	uint8_t 				nb_memops;
-
-	printf("%s -> %u operand(s)\n", xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)), xed_inst_noperands(xi)); /* pour le debug */
 
 	for (i = 0, nb_memops = 0, input_variables->nb_input = 0, input_variables->base_variable = NULL, input_variables->index_variable = NULL, input_variables->disp_variable = NULL; i < xed_inst_noperands(xi); i++){
 		xed_op = xed_inst_operand(xi, i);
@@ -249,6 +249,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 					}
 					else{
+						ir_node_get_operation(input_variables->variables[input_variables->nb_input])->data = 1;
 						input_variables->nb_input ++;
 						if (input_variables->nb_input == IRIMPORTERASM_MAX_INPUT_VARIABLE){
 							printf("ERROR: in %s, the max number of input variable has been reached\n", __func__);
@@ -439,6 +440,9 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_OR 	: {return IR_OR;}
 		case XED_ICLASS_ROL : {return IR_ROL;}
 		case XED_ICLASS_ROR : {return IR_ROR;}
+		case XED_ICLASS_SHL : {return IR_SHL;}
+		case XED_ICLASS_SHR : {return IR_SHR;}
+		case XED_ICLASS_SUB : {return IR_SUB;}
 		case XED_ICLASS_XOR : {return IR_XOR;}
 		default : {
 			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
@@ -449,13 +453,18 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 
 static enum reg xedRegister_2_reg(xed_reg_enum_t xed_reg){
 	switch(xed_reg){
-		case XED_REG_EAX : {return REGISTER_EAX;}
-		case XED_REG_ECX : {return REGISTER_ECX;}
-		case XED_REG_EDX : {return REGISTER_EDX;}
-		case XED_REG_EBX : {return REGISTER_EBX;}
-		case XED_REG_EBP : {return REGISTER_EBP;}
-		case XED_REG_ESI : {return REGISTER_ESI;}
-		case XED_REG_EDI : {return REGISTER_EDI;}
+		case XED_REG_AX 	: {return REGISTER_AX;} 	
+		case XED_REG_CX 	: {return REGISTER_CX;} 	
+		case XED_REG_DX 	: {return REGISTER_DX;} 	
+		case XED_REG_BX 	: {return REGISTER_BX;} 
+		case XED_REG_EAX 	: {return REGISTER_EAX;}
+		case XED_REG_ECX 	: {return REGISTER_ECX;}
+		case XED_REG_EDX 	: {return REGISTER_EDX;}
+		case XED_REG_EBX 	: {return REGISTER_EBX;}
+		case XED_REG_ESP 	: {return REGISTER_ESP;}
+		case XED_REG_EBP 	: {return REGISTER_EBP;}
+		case XED_REG_ESI 	: {return REGISTER_ESI;}
+		case XED_REG_EDI 	: {return REGISTER_EDI;}
 		default : {
 			printf("ERROR: in %s, this register (%s) cannot be translated into custom register\n", __func__, xed_reg_enum_t2str(xed_reg));
 			return REGISTER_INVALID;
