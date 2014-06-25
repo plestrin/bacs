@@ -1,8 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef VERBOSE
+#include <time.h>
+#endif
 
 #include "irNormalize.h"
+
+#ifdef VERBOSE
+#include "multiColumn.h"
+#endif
 
 #define IR_NORMALIZE_TRANSLATE_ROL_IMM 		1	/* IR must be obtained either by TRACE or ASM */
 #define IR_NORMALIZE_TRANSLATE_SUB_IMM 		1 	/* IR must be obtained either by TRACE or ASM */
@@ -12,28 +19,100 @@
 #define IR_NORMALIZE_PROPAGATE_EXPRESSION 	1 	/* IR must be obtained either by TRACE or ASM */
 #define IR_NORMALIZE_DETECT_ROTATION 		1 	/* IR must be obtained by ASM */
 
+#ifdef VERBOSE
+
+#define INIT_TIMER																																			\
+	struct timespec 			timer_start_time; 																											\
+	struct timespec 			timer_stop_time; 																											\
+	double 						timer_elapsed_time; 																										\
+	struct multiColumnPrinter* 	printer; 																													\
+																																							\
+	printer = multiColumnPrinter_create(stdout, 2, NULL, NULL, NULL); 																						\
+	if (printer != NULL){ 																																	\
+		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_DOUBLE); 																			\
+		multiColumnPrinter_set_column_size(printer, 0, 32); 																								\
+		multiColumnPrinter_set_title(printer, 0, "RULE"); 																									\
+		multiColumnPrinter_set_title(printer, 1, "TIME"); 																									\
+																																							\
+		multiColumnPrinter_print_header(printer); 																											\
+	} 																																						\
+	else{ 																																					\
+		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__); 																				\
+		return; 																																			\
+	}
+
+#define START_TIMER 																																		\
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){ 																						\
+		printf("ERROR: in %s, clock_gettime fails\n", __func__); 																							\
+	}
+
+#define STOP_TIMER 																																			\
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){ 																						\
+		printf("ERROR: in %s, clock_gettime fails\n", __func__); 																							\
+	}
+
+#define PRINT_TIMER(ctx_string) 																															\
+	timer_elapsed_time = (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.; 			\
+	multiColumnPrinter_print(printer, (ctx_string), timer_elapsed_time, NULL);
+
+#define CLEAN_TIMER 																																		\
+		multiColumnPrinter_delete(printer);
+
+#endif
+
 void ir_normalize(struct ir* ir){
+	INIT_TIMER
+
 	#if IR_NORMALIZE_TRANSLATE_ROL_IMM == 1
+	START_TIMER
 	ir_normalize_translate_rol_imm(ir);
+	STOP_TIMER
+	PRINT_TIMER("Translate rol imm")
 	#endif
+
 	#if IR_NORMALIZE_TRANSLATE_SUB_IMM == 1
+	START_TIMER
 	ir_normalize_translate_sub_imm(ir);
+	STOP_TIMER
+	PRINT_TIMER("Translate sub imm")
 	#endif
+
 	#if IR_NORMALIZE_TRANSLATE_XOR_FF == 1
+	START_TIMER
 	ir_normalize_translate_xor_ff(ir);
+	STOP_TIMER
+	PRINT_TIMER("Translate xor ff")
 	#endif
+
 	#if IR_NORMALIZE_MERGE_TRANSITIVE_ADD == 1
+	START_TIMER
 	ir_normalize_merge_transitive_operation(ir, IR_ADD);
+	STOP_TIMER
+	PRINT_TIMER("Merge transitive add")
 	#endif
+	
 	#if IR_NORMALIZE_MERGE_TRANSITIVE_XOR == 1
+	START_TIMER
 	ir_normalize_merge_transitive_operation(ir, IR_XOR);
+	STOP_TIMER
+	PRINT_TIMER("Merge transitive xor")
 	#endif
+	
 	#if IR_NORMALIZE_PROPAGATE_EXPRESSION == 1
+	START_TIMER
 	ir_normalize_propagate_expression(ir);
+	STOP_TIMER
+	PRINT_TIMER("Propagate expression")
 	#endif
-	#ifdef IR_NORMALIZE_DETECT_ROTATION
+	
+	#if IR_NORMALIZE_DETECT_ROTATION == 1
+	START_TIMER
 	ir_normalize_detect_rotation(ir);
+	STOP_TIMER
+	PRINT_TIMER("Detect rotation")
 	#endif
+
+	CLEAN_TIMER
 }
 
 void ir_normalize_translate_rol_imm(struct ir* ir){

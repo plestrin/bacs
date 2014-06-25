@@ -220,6 +220,12 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 							}
 							else{
 								input_variables->nb_input ++;
+
+								if (input_variables->disp_variable != NULL){
+									ir_remove_node(engine->ir, input_variables->disp_variable);
+									input_variables->disp_variable = NULL;
+								}
+
 								if (input_variables->nb_input == IRIMPORTERASM_MAX_INPUT_VARIABLE){
 									printf("ERROR: in %s, the max number of input variable has been reached\n", __func__);
 									break;
