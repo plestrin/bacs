@@ -217,6 +217,20 @@ struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct n
 	return edge;
 }
 
+struct edge* graph_get_edge(struct node* node_src, struct node* node_dst){
+	struct edge* edge;
+
+	edge = node_get_head_edge_src(node_src);
+	while(edge != NULL){
+		if (edge_get_dst(edge) == node_dst){
+			break;
+		}
+		edge = edge_get_next_src(edge);
+	}
+
+	return edge;
+}
+
 void graph_remove_edge(struct graph* graph, struct edge* edge){
 	graph->nb_edge --;
 

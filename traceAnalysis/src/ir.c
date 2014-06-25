@@ -56,7 +56,7 @@ int32_t ir_init(struct ir* ir, struct trace* trace, enum irCreateMethod create_m
 	return 0;
 }
 
-struct node* ir_add_input(struct ir* ir, struct operand* operand){
+struct node* ir_add_input(struct ir* ir, struct operand* operand, uint8_t size){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -67,6 +67,7 @@ struct node* ir_add_input(struct ir* ir, struct operand* operand){
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 							= IR_OPERATION_TYPE_INPUT;
+		operation->size 							= size;
 		operation->operation_type.input.operand 	= operand;
 		operation->operation_type.input.prev 		= NULL;
 		operation->operation_type.input.next 		= ir->input_linkedList;
@@ -81,7 +82,7 @@ struct node* ir_add_input(struct ir* ir, struct operand* operand){
 	return node;
 }
 
-struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand){
+struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand, uint8_t size){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -92,6 +93,7 @@ struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* 
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 							= IR_OPERATION_TYPE_OUTPUT;
+		operation->size 							= size;
 		operation->operation_type.output.opcode 	= opcode;
 		operation->operation_type.output.operand 	= operand;
 		operation->operation_type.output.prev 		= NULL;
@@ -107,7 +109,7 @@ struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* 
 	return node;
 }
 
-struct node* ir_add_immediate(struct ir* ir, uint16_t width, uint8_t signe, uint64_t value){
+struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -118,7 +120,7 @@ struct node* ir_add_immediate(struct ir* ir, uint16_t width, uint8_t signe, uint
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 						= IR_OPERATION_TYPE_IMM;
-		operation->operation_type.imm.width 	= width;
+		operation->size 						= size;
 		operation->operation_type.imm.signe 	= signe;
 		operation->operation_type.imm.value 	= value;
 	}
@@ -182,7 +184,7 @@ void ir_remove_node(struct ir* ir, struct node* node){
 		edge_current = edge_cursor;
 		edge_cursor = edge_get_next_dst(edge_cursor);
 
-		if (ir_node_get_operation(edge_get_src(edge_current))->type == IR_OPERATION_TYPE_IMM){
+		if (ir_node_get_operation(edge_get_src(edge_current))->type == IR_OPERATION_TYPE_IMM && edge_get_src(edge_current)->nb_edge_src == 1){
 			graph_remove_node(&(ir->graph), edge_get_src(edge_current));
 		}
 	}

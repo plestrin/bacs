@@ -85,6 +85,7 @@ void graph_remove_node(struct graph* graph, struct node* node);
 
 struct edge* graph_add_edge_(struct graph* graph, struct node* node_src, struct node* node_dst);
 struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct node* node_dst, void* data);
+struct edge* graph_get_edge(struct node* node_src, struct node* node_dst);
 void graph_remove_edge(struct graph* graph, struct edge* edge);
 
 #define node_get_head_edge_src(node) 	((node)->src_edge_linkedList)

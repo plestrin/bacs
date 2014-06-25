@@ -1190,3 +1190,31 @@ int32_t reg_is_contained_in(enum reg reg1, enum reg reg2){
 
 	return 0;
 }
+
+int8_t reg_get_size(enum reg reg){
+	switch(reg){
+		case REGISTER_INVALID 			: {return 0;}
+		case REGISTER_EAX 				: {return 32;}
+		case REGISTER_AX 				: {return 16;}
+		case REGISTER_AH 				: {return 8;}
+		case REGISTER_AL 				: {return 8;}
+		case REGISTER_EBX 				: {return 32;}
+		case REGISTER_BX 				: {return 16;}
+		case REGISTER_BH 				: {return 8;}
+		case REGISTER_BL 				: {return 8;}
+		case REGISTER_ECX 				: {return 32;}
+		case REGISTER_CX 				: {return 16;}
+		case REGISTER_CH 				: {return 8;}
+		case REGISTER_CL 				: {return 8;}
+		case REGISTER_EDX 				: {return 32;}
+		case REGISTER_DX 				: {return 16;}
+		case REGISTER_DH 				: {return 8;}
+		case REGISTER_DL 				: {return 8;}
+		case REGISTER_ESI 				: {return 32;}
+		case REGISTER_EDI 				: {return 32;}
+		case REGISTER_EBP 				: {return 32;}
+		case REGISTER_ESP 				: {return 32;}
+	}
+
+	return 0;
+}

@@ -95,10 +95,6 @@ static inline enum reg pintool_REG_2_reg(REG reg){
 /* Analysis function(s) 	                                             */
 /* ===================================================================== */
 
-void pintool_instruction_analysis_debug(UINT32 value){
-	printf("BOUMMMMMMMMMMMMMMMMMMMMMMMMMM: 0x%08x\n", value);
-}
-
 ADDRINT pintool_instruction_analysis_test_dyn_offset(){
 	return tracer.dyn_offset == 0;
 }

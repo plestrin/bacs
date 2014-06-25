@@ -405,7 +405,7 @@ struct node* irImporterDynTrace_get_ir_src_variable(struct irRenameEngine* engin
 
 	variable = irRenameEngine_get_ref(engine, operand);
 	if (variable == NULL){
-		variable = irImporterDynTrace_add_input(engine->ir, operand);
+		variable = irImporterDynTrace_add_input(engine->ir, operand, operand->size * 8);
 		if (variable != NULL){
 			ir_node_get_operation(variable)->data = 1;
 			if (irRenameEngine_set_new_ref(engine, operand, variable)){
@@ -425,7 +425,7 @@ struct node* irImporterDynTrace_get_ir_src_variable_dependence_index_base(struct
 
 	variable = irRenameEngine_get_ref(engine, operands + index);
 	if (variable == NULL){
-		variable = irImporterDynTrace_add_input(engine->ir, operands + index);
+		variable = irImporterDynTrace_add_input(engine->ir, operands + index, operands[index].size * 8);
 		if (variable != NULL){
 			ir_node_get_operation(variable)->data = 1;
 			if (irRenameEngine_set_new_ref(engine, operands + index, variable)){
@@ -447,7 +447,7 @@ struct node* irImporterDynTrace_get_ir_src_variable_dependence_index_base(struct
 struct node* irImporterDynTrace_get_ir_dst_variable(struct irRenameEngine* engine, struct operand* operand, enum irOpcode opcode){
 	struct node* variable;
 
-	variable = irImporterDynTrace_add_operation(engine->ir, opcode, operand);
+	variable = irImporterDynTrace_add_operation(engine->ir, opcode, operand, operand->size * 8);
 	if (variable == NULL){
 		printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 	}

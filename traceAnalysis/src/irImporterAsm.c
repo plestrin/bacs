@@ -135,7 +135,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 
 						input_variables->base_variable = irRenameEngine_get_register_ref(engine, reg, base_operand);
 						if (input_variables->base_variable == NULL){
-							input_variables->base_variable = irImporterAsm_add_input(engine->ir, base_operand);
+							input_variables->base_variable = irImporterAsm_add_input(engine->ir, base_operand, reg_get_size(reg));
 							if (input_variables->base_variable != NULL){
 								ir_node_get_operation(input_variables->base_variable)->data = 1;
 								if (irRenameEngine_set_register_new_ref(engine, reg, input_variables->base_variable)){
@@ -155,7 +155,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 
 						input_variables->index_variable = irRenameEngine_get_register_ref(engine, reg, index_operand);
 						if (input_variables->index_variable == NULL){
-							input_variables->index_variable = irImporterAsm_add_input(engine->ir, index_operand);
+							input_variables->index_variable = irImporterAsm_add_input(engine->ir, index_operand, reg_get_size(reg));
 							if (input_variables->index_variable != NULL){
 								ir_node_get_operation(input_variables->base_variable)->data = 1;
 								if (irRenameEngine_set_register_new_ref(engine, reg, input_variables->index_variable)){
@@ -184,7 +184,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 						else{
 							input_variables->variables[input_variables->nb_input] = irRenameEngine_get_ref(engine, mem_operand);
 							if (input_variables->variables[input_variables->nb_input] == NULL){
-								input_variables->variables[input_variables->nb_input] = irImporterAsm_add_input(engine->ir, mem_operand);
+								input_variables->variables[input_variables->nb_input] = irImporterAsm_add_input(engine->ir, mem_operand, mem_operand->size * 8);
 								if (input_variables->variables[input_variables->nb_input] != NULL){
 									ir_node_get_operation(input_variables->variables[input_variables->nb_input])->data = 1;
 									if (irRenameEngine_set_new_ref(engine, mem_operand, input_variables->variables[input_variables->nb_input])){
@@ -277,7 +277,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 
 					input_variables->variables[input_variables->nb_input] = irRenameEngine_get_register_ref(engine, reg, register_operand);
 					if (input_variables->variables[input_variables->nb_input] == NULL){
-						input_variables->variables[input_variables->nb_input] = irImporterAsm_add_input(engine->ir, register_operand);
+						input_variables->variables[input_variables->nb_input] = irImporterAsm_add_input(engine->ir, register_operand, reg_get_size(reg));
 						if (input_variables->variables[input_variables->nb_input] != NULL){
 							ir_node_get_operation(input_variables->variables[input_variables->nb_input])->data = 1;
 							if (irRenameEngine_set_register_new_ref(engine, reg, input_variables->variables[input_variables->nb_input])){
@@ -334,7 +334,7 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 						printf("ERROR: in %s, output memory operand with no specified address, unable to rename\n", __func__);
 					}
 					else{
-						output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), mem_operand);
+						output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), mem_operand, mem_operand->size * 8);
 						if (output_variables->variable == NULL){
 							printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 							continue;
@@ -364,7 +364,7 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 					reg = xedRegister_2_reg(xed_decoded_inst_get_reg(xedd, op_name));
 					register_operand = irImporterAsm_get_output_register(operands, nb_operand, reg);
 
-					output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), register_operand);
+					output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), register_operand, reg_get_size(reg));
 					if (output_variables->variable == NULL){
 						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 						continue;
@@ -585,7 +585,7 @@ static void special_instruction_lea(struct irRenameEngine* engine, struct asmInp
 					reg = xedRegister_2_reg(xed_decoded_inst_get_reg(xedd, op_name));
 					register_operand = irImporterAsm_get_output_register(operands, nb_operand, reg);
 
-					output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), register_operand);
+					output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), register_operand, reg_get_size(reg));
 					if (output_variables->variable == NULL){
 						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 						continue;
