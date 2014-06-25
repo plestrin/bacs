@@ -12,6 +12,7 @@
 static struct operand* irImporterAsm_get_input_memory(struct operand* operands, uint32_t nb_operand, uint32_t index);
 static struct operand* irImporterAsm_get_input_register(struct operand* operands, uint32_t nb_operand, enum reg reg);
 static struct operand* irImporterAsm_get_base_register(struct operand* operands, uint32_t nb_operand, enum reg reg);
+static struct operand* irImporterAsm_get_output_memory(struct operand* operands, uint32_t nb_operand, uint32_t index);
 static struct operand* irImporterAsm_get_output_register(struct operand* operands, uint32_t nb_operand, enum reg reg);
 
 #define IRIMPORTERASM_MAX_INPUT_VARIABLE 4
@@ -178,7 +179,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 					if (op_name != XED_OPERAND_AGEN){
 						mem_operand = irImporterAsm_get_input_memory(operands, nb_operand, nb_memops);
 						if (mem_operand == NULL){
-							printf("ERROR: in %s, input memory operands with no specified address, unable to rename\n", __func__);
+							printf("ERROR: in %s, input memory operand with no specified address, unable to rename\n", __func__);
 						}
 						else{
 							input_variables->variables[input_variables->nb_input] = irRenameEngine_get_ref(engine, mem_operand);
@@ -323,11 +324,29 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 			op_name = xed_operand_name(xed_op);
 
 			switch(op_name){
-				case XED_OPERAND_AGEN 	:
 				case XED_OPERAND_MEM0 	:
 				case XED_OPERAND_MEM1 	: {
-					printf("\t- write memory operand\n"); /* pour le debug */
-					/* a completer */
+					struct operand* mem_operand;
+
+					mem_operand = irImporterAsm_get_output_memory(operands, nb_operand, 0);
+					if (mem_operand == NULL){
+						output_variables->variable = NULL;
+						printf("ERROR: in %s, output memory operand with no specified address, unable to rename\n", __func__);
+					}
+					else{
+						output_variables->variable = irImporterAsm_add_operation(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), mem_operand);
+						if (output_variables->variable == NULL){
+							printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+							continue;
+						}
+
+						ir_node_get_operation(output_variables->variable)->data = 0;
+
+						if (irRenameEngine_set_ref(engine, mem_operand, output_variables->variable)){
+							printf("ERROR: in %s, unable to set memory reference in the renameEngine\n", __func__);
+						}
+					}
+
 					break;
 				}
 				case XED_OPERAND_REG0 	:
@@ -419,6 +438,21 @@ static struct operand* irImporterAsm_get_base_register(struct operand* operands,
 	return NULL;
 }
 
+static struct operand* irImporterAsm_get_output_memory(struct operand* operands, uint32_t nb_operand, uint32_t index){
+	uint32_t i;
+	uint32_t j;
+
+	for (i = 0, j = 0; i < nb_operand; i++){
+		if (OPERAND_IS_WRITE(operands[i]) && OPERAND_IS_MEM(operands[i])){
+			if (j++ == index){
+				return operands + i;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static struct operand* irImporterAsm_get_output_register(struct operand* operands, uint32_t nb_operand, enum reg reg){
 	uint32_t i;
 
@@ -486,11 +520,21 @@ static void special_instruction_mov(struct irRenameEngine* engine, struct asmInp
 			op_name = xed_operand_name(xed_op);
 
 			switch(op_name){
-				case XED_OPERAND_AGEN 	:
 				case XED_OPERAND_MEM0 	:
 				case XED_OPERAND_MEM1 	: {
-					printf("\t- write memory operand\n"); /* pour le debug */
-					/* a completer */
+					struct operand* mem_operand;
+
+					mem_operand = irImporterAsm_get_output_memory(operands, nb_operand, 0);
+					if (mem_operand == NULL){
+						output_variables->variable = NULL;
+						printf("ERROR: in %s, output memory operand with no specified address, unable to rename\n", __func__);
+					}
+					else{
+						if (irRenameEngine_set_ref(engine, mem_operand, input_variables->variables[0])){
+							printf("ERROR: in %s, unable to set memory reference in the renameEngine\n", __func__);
+						}
+					}
+
 					break;
 				}
 				case XED_OPERAND_REG0 	:

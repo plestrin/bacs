@@ -112,6 +112,7 @@ int32_t workQueue_submit(struct workQueue* queue, void(*routine)(void*), void* a
 	}
 	else{
 		printf("ERROR: in %s, unable to lock mutex\n", __func__);
+		free(job);
 	}
 
 	return 0;

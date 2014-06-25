@@ -1068,7 +1068,7 @@ void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
 
 			if (argSet_get_nb_input(&arg_set) > 0 && argSet_get_nb_output(&arg_set) > 0){
 				if (strlen(arg_set.tag) == 0){
-					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", index);
+					snprintf(arg_set.tag, ARGSET_TAG_MAX_LENGTH, "Frag %u", i);
 				}
 
 				if (array_add(&(analysis->arg_array), &arg_set) < 0){
