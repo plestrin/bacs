@@ -1,0 +1,39 @@
+# This file define the following signature(s):
+#	- md5_p1_v1 : round [1:32] 		F(x,y,z) = x.y + !x.z
+#	- md5_p1_v2 : round [1:32] 		F(x,y,z) = XOR(y, x.XOR(y, z))
+#	- md5_p3 	: round [33:48]
+#	- md5_p4	: round [49:64]
+
+"md5_p1_v1"
+
+1 (NOT) -> 2 (AND)
+3 (AND) -> 4 (OR)
+2 -> 4
+4 -> 5 (ADD)
+5 -> 6 (ROR)
+6 -> 7 (ADD)
+
+
+"md5_p1_v2"
+
+1 (XOR) -> 2 (AND)
+2 -> 3 (XOR)
+3 -> 4 (ADD)
+4 -> 5 (ROR)
+5 -> 6 (ADD)
+
+
+"md5_p3"
+
+1 (XOR) -> 2 (ADD)
+2 -> 3 (ROR)
+3 -> 4 (ADD)
+
+
+"md5_p4"
+
+1 (NOT) -> 2 (OR)
+2 -> 3 (XOR)
+3 -> 4 (ADD)
+4 -> 5 (ROR)
+5 -> 6 (ADD)

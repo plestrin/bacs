@@ -34,7 +34,8 @@ struct codeSignatureCollection{
 };
 
 struct codeSignatureCollection* codeSignature_create_collection();
-int32_t codeSignature_init_collection(struct codeSignatureCollection* collection);
+
+#define codeSignature_init_collection(collection) array_init(&((collection)->signature_array), sizeof(struct codeSignature))
 
 int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
 

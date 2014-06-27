@@ -365,6 +365,19 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 									reader_cursor->token = READER_TOKEN_NODE_LABEL;
 									break;
 								}
+								case '0' :
+								case '1' :
+								case '2' :
+								case '3' :
+								case '4' :
+								case '5' :
+								case '6' :
+								case '7' :
+								case '8' :
+								case '9' : {
+									reader_cursor->token = READER_TOKEN_NODE_ID;
+									break;
+								}
 								default  : {
 									printf("ERROR: in %s, incorrect character: %c (case ID)\n", __func__, *reader_cursor->cursor);
 									break;
