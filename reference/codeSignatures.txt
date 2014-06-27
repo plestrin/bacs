@@ -1,0 +1,8 @@
+# This file define the following signature(s):
+# 	- md5_v1
+# 	- md5_v2
+
+"md5_v1"
+
+1 (XOR) -> 2 (ADD)
+2 -> 3 (OR)

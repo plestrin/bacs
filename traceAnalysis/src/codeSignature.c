@@ -2,16 +2,17 @@
 #include <stdio.h>
 
 #include "codeSignature.h"
+#include "multiColumn.h"
 
 static void codeSignature_construct_md5p1_v1_signature(struct codeSignature* code_signature); 		/* tmp */
 static void codeSignature_construct_md5p1_v2_signature(struct codeSignature* code_signature);		/* tmp */
 static void codeSignature_construct_md5p3_signature(struct codeSignature* code_signature); 			/* tmp */
 static void codeSignature_construct_md5p4_signature(struct codeSignature* code_signature); 			/* tmp */
 
-uint32_t signatureNode_get_label(struct node* node);
 uint32_t irNode_get_label(struct node* node);
+uint32_t signatureNode_get_label(struct node* node);
 
-static int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
+void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
 
 
 struct codeSignatureCollection* codeSignature_create_collection(){
@@ -52,7 +53,7 @@ int32_t codeSignature_init_collection(struct codeSignatureCollection* collection
 	return 0;
 }
 
-static int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature){
+int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature){
 	struct codeSignature* 	new_signature;
 	int32_t 				index;
 
@@ -63,7 +64,13 @@ static int32_t codeSignature_add_signature_to_collection(struct codeSignatureCol
 	}
 	else{
 		new_signature = (struct codeSignature*)array_get(&(collection->signature_array), index);
-		new_signature->sub_graph_handle->graph = &(new_signature->graph);
+		if (new_signature->sub_graph_handle == NULL){
+			new_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(new_signature->graph), signatureNode_get_label);
+		}
+		else{
+			new_signature->sub_graph_handle->graph = &(new_signature->graph);
+		}
+		graph_register_dotPrint_callback(&(new_signature->graph), NULL, codeSignature_dotPrint_node, NULL, NULL);
 	}
 
 	return 0;
@@ -98,6 +105,18 @@ void codeSignature_search(struct codeSignatureCollection* collection, struct ir*
 	}
 
 	graphIso_delete_graph_handle(graph_handle);
+}
+
+void codeSignature_empty_collection(struct codeSignatureCollection* collection){
+	uint32_t 				i;
+	struct codeSignature* 	code_signature;
+
+	for (i = 0; i < array_get_length(&(collection->signature_array)); i++){
+		code_signature = (struct codeSignature*)array_get(&(collection->signature_array), i);
+		codeSignature_clean(code_signature);
+	}
+
+	array_empty(&(collection->signature_array));
 }
 
 void codeSignature_clean_collection(struct codeSignatureCollection* collection){
@@ -319,3 +338,46 @@ uint32_t irNode_get_label(struct node* node){
 /* ===================================================================== */
 /* Printing routines													 */
 /* ===================================================================== */
+
+void codeSignature_printDot_collection(struct codeSignatureCollection* collection){
+	uint32_t 					i;
+	struct codeSignature* 		code_signature;
+	struct multiColumnPrinter*	printer;
+	char 						file_name[CODESIGNATURE_NAME_MAX_SIZE + 3];
+
+	printer = multiColumnPrinter_create(stdout, 2, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_size(printer, 0, CODESIGNATURE_NAME_MAX_SIZE);
+		multiColumnPrinter_set_column_size(printer, 1, CODESIGNATURE_NAME_MAX_SIZE + 3);
+		multiColumnPrinter_set_title(printer, 0, "NAME");
+		multiColumnPrinter_set_title(printer, 1, "FILE_NAME");
+
+		multiColumnPrinter_print_header(printer);
+	}
+
+	for (i = 0; i < array_get_length(&(collection->signature_array)); i++){
+		code_signature = (struct codeSignature*)array_get(&(collection->signature_array), i);
+
+		snprintf(file_name, CODESIGNATURE_NAME_MAX_SIZE + 3, "%s.dot", code_signature->name);
+
+		if (graphPrintDot_print(&(code_signature->graph), file_name, NULL)){
+			printf("ERROR: in %s, graph printDot returned error code\n", __func__);
+		}
+
+		if (printer != NULL){
+			multiColumnPrinter_print(printer, code_signature->name, file_name, NULL);
+		}
+	}
+
+	if (printer != NULL){
+		multiColumnPrinter_delete(printer);
+	}
+}
+
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
+	struct signatureNode* node = (struct signatureNode*)data;
+
+	fprintf(file, "[label=\"%s\"]", irOpcode_2_string(node->opcode));
+}

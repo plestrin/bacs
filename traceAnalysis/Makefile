@@ -38,6 +38,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irIOExtract.o 			\
 					$(BUILD_DIR)irNormalize.o 			\
 					$(BUILD_DIR)codeSignature.o 		\
+					$(BUILD_DIR)signatureReader.o 		\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
 					$(BUILD_DIR)pageTable.o 			\
