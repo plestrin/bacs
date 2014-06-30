@@ -471,6 +471,9 @@ static enum irOpcode codeSignatureReader_str_2_irOpcode(const char* str, uint64_
 	else if (max_size > 3 && !memcmp(str + 1, "SHR", 3)){
 		return IR_SHR;
 	}
+	else if (max_size > 3 && !memcmp(str + 1, "SUB", 3)){
+		return IR_SUB;
+	}
 	else if (max_size > 3 && !memcmp(str + 1, "XOR", 3)){
 		return IR_XOR;
 	}

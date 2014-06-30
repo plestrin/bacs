@@ -36,8 +36,9 @@ static void asmInputVariable_build_dependence(struct ir* ir, struct asmInputVari
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
 static enum reg xedRegister_2_reg(xed_reg_enum_t xed_reg);
 
-static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand);
+static void special_instruction_dec(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand);
 static void special_instruction_lea(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand);
+static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand);
 
 
 int32_t irImporterAsm_import(struct ir* ir){
@@ -61,6 +62,13 @@ int32_t irImporterAsm_import(struct ir* ir){
 
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
 			case XED_ICLASS_CMP : {break;}
+			case XED_ICLASS_DEC : {
+				special_instruction_dec(&engine, &input_variables, &output_variables, &(it.xedd), operands, ir->trace->instructions[i].nb_operand);
+				break;
+			}
+			case XED_ICLASS_JBE : {break;}
+			case XED_ICLASS_JMP : {break;}
+			case XED_ICLASS_JNB : {break;}
 			case XED_ICLASS_JNZ : {break;}
 			case XED_ICLASS_LEA : {
 				special_instruction_lea(&engine, &input_variables, &output_variables, &(it.xedd), operands, ir->trace->instructions[i].nb_operand);
@@ -157,7 +165,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 						if (input_variables->index_variable == NULL){
 							input_variables->index_variable = irImporterAsm_add_input(engine->ir, index_operand, reg_get_size(reg));
 							if (input_variables->index_variable != NULL){
-								ir_node_get_operation(input_variables->base_variable)->data = 1;
+								ir_node_get_operation(input_variables->index_variable)->data = 1;
 								if (irRenameEngine_set_register_new_ref(engine, reg, input_variables->index_variable)){
 									printf("ERROR: in %s, unable to add new reference in the renaming engine\n", __func__);
 								}
@@ -475,6 +483,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 	switch (xed_opcode){
 		case XED_ICLASS_ADD : {return IR_ADD;}
 		case XED_ICLASS_AND : {return IR_AND;}
+		case XED_ICLASS_DEC : {return IR_SUB;}
 		case XED_ICLASS_LEA : {return IR_ADD;}
 		case XED_ICLASS_NOT : {return IR_NOT;}
 		case XED_ICLASS_OR 	: {return IR_OR;}
@@ -485,7 +494,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SUB : {return IR_SUB;}
 		case XED_ICLASS_XOR : {return IR_XOR;}
 		default : {
-			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
+			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, instruction_opcode_2_string(xed_opcode));
 			return IR_ADD;
 		}
 	}
@@ -512,62 +521,25 @@ static enum reg xedRegister_2_reg(xed_reg_enum_t xed_reg){
 	}
 }
 
-static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand){
-	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
-	const xed_operand_t* 	xed_op;
-	xed_operand_enum_t 		op_name;
-
+static void special_instruction_dec(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand){
 	asmInputVariable_fetch(engine, input_variables, xedd, operands, nb_operand);
 
-	for (i = 0, output_variables->variable = NULL; i < xed_inst_noperands(xi); i++){
-		xed_op = xed_inst_operand(xi, i);
-		if (xed_operand_written(xed_op)){
-			op_name = xed_operand_name(xed_op);
-
-			switch(op_name){
-				case XED_OPERAND_MEM0 	:
-				case XED_OPERAND_MEM1 	: {
-					struct operand* mem_operand;
-
-					mem_operand = irImporterAsm_get_output_memory(operands, nb_operand, 0);
-					if (mem_operand == NULL){
-						output_variables->variable = NULL;
-						printf("ERROR: in %s, output memory operand with no specified address, unable to rename\n", __func__);
-					}
-					else{
-						if (irRenameEngine_set_ref(engine, mem_operand, input_variables->variables[0])){
-							printf("ERROR: in %s, unable to set memory reference in the renameEngine\n", __func__);
-						}
-					}
-
-					break;
-				}
-				case XED_OPERAND_REG0 	:
-				case XED_OPERAND_REG1 	:
-				case XED_OPERAND_REG2 	:
-				case XED_OPERAND_REG3 	:
-				case XED_OPERAND_REG4 	:
-				case XED_OPERAND_REG5 	:
-				case XED_OPERAND_REG6 	:
-				case XED_OPERAND_REG7 	:
-				case XED_OPERAND_REG8 	: {
-					enum reg 		reg;
-					
-					reg = xedRegister_2_reg(xed_decoded_inst_get_reg(xedd, op_name));
-					if (irRenameEngine_set_register_ref(engine, reg, input_variables->variables[0])){
-						printf("ERROR: in %s, unable to set register reference in the renameEngine\n", __func__);
-					}
-
-					break;
-				}
-				default : {
-					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
-					break;
-				}
-			}
+	if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
+		input_variables->variables[input_variables->nb_input] = irImporterAsm_add_imm(engine->ir, 8, 0, 1);
+		if (input_variables->variables[input_variables->nb_input] == NULL){
+			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+		}
+		else{
+			ir_node_get_operation(input_variables->variables[input_variables->nb_input])->data = 1;
+			input_variables->nb_input ++;
 		}
 	}
+	else{
+		printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
+	}
+
+	asmOutputVariable_fetch(engine, output_variables, xedd, operands, nb_operand);
+	asmInputVariable_build_dependence(engine->ir, input_variables, output_variables);
 }
 
 static void special_instruction_lea(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand){
@@ -618,6 +590,64 @@ static void special_instruction_lea(struct irRenameEngine* engine, struct asmInp
 						if (irImporterAsm_add_dependence(engine->ir, input_variables->disp_variable, output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 							printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 						}
+					}
+
+					break;
+				}
+				default : {
+					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+					break;
+				}
+			}
+		}
+	}
+}
+
+static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd, struct operand* operands, uint32_t nb_operand){
+	uint32_t 				i;
+	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
+	const xed_operand_t* 	xed_op;
+	xed_operand_enum_t 		op_name;
+
+	asmInputVariable_fetch(engine, input_variables, xedd, operands, nb_operand);
+
+	for (i = 0, output_variables->variable = NULL; i < xed_inst_noperands(xi); i++){
+		xed_op = xed_inst_operand(xi, i);
+		if (xed_operand_written(xed_op)){
+			op_name = xed_operand_name(xed_op);
+
+			switch(op_name){
+				case XED_OPERAND_MEM0 	:
+				case XED_OPERAND_MEM1 	: {
+					struct operand* mem_operand;
+
+					mem_operand = irImporterAsm_get_output_memory(operands, nb_operand, 0);
+					if (mem_operand == NULL){
+						output_variables->variable = NULL;
+						printf("ERROR: in %s, output memory operand with no specified address, unable to rename\n", __func__);
+					}
+					else{
+						if (irRenameEngine_set_ref(engine, mem_operand, input_variables->variables[0])){
+							printf("ERROR: in %s, unable to set memory reference in the renameEngine\n", __func__);
+						}
+					}
+
+					break;
+				}
+				case XED_OPERAND_REG0 	:
+				case XED_OPERAND_REG1 	:
+				case XED_OPERAND_REG2 	:
+				case XED_OPERAND_REG3 	:
+				case XED_OPERAND_REG4 	:
+				case XED_OPERAND_REG5 	:
+				case XED_OPERAND_REG6 	:
+				case XED_OPERAND_REG7 	:
+				case XED_OPERAND_REG8 	: {
+					enum reg 		reg;
+					
+					reg = xedRegister_2_reg(xed_decoded_inst_get_reg(xedd, op_name));
+					if (irRenameEngine_set_register_ref(engine, reg, input_variables->variables[0])){
+						printf("ERROR: in %s, unable to set register reference in the renameEngine\n", __func__);
 					}
 
 					break;

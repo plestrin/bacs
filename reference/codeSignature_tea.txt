@@ -1,0 +1,41 @@
+# This file define the following signature(s):
+#	- tea_enc: one round of the TEA encrypt algorithm
+# 	- tea_dec: one roudn of the TEA decrypt algorithm
+
+"tea_enc"
+
+1 (SHR) -> 2 (ADD)
+3 (SHL) -> 4 (ADD)
+5 (ADD) -> 6 (XOR)
+2 -> 6
+4 -> 6
+6 -> 7 (ADD)
+7 -> 8 (SHR)
+8 -> 9 (ADD)
+7 -> 10 (SHL)
+10 -> 11 (ADD)
+7 -> 12 (ADD)
+12 ->13 (XOR)
+9 -> 13
+11 -> 13
+13 -> 14 (ADD)
+
+
+"tea_dec"
+
+1 (SHR) -> 2 (ADD)
+3 (SHL) -> 4 (ADD)
+5 (ADD) -> 6 (XOR)
+2 -> 6
+4 -> 6
+6 -> 7 (SUB)
+7 -> 8 (SHR)
+8 -> 9 (ADD)
+7 -> 10 (SHL)
+10 -> 11 (ADD)
+7 -> 12 (ADD)
+12 ->13 (XOR)
+9 -> 13
+11 -> 13
+13 -> 14 (SUB)
+
