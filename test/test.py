@@ -2,9 +2,8 @@
 
 import sys
 import subprocess
-import re
-import time
 import history
+from recipe import ioRecipe, sigRecipe
 
 # How to improve this script:
 # 	- print a report in HTML
@@ -41,16 +40,8 @@ except IOError:
 	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
 	exit()
 
-recipe_name 	= []
-recipe_build 	= []
-recipe_cmd 		= []
-recipe_arg 		= []
-recipe_crypto 	= []
-recipe_log 		= []
-
-line_counter = 0;
-recipe_counter = 0;
-
+recipe 			= []
+line_counter 	= 0;
 
 # VERIFY step
 if action == "TRACE" or action == "ALL":
@@ -65,6 +56,7 @@ if action == "TRACE" or action == "ALL":
 # PARSE step
 for line in lines:
 	name 	= None
+	kind 	= None
 	build 	= None
 	cmd 	= None
 	arg 	= None
@@ -83,36 +75,41 @@ for line in lines:
 		bracket_in = line.find('[')
 		bracket_out = line.find(']')
 		if bracket_in >= 0 and bracket_out > bracket_in:
-			build = line[bracket_in+1:bracket_out]
+			kind = line[bracket_in+1:bracket_out].strip()
 			line = line[bracket_out+1:]
 
 			bracket_in = line.find('[')
 			bracket_out = line.find(']')
 			if bracket_in >= 0 and bracket_out > bracket_in:
-				cmd = line[bracket_in+1:bracket_out]
+				build = line[bracket_in+1:bracket_out]
 				line = line[bracket_out+1:]
 
 				bracket_in = line.find('[')
 				bracket_out = line.find(']')
 				if bracket_in >= 0 and bracket_out > bracket_in:
-					arg = line[bracket_in+1:bracket_out]
+					cmd = line[bracket_in+1:bracket_out]
 					line = line[bracket_out+1:]
 
 					bracket_in = line.find('[')
 					bracket_out = line.find(']')
 					if bracket_in >= 0 and bracket_out > bracket_in:
-						crypto = line[bracket_in+1:bracket_out]
+						arg = line[bracket_in+1:bracket_out]
 						line = line[bracket_out+1:]
 
-	if name != None and build != None and cmd != None and arg != None and crypto != None:
-		recipe_name.append(name)
-		recipe_build.append(build)
-		recipe_cmd.append(cmd)
-		recipe_arg.append(arg)
-		recipe_crypto.append(crypto)
-		recipe_log.append(None)
-		recipe_counter = recipe_counter + 1
-	elif name == None and build == None and cmd == None and arg == None and crypto == None:
+						bracket_in = line.find('[')
+						bracket_out = line.find(']')
+						if bracket_in >= 0 and bracket_out > bracket_in:
+							crypto = line[bracket_in+1:bracket_out]
+							line = line[bracket_out+1:]
+
+	if name != None and kind != None and build != None and cmd != None and arg != None and crypto != None:
+		if kind == "io":
+			recipe.append(ioRecipe(name, build, cmd, arg, crypto))
+		elif kind == "sig":
+			recipe.append(sigRecipe(name, build, cmd, arg, crypto))
+		else:
+			print("ERROR: incorrect recipe type: \"" + kind + "\"")
+	elif name == None and kind == None and build == None and cmd == None and arg == None and crypto == None:
 		pass
 	else:
 		print("ERROR: parsing at line " + str(line_counter) + " " + line)
@@ -122,32 +119,14 @@ for line in lines:
 
 # PRINT step
 if action == "PRINT":
-	for i in range(recipe_counter):
-		print recipe_name[i], recipe_build[i], recipe_cmd[i], recipe_arg[i], recipe_crypto[i]
+	for r in recipe:
+		print r
 
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
-	for i in range(recipe_counter):
-		sys.stdout.write("Building " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
-		sys.stdout.flush()
-
-		if recipe_build[i] != "":
-			if recipe_log[i] == None:
-				recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
-
-			recipe_log[i].write("\n\n### BULID STDOUT & STDERR ###\n\n")
-			recipe_log[i].flush()
-
-			time_start = time.time()
-			return_value = subprocess.call(recipe_build[i].split(' '), stdout = recipe_log[i], stderr = recipe_log[i])
-			time_stop  = time.time()
-			if return_value == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
-			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
-		else:
-			sys.stdout.write("no rule\n")
+	for r in recipe:
+		r.build_prog(LOG_PATH)
 
 
 # COMPILE TRACE step
@@ -162,40 +141,8 @@ if action == "TRACE" or action == "ALL":
 
 # TRACE step
 if action == "TRACE" or action == "ALL":
-	for i in range(recipe_counter):
-		sys.stdout.write("Tracing " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
-		sys.stdout.flush()
-
-		if recipe_cmd[i] != "":
-			if hist.hasFilesChanged([PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, recipe_cmd[i]]):
-				if recipe_log[i] == None:
-					recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
-
-				recipe_log[i].write("\n\n### TRACE STDOUT & STDERR ###\n\n")
-				recipe_log[i].flush()
-
-				time_start = time.time()
-				process = subprocess.Popen([PIN_PATH, "-t", TOOL_PATH, "-o", TRACE_PATH + "trace" + recipe_name[i], "-w", WHITE_LIST_PATH, "--", recipe_cmd[i]], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-				process.wait()
-				time_stop = time.time()
-
-				output_val = process.communicate()
-				recipe_log[i].write(output_val[0])
-				recipe_log[i].write(output_val[1])
-
-				if process.returncode == 0:
-					sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
-				else:
-					sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-					print(output_val[1])
-
-				regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
-				for j in regex.findall(output_val[0]):
-					print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
-			else:
-				sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
-		else:
-			sys.stdout.write("no rule\n")
+	for r in recipe:
+		r.trace_prog(hist, LOG_PATH, PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, TRACE_PATH)
 
 
 # COMPILE SEARCH step
@@ -217,83 +164,9 @@ if action == "SEARCH" or action == "ALL":
 
 # SEARCH step
 if action == "SEARCH" or action == "ALL":
-	for i in range(recipe_counter):
-		sys.stdout.write("Searching " + str(i+1) + "/" + str(recipe_counter) + " " + recipe_name[i] + " ... ")
-		sys.stdout.flush()
-
-		ioChecker_file = recipe_arg[i][recipe_arg[i].find("load ioChecker") + 15:]
-		ioChecker_file = ioChecker_file[:ioChecker_file.find(",")]
-		trace_dir = recipe_arg[i][recipe_arg[i].find("load trace") + 11:]
-		trace_dir = trace_dir[:trace_dir.find(",")]
-
-		condition1 = hist.hasFilesChanged(["./analysis", ioChecker_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
-		condition2 = hist.hasStringChanged("analysis" + recipe_name[i], recipe_arg[i])
-
-		if condition1 or condition2:
-			if recipe_log[i] == None:
-				recipe_log[i] = open(LOG_PATH + recipe_name[i] + ".log", "w")
-
-			recipe_log[i].write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
-			recipe_log[i].flush()
-
-			cmd = ["./analysis"]
-			cmd.extend(recipe_arg[i].split(','))
-
-			time_start = time.time()
-			process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			output_val = process.communicate()
-			process.wait()
-			time_stop = time.time()
-
-			
-			recipe_log[i].write(output_val[0])
-			recipe_log[i].write(output_val[1])
-
-			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
-
-				crypto_list = recipe_crypto[i].split(',')
-
-				nb_found 	= []
-				nb_expected = []
-				crypto_name = []
-
-				for j in crypto_list:
-					nb_found.append(0)
-					nb_expected.append(int(j[:j.find(':')]))
-					crypto_name.append(j[j.find(':')+1:].strip())
-
-				regex = re.compile("\*\*\* IO match for [a-zA-Z0-9 ]* \*\*\*")
-				for j in regex.findall(output_val[0]):
-					found = 0
-					for k in range(len(crypto_list)):
-						if crypto_name[k] == j[17:-4].strip():
-							nb_found[k] = nb_found[k] + 1
-							if nb_found[k] > nb_expected[k]:
-								print("\t" + j[17:-4].strip() + " \x1b[33mEXTRA " + str(nb_found[k]) + "/" + str(nb_expected[k]) + "\x1b[0m")
-								found = 1
-								break
-							else:
-								print("\t" + j[17:-4].strip() + " \x1b[32mOK " + str(nb_found[k]) + "/" + str(nb_expected[k]) + "\x1b[0m")
-								found = 1
-								break
-					if found == 0:
-						print("\t" + j[17:-4].strip() + " \x1b[33mEXTRA ?/?\x1b[0m")
-
-				for j in range(len(crypto_list)):
-					if nb_found[j] < nb_expected[j]:
-						for k in range(nb_expected[j] - nb_found[j]):
-							print("\t" + crypto_name[j].strip() + " \x1b[31mFAIL " + str(nb_found[j] + k + 1) + "/" + str(nb_expected[j]) + "\x1b[0m")
-			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
-		else:
-			sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
+	for r in recipe:
+		r.search(hist, LOG_PATH)
 
 
 # CLEAN step
-for i in range(min(len(recipe_name), len(recipe_cmd), len(recipe_arg), len(recipe_crypto))):
-	if recipe_log[i] != None:
-		recipe_log[i].close()
-		recipe_log[i] = None
 hist.save()

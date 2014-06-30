@@ -58,6 +58,14 @@
 #define CLEAN_TIMER 																																		\
 		multiColumnPrinter_delete(printer);
 
+#else
+
+#define INIT_TIMER
+#define START_TIMER
+#define STOP_TIMER 
+#define PRINT_TIMER(ctx_string) 
+#define CLEAN_TIMER 
+
 #endif
 
 void ir_normalize(struct ir* ir){

@@ -71,9 +71,11 @@ void codeSignature_search(struct codeSignatureCollection* collection, struct ir*
 			printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
 		}
 		else{
-			printf("Found %u subgraph(s) instance for signature: %s\n", array_get_length(assignement_array), code_signature->name);
-
 			/* a completer */
+
+			if (array_get_length(assignement_array) > 0){
+				printf("Found %u subgraph(s) instance for signature: %s\n", array_get_length(assignement_array), code_signature->name);
+			}
 
 			array_delete(assignement_array);
 		}
