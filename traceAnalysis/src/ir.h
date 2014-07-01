@@ -25,7 +25,9 @@ enum irOpcode{
 	IR_SHL 		= 13,
 	IR_SHR 		= 14,
 	IR_SUB 		= 15,
-	IR_XOR 		= 16
+	IR_XOR 		= 16,
+	IR_INPUT 	= 17, 	/* signature */
+	IR_JOKER 	= 18 	/* signature */
 };
 
 char* irOpcode_2_string(enum irOpcode opcode);

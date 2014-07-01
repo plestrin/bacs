@@ -277,11 +277,16 @@ static struct possibleAssignement* possibleAssignement_create_init_first(struct 
 	}
 
 	for	(i = 0; i < sub_graph_handle->graph->nb_node; i++){
-		label_fast_access = (struct labelFastAccess*)bsearch(&(sub_graph_handle->label_tab[i].label), graph_handle->label_fast, graph_handle->nb_label, sizeof(struct labelFastAccess), compare_key_labelFastAccess);
-		if (label_fast_access == NULL){
-			return NULL;
+		if (sub_graph_handle->label_tab[i].label != SUBGRAPHISOMORPHISM_JOKER_LABEL){
+			label_fast_access = (struct labelFastAccess*)bsearch(&(sub_graph_handle->label_tab[i].label), graph_handle->label_fast, graph_handle->nb_label, sizeof(struct labelFastAccess), compare_key_labelFastAccess);
+			if (label_fast_access == NULL){
+				return NULL;
+			}
+			nb_assignement += label_fast_access->size;
 		}
-		nb_assignement += label_fast_access->size;
+		else{
+			nb_assignement += graph_handle->graph->nb_node;
+		}
 	}
 
 	possible_assignement = possibleAssignement_create(sub_graph_handle->graph->nb_node, nb_assignement);
@@ -289,14 +294,28 @@ static struct possibleAssignement* possibleAssignement_create_init_first(struct 
 		possible_assignement->headers[0].node_offset = 0;
 
 		for	(i = 0; i < sub_graph_handle->graph->nb_node; i++){
-			label_fast_access = (struct labelFastAccess*)bsearch (&(sub_graph_handle->label_tab[i].label), graph_handle->label_fast, graph_handle->nb_label, sizeof(struct labelFastAccess), compare_key_labelFastAccess);
-			possible_assignement->headers[i].nb_possible_assignement = label_fast_access->size;
-			if (i != sub_graph_handle->graph->nb_node - 1){
-				possible_assignement->headers[i + 1].node_offset = possible_assignement->headers[i].node_offset + label_fast_access->size;
-			}
+			if (sub_graph_handle->label_tab[i].label != SUBGRAPHISOMORPHISM_JOKER_LABEL){
+				label_fast_access = (struct labelFastAccess*)bsearch (&(sub_graph_handle->label_tab[i].label), graph_handle->label_fast, graph_handle->nb_label, sizeof(struct labelFastAccess), compare_key_labelFastAccess);
+				possible_assignement->headers[i].nb_possible_assignement = label_fast_access->size;
+				if (i != sub_graph_handle->graph->nb_node - 1){
+					possible_assignement->headers[i + 1].node_offset = possible_assignement->headers[i].node_offset + label_fast_access->size;
+				}
 
-			for (j = 0; j < label_fast_access->size; j++){
-				possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = graph_handle->label_tab[label_fast_access->offset + j].node;
+				for (j = 0; j < label_fast_access->size; j++){
+					possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = graph_handle->label_tab[label_fast_access->offset + j].node;
+				}
+			}
+			else{
+				/* a completer */
+
+				possible_assignement->headers[i].nb_possible_assignement = graph_handle->graph->nb_node;
+				if (i != sub_graph_handle->graph->nb_node - 1){
+					possible_assignement->headers[i + 1].node_offset = possible_assignement->headers[i].node_offset + graph_handle->graph->nb_node;
+				}
+
+				for (j = 0; j < graph_handle->graph->nb_node; j++){
+					possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = graph_handle->label_tab[j].node;
+				}
 			}
 		}
 	}
@@ -367,63 +386,71 @@ static void possibleAssignement_update(struct possibleAssignement* possible_assi
 	uint32_t 		l;
 	struct edge* 	sub_graph_edge;
 	struct edge* 	graph_edge;
+	uint8_t 		restart = 1;
 
-	start:
-	for (i = nb_assignement; i < sub_graph_handle->graph->nb_node; i++){
-		for (j = 0; j < possible_assignement->headers[i].nb_possible_assignement; j++){
-			if (possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != NULL){
+	
+	while(restart){
+		restart = 0;
 
-				sub_graph_edge = node_get_head_edge_src(sub_graph_handle->label_tab[i].node);
-				while(sub_graph_edge != NULL){
-					k = (struct labelTab*)edge_get_dst(sub_graph_edge)->ptr - sub_graph_handle->label_tab;
+		for (i = nb_assignement; i < sub_graph_handle->graph->nb_node; i++){
+			for (j = 0; j < possible_assignement->headers[i].nb_possible_assignement; j++){
+				if (possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != NULL){
 
-					for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
-						if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
-							graph_edge = node_get_head_edge_src(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
-							
-							while(graph_edge != NULL){
-								if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_dst(graph_edge)){
-									match = 1;
-									break;
+					sub_graph_edge = node_get_head_edge_src(sub_graph_handle->label_tab[i].node);
+					while(sub_graph_edge != NULL){
+						k = (struct labelTab*)edge_get_dst(sub_graph_edge)->ptr - sub_graph_handle->label_tab;
+
+						for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
+							if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
+								graph_edge = node_get_head_edge_src(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
+								
+								while(graph_edge != NULL){
+									if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_dst(graph_edge)){
+										match = 1;
+										break;
+									}
+
+									graph_edge = edge_get_next_src(graph_edge);
 								}
-
-								graph_edge = edge_get_next_src(graph_edge);
 							}
 						}
+						if (!match){
+							possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
+							restart = 1;
+							goto next;
+						}
+
+						sub_graph_edge = edge_get_next_src(sub_graph_edge);
 					}
-					if (!match){
-						possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
-						goto start;
-					}
 
-					sub_graph_edge = edge_get_next_src(sub_graph_edge);
-				}
+					sub_graph_edge = node_get_head_edge_dst(sub_graph_handle->label_tab[i].node);
+					while(sub_graph_edge != NULL){
+						k = (struct labelTab*)edge_get_src(sub_graph_edge)->ptr - sub_graph_handle->label_tab;
 
-				sub_graph_edge = node_get_head_edge_dst(sub_graph_handle->label_tab[i].node);
-				while(sub_graph_edge != NULL){
-					k = (struct labelTab*)edge_get_src(sub_graph_edge)->ptr - sub_graph_handle->label_tab;
+						for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
+							if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
+								graph_edge = node_get_head_edge_dst(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
+								
+								while(graph_edge != NULL){
+									if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_src(graph_edge)){
+										match = 1;
+										break;
+									}
 
-					for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
-						if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
-							graph_edge = node_get_head_edge_dst(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
-							
-							while(graph_edge != NULL){
-								if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_src(graph_edge)){
-									match = 1;
-									break;
+									graph_edge = edge_get_next_dst(graph_edge);
 								}
-
-								graph_edge = edge_get_next_dst(graph_edge);
 							}
 						}
-					}
-					if (!match){
-						possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
-						goto start;
-					}
+						if (!match){
+							possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
+							restart = 1;
+							goto next;
+						}
 
-					sub_graph_edge = edge_get_next_dst(sub_graph_edge);
+						sub_graph_edge = edge_get_next_dst(sub_graph_edge);
+					}
 				}
+				next:;
 			}
 		}
 	}

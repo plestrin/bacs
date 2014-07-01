@@ -6,6 +6,8 @@
 #include "graph.h"
 #include "array.h"
 
+#define SUBGRAPHISOMORPHISM_JOKER_LABEL 0xffffffff
+
 struct labelTab{
 	uint32_t 				label;
 	struct node* 			node;

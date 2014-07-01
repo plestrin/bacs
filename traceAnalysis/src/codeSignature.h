@@ -16,7 +16,6 @@ struct signatureNode{
 	uint16_t 					input_frag_order;
 	uint16_t 					output_number;
 	uint16_t 					output_frag_order;
-	uint8_t 					is_input;
 };
 
 struct codeSignature{

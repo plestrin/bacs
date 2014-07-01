@@ -355,6 +355,8 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_SHR 		: {return "shr";}
 		case IR_SUB 		: {return "sub";}
 		case IR_XOR 		: {return "xor";}
+		case IR_INPUT 		: {return "input";}
+		case IR_JOKER 		: {return "*";}
 	}
 
 	return NULL;

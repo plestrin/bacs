@@ -43,10 +43,11 @@ struct localCodeEdge{
 
 static void readerCursor_get_next(struct readerCursor* reader_cursor);
 
-static enum irOpcode codeSignatureReader_str_2_irOpcode(const char* str, uint64_t max_size);
 static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name);
 
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
+
+static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor);
 
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
@@ -123,7 +124,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 			case READER_STATE_SRC 			: {
 				switch(reader_cursor.token){
 					case READER_TOKEN_NODE_LABEL 	: {
-						local_edge.src_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
+						local_edge.src_opcode = codeSignatureReader_get_opcode(&reader_cursor);
 						local_edge.src_opcode_set = 1;
 
 						reader_state = READER_STATE_SRC_DESC;
@@ -194,12 +195,12 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_opcode_set = 0;
-						
+
 						reader_state = READER_STATE_SRC;
 						break;
 					}
 					case READER_TOKEN_NODE_LABEL 	: {
-						local_edge.dst_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
+						local_edge.dst_opcode = codeSignatureReader_get_opcode(&reader_cursor);
 						local_edge.dst_opcode_set = 1;
 
 						reader_state = READER_STATE_DST_DESC;
@@ -553,44 +554,6 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 	}
 }
 
-static enum irOpcode codeSignatureReader_str_2_irOpcode(const char* str, uint64_t max_size){
-	if (max_size > 3 && !memcmp (str + 1, "ADD", 3)){
-		return IR_ADD;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "AND", 3)){
-		return IR_AND;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "NOT", 3)){
-		return IR_NOT;
-	}
-	else if (max_size > 2 && !memcmp(str + 1, "OR", 2)){
-		return IR_OR;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "ROR", 3)){
-		return IR_ROR;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "SHL", 3)){
-		return IR_SHL;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "SHR", 3)){
-		return IR_SHR;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "SUB", 3)){
-		return IR_SUB;
-	}
-	else if (max_size > 3 && !memcmp(str + 1, "XOR", 3)){
-		return IR_XOR;
-	}
-	
-	if (max_size > 3){
-		printf("ERROR: in %s, unable to convert string to ir Opcode (%c%c%c), by default return ADD\n", __func__, str[1], str[2], str[3]);
-	}
-	else{
-		printf("ERROR: in %s, unable to convert string to ir Opcode, by default return ADD\n", __func__);
-	}
-	return IR_ADD;
-}
-
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length){
 	uint32_t i;
 
@@ -602,6 +565,58 @@ static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, c
 
 	memcpy(buffer, reader_cursor->cursor + 1, i - 1);
 	buffer[i - 1] = '\0';
+}
+
+static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor){
+	uint32_t length;
+
+	for (length = 0; length + 1 < reader_cursor->remaining_size; length++){
+		if (reader_cursor->cursor[length + 1] == ')'){
+			break;
+		}
+	}
+
+	if (!strncmp(reader_cursor->cursor + 1, "ADD", length)){
+		return IR_ADD;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "AND", length)){
+		return IR_AND;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "NOT", length)){
+		return IR_NOT;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "OR", length)){
+		return IR_OR;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "ROR", length)){
+		return IR_ROR;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "SHL", length)){
+		return IR_SHL;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "SHR", length)){
+		return IR_SHR;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "SUB", length)){
+		return IR_SUB;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "XOR", length)){
+		return IR_XOR;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "INPUT", length)){
+		return IR_INPUT;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "*", length)){
+		return IR_JOKER;
+	}
+	
+	if (length >= 3){
+		printf("ERROR: in %s, unable to convert string to ir Opcode %.3s, by default return ADD\n", __func__, reader_cursor->cursor + 1);
+	}
+	else{
+		printf("ERROR: in %s, unable to convert string to ir Opcode, by default return ADD\n", __func__);
+	}
+	return IR_JOKER;
 }
 
 struct localCodeNode{
@@ -682,7 +697,6 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		signature_node.input_frag_order 	= 0;
 		signature_node.output_number 		= 0;
 		signature_node.output_frag_order 	= 0;
-		signature_node.is_input 			= 0;
 
 		for (i = 0; i < nb_node; i++){
 			if (!node_buffer[i].opcode_set){

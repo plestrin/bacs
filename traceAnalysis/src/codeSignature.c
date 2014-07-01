@@ -115,8 +115,8 @@ void codeSignature_clean_collection(struct codeSignatureCollection* collection){
 uint32_t signatureNode_get_label(struct node* node){
 	struct signatureNode* signature_node = (struct signatureNode*)&(node->data);
 
-	if (signature_node->is_input){
-		return 0xffffffff;
+	if (signature_node->opcode == IR_JOKER){
+		return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 	}
 	else{
 		return (uint32_t)signature_node->opcode;
@@ -128,7 +128,7 @@ uint32_t irNode_get_label(struct node* node){
 
 	switch (operation->type){
 		case IR_OPERATION_TYPE_INPUT 	: {
-			return 0xffffffff;
+			return IR_INPUT;
 		}
 		case IR_OPERATION_TYPE_OUTPUT 	: {
 			return operation->operation_type.output.opcode;
