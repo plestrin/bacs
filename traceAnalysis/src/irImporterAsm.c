@@ -481,18 +481,19 @@ static struct operand* irImporterAsm_get_output_register(struct operand* operand
 
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 	switch (xed_opcode){
-		case XED_ICLASS_ADD : {return IR_ADD;}
-		case XED_ICLASS_AND : {return IR_AND;}
-		case XED_ICLASS_DEC : {return IR_SUB;}
-		case XED_ICLASS_LEA : {return IR_ADD;}
-		case XED_ICLASS_NOT : {return IR_NOT;}
-		case XED_ICLASS_OR 	: {return IR_OR;}
-		case XED_ICLASS_ROL : {return IR_ROL;}
-		case XED_ICLASS_ROR : {return IR_ROR;}
-		case XED_ICLASS_SHL : {return IR_SHL;}
-		case XED_ICLASS_SHR : {return IR_SHR;}
-		case XED_ICLASS_SUB : {return IR_SUB;}
-		case XED_ICLASS_XOR : {return IR_XOR;}
+		case XED_ICLASS_ADD 	: {return IR_ADD;}
+		case XED_ICLASS_AND 	: {return IR_AND;}
+		case XED_ICLASS_DEC 	: {return IR_SUB;}
+		case XED_ICLASS_LEA 	: {return IR_ADD;}
+		case XED_ICLASS_MOVZX 	: {return IR_MOVZX;}
+		case XED_ICLASS_NOT 	: {return IR_NOT;}
+		case XED_ICLASS_OR 		: {return IR_OR;}
+		case XED_ICLASS_ROL 	: {return IR_ROL;}
+		case XED_ICLASS_ROR 	: {return IR_ROR;}
+		case XED_ICLASS_SHL 	: {return IR_SHL;}
+		case XED_ICLASS_SHR 	: {return IR_SHR;}
+		case XED_ICLASS_SUB 	: {return IR_SUB;}
+		case XED_ICLASS_XOR 	: {return IR_XOR;}
 		default : {
 			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, instruction_opcode_2_string(xed_opcode));
 			return IR_ADD;
@@ -502,6 +503,14 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 
 static enum reg xedRegister_2_reg(xed_reg_enum_t xed_reg){
 	switch(xed_reg){
+		case XED_REG_AL 	: {return REGISTER_AL;}
+		case XED_REG_CL 	: {return REGISTER_CL;}
+		case XED_REG_DL 	: {return REGISTER_DL;}
+		case XED_REG_BL 	: {return REGISTER_BL;}
+		case XED_REG_AH 	: {return REGISTER_AH;}
+		case XED_REG_CH 	: {return REGISTER_CH;}
+		case XED_REG_DH 	: {return REGISTER_DH;}
+		case XED_REG_BH 	: {return REGISTER_BH;}
 		case XED_REG_AX 	: {return REGISTER_AX;} 	
 		case XED_REG_CX 	: {return REGISTER_CX;} 	
 		case XED_REG_DX 	: {return REGISTER_DX;} 	

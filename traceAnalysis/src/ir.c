@@ -338,21 +338,23 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 
 char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
-		case IR_ADD 	: {return "add";}
-		case IR_AND 	: {return "and";}
-		case IR_BSWAP 	: {return "bswap";}
-		case IR_DEC 	: {return "dec";}
-		case IR_MOVZX 	: {return "movzx";}
-		case IR_NOT 	: {return "not";}
-		case IR_OR 		: {return "or";}
-		case IR_PART 	: {return "part";}
-		case IR_ROL 	: {return "rol";}
-		case IR_ROR 	: {return "ror";}
-		case IR_SAR 	: {return "sar";}
-		case IR_SHL 	: {return "shl";}
-		case IR_SHR 	: {return "shr";}
-		case IR_SUB 	: {return "sub";}
-		case IR_XOR 	: {return "xor";}
+		case IR_ADD 		: {return "add";}
+		case IR_AND 		: {return "and";}
+		case IR_BSWAP 		: {return "bswap";}
+		case IR_DEC 		: {return "dec";}
+		case IR_MOVZX 		: {return "movzx";}
+		case IR_NOT 		: {return "not";}
+		case IR_OR 			: {return "or";}
+		case IR_PART1_8 	: {return "part(1/8)";}
+		case IR_PART2_8 	: {return "part(2/8)";}
+		case IR_PART1_16 	: {return "part(1/16)";}
+		case IR_ROL 		: {return "rol";}
+		case IR_ROR 		: {return "ror";}
+		case IR_SAR 		: {return "sar";}
+		case IR_SHL 		: {return "shl";}
+		case IR_SHR 		: {return "shr";}
+		case IR_SUB 		: {return "sub";}
+		case IR_XOR 		: {return "xor";}
 	}
 
 	return NULL;

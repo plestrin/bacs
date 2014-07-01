@@ -16,6 +16,16 @@ enum readerToken{
 	READER_TOKEN_NODE_LABEL
 };
 
+enum readerState{
+	READER_STATE_START,
+	READER_STATE_GRAPH,
+	READER_STATE_SRC,
+	READER_STATE_SRC_DESC,
+	READER_STATE_EDGE,
+	READER_STATE_DST,
+	READER_STATE_DST_DESC
+};
+
 struct readerCursor{
 	char* 					cursor;
 	uint64_t 				remaining_size;
@@ -32,21 +42,21 @@ struct localCodeEdge{
 };
 
 static void readerCursor_get_next(struct readerCursor* reader_cursor);
+
 static enum irOpcode codeSignatureReader_str_2_irOpcode(const char* str, uint64_t max_size);
 static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name);
+
+static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
+
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
 	void* 						buffer;
 	uint64_t 					buffer_size;
 	struct readerCursor 		reader_cursor;
+	enum readerState 			reader_state;
 	struct localCodeEdge 		local_edge;
 	struct array 				local_edge_array;
 	char 						graph_name[CODESIGNATURE_NAME_MAX_SIZE];
-
-	uint8_t 					src_set_id 			= 0;
-	uint8_t 					src_set_opcode 		= 0;
-	uint8_t 					dst_set_id 			= 0;
-	uint8_t 					dst_set_opcode 		= 0;
 
 	buffer = mapFile_map(file_name, &buffer_size);
 	if (buffer == NULL){
@@ -63,96 +73,190 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 	reader_cursor.cursor = (char*)buffer;
 	reader_cursor.remaining_size = buffer_size;
 	reader_cursor.token = READER_TOKEN_NONE;
+	reader_state = READER_STATE_START;
 
 	readerCursor_get_next(&reader_cursor);
 	while(reader_cursor.token != READER_TOKEN_NONE){
-		switch(reader_cursor.token){
-			case READER_TOKEN_GRAPH_NAME 	: {
-				uint32_t i;
+		switch(reader_state){
+			case READER_STATE_START 		: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_GRAPH_NAME 	: {
+						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
-				if (src_set_id && dst_set_id){
-					local_edge.src_opcode_set = src_set_opcode;
-					local_edge.dst_opcode_set = dst_set_opcode;
-
-					if (array_add(&local_edge_array, &local_edge) < 0){
-						printf("ERROR: in %s, unable to add element to array\n", __func__);
-					}
-				}
-
-				codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
-
-				array_empty(&local_edge_array);
-
-				src_set_id 		= 0;
-				src_set_opcode 	= 0;
-				dst_set_id 		= 0;
-				dst_set_opcode 	= 0;
-
-				for (i = 1; i < reader_cursor.remaining_size && i < CODESIGNATURE_NAME_MAX_SIZE - 1; i++){
-					if (reader_cursor.cursor[i] == '"'){
+						reader_state = READER_STATE_GRAPH;
 						break;
 					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is START\n", __func__);
+					}
 				}
-
-				memcpy(graph_name, reader_cursor.cursor + 1, i - 1);
-				graph_name[i - 1] = '\0';
-
 				break;
 			}
-			case READER_TOKEN_NODE_ID 		: {
-				if (src_set_id){
-					if (dst_set_id){
-						local_edge.src_opcode_set = src_set_opcode;
-						local_edge.dst_opcode_set = dst_set_opcode;
+			case READER_STATE_GRAPH 		: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_GRAPH_NAME 	: {
+						printf("WARNING: in %s, empty signature -> skip\n", __func__);
+						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
+						reader_state = READER_STATE_GRAPH;
+						break;
+					}
+					case READER_TOKEN_NODE_ID 		: {
+						local_edge.src_id = atoi(reader_cursor.cursor);
+						local_edge.src_opcode_set = 0;
+
+						reader_state = READER_STATE_SRC;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is GRAPH\n", __func__);
+					}
+				}
+				break;
+			}
+			case READER_STATE_SRC 			: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_NODE_LABEL 	: {
+						local_edge.src_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
+						local_edge.src_opcode_set = 1;
+
+						reader_state = READER_STATE_SRC_DESC;
+						break;
+					}
+					case READER_TOKEN_EDGE 			: {
+						reader_state = READER_STATE_EDGE;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is SRC\n", __func__);
+					}
+				}
+				break;
+			}
+			case READER_STATE_SRC_DESC 		: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_EDGE 			: {
+						reader_state = READER_STATE_EDGE;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is SRC_DESC\n", __func__);
+					}
+				}
+				break;
+			}
+			case READER_STATE_EDGE 			: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_NODE_ID 	: {
+						local_edge.dst_id = atoi(reader_cursor.cursor);
+						local_edge.dst_opcode_set = 0;
+
+						reader_state = READER_STATE_DST;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is EDGE\n", __func__);
+					}
+				}
+				break;
+			}
+			case READER_STATE_DST 			: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_GRAPH_NAME 		: {
 						if (array_add(&local_edge_array, &local_edge) < 0){
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
+						codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
+						array_empty(&local_edge_array);
+						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
-						src_set_id 		= 0;
-						src_set_opcode 	= 0;
-						dst_set_id 		= 0;
-						dst_set_opcode 	= 0;
-
+						reader_state = READER_STATE_GRAPH;
+						break;
+					}
+					case READER_TOKEN_NODE_ID 			: {
+						if (array_add(&local_edge_array, &local_edge) < 0){
+							printf("ERROR: in %s, unable to add element to array\n", __func__);
+						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
-						src_set_id = 1;
+						local_edge.src_opcode_set = 0;
+						
+						reader_state = READER_STATE_SRC;
+						break;
 					}
-					else{
-						local_edge.dst_id = atoi(reader_cursor.cursor);
-						dst_set_id = 1;
+					case READER_TOKEN_NODE_LABEL 	: {
+						local_edge.dst_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
+						local_edge.dst_opcode_set = 1;
+
+						reader_state = READER_STATE_DST_DESC;
+						break;
 					}
-				}
-				else{
-					local_edge.src_id = atoi(reader_cursor.cursor);
-					src_set_id = 1;
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is DST\n", __func__);
+					}
 				}
 				break;
 			}
-			case READER_TOKEN_NODE_LABEL 	: {
-				if (!dst_set_id){
-					local_edge.src_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
-					src_set_opcode = 1;
+			case READER_STATE_DST_DESC 		: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_GRAPH_NAME 		: {
+						if (array_add(&local_edge_array, &local_edge) < 0){
+							printf("ERROR: in %s, unable to add element to array\n", __func__);
+						}
+						codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
+						array_empty(&local_edge_array);
+						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+
+						reader_state = READER_STATE_GRAPH;
+						break;
+					}
+					case READER_TOKEN_NODE_ID 			: {
+						if (array_add(&local_edge_array, &local_edge) < 0){
+							printf("ERROR: in %s, unable to add element to array\n", __func__);
+						}
+						local_edge.src_id = atoi(reader_cursor.cursor);
+						local_edge.src_opcode_set = 0;
+
+						reader_state = READER_STATE_SRC;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is DST_DESC\n", __func__);
+					}
 				}
-				else{
-					local_edge.dst_opcode = codeSignatureReader_str_2_irOpcode(reader_cursor.cursor, reader_cursor.remaining_size);
-					dst_set_opcode = 1;
-				}
-				break;
-			}
-			default 						: {
 				break;
 			}
 		}
 		readerCursor_get_next(&reader_cursor);
 	}
 
-	if (src_set_id && dst_set_id){
-		local_edge.src_opcode_set = src_set_opcode;
-		local_edge.dst_opcode_set = dst_set_opcode;
-
+	if (reader_state == READER_STATE_DST || reader_state == READER_STATE_DST_DESC){
 		if (array_add(&local_edge_array, &local_edge) < 0){
 			printf("ERROR: in %s, unable to add element to array\n", __func__);
 		}
+	}
+	else{
+		printf("ERROR: in %s, syntaxe error: incorrect state at the end of the file\n", __func__);
 	}
 
 	codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
@@ -485,6 +589,19 @@ static enum irOpcode codeSignatureReader_str_2_irOpcode(const char* str, uint64_
 		printf("ERROR: in %s, unable to convert string to ir Opcode, by default return ADD\n", __func__);
 	}
 	return IR_ADD;
+}
+
+static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length){
+	uint32_t i;
+
+	for (i = 1; i < reader_cursor->remaining_size && i < buffer_length - 1; i++){
+		if (reader_cursor->cursor[i] == '"'){
+			break;
+		}
+	}
+
+	memcpy(buffer, reader_cursor->cursor + 1, i - 1);
+	buffer[i - 1] = '\0';
 }
 
 struct localCodeNode{

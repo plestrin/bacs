@@ -22,10 +22,11 @@ void irRenameEngine_free_memory_node(void* data){
 
 static void irRenameEngine_reset_reg_variable(struct ir* ir, struct alias* alias, struct node* ir_node);
 static void irRenameEngine_reset_mem_variable(struct irRenameEngine* engine, struct alias* alias, struct operand* operand, struct node* ir_node);
-static void irImporterDynTrace_part_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_dst_size);
-static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, struct alias* alias_src, struct node** ir_node, struct operand* operand);
-static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_src_size);
-static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine, struct alias* alias_dst, struct operand* operand);
+
+static void irImporterDynTrace_part_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_dst_size, enum irOpcode part_op);
+static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, struct alias* alias_src, struct node** ir_node, struct operand* operand, enum irOpcode part_op);
+static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_src_size, enum irOpcode part_op);
+static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine, struct alias* alias_dst, struct operand* operand, enum irOpcode part_op);
 
 
 static void irRenameEngine_reset_reg_variable(struct ir* ir, struct alias* alias, struct node* ir_node){
@@ -61,9 +62,9 @@ static void irRenameEngine_reset_mem_variable(struct irRenameEngine* engine, str
 	}
 }
 
-static void irImporterDynTrace_part_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_dst_size){
+static void irImporterDynTrace_part_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_dst_size, enum irOpcode part_op){
 	alias_dst->type 					= ALIAS_REG_READ;
-	alias_dst->alias_type.reg.ir_node 	= irImporterDynTrace_add_operation(ir, IR_PART, operand, alias_dst_size);
+	alias_dst->alias_type.reg.ir_node 	= irImporterDynTrace_add_operation(ir, part_op, operand, alias_dst_size);
 	if (alias_dst->alias_type.reg.ir_node == NULL){
 		printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 	}
@@ -73,7 +74,7 @@ static void irImporterDynTrace_part_reg_variable(struct ir* ir, struct alias* al
 	}
 }
 
-static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, struct alias* alias_src, struct node** ir_node, struct operand* operand){
+static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, struct alias* alias_src, struct node** ir_node, struct operand* operand, enum irOpcode part_op){
 	struct alias*	alias_new;
 	struct alias* 	alias_cursor;
 
@@ -83,7 +84,7 @@ static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, 
 		return;
 	}
 
-	*ir_node = irImporterDynTrace_add_operation(engine->ir, IR_PART, operand, operand->size * 8);
+	*ir_node = irImporterDynTrace_add_operation(engine->ir, part_op, operand, operand->size * 8);
 	if (*ir_node == NULL){
 		printf("ERROR: in %s, unable to add input to IR\n", __func__);
 		alias_free(engine, alias_new);
@@ -112,7 +113,7 @@ static void irImporterDynTrace_part_mem_variable(struct irRenameEngine* engine, 
 	alias_cursor->alias_type.mem.next = alias_new;
 }
 
-static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_src_size){
+static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* alias_src, struct alias* alias_dst, struct operand* operand, uint8_t alias_src_size, enum irOpcode part_op){
 	if (alias_src->alias_type.reg.ir_node == NULL){
 		alias_src->type 					= ALIAS_REG_READ;
 		alias_src->alias_type.reg.ir_node 	= irImporterDynTrace_add_input(ir, operand, alias_src_size);
@@ -122,11 +123,11 @@ static void irImporterDynTrace_merge_reg_variable(struct ir* ir, struct alias* a
 		}
 		ir_node_get_operation(alias_src->alias_type.reg.ir_node)->data = 2;
 	}
-	ir_convert_input_to_inner(ir, alias_dst->alias_type.reg.ir_node, IR_PART);
+	ir_convert_input_to_inner(ir, alias_dst->alias_type.reg.ir_node, part_op);
 	irImporterDynTrace_add_dependence(ir, alias_src->alias_type.reg.ir_node, alias_dst->alias_type.reg.ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 }
 
-static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine, struct alias* alias_dst, struct operand* operand){
+static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine, struct alias* alias_dst, struct operand* operand, enum irOpcode part_op){
 	struct alias*	alias_new;
 	struct node* 	ir_node;
 
@@ -161,7 +162,7 @@ static void irImporterDynTrace_merge_mem_variable(struct irRenameEngine* engine,
 		alias_dst->alias_type.mem.next 		= alias_new;
 		alias_dst->alias_type.mem.prev 		= NULL;
 
-		ir_convert_input_to_inner(engine->ir, alias_new->alias_type.mem.ir_node, IR_PART);
+		ir_convert_input_to_inner(engine->ir, alias_new->alias_type.mem.ir_node, part_op);
 		irImporterDynTrace_add_dependence(engine->ir, alias_dst->alias_type.mem.ir_node, alias_new->alias_type.mem.ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 	}
 	else{
@@ -194,10 +195,14 @@ struct node* irRenameEngine_get_ref(struct irRenameEngine* engine, struct operan
 			
 			if (node == NULL){
 				if ((*alias_result)->alias_type.mem.size > operand->size){
-					irImporterDynTrace_part_mem_variable(engine, *alias_result, &node, operand);
+					/* pour le debug */
+					printf("WARNING: in %s, this is a border case (part mem variable) be careful lad\n", __func__);
+					irImporterDynTrace_part_mem_variable(engine, *alias_result, &node, operand, IR_PART1_8);
 				}
 				else{
-					irImporterDynTrace_merge_mem_variable(engine, *alias_result, operand);
+					/* pour le debug */
+					printf("WARNING: in %s, this is a border case (merge mem variable) be careful lad\n", __func__);
+					irImporterDynTrace_merge_mem_variable(engine, *alias_result, operand, IR_PART1_8);
 					node = (*alias_result)->alias_type.mem.ir_node;
 				}
 			}
@@ -223,7 +228,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_EAX 	: {
 					if (engine->register_table[REGISTER_AH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_AH - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AH - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AH - 1), operand, 32, IR_PART2_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write AH\n", __func__);
@@ -231,7 +236,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 					if (engine->register_table[REGISTER_AL - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_AL - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AL - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AL - 1), operand, 32, IR_PART1_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write AL\n", __func__);
@@ -245,14 +250,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				}
 				case REGISTER_AH 	: {
 					if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AH - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AH - 1), operand, 8, IR_PART2_8);
 					}
 					node = engine->register_table[REGISTER_AH - 1].alias_type.reg.ir_node;
 					break;
 				}
 				case REGISTER_AL 	: {
 					if (engine->register_table[REGISTER_EAX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AL - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EAX - 1), engine->register_table + (REGISTER_AL - 1), operand, 8, IR_PART1_8);
 					}
 					node = engine->register_table[REGISTER_AL - 1].alias_type.reg.ir_node;
 					break;
@@ -260,7 +265,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_EBX 	: {
 					if (engine->register_table[REGISTER_BH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_BH - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BH - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BH - 1), operand, 32, IR_PART2_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write BH\n", __func__);
@@ -268,7 +273,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 					if (engine->register_table[REGISTER_BL - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_BL - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BL - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BL - 1), operand, 32, IR_PART1_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write BL\n", __func__);
@@ -282,14 +287,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				}
 				case REGISTER_BH 	: {
 					if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BH - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BH - 1), operand, 8, IR_PART2_8);
 					}
 					node = engine->register_table[REGISTER_BH - 1].alias_type.reg.ir_node;
 					break;
 				}
 				case REGISTER_BL 	: {
 					if (engine->register_table[REGISTER_EBX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BL - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EBX - 1), engine->register_table + (REGISTER_BL - 1), operand, 8, IR_PART1_8);
 					}
 					node = engine->register_table[REGISTER_BL - 1].alias_type.reg.ir_node;
 					break;
@@ -297,7 +302,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_ECX 	: {
 					if (engine->register_table[REGISTER_CH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_CH - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 32, IR_PART1_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write CH\n", __func__);
@@ -305,7 +310,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 					if (engine->register_table[REGISTER_CL - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_CL - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 32, IR_PART2_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write CL\n", __func__);
@@ -319,14 +324,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				}
 				case REGISTER_CH 	: {
 					if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 8, IR_PART2_8);
 					}
 					node = engine->register_table[REGISTER_CH - 1].alias_type.reg.ir_node;
 					break;
 				}
 				case REGISTER_CL 	: {
 					if (engine->register_table[REGISTER_ECX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 8, IR_PART1_8);
 					}
 					node = engine->register_table[REGISTER_CL - 1].alias_type.reg.ir_node;
 					break;
@@ -334,7 +339,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_EDX 	: {
 					if (engine->register_table[REGISTER_DH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_DH - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DH - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DH - 1), operand, 32, IR_PART2_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write DH\n", __func__);
@@ -342,7 +347,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 					if (engine->register_table[REGISTER_DL - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_DL - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DL - 1), operand, 32);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DL - 1), operand, 32, IR_PART1_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write DL\n", __func__);
@@ -356,14 +361,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				}
 				case REGISTER_DH 	: {
 					if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DH - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DH - 1), operand, 8, IR_PART2_8);
 					}
 					node = engine->register_table[REGISTER_DH - 1].alias_type.reg.ir_node;
 					break;
 				}
 				case REGISTER_DL 	: {
 					if (engine->register_table[REGISTER_EDX - 1].alias_type.reg.ir_node != NULL){
-						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DL - 1), operand, 8);
+						irImporterDynTrace_part_reg_variable(engine->ir, engine->register_table + (REGISTER_EDX - 1), engine->register_table + (REGISTER_DL - 1), operand, 8, IR_PART1_8);
 					}
 					node = engine->register_table[REGISTER_DL - 1].alias_type.reg.ir_node;
 					break;
