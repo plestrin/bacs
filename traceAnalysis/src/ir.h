@@ -104,6 +104,7 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 void ir_remove_node(struct ir* ir, struct node* node);
 
 void ir_convert_output_to_inner(struct ir* ir, struct node* node);
+void ir_convert_inner_to_output(struct ir* ir, struct node* node);
 void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
 
 void ir_print_io(struct ir* ir);

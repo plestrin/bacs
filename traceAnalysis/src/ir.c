@@ -215,6 +215,27 @@ void ir_convert_output_to_inner(struct ir* ir, struct node* node){
 	}
 }
 
+void ir_convert_inner_to_output(struct ir* ir, struct node* node){
+	enum irOpcode 			opcode;
+	struct irOperation* 	operation;
+
+	operation = ir_node_get_operation(node);
+	if (operation->type == IR_OPERATION_TYPE_INNER){
+		opcode = operation->operation_type.inner.opcode;
+		operation->type = IR_OPERATION_TYPE_OUTPUT;
+		operation->operation_type.output.opcode 	= opcode;
+		operation->operation_type.output.operand 	= NULL;
+		operation->operation_type.output.prev 		= NULL;
+		operation->operation_type.output.next 		= ir->output_linkedList;
+
+		if (ir->output_linkedList != NULL){
+			ir_node_get_operation(ir->output_linkedList)->operation_type.output.prev = node;
+		}
+
+		ir->output_linkedList = node;
+	}
+}
+
 void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode){
 	struct irOperation* operation;
 

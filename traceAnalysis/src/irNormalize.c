@@ -19,6 +19,9 @@
 #define IR_NORMALIZE_PROPAGATE_EXPRESSION 	1 	/* IR must be obtained either by TRACE or ASM */
 #define IR_NORMALIZE_DETECT_ROTATION 		1 	/* IR must be obtained by ASM */
 
+static int32_t irNormalize_sort_node(struct ir* ir);
+static void irNormalize_recursive_sort(struct node** node_buffer, struct node* node, uint32_t* generator);
+
 #ifdef VERBOSE
 
 #define INIT_TIMER																																			\
@@ -221,7 +224,7 @@ void ir_normalize_translate_sub_imm(struct ir* ir){
 				if (edge_cursor != NULL){
 					imm_value = ir_node_get_operation(edge_get_src(edge_cursor));
 					imm_value->operation_type.imm.value = (uint64_t)(-imm_value->operation_type.imm.value); /* I am not sure if this is correct */
-					*opcode_ptr = IR_SUB;
+					*opcode_ptr = IR_ADD;
 				}
 				break;
 			}
@@ -334,6 +337,7 @@ void ir_normalize_propagate_expression(struct ir* ir){
 	uint32_t 				nb_match;
 	enum irOpcode* 			opcode_ptr1;
 	enum irOpcode* 			opcode_ptr2;
+	struct node*			next_node_cursor2;
 
 	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
 		if (node_cursor1->nb_edge_dst > max_nb_edge_dst){
@@ -345,9 +349,13 @@ void ir_normalize_propagate_expression(struct ir* ir){
 		return;
 	}
 
+	if (irNormalize_sort_node(ir)){
+		printf("ERROR: in %s, unable to sort ir node(s)\n", __func__);
+		return;
+	}
+
 	taken = (uint8_t*)alloca(sizeof(uint8_t) * max_nb_edge_dst);
 
-	start:
 	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
 		operation1 = ir_node_get_operation(node_cursor1);
 		if (operation1->type == IR_OPERATION_TYPE_OUTPUT || operation1->type == IR_OPERATION_TYPE_INNER){
@@ -359,7 +367,9 @@ void ir_normalize_propagate_expression(struct ir* ir){
 				opcode_ptr1 = &(operation1->operation_type.inner.opcode);
 			}
 
-			for(node_cursor2 = node_get_next(node_cursor1); node_cursor2 != NULL; node_cursor2 = node_get_next(node_cursor2)){
+			for(node_cursor2 = node_get_next(node_cursor1); node_cursor2 != NULL; node_cursor2 = next_node_cursor2){
+				next_node_cursor2 = node_get_next(node_cursor2);
+
 				operation2 = ir_node_get_operation(node_cursor2);
 				if (operation2->type == IR_OPERATION_TYPE_OUTPUT || operation2->type == IR_OPERATION_TYPE_INNER){
 
@@ -405,15 +415,13 @@ void ir_normalize_propagate_expression(struct ir* ir){
 						}
 
 						if (nb_match == node_cursor1->nb_edge_dst){
-							if (operation1->type == IR_OPERATION_TYPE_OUTPUT){
-								graph_transfert_src_edge(&(ir->graph), node_cursor1, node_cursor2);
-								ir_remove_node(ir, node_cursor2);
+							if (operation1->type == IR_OPERATION_TYPE_INNER && operation2->type == IR_OPERATION_TYPE_OUTPUT){
+								ir_convert_inner_to_output(ir, node_cursor1);
+								operation1->operation_type.output.operand = operation2->operation_type.output.operand;
 							}
-							else{
-								graph_transfert_src_edge(&(ir->graph), node_cursor2, node_cursor1);
-								ir_remove_node(ir, node_cursor1);
-							}
-							goto start;
+
+							graph_transfert_src_edge(&(ir->graph), node_cursor1, node_cursor2);
+							ir_remove_node(ir, node_cursor2);
 						}
 					}
 				}
@@ -567,4 +575,65 @@ void ir_normalize_detect_rotation(struct ir* ir){
 			}
 		}
 	}
+}
+
+static int32_t irNormalize_sort_node(struct ir* ir){
+	struct node** 	node_buffer;
+	uint32_t 		i;
+	struct node* 	primary_cursor;
+	uint32_t 		generator = 1;
+
+	node_buffer = (struct node**)malloc(ir->graph.nb_node * sizeof(struct node*));
+	if (node_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
+
+	for(primary_cursor = graph_get_head_node(&(ir->graph)); primary_cursor != NULL; primary_cursor = node_get_next(primary_cursor)){
+		ir_node_get_operation(primary_cursor)->data = 0;
+	}
+
+	for(primary_cursor = graph_get_head_node(&(ir->graph)); primary_cursor != NULL; primary_cursor = node_get_next(primary_cursor)){
+		if (ir_node_get_operation(primary_cursor)->data == 0){
+			irNormalize_recursive_sort(node_buffer, primary_cursor, &generator);
+		}
+	}
+
+	ir->graph.node_linkedList = node_buffer[0];
+	node_buffer[0]->prev = NULL;
+	if (ir->graph.nb_node > 1){
+		node_buffer[0]->next = node_buffer[1];
+
+		for (i = 1; i < ir->graph.nb_node - 1; i++){
+			node_buffer[i]->prev = node_buffer[i - 1];
+			node_buffer[i]->next = node_buffer[i + 1];
+		}
+			
+		node_buffer[i]->prev = node_buffer[i - 1];
+		node_buffer[i]->next = NULL;
+	}
+	else{
+		node_buffer[0]->next = NULL;
+	}
+
+	free(node_buffer);
+
+	return 0;
+}
+
+static void irNormalize_recursive_sort(struct node** node_buffer, struct node* node, uint32_t* generator){
+	struct edge* edge_cursor;
+	struct node* parent_node;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		parent_node = edge_get_src(edge_cursor);
+
+		if (ir_node_get_operation(parent_node)->data == 0){
+			irNormalize_recursive_sort(node_buffer, parent_node, generator);
+		}
+	}
+
+	ir_node_get_operation(node)->data = *generator;
+	node_buffer[*generator - 1] = node;
+	*generator = *generator + 1;
 }
