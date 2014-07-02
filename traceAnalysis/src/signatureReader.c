@@ -13,7 +13,8 @@ enum readerToken{
 	READER_TOKEN_GRAPH_NAME,
 	READER_TOKEN_EDGE,
 	READER_TOKEN_NODE_ID,
-	READER_TOKEN_NODE_LABEL
+	READER_TOKEN_NODE_LABEL,
+	READER_TOKEN_NODE_IO
 };
 
 enum readerState{
@@ -36,18 +37,26 @@ struct localCodeEdge{
 	uint32_t 				src_id;
 	enum irOpcode 			src_opcode;
 	uint8_t 				src_opcode_set;
+	uint16_t 				src_input_number;
+	uint16_t 				src_input_frag_order;
+
 	uint32_t 				dst_id;
 	enum irOpcode 			dst_opcode;
 	uint8_t 				dst_opcode_set;
+	uint16_t 				dst_output_number;
+	uint16_t 				dst_output_frag_order;
 };
 
 static void readerCursor_get_next(struct readerCursor* reader_cursor);
 
-static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name);
-
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
 
 static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor);
+#define codeSignatureReader_get_IO_in(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'I')
+#define codeSignatureReader_get_IO_out(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'O')
+static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char);
+
+static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name);
 
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
@@ -108,6 +117,8 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					case READER_TOKEN_NODE_ID 		: {
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_opcode_set = 0;
+						local_edge.src_input_number = 0;
+						local_edge.src_input_frag_order = 0;
 
 						reader_state = READER_STATE_SRC;
 						break;
@@ -149,6 +160,14 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						reader_state = READER_STATE_EDGE;
 						break;
 					}
+					case READER_TOKEN_NODE_IO 		: {
+						uint32_t io;
+
+						io = codeSignatureReader_get_IO_in(&reader_cursor);
+						local_edge.src_input_number = io & 0x0000ffff;
+						local_edge.src_input_frag_order = io >> 16;
+						break;
+					}
 					case READER_TOKEN_COMMENT 		: {
 						break;
 					}
@@ -163,6 +182,8 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					case READER_TOKEN_NODE_ID 	: {
 						local_edge.dst_id = atoi(reader_cursor.cursor);
 						local_edge.dst_opcode_set = 0;
+						local_edge.dst_output_number = 0;
+						local_edge.dst_output_frag_order = 0;
 
 						reader_state = READER_STATE_DST;
 						break;
@@ -195,6 +216,8 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_opcode_set = 0;
+						local_edge.src_input_number = 0;
+						local_edge.src_input_frag_order = 0;
 
 						reader_state = READER_STATE_SRC;
 						break;
@@ -234,8 +257,18 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_opcode_set = 0;
+						local_edge.src_input_number = 0;
+						local_edge.src_input_frag_order = 0;
 
 						reader_state = READER_STATE_SRC;
+						break;
+					}
+					case READER_TOKEN_NODE_IO 		: {
+						uint32_t io;
+
+						io = codeSignatureReader_get_IO_out(&reader_cursor);
+						local_edge.dst_output_number = io & 0x0000ffff;
+						local_edge.dst_output_frag_order = io >> 16;
 						break;
 					}
 					case READER_TOKEN_COMMENT 		: {
@@ -268,39 +301,23 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 }
 
 static void readerCursor_get_next(struct readerCursor* reader_cursor){
+	uint8_t 	fetch_new = 0;
+	uint64_t 	i;
+	uint64_t 	j;
+
 	switch(reader_cursor->token){
 		case READER_TOKEN_NONE 			: {
-			uint64_t i;
-
 			for (i = 0; i < reader_cursor->remaining_size; i++){
 				if (reader_cursor->cursor[i] != ' ' && reader_cursor->cursor[i] != '\n' && reader_cursor->cursor[i] != '\a' && reader_cursor->cursor[i] != '\t'){
 					reader_cursor->cursor += i;
 					reader_cursor->remaining_size -= i;
-
-					switch(*reader_cursor->cursor){
-						case '#' : {
-							reader_cursor->token = READER_TOKEN_COMMENT;
-							break;
-						}
-						case '"' : {
-							reader_cursor->token = READER_TOKEN_GRAPH_NAME;
-							break;
-						}
-						default  : {
-							printf("ERROR: in %s, incorrect character: %c (case NONE)\n", __func__, *reader_cursor->cursor);
-							break;
-						}
-					}
+					fetch_new = 1;
 					break;
 				}
 			}
-
 			break;
 		}
 		case READER_TOKEN_COMMENT 		: {
-			uint64_t i;
-			uint64_t j;
-
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			for (i = 0; i < reader_cursor->remaining_size; i++){
@@ -309,55 +326,16 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 						if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
 							reader_cursor->cursor += j;
 							reader_cursor->remaining_size -= j;
-
-							switch(*reader_cursor->cursor){
-								case '#' : {
-									reader_cursor->token = READER_TOKEN_COMMENT;
-									break;
-								}
-								case '"' : {
-									reader_cursor->token = READER_TOKEN_GRAPH_NAME;
-									break;
-								}
-								case '(' : {
-									reader_cursor->token = READER_TOKEN_NODE_LABEL;
-									break;
-								}
-								case '-' : {
-									reader_cursor->token = READER_TOKEN_EDGE;
-									break;
-								}
-								case '0' :
-								case '1' :
-								case '2' :
-								case '3' :
-								case '4' :
-								case '5' :
-								case '6' :
-								case '7' :
-								case '8' :
-								case '9' : {
-									reader_cursor->token = READER_TOKEN_NODE_ID;
-									break;
-								}
-								default  : {
-									printf("ERROR: in %s, incorrect character: %c (case COMMENT)\n", __func__, *reader_cursor->cursor);
-									break;
-								}
-							}
+							fetch_new = 1;
 							break;
 						}
 					}
 					break;
 				}
 			}
-
 			break;
 		}
 		case READER_TOKEN_GRAPH_NAME 	: {
-			uint64_t i;
-			uint64_t j;
-
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			for (i = 1; i < reader_cursor->remaining_size; i++){
@@ -366,42 +344,16 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 						if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
 							reader_cursor->cursor += j;
 							reader_cursor->remaining_size -= j;
-
-							switch(*reader_cursor->cursor){
-								case '#' : {
-									reader_cursor->token = READER_TOKEN_COMMENT;
-									break;
-								}
-								case '0' :
-								case '1' :
-								case '2' :
-								case '3' :
-								case '4' :
-								case '5' :
-								case '6' :
-								case '7' :
-								case '8' :
-								case '9' : {
-									reader_cursor->token = READER_TOKEN_NODE_ID;
-									break;
-								}
-								default  : {
-									printf("ERROR: in %s, incorrect character: %c (case NAME)\n", __func__, *reader_cursor->cursor);
-									break;
-								}
-							}
+							fetch_new = 1;
 							break;
 						}
 					}
 					break;
 				}
 			}
-
 			break;
 		}
 		case READER_TOKEN_EDGE 			: {
-			uint64_t j;
-
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			if (reader_cursor->remaining_size > 1 && reader_cursor->cursor[1] == '>'){
@@ -409,41 +361,14 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 					if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
 						reader_cursor->cursor += j;
 						reader_cursor->remaining_size -= j;
-
-						switch(*reader_cursor->cursor){
-							case '#' : {
-								reader_cursor->token = READER_TOKEN_COMMENT;
-								break;
-							}
-							case '0' :
-							case '1' :
-							case '2' :
-							case '3' :
-							case '4' :
-							case '5' :
-							case '6' :
-							case '7' :
-							case '8' :
-							case '9' : {
-								reader_cursor->token = READER_TOKEN_NODE_ID;
-								break;
-							}
-							default  : {
-								printf("ERROR: in %s, incorrect character: %c (case EDGE)\n", __func__, *reader_cursor->cursor);
-								break;
-							}
-						}
+						fetch_new = 1;
 						break;
 					}
 				}
 			}
-
 			break;
 		}
 		case READER_TOKEN_NODE_ID 		: {
-			uint64_t i;
-			uint64_t j;
-
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			for (i = 0; i < reader_cursor->remaining_size; i++){
@@ -452,56 +377,16 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 						if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
 							reader_cursor->cursor += j;
 							reader_cursor->remaining_size -= j;
-
-							switch(*reader_cursor->cursor){
-								case '"' : {
-									reader_cursor->token = READER_TOKEN_GRAPH_NAME;
-									break;
-								}
-								case '#' : {
-									reader_cursor->token = READER_TOKEN_COMMENT;
-									break;
-								}
-								case '-' : {
-									reader_cursor->token = READER_TOKEN_EDGE;
-									break;
-								}
-								case '(' : {
-									reader_cursor->token = READER_TOKEN_NODE_LABEL;
-									break;
-								}
-								case '0' :
-								case '1' :
-								case '2' :
-								case '3' :
-								case '4' :
-								case '5' :
-								case '6' :
-								case '7' :
-								case '8' :
-								case '9' : {
-									reader_cursor->token = READER_TOKEN_NODE_ID;
-									break;
-								}
-								default  : {
-									printf("ERROR: in %s, incorrect character: %c (case ID)\n", __func__, *reader_cursor->cursor);
-									break;
-								}
-							}
+							fetch_new = 1;
 							break;
 						}
 					}
 					break;
 				}
 			}
-
-
 			break;
 		}
 		case READER_TOKEN_NODE_LABEL 	: {
-			uint64_t i;
-			uint64_t j;
-
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			for (i = 1; i < reader_cursor->remaining_size; i++){
@@ -510,46 +395,74 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 						if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
 							reader_cursor->cursor += j;
 							reader_cursor->remaining_size -= j;
-
-							switch(*reader_cursor->cursor){
-								case '"' : {
-									reader_cursor->token = READER_TOKEN_GRAPH_NAME;
-									break;
-								}
-								case '#' : {
-									reader_cursor->token = READER_TOKEN_COMMENT;
-									break;
-								}
-								case '-' : {
-									reader_cursor->token = READER_TOKEN_EDGE;
-									break;
-								}
-								case '0' :
-								case '1' :
-								case '2' :
-								case '3' :
-								case '4' :
-								case '5' :
-								case '6' :
-								case '7' :
-								case '8' :
-								case '9' : {
-									reader_cursor->token = READER_TOKEN_NODE_ID;
-									break;
-								}
-								default  : {
-									printf("ERROR: in %s, incorrect character: %c (case LABEL)\n", __func__, *reader_cursor->cursor);
-									break;
-								}
-							}
+							fetch_new = 1;
 							break;
 						}
 					}
 					break;
 				}
 			}
-
 			break;
+		}
+		case READER_TOKEN_NODE_IO 		: {
+			reader_cursor->token = READER_TOKEN_NONE;
+
+			for (i = 1; i < reader_cursor->remaining_size; i++){
+				if (reader_cursor->cursor[i] == ']'){
+					for (j = i + 1; j < reader_cursor->remaining_size; j++){
+						if (reader_cursor->cursor[j] != ' ' && reader_cursor->cursor[j] != '\n' && reader_cursor->cursor[j] != '\a' && reader_cursor->cursor[j] != '\t'){
+							reader_cursor->cursor += j;
+							reader_cursor->remaining_size -= j;
+							fetch_new = 1;
+							break;
+						}
+					}
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	if (fetch_new){
+		switch(*reader_cursor->cursor){
+			case '"' : {
+				reader_cursor->token = READER_TOKEN_GRAPH_NAME;
+				break;
+			}
+			case '#' : {
+				reader_cursor->token = READER_TOKEN_COMMENT;
+				break;
+			}
+			case '-' : {
+				reader_cursor->token = READER_TOKEN_EDGE;
+				break;
+			}
+			case '(' : {
+				reader_cursor->token = READER_TOKEN_NODE_LABEL;
+				break;
+			}
+			case '[' : {
+				reader_cursor->token = READER_TOKEN_NODE_IO;
+				break;
+			}
+			case '0' :
+			case '1' :
+			case '2' :
+			case '3' :
+			case '4' :
+			case '5' :
+			case '6' :
+			case '7' :
+			case '8' :
+			case '9' : {
+				reader_cursor->token = READER_TOKEN_NODE_ID;
+				break;
+			}
+			default  : {
+				printf("ERROR: in %s, incorrect character: %c\n", __func__, *reader_cursor->cursor);
+				break;
+			}
 		}
 	}
 }
@@ -619,10 +532,43 @@ static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_
 	return IR_JOKER;
 }
 
+static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char){
+	uint32_t 	result = 0;
+	uint64_t 	i;
+	uint64_t 	j;
+
+	if (reader_cursor->remaining_size < 6){
+		printf("ERROR: in %s, incomplete IO tag\n", __func__);
+	}
+	else{
+		if (reader_cursor->cursor[1] == first_char && reader_cursor->cursor[2] == ':'){
+			for (i = 0; i + 3 < reader_cursor->remaining_size; i++){
+				if (reader_cursor->cursor[i + 3] == ':'){
+					result = atoi(reader_cursor->cursor + 3) & 0x0000ffff;
+					for (j = i + 1; j + 3 < reader_cursor->remaining_size; j++){
+						if (reader_cursor->cursor[i + 3] == ']'){
+							result |= atoi(reader_cursor->cursor + i + 4) << 16;
+						}
+					}
+				}
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect IO tag\n", __func__);
+		}
+	}
+
+	return result;
+}
+
 struct localCodeNode{
 	uint32_t 		id;
 	enum irOpcode 	opcode;
 	uint8_t 		opcode_set;
+	uint16_t 		input_number;
+	uint16_t 		input_frag_order;
+	uint16_t 		output_number;
+	uint16_t 		output_frag_order;
 	struct node* 	node;
 };
 
@@ -649,16 +595,23 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		for (i = 0; i < array_get_length(array); i++){
 			edge = (struct localCodeEdge*)array_get(array, i);
 
-			node_buffer[2 * i].id 				= edge->src_id;
-			node_buffer[2 * i].opcode 			= edge->src_opcode;
-			node_buffer[2 * i].opcode_set 		= edge->src_opcode_set;
-			node_buffer[2 * i].node 			= NULL;
+			node_buffer[2 * i].id 						= edge->src_id;
+			node_buffer[2 * i].opcode 					= edge->src_opcode;
+			node_buffer[2 * i].opcode_set 				= edge->src_opcode_set;
+			node_buffer[2 * i].input_number 			= edge->src_input_number;
+			node_buffer[2 * i].input_frag_order 		= edge->src_input_frag_order;
+			node_buffer[2 * i].output_number 			= 0;
+			node_buffer[2 * i].output_frag_order 		= 0;
+			node_buffer[2 * i].node 					= NULL;
 
-
-			node_buffer[2 * i + 1].id 			= edge->dst_id;
-			node_buffer[2 * i + 1].opcode 		= edge->dst_opcode;
-			node_buffer[2 * i + 1].opcode_set 	= edge->dst_opcode_set;
-			node_buffer[2 * i + 1].node 		= NULL;
+			node_buffer[2 * i + 1].id 					= edge->dst_id;
+			node_buffer[2 * i + 1].opcode 				= edge->dst_opcode;
+			node_buffer[2 * i + 1].opcode_set 			= edge->dst_opcode_set;
+			node_buffer[2 * i + 1].input_number 		= 0;
+			node_buffer[2 * i + 1].input_frag_order 	= 0;
+			node_buffer[2 * i + 1].output_number 		= edge->dst_output_number;
+			node_buffer[2 * i + 1].output_frag_order 	= edge->dst_output_frag_order;
+			node_buffer[2 * i + 1].node 				= NULL;
 
 		}
 
@@ -673,8 +626,12 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			}
 			else if (node_buffer[i].opcode_set){
 				if (!node_buffer[node_offset].opcode_set){
-					node_buffer[node_offset].opcode = node_buffer[i].opcode;
-					node_buffer[node_offset].opcode_set = 1;
+					node_buffer[node_offset].opcode 			= node_buffer[i].opcode;
+					node_buffer[node_offset].opcode_set 		= 1;
+					node_buffer[node_offset].input_number 		= node_buffer[i].input_number;
+					node_buffer[node_offset].input_frag_order 	= node_buffer[i].input_frag_order;
+					node_buffer[node_offset].output_number 		= node_buffer[i].output_number;
+					node_buffer[node_offset].output_frag_order 	= node_buffer[i].output_frag_order;
 				}
 				else if (node_buffer[node_offset].opcode != node_buffer[i].opcode){
 					printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
@@ -692,17 +649,16 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		}
 
 		graph_init(&(code_signature.graph), sizeof(struct signatureNode), 0);
-			
-		signature_node.input_number 		= 0;
-		signature_node.input_frag_order 	= 0;
-		signature_node.output_number 		= 0;
-		signature_node.output_frag_order 	= 0;
 
 		for (i = 0; i < nb_node; i++){
 			if (!node_buffer[i].opcode_set){
 				printf("ERROR: in %s, opcode has not been set for node %u\n", __func__, node_buffer[i].id);
 			}
-			signature_node.opcode = node_buffer[i].opcode;
+			signature_node.opcode 				= node_buffer[i].opcode;
+			signature_node.input_number 		= node_buffer[i].input_number;
+			signature_node.input_frag_order 	= node_buffer[i].input_frag_order;
+			signature_node.output_number 		= node_buffer[i].output_number;
+			signature_node.output_frag_order 	= node_buffer[i].output_frag_order;
 			node_buffer[i].node = graph_add_node(&(code_signature.graph), &signature_node);
 		}
 

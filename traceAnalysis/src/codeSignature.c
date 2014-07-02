@@ -190,5 +190,13 @@ void codeSignature_printDot_collection(struct codeSignatureCollection* collectio
 void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 	struct signatureNode* node = (struct signatureNode*)data;
 
-	fprintf(file, "[label=\"%s\"]", irOpcode_2_string(node->opcode));
+	if (node->input_number > 0){
+		fprintf(file, "[label=\"%s\",shape=\"box\"]", irOpcode_2_string(node->opcode));
+	}
+	else if (node->output_number > 0){
+		fprintf(file, "[label=\"%s\",shape=\"invhouse\"]", irOpcode_2_string(node->opcode));
+	}
+	else{
+		fprintf(file, "[label=\"%s\"]", irOpcode_2_string(node->opcode));
+	}
 }
