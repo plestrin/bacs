@@ -10,5 +10,7 @@ void ir_normalize_translate_xor_ff(struct ir* ir);
 void ir_normalize_merge_transitive_operation(struct ir* ir, enum irOpcode opcode);
 void ir_normalize_propagate_expression(struct ir* ir);
 void ir_normalize_detect_rotation(struct ir* ir);
+void ir_normalize_detect_first_byte_extract(struct ir* ir);
+void ir_normalize_detect_second_byte_extract(struct ir* ir);
 
 #endif

@@ -302,7 +302,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				case REGISTER_ECX 	: {
 					if (engine->register_table[REGISTER_CH - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_CH - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 32, IR_PART1_8);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CH - 1), operand, 32, IR_PART2_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write CH\n", __func__);
@@ -310,7 +310,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 					if (engine->register_table[REGISTER_CL - 1].alias_type.reg.ir_node != NULL){
 						if (ALIAS_IS_READ(engine->register_table[REGISTER_CL - 1].type)){
-							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 32, IR_PART2_8);
+							irImporterDynTrace_merge_reg_variable(engine->ir, engine->register_table + (REGISTER_ECX - 1), engine->register_table + (REGISTER_CL - 1), operand, 32, IR_PART1_8);
 						}
 						else{
 							printf("WARNING: in %s, partial write CL\n", __func__);

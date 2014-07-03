@@ -11,13 +11,15 @@
 #include "multiColumn.h"
 #endif
 
-#define IR_NORMALIZE_TRANSLATE_ROL_IMM 		1	/* IR must be obtained either by TRACE or ASM */
-#define IR_NORMALIZE_TRANSLATE_SUB_IMM 		1 	/* IR must be obtained either by TRACE or ASM */
-#define IR_NORMALIZE_TRANSLATE_XOR_FF 		1 	/* IR must be obtained by ASM */
-#define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 	1 	/* IR must be obtained either by TRACE or ASM */
-#define IR_NORMALIZE_MERGE_TRANSITIVE_XOR 	1 	/* IR must be obtained either by TRACE or ASM */
-#define IR_NORMALIZE_PROPAGATE_EXPRESSION 	1 	/* IR must be obtained either by TRACE or ASM */
-#define IR_NORMALIZE_DETECT_ROTATION 		1 	/* IR must be obtained by ASM */
+#define IR_NORMALIZE_TRANSLATE_ROL_IMM 				1	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_TRANSLATE_SUB_IMM 				1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_TRANSLATE_XOR_FF 				1 	/* IR must be obtained by ASM */
+#define IR_NORMALIZE_MERGE_TRANSITIVE_ADD 			1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_MERGE_TRANSITIVE_XOR 			1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_PROPAGATE_EXPRESSION 			1 	/* IR must be obtained either by TRACE or ASM */
+#define IR_NORMALIZE_DETECT_ROTATION 				1 	/* IR must be obtained by ASM */
+#define IR_NORMALIZE_DETECT_FIRST_BYTE_EXTRACT 		1 	/* IR must be obtained either by trace or ASM */
+#define IR_NORMALIZE_DETECT_SECOND_BYTE_EXTRACT 	1 	/* IR must be obtained either by trace or ASM */
 
 static int32_t irNormalize_sort_node(struct ir* ir);
 static void irNormalize_recursive_sort(struct node** node_buffer, struct node* node, uint32_t* generator);
@@ -121,6 +123,20 @@ void ir_normalize(struct ir* ir){
 	ir_normalize_detect_rotation(ir);
 	STOP_TIMER
 	PRINT_TIMER("Detect rotation")
+	#endif
+
+	#if IR_NORMALIZE_DETECT_FIRST_BYTE_EXTRACT == 1
+	START_TIMER
+	ir_normalize_detect_first_byte_extract(ir);
+	STOP_TIMER
+	PRINT_TIMER("Detect first byte extraction")
+	#endif
+
+	#if IR_NORMALIZE_DETECT_SECOND_BYTE_EXTRACT == 1
+	START_TIMER
+	ir_normalize_detect_second_byte_extract(ir);
+	STOP_TIMER
+	PRINT_TIMER("Detect second byte extraction")
 	#endif
 
 	CLEAN_TIMER
@@ -571,6 +587,157 @@ void ir_normalize_detect_rotation(struct ir* ir){
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+}
+
+void ir_normalize_detect_first_byte_extract(struct ir* ir){
+	struct node* 		node_cursor;
+	struct node* 		node_child;
+	struct node* 		node_imm_new;
+	struct irOperation* operation;
+	enum irOpcode* 		opcode_ptr;
+	uint8_t 			size;
+
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		if (node_cursor->nb_edge_src == 1 && node_cursor->nb_edge_dst == 1){
+			operation = ir_node_get_operation(node_cursor);
+			if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+				if (operation->operation_type.output.opcode != IR_PART1_8){
+					continue;
+				}
+				else{
+					opcode_ptr = &(operation->operation_type.output.opcode);
+				}
+			}
+			else if (operation->type == IR_OPERATION_TYPE_INNER){
+				if (operation->operation_type.inner.opcode != IR_PART1_8){
+					continue;
+				}
+				else{
+					opcode_ptr = &(operation->operation_type.inner.opcode);
+				}
+			}
+			else{
+				continue;
+			}
+
+			node_child = edge_get_dst(node_get_head_edge_src(node_cursor));
+			if (node_child->nb_edge_dst == 1){
+				operation = ir_node_get_operation(node_child);
+				size = operation->size;
+				if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+					if (operation->operation_type.output.opcode != IR_MOVZX){
+						continue;
+					}
+				}
+				else if (operation->type == IR_OPERATION_TYPE_INNER){
+					if (operation->operation_type.inner.opcode != IR_MOVZX){
+						continue;
+					}
+				}
+				else{
+					continue;
+				}
+
+				*opcode_ptr = IR_AND;
+				graph_transfert_src_edge(&(ir->graph), node_cursor, node_child);
+				ir_remove_node(ir, node_child);
+
+				node_imm_new = ir_add_immediate(ir, size, 0, 0x000000ff);
+				if (node_imm_new != NULL){
+					if (ir_add_dependence(ir, node_imm_new, node_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add edge to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to add immediate node to IR\n", __func__);
+				}
+			}
+		}
+	}
+}
+
+void ir_normalize_detect_second_byte_extract(struct ir* ir){
+	struct node* 		node_cursor;
+	struct node* 		node_child;
+	struct node* 		node_imm_new;
+	struct irOperation* operation;
+	enum irOpcode* 		opcode_ptr_cursor;
+	enum irOpcode* 		opcode_ptr_child;
+	uint8_t 			size;
+
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		if (node_cursor->nb_edge_src == 1 && node_cursor->nb_edge_dst == 1){
+			operation = ir_node_get_operation(node_cursor);
+			if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+				if (operation->operation_type.output.opcode != IR_PART2_8){
+					continue;
+				}
+				else{
+					opcode_ptr_cursor = &(operation->operation_type.output.opcode);
+				}
+			}
+			else if (operation->type == IR_OPERATION_TYPE_INNER){
+				if (operation->operation_type.inner.opcode != IR_PART2_8){
+					continue;
+				}
+				else{
+					opcode_ptr_cursor = &(operation->operation_type.inner.opcode);
+				}
+			}
+			else{
+				continue;
+			}
+
+			node_child = edge_get_dst(node_get_head_edge_src(node_cursor));
+			if (node_child->nb_edge_dst == 1){
+				operation = ir_node_get_operation(node_child);
+				size = operation->size;
+				if (operation->type == IR_OPERATION_TYPE_OUTPUT){
+					if (operation->operation_type.output.opcode != IR_MOVZX){
+						continue;
+					}
+					else{
+						opcode_ptr_child = &(operation->operation_type.output.opcode);
+					}
+				}
+				else if (operation->type == IR_OPERATION_TYPE_INNER){
+					if (operation->operation_type.inner.opcode != IR_MOVZX){
+						continue;
+					}
+					else{
+						opcode_ptr_child = &(operation->operation_type.inner.opcode);
+					}
+				}
+				else{
+					continue;
+				}
+
+				*opcode_ptr_child = IR_AND;
+
+				node_imm_new = ir_add_immediate(ir, size, 0, 0x000000ff);
+				if (node_imm_new != NULL){
+					if (ir_add_dependence(ir, node_imm_new, node_child, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add edge to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to add immediate node to IR\n", __func__);
+				}
+
+				*opcode_ptr_cursor = IR_SHR;
+
+				node_imm_new = ir_add_immediate(ir, size, 0, size - 8);
+				if (node_imm_new != NULL){
+					if (ir_add_dependence(ir, node_imm_new, node_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add edge to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to add immediate node to IR\n", __func__);
 				}
 			}
 		}
