@@ -184,8 +184,8 @@ class sigRecipe(recipe):
 		trace_dir = self.arg[self.arg.find("load trace") + 11:]
 		trace_dir = trace_dir[:trace_dir.find(",")]
 
-		condition1 = hist.hasFilesChanged(["./analysis", codeSignature_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
-		condition2 = hist.hasStringChanged("analysis" + self.name, self.arg)
+		condition1 = hist.hasFilesChanged(["./signature", codeSignature_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
+		condition2 = hist.hasStringChanged("signature" + self.name, self.arg)
 
 		if condition1 or condition2:
 			if self.log == None:
@@ -194,7 +194,7 @@ class sigRecipe(recipe):
 			self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
 			self.log.flush()
 
-			cmd = ["./analysis"]
+			cmd = ["./signature"]
 			cmd.extend(self.arg.split(','))
 
 			time_start = time.time()

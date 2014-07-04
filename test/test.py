@@ -13,7 +13,8 @@ PIN_PATH 				= "/home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/pin"
 TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
 WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
 MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"
-MAKEFILE_SEARCH_PATH 	= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
+MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
+MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
 LOG_PATH 				= "/home/pierre/Documents/bacs/test/"
 HISTORY_FILE_PATH 		= "/home/pierre/Documents/bacs/test/.testHistory"
@@ -147,18 +148,31 @@ if action == "TRACE" or action == "ALL":
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	if hist.hasFilesChanged([MAKEFILE_SEARCH_PATH]):
-		makefile = open("Makefile", "w")
-		return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g", MAKEFILE_SEARCH_PATH], stdout = makefile)
+	if hist.hasFilesChanged([MAKEFILE_ANAL_PATH]):
+		makefile = open("makefile_anal", "w")
+		return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_anal/g", MAKEFILE_ANAL_PATH], stdout = makefile)
 		makefile.close()
 		if return_value != 0:
 			print("ERROR: unable to create the Makefile")
 			exit()
-	sys.stdout.write("Building Search program: ... ")
+	sys.stdout.write("Building Analysis program: ... ")
 	sys.stdout.flush()
-	return_value = subprocess.call(["make", "analysis"])
+	return_value = subprocess.call(["make", "--makefile=makefile_anal", "analysis"])
 	if return_value != 0:
-		print("ERROR: unable to build Search program")
+		print("ERROR: unable to build Analysis program")
+		exit()
+	if hist.hasFilesChanged([MAKEFILE_SIG_PATH]):
+		makefile = open("makefile_sig", "w")
+		return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_sig/g", MAKEFILE_SIG_PATH], stdout = makefile)
+		makefile.close()
+		if return_value != 0:
+			print("ERROR: unable to create the Makefile")
+			exit()
+	sys.stdout.write("Building Signature program: ... ")
+	sys.stdout.flush()
+	return_value = subprocess.call(["make", "--makefile=makefile_sig", "signature"])
+	if return_value != 0:
+		print("ERROR: unable to build Signature program")
 		exit()
 
 
