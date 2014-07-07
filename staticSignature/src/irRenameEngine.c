@@ -38,25 +38,25 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 	if (node == NULL){
 		switch(reg){
 			case IR_REG_EAX 	: {
-				/*
 				if (engine->register_alias[IR_REG_AH].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_AH].type)){
+					printf("WARNING: in %s, opportunity to merge AH to create EAX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_AH].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EAX, engine->register_alias + IR_REG_AH, operand, 32, IR_PART2_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write AH\n", __func__);
-					}
+					}*/
 				}
 				if (engine->register_alias[IR_REG_AL].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_AL].type)){
+					printf("WARNING: in %s, opportunity to merge AL to create EAX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_AL].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EAX, engine->register_alias + IR_REG_AL, operand, 32, IR_PART1_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write AL\n", __func__);
-					}
+					}*/
 				}
-				*/
-				node = engine->register_alias[IR_REG_EAX].ir_node;
+				/*node = engine->register_alias[IR_REG_EAX].ir_node;*/
 				break;
 			}
 			case IR_REG_AX 	: {
@@ -80,23 +80,25 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				break;
 			}
 			case IR_REG_EBX 	: {
-				/*if (engine->register_alias[IR_REG_BH].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_BH].type)){
+				if (engine->register_alias[IR_REG_BH].ir_node != NULL){
+					printf("WARNING: in %s, opportunity to merge BH to create EBX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_BH].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EBX, engine->register_alias + IR_REG_BH, operand, 32, IR_PART2_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write BH\n", __func__);
-					}
+					}*/
 				}
 				if (engine->register_alias[IR_REG_BL].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_BL].type)){
+					printf("WARNING: in %s, opportunity to merge BL to create EBX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_BL].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EBX, engine->register_alias + IR_REG_BL, operand, 32, IR_PART1_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write BL\n", __func__);
-					}
+					}*/
 				}
-				node = engine->register_alias[IR_REG_EBX].ir_node;*/
+				/*node = engine->register_alias[IR_REG_EBX].ir_node;*/
 				break;
 			}
 			case IR_REG_BX 	: {
@@ -120,23 +122,25 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				break;
 			}
 			case IR_REG_ECX 	: {
-				/*if (engine->register_alias[IR_REG_CH].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_CH].type)){
+				if (engine->register_alias[IR_REG_CH].ir_node != NULL){
+					printf("WARNING: in %s, opportunity to merge CH to create ECX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_CH].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_ECX, engine->register_alias + IR_REG_CH, operand, 32, IR_PART2_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write CH\n", __func__);
-					}
+					}*/
 				}
 				if (engine->register_alias[IR_REG_CL].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_CL].type)){
+					printf("WARNING: in %s, opportunity to merge CL to create ECX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_CL].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_ECX, engine->register_alias + IR_REG_CL, operand, 32, IR_PART1_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write CL\n", __func__);
-					}
+					}*/
 				}
-				node = engine->register_alias[IR_REG_ECX].ir_node;*/
+				/*node = engine->register_alias[IR_REG_ECX].ir_node;*/
 				break;
 			}
 			case IR_REG_CX 	: {
@@ -160,23 +164,25 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				break;
 			}
 			case IR_REG_EDX 	: {
-				/*if (engine->register_alias[IR_REG_DH].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_DH].type)){
+				if (engine->register_alias[IR_REG_DH].ir_node != NULL){
+					printf("WARNING: in %s, opportunity to merge DH to create EDX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_DH].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EDX, engine->register_alias + IR_REG_DH, operand, 32, IR_PART2_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write DH\n", __func__);
-					}
+					}*/
 				}
 				if (engine->register_alias[IR_REG_DL].ir_node != NULL){
-					if (ALIAS_IS_READ(engine->register_alias[IR_REG_DL].type)){
+					printf("WARNING: in %s, opportunity to merge DL to create EDX, not implemented\n", __func__);
+					/*if (ALIAS_IS_READ(engine->register_alias[IR_REG_DL].type)){
 						irImporter_merge_reg_variable(engine->ir, engine->register_alias + IR_REG_EDX, engine->register_alias + IR_REG_DL, operand, 32, IR_PART1_8);
 					}
 					else{
 						printf("WARNING: in %s, partial write DL\n", __func__);
-					}
+					}*/
 				}
-				node = engine->register_alias[IR_REG_EDX].ir_node;*/
+				/*node = engine->register_alias[IR_REG_EDX].ir_node;*/
 				break;
 			}
 			case IR_REG_DX 	: {
