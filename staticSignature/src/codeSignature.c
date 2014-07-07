@@ -127,17 +127,20 @@ uint32_t irNode_get_label(struct node* node){
 	struct irOperation* operation = ir_node_get_operation(node);
 
 	switch (operation->type){
-		case IR_OPERATION_TYPE_INPUT 	: {
+		case IR_OPERATION_TYPE_IN_REG 	: {
 			return IR_INPUT;
 		}
-		case IR_OPERATION_TYPE_OUTPUT 	: {
-			return operation->operation_type.output.opcode;
+		case IR_OPERATION_TYPE_IN_MEM 	: {
+			return IR_INPUT;
 		}
-		case IR_OPERATION_TYPE_INNER 	: {
-			return operation->operation_type.inner.opcode;
+		case IR_OPERATION_TYPE_OUT_MEM 	: {
+			return 0xfffffffd;
+		}
+		case IR_OPERATION_TYPE_INST 	: {
+			return operation->operation_type.inst.opcode;
 		}
 		case IR_OPERATION_TYPE_IMM 		: {
-			return 0xfffffffd;
+			return 0xfffffffe;
 		}
 		default : {
 			printf("ERROR: in %s, this case is not supposed to happen\n", __func__);

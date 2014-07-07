@@ -66,15 +66,6 @@ static inline void traceFragment_printDot_ir(struct traceFragment* frag){
 	}
 }
 
-static inline void traceFragment_print_io(struct traceFragment* frag){
-	if (frag->ir != NULL){
-		ir_print_io(frag->ir);
-	}
-	else{
-		printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
-	}
-}
-
 #define traceFragment_delete(frag) 																								\
 	traceFragment_clean(frag);																									\
 	free(frag);

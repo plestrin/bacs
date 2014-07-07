@@ -11,71 +11,100 @@
 enum irOpcode{
 	IR_ADD 		= 0,
 	IR_AND 		= 1,
-	IR_BSWAP 	= 2,
-	IR_DEC 		= 3, 	/* trace */
-	IR_MOVZX 	= 4,
-	IR_NOT 		= 5,
-	IR_OR 		= 6,
-	IR_PART1_8 	= 7, 	/* specific */
-	IR_PART2_8 	= 8, 	/* specific */
-	IR_PART1_16 = 9, 	/* specific */
-	IR_ROL 		= 10,
-	IR_ROR 		= 11,
-	IR_SAR 		= 12,
-	IR_SHL 		= 13,
-	IR_SHR 		= 14,
-	IR_SUB 		= 15,
-	IR_XOR 		= 16,
-	IR_INPUT 	= 17, 	/* signature */
-	IR_JOKER 	= 18 	/* signature */
+	IR_MOVZX 	= 2,
+	IR_NOT 		= 3,
+	IR_OR 		= 4,
+	IR_PART1_8 	= 5, 	/* specific */
+	IR_PART2_8 	= 6, 	/* specific */
+	IR_PART1_16 = 7, 	/* specific */
+	IR_ROL 		= 8,
+	IR_ROR 		= 9,
+	IR_SAR 		= 10,
+	IR_SHL 		= 11,
+	IR_SHR 		= 12,
+	IR_SUB 		= 13,
+	IR_XOR 		= 14,
+	IR_INPUT 	= 15, 	/* signature */
+	IR_JOKER 	= 16 	/* signature */
 };
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
-enum irOperationType{
-	IR_OPERATION_TYPE_INPUT,
-	IR_OPERATION_TYPE_OUTPUT,
-	IR_OPERATION_TYPE_INNER,
-	IR_OPERATION_TYPE_IMM
+enum irRegister{
+	IR_REG_EAX 	= 0,
+	IR_REG_AX 	= 1,
+	IR_REG_AH 	= 2,
+	IR_REG_AL 	= 3,
+	IR_REG_EBX 	= 4,
+	IR_REG_BX 	= 5,
+	IR_REG_BH 	= 6,
+	IR_REG_BL 	= 7,
+	IR_REG_ECX 	= 8,
+	IR_REG_CX 	= 9,
+	IR_REG_CH 	= 10,
+	IR_REG_CL 	= 11,
+	IR_REG_EDX 	= 12,
+	IR_REG_DX 	= 13,
+	IR_REG_DH 	= 14,
+	IR_REG_DL 	= 15,
+	IR_REG_ESP 	= 16,
+	IR_REG_EBP 	= 17,
+	IR_REG_ESI 	= 18,
+	IR_REG_EDI 	= 19
 };
 
-enum irDependenceType{
+#define NB_IR_REGISTER 20
+
+char* irRegister_2_string(enum irRegister reg);
+uint8_t irRegister_get_size(enum irRegister reg);
+
+enum irOperationType{
+	IR_OPERATION_TYPE_IN_REG,
+	IR_OPERATION_TYPE_IN_MEM,
+	IR_OPERATION_TYPE_OUT_MEM,
+	IR_OPERATION_TYPE_IMM,
+	IR_OPERATION_TYPE_INST
+};
+
+enum irDependenceType{ /* a reprendre */
 	IR_DEPENDENCE_TYPE_DIRECT,
 	IR_DEPENDENCE_TYPE_BASE,
 	IR_DEPENDENCE_TYPE_INDEX,
-	IR_DEPENDENCE_TYPE_DISP
+	IR_DEPENDENCE_TYPE_DISP,
+	IR_DEPENDENCE_TYPE_ADDRESS
 };
 
 struct irOperation{
 	enum irOperationType 		type;
 	union {
 		struct {
-			struct operand* 	operand;
-			struct node* 		next;
-			struct node* 		prev;
-		} 						input;
+			enum irRegister 	reg;
+		} 						in_reg;
 		struct {
-			enum irOpcode 		opcode;
-			struct operand* 	operand;
-			struct node* 		next;
-			struct node* 		prev;
-		} 						output;
+			uint32_t 			order;
+		} 						in_mem;
 		struct {
-			enum irOpcode 		opcode;
-		} 						inner;
+			uint32_t 			order;
+		} 						out_mem;
 		struct {
 			uint8_t 			signe;
 			uint64_t 			value;
 		} 						imm;
+		struct {
+			enum irOpcode 		opcode;
+		} 						inst;
 	} 							operation_type;
 	uint8_t 					size;
 	uint32_t 					data;
+	/* maybe add stuff here */
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
 
 #define ir_imm_operation_get_signed_value(op) 		((int32_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
+
+int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2);
 
 struct irDependence{
 	enum irDependenceType 		type;
@@ -86,25 +115,20 @@ struct irDependence{
 struct ir{
 	struct trace* 				trace;
 	struct graph 				graph;
-	struct node* 				input_linkedList;
-	struct node* 				output_linkedList;
 };
 
 struct ir* ir_create(struct trace* trace);
 int32_t ir_init(struct ir* ir, struct trace* trace);
 
-struct node* ir_add_input(struct ir* ir, struct operand* operand, uint8_t size);
-struct node* ir_add_output(struct ir* ir, enum irOpcode opcode, struct operand* operand, uint8_t size);
+struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg);
+struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
+struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value);
+struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
+
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 
 void ir_remove_node(struct ir* ir, struct node* node);
-
-void ir_convert_output_to_inner(struct ir* ir, struct node* node);
-void ir_convert_inner_to_output(struct ir* ir, struct node* node);
-void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode opcode);
-
-void ir_print_io(struct ir* ir);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 

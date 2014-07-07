@@ -67,7 +67,6 @@ int main(int argc, char** argv){
 	/* ir specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag io", 			"Print IR input and output", 					"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_io)
 	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (usefull for signature)", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 
 	/* code signature specific commands */
@@ -676,33 +675,6 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-	}
-}
-
-void analysis_frag_print_io(struct analysis* analysis, char* arg){
-	uint32_t index;
-	uint32_t start;
-	uint32_t stop;
-	uint32_t i;
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
-	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
-	}
-
-	for (i = start; i < stop; i++){	
-		traceFragment_print_io((struct traceFragment*)array_get(&(analysis->frag_array), i));
 	}
 }
 
