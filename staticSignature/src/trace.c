@@ -125,7 +125,31 @@ void trace_check(struct trace* trace){
 
 	/* Assembly verification */
 	if (trace->nb_instruction != assembly_get_nb_instruction(&(trace->assembly))){
+		struct instructionIterator 	it;
+
 		printf("ERROR: in %s, the number of instruction is different between the trace (%u) and the assembly (%u)\n", __func__, trace->nb_instruction, assembly_get_nb_instruction(&(trace->assembly)));
+		
+		if (assembly_get_instruction(&(trace->assembly), &it, 0)){
+			printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+			return;
+		}
+
+		for (i = 0; i < trace->nb_instruction; i++){
+			if (trace->instructions[i].opcode != xed_decoded_inst_get_iclass(&(it.xedd))){
+				printf("ERROR: in %s, first opcode difference is @ %u: %s (trace) vs %s (assembly)\n", __func__, i, instruction_opcode_2_string(trace->instructions[i].opcode), instruction_opcode_2_string(xed_decoded_inst_get_iclass(&(it.xedd))));
+				break;
+			}
+
+			if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(trace->assembly)) - 1){
+				break;
+			}
+			else{
+				if (assembly_get_next_instruction(&(trace->assembly), &it)){
+					printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+					break;
+				}
+			}
+		}
 	}
 	else{
 		if (assembly_check(&(trace->assembly))){

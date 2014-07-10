@@ -1,7 +1,7 @@
 MISC_DIRECTORY 				:= /home/pierre/Documents/bacs/misc/
 
 CC							:= gcc
-CFLAGS						:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -g
+CFLAGS						:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2
 LDFLAGS						:= -lcrypto
 
 AES_OPENSSL_EXAMPLE_NAME 	:= openssl_aes

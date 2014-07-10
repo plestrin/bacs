@@ -15,7 +15,7 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 	if (op1->type == op2->type && op1->size == op2->size){
 		switch(op1->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
-				return (op1->operation_type.in_reg.reg == op1->operation_type.in_reg.reg);
+				return (op1->operation_type.in_reg.reg == op2->operation_type.in_reg.reg);
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
 				return 1;
@@ -28,7 +28,7 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 				return (op1->operation_type.imm.signe == op2->operation_type.imm.signe && op1->operation_type.imm.value == op2->operation_type.imm.value);
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				return (op1->operation_type.inst.opcode == op1->operation_type.inst.opcode);
+				return (op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
 			}
 		}
 	}
@@ -80,6 +80,7 @@ struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg){
 		operation->type 						= IR_OPERATION_TYPE_IN_REG;
 		operation->operation_type.in_reg.reg 	= reg;
 		operation->size 						= irRegister_get_size(reg);
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -98,6 +99,7 @@ struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, ui
 		operation->type 						= IR_OPERATION_TYPE_IN_MEM;
 		operation->operation_type.in_mem.order 	= order;
 		operation->size 						= size;
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -120,6 +122,7 @@ struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, u
 		operation->type 						= IR_OPERATION_TYPE_OUT_MEM;
 		operation->operation_type.out_mem.order = order;
 		operation->size 						= size;
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_FINAL;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -140,9 +143,10 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 						= IR_OPERATION_TYPE_IMM;
-		operation->size 						= size;
 		operation->operation_type.imm.signe 	= signe;
 		operation->operation_type.imm.value 	= value;
+		operation->size 						= size;
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -159,8 +163,9 @@ struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size){
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 						= IR_OPERATION_TYPE_INST;
-		operation->size 						= size;
 		operation->operation_type.inst.opcode 	= opcode;
+		operation->size 						= size;
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -183,19 +188,42 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 }
 
 void ir_remove_node(struct ir* ir, struct node* node){
-	struct edge* edge_cursor;
-	struct edge* edge_current;
+	struct edge* 	edge_cursor;
+	uint32_t 		nb_parent;
+	struct node** 	parent;
+	uint32_t 		i;
 
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; ){
-		edge_current = edge_cursor;
-		edge_cursor = edge_get_next_dst(edge_cursor);
-
-		if (ir_node_get_operation(edge_get_src(edge_current))->type == IR_OPERATION_TYPE_IMM && edge_get_src(edge_current)->nb_edge_src == 1){
-			graph_remove_node(&(ir->graph), edge_get_src(edge_current));
+	for (edge_cursor = node_get_head_edge_dst(node), nb_parent = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (edge_get_src(edge_cursor)->nb_edge_src == 1)){
+			nb_parent ++;
 		}
 	}
 
-	graph_remove_node(&(ir->graph), node);
+	if (nb_parent != 0){
+		parent = (struct node**)malloc(sizeof(struct node*) * nb_parent);
+		if (parent == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			graph_remove_node(&(ir->graph), node);
+		}
+		else{
+			for (edge_cursor = node_get_head_edge_dst(node), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (edge_get_src(edge_cursor)->nb_edge_src == 1)){
+					parent[i++] = edge_get_src(edge_cursor);
+				}
+			}
+
+			graph_remove_node(&(ir->graph), node);
+
+			for (i = 0; i < nb_parent; i++){
+				ir_remove_node(ir, parent[i]);
+			}
+
+			free(parent);
+		}
+	}
+	else{
+		graph_remove_node(&(ir->graph), node);
+	}
 }
 
 uint8_t irRegister_get_size(enum irRegister reg){

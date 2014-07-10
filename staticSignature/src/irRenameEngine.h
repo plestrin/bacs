@@ -34,4 +34,6 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 
 void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegister reg, struct node* node);
 
+void irRenameEngine_tag_final_node(struct irRenameEngine* engine);
+
 #endif

@@ -32,6 +32,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
 static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg);
 
 static void special_instruction_dec(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
+static void special_instruction_inc(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
 static void special_instruction_lea(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
 static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
 
@@ -51,33 +52,44 @@ int32_t irImporterAsm_import(struct ir* ir){
 
 	for (;;){
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
-			case XED_ICLASS_CMP : {break;}
-			case XED_ICLASS_DEC : {
+			case XED_ICLASS_BSWAP 	: {break;}
+			case XED_ICLASS_CMP 	: {break;}
+			case XED_ICLASS_DEC 	: {
 				special_instruction_dec(&engine, &input_variables, &output_variables, &(it.xedd));
 				break;
 			}
-			case XED_ICLASS_JBE : {break;}
-			case XED_ICLASS_JMP : {break;}
-			case XED_ICLASS_JNB : {break;}
-			case XED_ICLASS_JNZ : {break;}
-			case XED_ICLASS_LEA : {
+			case XED_ICLASS_INC 	: {
+				special_instruction_inc(&engine, &input_variables, &output_variables, &(it.xedd));
+				break;
+			}
+			case XED_ICLASS_JBE 	: {break;}
+			case XED_ICLASS_JL  	: {break;}
+			case XED_ICLASS_JLE 	: {break;}
+			case XED_ICLASS_JMP 	: {break;}
+			case XED_ICLASS_JNB 	: {break;}
+			case XED_ICLASS_JNBE 	: {break;}
+			case XED_ICLASS_JNL 	: {break;}
+			case XED_ICLASS_JNZ 	: {break;}
+			case XED_ICLASS_JZ 		: {break;}
+			case XED_ICLASS_LEA 	: {
 				special_instruction_lea(&engine, &input_variables, &output_variables, &(it.xedd));
 				break;
 			}
-			case XED_ICLASS_MOV : {
+			case XED_ICLASS_MOV 	: {
 				special_instruction_mov(&engine, &input_variables, &output_variables, &(it.xedd));
 				break;
 			}
-			case XED_ICLASS_POP : {
+			case XED_ICLASS_POP 	: {
 				/* a completer */
 				printf("WARNING: in %s, this case is not implemented yet (POP instruction)\n", __func__);
 				break;
 			}
-			case XED_ICLASS_PUSH : {
+			case XED_ICLASS_PUSH 	: {
 				/* a completer */
 				printf("WARNING: in %s, this case is not implemented yet (PUSH instruction)\n", __func__);
 				break;
 			}
+			case XED_ICLASS_TEST 	: {break;}
 			default :{
 				asmInputVariable_fetch(&engine, &input_variables, &(it.xedd));
 				asmOutputVariable_fetch(&engine, &output_variables, &(it.xedd));
@@ -95,6 +107,8 @@ int32_t irImporterAsm_import(struct ir* ir){
 			}
 		}
 	}
+
+	irRenameEngine_tag_final_node(&engine);
 
 	return 0;
 }
@@ -288,7 +302,7 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 								printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 								continue;
 							}
-							mem = ir_add_out_mem(engine->ir, address, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops), irRenameEngine_get_mem_order(engine));
+							mem = ir_add_out_mem(engine->ir, address, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8, irRenameEngine_get_mem_order(engine));
 							if (mem == NULL){
 								printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
 							}
@@ -417,6 +431,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_ADD 	: {return IR_ADD;}
 		case XED_ICLASS_AND 	: {return IR_AND;}
 		case XED_ICLASS_DEC 	: {return IR_SUB;}
+		case XED_ICLASS_INC 	: {return IR_ADD;}
 		case XED_ICLASS_LEA 	: {return IR_ADD;}
 		case XED_ICLASS_MOVZX 	: {return IR_MOVZX;}
 		case XED_ICLASS_NOT 	: {return IR_NOT;}
@@ -467,7 +482,27 @@ static void special_instruction_dec(struct irRenameEngine* engine, struct asmInp
 	asmInputVariable_fetch(engine, input_variables, xedd);
 
 	if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-		input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 8, 0, 1);
+		input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 8, 0, 1); /* size may be tuned to fit DST operand */
+		if (input_variables->variables[input_variables->nb_input] == NULL){
+			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+		}
+		else{
+			input_variables->nb_input ++;
+		}
+	}
+	else{
+		printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
+	}
+
+	asmOutputVariable_fetch(engine, output_variables, xedd);
+	asmInputVariable_build_dependence(engine->ir, input_variables, output_variables);
+}
+
+static void special_instruction_inc(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
+	asmInputVariable_fetch(engine, input_variables, xedd);
+
+	if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
+		input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 8, 0, 1);  /* size may be tuned to fit DST operand */
 		if (input_variables->variables[input_variables->nb_input] == NULL){
 			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 		}

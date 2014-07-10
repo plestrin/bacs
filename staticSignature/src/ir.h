@@ -31,26 +31,26 @@ enum irOpcode{
 char* irOpcode_2_string(enum irOpcode opcode);
 
 enum irRegister{
-	IR_REG_EAX 	= 0,
-	IR_REG_AX 	= 1,
-	IR_REG_AH 	= 2,
-	IR_REG_AL 	= 3,
-	IR_REG_EBX 	= 4,
-	IR_REG_BX 	= 5,
-	IR_REG_BH 	= 6,
-	IR_REG_BL 	= 7,
-	IR_REG_ECX 	= 8,
-	IR_REG_CX 	= 9,
-	IR_REG_CH 	= 10,
-	IR_REG_CL 	= 11,
-	IR_REG_EDX 	= 12,
-	IR_REG_DX 	= 13,
-	IR_REG_DH 	= 14,
-	IR_REG_DL 	= 15,
-	IR_REG_ESP 	= 16,
-	IR_REG_EBP 	= 17,
-	IR_REG_ESI 	= 18,
-	IR_REG_EDI 	= 19
+	IR_REG_EAX 		= 0,
+	IR_REG_AX 		= 1,
+	IR_REG_AH 		= 2,
+	IR_REG_AL 		= 3,
+	IR_REG_EBX 		= 4,
+	IR_REG_BX 		= 5,
+	IR_REG_BH 		= 6,
+	IR_REG_BL 		= 7,
+	IR_REG_ECX 		= 8,
+	IR_REG_CX 		= 9,
+	IR_REG_CH 		= 10,
+	IR_REG_CL 		= 11,
+	IR_REG_EDX 		= 12,
+	IR_REG_DX 		= 13,
+	IR_REG_DH 		= 14,
+	IR_REG_DL 		= 15,
+	IR_REG_ESP 		= 16,
+	IR_REG_EBP 		= 17,
+	IR_REG_ESI 		= 18,
+	IR_REG_EDI 		= 19
 };
 
 #define NB_IR_REGISTER 20
@@ -74,6 +74,9 @@ enum irDependenceType{ /* a reprendre */
 	IR_DEPENDENCE_TYPE_ADDRESS
 };
 
+#define IR_NODE_STATUS_FLAG_NONE 	0x00000000
+#define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
+
 struct irOperation{
 	enum irOperationType 		type;
 	union {
@@ -96,6 +99,7 @@ struct irOperation{
 	} 							operation_type;
 	uint8_t 					size;
 	uint32_t 					data;
+	uint32_t 					status_flag;
 	/* maybe add stuff here */
 } __attribute__((__may_alias__));
 
@@ -126,17 +130,24 @@ struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, u
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
 
+#define ir_convert_node_to_inst(node, opcode_, size_)						\
+	ir_node_get_operation(node)->type = IR_OPERATION_TYPE_INST; 			\
+	ir_node_get_operation(node)->operation_type.inst.opcode = opcode_; 		\
+	ir_node_get_operation(node)->size = size_; 								\
+	ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
+
+
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 
 void ir_remove_node(struct ir* ir, struct node* node);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
-#define ir_clean(ir) 													\
-	graph_clean(&(ir->graph));											\
+#define ir_clean(ir) 														\
+	graph_clean(&(ir->graph));												\
 
-#define ir_delete(ir) 													\
-	ir_clean(ir); 														\
+#define ir_delete(ir) 														\
+	ir_clean(ir); 															\
 	free(ir);
 
 #include "irNormalize.h"
