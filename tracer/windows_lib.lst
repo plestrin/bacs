@@ -5,6 +5,7 @@ C:\Windows\system32\MSVCR110D.dll
 C:\Windows\system32\MSVCR110.dll
 C:\Windows\system32\msvcr110.dll
 C:\Windows\system32\oleaut32.dll
+C:\Windows\system32\OLEAUT32.dll
 C:\Windows\system32\ole32.dll
 C:\Windows\system32\msvcrt.dll
 C:\Windows\system32\GDI32.dll
@@ -22,3 +23,4 @@ C:\Windows\system32\WS2_32.dll
 C:\Windows\system32\NSI.dll
 C:\Windows\system32\uxtheme.dll
 C:\Windows\system32\apphelp.dll
+C:\Windows\system32\ADVAPI32.dll

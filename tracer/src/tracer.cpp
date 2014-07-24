@@ -15,6 +15,11 @@
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
 #define DEFAULT_DYN_OFFSET_VALUE 		"0"
 
+#define TRACER_LOG_READ_MEM_OPERAND 	1
+#define TRACER_LOG_WRITE_MEM_OPERAND	1
+#define TRACER_LOG_READ_REG_OPERAND 	1
+#define TRACER_LOG_WRITE_REG_OPERAND 	1
+
 struct tracer	tracer;
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
@@ -625,6 +630,7 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 					continue;
 				}
 
+				#if TRACER_LOG_READ_REG_OPERAND == 1
 				tmp_reg = INS_MemoryBaseReg(instruction);
 				if (REG_valid(tmp_reg) && pintool_monitor_REG(tmp_reg)){
 					if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
@@ -636,7 +642,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ANALYSIS_SELECTOR_INC_RR(selector);
 					}
 				}
+				#endif
 
+				#if TRACER_LOG_READ_REG_OPERAND == 1
 				tmp_reg = INS_MemoryIndexReg(instruction);
 				if (REG_valid(tmp_reg) && pintool_monitor_REG(tmp_reg)){
 					if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
@@ -648,31 +656,40 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 						ANALYSIS_SELECTOR_INC_RR(selector);
 					}
 				}
+				#endif
 
 				for (i = 0; i < INS_OperandCount(instruction); i++){
 					if (INS_OperandIsMemory(instruction, i)){
+						#if TRACER_LOG_READ_MEM_OPERAND == 1 || TRACER_LOG_WRITE_MEM_OPERAND == 1
 						if (INS_OperandRead(instruction, i)){
+							#if TRACER_LOG_READ_MEM_OPERAND == 1
 							if (ANALYSIS_SELECTOR_GET_MR_COUNT(selector) == ANALYSIS_MAX_OPERAND_MEM_READ){
 								printf("ERROR: in %s, the max number of mem read operand has been reached\n", __func__);
 							}
 							else{
 								ANALYSIS_SELECTOR_INC_MR(selector);
 							}
+							#endif
 						}
 						if (INS_OperandWritten(instruction, i)){
+							#if TRACER_LOG_WRITE_MEM_OPERAND == 1
 							if (ANALYSIS_SELECTOR_GET_MW_COUNT(selector) == ANALYSIS_MAX_OPERAND_MEM_WRITE){
 								printf("ERROR: in %s, the max number of mem write operand has been reached\n", __func__);
 							}
 							else{
 								ANALYSIS_SELECTOR_INC_MW(selector);
 							}
+							#endif
 						}
+						#endif
 					}
 					else if(INS_OperandIsReg(instruction, i)){
+						#if TRACER_LOG_READ_REG_OPERAND == 1 || TRACER_LOG_WRITE_REG_OPERAND == 1
 						tmp_reg = INS_OperandReg(instruction, i);
 
 						if (pintool_monitor_REG(tmp_reg)){
 							if (INS_OperandRead(instruction, i)){
+								#if TRACER_LOG_READ_REG_OPERAND == 1
 								if (ANALYSIS_SELECTOR_GET_RR_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_READ){
 									printf("ERROR: in %s, the max number of reg read operand has been reached\n", __func__);
 								}
@@ -681,8 +698,10 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 									read_register_type[ANALYSIS_SELECTOR_GET_RR_COUNT(selector)] = ANALYSIS_REGISTER_READ_STD;
 									ANALYSIS_SELECTOR_INC_RR(selector);
 								}
+								#endif
 							}
 							if (INS_OperandWritten(instruction, i)){
+								#if TRACER_LOG_WRITE_REG_OPERAND == 1
 								if (ANALYSIS_SELECTOR_GET_RW_COUNT(selector) == ANALYSIS_MAX_OPERAND_REG_WRITE){
 									printf("ERROR: in %s, the max number of reg write operand has been reached\n", __func__);
 								}
@@ -690,8 +709,10 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 									write_reg[ANALYSIS_SELECTOR_GET_RW_COUNT(selector)] = tmp_reg;
 									ANALYSIS_SELECTOR_INC_RW(selector);
 								}
+								#endif
 							}
 						}
+						#endif
 					}
 				}
 

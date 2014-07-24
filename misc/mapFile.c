@@ -1,3 +1,5 @@
+#define _FILE_OFFSET_BITS 64
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -15,6 +17,7 @@ void* mapFile_map(const char* file_name, uint64_t* size){
 	file = open(file_name, O_RDONLY);
 	if (file == -1){
 		printf("ERROR: in %s, unable to open file %s read only\n", __func__, file_name);
+		perror(NULL);
 		return NULL;
 	}
 
