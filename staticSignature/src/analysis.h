@@ -6,7 +6,7 @@
 #include "loop.h"
 #include "trace.h"
 #include "codeSignature.h"
-
+#include "callGraph.h"
 
 struct analysis{
 	struct trace* 					trace;
@@ -15,6 +15,8 @@ struct analysis{
 	struct loopEngine*				loop_engine;
 
 	struct codeSignatureCollection code_signature_collection;
+
+	struct callGraph* 				call_graph;
 
 	struct array					frag_array;
 };
@@ -50,6 +52,10 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
+
+void analysis_call_create(struct analysis* analysis);
+void analysis_call_printDot(struct analysis* analysis);
+void analysis_call_export(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 

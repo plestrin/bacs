@@ -14,11 +14,11 @@
 #include "simpleTraceStat.h"
 
 
-#define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)									\
-	{																									\
+#define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)										\
+	{																													\
 		if (inputParser_add_cmd((parser), (cmd), (cmd_desc), (arg_desc), (type), (arg), (void(*)(void))(func))){		\
-			printf("ERROR: in %s, unable to add cmd: \"%s\" to inputParser\n", __func__, (cmd));		\
-		}																								\
+			printf("ERROR: in %s, unable to add cmd: \"%s\" to inputParser\n", __func__, (cmd));						\
+		}																												\
 	}
 
 int main(int argc, char** argv){
@@ -75,6 +75,11 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_printDot_collection)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_empty_collection)
 
+	/* callGraph specific commands */
+	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot callGraph", 		"Write the call graph in the dot format", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
+
 	inputParser_exe(parser, argc - 1, argv + 1);
 
 	exit:
@@ -114,6 +119,7 @@ struct analysis* analysis_create(){
 	analysis->trace 		= NULL;
 	analysis->code_map 		= NULL;
 	analysis->loop_engine 	= NULL;
+	analysis->call_graph 	= NULL;
 
 	return analysis;
 }
@@ -122,6 +128,11 @@ void analysis_delete(struct analysis* analysis){
 	if (analysis->loop_engine != NULL){
 		loopEngine_delete(analysis->loop_engine);
 		analysis->loop_engine = NULL;
+	}
+
+	if (analysis->call_graph != NULL){
+		callGraph_delete(analysis->call_graph);
+		analysis->call_graph = NULL;
 	}
 
 	analysis_frag_clean(analysis);
@@ -150,6 +161,16 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		printf("WARNING: in %s, deleting previous trace\n", __func__);
 		trace_delete(analysis->trace);
+
+		if (analysis->loop_engine != NULL){
+			loopEngine_delete(analysis->loop_engine);
+			analysis->loop_engine = NULL;
+		}
+
+		if (analysis->call_graph != NULL){
+			callGraph_delete(analysis->call_graph);
+			analysis->call_graph = NULL;
+		}
 	}
 
 	if (analysis->code_map != NULL){
@@ -293,6 +314,7 @@ void analysis_loop_create(struct analysis* analysis, char* arg){
 	if (analysis->loop_engine != NULL){
 		printf("WARNING: in %s, deleting previous loopEngine\n", __func__);
 		loopEngine_delete(analysis->loop_engine);
+		analysis->loop_engine = NULL;
 	}
 
 	if (analysis->trace == NULL){
@@ -301,7 +323,7 @@ void analysis_loop_create(struct analysis* analysis, char* arg){
 	else{
 		analysis->loop_engine = loopEngine_create(analysis->trace);
 		if (analysis->loop_engine == NULL){
-			printf("ERROR: in %s, unable to init loopEngine\n", __func__);
+			printf("ERROR: in %s, unable to create loopEngine\n", __func__);
 			return;
 		}
 
@@ -747,6 +769,52 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		}
 		else{
 			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+		}
+	}
+}
+
+
+/* ===================================================================== */
+/* call graph functions						    	                     */
+/* ===================================================================== */
+
+void analysis_call_create(struct analysis* analysis){
+	if (analysis->call_graph != NULL){
+		printf("WARNING: in %s, deleting previous callGraph\n", __func__);
+		callGraph_delete(analysis->call_graph);
+		analysis->call_graph = NULL;
+	}
+
+	if (analysis->trace == NULL){
+		printf("ERROR: %s, trace is NULL\n", __func__);
+	}
+	else{
+		analysis->call_graph = callGraph_create(analysis->trace);
+		if (analysis->call_graph == NULL){
+			printf("ERROR: in %s, unable to create callGraph\n", __func__);
+		}
+		else if (analysis->code_map != NULL){
+			 callGraph_locate_in_codeMap(analysis->call_graph, analysis->code_map);
+		}
+	}
+}
+
+void analysis_call_printDot(struct analysis* analysis){
+	if (analysis->call_graph == NULL){
+		printf("ERROR: in %s, callGraph is NULL cannot print\n", __func__);
+	}
+	else{
+		callGraph_printDot(analysis->call_graph);
+	}
+}
+
+void analysis_call_export(struct analysis* analysis, char* arg){
+	if (analysis->call_graph == NULL){
+		printf("ERROR: in %s, callGraph is NULL cannot export\n", __func__);
+	}
+	else{
+		if (callGraph_export_inclusive(analysis->call_graph, analysis->trace, &(analysis->frag_array), arg)){
+			printf("ERROR: in %s, unable to export callGraph\n", __func__);
 		}
 	}
 }
