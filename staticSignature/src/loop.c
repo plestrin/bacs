@@ -549,7 +549,7 @@ int32_t loopEngine_export_it(struct loopEngine* engine, struct array* frag_array
 	if (engine->loops != NULL){
 		if (loop_index < engine->nb_loop){
 			if ((uint32_t)iteration_index < engine->loops[loop_index].nb_iteration){
-				traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL);
+				traceFragment_init(&fragment)
 
 				if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[loop_index].offset + engine->loops[loop_index].length * iteration_index, engine->loops[loop_index].length)){
 					printf("ERROR: in %s, unable to extract sub trace\n", __func__);
@@ -597,7 +597,7 @@ int32_t loopEngine_export_all(struct loopEngine* engine, struct array* frag_arra
 
 	if (engine->loops != NULL){
 		for (i = start_index; i < stop_index; i++){
-			traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length);
+			traceFragment_init(&fragment)
 
 			total_length = engine->loops[i].length * engine->loops[i].nb_iteration + engine->loops[i].epilogue;
 			if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[i].offset, total_length)){
@@ -639,7 +639,7 @@ int32_t loopEngine_export_noEp(struct loopEngine* engine, struct array* frag_arr
 
 	if (engine->loops != NULL){
 		for (i = start_index; i < stop_index; i++){
-			traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_LOOP, (void*)engine->loops[i].length);
+			traceFragment_init(&fragment)
 
 			total_length = engine->loops[i].length * engine->loops[i].nb_iteration;
 			if (trace_extract_segment(engine->trace, &(fragment.trace), engine->loops[i].offset, total_length)){

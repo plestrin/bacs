@@ -12,42 +12,25 @@
 
 #define TRACEFRAGMENT_TAG_LENGTH 32
 
-enum fragmentType{
-	TRACEFRAGMENT_TYPE_NONE,
-	TRACEFRAGMENT_TYPE_LOOP
-};
-
 struct traceFragment{
-	char 						tag[TRACEFRAGMENT_TAG_LENGTH];
-	struct trace 				trace;
-	struct ir* 					ir;
-	enum fragmentType 			type;
-	void* 						specific_data;
+	char 			tag[TRACEFRAGMENT_TAG_LENGTH];
+	struct trace 	trace;
+	struct ir* 		ir;
 };
 
-#define traceFragment_init(frag, type_, specific_data_) 																		\
-	(frag)->tag[0]					= '\0'; 																					\
-	(frag)->ir 						= NULL; 																					\
-	(frag)->type 					= type_; 																					\
-	(frag)->specific_data 			= specific_data_;
+#define traceFragment_init(frag) 														\
+	(frag)->tag[0]	= '\0'; 															\
+	(frag)->ir 		= NULL;
 
+#define traceFragment_get_nb_instruction(frag) assembly_get_nb_instruction(&((frag)->trace.assembly))
 
-static inline uint32_t traceFragment_get_nb_instruction(struct traceFragment* frag){
-	return frag->trace.nb_instruction;
-}
-
-double traceFragment_opcode_percent(struct traceFragment* frag, int nb_opcode, uint32_t* opcode, int nb_excluded_opcode, uint32_t* excluded_opcode);
+double traceFragment_opcode_percent(struct traceFragment* frag, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode);
 
 void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm);
-
-static inline void traceFragment_print_instruction(struct traceFragment* frag){
-	trace_print(&(frag->trace), 0, frag->trace.nb_instruction, NULL);
-}
 
 static inline void traceFragment_print_assembly(struct traceFragment* frag){
 	trace_print_asm(&(frag->trace), 0, frag->trace.nb_instruction);
 }
-
 
 static inline void traceFragment_create_ir(struct traceFragment* frag){
 	if (frag->ir != NULL){
@@ -66,8 +49,8 @@ static inline void traceFragment_printDot_ir(struct traceFragment* frag){
 	}
 }
 
-#define traceFragment_delete(frag) 																								\
-	traceFragment_clean(frag);																									\
+#define traceFragment_delete(frag) 														\
+	traceFragment_clean(frag);															\
 	free(frag);
 
 void traceFragment_clean(struct traceFragment* frag);

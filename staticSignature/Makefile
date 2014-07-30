@@ -18,7 +18,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)assembly.o 				\
 					$(BUILD_DIR)analysis.o 				\
 					$(BUILD_DIR)trace.o 				\
-					$(BUILD_DIR)simpleTraceStat.o 		\
 					$(BUILD_DIR)cmReaderJSON.o 			\
 					$(BUILD_DIR)traceFragment.o			\
 					$(BUILD_DIR)loop.o 					\

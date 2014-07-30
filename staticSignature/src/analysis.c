@@ -11,7 +11,6 @@
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "traceFragment.h"
-#include "simpleTraceStat.h"
 
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)										\
@@ -56,10 +55,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_loop_delete)
 
 	/* traceFragement specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag stat", 			"Print stats about the traceFragments", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_stat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag ins", 			"Print instructions of a given traceFragment",  "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_print_ins)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag asm", 			"Print assembly code of a given traceFragment", "Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_print_asm)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag percent", 		"Print some stat about instructions frequency", NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_print_percent)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
@@ -248,7 +244,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	struct traceFragment 	fragment;
 
 	if (analysis->trace != NULL){
-		traceFragment_init(&fragment, TRACEFRAGMENT_TYPE_NONE, NULL);
+		traceFragment_init(&fragment)
 		inputParser_extract_index(arg, &start, &stop);
 		if (trace_extract_segment(analysis->trace, &(fragment.trace), start, stop - start)){
 			printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
@@ -448,82 +444,28 @@ void analysis_loop_delete(struct analysis* analysis){
 /* frag functions						                                 */
 /* ===================================================================== */
 
-void analysis_frag_print_stat(struct analysis* analysis, char* arg){
+void analysis_frag_print(struct analysis* analysis, char* arg){
 	uint32_t 					i;
-	struct simpleTraceStat 		stat;
-	struct multiColumnPrinter* 	printer = NULL;
+	struct multiColumnPrinter* 	printer;
 	uint32_t 					index;
 	struct traceFragment*		fragment;
+	double 						percent;
+	uint32_t 					nb_opcode = 10;
+	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
+	uint32_t 					nb_excluded_opcode = 3;
+	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
 		
 		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
-			#ifdef VERBOSE
-			printf("Print simpleTraceStat for fragment %u (tag: \"%s\", nb fragment: %u)\n", index, fragment->tag, array_get_length(&(analysis->frag_array)));
-			#endif
-			simpleTraceStat_init(&stat);
-			simpleTraceStat_process(&stat, fragment);
-			simpleTraceStat_print(printer, 0, NULL, &stat);
+			traceFragment_print_assembly((struct traceFragment*)array_get(&(analysis->frag_array), index));
+			return;
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
 		}
 	}
-	else{
-		printer = simpleTraceStat_init_MultiColumnPrinter();
-		if (printer != NULL){
-			multiColumnPrinter_print_header(printer);
-
-			for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-				fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
-				simpleTraceStat_init(&stat);
-				simpleTraceStat_process(&stat, fragment);
-				simpleTraceStat_print(printer, i, fragment->tag, &stat);
-			}
-
-			multiColumnPrinter_delete(printer);
-		}
-		else{
-			printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
-		}
-	}
-}
-
-void analysis_frag_print_ins(struct analysis* analysis, char* arg){
-	uint32_t index;
-
-	index = (uint32_t)atoi(arg);	
-	if (index < array_get_length(&(analysis->frag_array))){
-		traceFragment_print_instruction((struct traceFragment*)array_get(&(analysis->frag_array), index));
-	}
-	else{
-		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-	}
-}
-
-void analysis_frag_print_asm(struct analysis* analysis, char* arg){
-	uint32_t index;
-
-	index = (uint32_t)atoi(arg);	
-	if (index < array_get_length(&(analysis->frag_array))){
-		traceFragment_print_assembly((struct traceFragment*)array_get(&(analysis->frag_array), index));
-	}
-	else{
-		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-	}
-}
-
-void analysis_frag_print_percent(struct analysis* analysis){
-	uint32_t 					nb_opcode = 10;
-	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
-	uint32_t 					nb_excluded_opcode = 3;
-	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
-	uint32_t 					i;
-	struct multiColumnPrinter* 	printer;
-	struct traceFragment* 		fragment;
-	double 						percent;
 
 	#ifdef VERBOSE
 	printf("Included opcode(s): ");
@@ -546,25 +488,28 @@ void analysis_frag_print_percent(struct analysis* analysis){
 	}
 	#endif
 
-	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
-		multiColumnPrinter_set_column_size(printer, 1, 24);
-		multiColumnPrinter_set_column_size(printer, 2, 16);
+		multiColumnPrinter_set_column_size(printer, 1, TRACEFRAGMENT_TAG_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 2, 8);
+		multiColumnPrinter_set_column_size(printer, 3, 16);
 
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
-		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT32);
+		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_DOUBLE);
 
 		multiColumnPrinter_set_title(printer, 0, (char*)"Index");
 		multiColumnPrinter_set_title(printer, 1, (char*)"Tag");
-		multiColumnPrinter_set_title(printer, 2, (char*)"Percent (%%)");
+		multiColumnPrinter_set_title(printer, 2, (char*)"# Ins");
+		multiColumnPrinter_set_title(printer, 3, (char*)"Percent (%%)");
 
 		multiColumnPrinter_print_header(printer);
 
 		for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
 			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
 			percent = traceFragment_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-			multiColumnPrinter_print(printer, i, fragment->tag, percent*100, NULL);
+			multiColumnPrinter_print(printer, i, fragment->tag, traceFragment_get_nb_instruction(fragment), percent*100, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);
