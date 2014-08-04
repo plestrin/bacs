@@ -30,19 +30,34 @@ int main(){
 
 		tea_encipher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
 
-		printf("Ciphertext: \t");
+		printf("Ciphertext TEA: ");
 		printBuffer_raw(stdout, ciphertext, size);
 		printf("\n");
 
 		tea_decipher((uint32_t*)ciphertext, (uint64_t)size, key, (uint32_t*)deciphertext);
 		
 		if (memcmp(plaintext, deciphertext, size) == 0){
-			printf("Recovery: \tOK\n");
+			printf("Recovery TEA: \tOK\n");
 		}
 		else{
-			printf("Recovery: \tFAIL\n");
+			printf("Recovery TEA: \tFAIL\n");
 		}
+
+		xtea_encipher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
+
+		printf("Ciphertext XTEA:");
+		printBuffer_raw(stdout, ciphertext, size);
+		printf("\n");
+
+		xtea_decipher((uint32_t*)ciphertext, (uint64_t)size, key, (uint32_t*)deciphertext);
 		
+		if (memcmp(plaintext, deciphertext, size) == 0){
+			printf("Recovery XTEA: \tOK\n");
+		}
+		else{
+			printf("Recovery XTEA: \tFAIL\n");
+		}
+
 		free(plaintext);
 		free(ciphertext);
 		free(deciphertext);

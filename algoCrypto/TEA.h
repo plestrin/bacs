@@ -19,4 +19,7 @@
 void tea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
 void tea_decipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
 
+void xtea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
+void xtea_decipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
+
 #endif

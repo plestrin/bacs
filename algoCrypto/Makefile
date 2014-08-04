@@ -21,7 +21,7 @@ gladman:
 openssl:
 	@ cd $(OPENSSL_DIRECTORY) && $(MAKE)
 
-.PHONY: all clean example tomCrypt cryptopp gladman openssl
+.PHONY: all clean test tomCrypt cryptopp gladman openssl
 
 clean:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE) clean

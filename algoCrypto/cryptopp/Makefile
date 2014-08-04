@@ -2,13 +2,17 @@ CXX								:= g++
 CXXFLAGS						:= -W -Wall -pedantic -Wextra -g
 LDFLAGS							:= -lcryptopp
 
+TEA_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_tea
 AES128_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes128
 AES192_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes192
 AES256_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes256
 MD5_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_md5
 
 
-all: build/$(AES128_CRYPTOPP_EXAMPLE_NAME) build/$(AES192_CRYPTOPP_EXAMPLE_NAME) build/$(AES256_CRYPTOPP_EXAMPLE_NAME) build/$(MD5_CRYPTOPP_EXAMPLE_NAME)
+all: build/$(TEA_CRYPTOPP_EXAMPLE_NAME) build/$(AES128_CRYPTOPP_EXAMPLE_NAME) build/$(AES192_CRYPTOPP_EXAMPLE_NAME) build/$(AES256_CRYPTOPP_EXAMPLE_NAME) build/$(MD5_CRYPTOPP_EXAMPLE_NAME)
+
+build/$(TEA_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_tea.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(AES128_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes128.o
 	$(CXX) -o $@ $^ $(LDFLAGS)

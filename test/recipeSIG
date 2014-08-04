@@ -1,6 +1,5 @@
 # 	[NAME] 			[TYPE] 	[BUILD] 																			[CMD]																		[ANALYSIS ARG] 																																																	[SIGNATURE]
 
-# TEA
 	[TEST_TEA_GO0] 	[sig] 	[make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go0] 			[/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go0]			[load trace traceTEST_TEA_GO0,load code signature ../reference/codeSignature_tea.txt,export trace [986:2426,export trace [8100:9540,create ir,normalize ir,search code signature,exit]							[63:tea_enc,63:tea_dec]
 	[TEST_TEA_GO1] 	[sig] 	[make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go1] 			[/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go1]			[load trace traceTEST_TEA_GO1,load code signature ../reference/codeSignature_tea.txt,export trace [979:1715,export trace [5192:5896,create ir,normalize ir,search code signature,exit]							[63:tea_enc,63:tea_dec]
 	[TEST_TEA_GO2] 	[sig] 	[make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go2] 			[/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go2]			[load trace traceTEST_TEA_GO2,load code signature ../reference/codeSignature_tea.txt,export trace [981:1717,export trace [5199:5903,create ir,normalize ir,search code signature,exit]							[63:tea_enc,63:tea_dec]
