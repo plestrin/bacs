@@ -1450,6 +1450,9 @@ void pintool_instrumentation_trace(TRACE trace, void* arg){
 				}
 			}
 		}
+		else{
+			BBL_InsertCall(basic_block, IPOINT_ANYWHERE, (AFUNPTR)pintool_basic_block_analysis, IARG_UINT32, BLACK_LISTED_ID, IARG_END);
+		}
 	}
 }
 
@@ -1526,6 +1529,12 @@ int pintool_init(const char* trace_dir_name, const char* white_list_file_name, c
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		goto fail;
 	}
+
+	#ifdef __linux__
+	if (codeMap_add_vdso(tracer.code_map, ((whiteList_search(tracer.white_list, "VDSO") == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED))){
+		printf("ERROR: in %s, unable to add VDSO to code map\n", __func__);
+	}
+	#endif
 
 	tracer.trace_buffer->local_offset_ins 	= 0;
 	tracer.trace_buffer->local_offset_op 	= 0;

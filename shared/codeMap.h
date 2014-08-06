@@ -55,9 +55,11 @@ struct cm_routine{
 };
 
 struct codeMap* codeMap_create();
+
 int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name, char white_listed);
 int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name);
 struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name, char white_listed);
+
 int codeMap_check_address(struct codeMap* cm);
 void codeMap_print_JSON(struct codeMap* cm, FILE* file);
 void codeMap_print(struct codeMap* cm, char* str_filter);
@@ -67,6 +69,9 @@ void codeMap_clean_image(struct cm_image* image);
 void codeMap_clean_section(struct cm_section* section);
 void codeMap_clean_routine(struct cm_routine* routine);
 
+#ifdef __linux__
+int codeMap_add_vdso(struct codeMap* cm, char white_listed);
+#endif
 
 int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image);
 int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section);

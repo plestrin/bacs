@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_empty_collection)
 
 	/* callGraph specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"Specify OS", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot callGraph", 		"Write the call graph in the dot format", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_printDot)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
 
@@ -723,7 +723,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 /* call graph functions						    	                     */
 /* ===================================================================== */
 
-void analysis_call_create(struct analysis* analysis){
+void analysis_call_create(struct analysis* analysis, char* arg){
 	if (analysis->call_graph != NULL){
 		printf("WARNING: in %s, deleting previous callGraph\n", __func__);
 		callGraph_delete(analysis->call_graph);
@@ -739,7 +739,15 @@ void analysis_call_create(struct analysis* analysis){
 			printf("ERROR: in %s, unable to create callGraph\n", __func__);
 		}
 		else if (analysis->code_map != NULL){
-			 callGraph_locate_in_codeMap(analysis->call_graph, analysis->code_map);
+			if (!strcmp(arg, "LINUX")){
+				callGraph_locate_in_codeMap_linux(analysis->call_graph, analysis->trace, analysis->code_map);
+			}
+			else if (!strcmp(arg, "WINDOWS")){
+				printf("ERROR: in %s, this feature is not yet implemented\n", __func__);
+			}
+			else{
+				printf("Expected os specifier: {LINUX, WINDOWS}\n");
+			}
 		}
 	}
 }

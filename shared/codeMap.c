@@ -5,6 +5,10 @@
 #include "codeMap.h"
 #include "multiColumn.h"
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
 #ifdef WIN32
 #include "windowsComp.h"
 #endif
@@ -151,6 +155,58 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start
 
 	return routine;
 }
+
+#ifdef __linux__
+int codeMap_add_vdso(struct codeMap* cm, char white_listed){
+	FILE* 		maps_file;
+	char 		file_name[256];
+	char* 		line = NULL;
+	size_t 		length = 0;
+	ssize_t 	read;
+	ADDRESS 	address_start = 0;
+	ADDRESS 	address_stop = 0;
+
+	snprintf(file_name, 256, "/proc/%u/maps", getpid());
+	maps_file = fopen(file_name, "r");
+	if (maps_file == NULL){
+		printf("ERROR: in %s, unable to open file: %s\n", __func__, file_name);
+		return -1;
+	}
+
+	while ((read = getline(&line, &length, maps_file)) != -1) {
+		if (strstr(line, "[vdso]") != NULL && read > 20){
+			address_start = strtoul((const char*)line, NULL, 16);
+			address_stop = strtoul((const char*)(line + 9), NULL, 16);
+			break;
+		}
+	}
+
+	if (line != NULL){
+		free(line);
+	}
+
+	if (address_start == 0 && address_stop == 0){
+		printf("ERROR: in %s, unable to locate VDSO\n", __func__);
+		return -1;
+	}
+
+	if (codeMap_add_image(cm, address_start, address_stop, "VDSO", white_listed)){
+		printf("ERROR: in %s, unable to add VDSO image to code map structure\n", __func__);
+	}
+	else{
+		if (codeMap_add_section(cm, address_start, address_stop, "VDSO")){
+			printf("ERROR: in %s, unable to add section to code map structure\n", __func__);
+		}
+		else{
+			if (codeMap_add_routine(cm, address_start, address_stop, "VDSO", white_listed) == NULL){
+				printf("ERROR: in %s, unable to add routine to code map structure\n", __func__);
+			}
+		}
+	}
+
+	return 0;
+}
+#endif
 
 int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image){
 	struct cm_image* 	new_image;

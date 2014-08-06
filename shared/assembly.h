@@ -12,6 +12,7 @@ struct asmWriter{
 
 #define asmWriter_init(writer) 			(writer)->blockId_generator = 1
 #define asmWrite_get_BlockId(writer) 	(writer)->blockId_generator++
+#define BLACK_LISTED_ID 				0
 
 struct asmBlockHeader{
 	uint32_t 				id;
@@ -29,6 +30,9 @@ struct dynBlock{
 	uint32_t 				instruction_count;
 	struct asmBlock* 		block;
 };
+
+#define dynBlock_is_valid(dyn_block) ((dyn_block)->block != NULL)
+#define dynBlock_set_invalid(dyn_block) (dyn_block)->block = NULL
 
 enum assemblyAllocation{
 	ASSEMBLYALLOCATION_MALLOC,
@@ -52,6 +56,7 @@ struct instructionIterator{
 	uint32_t 				instruction_sub_index;
 	uint32_t 				instruction_offset;
 	uint8_t 				instruction_size;
+	uint8_t 				prev_black_listed;
 	ADDRESS 				instruction_address;
 };
 

@@ -50,7 +50,7 @@ void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
 
-void analysis_call_create(struct analysis* analysis);
+void analysis_call_create(struct analysis* analysis, char* arg);
 void analysis_call_printDot(struct analysis* analysis);
 void analysis_call_export(struct analysis* analysis, char* arg);
 

@@ -281,8 +281,12 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 		return;
 	}
 
+	if (it.prev_black_listed){
+		printf("[...]\n");
+	}
+
 	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
-	printf("%s\n", buffer);
+	printf("0x%08x  %s\n", it.instruction_address, buffer);
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(&(trace->assembly)); i++){
 		if (assembly_get_next_instruction(&(trace->assembly), &it)){
@@ -290,8 +294,12 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 			break;
 		}
 
+		if (it.prev_black_listed){
+			printf("[...]\n");
+		}
+
 		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
-		printf("%s\n", buffer);
+		printf("0x%08x  %s\n", it.instruction_address, buffer);
 	}
 }
 

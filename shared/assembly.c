@@ -50,9 +50,11 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 	uint32_t* 			mapping_id;
 	void* 				mapping_block;
 	uint32_t 			i;
+	uint32_t 			j;
 	struct array 		asmBlock_array;
 	struct asmBlock* 	current_ptr;
 	uint32_t 			current_offset;
+	struct dynBlock* 	dyn_blocks_realloc;
 
 	if (disas.xed_init == 0){
 		xed_tables_init();
@@ -110,44 +112,73 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 		}
 	}
 
-	for (i = 0; i < assembly->nb_dyn_block; i++){
+	for (i = 0, j = 0; i < assembly->nb_dyn_block; i++){
 		uint32_t 			up = array_get_length(&asmBlock_array);
 		uint32_t 			down = 0;
 		uint32_t 			idx;
 		struct asmBlock* 	idx_block;
 
-		current_ptr = NULL;
-		while(down < up){
-			idx  = (up + down) / 2;
-			idx_block = *(struct asmBlock**)array_get(&asmBlock_array, idx);
-			if (mapping_id[i] > idx_block->header.id){
-				down = idx + 1;
+		if (mapping_id[i] != BLACK_LISTED_ID){
+			current_ptr = NULL;
+			while(down < up){
+				idx  = (up + down) / 2;
+				idx_block = *(struct asmBlock**)array_get(&asmBlock_array, idx);
+				if (mapping_id[i] > idx_block->header.id){
+					down = idx + 1;
+				}
+				else if (mapping_id[i] < idx_block->header.id){
+					up = idx;
+				}
+				else{
+					current_ptr = idx_block;
+					break;
+				}
 			}
-			else if (mapping_id[i] < idx_block->header.id){
-				up = idx;
-			}
-			else{
-				current_ptr = idx_block;
+
+			if (current_ptr == NULL){
+				printf("ERROR: in %s, unable to locate asmBlock %u\n", __func__, mapping_id[i]);
 				break;
 			}
-		}
 
-		if (current_ptr == NULL){
-			printf("ERROR: in %s, unable to locate asmBlock %u\n", __func__, mapping_id[i]);
-			break;
+			if (j == 0){
+				assembly->dyn_blocks[j].instruction_count = 0;
+			}
+			else if (dynBlock_is_valid(assembly->dyn_blocks + (j - 1))){
+				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 1].instruction_count + assembly->dyn_blocks[j - 1].block->header.nb_ins;
+			}
+			else if (j > 1){
+				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 2].instruction_count + assembly->dyn_blocks[j - 2].block->header.nb_ins;
+			}
+			else{
+				assembly->dyn_blocks[j].instruction_count = 0;
+			}
+			assembly->dyn_blocks[j].block = current_ptr;
+			j ++;
 		}
-
-		if (i == 0){
-			assembly->dyn_blocks[i].instruction_count = 0;
+		else if (i == 0 || (i != 0 && mapping_id[i - 1] != BLACK_LISTED_ID)){
+			dynBlock_set_invalid(assembly->dyn_blocks + j);
+			j ++;
 		}
-		else{
-			assembly->dyn_blocks[i].instruction_count = assembly->dyn_blocks[i - 1].instruction_count + assembly->dyn_blocks[i - 1].block->header.nb_ins;
-		}
-		assembly->dyn_blocks[i].block = current_ptr;
 	}
 
-	assembly->nb_dyn_instruction = assembly->dyn_blocks[assembly->nb_dyn_block - 1].instruction_count + assembly->dyn_blocks[assembly->nb_dyn_block - 1].block->header.nb_ins;
+	dyn_blocks_realloc = (struct dynBlock*)realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * j);
+	if (dyn_blocks_realloc == NULL){
+		printf("ERROR: in %s, unable to realloc memory\n", __func__);
+	}
+	else{
+		assembly->dyn_blocks = dyn_blocks_realloc;
+		assembly->nb_dyn_block = j;
+	}
 
+	if(dynBlock_is_valid(assembly->dyn_blocks + (assembly->nb_dyn_block - 1))){
+		assembly->nb_dyn_instruction = assembly->dyn_blocks[assembly->nb_dyn_block - 1].instruction_count + assembly->dyn_blocks[assembly->nb_dyn_block - 1].block->header.nb_ins;
+	}
+	else if (assembly->nb_dyn_block > 1){
+		assembly->nb_dyn_instruction = assembly->dyn_blocks[assembly->nb_dyn_block - 2].instruction_count + assembly->dyn_blocks[assembly->nb_dyn_block - 2].block->header.nb_ins;
+	}
+	else{
+		assembly->nb_dyn_instruction = 0;
+	}
 	
 	array_clean(&asmBlock_array);
 	munmap(mapping_id, mapping_size_id);
@@ -165,6 +196,14 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 
 	while(down < up){
 		idx  = (up + down) / 2;
+		if (!dynBlock_is_valid(assembly->dyn_blocks + idx)){
+			if (idx != down){
+				idx --;
+			}
+			else{
+				idx ++;
+			}
+		}
 		if (index >= assembly->dyn_blocks[idx].instruction_count + assembly->dyn_blocks[idx].block->header.nb_ins){
 			down = idx + 1;
 		}
@@ -176,6 +215,12 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 			it->dyn_block_index 		= idx;
 			it->instruction_sub_index 	= index - assembly->dyn_blocks[idx].instruction_count;
 			it->instruction_offset 		= 0;
+			if (it->instruction_sub_index == 0 && idx > 0 && !dynBlock_is_valid(assembly->dyn_blocks + (idx - 1))){
+				it->prev_black_listed = 1;
+			}
+			else{
+				it->prev_black_listed = 0;
+			}
 			found = 1;
 			break;
 		}
@@ -230,10 +275,24 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 
 	if (it->instruction_index + 1 >= assembly->dyn_blocks[it->dyn_block_index].instruction_count + assembly->dyn_blocks[it->dyn_block_index].block->header.nb_ins){
 		if (it->dyn_block_index + 1 < assembly->nb_dyn_block){
-			it->instruction_index 		= it->instruction_index + 1;
-			it->dyn_block_index 		= it->dyn_block_index + 1;
-			it->instruction_sub_index 	= 0;
-			it->instruction_offset 		= 0;
+			if (dynBlock_is_valid(assembly->dyn_blocks + (it->dyn_block_index + 1))){
+				it->instruction_index 		= it->instruction_index + 1;
+				it->dyn_block_index 		= it->dyn_block_index + 1;
+				it->instruction_sub_index 	= 0;
+				it->instruction_offset 		= 0;
+				it->prev_black_listed 		= 0;
+			}
+			else if (it->dyn_block_index + 2 < assembly->nb_dyn_block){
+				it->instruction_index 		= it->instruction_index + 1;
+				it->dyn_block_index 		= it->dyn_block_index + 2;
+				it->instruction_sub_index 	= 0;
+				it->instruction_offset 		= 0;
+				it->prev_black_listed 		= 1;
+			}
+			else{
+				printf("ERROR: in %s, the last instruction has been reached\n", __func__);
+				return -1;
+			}
 		}
 		else{
 			printf("ERROR: in %s, the last instruction has been reached\n", __func__);
@@ -241,9 +300,10 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 		}
 	}
 	else{
-		it->instruction_index += 1;
-		it->instruction_sub_index += 1;
-		it->instruction_offset += it->instruction_size;
+		it->instruction_index 		= it->instruction_index + 1;
+		it->instruction_sub_index 	= it->instruction_sub_index + 1;
+		it->instruction_offset 		= it->instruction_offset + it->instruction_size;
+		it->prev_black_listed		= 0;
 	}
 
 	xed_decoded_inst_zero(&(it->xedd));
@@ -288,8 +348,8 @@ int32_t assembly_check(struct assembly* assembly){
 	int32_t 			result = 0;
 
 	block_offset = 0;
-	block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 	while (block_offset != assembly->mapping_size_block){
+		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
 			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
 			break;
@@ -348,7 +408,6 @@ int32_t assembly_check(struct assembly* assembly){
 
 			next_block:
 			block_offset += sizeof(struct asmBlockHeader) + block->header.size;
-			block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		}
 	}
 
@@ -390,6 +449,14 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	while(down < up){
 		idx_block_start  = (up + down) / 2;
+		if (!dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_start)){
+			if (idx_block_start != down){
+				idx_block_start --;
+			}
+			else{
+				idx_block_start ++;
+			}
+		}
 		if (offset >= assembly_src->dyn_blocks[idx_block_start].instruction_count + assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins){
 			down = idx_block_start + 1;
 		}
@@ -451,6 +518,16 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	while(offset + length >= assembly_src->dyn_blocks[idx_block_stop].instruction_count + assembly_src->dyn_blocks[idx_block_stop].block->header.nb_ins && idx_block_stop < assembly_src->nb_dyn_block){
 		size += assembly_src->dyn_blocks[idx_block_stop].block->header.size;
 		idx_block_stop ++;
+		while (!dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_stop)){
+			idx_block_stop ++;
+		}
+	}
+
+	if (idx_block_stop >= assembly_src->nb_dyn_block){
+		printf("ERROR: in %s, unable to locate the dyn block containing the index %u\n", __func__, offset + length);
+		return -1;
+	}
+	else{
 		possible_new_id = (assembly_src->dyn_blocks[idx_block_stop].block->header.id >= possible_new_id) ? (assembly_src->dyn_blocks[idx_block_stop].block->header.id + 1) : possible_new_id;
 	}
 
@@ -559,32 +636,46 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		struct asmBlock 	compare_block;
 		struct asmBlock** 	result_block;
 
-		assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 1].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 1].block->header.nb_ins;
+		if (dynBlock_is_valid(assembly_src->dyn_blocks + i)){
+			if (dynBlock_is_valid(assembly_dst->dyn_blocks + (i - idx_block_start - 1))){
+				assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 1].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 1].block->header.nb_ins;
+			}
+			else{
+				assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 2].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 2].block->header.nb_ins;
+			}
+			compare_block.header.id 		= assembly_src->dyn_blocks[i].block->header.id;
+			compare_block.header.size 		= assembly_src->dyn_blocks[i].block->header.size;
+			compare_block.header.nb_ins 	= assembly_src->dyn_blocks[i].block->header.nb_ins;
+			compare_block.header.address 	= assembly_src->dyn_blocks[i].block->header.address;
 
-		compare_block.header.id 		= assembly_src->dyn_blocks[i].block->header.id;
-		compare_block.header.size 		= assembly_src->dyn_blocks[i].block->header.size;
-		compare_block.header.nb_ins 	= assembly_src->dyn_blocks[i].block->header.nb_ins;
-		compare_block.header.address 	= assembly_src->dyn_blocks[i].block->header.address;
-
-		result_block = (struct asmBlock**)tsearch(&compare_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
-		if (result_block == NULL){
-			printf("ERROR: in %s, unable to search the bin tree\n", __func__);
-			return -1;
-		}
-		else if (*result_block == &compare_block){
-			new_block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size);
-			memcpy(new_block, assembly_src->dyn_blocks[i].block, sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[i].block->header.size);
-			size += sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[i].block->header.size;
-			*result_block = new_block;
+			result_block = (struct asmBlock**)tsearch(&compare_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
+			if (result_block == NULL){
+				printf("ERROR: in %s, unable to search the bin tree\n", __func__);
+				return -1;
+			}
+			else if (*result_block == &compare_block){
+				new_block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size);
+				memcpy(new_block, assembly_src->dyn_blocks[i].block, sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[i].block->header.size);
+				size += sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[i].block->header.size;
+				*result_block = new_block;
+			}
+			else{
+				new_block = *result_block;
+			}
+			assembly_dst->dyn_blocks[i - idx_block_start].block = new_block;
 		}
 		else{
-			new_block = *result_block;
+			dynBlock_set_invalid(assembly_dst->dyn_blocks + (i - idx_block_start));
 		}
-		assembly_dst->dyn_blocks[i - idx_block_start].block = new_block;
 	}
 
 	if ((idx_block_start != idx_block_stop) && (idx_ins_stop != 0)){
-		assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.size;
+		if (dynBlock_is_valid(assembly_dst->dyn_blocks + (assembly_dst->nb_dyn_block - 2))){
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.size;
+		}
+		else{
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].block->header.size;
+		}
 	}
 
 	tdestroy(bintree_root, assembly_clean_tree_node);
@@ -595,7 +686,9 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 	else if (realloc_mapping != assembly_dst->mapping_block){
 		for (i = 0; i < assembly_dst->nb_dyn_block; i++){
-			assembly_dst->dyn_blocks[i].block = (struct asmBlock*)((char*)realloc_mapping + (uint32_t)((char*)assembly_dst->dyn_blocks[i].block - (char*)assembly_dst->mapping_block));
+			if (dynBlock_is_valid(assembly_dst->dyn_blocks + i)){
+				assembly_dst->dyn_blocks[i].block = (struct asmBlock*)((char*)realloc_mapping + (uint32_t)((char*)assembly_dst->dyn_blocks[i].block - (char*)assembly_dst->mapping_block));
+			}
 		}
 		assembly_dst->mapping_block = realloc_mapping;
 	}

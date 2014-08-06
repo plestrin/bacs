@@ -7,9 +7,9 @@
 #include "codeMap.h"
 
 struct assemblySnippet{
-	ADDRESS 				address_start;
 	uint32_t 				offset;
 	uint32_t 				length;
+	ADDRESS 				expected_next_address;
 	int32_t 				next_snippet_offset;
 	int32_t 				prev_snippet_offset;
 };
@@ -42,7 +42,7 @@ struct callGraph{
 struct callGraph* callGraph_create(struct trace* trace);
 int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace);
 
-void callGraph_locate_in_codeMap(struct callGraph* call_graph, struct codeMap* code_map);
+void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map);
 
 #define callGraph_printDot(call_graph) graphPrintDot_print(&(call_graph->graph), "callGraph.dot", call_graph)
 
