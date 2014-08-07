@@ -2,6 +2,7 @@
 
 import sys
 import subprocess
+import xml.etree.ElementTree as ET
 import history
 from recipe import ioRecipe, sigRecipe
 
@@ -32,17 +33,8 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 	exit()
 
 hist = history.history(HISTORY_FILE_PATH)
-
-try:
-	file = open(file_name, "r")
-	lines= file.readlines()
-	file.close()
-except IOError:
-	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
-	exit()
-
-recipe 			= []
-line_counter 	= 0;
+recipes = []
+nb_desactivated = 0
 
 # VERIFY step
 if action == "TRACE" or action == "ALL":
@@ -53,80 +45,52 @@ if action == "TRACE" or action == "ALL":
 		exit()
 	file.close()
 
-
 # PARSE step
-for line in lines:
-	name 	= None
-	kind 	= None
-	build 	= None
-	cmd 	= None
-	arg 	= None
-	crypto 	= None
+try:
+	tree = ET.parse(file_name)
+	root = tree.getroot()
+	for xml_recipe in root.findall("recipe"):
+		name 	= None
+		kind 	= None
+		build 	= None
+		trace 	= None
+		arg 	= []
+		algo 	= {}
 
-	escap_char_index = line.find('#')
-	if escap_char_index >= 0:
-		line = line[:escap_char_index]
+		name 	= xml_recipe.attrib.get("name")
+		build 	= xml_recipe.find("build").attrib.get("cmd")
+		trace 	= xml_recipe.find("trace").attrib.get("cmd")
 
-	bracket_in = line.find('[')
-	bracket_out = line.find(']')
-	if bracket_in >= 0 and bracket_out > bracket_in:
-		name = line[bracket_in+1:bracket_out].strip()
-		line = line[bracket_out+1:]
+		for xml_arg in xml_recipe.find("search").findall("arg"):
+			arg.append(xml_arg.attrib.get("value"))
+		for xml_algo in xml_recipe.find("result").findall("algo"):
+			algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
 
-		bracket_in = line.find('[')
-		bracket_out = line.find(']')
-		if bracket_in >= 0 and bracket_out > bracket_in:
-			kind = line[bracket_in+1:bracket_out].strip()
-			line = line[bracket_out+1:]
-
-			bracket_in = line.find('[')
-			bracket_out = line.find(']')
-			if bracket_in >= 0 and bracket_out > bracket_in:
-				build = line[bracket_in+1:bracket_out]
-				line = line[bracket_out+1:]
-
-				bracket_in = line.find('[')
-				bracket_out = line.find(']')
-				if bracket_in >= 0 and bracket_out > bracket_in:
-					cmd = line[bracket_in+1:bracket_out]
-					line = line[bracket_out+1:]
-
-					bracket_in = line.find('[')
-					bracket_out = line.find(']')
-					if bracket_in >= 0 and bracket_out > bracket_in:
-						arg = line[bracket_in+1:bracket_out]
-						line = line[bracket_out+1:]
-
-						bracket_in = line.find('[')
-						bracket_out = line.find(']')
-						if bracket_in >= 0 and bracket_out > bracket_in:
-							crypto = line[bracket_in+1:bracket_out]
-							line = line[bracket_out+1:]
-
-	if name != None and kind != None and build != None and cmd != None and arg != None and crypto != None:
-		if kind == "io":
-			recipe.append(ioRecipe(name, build, cmd, arg, crypto))
-		elif kind == "sig":
-			recipe.append(sigRecipe(name, build, cmd, arg, crypto))
+		if xml_recipe.attrib.get("active") == "yes":
+			if xml_recipe.find("result").attrib.get("type") == "sig":
+				recipes.append(sigRecipe(name, build, trace, arg, algo))
+			elif xml_recipe.find("result").attrib.get("type") == "io":
+				recipes.append(ioRecipe(name, build, trace, arg, algo))
+			else:
+				print("ERROR: incorrect result type for recipe: " + name)
 		else:
-			print("ERROR: incorrect recipe type: \"" + kind + "\"")
-	elif name == None and kind == None and build == None and cmd == None and arg == None and crypto == None:
-		pass
-	else:
-		print("ERROR: parsing at line " + str(line_counter) + " " + line)
-
-	line_counter = line_counter + 1
+			nb_desactivated += 1
+except IOError:
+	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
+	exit()
+if nb_desactivated > 0:
+	print("\x1b[35mWARNING: " + str(nb_desactivated) + " desactivated recipe(s)\x1b[0m")
 
 
 # PRINT step
 if action == "PRINT":
-	for r in recipe:
+	for r in recipes:
 		print r
 
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
-	for r in recipe:
+	for r in recipes:
 		r.build_prog(LOG_PATH)
 
 
@@ -142,7 +106,7 @@ if action == "TRACE" or action == "ALL":
 
 # TRACE step
 if action == "TRACE" or action == "ALL":
-	for r in recipe:
+	for r in recipes:
 		r.trace_prog(hist, LOG_PATH, PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, TRACE_PATH)
 
 
@@ -178,7 +142,7 @@ if action == "SEARCH" or action == "ALL":
 
 # SEARCH step
 if action == "SEARCH" or action == "ALL":
-	for r in recipe:
+	for r in recipes:
 		r.search(hist, LOG_PATH)
 
 

@@ -323,6 +323,46 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trac
 	}
 }
 
+void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map){
+	struct node* 				node;
+	struct callGraphNode* 		call_graph_node;
+	int32_t 					snippet_index;
+	struct assemblySnippet* 	snippet;
+	struct instructionIterator 	it;
+	struct cm_routine* 			routine;
+
+	for (node = graph_get_head_node(&(call_graph->graph)); node != NULL; node = node_get_next(node)){
+		call_graph_node = callGraph_node_get_data(node);
+		snippet_index = callGraphNode_get_first_snippet(call_graph, call_graph_node);
+		if (snippet_index < 0){
+			printf("ERROR: in %s, unable to get first snippet for a callGraph node\n", __func__);
+			continue;
+		}
+
+		snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), snippet_index);
+		if (assembly_get_instruction(&(trace->assembly), &it, snippet->offset)){
+			printf("ERROR: in %s, unable to fetch first instructionof snippet\n", __func__);
+			continue;
+		}
+
+		do{
+			routine = codeMap_search_routine(code_map, it.instruction_address);
+
+			if (instructionIterator_get_instruction_index(&it) <  snippet->offset + snippet->length){
+				if (assembly_get_next_instruction(&(trace->assembly), &it)){
+					printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+					break;
+				}
+			}
+			else{
+				break;
+			}
+		}while(routine == NULL || (routine != NULL && !strncmp(routine->name, "unnamedImageEntryPoint", CODEMAP_DEFAULT_NAME_SIZE)));
+
+		call_graph_node->routine = codeMap_search_routine(code_map, it.instruction_address);
+	}
+}
+
 int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* trace, struct array* frag_array, char* name_filter){
 	struct node* 				node;
 	struct callGraphNode* 		call_graph_node;

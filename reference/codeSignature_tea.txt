@@ -1,6 +1,8 @@
 # This file define the following signature(s):
 #	- tea_enc: one round of the TEA encrypt algorithm
-# 	- tea_dec: one roudn of the TEA decrypt algorithm
+# 	- tea_dec: one round of the TEA decrypt algorithm
+#	- xtea_enc: one round of the XTEA encrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
+# 	- xtea_dec: one round of the XTEA decrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
 
 "tea_enc"
 
@@ -62,3 +64,54 @@
 19 (*) [I:2:3] -> 6
 20 (*) [I:2:4] -> 4
 
+"xtea_enc"
+
+# INPUT: 2 [2 frag, 2 frag]
+# OUTPUT: 1 [2 frag]
+
+2 (*) [I:1:2] -> 3 (SHR)
+2 -> 4 (SHL)
+3 -> 5 (XOR)
+4 -> 5
+5 -> 6 (ADD)
+2 -> 6
+7 (*) [I:2:1] -> 10 (XOR)
+6 -> 10
+1 (*) [I:1:1] -> 11 (ADD) [O:1:1]
+10 -> 11
+11 -> 12 (SHR)
+11 -> 13 (SHL)
+12 -> 14 (XOR)
+13 -> 14
+14 -> 15 (ADD)
+11 -> 15
+17 (*) [I:2:2] -> 18 (XOR)
+15 -> 18
+18 -> 19 (ADD) [O:1:2]
+2 -> 19
+
+"xtea_dec"
+
+# INPUT: 2 [2 frag, 2 frag]
+# OUTPUT: 1 [2 frag]
+
+2 (*) [I:1:2] -> 3 (SHR)
+2 -> 4 (SHL)
+3 -> 5 (XOR)
+4 -> 5
+5 -> 6 (ADD)
+2 -> 6
+7 (*) [I:2:1] -> 10 (XOR)
+6 -> 10
+1 (*) [I:1:1] -> 11 (SUB) [O:1:1]
+10 -> 11
+11 -> 12 (SHR)
+11 -> 13 (SHL)
+12 -> 14 (XOR)
+13 -> 14
+14 -> 15 (ADD)
+11 -> 15
+17 (*) [I:2:2] -> 18 (XOR)
+15 -> 18
+18 -> 19 (SUB) [O:1:2]
+2 -> 19

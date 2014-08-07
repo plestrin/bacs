@@ -369,7 +369,7 @@ void codeMap_print(struct codeMap* cm, char* str_filter){
 		if (printer != NULL){
 			multiColumnPrinter_set_column_size(printer, 0, 38);
 			multiColumnPrinter_set_column_size(printer, 1, 7);
-			multiColumnPrinter_set_column_size(printer, 2, 32);
+			multiColumnPrinter_set_column_size(printer, 2, 48);
 			multiColumnPrinter_set_column_size(printer, 3, 10);
 			multiColumnPrinter_set_column_size(printer, 4, 10);
 			multiColumnPrinter_set_column_size(printer, 5, 6);

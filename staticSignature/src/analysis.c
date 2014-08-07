@@ -264,8 +264,8 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 }
 
 void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
-	ADDRESS 	pc;
-	uint32_t 	i;
+	ADDRESS 					pc;
+	struct instructionIterator 	it;
 
 	pc = strtoul((const char*)arg, NULL, 16);
 
@@ -276,10 +276,25 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	#else
 	#error Please specify an architecture {ARCH_32 or ARCH_64}
 	#endif
-	
-	for (i = 0; i < analysis->trace->nb_instruction; i++){
-		if (analysis->trace->instructions[i].pc == pc){
-			printf("\t- Found EIP in trace at offset: %u\n", i);
+
+	if (assembly_get_instruction(&(analysis->trace->assembly), &it, 0)){
+		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+		return;
+	}
+
+	for (;;){
+		if (it.instruction_address == pc){
+			printf("\t- Found EIP in trace at offset: %u\n", it.instruction_index);
+		}
+
+		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(analysis->trace->assembly)) - 1){
+			break;
+		}
+		else{
+			if (assembly_get_next_instruction(&(analysis->trace->assembly), &it)){
+				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+				return;
+			}
 		}
 	}
 }
@@ -743,7 +758,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 				callGraph_locate_in_codeMap_linux(analysis->call_graph, analysis->trace, analysis->code_map);
 			}
 			else if (!strcmp(arg, "WINDOWS")){
-				printf("ERROR: in %s, this feature is not yet implemented\n", __func__);
+				callGraph_locate_in_codeMap_windows(analysis->call_graph, analysis->trace, analysis->code_map);
 			}
 			else{
 				printf("Expected os specifier: {LINUX, WINDOWS}\n");

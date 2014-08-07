@@ -7,16 +7,22 @@ import re
 
 class recipe(object):
 
-	def __init__(self, name, build, cmd, arg, result):
+	def __init__(self, name, build, trace, arg, algo):
 		self.name 	= name
 		self.build 	= build
-		self.cmd 	= cmd
+		self.trace 	= trace
 		self.arg 	= arg
-		self.result = result
+		self.algo 	= algo
 		self.log  	= None
 
 	def __str__(self):
-		return self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.cmd + "\n\t-ARG: " + self.arg + "\n\t-RESULT: " + self.result
+		string = self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.trace + "\n\t-ARG:\n"
+		for i in self.arg:
+			string = string + "\t\t-" + i + "\n"
+		string += "\n\t-PRIMITIVE(S):\n"
+		for i in self.algo:
+			string = string + "\t\t-" + i + ": " + str(self.algo.get(i)) + "\n"
+		return string
 
 	def build_prog(self, log_path):
 		sys.stdout.write("Building " + self.name + " ... ")
@@ -43,8 +49,8 @@ class recipe(object):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 
-		if self.cmd != "":
-			if hist.hasFilesChanged([pin_path, tool_path, white_list_path, self.cmd]):
+		if self.trace != "":
+			if hist.hasFilesChanged([pin_path, tool_path, white_list_path, self.trace]):
 				if self.log == None:
 					self.log = open(log_path + self.name + ".log", "w")
 
@@ -52,7 +58,7 @@ class recipe(object):
 				self.log.flush()
 
 				time_start = time.time()
-				process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.cmd], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+				process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 				process.wait()
 				time_stop = time.time()
 
@@ -160,32 +166,24 @@ class ioRecipe(recipe):
 
 class sigRecipe(recipe):
 
-	def __init__(self, name, build, cmd, arg, result):
-		super(sigRecipe, self).__init__(name, build, cmd, arg, result)
-		self.signature = {}
-
-		signature_list = result.split(',')
-		for i in signature_list:
-			self.signature[i[i.find(':') + 1:].strip()] = int(i[:i.find(':')])
-
-	def __str__(self):
-		string = self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.cmd + "\n\t-ARG: " + self.arg + "\n\t-SIGNATURE(S):\n"
-		for i in self.signature:
-			string = string + "\t\t-" + i + ": " + str(self.signature.get(i)) + "\n"
-		return string
-
-
 	def search(self, hist, log_path):
 		sys.stdout.write("Searching " + self.name + " ... ")
 		sys.stdout.flush()
 
-		codeSignature_file = self.arg[self.arg.find("load code signature") + 20:]
-		codeSignature_file = codeSignature_file[:codeSignature_file.find(",")]
-		trace_dir = self.arg[self.arg.find("load trace") + 11:]
-		trace_dir = trace_dir[:trace_dir.find(",")]
+		signature_file = None
+		trace_dir = None
 
-		condition1 = hist.hasFilesChanged(["./signature", codeSignature_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
-		condition2 = hist.hasStringChanged("signature" + self.name, self.arg)
+		for a in self.arg:
+			if a.startswith("load code signature"):
+				signature_file = a[20:]
+			elif a.startswith("load trace"):
+				trace_dir = a[11:]
+
+		if signature_file != None and trace_dir != None:
+			condition1 = hist.hasFilesChanged(["./signature", signature_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
+		else:
+			condition1 = True
+		condition2 = hist.hasStringChanged("signature" + self.name, str(self.arg))
 
 		if condition1 or condition2:
 			if self.log == None:
@@ -195,7 +193,7 @@ class sigRecipe(recipe):
 			self.log.flush()
 
 			cmd = ["./signature"]
-			cmd.extend(self.arg.split(','))
+			cmd.extend(self.arg)
 
 			time_start = time.time()
 			process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -220,22 +218,22 @@ class sigRecipe(recipe):
 					else:
 						detected_signature[name] = occu
 
-				for i in self.signature:
+				for i in self.algo:
 					if i in detected_signature:
-						nb_expected = self.signature.get(i)
+						nb_expected = self.algo.get(i)
 						nb_detected = detected_signature.get(i)
 
 						if nb_expected < nb_detected:
-							print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/" + str(self.signature.get(i)) + "\x1b[0m")
+							print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
 						elif nb_expected > nb_detected:
-							print("\t" + i + " \x1b[31mFAIL " + str(detected_signature.get(i)) + "/" + str(self.signature.get(i)) + "\x1b[0m")
+							print("\t" + i + " \x1b[31mFAIL " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
 						else:
-							print("\t" + i + " \x1b[32mOK " + str(self.signature.get(i)) + "/" + str(self.signature.get(i)) + "\x1b[0m")
+							print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
 					else:
-						print("\t" + i + " \x1b[31mFAIL 0/" + str(self.signature.get(i)) + "\x1b[0m")
+						print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
 
 				for i in detected_signature:
-					if i not in self.signature:
+					if i not in self.algo:
 						print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/0\x1b[0m")
 
 			else:

@@ -56,6 +56,7 @@ int32_t irImporterAsm_import(struct ir* ir){
 	for (;;){
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
 			case XED_ICLASS_BSWAP 		: {break;}
+			case XED_ICLASS_CALL_NEAR 	: {break;}
 			case XED_ICLASS_CMP 		: {break;}
 			case XED_ICLASS_DEC 		: {
 				special_instruction_dec(&engine, &input_variables, &output_variables, &(it.xedd));
@@ -447,6 +448,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_INC 	: {return IR_ADD;}
 		case XED_ICLASS_LEA 	: {return IR_ADD;}
 		case XED_ICLASS_MOVZX 	: {return IR_MOVZX;}
+		case XED_ICLASS_MUL 	: {return IR_MUL;}
 		case XED_ICLASS_NOT 	: {return IR_NOT;}
 		case XED_ICLASS_OR 		: {return IR_OR;}
 		case XED_ICLASS_ROL 	: {return IR_ROL;}
