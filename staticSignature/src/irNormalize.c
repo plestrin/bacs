@@ -389,31 +389,11 @@ void ir_normalize_propagate_expression(struct ir* ir, uint8_t* modification){
 	}
 }
 
-struct memoryAccessList{
-	struct node* 	address;
-	struct node* 	node;
-};
-
-int32_t compare_address_memoryAccessList(const void* arg1, const void* arg2){
-	struct memoryAccessList* access1 = (struct memoryAccessList*)arg1;
-	struct memoryAccessList* access2 = (struct memoryAccessList*)arg2;
-
-	if (access1->address < access2->address){
-		return -1;
-	}
-	else if (access1->address > access2->address){
-		return 1;
-	}
-	else{
-		return 0;
-	}
-}
-
-int32_t compare_order_memoryAccessList(const void* arg1, const void* arg2){
-	struct memoryAccessList* access1 = (struct memoryAccessList*)arg1;
-	struct memoryAccessList* access2 = (struct memoryAccessList*)arg2;
-	struct irOperation* op1 = ir_node_get_operation(access1->node);
-	struct irOperation* op2 = ir_node_get_operation(access2->node);
+int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
+	struct node* access1 = *(struct node**)arg1;
+	struct node* access2 = *(struct node**)arg2;
+	struct irOperation* op1 = ir_node_get_operation(access1);
+	struct irOperation* op2 = ir_node_get_operation(access2);
 	uint32_t order1;
 	uint32_t order2;
 
@@ -442,11 +422,6 @@ int32_t compare_order_memoryAccessList(const void* arg1, const void* arg2){
 	}
 }
 
-struct memoryAddressList{
-	uint32_t 			offset;
-	uint32_t 			length;
-};
-
 static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t size_dst){
 	if (size_src == 32 && size_dst == 8){
 		return IR_PART1_8;
@@ -458,169 +433,127 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 }
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification){
-	uint32_t 					nb_mem_access;
-	uint32_t 					nb_address;
-	struct node* 				node_cursor;
-	struct edge* 				edge_cursor;
-	struct memoryAccessList* 	access_list;
-	struct memoryAddressList* 	address_list;
-	uint32_t 					i;
-	uint32_t 					j;
+	struct node* 	node_cursor;
+	struct edge* 	edge_cursor;
+	uint32_t 		nb_mem_access;
+	struct node** 	access_list;
+	uint32_t 		i;
 
 	*modification = 0;
 
-	for(node_cursor = graph_get_head_node(&(ir->graph)), nb_mem_access = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_OUT_MEM){
-			nb_mem_access ++;
-		}
-	}
-
-	if (nb_mem_access == 0){
-		return;
-	}
-
-	access_list = (struct memoryAccessList*)malloc(sizeof(struct memoryAccessList) * nb_mem_access);
-	if (access_list == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		return;
-	}
-
-	for(node_cursor = graph_get_head_node(&(ir->graph)), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_OUT_MEM){
-			access_list[i].address = NULL;
-			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-					access_list[i].address = edge_get_src(edge_cursor);
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		if (node_cursor->nb_edge_src > 1){
+			for (edge_cursor = node_get_head_edge_src(node_cursor), nb_mem_access = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS && (ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_OUT_MEM)){
+					nb_mem_access ++;
 				}
 			}
-
-			access_list[i].node = node_cursor;
-			i ++;
-		}
-	}
-
-	qsort(access_list, nb_mem_access, sizeof(struct memoryAccessList), compare_address_memoryAccessList);
-
-	for (i = 1, nb_address = 1; i < nb_mem_access; i++){
-		if (access_list[i].address != access_list[i - 1].address){
-			nb_address ++;
-		}
-	}
-
-	address_list = (struct memoryAddressList*)malloc(sizeof(struct memoryAddressList) * nb_address);
-	if (address_list == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		free(access_list);
-		return;
-	}
-
-	address_list[0].offset = 0;
-	for (i = 1, j = 1; i < nb_mem_access; i++){
-		if (access_list[i].address != access_list[i - 1].address){
-			address_list[j - 1].length = i - address_list[j - 1].offset;
-			address_list[j].offset = i;
-			qsort(access_list + address_list[j - 1].offset, address_list[j - 1].length, sizeof(struct memoryAccessList), compare_order_memoryAccessList);
-			j ++;
-		}
-	}
-	address_list[nb_address - 1].length = nb_mem_access - address_list[nb_address - 1].offset;
-	qsort(access_list + address_list[nb_address - 1].offset, address_list[nb_address - 1].length, sizeof(struct memoryAccessList), compare_order_memoryAccessList);
-
-	for (i = 0; i < nb_address; i++){
-		for (j = 1; j < address_list[i].length; j++){
-			struct memoryAccessList* 	access_prev;
-			struct memoryAccessList* 	access_next;
-			struct irOperation* 		operation_prev;
-			struct irOperation* 		operation_next;
-
-			access_prev = access_list + (address_list[i].offset + j - 1);
-			access_next = access_list + (address_list[i].offset + j);
-
-			operation_prev = ir_node_get_operation(access_prev->node);
-			operation_next = ir_node_get_operation(access_next->node);
-
-			/* STORE -> LOAD */
-			if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
-				struct node* stored_value = NULL;
-
-				for (edge_cursor = node_get_head_edge_dst(access_prev->node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
-						stored_value = edge_get_src(edge_cursor);
-					}
-				}
-
-				if (stored_value != NULL){
-					if (operation_prev->size > operation_next->size){
-						ir_convert_node_to_inst(access_next->node, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size)
-						graph_remove_edge(&(ir->graph), graph_get_edge(access_next->address, access_next->node));
-
-						if (ir_add_dependence(ir, stored_value, access_next->node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
-						}
-
-						memcpy(access_next, access_prev, sizeof(struct memoryAccessList));
-					}
-					else if (operation_prev->size < operation_next->size){
-						printf("WARNING: in %s, simplification of memory access of different size (case STORE -> LOAD)\n", __func__);
-					}
-					else{
-						graph_transfert_src_edge(&(ir->graph), stored_value, access_next->node);
-						ir_remove_node(ir, access_next->node);
-
-						memcpy(access_next, access_prev, sizeof(struct memoryAccessList));
-					}
-					*modification = 1;
+			if (nb_mem_access > 1){
+				access_list = (struct node**)malloc(sizeof(struct node*) * nb_mem_access);
+				if (access_list == NULL){
+					printf("ERROR: in %s, unable to allocate memory\n", __func__);
 					continue;
 				}
-				else{
-					printf("ERROR: in %s, incorrect memory access pattern in STORE -> LOAD\n", __func__);
-				}
-			}
 
-			/* LOAD -> LOAD */
-			if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
-				if (operation_prev->size > operation_next->size){
-					ir_convert_node_to_inst(access_next->node, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size)
-					graph_remove_edge(&(ir->graph), graph_get_edge(access_next->address, access_next->node));
-
-					if (ir_add_dependence(ir, access_prev->node, access_next->node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
-					}
-
-					memcpy(access_next, access_prev, sizeof(struct memoryAccessList));
-				}
-				else if (operation_prev->size < operation_next->size){
-					ir_convert_node_to_inst(access_prev->node, ir_normalize_choose_part_opcode(operation_next->size, operation_prev->size), operation_prev->size)
-					graph_remove_edge(&(ir->graph), graph_get_edge(access_prev->address, access_prev->node));
-
-					if (ir_add_dependence(ir, access_next->node, access_prev->node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
+				for (edge_cursor = node_get_head_edge_src(node_cursor), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS && (ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_OUT_MEM)){
+						access_list[i++] = edge_get_dst(edge_cursor);
 					}
 				}
-				else{
-					graph_transfert_src_edge(&(ir->graph), access_prev->node, access_next->node);
-					ir_remove_node(ir, access_next->node);
 
-					memcpy(access_next, access_prev, sizeof(struct memoryAccessList));
+				qsort(access_list, nb_mem_access, sizeof(struct node*), compare_order_memoryNode);
+
+				for (i = 1; i < nb_mem_access; i++){
+					struct irOperation* 		operation_prev;
+					struct irOperation* 		operation_next;
+
+					operation_prev = ir_node_get_operation(access_list[i - 1]);
+					operation_next = ir_node_get_operation(access_list[i]);
+
+					/* STORE -> LOAD */
+					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
+						struct node* stored_value = NULL;
+
+						for (edge_cursor = node_get_head_edge_dst(access_list[i - 1]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+							if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
+								stored_value = edge_get_src(edge_cursor);
+							}
+						}
+
+						if (stored_value != NULL){
+							if (operation_prev->size > operation_next->size){
+								ir_convert_node_to_inst(access_list[i], ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size)
+								graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
+
+								if (ir_add_dependence(ir, stored_value, access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+									printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
+								}
+
+								access_list[i] = access_list[i - 1];
+							}
+							else if (operation_prev->size < operation_next->size){
+								printf("WARNING: in %s, simplification of memory access of different size (case STORE -> LOAD)\n", __func__);
+							}
+							else{
+								graph_transfert_src_edge(&(ir->graph), stored_value, access_list[i]);
+								ir_remove_node(ir, access_list[i]);
+
+								access_list[i] = access_list[i - 1];
+							}
+							*modification = 1;
+							continue;
+						}
+						else{
+							printf("ERROR: in %s, incorrect memory access pattern in STORE -> LOAD\n", __func__);
+						}
+					}
+
+					/* LOAD -> LOAD */
+					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
+						if (operation_prev->size > operation_next->size){
+							ir_convert_node_to_inst(access_list[i], ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size)
+							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
+
+							if (ir_add_dependence(ir, access_list[i - 1], access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+								printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
+							}
+
+							access_list[i] = access_list[i - 1];
+						}
+						else if (operation_prev->size < operation_next->size){
+							ir_convert_node_to_inst(access_list[i - 1], ir_normalize_choose_part_opcode(operation_next->size, operation_prev->size), operation_prev->size)
+							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i - 1]));
+
+							if (ir_add_dependence(ir, access_list[i], access_list[i - 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+								printf("ERROR: in %s, unable to add new dependance to IR\n", __func__);
+							}
+						}
+						else{
+							graph_transfert_src_edge(&(ir->graph), access_list[i - 1], access_list[i]);
+							ir_remove_node(ir, access_list[i]);
+
+							access_list[i] = access_list[i - 1];
+						}
+						*modification = 1;
+						continue;
+					}
+
+					/* STORE -> STORE */
+					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
+						if (operation_prev->size > operation_next->size){
+							printf("WARNING: in %s, simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))\n", __func__, operation_prev->size, operation_next->size);
+						}
+
+						ir_remove_node(ir, access_list[i - 1]);
+						*modification = 1;
+						continue;
+					}
 				}
-				*modification = 1;
-				continue;
-			}
 
-			/* STORE -> STORE */
-			if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
-				if (operation_prev->size > operation_next->size){
-					printf("WARNING: in %s, simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))\n", __func__, operation_prev->size, operation_next->size);
-				}
-
-				ir_remove_node(ir, access_prev->node);
-				continue;
+				free(access_list);
 			}
 		}
 	}
-
-	free(address_list);
-	free(access_list);
 }
 
 void ir_normalize_detect_rotation(struct ir* ir){
