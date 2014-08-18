@@ -244,11 +244,15 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 					break;
 				}
 				case XED_OPERAND_BASE0 : {
-					/* IGNORE: this is ESP for a tsack instrcution (example: PUSH) */
+					/* IGNORE: this is ESP for a stack instruction (example: PUSH) */
+					break;
+				}
+				case XED_OPERAND_BASE1 : {
+					/* IGNORE: this is ESP for stack instrcution (example: PUSH) */
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -355,7 +359,7 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -459,7 +463,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_XOR 	: {return IR_XOR;}
 		default : {
 			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, instruction_opcode_2_string(xed_opcode));
-			return IR_ADD;
+			return IR_INVALID;
 		}
 	}
 }
@@ -577,7 +581,7 @@ static void special_instruction_lea(struct irRenameEngine* engine, struct asmInp
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -736,7 +740,7 @@ static void special_instruction_mov(struct irRenameEngine* engine, struct asmInp
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -861,7 +865,7 @@ static void special_instruction_pop(struct irRenameEngine* engine, struct asmInp
 						break;
 					}
 					default : {
-						printf("ERROR: in %s, operand type not supported: %s\n", __func__, xed_operand_enum_t2str(op_name));
+						printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
 						break;
 					}
 				}

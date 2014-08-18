@@ -34,7 +34,6 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 
 hist = history.history(HISTORY_FILE_PATH)
 recipes = []
-nb_desactivated = 0
 
 # VERIFY step
 if action == "TRACE" or action == "ALL":
@@ -74,12 +73,10 @@ try:
 			else:
 				print("ERROR: incorrect result type for recipe: " + name)
 		else:
-			nb_desactivated += 1
+			print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
 except IOError:
 	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
 	exit()
-if nb_desactivated > 0:
-	print("\x1b[35mWARNING: " + str(nb_desactivated) + " desactivated recipe(s)\x1b[0m")
 
 
 # PRINT step

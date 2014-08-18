@@ -34,7 +34,7 @@ struct node* graph_add_node_(struct graph* graph){
 	else{
 		node->nb_edge_src 			= 0;
 		node->nb_edge_dst 			= 0;
-		node->next 					= graph->node_linkedList;
+		node->next 					= graph->node_linkedList_head;
 		node->prev 					= NULL;
 		node->src_edge_linkedList 	= NULL;
 		node->dst_edge_linkedList 	= NULL;
@@ -43,8 +43,11 @@ struct node* graph_add_node_(struct graph* graph){
 		if (node->next != NULL){
 			node->next->prev = node;
 		}
+		else{
+			graph->node_linkedList_tail = node;
+		}
 
-		graph->node_linkedList = node;
+		graph->node_linkedList_head = node;
 		graph->nb_node ++;
 	}
 	
@@ -153,13 +156,16 @@ void graph_remove_node(struct graph* graph, struct node* node){
 	}
 
 	if (node->prev == NULL){
-		graph->node_linkedList = node->next;
+		graph->node_linkedList_head = node->next;
 	}
 	else{
 		node->prev->next = node->next;
 	}
 
-	if (node->next != NULL){
+	if (node->next == NULL){
+		graph->node_linkedList_tail = node->prev;
+	}
+	else{
 		node->next->prev = node->prev;
 	}
 

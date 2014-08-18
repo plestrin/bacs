@@ -226,6 +226,16 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	}
 }
 
+void ir_remove_dependence(struct ir* ir, struct edge* edge){
+	struct node* node_src;
+
+	node_src = edge_get_src(edge);
+	graph_remove_edge(&(ir->graph), edge);
+	if (node_src->nb_edge_src == 0 && !(ir_node_get_operation(node_src)->status_flag & IR_NODE_STATUS_FLAG_FINAL)){
+		ir_remove_node(ir, node_src);
+	}
+}
+
 uint8_t irRegister_get_size(enum irRegister reg){
 	switch(reg){
 		case IR_REG_EAX 	: {return 32;}
@@ -339,6 +349,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_XOR 		: {return "xor";}
 		case IR_INPUT 		: {return "input";}
 		case IR_JOKER 		: {return "*";}
+		case IR_INVALID 	: {return "?";}
 	}
 
 	return NULL;
