@@ -10,7 +10,7 @@ from recipe import ioRecipe, sigRecipe
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/pin"
+PIN_PATH 				= "/home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/pin"
 TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
 WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
 MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"

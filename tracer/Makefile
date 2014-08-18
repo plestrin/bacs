@@ -1,4 +1,4 @@
-PIN_ROOT 		:= /home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/
+PIN_ROOT 		:= /home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/
 TOOLS_ROOT 		:= $(PIN_ROOT)source/tools/
 CONFIG_ROOT 	:= $(TOOLS_ROOT)Config/
 KIT 			:= 1
@@ -18,8 +18,8 @@ ADD_DEFINE		:= -DARCH_32
 ifeq ($(OS),Windows_NT)
 	# Add custom code when the time'll come
 else
-    include $(CONFIG_ROOT)/unix.vars
-    include $(CONFIG_ROOT)/makefile.unix.config
+    include $(CONFIG_ROOT)unix.vars
+    include $(CONFIG_ROOT)makefile.unix.config
 endif
 
 
