@@ -16,7 +16,7 @@ int main(){
 	char* 		padded_message;
 	uint32_t 	message_size;
 	uint32_t 	hash[SHA1_HASH_NB_WORD];
-	uint32_t 	expected_hash[SHA1_HASH_NB_WORD] = {0xa49b2446, 0xa02c645b, 0xf419f995, 0xb6709125, 0x3a04a259};
+	uint32_t 	expected_hash[SHA1_HASH_NB_WORD] = {0x46249ba4, 0x5b642ca0, 0x95f919f4, 0x259170b6, 0x59a2043a};
 
 	message_size = strlen(message);
 	padded_message = (char*)malloc(SHA1_DATA_SIZE_TO_NB_BLOCK(message_size) * SHA1_BLOCK_NB_BYTE);

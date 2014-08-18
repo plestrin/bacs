@@ -1,5 +1,13 @@
 #include "SHA1.h"
 
+#ifdef __GNUC__
+#   define SHA1_LOAD_WORD(w)        __builtin_bswap32(w)
+#   define SHA1_STORE_WORD(w)       __builtin_bswap32(w)
+#else
+#   define SHA1_LOAD_WORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#   define SHA1_STORE_WORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#endif
+
 #define F0(x, y, z) (((x) & (y)) | ((~(x)) & (z)))
 #define F1(x, y, z) ((x) ^ (y) ^ (z))
 #define F2(x, y, z) (((x) & (y)) | ((x) & (z)) | ((y) & (z)))
@@ -40,18 +48,18 @@ void sha1(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	nb_block = (uint32_t)SHA1_DATA_SIZE_TO_NB_BLOCK(data_length);
 
 	/* Padding - no padding for reference implementation */
-	*((char*)data + data_length) = (char)0x80;
+	*((uint8_t*)data + data_length) = (uint8_t)0x80;
 	for (i = 1; (data_length + i)%SHA1_BLOCK_NB_BYTE != 56; i++){
-		*((char*)data + data_length + i) = 0x00;
+		*((uint8_t*)data + data_length + i) = 0x00;
 	}
-	*((char*)data + data_length + i + 0) = data_length >> 53;
-	*((char*)data + data_length + i + 1) = data_length >> 45;
-	*((char*)data + data_length + i + 2) = data_length >> 37;
-	*((char*)data + data_length + i + 3) = data_length >> 29;
-	*((char*)data + data_length + i + 4) = data_length >> 21;
-	*((char*)data + data_length + i + 5) = data_length >> 13;
-	*((char*)data + data_length + i + 6) = data_length >> 5;
-	*((char*)data + data_length + i + 7) = data_length << 3;
+	*((uint8_t*)data + data_length + i + 0) = (uint8_t)(data_length >> 53);
+	*((uint8_t*)data + data_length + i + 1) = (uint8_t)(data_length >> 45);
+	*((uint8_t*)data + data_length + i + 2) = (uint8_t)(data_length >> 37);
+	*((uint8_t*)data + data_length + i + 3) = (uint8_t)(data_length >> 29);
+	*((uint8_t*)data + data_length + i + 4) = (uint8_t)(data_length >> 21);
+	*((uint8_t*)data + data_length + i + 5) = (uint8_t)(data_length >> 13);
+	*((uint8_t*)data + data_length + i + 6) = (uint8_t)(data_length >> 5);
+	*((uint8_t*)data + data_length + i + 7) = (uint8_t)(data_length << 3);
 
 	#else
 
@@ -60,12 +68,22 @@ void sha1(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	#endif
 
 	for (i = 0; i < nb_block; i++){
-		for(j = 0; j < 16; j++){
-			w[j]  = (data[i*16 + j] & 0x000000ff) << 24;
-			w[j] |= (data[i*16 + j] & 0x0000ff00) << 8;
-			w[j] |= (data[i*16 + j] & 0x00ff0000) >> 8;
-			w[j] |= (data[i*16 + j] & 0xff000000) >> 24;
-		}
+		w[0 ] = SHA1_LOAD_WORD(data[i*16 + 0 ]);
+		w[1 ] = SHA1_LOAD_WORD(data[i*16 + 1 ]);
+		w[2 ] = SHA1_LOAD_WORD(data[i*16 + 2 ]);
+		w[3 ] = SHA1_LOAD_WORD(data[i*16 + 3 ]);
+		w[4 ] = SHA1_LOAD_WORD(data[i*16 + 4 ]);
+		w[5 ] = SHA1_LOAD_WORD(data[i*16 + 5 ]);
+		w[6 ] = SHA1_LOAD_WORD(data[i*16 + 6 ]);
+		w[7 ] = SHA1_LOAD_WORD(data[i*16 + 7 ]);
+		w[8 ] = SHA1_LOAD_WORD(data[i*16 + 8 ]);
+		w[9 ] = SHA1_LOAD_WORD(data[i*16 + 9 ]);
+		w[10] = SHA1_LOAD_WORD(data[i*16 + 10]);
+		w[11] = SHA1_LOAD_WORD(data[i*16 + 11]);
+		w[12] = SHA1_LOAD_WORD(data[i*16 + 12]);
+		w[13] = SHA1_LOAD_WORD(data[i*16 + 13]);
+		w[14] = SHA1_LOAD_WORD(data[i*16 + 14]);
+		w[15] = SHA1_LOAD_WORD(data[i*16 + 15]);
 
 		for(j = 16; j < 80; j++){
 			w[j] = ROTATE_LEFT(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
@@ -119,9 +137,9 @@ void sha1(uint32_t* data, uint64_t data_length, uint32_t* hash){
 		h4 += e;
 	}
 
-	hash[0] = h0;
-	hash[1] = h1;
-	hash[2] = h2;
-	hash[3] = h3;
-	hash[4] = h4;
+	hash[0] = SHA1_STORE_WORD(h0);
+	hash[1] = SHA1_STORE_WORD(h1);
+	hash[2] = SHA1_STORE_WORD(h2);
+	hash[3] = SHA1_STORE_WORD(h3);
+	hash[4] = SHA1_STORE_WORD(h4);
 }
