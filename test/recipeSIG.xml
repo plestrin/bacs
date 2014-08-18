@@ -945,7 +945,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_AES" active="yes"> <!--  I don't know why but 4 additionnal signature for aes encryption {128, 192 and 256} -->
+	<recipe name="TOM_AES" active="yes"> <!--  I don't know why but 4 additionnal signatures for AES encryption {128, 192 and 256} are detected. It may be due to the last round... -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes"/>
 		<search>

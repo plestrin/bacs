@@ -1,13 +1,16 @@
 MISC_DIRECTORY 				:= /home/pierre/Documents/bacs/misc/
-CC							:= gcc
-CFLAGS 						:= -W -Wall -pedantic -Wextra -g -std=c99
-LDFLAGS						:=
+GCC_CC						:= gcc
+GCC_CFLAGS 					:= -W -Wall -pedantic -Wextra  -std=c99 -std=c99
+CLANG_CC 					:= clang
+CLANG_CFLAGS 				:= -pedantic -Weverything -Wno-cast-align -Wno-newline-eof -Wno-unused-macros
 
 AES_NAME 					:= glad_aes
 PROGRAM_VERSIONS 			:= v0 v1 v2 v3 v4 v5
-PROGRAM_NAMES 				:= $(foreach version,$(PROGRAM_VERSIONS),build/$(AES_NAME)_$(version))
-VARIABLE_OBJECTS 			:= glad_aes.o aeskey.o aestab.o aescrypt.o aes_modes.o
-MISC_OBJECTS 				:= multiColumn.o printBuffer.o
+GCC_OPTIMIZATION_LEVEL 		:= 0 1 2 3 s
+CLANG_OPTIMIZATION_LEVEL 	:= 0 1 2 3 z
+PROGRAM_NAMES 				:= $(foreach optim, $(GCC_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),build/$(AES_NAME)_$(version)_go$(optim))) $(foreach optim, $(CLANG_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),build/$(AES_NAME)_$(version)_co$(optim)))
+VARIABLE_OBJECTS 			:= glad_aes aeskey aestab aescrypt aes_modes
+MISC_OBJECTS 				:= multiColumn printBuffer
 
 v0_DEFINE 					:=
 v1_DEFINE					:= -DENC_UNROLL=PARTIAL -DDEC_UNROLL=PARTIAL
@@ -18,22 +21,61 @@ v5_DEFINE					:= -DNO_FIXED_TABLES
 
 
 define PROGRAM_template
-build/$$(AES_NAME)_$(1): $$(foreach obj,$$(VARIABLE_OBJECTS),build/$$(obj)$(1)) $$(foreach obj,$$(MISC_OBJECTS),build/$$(obj))
-	$$(CC) -o $$@ $$^ $$(LDFLAGS)
+ifeq ($(2),g)
+build/$$(AES_NAME)_$(1)_$(2)o$(3): $$(foreach obj,$$(VARIABLE_OBJECTS),build/$$(obj).$(1)$(2)o$(3)) $$(foreach obj,$$(MISC_OBJECTS),build/$$(obj).$(2)o$(3))
+	$$(GCC_CC) -o $$@ $$^
 
-build/%.o$(1): src/%.c
-	$(CC) -o $$@ -c $$< $$(CFLAGS) -I$$(MISC_DIRECTORY) -I../ -I./lib/ $$($(1)_DEFINE)
+build/%.$(1)$(2)o$(3): src/%.c
+	$(GCC_CC) -o $$@ -c $$< $$(GCC_CFLAGS) -O$(3) -I$$(MISC_DIRECTORY) -I../ -I./lib/ $$($(1)_DEFINE)
 
-build/%.o$(1): lib/%.c
-	$(CC) -o $$@ -c $$< $$(CFLAGS) $$($(1)_DEFINE)
+build/%.$(1)$(2)o$(3): lib/%.c
+	$(GCC_CC) -o $$@ -c $$< $$(GCC_CFLAGS) -O$(3) $$($(1)_DEFINE)
+else
+build/$$(AES_NAME)_$(1)_$(2)o$(3): $$(foreach obj,$$(VARIABLE_OBJECTS),build/$$(obj).$(1)$(2)o$(3)) $$(foreach obj,$$(MISC_OBJECTS),build/$$(obj).$(2)o$(3))
+	$$(CLANG_CC) -o $$@ $$^
+
+build/%.$(1)$(2)o$(3): src/%.c
+	$(CLANG_CC) -o $$@ -c $$< $$(CLANG_CFLAGS) -O$(3) -I$$(MISC_DIRECTORY) -I../ -I./lib/ $$($(1)_DEFINE)
+
+build/%.$(1)$(2)o$(3): lib/%.c
+	$(CLANG_CC) -o $$@ -c $$< $$(CLANG_CFLAGS) -O$(3) $$($(1)_DEFINE)
+endif
 endef
 
 all: $(PROGRAM_NAMES)
 
-$(foreach version,$(PROGRAM_VERSIONS),$(eval $(call PROGRAM_template,$(version))))
+$(foreach optim, $(GCC_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),$(eval $(call PROGRAM_template,$(version),g,$(optim)))))
+$(foreach optim, $(CLANG_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),$(eval $(call PROGRAM_template,$(version),c,$(optim)))))
 
-build/%.o: $(MISC_DIRECTORY)/%.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+build/%.go0: $(MISC_DIRECTORY)%.c
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O0
+
+build/%.go1: $(MISC_DIRECTORY)%.c
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O1
+
+build/%.go2: $(MISC_DIRECTORY)%.c
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O2
+
+build/%.go3: $(MISC_DIRECTORY)%.c
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O3
+
+build/%.gos: $(MISC_DIRECTORY)%.c
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -Os
+
+build/%.co0: $(MISC_DIRECTORY)%.c
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O0
+
+build/%.co1: $(MISC_DIRECTORY)%.c
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O1
+
+build/%.co2: $(MISC_DIRECTORY)%.c
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O2
+
+build/%.co3: $(MISC_DIRECTORY)%.c
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O3
+
+build/%.coz: $(MISC_DIRECTORY)%.c
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -Oz
 
 clean:
 	@ rm -f build/*
