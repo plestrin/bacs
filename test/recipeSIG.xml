@@ -945,15 +945,129 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_AES" active="yes"> <!--  I don't know why but 4 additionnal signatures for AES encryption {128, 192 and 256} are detected. It may be due to the last round... -->
+	<recipe name="TOM_AES" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes"/>
 		<search>
 			<arg value="load trace traceTOM_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
-			<arg value="create callGraph WINDOWS"/>
+			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rijndael_ecb_encrypt"/>
 			<arg value="export callGraph rijndael_ecb_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="276"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO2" active="yes"> <!-- Missing detection for AES 256 encryption -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO3" active="yes"> <!-- Missing detection for AES 256 encryption -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO0" active="yes"> <!-- Doesn't work -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -964,11 +1078,573 @@
 		</result>
 	</recipe>
 
-<!--
-#	[GLAD_AES_V1] 	[sig] 	[make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1] 		[/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1]			[load trace traceGLAD_AES_V1,load code signature ../reference/codeSignature_aes.txt,export trace [6171:7109,export trace [9019:9957,export trace [11864:13010,export trace [15098:16244,export trace [18612:19966,export trace [22435:23789,create ir,normalize ir,search code signature,exit] 						[264:aes_t4]
-#	[GLAD_AES_V2] 	[sig] 	[make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2] 		[/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2]			[load trace traceGLAD_AES_V2,load code signature ../reference/codeSignature_aes.txt,export trace [6322:7366,export trace [10587:11631,export trace [13838:15114,export trace [18945:20221,export trace [22770:24278,export trace [28354:29862,create ir,normalize ir,search code signature,exit] 						[264:aes_t4]
+	<recipe name="GLAD_AES_V0_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
 
--->
+	<recipe name="GLAD_AES_V0_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
 
+	<recipe name="GLAD_AES_V0_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
 
+	<recipe name="GLAD_AES_V0_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WD" active="yes"> <!-- Doesn't work -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V0_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V0_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO0" active="yes"> <!-- Doesn't work -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="264"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WD" active="yes"> <!-- Doesn't work -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V1_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V1_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO0" active="yes"> <!-- Doesn't work -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="264"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WD" active="yes"> <!-- Doesn't work -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V2_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="export callGraph aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V2_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph aes_ecb_encrypt"/>
+			<arg value="export callGraph aes_ecb_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="288"/>
+		</result>
+	</recipe>
 </xml>
