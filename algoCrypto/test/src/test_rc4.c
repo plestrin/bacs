@@ -23,24 +23,23 @@ int main(){
 	deciphertext = (char*)malloc(plaintext_length);
 
 	if (ciphertext != NULL && deciphertext != NULL){
-		printf("Plaintext: \t%s\n", plaintext);
-		printf("Key: \t\t%s\n", key);
+		printf("Plaintext:  \"%s\"\n", plaintext);
+		printf("Key:        \"%s\"\n", key);
 
 		rc4((uint8_t*)plaintext, plaintext_length, (uint8_t*)key, key_length, (uint8_t*)ciphertext);
 
-		printf("Ciphertext: \t");
+		printf("Ciphertext: ");
 		printBuffer_raw(stdout, ciphertext, plaintext_length);
 		printf("\n");
 
 		rc4((uint8_t*)ciphertext, plaintext_length, (uint8_t*)key, key_length, (uint8_t*)deciphertext);
 
 		if (memcmp(plaintext, deciphertext, plaintext_length) == 0){
-			printf("Recovery: \tOK\n");
+			printf("Check:      OK\n");
 		}
 		else{
-			printf("Recovery: \tFAIL\n");
+			printf("Check:      FAIL\n");
 		}
-
 
 		free(ciphertext);
 		free(deciphertext);
@@ -48,7 +47,6 @@ int main(){
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
-
 
 	return 0;
 }
