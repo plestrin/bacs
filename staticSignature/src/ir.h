@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-#include "instruction.h"
 #include "trace.h"
 #include "graph.h"
 #include "graphPrintDot.h"
@@ -11,23 +10,24 @@
 enum irOpcode{
 	IR_ADD 		= 0,
 	IR_AND 		= 1,
-	IR_MOVZX 	= 2,
-	IR_MUL 		= 3,
-	IR_NOT 		= 4,
-	IR_OR 		= 5,
-	IR_PART1_8 	= 6, 	/* specific */
-	IR_PART2_8 	= 7, 	/* specific */
-	IR_PART1_16 = 8, 	/* specific */
-	IR_ROL 		= 9,
-	IR_ROR 		= 10,
-	IR_SAR 		= 11,
-	IR_SHL 		= 12,
-	IR_SHR 		= 13,
-	IR_SUB 		= 14,
-	IR_XOR 		= 15,
-	IR_INPUT 	= 16, 	/* signature */
-	IR_JOKER 	= 17, 	/* signature */
-	IR_INVALID 	= 18 	/* specific */
+	IR_DIV 		= 2,
+	IR_MOVZX 	= 3,
+	IR_MUL 		= 4,
+	IR_NOT 		= 5,
+	IR_OR 		= 6,
+	IR_PART1_8 	= 7, 	/* specific */
+	IR_PART2_8 	= 8, 	/* specific */
+	IR_PART1_16 = 9, 	/* specific */
+	IR_ROL 		= 10,
+	IR_ROR 		= 11,
+	IR_SAR 		= 12,
+	IR_SHL 		= 13,
+	IR_SHR 		= 14,
+	IR_SUB 		= 15,
+	IR_XOR 		= 16,
+	IR_INPUT 	= 17, 	/* signature */
+	IR_JOKER 	= 18, 	/* signature */
+	IR_INVALID 	= 19 	/* specific */
 };
 
 char* irOpcode_2_string(enum irOpcode opcode);
@@ -112,7 +112,7 @@ struct irOperation{
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
 #define irOperation_is_index_set(operation) (operation->index >= IR_NODE_INDEX_FIRST)
 
-#define ir_imm_operation_get_signed_value(op) 		((int32_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))))
+#define ir_imm_operation_get_signed_value(op) 		((int64_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
 
 int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2);

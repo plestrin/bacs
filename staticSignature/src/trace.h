@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "instruction.h"
-#include "multiColumn.h"
 #include "assembly.h"
 
 enum traceAllocation{
@@ -34,9 +33,7 @@ int32_t trace_init(struct trace* trace, const char* directory_path);
 
 void trace_check(struct trace* trace);
 
-struct multiColumnPrinter* trace_create_multiColumnPrinter();
-void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct multiColumnPrinter* printer);
-void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop);
+void trace_print(struct trace* trace, uint32_t start, uint32_t stop);
 
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
 

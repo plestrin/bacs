@@ -5,9 +5,7 @@
 #include <string.h>
 
 #include "codeMap.h"
-#include "instruction.h"
 #include "ir.h"
-#include "array.h"
 #include "trace.h"
 
 #define TRACEFRAGMENT_TAG_LENGTH 32
@@ -29,7 +27,7 @@ double traceFragment_opcode_percent(struct traceFragment* frag, uint32_t nb_opco
 void traceFragment_print_location(struct traceFragment* frag, struct codeMap* cm);
 
 static inline void traceFragment_print_assembly(struct traceFragment* frag){
-	trace_print_asm(&(frag->trace), 0, frag->trace.nb_instruction);
+	trace_print(&(frag->trace), 0, frag->trace.nb_instruction);
 }
 
 static inline void traceFragment_create_ir(struct traceFragment* frag){

@@ -80,6 +80,9 @@ void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct no
 	graph_transfert_src_edge(graph, node1, node2); 																								\
 	graph_transfert_dst_edge(graph, node1, node2);
 
+int32_t graph_copy_src_edge(struct graph* graph, struct node* node1, struct node* node2);
+int32_t graph_copy_dst_edge(struct graph* graph, struct node* node1, struct node* node2);
+
 void graph_remove_node(struct graph* graph, struct node* node);
 
 #define graph_get_head_node(graph) 		((graph)->node_linkedList_head)

@@ -1,0 +1,22 @@
+# This file define the following signature(s):
+#	- rc4_prga: pseudo random generation of 1 byte
+
+"rc4_prga"
+
+# INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+
+
+1 (*) [I:1:1] -> 2 (ADD)
+2 -> 3 (INPUT)
+4 (*) [I:2:1] -> 5 (ADD)
+3 -> 5
+5 -> 6 (INPUT)
+6 -> 7 (ADD)
+3 -> 7
+7 -> 8 (INPUT)
+8 -> 9 (XOR) [O:1:1]
+10 (INPUT) [I:3:1] -> 9
+11 (*) [I:4:1] -> 2
+11 -> 5
+11 -> 7

@@ -252,7 +252,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -359,7 +359,7 @@ static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOut
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -448,6 +448,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 	switch (xed_opcode){
 		case XED_ICLASS_ADD 	: {return IR_ADD;}
 		case XED_ICLASS_AND 	: {return IR_AND;}
+		case XED_ICLASS_DIV		: {return IR_DIV;}
 		case XED_ICLASS_DEC 	: {return IR_SUB;}
 		case XED_ICLASS_INC 	: {return IR_ADD;}
 		case XED_ICLASS_LEA 	: {return IR_ADD;}
@@ -462,7 +463,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SUB 	: {return IR_SUB;}
 		case XED_ICLASS_XOR 	: {return IR_XOR;}
 		default : {
-			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, instruction_opcode_2_string(xed_opcode));
+			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
 			return IR_INVALID;
 		}
 	}
@@ -581,7 +582,7 @@ static void special_instruction_lea(struct irRenameEngine* engine, struct asmInp
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -740,7 +741,7 @@ static void special_instruction_mov(struct irRenameEngine* engine, struct asmInp
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
+					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
@@ -865,7 +866,7 @@ static void special_instruction_pop(struct irRenameEngine* engine, struct asmInp
 						break;
 					}
 					default : {
-						printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), instruction_opcode_2_string(xed_decoded_inst_get_iclass(xedd)));
+						printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 						break;
 					}
 				}

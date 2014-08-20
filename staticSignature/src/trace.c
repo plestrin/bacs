@@ -90,7 +90,7 @@ void trace_check(struct trace* trace){
 	for (i = 0, expected_offset = 0; i < trace->nb_instruction; i++){
 		if (trace->instructions[i].nb_operand != 0){
 			if (trace->instructions[i].operand_offset != expected_offset){
-				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u - (previous instruction nb operand(s): %u, opcode: %s, offset: %u)\n", __func__, i, expected_offset, trace->instructions[i].operand_offset, trace->instructions[i - 1].nb_operand, instruction_opcode_2_string(trace->instructions[i - 1].opcode), trace->instructions[i - 1].operand_offset);
+				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u - (previous instruction nb operand(s): %u, opcode: %s, offset: %u)\n", __func__, i, expected_offset, trace->instructions[i].operand_offset, trace->instructions[i - 1].nb_operand, xed_iclass_enum_t2str(trace->instructions[i - 1].opcode), trace->instructions[i - 1].operand_offset);
 			}
 			expected_offset = trace->instructions[i].operand_offset + trace->instructions[i].nb_operand;
 			if (expected_offset * sizeof(struct operand) > trace->alloc_size_op){
@@ -136,7 +136,7 @@ void trace_check(struct trace* trace){
 
 		for (i = 0; i < trace->nb_instruction; i++){
 			if (trace->instructions[i].opcode != xed_decoded_inst_get_iclass(&(it.xedd))){
-				printf("ERROR: in %s, first opcode difference is @ %u: %s (trace) vs %s (assembly)\n", __func__, i, instruction_opcode_2_string(trace->instructions[i].opcode), instruction_opcode_2_string(xed_decoded_inst_get_iclass(&(it.xedd))));
+				printf("ERROR: in %s, first opcode difference is @ %u: %s (trace) vs %s (assembly)\n", __func__, i, xed_iclass_enum_t2str(trace->instructions[i].opcode), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it.xedd))));
 				break;
 			}
 
@@ -158,123 +158,10 @@ void trace_check(struct trace* trace){
 	}
 }
 
-struct multiColumnPrinter* trace_create_multiColumnPrinter(){
-	struct multiColumnPrinter* printer;
-
-	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
-	if (printer != NULL){
-		#if defined ARCH_32
-		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_32);
-		#elif defined ARCH_64
-		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_HEX_64);
-		#else
-		#error Please specify an architecture {ARCH_32 or ARCH_64}
-		#endif
-
-		multiColumnPrinter_set_column_size(printer, 2, 96);
-		multiColumnPrinter_set_column_size(printer, 3, 32);
-
-		multiColumnPrinter_set_title(printer, 0, "PC");
-		multiColumnPrinter_set_title(printer, 1, "Opcode");
-		multiColumnPrinter_set_title(printer, 2, "Read Access");
-		multiColumnPrinter_set_title(printer, 3, "Write Access");
-	}
-	else{
-		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
-	}
-
-	return printer;
-}
-
-void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct multiColumnPrinter* printer){
-	uint32_t 		i;
-	uint32_t 		j;
-	uint8_t 		delete_printer = 0;
-	struct operand* operands;
-	char 			read_access[MULTICOLUMN_STRING_MAX_SIZE];
-	char 			write_access[MULTICOLUMN_STRING_MAX_SIZE];
-	uint32_t 		str_read_offset;
-	uint32_t 		str_write_offset;
-	char* 			current_str;
-	uint32_t*		current_offset;
-	uint32_t		nb_byte_written;
-
-
-	if (printer == NULL){
-		printer = trace_create_multiColumnPrinter();
-		delete_printer = 1;
-		if (printer == NULL){
-			printf("ERROR: in %s, unable to create specific multiColumnPrinter\n", __func__);
-			return;
-		}
-
-		if (start < stop && start < trace->nb_instruction){
-			multiColumnPrinter_print_header(printer);
-		}
-	}
-
-	for (i = start; i < stop && i < trace->nb_instruction; i++){
-		operands = trace->operands + trace->instructions[i].operand_offset;
-		read_access[0] 		= '\0';
-		write_access[0] 	= '\0';
-		str_read_offset 	= 0;
-		str_write_offset 	= 0;
-
-		for (j = 0; j < trace->instructions[i].nb_operand; j++){
-			if (OPERAND_IS_READ(operands[j])){
-				current_str = read_access + str_read_offset;
-				current_offset = &str_read_offset;
-			}
-			else if (OPERAND_IS_WRITE(operands[j])){
-				current_str = write_access + str_write_offset;
-				current_offset = &str_write_offset;
-			}
-			else{
-				printf("ERROR: in %s, unexpected data type (READ or WRITE)\n", __func__);
-				break;
-			}
-
-			if (OPERAND_IS_MEM(operands[j])){
-				#if defined ARCH_32
-				nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %08x ", operands[j].location.address);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{Mem @ %llx ", operands[j].location.address);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-				current_str += nb_byte_written;
-				*current_offset += nb_byte_written;
-			}
-			else if (OPERAND_IS_REG(operands[j])){
-				nb_byte_written = snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "{%s ", reg_2_string(operands[j].location.reg));
-				current_str += nb_byte_written;
-				*current_offset += nb_byte_written;
-			}
-			else{
-				printf("ERROR: in %s, unexpected data type (REG or MEM)\n", __func__);
-				break;
-			}
-
-			switch(operands[j].size){
-				case 1 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%02x}", *(uint8_t* )(trace->data + operands[j].data_offset)); break;}
-				case 2 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%04x}", *(uint16_t*)(trace->data + operands[j].data_offset)); break;}
-				case 4 	: {*current_offset += snprintf(current_str, MULTICOLUMN_STRING_MAX_SIZE - *current_offset, "0x%08x}", *(uint32_t*)(trace->data + operands[j].data_offset)); break;}
-				default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
-			}
-		}
-		multiColumnPrinter_print(printer, trace->instructions[i].pc, instruction_opcode_2_string(trace->instructions[i].opcode), read_access, write_access, NULL);
-	}
-
-	if (delete_printer){
-		multiColumnPrinter_delete(printer);
-	}
-}
-
-void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
+void trace_print(struct trace* trace, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
-	char 						buffer[MULTICOLUMN_STRING_MAX_SIZE];
+	char 						buffer[256];
 
 	if (assembly_get_instruction(&(trace->assembly), &it, start)){
 		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
@@ -285,7 +172,7 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 		printf("[...]\n");
 	}
 
-	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
+	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
 	printf("0x%08x  %s\n", it.instruction_address, buffer);
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(&(trace->assembly)); i++){
@@ -298,7 +185,7 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 			printf("[...]\n");
 		}
 
-		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
+		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
 		printf("0x%08x  %s\n", it.instruction_address, buffer);
 	}
 }

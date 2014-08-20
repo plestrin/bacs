@@ -4,13 +4,13 @@
 
 #include "analysis.h"
 #include "inputParser.h"
-#include "instruction.h"
 #include "printBuffer.h"
 #include "readBuffer.h"
 #include "ir.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "traceFragment.h"
+#include "multiColumn.h"
 
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)										\
@@ -38,8 +38,7 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (trace format)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print asm", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_asm)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check_codeMap)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
@@ -191,20 +190,7 @@ void analysis_trace_print(struct analysis* analysis, char* arg){
 
 	if (analysis->trace != NULL){
 		inputParser_extract_index(arg, &start, &stop);
-		trace_print(analysis->trace, start, stop, NULL);
-	}
-	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
-	}
-}
-
-void analysis_trace_print_asm(struct analysis* analysis, char* arg){
-	uint32_t start = 0;
-	uint32_t stop = 0;
-
-	if (analysis->trace != NULL){
-		inputParser_extract_index(arg, &start, &stop);
-		trace_print_asm(analysis->trace, start, stop);
+		trace_print(analysis->trace, start, stop);
 	}
 	else{
 		printf("ERROR: in %s, trace is NULL\n", __func__);
@@ -486,19 +472,19 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	printf("Included opcode(s): ");
 	for (i = 0; i < nb_opcode; i++){
 		if (i == nb_opcode - 1){
-			printf("%s\n", instruction_opcode_2_string(opcode[i]));
+			printf("%s\n", xed_iclass_enum_t2str(opcode[i]));
 		}
 		else{
-			printf("%s, ", instruction_opcode_2_string(opcode[i]));
+			printf("%s, ", xed_iclass_enum_t2str(opcode[i]));
 		}
 	}
 	printf("Excluded opcode(s): ");
 	for (i = 0; i < nb_excluded_opcode; i++){
 		if (i == nb_excluded_opcode - 1){
-			printf("%s\n", instruction_opcode_2_string(excluded_opcode[i]));
+			printf("%s\n", xed_iclass_enum_t2str(excluded_opcode[i]));
 		}
 		else{
-			printf("%s, ", instruction_opcode_2_string(excluded_opcode[i]));
+			printf("%s, ", xed_iclass_enum_t2str(excluded_opcode[i]));
 		}
 	}
 	#endif

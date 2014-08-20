@@ -144,6 +144,30 @@ void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct no
 	}
 }
 
+int32_t graph_copy_src_edge(struct graph* graph, struct node* node1, struct node* node2){
+	struct edge* edge_cursor;
+
+	for (edge_cursor = node_get_head_edge_src(node2); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+		if (graph_add_edge(graph, node1, edge_get_dst(edge_cursor), &(edge_cursor->data)) == NULL){
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int32_t graph_copy_dst_edge(struct graph* graph, struct node* node1, struct node* node2){
+	struct edge* edge_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (graph_add_edge(graph, edge_get_src(edge_cursor), node1, &(edge_cursor->data)) == NULL){
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 void graph_remove_node(struct graph* graph, struct node* node){
 	graph->nb_node --;
 

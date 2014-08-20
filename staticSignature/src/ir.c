@@ -18,14 +18,26 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 				return (op1->operation_type.in_reg.reg == op2->operation_type.in_reg.reg);
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				return 1;
+				return 0;
 
 			}
 			case IR_OPERATION_TYPE_OUT_MEM 	: {
-				return 1;
+				return 0;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				return (op1->operation_type.imm.signe == op2->operation_type.imm.signe && op1->operation_type.imm.value == op2->operation_type.imm.value);
+				if (op1->operation_type.imm.signe == op2->operation_type.imm.signe){
+					#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
+					return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
+				}
+				else{
+					if (ir_imm_operation_get_signed_value(op1) < 0 || ir_imm_operation_get_signed_value(op2) < 0){
+						return 0;
+					}
+					else{
+						#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
+						return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
+					}
+				}
 			}
 			case IR_OPERATION_TYPE_INST 	: {
 				return (op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
@@ -333,6 +345,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
 		case IR_ADD 		: {return "add";}
 		case IR_AND 		: {return "and";}
+		case IR_DIV 		: {return "div";}
 		case IR_MOVZX 		: {return "movzx";}
 		case IR_MUL 		: {return "mul";}
 		case IR_NOT 		: {return "not";}
