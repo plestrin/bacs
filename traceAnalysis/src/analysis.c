@@ -12,7 +12,6 @@
 #include "printBuffer.h"
 #include "readBuffer.h"
 #include "ir.h"
-#include "signatureReader.h"
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)									\
 	{																									\
@@ -83,7 +82,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag io", 			"Print IR input and output", 					"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_io)
 	ADD_CMD_TO_INPUT_PARSER(parser, "extract arg ir", 			"Extract argument from the IR representation", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_extract_arg_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (usefull for signature)", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 
 	/* argument specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print arg", 				"Print arguments from the argSet array", 		"ArgSet index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_arg_print)
@@ -92,12 +90,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "seek arg", 				"Seek for a argBuffer in the argSet array", 	"Binary buffer (raw format)", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_arg_seek)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean arg", 				"Clean the argSet array", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_arg_clean)
 	
-	/* code signature specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_printDot_collection)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_empty_collection)
-
 	inputParser_exe(parser, argc - 1, argv + 1);
 
 	exit:
@@ -137,17 +129,8 @@ struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	if (codeSignature_init_collection(&(analysis->code_signature_collection))){
-		printf("ERROR: in %s, unable to init code signature collection\n", __func__);
-		cstChecker_clean(&(analysis->cst_checker));
-		ioChecker_clean(&(analysis->io_checker));
-		free(analysis);
-		return NULL;
-	}
-
 	if (array_init(&(analysis->frag_array), sizeof(struct traceFragment))){
 		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
-		codeSignature_clean_collection(&(analysis->code_signature_collection));
 		cstChecker_clean(&(analysis->cst_checker));
 		ioChecker_clean(&(analysis->io_checker));
 		free(analysis);
@@ -157,7 +140,6 @@ struct analysis* analysis_create(){
 	if (array_init(&(analysis->arg_array), sizeof(struct argSet))){
 		printf("ERROR: in %s, unable to init argSet array\n", __func__);
 		array_clean(&(analysis->frag_array));
-		codeSignature_clean_collection(&(analysis->code_signature_collection));
 		cstChecker_clean(&(analysis->cst_checker));
 		ioChecker_clean(&(analysis->io_checker));
 		free(analysis);
@@ -186,8 +168,6 @@ void analysis_delete(struct analysis* analysis){
 
 	ioChecker_clean(&(analysis->io_checker));
 	cstChecker_clean(&(analysis->cst_checker));
-
-	codeSignature_clean_collection(&(analysis->code_signature_collection));
 
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -1086,41 +1066,6 @@ void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
-	uint32_t 				index;
-	uint32_t 				start;
-	uint32_t 				stop;
-	uint32_t 				i;
-	struct traceFragment* 	fragment;
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
-	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
-	}
-
-	for (i = start; i < stop; i++){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
-		if (fragment->ir != NULL){
-			ir_normalize(fragment->ir);
-		}
-		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
-		}
-	}
-}
-
-
 /* ===================================================================== */
 /* arg functions						                                 */
 /* ===================================================================== */
@@ -1312,43 +1257,4 @@ void analysis_arg_clean(struct analysis* analysis){
 		argSet_clean((struct argSet*)array_get(&(analysis->arg_array), i));
 	}
 	array_empty(&(analysis->arg_array));
-}
-
-
-/* ===================================================================== */
-/* code signature functions						                         */
-/* ===================================================================== */
-
-void analysis_code_signature_search(struct analysis* analysis, char* arg){
-	uint32_t 				index;
-	uint32_t 				start;
-	uint32_t 				stop;
-	uint32_t 				i;
-	struct traceFragment* 	fragment;
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
-	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
-	}
-
-	for (i = start; i < stop; i++){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
-		if (fragment->ir != NULL){
-			codeSignature_search(&(analysis->code_signature_collection), fragment->ir);
-		}
-		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
-		}
-	}
 }

@@ -8,22 +8,18 @@
 #include "cstChecker.h"
 #include "loop.h"
 #include "trace.h"
-#include "codeSignature.h"
-
 
 struct analysis{
-	struct trace* 					trace;
-	struct codeMap* 				code_map;
+	struct trace* 			trace;
+	struct codeMap* 		code_map;
 
-	struct ioChecker				io_checker;
-	struct cstChecker 				cst_checker;
+	struct ioChecker		io_checker;
+	struct cstChecker 		cst_checker;
 
-	struct loopEngine*				loop_engine;
+	struct loopEngine*		loop_engine;
 
-	struct codeSignatureCollection code_signature_collection;
-
-	struct array					frag_array;
-	struct array 					arg_array;
+	struct array			frag_array;
+	struct array 			arg_array;
 };
 
 struct analysis* analysis_create();
@@ -60,15 +56,12 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg);
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_print_io(struct analysis* analysis, char* arg);
 void analysis_frag_extract_arg_ir(struct analysis* analysis, char* arg);
-void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 
 void analysis_arg_print(struct analysis* analysis, char* arg);
 void analysis_arg_set_tag(struct analysis* analysis, char* arg);
 void analysis_arg_search(struct analysis* analysis, char* arg);
 void analysis_arg_seek(struct analysis* analysis, char* arg);
 void analysis_arg_clean(struct analysis* analysis);
-
-void analysis_code_signature_search(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 

@@ -121,6 +121,5 @@ void ir_print_io(struct ir* ir);
 	free(ir);
 
 #include "irIOExtract.h"
-#include "irNormalize.h"
 
 #endif

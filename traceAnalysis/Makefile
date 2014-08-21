@@ -7,7 +7,7 @@ SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/pierre/Documents/pin-2.13-62732-gcc.4.4.7-linux/extras/xed2-ia32/
+XED_DIR 		:= /home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/extras/xed2-ia32/
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
@@ -36,9 +36,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irImporterAsm.o 		\
 					$(BUILD_DIR)irRenameEngine.o 		\
 					$(BUILD_DIR)irIOExtract.o 			\
-					$(BUILD_DIR)irNormalize.o 			\
-					$(BUILD_DIR)codeSignature.o 		\
-					$(BUILD_DIR)signatureReader.o 		\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
 					$(BUILD_DIR)pageTable.o 			\
@@ -49,8 +46,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)workQueue.o 			\
 					$(BUILD_DIR)mapFile.o 				\
 					$(BUILD_DIR)graph.o 				\
-					$(BUILD_DIR)graphPrintDot.o 		\
-					$(BUILD_DIR)subGraphIsomorphism.o
+					$(BUILD_DIR)graphPrintDot.o
 
 
 ifeq ($(DEBUG),1)

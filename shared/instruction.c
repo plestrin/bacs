@@ -49,6 +49,13 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_BLSIC 			: {return "BLSIC";}
 	case XED_ICLASS_BLSMSK 			: {return "BLSMSK";}
 	case XED_ICLASS_BLSR 			: {return "BLSR";}
+	case XED_ICLASS_BNDCL 			: {return "BNDCL";}
+	case XED_ICLASS_BNDCN 			: {return "BNDCN";}
+	case XED_ICLASS_BNDCU 			: {return "BNDCU";}
+	case XED_ICLASS_BNDLDX 			: {return "BNDLDX";}
+	case XED_ICLASS_BNDMK 			: {return "BNDMK";}
+	case XED_ICLASS_BNDMOV 			: {return "BNDMOV";}
+	case XED_ICLASS_BNDSTX			: {return "BNDSTX";}
 	case XED_ICLASS_BOUND 			: {return "BOUND";}
 	case XED_ICLASS_BSF 			: {return "BSF";}
 	case XED_ICLASS_BSR 			: {return "BSR";}
@@ -67,6 +74,7 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_CLC 			: {return "CLC";}
 	case XED_ICLASS_CLD 			: {return "CLD";}
 	case XED_ICLASS_CLFLUSH 		: {return "CLFLUSH";}
+	case XED_ICLASS_CLFLUSHOPT 		: {return "CLFLUSHOPT";}
 	case XED_ICLASS_CLGI 			: {return "CLGI";}
 	case XED_ICLASS_CLI 			: {return "CLI";}
 	case XED_ICLASS_CLTS 			: {return "CLTS";}
@@ -139,6 +147,8 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_DPPD 			: {return "DPPD";}
 	case XED_ICLASS_DPPS 			: {return "DPPS";}
 	case XED_ICLASS_EMMS 			: {return "EMMS";}
+	case XED_ICLASS_ENCLS 			: {return "ENCLS";}
+	case XED_ICLASS_ENCLU 			: {return "ENCLU";}
 	case XED_ICLASS_ENTER 			: {return "ENTER";}
 	case XED_ICLASS_EXTRACTPS 		: {return "EXTRACTPS";}
 	case XED_ICLASS_EXTRQ 			: {return "EXTRQ";}
@@ -438,6 +448,7 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_PEXTRD 			: {return "PEXTRD";}
 	case XED_ICLASS_PEXTRQ 			: {return "PEXTRQ";}
 	case XED_ICLASS_PEXTRW 			: {return "PEXTRW";}
+	case XED_ICLASS_PEXTRW_SSE4 	: {return "PEXTRW_SSE4";}
 	case XED_ICLASS_PF2ID 			: {return "PF2ID";}
 	case XED_ICLASS_PF2IW 			: {return "PF2IW";}
 	case XED_ICLASS_PFACC 			: {return "PFACC";}
@@ -615,6 +626,13 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_SETZ 			: {return "SETZ";}
 	case XED_ICLASS_SFENCE 			: {return "SFENCE";}
 	case XED_ICLASS_SGDT 			: {return "SGDT";}
+	case XED_ICLASS_SHA1MSG1 		: {return "SHA1MSG1";}
+	case XED_ICLASS_SHA1MSG2 		: {return "SHA1MSG2";}
+	case XED_ICLASS_SHA1NEXTE 		: {return "SHA1NEXTE";}
+	case XED_ICLASS_SHA1RNDS4 		: {return "SHA1RNDS4";}
+	case XED_ICLASS_SHA256MSG1 		: {return "SHA256MSG1";}
+	case XED_ICLASS_SHA256MSG2 		: {return "SHA256MSG2";}
+	case XED_ICLASS_SHA256RNDS2 	: {return "SHA256RNDS2";}
 	case XED_ICLASS_SHL 			: {return "SHL";}
 	case XED_ICLASS_SHLD 			: {return "SHLD";}
 	case XED_ICLASS_SHLX 			: {return "SHLX";}
@@ -1123,10 +1141,16 @@ const char* instruction_opcode_2_string(uint32_t opcode){
 	case XED_ICLASS_XORPS 			: {return "XORPS";}
 	case XED_ICLASS_XRSTOR 			: {return "XRSTOR";}
 	case XED_ICLASS_XRSTOR64 		: {return "XRSTOR64";}
+	case XED_ICLASS_XRSTORS 		: {return "XRSTORS";}
+	case XED_ICLASS_XRSTORS64 		: {return "XRSTORS64";}
 	case XED_ICLASS_XSAVE 			: {return "XSAVE";}
 	case XED_ICLASS_XSAVE64 		: {return "XSAVE64";}
+	case XED_ICLASS_XSAVEC 			: {return "XSAVEC";}
+	case XED_ICLASS_XSAVEC64 		: {return "XSAVEC64";}
 	case XED_ICLASS_XSAVEOPT 		: {return "XSAVEOPT";}
 	case XED_ICLASS_XSAVEOPT64 		: {return "XSAVEOPT64";}
+	case XED_ICLASS_XSAVES 			: {return "XSAVES";}
+	case XED_ICLASS_XSAVES64 		: {return "XSAVES64";}
 	case XED_ICLASS_XSETBV 			: {return "XSETBV";}
 	case XED_ICLASS_XTEST 			: {return "XTEST";}
 	case XED_ICLASS_LAST 			: {return "LAST";}
