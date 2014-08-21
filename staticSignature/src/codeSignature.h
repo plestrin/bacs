@@ -18,6 +18,10 @@ struct signatureNode{
 	uint16_t 					output_frag_order;
 };
 
+struct signatureEdge{
+	enum irDependenceType 		type;
+};
+
 struct codeSignature{
 	char  						name[CODESIGNATURE_NAME_MAX_SIZE];
 	struct graph				graph;

@@ -13,7 +13,7 @@ enum readerToken{
 	READER_TOKEN_GRAPH_NAME,
 	READER_TOKEN_EDGE,
 	READER_TOKEN_NODE_ID,
-	READER_TOKEN_NODE_LABEL,
+	READER_TOKEN_LABEL,
 	READER_TOKEN_NODE_IO
 };
 
@@ -23,6 +23,7 @@ enum readerState{
 	READER_STATE_SRC,
 	READER_STATE_SRC_DESC,
 	READER_STATE_EDGE,
+	READER_STATE_EDGE_DESC,
 	READER_STATE_DST,
 	READER_STATE_DST_DESC
 };
@@ -45,6 +46,9 @@ struct localCodeEdge{
 	uint8_t 				dst_opcode_set;
 	uint16_t 				dst_output_number;
 	uint16_t 				dst_output_frag_order;
+
+	enum irDependenceType 	edge_type;
+	uint8_t 				edge_type_set;
 };
 
 static void readerCursor_get_next(struct readerCursor* reader_cursor);
@@ -52,6 +56,7 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor);
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
 
 static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor);
+static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor);
 #define codeSignatureReader_get_IO_in(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'I')
 #define codeSignatureReader_get_IO_out(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'O')
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char);
@@ -134,7 +139,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 			}
 			case READER_STATE_SRC 			: {
 				switch(reader_cursor.token){
-					case READER_TOKEN_NODE_LABEL 	: {
+					case READER_TOKEN_LABEL 		: {
 						local_edge.src_opcode = codeSignatureReader_get_opcode(&reader_cursor);
 						local_edge.src_opcode_set = 1;
 
@@ -142,6 +147,8 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					case READER_TOKEN_EDGE 			: {
+						local_edge.edge_type_set = 0;
+
 						reader_state = READER_STATE_EDGE;
 						break;
 					}
@@ -157,6 +164,8 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 			case READER_STATE_SRC_DESC 		: {
 				switch(reader_cursor.token){
 					case READER_TOKEN_EDGE 			: {
+						local_edge.edge_type_set = 0;
+
 						reader_state = READER_STATE_EDGE;
 						break;
 					}
@@ -178,6 +187,33 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				break;
 			}
 			case READER_STATE_EDGE 			: {
+				switch(reader_cursor.token){
+					case READER_TOKEN_NODE_ID 	: {
+						local_edge.dst_id = atoi(reader_cursor.cursor);
+						local_edge.dst_opcode_set = 0;
+						local_edge.dst_output_number = 0;
+						local_edge.dst_output_frag_order = 0;
+
+						reader_state = READER_STATE_DST;
+						break;
+					}
+					case READER_TOKEN_LABEL 		: {
+						local_edge.edge_type = codeSignatureReader_get_irDependenceType(&reader_cursor);
+						local_edge.edge_type_set = 1;
+
+						reader_state = READER_STATE_EDGE_DESC;
+						break;
+					}
+					case READER_TOKEN_COMMENT 		: {
+						break;
+					}
+					default 						: {
+						printf("ERROR: in %s, syntaxe error: state is EDGE\n", __func__);
+					}
+				}
+				break;
+			}
+			case READER_STATE_EDGE_DESC 	: {
 				switch(reader_cursor.token){
 					case READER_TOKEN_NODE_ID 	: {
 						local_edge.dst_id = atoi(reader_cursor.cursor);
@@ -222,7 +258,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						reader_state = READER_STATE_SRC;
 						break;
 					}
-					case READER_TOKEN_NODE_LABEL 	: {
+					case READER_TOKEN_LABEL 		: {
 						local_edge.dst_opcode = codeSignatureReader_get_opcode(&reader_cursor);
 						local_edge.dst_opcode_set = 1;
 
@@ -386,7 +422,7 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 			}
 			break;
 		}
-		case READER_TOKEN_NODE_LABEL 	: {
+		case READER_TOKEN_LABEL 		: {
 			reader_cursor->token = READER_TOKEN_NONE;
 
 			for (i = 1; i < reader_cursor->remaining_size; i++){
@@ -439,7 +475,7 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 				break;
 			}
 			case '(' : {
-				reader_cursor->token = READER_TOKEN_NODE_LABEL;
+				reader_cursor->token = READER_TOKEN_LABEL;
 				break;
 			}
 			case '[' : {
@@ -530,6 +566,29 @@ static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_
 		printf("ERROR: in %s, unable to convert string to ir Opcode, by default return ADD\n", __func__);
 	}
 	return IR_JOKER;
+}
+
+static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor){
+	uint32_t length;
+
+	for (length = 0; length + 1 < reader_cursor->remaining_size; length++){
+		if (reader_cursor->cursor[length + 1] == ')'){
+			break;
+		}
+	}
+
+	if (!strncmp(reader_cursor->cursor + 1, "@", length)){
+		return IR_DEPENDENCE_TYPE_ADDRESS;
+	}
+	/* a completer */
+
+	if (length >= 3){
+		printf("ERROR: in %s, unable to convert string to irDependenceType %.3s, by default return DIRECT\n", __func__, reader_cursor->cursor + 1);
+	}
+	else{
+		printf("ERROR: in %s, unable to convert string to irDependenceType, by default return DIRECT\n", __func__);
+	}
+	return IR_DEPENDENCE_TYPE_DIRECT;
 }
 
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char){
@@ -648,7 +707,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			printf("ERROR: in %s, unable to realloc memory buffer\n", __func__);
 		}
 
-		graph_init(&(code_signature.graph), sizeof(struct signatureNode), 0);
+		graph_init(&(code_signature.graph), sizeof(struct signatureNode), sizeof(struct signatureEdge));
 
 		for (i = 0; i < nb_node; i++){
 			if (!node_buffer[i].opcode_set){
@@ -666,6 +725,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			struct localCodeNode* 	src_node;
 			struct localCodeNode* 	dst_node;
 			struct localCodeNode 	cmp_node;
+			struct edge* 			new_edge;
 
 			edge = (struct localCodeEdge*)array_get(array, i);
 				
@@ -689,8 +749,17 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 				printf("ERROR: in %s, rsc node is NULL\n", __func__);
 			}
 
-			if (graph_add_edge_(&(code_signature.graph), src_node->node, dst_node->node) == NULL){
+			new_edge = graph_add_edge_(&(code_signature.graph), src_node->node, dst_node->node);
+			if (new_edge == NULL){
 				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+			}
+			else{
+				if (edge->edge_type_set){
+					((struct signatureEdge*)&(new_edge->data))->type = edge->edge_type;
+				}
+				else{
+					((struct signatureEdge*)&(new_edge->data))->type = IR_DEPENDENCE_TYPE_DIRECT;
+				}
 			}
 		}
 

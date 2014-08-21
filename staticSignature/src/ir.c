@@ -322,20 +322,136 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 		case IR_DEPENDENCE_TYPE_DIRECT 	: {
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_BASE 	: {
-			fprintf(file, "[label=\"base\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_INDEX 	: {
-			fprintf(file, "[label=\"index\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_DISP 	: {
-			fprintf(file, "[label=\"disp\"]");
-			break;
-		}
 		case IR_DEPENDENCE_TYPE_ADDRESS : {
 			fprintf(file, "[label=\"@\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I1F1 	:{
+			fprintf(file, "[label=\"I1F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I1F2 	:{
+			fprintf(file, "[label=\"I1F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I1F3 	:{
+			fprintf(file, "[label=\"I1F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I1F4 	:{
+			fprintf(file, "[label=\"I1F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I2F1 	:{
+			fprintf(file, "[label=\"I2F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I2F2 	:{
+			fprintf(file, "[label=\"I2F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I2F3 	:{
+			fprintf(file, "[label=\"I2F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I2F4 	:{
+			fprintf(file, "[label=\"I2F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I3F1 	:{
+			fprintf(file, "[label=\"I3F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I3F2 	:{
+			fprintf(file, "[label=\"I3F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I3F3 	:{
+			fprintf(file, "[label=\"I3F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I3F4 	:{
+			fprintf(file, "[label=\"I3F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I4F1 	:{
+			fprintf(file, "[label=\"I4F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I4F2 	:{
+			fprintf(file, "[label=\"I4F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I4F3 	:{
+			fprintf(file, "[label=\"I4F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I4F4 	:{
+			fprintf(file, "[label=\"I4F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O1F1 	:{
+			fprintf(file, "[label=\"O1F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O1F2 	:{
+			fprintf(file, "[label=\"O1F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O1F3 	:{
+			fprintf(file, "[label=\"O1F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O1F4 	:{
+			fprintf(file, "[label=\"O1F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O2F1 	:{
+			fprintf(file, "[label=\"O2F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O2F2 	:{
+			fprintf(file, "[label=\"O2F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O2F3 	:{
+			fprintf(file, "[label=\"O2F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O2F4 	:{
+			fprintf(file, "[label=\"O2F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O3F1 	:{
+			fprintf(file, "[label=\"O3F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O3F2 	:{
+			fprintf(file, "[label=\"O3F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O3F3 	:{
+			fprintf(file, "[label=\"O3F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O3F4 	:{
+			fprintf(file, "[label=\"O3F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O4F1 	:{
+			fprintf(file, "[label=\"O4F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O4F2 	:{
+			fprintf(file, "[label=\"O4F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O4F3 	:{
+			fprintf(file, "[label=\"O4F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_O4F4 	:{
+			fprintf(file, "[label=\"O4F4\"]");
 			break;
 		}
 	}
