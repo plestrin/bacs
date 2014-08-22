@@ -691,6 +691,8 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	uint32_t 				stop;
 	uint32_t 				i;
 	struct traceFragment* 	fragment;
+	struct ir**				ir_buffer;
+	uint32_t 				nb_ir;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -708,15 +710,24 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		stop = array_get_length(&(analysis->frag_array));
 	}
 
-	for (i = start; i < stop; i++){
+	ir_buffer = (struct ir**)malloc(sizeof(struct ir*) * (stop - start));
+	if (ir_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
+
+	for (i = start, nb_ir = 0; i < stop; i++){
 		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
-			codeSignature_search(&(analysis->code_signature_collection), fragment->ir);
+			ir_buffer[nb_ir ++] = fragment->ir;
 		}
 		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+			printf("ERROR: in %s, the IR is NULL for fragment %u\n", __func__, i);
 		}
 	}
+
+	codeSignature_search(&(analysis->code_signature_collection), ir_buffer, nb_ir);
+	free(ir_buffer);
 }
 
 

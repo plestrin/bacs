@@ -207,11 +207,11 @@ class sigRecipe(recipe):
 			if process.returncode == 0:
 				sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
 
-				regex = re.compile("Found [0-9]+ subgraph\(s\) instance for signature: [a-zA-Z0-9_]+")
+				regex = re.compile("[a-zA-Z0-9_]+ +\| [0-9]+ +\| [0-9]+\.[0-9]+ *")
 				detected_signature = {}
 				for i in regex.findall(output_val[0]):
-					name = i[i.find(':') + 2:].strip()
-					occu = int(i[6: 6 + i[6:].find(' ')])
+					name = i[:i.find(' ')].strip()
+					occu = int(i[35: 35 + i[35:].find(' ')])
 
 					if name in detected_signature:
 						detected_signature[name] = occu + detected_signature.get(name)

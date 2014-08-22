@@ -725,7 +725,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			struct localCodeNode* 	src_node;
 			struct localCodeNode* 	dst_node;
 			struct localCodeNode 	cmp_node;
-			struct edge* 			new_edge;
+			struct signatureEdge 	signature_edge;
 
 			edge = (struct localCodeEdge*)array_get(array, i);
 				
@@ -749,17 +749,14 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 				printf("ERROR: in %s, rsc node is NULL\n", __func__);
 			}
 
-			new_edge = graph_add_edge_(&(code_signature.graph), src_node->node, dst_node->node);
-			if (new_edge == NULL){
-				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+			if (edge->edge_type_set){
+				signature_edge.type = edge->edge_type;
 			}
 			else{
-				if (edge->edge_type_set){
-					((struct signatureEdge*)&(new_edge->data))->type = edge->edge_type;
-				}
-				else{
-					((struct signatureEdge*)&(new_edge->data))->type = IR_DEPENDENCE_TYPE_DIRECT;
-				}
+				signature_edge.type = IR_DEPENDENCE_TYPE_DIRECT;
+			}
+			if (graph_add_edge(&(code_signature.graph), src_node->node, dst_node->node, &signature_edge) == NULL){
+				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
 			}
 		}
 

@@ -1,11 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "codeSignature.h"
 #include "multiColumn.h"
 
 uint32_t irNode_get_label(struct node* node);
 uint32_t signatureNode_get_label(struct node* node);
+uint32_t irEdge_get_label(struct edge* edge);
+uint32_t signatureEdge_get_label(struct edge* edge);
 
 void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
 void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
@@ -41,7 +44,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	else{
 		new_signature = (struct codeSignature*)array_get(&(collection->signature_array), index);
 		if (new_signature->sub_graph_handle == NULL){
-			new_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(new_signature->graph), signatureNode_get_label);
+			new_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(new_signature->graph), signatureNode_get_label, signatureEdge_get_label);
 		}
 		else{
 			new_signature->sub_graph_handle->graph = &(new_signature->graph);
@@ -52,37 +55,72 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	return 0;
 }
 
-void codeSignature_search(struct codeSignatureCollection* collection, struct ir* ir){
-	uint32_t 				i;
-	struct codeSignature* 	code_signature;
-	struct graphIsoHandle* 	graph_handle;
-	struct array* 			assignement_array;
+void codeSignature_search(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir){
+	uint32_t 					i;
+	uint32_t 					j;
+	struct codeSignature* 		code_signature;
+	struct graphIsoHandle* 		graph_handle;
+	struct array* 				assignement_array;
+	struct timespec 			timer_start_time;
+	struct timespec 			timer_stop_time;
+	double 						timer_elapsed_time = 0.0;
+	struct multiColumnPrinter* 	printer;
 
-	graph_handle = graphIso_create_graph_handle(&(ir->graph), irNode_get_label);
-	if (graph_handle == NULL){
-		printf("ERROR: in %s, unable to create graphHandle\n", __func__);
+	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
+	if (printer != NULL){
+		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_INT32);
+		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
+		multiColumnPrinter_set_column_size(printer, 0, CODESIGNATURE_NAME_MAX_SIZE);
+		multiColumnPrinter_set_title(printer, 0, "NAME");
+		multiColumnPrinter_set_title(printer, 1, "FOUND");
+		multiColumnPrinter_set_title(printer, 2, "TIME");
+
+		multiColumnPrinter_print_header(printer);
+	}
+	else{
+		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
 		return;
 	}
 
-	for (i = 0; i < array_get_length(&(collection->signature_array)); i++){
-		code_signature = (struct codeSignature*)array_get(&(collection->signature_array), i);
-
-		assignement_array = graphIso_search(graph_handle, code_signature->sub_graph_handle);
-		if (assignement_array == NULL){
-			printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
-		}
-		else{
-			/* a completer */
-
-			if (array_get_length(assignement_array) > 0){
-				printf("Found %u subgraph(s) instance for signature: %s\n", array_get_length(assignement_array), code_signature->name);
-			}
-
-			array_delete(assignement_array);
-		}
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){
+		printf("ERROR: in %s, clock_gettime fails\n", __func__);
 	}
 
-	graphIso_delete_graph_handle(graph_handle);
+	for (j = 0; j < nb_ir; j++){
+		graph_handle = graphIso_create_graph_handle(&(ir_buffer[j]->graph), irNode_get_label, irEdge_get_label);
+		if (graph_handle == NULL){
+			printf("ERROR: in %s, unable to create graphHandle\n", __func__);
+			return;
+		}
+
+		for (i = 0; i < array_get_length(&(collection->signature_array)); i++){
+			code_signature = (struct codeSignature*)array_get(&(collection->signature_array), i);
+
+			assignement_array = graphIso_search(graph_handle, code_signature->sub_graph_handle);
+
+			if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){
+				printf("ERROR: in %s, clock_gettime fails\n", __func__);
+			}
+			timer_elapsed_time = ((timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.) - timer_elapsed_time;
+
+			if (assignement_array == NULL){
+				printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
+			}
+			else{
+				if (array_get_length(assignement_array) > 0){
+					multiColumnPrinter_print(printer, code_signature->name, array_get_length(assignement_array), timer_elapsed_time, NULL);
+				}
+
+				array_delete(assignement_array);
+			}
+		}
+
+		graphIso_delete_graph_handle(graph_handle);
+		multiColumnPrinter_print_horizontal_separator(printer);
+	}
+
+	multiColumnPrinter_delete(printer);
+	printf("Total elapsed time: %f\n", (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.);
 }
 
 void codeSignature_empty_collection(struct codeSignatureCollection* collection){
@@ -113,17 +151,6 @@ void codeSignature_clean_collection(struct codeSignatureCollection* collection){
 /* Labelling routines													 */
 /* ===================================================================== */
 
-uint32_t signatureNode_get_label(struct node* node){
-	struct signatureNode* signature_node = (struct signatureNode*)&(node->data);
-
-	if (signature_node->opcode == IR_JOKER){
-		return SUBGRAPHISOMORPHISM_JOKER_LABEL;
-	}
-	else{
-		return (uint32_t)signature_node->opcode;
-	}
-}
-
 uint32_t irNode_get_label(struct node* node){
 	struct irOperation* operation = ir_node_get_operation(node);
 
@@ -148,6 +175,29 @@ uint32_t irNode_get_label(struct node* node){
 			return 0;
 		}
 	}
+}
+
+uint32_t signatureNode_get_label(struct node* node){
+	struct signatureNode* signature_node = (struct signatureNode*)&(node->data);
+
+	if (signature_node->opcode == IR_JOKER){
+		return SUBGRAPHISOMORPHISM_JOKER_LABEL;
+	}
+	else{
+		return (uint32_t)signature_node->opcode;
+	}
+}
+
+uint32_t irEdge_get_label(struct edge* edge){
+	struct irDependence* dependence = ir_edge_get_dependence(edge);
+
+	return dependence->type;
+}
+
+uint32_t signatureEdge_get_label(struct edge* edge){
+	struct signatureEdge* signature_edge = (struct signatureEdge*)&(edge->data);
+
+	return signature_edge->type;
 }
 
 /* ===================================================================== */

@@ -42,7 +42,7 @@ struct codeSignatureCollection* codeSignature_create_collection();
 
 int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
 
-void codeSignature_search(struct codeSignatureCollection* collection, struct ir* ir);
+void codeSignature_search(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir);
 
 void codeSignature_printDot_collection(struct codeSignatureCollection* collection);
 

@@ -5,7 +5,7 @@
 
 # INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-
+# Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on two operands)
 
 1 (*) [I:1:1] -> 2 (ADD)
 2 -> (@) 3 (INPUT)

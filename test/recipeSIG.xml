@@ -2,7 +2,7 @@
 
 	<!-- TEA and XTEA encryption and decrytion -->
 
-	<recipe name="TEST_TEA_GO0" active="no">
+	<recipe name="TEST_TEA_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go0"/>
 		<search>
@@ -26,7 +26,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO1" active="no">
+	<recipe name="TEST_TEA_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go1"/>
 		<search>
@@ -50,7 +50,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO2" active="no">
+	<recipe name="TEST_TEA_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go2"/>
 		<search>
@@ -74,7 +74,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO3" active="no">
+	<recipe name="TEST_TEA_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go3"/>
 		<search>
@@ -98,7 +98,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GOs" active="no">
+	<recipe name="TEST_TEA_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_gos"/>
 		<search>
@@ -122,7 +122,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO0" active="no">
+	<recipe name="TEST_TEA_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co0"/>
 		<search>
@@ -146,7 +146,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO1" active="no">
+	<recipe name="TEST_TEA_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co1"/>
 		<search>
@@ -170,7 +170,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO2" active="no">
+	<recipe name="TEST_TEA_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co2"/>
 		<search>
@@ -194,7 +194,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO3" active="no">
+	<recipe name="TEST_TEA_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co3"/>
 		<search>
@@ -218,7 +218,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_COz" active="no">
+	<recipe name="TEST_TEA_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_coz"/>
 		<search>
@@ -242,7 +242,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WD" active="no">
+	<recipe name="TEST_TEA_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -266,7 +266,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WR" active="no">
+	<recipe name="TEST_TEA_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -290,7 +290,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_TEA" active="no">
+	<recipe name="TOM_TEA" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea"/>
 		<search>
@@ -310,7 +310,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_TEA" active="no">
+	<recipe name="PP_TEA" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea"/>
 		<search>
@@ -336,7 +336,7 @@
 
 	<!-- MD5 hash -->
 
-	<recipe name="TEST_MD5_GO0" active="no">
+	<recipe name="TEST_MD5_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
 		<search>
@@ -357,7 +357,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO1" active="no">
+	<recipe name="TEST_MD5_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
 		<search>
@@ -378,7 +378,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO2" active="no">
+	<recipe name="TEST_MD5_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
 		<search>
@@ -399,7 +399,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO3" active="no">
+	<recipe name="TEST_MD5_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
 		<search>
@@ -420,7 +420,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GOs" active="no">
+	<recipe name="TEST_MD5_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
 		<search>
@@ -441,7 +441,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO0" active="no">
+	<recipe name="TEST_MD5_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
 		<search>
@@ -462,7 +462,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO1" active="no">
+	<recipe name="TEST_MD5_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
 		<search>
@@ -483,7 +483,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO2" active="no">
+	<recipe name="TEST_MD5_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
 		<search>
@@ -504,7 +504,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO3" active="no">
+	<recipe name="TEST_MD5_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
 		<search>
@@ -525,7 +525,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_COz" active="no">
+	<recipe name="TEST_MD5_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
 		<search>
@@ -546,7 +546,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_WD" active="no">
+	<recipe name="TEST_MD5_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -567,7 +567,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_WR" active="no">
+	<recipe name="TEST_MD5_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -588,7 +588,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_MD5" active="no">
+	<recipe name="TOM_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
 		<search>
@@ -610,7 +610,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_MD5" active="no">
+	<recipe name="OPEN_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
 		<search>
@@ -631,7 +631,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_MD5" active="no">
+	<recipe name="PP_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
 		<search>
@@ -652,7 +652,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GO_MD5" active="no">
+	<recipe name="GO_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/go/ build/go_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/go/build/go_md5"/>
 		<search>
@@ -669,7 +669,7 @@
 
 	<!-- AES {128, 192 and 256} encryption/decryption. Table implementation -->
 
-	<recipe name="TEST_AES_GO0" active="no">
+	<recipe name="TEST_AES_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go0"/>
 		<search>
@@ -692,7 +692,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_GO1" active="no">
+	<recipe name="TEST_AES_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go1"/>
 		<search>
@@ -715,7 +715,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_GO2" active="no">
+	<recipe name="TEST_AES_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go2"/>
 		<search>
@@ -738,7 +738,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_GO3" active="no">
+	<recipe name="TEST_AES_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go3"/>
 		<search>
@@ -761,7 +761,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_GOs" active="no">
+	<recipe name="TEST_AES_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_gos"/>
 		<search>
@@ -784,7 +784,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_CO0" active="no"> <!-- Doesn't work -->
+	<recipe name="TEST_AES_CO0" active="yes"> <!-- Doesn't work -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co0"/>
 		<search>
@@ -807,7 +807,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_CO1" active="no">
+	<recipe name="TEST_AES_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co1"/>
 		<search>
@@ -830,7 +830,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_CO2" active="no">
+	<recipe name="TEST_AES_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co2"/>
 		<search>
@@ -853,7 +853,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_CO3" active="no">
+	<recipe name="TEST_AES_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co3"/>
 		<search>
@@ -876,7 +876,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_COz" active="no">
+	<recipe name="TEST_AES_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_coz"/>
 		<search>
@@ -899,7 +899,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_WD" active="no"> <!-- Doesn't work -->
+	<recipe name="TEST_AES_WD" active="yes"> <!-- Doesn't work -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -922,7 +922,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_AES_WR" active="no">
+	<recipe name="TEST_AES_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -945,7 +945,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_AES" active="no">
+	<recipe name="TOM_AES" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes"/>
 		<search>
@@ -964,7 +964,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_GO0" active="no">
+	<recipe name="GLAD_AES_V0_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
 		<search>
@@ -983,7 +983,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_GO1" active="no">
+	<recipe name="GLAD_AES_V0_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go1"/>
 		<search>
@@ -1002,7 +1002,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_GO2" active="no"> <!-- Missing detection for AES 256 encryption -->
+	<recipe name="GLAD_AES_V0_GO2" active="yes"> <!-- Missing detection for AES 256 encryption -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go2"/>
 		<search>
@@ -1021,7 +1021,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_GO3" active="no"> <!-- Missing detection for AES 256 encryption -->
+	<recipe name="GLAD_AES_V0_GO3" active="yes"> <!-- Missing detection for AES 256 encryption -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go3"/>
 		<search>
@@ -1040,7 +1040,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_GOs" active="no">
+	<recipe name="GLAD_AES_V0_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_gos"/>
 		<search>
@@ -1059,7 +1059,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_CO0" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V0_CO0" active="yes"> <!-- Doesn't work -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co0"/>
 		<search>
@@ -1078,7 +1078,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_CO1" active="no">
+	<recipe name="GLAD_AES_V0_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co1"/>
 		<search>
@@ -1097,7 +1097,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_CO2" active="no">
+	<recipe name="GLAD_AES_V0_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co2"/>
 		<search>
@@ -1116,7 +1116,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_CO3" active="no">
+	<recipe name="GLAD_AES_V0_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co3"/>
 		<search>
@@ -1135,7 +1135,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_COz" active="no">
+	<recipe name="GLAD_AES_V0_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_coz"/>
 		<search>
@@ -1154,7 +1154,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_WD" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V0_WD" active="yes"> <!-- Doesn't work -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1173,7 +1173,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V0_WR" active="no">
+	<recipe name="GLAD_AES_V0_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1192,7 +1192,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_GO0" active="no">
+	<recipe name="GLAD_AES_V1_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go0"/>
 		<search>
@@ -1211,7 +1211,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_GO1" active="no">
+	<recipe name="GLAD_AES_V1_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go1"/>
 		<search>
@@ -1230,7 +1230,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_GO2" active="no">
+	<recipe name="GLAD_AES_V1_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go2"/>
 		<search>
@@ -1249,7 +1249,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_GO3" active="no">
+	<recipe name="GLAD_AES_V1_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go3"/>
 		<search>
@@ -1268,7 +1268,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_GOs" active="no">
+	<recipe name="GLAD_AES_V1_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_gos"/>
 		<search>
@@ -1287,7 +1287,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_CO0" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V1_CO0" active="yes"> <!-- Doesn't work -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co0"/>
 		<search>
@@ -1306,7 +1306,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_CO1" active="no">
+	<recipe name="GLAD_AES_V1_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co1"/>
 		<search>
@@ -1325,7 +1325,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_CO2" active="no">
+	<recipe name="GLAD_AES_V1_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co2"/>
 		<search>
@@ -1344,7 +1344,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_CO3" active="no">
+	<recipe name="GLAD_AES_V1_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co3"/>
 		<search>
@@ -1363,7 +1363,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_COz" active="no">
+	<recipe name="GLAD_AES_V1_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_coz"/>
 		<search>
@@ -1382,7 +1382,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_WD" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V1_WD" active="yes"> <!-- Doesn't work -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1401,7 +1401,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V1_WR" active="no">
+	<recipe name="GLAD_AES_V1_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1420,7 +1420,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_GO0" active="no">
+	<recipe name="GLAD_AES_V2_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go0"/>
 		<search>
@@ -1439,7 +1439,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_GO1" active="no">
+	<recipe name="GLAD_AES_V2_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go1"/>
 		<search>
@@ -1458,7 +1458,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_GO2" active="no">
+	<recipe name="GLAD_AES_V2_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go2"/>
 		<search>
@@ -1477,7 +1477,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_GO3" active="no">
+	<recipe name="GLAD_AES_V2_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go3"/>
 		<search>
@@ -1496,7 +1496,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_GOs" active="no">
+	<recipe name="GLAD_AES_V2_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_gos"/>
 		<search>
@@ -1515,7 +1515,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_CO0" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V2_CO0" active="yes"> <!-- Doesn't work -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co0"/>
 		<search>
@@ -1534,7 +1534,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_CO1" active="no">
+	<recipe name="GLAD_AES_V2_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co1"/>
 		<search>
@@ -1553,7 +1553,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_CO2" active="no">
+	<recipe name="GLAD_AES_V2_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2"/>
 		<search>
@@ -1572,7 +1572,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_CO3" active="no">
+	<recipe name="GLAD_AES_V2_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co3"/>
 		<search>
@@ -1591,7 +1591,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_COz" active="no">
+	<recipe name="GLAD_AES_V2_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_coz"/>
 		<search>
@@ -1610,7 +1610,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_WD" active="no"> <!-- Doesn't work -->
+	<recipe name="GLAD_AES_V2_WD" active="yes"> <!-- Doesn't work -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1629,7 +1629,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_WR" active="no">
+	<recipe name="GLAD_AES_V2_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1654,7 +1654,7 @@
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go2"/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_RC4_GO2"/>
+			<arg value="load trace traceTEST_RC4_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_ecb_encrypt"/>
