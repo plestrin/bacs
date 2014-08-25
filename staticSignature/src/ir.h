@@ -65,7 +65,8 @@ enum irOperationType{
 	IR_OPERATION_TYPE_IN_MEM,
 	IR_OPERATION_TYPE_OUT_MEM,
 	IR_OPERATION_TYPE_IMM,
-	IR_OPERATION_TYPE_INST
+	IR_OPERATION_TYPE_INST,
+	IR_OPERATION_TYPE_MACRO
 };
 
 enum irDependenceType{
@@ -137,7 +138,6 @@ struct irOperation{
 	uint8_t 					size;
 	uint32_t 					index;
 	uint32_t 					status_flag;
-	/* maybe add stuff here */
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))

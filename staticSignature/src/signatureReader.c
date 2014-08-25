@@ -36,14 +36,18 @@ struct readerCursor{
 
 struct localCodeEdge{
 	uint32_t 				src_id;
+	enum signatureNodeType 	src_type;
 	enum irOpcode 			src_opcode;
-	uint8_t 				src_opcode_set;
+	int32_t 				src_symbol;
+	uint8_t 				src_label_set;
 	uint16_t 				src_input_number;
 	uint16_t 				src_input_frag_order;
 
 	uint32_t 				dst_id;
+	enum signatureNodeType 	dst_type;
 	enum irOpcode 			dst_opcode;
-	uint8_t 				dst_opcode_set;
+	int32_t 				dst_symbol;
+	uint8_t 				dst_label_set;
 	uint16_t 				dst_output_number;
 	uint16_t 				dst_output_frag_order;
 
@@ -55,13 +59,13 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor);
 
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
 
-static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor);
+static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCursor* reader_cursor, enum irOpcode* opcode, struct array* symbol_array);
 static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor);
 #define codeSignatureReader_get_IO_in(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'I')
 #define codeSignatureReader_get_IO_out(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'O')
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char);
 
-static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name);
+static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name);
 
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
@@ -72,6 +76,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 	struct localCodeEdge 		local_edge;
 	struct array 				local_edge_array;
 	char 						graph_name[CODESIGNATURE_NAME_MAX_SIZE];
+	struct array 				symbol_array;
 
 	buffer = mapFile_map(file_name, &buffer_size);
 	if (buffer == NULL){
@@ -79,7 +84,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 		return;
 	}
 
-	if (array_init(&local_edge_array, sizeof(struct localCodeEdge))){
+	if (array_init(&local_edge_array, sizeof(struct localCodeEdge)) != 0 || array_init(&symbol_array, CODESIGNATURE_NAME_MAX_SIZE) != 0){
 		printf("ERROR: in %s, unable to init array\n", __func__);
 		munmap(buffer, buffer_size);
 		return;
@@ -121,7 +126,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					}
 					case READER_TOKEN_NODE_ID 		: {
 						local_edge.src_id = atoi(reader_cursor.cursor);
-						local_edge.src_opcode_set = 0;
+						local_edge.src_label_set = 0;
 						local_edge.src_input_number = 0;
 						local_edge.src_input_frag_order = 0;
 
@@ -140,8 +145,11 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 			case READER_STATE_SRC 			: {
 				switch(reader_cursor.token){
 					case READER_TOKEN_LABEL 		: {
-						local_edge.src_opcode = codeSignatureReader_get_opcode(&reader_cursor);
-						local_edge.src_opcode_set = 1;
+						local_edge.src_type = codeSignatureReader_get_node_label(&reader_cursor, &(local_edge.src_opcode), &symbol_array);
+						if (local_edge.src_type == SIGNATURE_NODE_TYPE_SYMBOL){
+							local_edge.src_symbol = array_get_length(&symbol_array) - 1;
+						}
+						local_edge.src_label_set = 1;
 
 						reader_state = READER_STATE_SRC_DESC;
 						break;
@@ -190,7 +198,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				switch(reader_cursor.token){
 					case READER_TOKEN_NODE_ID 	: {
 						local_edge.dst_id = atoi(reader_cursor.cursor);
-						local_edge.dst_opcode_set = 0;
+						local_edge.dst_label_set = 0;
 						local_edge.dst_output_number = 0;
 						local_edge.dst_output_frag_order = 0;
 
@@ -217,7 +225,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				switch(reader_cursor.token){
 					case READER_TOKEN_NODE_ID 	: {
 						local_edge.dst_id = atoi(reader_cursor.cursor);
-						local_edge.dst_opcode_set = 0;
+						local_edge.dst_label_set = 0;
 						local_edge.dst_output_number = 0;
 						local_edge.dst_output_frag_order = 0;
 
@@ -239,8 +247,9 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						if (array_add(&local_edge_array, &local_edge) < 0){
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
-						codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
+						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
 						array_empty(&local_edge_array);
+						array_empty(&symbol_array);
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
@@ -251,7 +260,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
-						local_edge.src_opcode_set = 0;
+						local_edge.src_label_set = 0;
 						local_edge.src_input_number = 0;
 						local_edge.src_input_frag_order = 0;
 
@@ -259,8 +268,11 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					case READER_TOKEN_LABEL 		: {
-						local_edge.dst_opcode = codeSignatureReader_get_opcode(&reader_cursor);
-						local_edge.dst_opcode_set = 1;
+						local_edge.dst_type = codeSignatureReader_get_node_label(&reader_cursor, &(local_edge.dst_opcode), &symbol_array);
+						if (local_edge.dst_type == SIGNATURE_NODE_TYPE_SYMBOL){
+							local_edge.dst_symbol = array_get_length(&symbol_array) - 1;
+						}
+						local_edge.dst_label_set = 1;
 
 						reader_state = READER_STATE_DST_DESC;
 						break;
@@ -280,8 +292,9 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						if (array_add(&local_edge_array, &local_edge) < 0){
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
-						codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
+						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
 						array_empty(&local_edge_array);
+						array_empty(&symbol_array);
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
@@ -292,7 +305,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
-						local_edge.src_opcode_set = 0;
+						local_edge.src_label_set = 0;
 						local_edge.src_input_number = 0;
 						local_edge.src_input_frag_order = 0;
 
@@ -329,9 +342,10 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 		printf("ERROR: in %s, syntaxe error: incorrect state at the end of the file\n", __func__);
 	}
 
-	codeSignatureReader_push_signature(collection, &local_edge_array, graph_name);
+	codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
 
 	array_clean(&local_edge_array);
+	array_clean(&symbol_array);
 
 	munmap(buffer, buffer_size);
 }
@@ -516,8 +530,9 @@ static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, c
 	buffer[i - 1] = '\0';
 }
 
-static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_cursor){
-	uint32_t length;
+static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCursor* reader_cursor, enum irOpcode* opcode, struct array* symbol_array){
+	uint32_t 	length;
+	char 		symbol[CODESIGNATURE_NAME_MAX_SIZE];
 
 	for (length = 0; length + 1 < reader_cursor->remaining_size; length++){
 		if (reader_cursor->cursor[length + 1] == ')'){
@@ -526,46 +541,57 @@ static enum irOpcode codeSignatureReader_get_opcode(struct readerCursor* reader_
 	}
 
 	if (!strncmp(reader_cursor->cursor + 1, "ADD", length)){
-		return IR_ADD;
+		*opcode = IR_ADD;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "AND", length)){
-		return IR_AND;
+		*opcode = IR_AND;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "NOT", length)){
-		return IR_NOT;
+		*opcode = IR_NOT;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "OR", length)){
-		return IR_OR;
+		*opcode = IR_OR;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "ROR", length)){
-		return IR_ROR;
+		*opcode = IR_ROR;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "SHL", length)){
-		return IR_SHL;
+		*opcode = IR_SHL;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "SHR", length)){
-		return IR_SHR;
+		*opcode = IR_SHR;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "SUB", length)){
-		return IR_SUB;
+		*opcode = IR_SUB;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "XOR", length)){
-		return IR_XOR;
+		*opcode = IR_XOR;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "INPUT", length)){
-		return IR_INPUT;
+		*opcode = IR_INPUT;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	else if (!strncmp(reader_cursor->cursor + 1, "*", length)){
-		return IR_JOKER;
+		*opcode = IR_JOKER;
+		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
 	
-	if (length >= 3){
-		printf("ERROR: in %s, unable to convert string to ir Opcode %.3s, by default return ADD\n", __func__, reader_cursor->cursor + 1);
+	memset(symbol, '\0', CODESIGNATURE_NAME_MAX_SIZE);
+	memcpy(symbol, reader_cursor->cursor + 1, (length > CODESIGNATURE_NAME_MAX_SIZE - 1) ? (CODESIGNATURE_NAME_MAX_SIZE - 1) : length);
+	if (array_add(symbol_array, &symbol) < 0){
+		printf("ERROR: in %s, unable to add element to array\n", __func__);
 	}
-	else{
-		printf("ERROR: in %s, unable to convert string to ir Opcode, by default return ADD\n", __func__);
-	}
-	return IR_JOKER;
+
+	return SIGNATURE_NODE_TYPE_SYMBOL;
 }
 
 static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor){
@@ -580,7 +606,102 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 	if (!strncmp(reader_cursor->cursor + 1, "@", length)){
 		return IR_DEPENDENCE_TYPE_ADDRESS;
 	}
-	/* a completer */
+	else if (!strncmp(reader_cursor->cursor + 1, "I1F1", length)){
+		return IR_DEPENDENCE_TYPE_I1F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I1F2", length)){
+		return IR_DEPENDENCE_TYPE_I1F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I1F3", length)){
+		return IR_DEPENDENCE_TYPE_I1F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I1F4", length)){
+		return IR_DEPENDENCE_TYPE_I1F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I2F1", length)){
+		return IR_DEPENDENCE_TYPE_I2F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I2F2", length)){
+		return IR_DEPENDENCE_TYPE_I2F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I2F3", length)){
+		return IR_DEPENDENCE_TYPE_I2F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I2F4", length)){
+		return IR_DEPENDENCE_TYPE_I2F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I3F1", length)){
+		return IR_DEPENDENCE_TYPE_I3F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I3F2", length)){
+		return IR_DEPENDENCE_TYPE_I3F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I3F3", length)){
+		return IR_DEPENDENCE_TYPE_I3F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I3F4", length)){
+		return IR_DEPENDENCE_TYPE_I3F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I4F1", length)){
+		return IR_DEPENDENCE_TYPE_I4F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I4F2", length)){
+		return IR_DEPENDENCE_TYPE_I4F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I4F3", length)){
+		return IR_DEPENDENCE_TYPE_I4F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I4F4", length)){
+		return IR_DEPENDENCE_TYPE_I4F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O1F1", length)){
+		return IR_DEPENDENCE_TYPE_O1F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O1F2", length)){
+		return IR_DEPENDENCE_TYPE_O1F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O1F3", length)){
+		return IR_DEPENDENCE_TYPE_O1F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O1F4", length)){
+		return IR_DEPENDENCE_TYPE_O1F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O2F1", length)){
+		return IR_DEPENDENCE_TYPE_O2F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O2F2", length)){
+		return IR_DEPENDENCE_TYPE_O2F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O2F3", length)){
+		return IR_DEPENDENCE_TYPE_O2F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O2F4", length)){
+		return IR_DEPENDENCE_TYPE_O2F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O3F1", length)){
+		return IR_DEPENDENCE_TYPE_O3F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O3F2", length)){
+		return IR_DEPENDENCE_TYPE_O3F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O3F3", length)){
+		return IR_DEPENDENCE_TYPE_O3F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O3F4", length)){
+		return IR_DEPENDENCE_TYPE_O3F4;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O4F1", length)){
+		return IR_DEPENDENCE_TYPE_O4F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O4F2", length)){
+		return IR_DEPENDENCE_TYPE_O4F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O4F3", length)){
+		return IR_DEPENDENCE_TYPE_O4F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "O4F4", length)){
+		return IR_DEPENDENCE_TYPE_O4F4;
+	}
 
 	if (length >= 3){
 		printf("ERROR: in %s, unable to convert string to irDependenceType %.3s, by default return DIRECT\n", __func__, reader_cursor->cursor + 1);
@@ -621,56 +742,145 @@ static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, c
 }
 
 struct localCodeNode{
-	uint32_t 		id;
-	enum irOpcode 	opcode;
-	uint8_t 		opcode_set;
-	uint16_t 		input_number;
-	uint16_t 		input_frag_order;
-	uint16_t 		output_number;
-	uint16_t 		output_frag_order;
-	struct node* 	node;
+	uint32_t 				id;
+	uint8_t 				label_set;
+	struct signatureNode 	signature_node;
+	struct node* 			graph_node;
 };
 
 int32_t compare_localCodeNode(const void* arg1, const void* arg2);
+int32_t compare_signatureSymbol(const void* arg1, const void* arg2);
 
-static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* array, const char* graph_name){
-	uint32_t 				i;
-	struct localCodeEdge* 	edge;
-	struct localCodeNode* 	node_buffer;
-	struct localCodeNode* 	node_buffer_realloc;
-	uint32_t 				nb_node;
-	uint32_t 				node_offset;
-	struct signatureNode 	signature_node;
-	struct codeSignature 	code_signature;
+static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name){
+	uint32_t 						i;
+	struct localCodeEdge* 			edge;
+	struct localCodeNode* 			node_buffer;
+	struct localCodeNode* 			node_buffer_realloc;
+	uint32_t 						nb_node;
+	uint32_t 						node_offset;
+	struct codeSignature 			code_signature;
+	struct signatureSymbolTable* 	symbol_table;
+	uint8_t 						nb_raw_symbol;
+	struct signatureSymbol** 		raw_symbol_index;
 
-	if (array_get_length(array) > 0){
-		nb_node = 2 * array_get_length(array);
+	
+	if (array_get_length(local_edge_array) > 0){
+		if (array_get_length(symbol_array) > 0){
+			struct signatureSymbolTable* 	realloc_symbol_table;
+			uint32_t 						j;
+
+			nb_raw_symbol = array_get_length(symbol_array);
+			symbol_table = (struct signatureSymbolTable*)malloc(signatureSymbolTable_get_size(nb_raw_symbol));
+			if (symbol_table == NULL){
+				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				return;
+			}
+
+			for (i = 0; i < nb_raw_symbol; i++){
+				symbol_table->symbols[i].id = 0;
+				memcpy(symbol_table->symbols[i].name, (char*)array_get(symbol_array, i), CODESIGNATURE_NAME_MAX_SIZE);	
+			}
+
+			qsort(symbol_table->symbols, nb_raw_symbol, sizeof(struct signatureSymbol), compare_signatureSymbol);
+
+			symbol_table->nb_symbol = 1;
+			for (i = 1; i < nb_raw_symbol; i++){
+				if (strncmp(symbol_table->symbols[i].name, symbol_table->symbols[i - 1].name, CODESIGNATURE_NAME_MAX_SIZE)){
+					if (symbol_table->nb_symbol != i){
+						memcpy(symbol_table->symbols + symbol_table->nb_symbol, symbol_table->symbols + i, sizeof(struct signatureSymbol));
+					}
+					symbol_table->nb_symbol ++;
+				}
+			}
+
+			realloc_symbol_table = (struct signatureSymbolTable*)realloc(symbol_table, signatureSymbolTable_get_size(symbol_table->nb_symbol));
+			if (realloc_symbol_table == NULL){
+				printf("ERROR: in %s, unable to realloc memory buffer\n", __func__);
+			}
+			else{
+				symbol_table = realloc_symbol_table;
+			}
+
+			raw_symbol_index = (struct signatureSymbol**)malloc(sizeof(struct signatureSymbol*) * nb_raw_symbol);
+			if (raw_symbol_index == NULL){
+				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				free(symbol_table);
+				return;
+			}
+
+			for (i = 0; i < nb_raw_symbol; i++){
+				for (j = 0; j < symbol_table->nb_symbol; j++){
+					if (!strncmp(symbol_table->symbols[j].name, (char*)array_get(symbol_array, i), CODESIGNATURE_NAME_MAX_SIZE)){
+						raw_symbol_index[i] = symbol_table->symbols + j;
+						break;
+					}
+				}
+			}
+		}
+		else{
+			raw_symbol_index = NULL;
+			symbol_table = NULL;
+		}
+
+	
+		nb_node = 2 * array_get_length(local_edge_array);
 		node_buffer = (struct localCodeNode*)malloc(sizeof(struct localCodeNode) * nb_node);
 		if (node_buffer == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			if (raw_symbol_index != NULL){
+				free(raw_symbol_index);
+			}
+			if (symbol_table != NULL){
+				free(symbol_table);
+			}
 			return;
 		}
 
-		for (i = 0; i < array_get_length(array); i++){
-			edge = (struct localCodeEdge*)array_get(array, i);
+		for (i = 0; i < array_get_length(local_edge_array); i++){
+			edge = (struct localCodeEdge*)array_get(local_edge_array, i);
 
-			node_buffer[2 * i].id 						= edge->src_id;
-			node_buffer[2 * i].opcode 					= edge->src_opcode;
-			node_buffer[2 * i].opcode_set 				= edge->src_opcode_set;
-			node_buffer[2 * i].input_number 			= edge->src_input_number;
-			node_buffer[2 * i].input_frag_order 		= edge->src_input_frag_order;
-			node_buffer[2 * i].output_number 			= 0;
-			node_buffer[2 * i].output_frag_order 		= 0;
-			node_buffer[2 * i].node 					= NULL;
+			node_buffer[2 * i].id 												= edge->src_id;
+			node_buffer[2 * i].label_set 										= edge->src_label_set;
+			if (node_buffer[2 * i].label_set){
+				node_buffer[2 * i].signature_node.type 							= edge->src_type;
+				switch(node_buffer[2 * i].signature_node.type){
+					case SIGNATURE_NODE_TYPE_OPCODE : {
+						node_buffer[2 * i].signature_node.node_type.opcode 		= edge->src_opcode;
+						break;
+					}
+					case SIGNATURE_NODE_TYPE_SYMBOL : {
+						node_buffer[2 * i].signature_node.node_type.symbol 		= raw_symbol_index[edge->src_symbol];
+						break;
+					}
+				}
+			}
 
-			node_buffer[2 * i + 1].id 					= edge->dst_id;
-			node_buffer[2 * i + 1].opcode 				= edge->dst_opcode;
-			node_buffer[2 * i + 1].opcode_set 			= edge->dst_opcode_set;
-			node_buffer[2 * i + 1].input_number 		= 0;
-			node_buffer[2 * i + 1].input_frag_order 	= 0;
-			node_buffer[2 * i + 1].output_number 		= edge->dst_output_number;
-			node_buffer[2 * i + 1].output_frag_order 	= edge->dst_output_frag_order;
-			node_buffer[2 * i + 1].node 				= NULL;
+			node_buffer[2 * i].signature_node.input_number 						= edge->src_input_number;
+			node_buffer[2 * i].signature_node.input_frag_order 					= edge->src_input_frag_order;
+			node_buffer[2 * i].signature_node.output_number 					= 0;
+			node_buffer[2 * i].signature_node.output_frag_order 				= 0;
+			node_buffer[2 * i].graph_node 										= NULL;
+
+			node_buffer[2 * i + 1].id 											= edge->dst_id;
+			node_buffer[2 * i + 1].label_set 									= edge->dst_label_set;
+			if (node_buffer[2 * i + 1].label_set){
+				node_buffer[2 * i + 1].signature_node.type 						= edge->dst_type;
+				switch(node_buffer[2 * i + 1].signature_node.type){
+					case SIGNATURE_NODE_TYPE_OPCODE : {
+						node_buffer[2 * i + 1].signature_node.node_type.opcode 	= edge->dst_opcode;
+						break;
+					}
+					case SIGNATURE_NODE_TYPE_SYMBOL : {
+						node_buffer[2 * i + 1].signature_node.node_type.symbol 	= raw_symbol_index[edge->dst_symbol];
+						break;
+					}
+				}
+			}
+			node_buffer[2 * i + 1].signature_node.input_number 					= 0;
+			node_buffer[2 * i + 1].signature_node.input_frag_order 				= 0;
+			node_buffer[2 * i + 1].signature_node.output_number 				= edge->dst_output_number;
+			node_buffer[2 * i + 1].signature_node.output_frag_order 			= edge->dst_output_frag_order;
+			node_buffer[2 * i + 1].graph_node 									= NULL;
 
 		}
 
@@ -683,18 +893,47 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 					memcpy(node_buffer + node_offset, node_buffer + i, sizeof(struct localCodeNode));
 				}
 			}
-			else if (node_buffer[i].opcode_set){
-				if (!node_buffer[node_offset].opcode_set){
-					node_buffer[node_offset].opcode 			= node_buffer[i].opcode;
-					node_buffer[node_offset].opcode_set 		= 1;
-					node_buffer[node_offset].input_number 		= node_buffer[i].input_number;
-					node_buffer[node_offset].input_frag_order 	= node_buffer[i].input_frag_order;
-					node_buffer[node_offset].output_number 		= node_buffer[i].output_number;
-					node_buffer[node_offset].output_frag_order 	= node_buffer[i].output_frag_order;
+			else if (node_buffer[i].label_set){
+				if (!node_buffer[node_offset].label_set){
+					node_buffer[node_offset].label_set 									= 1;
+					node_buffer[node_offset].signature_node.type 						= node_buffer[i].signature_node.type;
+					switch(node_buffer[node_offset].signature_node.type){
+						case SIGNATURE_NODE_TYPE_OPCODE : {
+							node_buffer[node_offset].signature_node.node_type.opcode 	= node_buffer[i].signature_node.node_type.opcode;
+							break;
+						}
+						case SIGNATURE_NODE_TYPE_SYMBOL : {
+							node_buffer[node_offset].signature_node.node_type.symbol 	= node_buffer[i].signature_node.node_type.symbol;
+							break;
+						}
+					}
+					
+					node_buffer[node_offset].signature_node.input_number 				= node_buffer[i].signature_node.input_number;
+					node_buffer[node_offset].signature_node.input_frag_order 			= node_buffer[i].signature_node.input_frag_order;
+					node_buffer[node_offset].signature_node.output_number 				= node_buffer[i].signature_node.output_number;
+					node_buffer[node_offset].signature_node.output_frag_order 			= node_buffer[i].signature_node.output_frag_order;
 				}
-				else if (node_buffer[node_offset].opcode != node_buffer[i].opcode){
-					printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
-				}
+				else{
+					if (node_buffer[node_offset].signature_node.type != node_buffer[i].signature_node.type){
+						printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+					}
+					else{
+						switch (node_buffer[node_offset].signature_node.type){
+							case SIGNATURE_NODE_TYPE_OPCODE  :{
+								if (node_buffer[node_offset].signature_node.node_type.opcode != node_buffer[i].signature_node.node_type.opcode){
+									printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+								}
+								break;
+							}
+							case SIGNATURE_NODE_TYPE_SYMBOL : {
+								if (node_buffer[node_offset].signature_node.node_type.symbol != node_buffer[i].signature_node.node_type.symbol){
+									printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+								}
+								break;
+							}
+						}
+					}
+				} 
 			}
 		}
 
@@ -710,24 +949,21 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		graph_init(&(code_signature.graph), sizeof(struct signatureNode), sizeof(struct signatureEdge));
 
 		for (i = 0; i < nb_node; i++){
-			if (!node_buffer[i].opcode_set){
+			if (!node_buffer[i].label_set){
 				printf("ERROR: in %s, opcode has not been set for node %u\n", __func__, node_buffer[i].id);
 			}
-			signature_node.opcode 				= node_buffer[i].opcode;
-			signature_node.input_number 		= node_buffer[i].input_number;
-			signature_node.input_frag_order 	= node_buffer[i].input_frag_order;
-			signature_node.output_number 		= node_buffer[i].output_number;
-			signature_node.output_frag_order 	= node_buffer[i].output_frag_order;
-			node_buffer[i].node = graph_add_node(&(code_signature.graph), &signature_node);
+			else{
+				node_buffer[i].graph_node = graph_add_node(&(code_signature.graph), &(node_buffer[i].signature_node));
+			}
 		}
 
-		for (i = 0; i < array_get_length(array); i++){
+		for (i = 0; i < array_get_length(local_edge_array); i++){
 			struct localCodeNode* 	src_node;
 			struct localCodeNode* 	dst_node;
 			struct localCodeNode 	cmp_node;
 			struct signatureEdge 	signature_edge;
 
-			edge = (struct localCodeEdge*)array_get(array, i);
+			edge = (struct localCodeEdge*)array_get(local_edge_array, i);
 				
 			cmp_node.id = edge->src_id;
 			src_node = (struct localCodeNode*)bsearch (&cmp_node, node_buffer, nb_node, sizeof(struct localCodeNode), compare_localCodeNode);
@@ -735,18 +971,18 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 				printf("ERROR: in %s, edge %u unable to fetch src node\n", __func__, i);
 				continue;
 			}
-			if (src_node->node == NULL){
-				printf("ERROR: in %s, rsc node is NULL\n", __func__);
+			if (src_node->graph_node == NULL){
+				printf("ERROR: in %s, src node is NULL\n", __func__);
 			}
 
 			cmp_node.id = edge->dst_id;
-			dst_node = (struct localCodeNode*)bsearch (&cmp_node, node_buffer, nb_node, sizeof(struct localCodeNode), compare_localCodeNode);
+			dst_node = (struct localCodeNode*)bsearch(&cmp_node, node_buffer, nb_node, sizeof(struct localCodeNode), compare_localCodeNode);
 			if (dst_node == NULL){
 				printf("ERROR: in %s, edge %u unable to fetch dst node\n", __func__, i);
 				continue;
 			}
-			if (dst_node->node == NULL){
-				printf("ERROR: in %s, rsc node is NULL\n", __func__);
+			if (dst_node->graph_node == NULL){
+				printf("ERROR: in %s, dst node is NULL\n", __func__);
 			}
 
 			if (edge->edge_type_set){
@@ -755,19 +991,24 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			else{
 				signature_edge.type = IR_DEPENDENCE_TYPE_DIRECT;
 			}
-			if (graph_add_edge(&(code_signature.graph), src_node->node, dst_node->node, &signature_edge) == NULL){
+			if (graph_add_edge(&(code_signature.graph), src_node->graph_node, dst_node->graph_node, &signature_edge) == NULL){
 				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
 			}
 		}
 
 		strncpy(code_signature.name, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
-		code_signature.sub_graph_handle = NULL;
-
+		code_signature.sub_graph_handle 	= NULL;
+		code_signature.symbol_table 		= symbol_table;
+		
 		if (codeSignature_add_signature_to_collection(collection, &code_signature)){
 			printf("ERROR: in %s, unable to add signature to collection\n", __func__);
 		}
 
 		free(node_buffer);
+
+		if (raw_symbol_index != NULL){
+			free(raw_symbol_index);
+		}
 	}
 }
 
@@ -782,4 +1023,11 @@ int32_t compare_localCodeNode(const void* arg1, const void* arg2){
 		return 1;
 	}
 	return 0;
+}
+
+int32_t compare_signatureSymbol(const void* arg1, const void* arg2){
+	struct signatureSymbol* sym1 = (struct signatureSymbol*)arg1;
+	struct signatureSymbol* sym2 = (struct signatureSymbol*)arg2;
+
+	return strncmp(sym1->name, sym2->name, CODESIGNATURE_NAME_MAX_SIZE);
 }

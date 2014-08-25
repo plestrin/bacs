@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_printDot_collection)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_empty_collection)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_clean_collection)
 
 	/* callGraph specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"Specify OS", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
@@ -98,11 +98,7 @@ struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	if (codeSignature_init_collection(&(analysis->code_signature_collection))){
-		printf("ERROR: in %s, unable to init code signature collection\n", __func__);
-		free(analysis);
-		return NULL;
-	}
+	codeSignature_init_collection(&(analysis->code_signature_collection));
 
 	if (array_init(&(analysis->frag_array), sizeof(struct traceFragment))){
 		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
