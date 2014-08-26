@@ -654,6 +654,18 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 	else if (!strncmp(reader_cursor->cursor + 1, "I4F4", length)){
 		return IR_DEPENDENCE_TYPE_I4F4;
 	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I5F1", length)){
+		return IR_DEPENDENCE_TYPE_I5F1;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I5F2", length)){
+		return IR_DEPENDENCE_TYPE_I5F2;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I5F3", length)){
+		return IR_DEPENDENCE_TYPE_I5F3;
+	}
+	else if (!strncmp(reader_cursor->cursor + 1, "I5F4", length)){
+		return IR_DEPENDENCE_TYPE_I5F4;
+	}
 	else if (!strncmp(reader_cursor->cursor + 1, "O1F1", length)){
 		return IR_DEPENDENCE_TYPE_O1F1;
 	}
@@ -715,21 +727,16 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char){
 	uint32_t 	result = 0;
 	uint64_t 	i;
-	uint64_t 	j;
 
 	if (reader_cursor->remaining_size < 6){
 		printf("ERROR: in %s, incomplete IO tag\n", __func__);
 	}
 	else{
 		if (reader_cursor->cursor[1] == first_char && reader_cursor->cursor[2] == ':'){
-			for (i = 0; i + 3 < reader_cursor->remaining_size; i++){
-				if (reader_cursor->cursor[i + 3] == ':'){
-					result = atoi(reader_cursor->cursor + 3) & 0x0000ffff;
-					for (j = i + 1; j + 3 < reader_cursor->remaining_size; j++){
-						if (reader_cursor->cursor[i + 3] == ']'){
-							result |= atoi(reader_cursor->cursor + i + 4) << 16;
-						}
-					}
+			for (i = 3; i < reader_cursor->remaining_size; i++){
+				if (reader_cursor->cursor[i] == ':'){
+					result = atoi(reader_cursor->cursor + 3) | (atoi(reader_cursor->cursor + i + 1) << 16);
+					break;
 				}
 			}
 		}
@@ -999,7 +1006,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		strncpy(code_signature.name, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 		code_signature.sub_graph_handle 	= NULL;
 		code_signature.symbol_table 		= symbol_table;
-		
+
 		if (codeSignature_add_signature_to_collection(collection, &code_signature)){
 			printf("ERROR: in %s, unable to add signature to collection\n", __func__);
 		}

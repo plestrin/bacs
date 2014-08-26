@@ -42,6 +42,9 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 			case IR_OPERATION_TYPE_INST 	: {
 				return (op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
 			}
+			case IR_OPERATION_TYPE_SYMBOL 	: {
+				return (op1->operation_type.symbol.ptr == op2->operation_type.symbol.ptr);
+			}
 		}
 	}
 
@@ -183,6 +186,25 @@ struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size){
 	return node;
 }
 
+struct node* ir_add_symbol(struct ir* ir, void* ptr){
+	struct node* 			node;
+	struct irOperation* 	operation;
+
+	node = graph_add_node_(&(ir->graph));
+	if (node == NULL){
+		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+	}
+	else{
+		operation = ir_node_get_operation(node);
+		operation->type 						= IR_OPERATION_TYPE_SYMBOL;
+		operation->operation_type.symbol.ptr 	= ptr;
+		operation->size 						= 1;
+		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+	}
+
+	return node;
+}
+
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type){
 	struct edge* 			edge;
 	struct irDependence* 	dependence;
@@ -311,6 +333,10 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"%s\"]", irOpcode_2_string(operation->operation_type.inst.opcode));
 			break;
 		}
+		case IR_OPERATION_TYPE_SYMBOL 		: {
+			fprintf(file, "[label=\"SYMBOL\"]");
+			break;
+		}
 	}
 }
 
@@ -388,6 +414,22 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 		}
 		case IR_DEPENDENCE_TYPE_I4F4 	:{
 			fprintf(file, "[label=\"I4F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I5F1 	:{
+			fprintf(file, "[label=\"I5F1\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I5F2 	:{
+			fprintf(file, "[label=\"I5F2\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I5F3 	:{
+			fprintf(file, "[label=\"I5F3\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_I5F4 	:{
+			fprintf(file, "[label=\"I5F4\"]");
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_O1F1 	:{

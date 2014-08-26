@@ -53,9 +53,15 @@ struct codeSignature{
 	struct graph					graph;
 	struct subGraphIsoHandle* 		sub_graph_handle;
 	struct signatureSymbolTable* 	symbol_table;
+	uint32_t 						state;
 } __attribute__((__may_alias__));
 
 #define syntax_node_get_codeSignature(node) 	((struct codeSignature*)&((node)->data))
+
+#define codeSignature_state_is_search(code_signature) ((code_signature)->state & 0x00000001)
+#define codeSignature_state_is_found(code_signature) ((code_signature)->state & 0x00000002)
+#define codeSignature_state_set_search(code_signature) (code_signature)->state |= 0x00000001
+#define codeSignature_state_set_found(code_signature) (code_signature)->state |= 0x00000002
 
 #define codeSignature_clean(code_signature) 																							\
 	graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 																\
@@ -80,7 +86,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 
 #define codeSignature_get_new_id(collection) ((collection)->code_signature_id_generator ++)
 
-void codeSignature_search(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir);
+void codeSignature_search_collection(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir);
 
 void codeSignature_printDot_collection(struct codeSignatureCollection* collection);
 

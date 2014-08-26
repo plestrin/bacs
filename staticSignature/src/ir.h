@@ -66,7 +66,7 @@ enum irOperationType{
 	IR_OPERATION_TYPE_OUT_MEM,
 	IR_OPERATION_TYPE_IMM,
 	IR_OPERATION_TYPE_INST,
-	IR_OPERATION_TYPE_MACRO
+	IR_OPERATION_TYPE_SYMBOL
 };
 
 enum irDependenceType{
@@ -88,22 +88,26 @@ enum irDependenceType{
 	IR_DEPENDENCE_TYPE_I4F2 		= 0x0000000f,
 	IR_DEPENDENCE_TYPE_I4F3 		= 0x00000010,
 	IR_DEPENDENCE_TYPE_I4F4 		= 0x00000011,
-	IR_DEPENDENCE_TYPE_O1F1 		= 0x00000012,
-	IR_DEPENDENCE_TYPE_O1F2 		= 0x00000013,
-	IR_DEPENDENCE_TYPE_O1F3 		= 0x00000014,
-	IR_DEPENDENCE_TYPE_O1F4 		= 0x00000015,
-	IR_DEPENDENCE_TYPE_O2F1 		= 0x00000016,
-	IR_DEPENDENCE_TYPE_O2F2 		= 0x00000017,
-	IR_DEPENDENCE_TYPE_O2F3 		= 0x00000018,
-	IR_DEPENDENCE_TYPE_O2F4 		= 0x00000019,
-	IR_DEPENDENCE_TYPE_O3F1 		= 0x0000001a,
-	IR_DEPENDENCE_TYPE_O3F2 		= 0x0000001b,
-	IR_DEPENDENCE_TYPE_O3F3 		= 0x0000001c,
-	IR_DEPENDENCE_TYPE_O3F4 		= 0x0000001d,
-	IR_DEPENDENCE_TYPE_O4F1 		= 0x0000001e,
-	IR_DEPENDENCE_TYPE_O4F2 		= 0x0000001f,
-	IR_DEPENDENCE_TYPE_O4F3 		= 0x00000020,
-	IR_DEPENDENCE_TYPE_O4F4 		= 0x00000021
+	IR_DEPENDENCE_TYPE_I5F1 		= 0x00000012,
+	IR_DEPENDENCE_TYPE_I5F2 		= 0x00000013,
+	IR_DEPENDENCE_TYPE_I5F3 		= 0x00000014,
+	IR_DEPENDENCE_TYPE_I5F4 		= 0x00000015,
+	IR_DEPENDENCE_TYPE_O1F1 		= 0x00000016,
+	IR_DEPENDENCE_TYPE_O1F2 		= 0x00000017,
+	IR_DEPENDENCE_TYPE_O1F3 		= 0x00000018,
+	IR_DEPENDENCE_TYPE_O1F4 		= 0x00000019,
+	IR_DEPENDENCE_TYPE_O2F1 		= 0x0000001a,
+	IR_DEPENDENCE_TYPE_O2F2 		= 0x0000001b,
+	IR_DEPENDENCE_TYPE_O2F3 		= 0x0000001c,
+	IR_DEPENDENCE_TYPE_O2F4 		= 0x0000001d,
+	IR_DEPENDENCE_TYPE_O3F1 		= 0x0000001e,
+	IR_DEPENDENCE_TYPE_O3F2 		= 0x0000001f,
+	IR_DEPENDENCE_TYPE_O3F3 		= 0x00000020,
+	IR_DEPENDENCE_TYPE_O3F4 		= 0x00000021,
+	IR_DEPENDENCE_TYPE_O4F1 		= 0x00000022,
+	IR_DEPENDENCE_TYPE_O4F2 		= 0x00000023,
+	IR_DEPENDENCE_TYPE_O4F3 		= 0x00000024,
+	IR_DEPENDENCE_TYPE_O4F4 		= 0x00000025
 };
 
 #define irDependenceType_iocustom_get
@@ -134,6 +138,9 @@ struct irOperation{
 		struct {
 			enum irOpcode 		opcode;
 		} 						inst;
+		struct {
+			void* 				ptr;
+		} 						symbol;
 	} 							operation_type;
 	uint8_t 					size;
 	uint32_t 					index;
@@ -167,6 +174,7 @@ struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, ui
 struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
+struct node* ir_add_symbol(struct ir* ir, void* ptr);
 
 #define ir_convert_node_to_inst(node, opcode_, size_)						\
 	ir_node_get_operation(node)->type = IR_OPERATION_TYPE_INST; 			\

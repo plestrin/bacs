@@ -722,7 +722,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		}
 	}
 
-	codeSignature_search(&(analysis->code_signature_collection), ir_buffer, nb_ir);
+	codeSignature_search_collection(&(analysis->code_signature_collection), ir_buffer, nb_ir);
 	free(ir_buffer);
 }
 
