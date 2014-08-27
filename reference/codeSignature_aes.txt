@@ -1,6 +1,5 @@
 # This file define the following signature(s):
 #	- aes_t4 		: one round of the AES encryption/decryption (round 1 to 9), four tables version
-#	- aes_t4_last 	: one round of the AES encryption/decryption (last round), four tables version
 
 "aes_t4"
 
