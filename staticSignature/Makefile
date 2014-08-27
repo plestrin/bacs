@@ -18,8 +18,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)analysis.o 				\
 					$(BUILD_DIR)trace.o 				\
 					$(BUILD_DIR)cmReaderJSON.o 			\
-					$(BUILD_DIR)traceFragment.o			\
-					$(BUILD_DIR)loop.o 					\
 					$(BUILD_DIR)ir.o 					\
 					$(BUILD_DIR)irImporterAsm.o 		\
 					$(BUILD_DIR)irRenameEngine.o 		\

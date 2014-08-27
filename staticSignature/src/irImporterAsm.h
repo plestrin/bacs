@@ -5,6 +5,6 @@
 
 #include "ir.h"
 
-int32_t irImporterAsm_import(struct ir* ir);
+int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly);
 
 #endif

@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "callGraph.h"
-#include "traceFragment.h"
 
 #define CALLGRAPH_MAX_DEPTH 	512
 #define CALLGRAPH_START_DEPTH 	256
@@ -370,7 +369,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 	struct assemblySnippet* 	snippet;
 	uint32_t 					start_index;
 	uint32_t 					stop_index;
-	struct traceFragment 		fragment;
+	struct trace 				fragment;
 
 	for (node = graph_get_head_node(&(call_graph->graph)); node != NULL; node = node_get_next(node)){
 		call_graph_node = callGraph_node_get_data(node);
@@ -392,18 +391,18 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
 			start_index = snippet->offset;
 
-			traceFragment_init(&fragment)
-			if (trace_extract_segment(trace, &(fragment.trace), start_index, stop_index - start_index)){
+			trace_init(&fragment);
+			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
 				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
 			}
 			else{
 				if (call_graph_node->routine != NULL){
-					snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "rtn_inc:%s", call_graph_node->routine->name);
+					snprintf(fragment.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", call_graph_node->routine->name);
 				}
 
 				if (array_add(frag_array, &fragment) < 0){
 					printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
-					traceFragment_clean(&fragment);
+					trace_clean(&fragment);
 				}
 			}
 		}

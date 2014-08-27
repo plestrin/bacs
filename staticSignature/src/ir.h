@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "trace.h"
+#include "assembly.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 
@@ -162,12 +162,11 @@ struct irDependence{
 #define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
 
 struct ir{
-	struct trace* 				trace;
 	struct graph 				graph;
 };
 
-struct ir* ir_create(struct trace* trace);
-int32_t ir_init(struct ir* ir, struct trace* trace);
+struct ir* ir_create(struct assembly* assembly);
+int32_t ir_init(struct ir* ir, struct assembly* assembly);
 
 struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg);
 struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);

@@ -9,7 +9,6 @@
 #include "ir.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
-#include "traceFragment.h"
 #include "multiColumn.h"
 
 
@@ -45,13 +44,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
-
-	/* loop specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create loop", 				"Create a loopEngine and parse the trace", 		"Creation method", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_loop_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "remove redundant loop", 	"Remove the redundant loops", 					"Removing method", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_loop_remove_redundant)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print loop", 				"Print the loops contained in the loopEngine", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_loop_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export loop", 				"Export loop(s) to traceFragment array", 		"Export method & loop index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_loop_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "delete loop", 				"Delete the loopEngine", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_loop_delete)
 
 	/* traceFragement specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
@@ -100,7 +92,7 @@ struct analysis* analysis_create(){
 
 	codeSignature_init_collection(&(analysis->code_signature_collection));
 
-	if (array_init(&(analysis->frag_array), sizeof(struct traceFragment))){
+	if (array_init(&(analysis->frag_array), sizeof(struct trace))){
 		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
 		codeSignature_clean_collection(&(analysis->code_signature_collection));
 		free(analysis);
@@ -109,18 +101,12 @@ struct analysis* analysis_create(){
 
 	analysis->trace 		= NULL;
 	analysis->code_map 		= NULL;
-	analysis->loop_engine 	= NULL;
 	analysis->call_graph 	= NULL;
 
 	return analysis;
 }
 
 void analysis_delete(struct analysis* analysis){
-	if (analysis->loop_engine != NULL){
-		loopEngine_delete(analysis->loop_engine);
-		analysis->loop_engine = NULL;
-	}
-
 	if (analysis->call_graph != NULL){
 		callGraph_delete(analysis->call_graph);
 		analysis->call_graph = NULL;
@@ -153,11 +139,6 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 		printf("WARNING: in %s, deleting previous trace\n", __func__);
 		trace_delete(analysis->trace);
 
-		if (analysis->loop_engine != NULL){
-			loopEngine_delete(analysis->loop_engine);
-			analysis->loop_engine = NULL;
-		}
-
 		if (analysis->call_graph != NULL){
 			callGraph_delete(analysis->call_graph);
 			analysis->call_graph = NULL;
@@ -169,7 +150,7 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 		codeMap_delete(analysis->code_map);
 	}
 
-	analysis->trace = trace_create(arg);
+	analysis->trace = trace_load(arg);
 	if (analysis->trace == NULL){
 		printf("ERROR: in %s, unable to create trace\n", __func__);
 	}
@@ -221,22 +202,22 @@ void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 }
 
 void analysis_trace_export(struct analysis* analysis, char* arg){
-	uint32_t 				start = 0;
-	uint32_t 				stop = 0;
-	struct traceFragment 	fragment;
+	uint32_t 		start = 0;
+	uint32_t 		stop = 0;
+	struct trace 	fragment;
 
 	if (analysis->trace != NULL){
-		traceFragment_init(&fragment)
+		trace_init(&fragment);
 		inputParser_extract_index(arg, &start, &stop);
-		if (trace_extract_segment(analysis->trace, &(fragment.trace), start, stop - start)){
+		if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 			printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
 		}
 		else{
-			snprintf(fragment.tag, TRACEFRAGMENT_TAG_LENGTH, "trace [%u:%u]", start, stop);
+			snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
 
 			if (array_add(&(analysis->frag_array), &fragment) < 0){
 				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
-				traceFragment_clean(&fragment);
+				trace_clean(&fragment);
 			}
 		}
 	}
@@ -300,144 +281,6 @@ void analysis_trace_delete(struct analysis* analysis){
 }
 
 /* ===================================================================== */
-/* Loop functions						                                 */
-/* ===================================================================== */
-
-void analysis_loop_create(struct analysis* analysis, char* arg){
-	if (analysis->loop_engine != NULL){
-		printf("WARNING: in %s, deleting previous loopEngine\n", __func__);
-		loopEngine_delete(analysis->loop_engine);
-		analysis->loop_engine = NULL;
-	}
-
-	if (analysis->trace == NULL){
-		printf("ERROR: %s, trace is NULL\n", __func__);
-	}
-	else{
-		analysis->loop_engine = loopEngine_create(analysis->trace);
-		if (analysis->loop_engine == NULL){
-			printf("ERROR: in %s, unable to create loopEngine\n", __func__);
-			return;
-		}
-
-		if (!strcmp(arg, "STRICT")){
-			if (loopEngine_process_strict(analysis->loop_engine)){
-				printf("ERROR: in %s, unable to process strict loopEngine\n", __func__);
-			}
-		}
-		else if (!strcmp(arg, "NORDER")){
-			if (loopEngine_process_norder(analysis->loop_engine)){
-				printf("ERROR: in %s, unable to process norder loopEngine\n", __func__);
-			}
-		}
-		else{
-			printf("Expected loop creation specifier:\n");
-			printf(" - \"STRICT\" : compare exact instruction sequence\n");
-			printf(" - \"NORDER\" : does not take into account instructions order\n");
-		}
-	}
-}
-
-void analysis_loop_remove_redundant(struct analysis* analysis, char* arg){
-	if (analysis->loop_engine != NULL){
-		if (!strcmp(arg, "STRICT")){
-			if (loopEngine_remove_redundant_loop_strict(analysis->loop_engine)){
-				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
-			}
-		}
-		else if (!strcmp(arg, "PACKED")){
-			if (loopEngine_remove_redundant_loop_packed(analysis->loop_engine)){
-				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
-			}
-		}
-		else if (!strcmp(arg, "NESTED")){
-			if (loopEngine_remove_redundant_loop_nested(analysis->loop_engine)){
-				printf("ERROR: in %s, unable to remove redundant loop\n", __func__);
-			}
-		}
-		else{
-			printf("Expected remove redundant loop specifier:\n");
-			printf(" - \"STRICT\" : nested loop(s) are deleted. No epilogue packing\n");
-			printf(" - \"PACKED\" : nested loop(s) are deleted. Epilogue packing\n");
-			printf(" - \"NESTED\" : nested loop(s) are not deleted. Epilogue packing\n");
-		}
-	}
-	else{
-		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
-	}
-}
-
-void analysis_loop_print(struct analysis* analysis){
-	if (analysis->loop_engine != NULL){
-		loopEngine_print_loop(analysis->loop_engine);
-	}
-	else{
-		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
-	}
-}
-
-void analysis_loop_export(struct analysis* analysis, char* arg){
-	int32_t 	loop_index = -1;
-	int32_t 	iteration_index = -1;
-	uint32_t 	i;
-	uint8_t 	found_space = 0;
-
-
-	if (analysis->loop_engine != NULL){
-		for (i = 0; i < strlen(arg) - 1; i++){
-			if (arg[i] == ' '){
-				found_space = 1;
-				break;
-			}
-		}
-		if (found_space){
-			loop_index = atoi(arg + i + 1);
-		}
-		else{
-			i ++;
-		}
-
-		if (!strncmp(arg, "ALL", i)){
-			if (loopEngine_export_all(analysis->loop_engine, &(analysis->frag_array), loop_index)){
-				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-			}
-		}
-		else if (i > 3 && !strncmp(arg, "IT=", 3)){
-			iteration_index = atoi(arg + 3);
-			if (loopEngine_export_it(analysis->loop_engine, &(analysis->frag_array), loop_index, iteration_index)){
-				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-			}
-		}
-		else if (!strncmp(arg, "NOEP", i)){
-			if (loopEngine_export_noEp(analysis->loop_engine, &(analysis->frag_array), loop_index)){
-				printf("ERROR: in %s, unable to export loop to traceFragment\n", __func__);
-			}
-		}
-		else{
-			printf("Expected export specifier:\n");
-			printf(" - \"ALL\"   : export every loop's iteration and the epilogue if it exists\n");
-			printf(" - \"NOEP\"  : export every loop's iteration\n");
-			printf(" - \"IT=xx\" : export the xx iteration of the loop\n");
-		}
-	}
-	else{
-		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
-	}
-
-	return;
-}
-
-void analysis_loop_delete(struct analysis* analysis){
-	if (analysis->loop_engine != NULL){
-		loopEngine_delete(analysis->loop_engine);
-		analysis->loop_engine = NULL;
-	}
-	else{
-		printf("ERROR: in %s, loopEngine is NULL\n", __func__);
-	}
-}
-
-/* ===================================================================== */
 /* frag functions						                                 */
 /* ===================================================================== */
 
@@ -445,7 +288,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					index;
-	struct traceFragment*		fragment;
+	struct trace*				fragment;
 	double 						percent;
 	uint32_t 					nb_opcode = 10;
 	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
@@ -456,7 +299,8 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		index = (uint32_t)atoi(arg);
 		
 		if (index < array_get_length(&(analysis->frag_array))){
-			traceFragment_print_assembly((struct traceFragment*)array_get(&(analysis->frag_array), index));
+			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
+			trace_print(fragment, 0, trace_get_nb_instruction(fragment));
 			return;
 		}
 		else{
@@ -488,7 +332,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
-		multiColumnPrinter_set_column_size(printer, 1, TRACEFRAGMENT_TAG_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
 		multiColumnPrinter_set_column_size(printer, 2, 8);
 		multiColumnPrinter_set_column_size(printer, 3, 16);
 
@@ -504,9 +348,9 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		multiColumnPrinter_print_header(printer);
 
 		for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
-			percent = traceFragment_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-			multiColumnPrinter_print(printer, i, fragment->tag, traceFragment_get_nb_instruction(fragment), percent*100, NULL);
+			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+			percent = trace_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
+			multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);
@@ -517,10 +361,10 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_set_tag(struct analysis* analysis, char* arg){
-	uint32_t 				i;
-	uint32_t 				index;
-	struct traceFragment* 	fragment;
-	uint8_t 				found_space = 0;
+	uint32_t 		i;
+	uint32_t 		index;
+	struct trace* 	fragment;
+	uint8_t 		found_space = 0;
 
 	for (i = 0; i < strlen(arg) - 1; i++){
 		if (arg[i] == ' '){
@@ -532,13 +376,13 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg){
 		index = (uint32_t)atoi(arg);
 
 		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), index);
+			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
 
 			#ifdef VERBOSE
 			printf("Setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
 			#endif
 
-			strncpy(fragment->tag, arg + i + 1, TRACEFRAGMENT_TAG_LENGTH);
+			strncpy(fragment->tag, arg + i + 1, TRACE_TAG_LENGTH);
 		}
 		else{
 			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
@@ -550,11 +394,11 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_locate(struct analysis* analysis, char* arg){
-	uint32_t 				i;
-	uint32_t 				index;
-	uint32_t 				start;
-	uint32_t 				stop;
-	struct traceFragment* 	fragment;
+	uint32_t 		i;
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	struct trace* 	fragment;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -574,13 +418,13 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 
 	if (analysis->code_map != NULL){
 		for (i = start; i < stop; i++){
-			fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
+			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 
 			#ifdef VERBOSE
 			printf("Locating frag %u (tag: \"%s\")\n", i, fragment->tag);
 			#endif
 			
-			traceFragment_print_location(fragment, analysis->code_map);
+			trace_print_location(fragment, analysis->code_map);
 		}
 	}
 	else{
@@ -592,7 +436,7 @@ void analysis_frag_clean(struct analysis* analysis){
 	uint32_t i;
 
 	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-		traceFragment_clean((struct traceFragment*)array_get(&(analysis->frag_array), i));
+		trace_clean((struct trace*)array_get(&(analysis->frag_array), i));
 	}
 	array_empty(&(analysis->frag_array));
 }
@@ -624,18 +468,18 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 	}
 
 	for (i = start; i < stop; i++){	
-		traceFragment_create_ir((struct traceFragment*)array_get(&(analysis->frag_array), i));
+		trace_create_ir((struct trace*)array_get(&(analysis->frag_array), i));
 	}
 
 	return;
 }
 
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
-	uint32_t 				index;
+	uint32_t index;
 
 	index = (uint32_t)atoi(arg);	
 	if (index < array_get_length(&(analysis->frag_array))){
-		traceFragment_printDot_ir((struct traceFragment*)array_get(&(analysis->frag_array), index));
+		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index));
 	}
 	else{
 		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
@@ -643,11 +487,11 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
-	uint32_t 				index;
-	uint32_t 				start;
-	uint32_t 				stop;
-	uint32_t 				i;
-	struct traceFragment* 	fragment;
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	struct trace* 	fragment;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -666,7 +510,7 @@ void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
 	}
 
 	for (i = start; i < stop; i++){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
 			ir_normalize(fragment->ir);
 		}
@@ -682,13 +526,13 @@ void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
 /* ===================================================================== */
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg){
-	uint32_t 				index;
-	uint32_t 				start;
-	uint32_t 				stop;
-	uint32_t 				i;
-	struct traceFragment* 	fragment;
-	struct ir**				ir_buffer;
-	uint32_t 				nb_ir;
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	struct trace* 	fragment;
+	struct ir**		ir_buffer;
+	uint32_t 		nb_ir;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -713,7 +557,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	}
 
 	for (i = start, nb_ir = 0; i < stop; i++){
-		fragment = (struct traceFragment*)array_get(&(analysis->frag_array), i);
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
 			ir_buffer[nb_ir ++] = fragment->ir;
 		}

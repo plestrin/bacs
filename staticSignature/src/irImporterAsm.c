@@ -40,7 +40,7 @@ static void special_instruction_pop(struct irRenameEngine* engine, struct asmInp
 static void special_instruction_push(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
 
 
-int32_t irImporterAsm_import(struct ir* ir){
+int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 	struct asmInputVariable 	input_variables;
 	struct asmOutputVariable 	output_variables;
 	struct irRenameEngine 		engine;
@@ -48,7 +48,7 @@ int32_t irImporterAsm_import(struct ir* ir){
 
 	irRenameEngine_init(engine, ir)
 
-	if (assembly_get_instruction(&(ir->trace->assembly), &it, 0)){
+	if (assembly_get_instruction(assembly, &it, 0)){
 		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
 		return -1;
 	}
@@ -107,11 +107,11 @@ int32_t irImporterAsm_import(struct ir* ir){
 			}
 		}
 
-		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(ir->trace->assembly)) - 1){
+		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
 			break;
 		}
 		else{
-			if (assembly_get_next_instruction(&(ir->trace->assembly), &it)){
+			if (assembly_get_next_instruction(assembly, &it)){
 				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
 				return -1;
 			}

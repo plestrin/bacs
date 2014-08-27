@@ -51,12 +51,12 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 	return 0;
 }
 
-struct ir* ir_create(struct trace* trace){
+struct ir* ir_create(struct assembly* assembly){
 	struct ir* ir;
 
 	ir =(struct ir*)malloc(sizeof(struct ir));
 	if (ir != NULL){
-		if(ir_init(ir, trace)){
+		if(ir_init(ir, assembly)){
 			printf("ERROR: in %s, unable to init ir\n", __func__);
 			free(ir);
 			ir = NULL;
@@ -69,12 +69,11 @@ struct ir* ir_create(struct trace* trace){
 	return ir;
 }
 
-int32_t ir_init(struct ir* ir, struct trace* trace){
-	ir->trace 				= trace;
+int32_t ir_init(struct ir* ir, struct assembly* assembly){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
 	
-	if (irImporterAsm_import(ir)){
+	if (irImporterAsm_import(ir, assembly)){
 		printf("ERROR: in %s, trace asm import has failed\n", __func__);
 		return -1;
 	}
