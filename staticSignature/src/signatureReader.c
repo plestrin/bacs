@@ -980,6 +980,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			}
 			if (src_node->graph_node == NULL){
 				printf("ERROR: in %s, src node is NULL\n", __func__);
+				continue;
 			}
 
 			cmp_node.id = edge->dst_id;
@@ -990,6 +991,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			}
 			if (dst_node->graph_node == NULL){
 				printf("ERROR: in %s, dst node is NULL\n", __func__);
+				continue;
 			}
 
 			if (edge->edge_type_set){
