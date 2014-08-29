@@ -2,7 +2,7 @@
 
 	<!-- TEA and XTEA encryption and decrytion -->
 
-	<recipe name="TEST_TEA_GO0" active="yes">
+	<recipe name="TEST_TEA_GO0" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go0"/>
 		<search>
@@ -30,7 +30,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO1" active="yes">
+	<recipe name="TEST_TEA_GO1" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go1"/>
 		<search>
@@ -58,7 +58,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO2" active="yes">
+	<recipe name="TEST_TEA_GO2" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go2"/>
 		<search>
@@ -86,7 +86,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GO3" active="yes">
+	<recipe name="TEST_TEA_GO3" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go3"/>
 		<search>
@@ -114,7 +114,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_GOs" active="yes">
+	<recipe name="TEST_TEA_GOs" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_gos"/>
 		<search>
@@ -142,7 +142,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO0" active="yes">
+	<recipe name="TEST_TEA_CO0" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co0"/>
 		<search>
@@ -170,7 +170,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO1" active="yes">
+	<recipe name="TEST_TEA_CO1" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co1"/>
 		<search>
@@ -198,7 +198,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO2" active="yes">
+	<recipe name="TEST_TEA_CO2" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co2"/>
 		<search>
@@ -226,7 +226,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_CO3" active="yes">
+	<recipe name="TEST_TEA_CO3" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co3"/>
 		<search>
@@ -254,7 +254,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_COz" active="yes">
+	<recipe name="TEST_TEA_COz" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_coz"/>
 		<search>
@@ -282,7 +282,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WD" active="yes">
+	<recipe name="TEST_TEA_WD" active="no">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -310,7 +310,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WR" active="yes">
+	<recipe name="TEST_TEA_WR" active="no">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -338,7 +338,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_TEA" active="yes">
+	<recipe name="TOM_TEA" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea"/>
 		<search>
@@ -360,7 +360,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_TEA" active="yes">
+	<recipe name="PP_TEA" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea"/>
 		<search>
@@ -390,7 +390,7 @@
 
 	<!-- MD5 hash -->
 
-	<recipe name="TEST_MD5_GO0" active="no">
+	<recipe name="TEST_MD5_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
 		<search>
@@ -404,16 +404,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO1" active="no">
+	<recipe name="TEST_MD5_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
 		<search>
@@ -427,16 +427,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO2" active="no">
+	<recipe name="TEST_MD5_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
 		<search>
@@ -450,16 +450,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GO3" active="no">
+	<recipe name="TEST_MD5_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
 		<search>
@@ -473,16 +473,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_GOs" active="no">
+	<recipe name="TEST_MD5_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
 		<search>
@@ -496,16 +496,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO0" active="no">
+	<recipe name="TEST_MD5_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
 		<search>
@@ -519,16 +519,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO1" active="no">
+	<recipe name="TEST_MD5_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
 		<search>
@@ -542,16 +542,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO2" active="no">
+	<recipe name="TEST_MD5_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
 		<search>
@@ -565,16 +565,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_CO3" active="no">
+	<recipe name="TEST_MD5_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
 		<search>
@@ -588,16 +588,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_COz" active="no">
+	<recipe name="TEST_MD5_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
 		<search>
@@ -611,16 +611,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_WD" active="no">
+	<recipe name="TEST_MD5_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -634,16 +634,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_MD5_WR" active="no">
+	<recipe name="TEST_MD5_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -657,16 +657,16 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p1_v1" number="176"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3" number="384"/>
 			<algo name="md5_p4" number="192"/>
-			<algo name="md5_slice_v1" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_slice_v1" number="120"/>
+			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TOM_MD5" active="no">
+	<recipe name="TOM_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
 		<search>
@@ -690,7 +690,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_MD5" active="no">
+	<recipe name="OPEN_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
 		<search>
@@ -713,7 +713,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_MD5" active="no">
+	<recipe name="PP_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
 		<search>
@@ -736,7 +736,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GO_MD5" active="no">
+	<recipe name="GO_MD5" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/go/ build/go_md5"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/go/build/go_md5"/>
 		<search>
