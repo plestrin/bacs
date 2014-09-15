@@ -5,84 +5,92 @@
 
 # INPUT: 2 [4 frag, 4 frag]
 # OUTPUT: 1 [4 frag]
-# Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (four rotations of the initial pattern)
+# Remark: each of this subgraph occurence counts for 24 in the subgraph isomorphism (four rotations of the initial pattern)
 
 1 (*) [I:1:1] -> 5 (SHR) 		# 1
 2 (*) [I:1:2] -> 6 (SHR)
 3 (*) [I:1:3] -> 7 (SHR)
-4 (*) [I:1:4] -> 8 (AND)
-5 -> 53 (ADD)
-53 -> (@) 9 (INPUT)
+4 (*) [I:1:4] -> 8 (SHL)
+5 -> 9 (AND)
 6 -> 10 (AND)
-10 -> 54 (ADD)
-54 -> (@) 11 (INPUT)
-7 -> 12 (AND)
-12 -> 55 (ADD)
-55 -> (@) 13 (INPUT)
-8 -> 56 (ADD)
-56 -> (@) 14 (INPUT)
-9 -> 15 (XOR) [O:1:1]
-11 -> 15
-13 -> 15
-14 -> 15
-16 (INPUT) [I:2:1] -> 15
+7 -> 11 (AND)
+8 -> 12 (AND)
+9 -> 13 (ADD)
+10 -> 14 (ADD)
+11 -> 15 (ADD)
+12 -> 16 (ADD)
+13 -> (@) 17 (INPUT)
+14 -> (@) 18 (INPUT)
+15 -> (@) 19 (INPUT)
+16 -> (@) 20 (INPUT)
+17 -> 21 (XOR) [O:1:1]
+18 -> 21
+19 -> 21
+20 -> 21
+22 (INPUT) [I:2:1] -> 21
 
-2 -> 17 (SHR) 					# 2
-3 -> 18 (SHR)
-4 -> 19 (SHR)
-1 -> 20 (AND)
-17 -> 57 (ADD)
-57 -> (@) 21 (INPUT)
-18 -> 22 (AND)
-22 -> 58 (ADD)
-58 -> (@) 23 (INPUT)
-19 -> 24 (AND)
-24 -> 59 (ADD)
-59 -> (@) 25 (INPUT)
-20 -> 60 (ADD)
-60 -> (@) 26 (INPUT)
-21 -> 27 (XOR) [O:1:2]
-23 -> 27
-25 -> 27
-26 -> 27
-28 (INPUT) [I:2:2] -> 27
-
-3 -> 29 (SHR) 					# 3
-4 -> 30 (SHR)
-1 -> 31 (SHR)
-2 -> 32 (AND)
-29 -> 61 (ADD)
-61 -> (@) 33 (INPUT)
-30 -> 34 (AND)
-34 -> 62 (ADD)
-62 -> (@) 35 (INPUT)
-31 -> 36 (AND)
-36 -> 63 (ADD)
-63 -> (@) 37 (INPUT)
-32 -> 64 (ADD)
-64 -> (@) 38 (INPUT)
-33 -> 39 (XOR) [O:1:3]
-35 -> 39
+2 -> 23 (SHR) 					# 2
+3 -> 24 (SHR)
+4 -> 25 (SHR)
+1 -> 26 (SHL)
+23 -> 27 (AND)
+24 -> 28 (AND)
+25 -> 29 (AND)
+26 -> 30 (AND)
+27 -> 31 (ADD)
+28 -> 32 (ADD)
+29 -> 33 (ADD)
+30 -> 34 (ADD)
+31 -> (@) 35 (INPUT)
+32 -> (@) 36 (INPUT)
+33 -> (@) 37 (INPUT)
+34 -> (@) 38 (INPUT)
+35 -> 39 (XOR) [O:1:2]
+36 -> 39
 37 -> 39
 38 -> 39
-40 (INPUT) [I:2:3] -> 39
+40 (INPUT) [I:2:2] -> 39
 
-4 -> 41 (SHR) 					# 4
-1 -> 42 (SHR)
-2 -> 43 (SHR)
-3 -> 44 (AND)
-41 -> 65 (ADD)
-65 -> (@) 45 (INPUT)
+3 -> 41 (SHR) 					# 3
+4 -> 42 (SHR)
+1 -> 43 (SHR)
+2 -> 44 (SHL)
+41 -> 45 (AND)
 42 -> 46 (AND)
-46 -> 66 (ADD)
-66 -> (@) 47 (INPUT)
-43 -> 48 (AND)
-48 -> 67 (ADD)
-67 -> (@) 49 (INPUT)
-44 -> 68 (ADD)
-68 -> (@) 50 (INPUT)
-45 -> 51 (XOR) [O:1:4]
-47 -> 51
-49 -> 51
-50 -> 51
-52 (INPUT) [I:2:4] -> 51
+43 -> 47 (AND)
+44 -> 48 (AND)
+45 -> 49 (ADD)
+46 -> 50 (ADD)
+47 -> 51 (ADD)
+48 -> 52 (ADD)
+49 -> (@) 53 (INPUT)
+50 -> (@) 54 (INPUT)
+51 -> (@) 55 (INPUT)
+52 -> (@) 56 (INPUT)
+53 -> 57 (XOR) [O:1:3]
+54 -> 57
+55 -> 57
+56 -> 57
+58 (INPUT) [I:2:3] -> 57
+
+4 -> 59 (SHR) 					# 4
+1 -> 60 (SHR)
+2 -> 61 (SHR)
+3 -> 62 (SHL)
+59 -> 63 (AND)
+60 -> 64 (AND)
+61 -> 65 (AND)
+62 -> 66 (AND)
+63 -> 67 (ADD)
+64 -> 68 (ADD)
+65 -> 69 (ADD)
+66 -> 70 (ADD)
+67 -> (@) 71 (INPUT)
+68 -> (@) 72 (INPUT)
+69 -> (@) 73 (INPUT)
+70 -> (@) 74 (INPUT)
+71 -> 75 (XOR) [O:1:4]
+72 -> 75
+73 -> 75
+74 -> 75
+76 (INPUT) [I:2:4] -> 75

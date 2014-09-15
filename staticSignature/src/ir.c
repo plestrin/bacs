@@ -12,7 +12,7 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
 
 int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2){
-	if (op1->type == op2->type && op1->size == op2->size){
+	if (op1->type == op2->type){
 		switch(op1->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
 				return (op1->operation_type.in_reg.reg == op2->operation_type.in_reg.reg);
@@ -40,10 +40,10 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 				}
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				return (op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
+				return (op1->size == op2->size && op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
-				return (op1->operation_type.symbol.ptr == op2->operation_type.symbol.ptr);
+				return (op1->size == op2->size && op1->operation_type.symbol.ptr == op2->operation_type.symbol.ptr);
 			}
 		}
 	}
@@ -344,155 +344,159 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 	struct irDependence* dependence = (struct irDependence*)data;
 
 	switch(dependence->type){
-		case IR_DEPENDENCE_TYPE_DIRECT 	: {
+		case IR_DEPENDENCE_TYPE_DIRECT 		: {
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_ADDRESS : {
+		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F1 	:{
+		case IR_DEPENDENCE_TYPE_I1F1 		:{
 			fprintf(file, "[label=\"I1F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F2 	:{
+		case IR_DEPENDENCE_TYPE_I1F2 		:{
 			fprintf(file, "[label=\"I1F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F3 	:{
+		case IR_DEPENDENCE_TYPE_I1F3 		:{
 			fprintf(file, "[label=\"I1F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F4 	:{
+		case IR_DEPENDENCE_TYPE_I1F4 		:{
 			fprintf(file, "[label=\"I1F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F1 	:{
+		case IR_DEPENDENCE_TYPE_I2F1 		:{
 			fprintf(file, "[label=\"I2F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F2 	:{
+		case IR_DEPENDENCE_TYPE_I2F2 		:{
 			fprintf(file, "[label=\"I2F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F3 	:{
+		case IR_DEPENDENCE_TYPE_I2F3 		:{
 			fprintf(file, "[label=\"I2F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F4 	:{
+		case IR_DEPENDENCE_TYPE_I2F4 		:{
 			fprintf(file, "[label=\"I2F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F1 	:{
+		case IR_DEPENDENCE_TYPE_I3F1 		:{
 			fprintf(file, "[label=\"I3F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F2 	:{
+		case IR_DEPENDENCE_TYPE_I3F2 		:{
 			fprintf(file, "[label=\"I3F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F3 	:{
+		case IR_DEPENDENCE_TYPE_I3F3 		:{
 			fprintf(file, "[label=\"I3F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F4 	:{
+		case IR_DEPENDENCE_TYPE_I3F4 		:{
 			fprintf(file, "[label=\"I3F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F1 	:{
+		case IR_DEPENDENCE_TYPE_I4F1 		:{
 			fprintf(file, "[label=\"I4F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F2 	:{
+		case IR_DEPENDENCE_TYPE_I4F2 		:{
 			fprintf(file, "[label=\"I4F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F3 	:{
+		case IR_DEPENDENCE_TYPE_I4F3 		:{
 			fprintf(file, "[label=\"I4F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F4 	:{
+		case IR_DEPENDENCE_TYPE_I4F4 		:{
 			fprintf(file, "[label=\"I4F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F1 	:{
+		case IR_DEPENDENCE_TYPE_I5F1 		:{
 			fprintf(file, "[label=\"I5F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F2 	:{
+		case IR_DEPENDENCE_TYPE_I5F2 		:{
 			fprintf(file, "[label=\"I5F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F3 	:{
+		case IR_DEPENDENCE_TYPE_I5F3 		:{
 			fprintf(file, "[label=\"I5F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F4 	:{
+		case IR_DEPENDENCE_TYPE_I5F4 		:{
 			fprintf(file, "[label=\"I5F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F1 	:{
+		case IR_DEPENDENCE_TYPE_O1F1 		:{
 			fprintf(file, "[label=\"O1F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F2 	:{
+		case IR_DEPENDENCE_TYPE_O1F2 		:{
 			fprintf(file, "[label=\"O1F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F3 	:{
+		case IR_DEPENDENCE_TYPE_O1F3 		:{
 			fprintf(file, "[label=\"O1F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F4 	:{
+		case IR_DEPENDENCE_TYPE_O1F4 		:{
 			fprintf(file, "[label=\"O1F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F1 	:{
+		case IR_DEPENDENCE_TYPE_O2F1 		:{
 			fprintf(file, "[label=\"O2F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F2 	:{
+		case IR_DEPENDENCE_TYPE_O2F2 		:{
 			fprintf(file, "[label=\"O2F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F3 	:{
+		case IR_DEPENDENCE_TYPE_O2F3 		:{
 			fprintf(file, "[label=\"O2F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F4 	:{
+		case IR_DEPENDENCE_TYPE_O2F4 		:{
 			fprintf(file, "[label=\"O2F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F1 	:{
+		case IR_DEPENDENCE_TYPE_O3F1 		:{
 			fprintf(file, "[label=\"O3F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F2 	:{
+		case IR_DEPENDENCE_TYPE_O3F2 		:{
 			fprintf(file, "[label=\"O3F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F3 	:{
+		case IR_DEPENDENCE_TYPE_O3F3 		:{
 			fprintf(file, "[label=\"O3F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F4 	:{
+		case IR_DEPENDENCE_TYPE_O3F4 		:{
 			fprintf(file, "[label=\"O3F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F1 	:{
+		case IR_DEPENDENCE_TYPE_O4F1 		:{
 			fprintf(file, "[label=\"O4F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F2 	:{
+		case IR_DEPENDENCE_TYPE_O4F2 		:{
 			fprintf(file, "[label=\"O4F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F3 	:{
+		case IR_DEPENDENCE_TYPE_O4F3 		:{
 			fprintf(file, "[label=\"O4F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F4 	:{
+		case IR_DEPENDENCE_TYPE_O4F4 		:{
 			fprintf(file, "[label=\"O4F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP :{
+			fprintf(file, "[label=\"disp\"]");
 			break;
 		}
 	}
@@ -503,6 +507,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_ADD 		: {return "add";}
 		case IR_AND 		: {return "and";}
 		case IR_DIV 		: {return "div";}
+		case IR_IMUL 		: {return "imul";}
 		case IR_MOVZX 		: {return "movzx";}
 		case IR_MUL 		: {return "mul";}
 		case IR_NOT 		: {return "not";}

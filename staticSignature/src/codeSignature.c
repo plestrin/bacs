@@ -43,15 +43,6 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	struct codeSignature* 	signature_cursor;
 	uint32_t 				i;
 
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		signature_cursor = syntax_node_get_codeSignature(node_cursor);
-
-		if (!strncmp(code_signature->name, signature_cursor->name, CODESIGNATURE_NAME_MAX_SIZE)){
-			printf("ERROR: in %s, there is already a code signature in the collection with the name: \"%s\"\n", __func__, code_signature->name);
-			return - 1;
-		}
-	}
-
 	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
 	if (syntax_node == NULL){
 		printf("ERROR: in %s, unable to add code signature to the collection's syntax graph\n", __func__);
@@ -621,6 +612,10 @@ uint32_t signatureNode_get_label(struct node* node){
 uint32_t irEdge_get_label(struct edge* edge){
 	struct irDependence* dependence = ir_edge_get_dependence(edge);
 
+	if (dependence->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+		return IR_DEPENDENCE_TYPE_DIRECT;
+	}
+
 	return dependence->type;
 }
 
@@ -733,155 +728,159 @@ void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
 	struct signatureEdge* edge = (struct signatureEdge*)data;
 
 	switch(edge->type){
-		case IR_DEPENDENCE_TYPE_DIRECT 	: {
+		case IR_DEPENDENCE_TYPE_DIRECT 		: {
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_ADDRESS : {
+		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F1 	:{
+		case IR_DEPENDENCE_TYPE_I1F1 		:{
 			fprintf(file, "[label=\"I1F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F2 	:{
+		case IR_DEPENDENCE_TYPE_I1F2 		:{
 			fprintf(file, "[label=\"I1F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F3 	:{
+		case IR_DEPENDENCE_TYPE_I1F3 		:{
 			fprintf(file, "[label=\"I1F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F4 	:{
+		case IR_DEPENDENCE_TYPE_I1F4 		:{
 			fprintf(file, "[label=\"I1F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F1 	:{
+		case IR_DEPENDENCE_TYPE_I2F1 		:{
 			fprintf(file, "[label=\"I2F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F2 	:{
+		case IR_DEPENDENCE_TYPE_I2F2 		:{
 			fprintf(file, "[label=\"I2F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F3 	:{
+		case IR_DEPENDENCE_TYPE_I2F3 		:{
 			fprintf(file, "[label=\"I2F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I2F4 	:{
+		case IR_DEPENDENCE_TYPE_I2F4 		:{
 			fprintf(file, "[label=\"I2F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F1 	:{
+		case IR_DEPENDENCE_TYPE_I3F1 		:{
 			fprintf(file, "[label=\"I3F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F2 	:{
+		case IR_DEPENDENCE_TYPE_I3F2 		:{
 			fprintf(file, "[label=\"I3F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F3 	:{
+		case IR_DEPENDENCE_TYPE_I3F3 		:{
 			fprintf(file, "[label=\"I3F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I3F4 	:{
+		case IR_DEPENDENCE_TYPE_I3F4 		:{
 			fprintf(file, "[label=\"I3F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F1 	:{
+		case IR_DEPENDENCE_TYPE_I4F1 		:{
 			fprintf(file, "[label=\"I4F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F2 	:{
+		case IR_DEPENDENCE_TYPE_I4F2 		:{
 			fprintf(file, "[label=\"I4F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F3 	:{
+		case IR_DEPENDENCE_TYPE_I4F3 		:{
 			fprintf(file, "[label=\"I4F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I4F4 	:{
+		case IR_DEPENDENCE_TYPE_I4F4 		:{
 			fprintf(file, "[label=\"I4F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F1 	:{
+		case IR_DEPENDENCE_TYPE_I5F1 		:{
 			fprintf(file, "[label=\"I5F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F2 	:{
+		case IR_DEPENDENCE_TYPE_I5F2 		:{
 			fprintf(file, "[label=\"I5F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F3 	:{
+		case IR_DEPENDENCE_TYPE_I5F3 		:{
 			fprintf(file, "[label=\"I5F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I5F4 	:{
+		case IR_DEPENDENCE_TYPE_I5F4 		:{
 			fprintf(file, "[label=\"I5F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F1 	:{
+		case IR_DEPENDENCE_TYPE_O1F1 		:{
 			fprintf(file, "[label=\"O1F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F2 	:{
+		case IR_DEPENDENCE_TYPE_O1F2 		:{
 			fprintf(file, "[label=\"O1F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F3 	:{
+		case IR_DEPENDENCE_TYPE_O1F3 		:{
 			fprintf(file, "[label=\"O1F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O1F4 	:{
+		case IR_DEPENDENCE_TYPE_O1F4 		:{
 			fprintf(file, "[label=\"O1F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F1 	:{
+		case IR_DEPENDENCE_TYPE_O2F1 		:{
 			fprintf(file, "[label=\"O2F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F2 	:{
+		case IR_DEPENDENCE_TYPE_O2F2 		:{
 			fprintf(file, "[label=\"O2F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F3 	:{
+		case IR_DEPENDENCE_TYPE_O2F3 		:{
 			fprintf(file, "[label=\"O2F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O2F4 	:{
+		case IR_DEPENDENCE_TYPE_O2F4 		:{
 			fprintf(file, "[label=\"O2F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F1 	:{
+		case IR_DEPENDENCE_TYPE_O3F1 		:{
 			fprintf(file, "[label=\"O3F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F2 	:{
+		case IR_DEPENDENCE_TYPE_O3F2 		:{
 			fprintf(file, "[label=\"O3F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F3 	:{
+		case IR_DEPENDENCE_TYPE_O3F3 		:{
 			fprintf(file, "[label=\"O3F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O3F4 	:{
+		case IR_DEPENDENCE_TYPE_O3F4 		:{
 			fprintf(file, "[label=\"O3F4\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F1 	:{
+		case IR_DEPENDENCE_TYPE_O4F1 		:{
 			fprintf(file, "[label=\"O4F1\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F2 	:{
+		case IR_DEPENDENCE_TYPE_O4F2 		:{
 			fprintf(file, "[label=\"O4F2\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F3 	:{
+		case IR_DEPENDENCE_TYPE_O4F3 		:{
 			fprintf(file, "[label=\"O4F3\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_O4F4 	:{
+		case IR_DEPENDENCE_TYPE_O4F4 		:{
 			fprintf(file, "[label=\"O4F4\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	:{
+			fprintf(file, "[label=\"disp\"]");
 			break;
 		}
 	}

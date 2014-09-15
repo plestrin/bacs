@@ -11,23 +11,24 @@ enum irOpcode{
 	IR_ADD 		= 0,
 	IR_AND 		= 1,
 	IR_DIV 		= 2,
-	IR_MOVZX 	= 3,
-	IR_MUL 		= 4,
-	IR_NOT 		= 5,
-	IR_OR 		= 6,
-	IR_PART1_8 	= 7, 	/* specific */
-	IR_PART2_8 	= 8, 	/* specific */
-	IR_PART1_16 = 9, 	/* specific */
-	IR_ROL 		= 10,
-	IR_ROR 		= 11,
-	IR_SAR 		= 12,
-	IR_SHL 		= 13,
-	IR_SHR 		= 14,
-	IR_SUB 		= 15,
-	IR_XOR 		= 16,
-	IR_INPUT 	= 17, 	/* signature */
-	IR_JOKER 	= 18, 	/* signature */
-	IR_INVALID 	= 19 	/* specific */
+	IR_IMUL 	= 3,
+	IR_MOVZX 	= 4,
+	IR_MUL 		= 5,
+	IR_NOT 		= 6,
+	IR_OR 		= 7,
+	IR_PART1_8 	= 8, 	/* specific */
+	IR_PART2_8 	= 9, 	/* specific */
+	IR_PART1_16 = 10, 	/* specific */
+	IR_ROL 		= 11,
+	IR_ROR 		= 12,
+	IR_SAR 		= 13,
+	IR_SHL 		= 14,
+	IR_SHR 		= 15,
+	IR_SUB 		= 16,
+	IR_XOR 		= 17,
+	IR_INPUT 	= 18, 	/* signature */
+	IR_JOKER 	= 19, 	/* signature */
+	IR_INVALID 	= 20 	/* specific */
 };
 
 char* irOpcode_2_string(enum irOpcode opcode);
@@ -107,7 +108,8 @@ enum irDependenceType{
 	IR_DEPENDENCE_TYPE_O4F1 		= 0x00000022,
 	IR_DEPENDENCE_TYPE_O4F2 		= 0x00000023,
 	IR_DEPENDENCE_TYPE_O4F3 		= 0x00000024,
-	IR_DEPENDENCE_TYPE_O4F4 		= 0x00000025
+	IR_DEPENDENCE_TYPE_O4F4 		= 0x00000025,
+	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000026
 };
 
 #define irDependenceType_iocustom_get
