@@ -1,22 +1,30 @@
 # This file define the following signature(s):
-#	- md5_p1_v1 	: round [1 :16] 	F(x,y,z) = x.y + !x.z
-#	- md5_p1_v2 	: round [1 :16] 	F(x,y,z) = XOR(z, x.XOR(y, z))
-#	- md5_p2_v1 	: round [17:32] 	G(x,y,z) = x.z + !z.y
-#	- md5_p2_v2 	: round [17:32] 	G(x,y,z) = XOR(y, z.XOR(y, x))
-#	- md5_p3 		: round [33:48]
-#	- md5_p4		: round [49:64]
-# 	- md5_slice_v1 	: strange slice (one round from each part {1, 2, 3, 4}) used for "md5_v*"
-# 	- md5_v1 		: full MD5 compression function using bollean expression v1
-# 	- md5_slice_v2 	: strange slice (one round from each part {1, 2, 3, 4}) used for "md5_v*"
-# 	- md5_v2 		: full MD5 compression function using bollean expression v2
+#	- md5_p1_v1 : round [1 :16] 	F(x,y,z) = x.y + !x.z 				Instruction rotation
+#	- md5_p1_v2 : round [1 :16] 	F(x,y,z) = XOR(z, x.XOR(y, z)) 		Instruction rotation
+#	- md5_p1_v3 : round [1 :16] 	F(x,y,z) = x.y + !x.z 				Macro rotation
+#
+#	- md5_p2_v1 : round [17:32] 	G(x,y,z) = x.z + !z.y 				Instruction rotation
+#	- md5_p2_v2 : round [17:32] 	G(x,y,z) = XOR(y, z.XOR(y, x)) 		Instruction rotation
+#	- md5_p2_v3 : round [17:32] 	G(x,y,z) = x.z + !z.y 				Macro rotation
+#
+#	- md5_p3_v1 : round [33:48] 	Instruction rotation
+#	- md5_p3_v2 : round [33:48] 	Macro rotation
+#
+#	- md5_p4_v1	: round [49:64] 	Instruction rotation
+#	- md5_p4_v2	: round [49:64] 	Macro rotation
+#
+# 	- md5_slice : strange slice (one round from each part {1, 2, 3, 4}) used for "md5"
+#
+# 	- md5_v1 	: full MD5 compression function 	No interference with the feedback
+# 	- md5_v2 	: full MD5 compression function 	Interference with the feedback
 
 
-"md5_p1_v1"
+"md5_p1_v1" (md5_p1)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
-# 		  except for the 4 first iterations (cst add additions are simplified)of a new message. In this former case this subgraph may counts for 4 (2 jokers input can be mapped on 2 operands for the add @ 8)
+# Remark: each of this subgraph occurrence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 9)
+# 		  except for the 4 first iterations (cst add additions are simplified) of a new message. In this former case this subgraph may counts for 2 (2 jokers input can be mapped on 2 operands for the add @ 8)
 
 1 (*) [I:1:1] -> 9 (ADD)
 2 (*) [I:1:2] -> 5 (AND)
@@ -33,12 +41,12 @@
 12 (*) [I:2:1] -> 9
 
 
-"md5_p1_v2"
+"md5_p1_v2" (md5_p1)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
-# 		  except for the 4 first iterations (cst add additions are simplified)of a new message. In this former case this subgraph may counts for 4 (2 jokers input can be mapped on 2 operands for the add @ 8)
+# Remark: each of this subgraph occurrence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
+# 		  except for the 4 first iterations (cst add additions are simplified) of a new message. In this former case this subgraph may counts for 2 (2 jokers input can be mapped on 2 operands for the add @ 8)
 
 1 (*) [I:1:1] -> 8 (ADD)
 2 (*) [I:1:2] -> 6 (AND)
@@ -54,11 +62,36 @@
 11 (*) [I:2:1] -> 8
 
 
-"md5_p2_v1"
+"md5_p1_v3" (md5_p1)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
+# Remark: each of this subgraph occurrence counts for 2 in the subgraph isomorphism (2 jokers input can be mapped on two operands for the add @ 9)
+1 (*) [I:1:1] -> 9 (ADD)
+2 (*) [I:1:2] -> 5 (AND)
+3 (*) [I:1:3] -> 5
+2 -> 6 (NOT)
+6 -> 7 (AND)
+4 (*) [I:1:4] -> 7
+5 -> 8 (OR)
+7 -> 8
+8 -> 9
+9 -> 10 (ADD)
+9 -> 11 (SHL)
+10 -> 12 (SHR)
+11 -> 13 (ADD)
+12 -> 14 (OR)
+13 -> 14
+14 -> 15 (ADD) [O:1:1]
+2 -> 15
+16 (*) [I:2:1] -> 9
+
+
+"md5_p2_v1" (md5_p2)
+
+# INPUT: 2 [4 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
 
 1 (*) [I:1:1] -> 9 (ADD)
 2 (*) [I:1:2] -> 5 (AND)
@@ -75,11 +108,11 @@
 12 (*) [I:2:1] -> 9
 
 
-"md5_p2_v2"
+"md5_p2_v2" (md5_p2)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
+# Remark: each of this subgraph occurrence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
 
 1 (*) [I:1:1] -> 8 (ADD)
 2 (*) [I:1:2] -> 5 (XOR)
@@ -95,11 +128,37 @@
 11 (*) [I:2:1] -> 8
 
 
-"md5_p3"
+"md5_p2_v3" (md5_p2)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 12 in the subgraph isomorphism (2 jokers input can be mapped on 3 operands for the add @ 8 and 2 jokers input can be mapped on 2 operands for the XOR @ 5)
+# Remark: each of this subgraph occurrence counts for 2 in the subgraph isomorphism (2 jokers input can be mapped on two operands for the add @ 9)
+
+1 (*) [I:1:1] -> 9 (ADD)
+2 (*) [I:1:2] -> 5 (AND)
+3 (*) [I:1:3] -> 7 (AND)
+4 (*) [I:1:4] -> 6 (NOT)
+6 -> 7
+4 -> 5
+5 -> 8 (OR)
+7 -> 8
+8 -> 9
+9 -> 10 (ADD)
+9 -> 11 (SHL)
+10 -> 12 (SHR)
+11 -> 13 (ADD)
+12 -> 14 (OR)
+13 -> 14
+14 -> 15 (ADD) [O:1:1]
+2 -> 15
+16 (*) [I:2:1] -> 9
+
+
+"md5_p3_v1" (md5_p3)
+
+# INPUT: 2 [4 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 12 in the subgraph isomorphism (2 jokers input can be mapped on 3 operands for the add @ 8 and 2 jokers input can be mapped on 2 operands for the XOR @ 5)
 
 1 (*) [I:1:1] -> 6 (ADD)
 2 (*) [I:1:2] -> 5 (XOR)
@@ -112,11 +171,33 @@
 9 (*) [I:2:1] -> 6
 
 
-"md5_p4"
+"md5_p3_v2" (md5_p3)
 
 # INPUT: 2 [4 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
+# Remark: each of this subgraph occurrence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on 2 operands for the add @ 8 and 2 jokers input can be mapped on 2 operands for the XOR @ 5)
+
+1 (*) [I:1:1] -> 6 (ADD)
+2 (*) [I:1:2] -> 5 (XOR)
+3 (*) [I:1:3] -> 5
+4 (*) [I:1:4] -> 5
+5 -> 6
+6 -> 7 (ADD)
+6 -> 8 (SHL)
+7 -> 9 (SHR)
+8 -> 10 (ADD)
+9 -> 11 (OR)
+10 -> 11
+11 -> 12 (ADD) [O:1:1]
+2 -> 12
+13 (*) [I:2:1] -> 6
+
+
+"md5_p4_v1" (md5_p4)
+
+# INPUT: 2 [4 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 6 in the subgraph isomorphism (2 jokers input can be mapped on three operands for the add @ 8)
 
 1 (*) [I:1:1] -> 8 (ADD)
 2 (*) [I:1:2] -> 5 (OR)
@@ -131,19 +212,44 @@
 11 (*) [I:2:1] -> 8
 
 
-"md5_slice_v1"
+"md5_p4_v2" (md5_p4)
+
+# INPUT: 2 [4 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 2 in the subgraph isomorphism (2 jokers input can be mapped on two operands for the add @ 8)
+
+1 (*) [I:1:1] -> 8 (ADD)
+2 (*) [I:1:2] -> 5 (OR)
+3 (*) [I:1:3] -> 6 (XOR)
+4 (*) [I:1:4] -> 7 (NOT)
+7 -> 5
+5 -> 6
+6 -> 8
+8 -> 9 (ADD)
+9 -> 11 (SHR)
+8 -> 10 (SHL)
+10 -> 12 (ADD)
+12 -> 13 (OR)
+11 -> 13
+13 -> 14 (ADD) [O:1:1]
+2 -> 14
+15 (*) [I:2:1] -> 8
+
+
+"md5_slice"
 
 # INPUT: 5 [4 frag, 4 frag, 4 frag, 4 frag, 1 frag]
 # OUTPUT: 1 [4 frag]
-# Remark: each of this subgraph counts for 4 (md5_p1_v1 -> x2, md5_p3 -> x2)
+# Remark: each of this subgraph counts for 4 (md5_p1 -> x2, md5_p3 -> x2)
+# 		  except for the 4 first iterations (cst add additions are simplified) of a new message. In this former case this subgraph may counts for 2 (md5_p3 -> x2))
 
-1  (*) [I:1:1] -> (I1F1) 101 (md5_p1_v1)
+1  (*) [I:1:1] -> (I1F1) 101 (md5_p1)
 2  (*) [I:1:2] -> (I1F2) 101
 3  (*) [I:1:3] -> (I1F3) 101
 4  (*) [I:1:4] -> (I1F4) 101
 201 (*) [I:5:1] -> (I2F1) 101
 101 -> (O1F1) 301 (ADD) [O:1:1]
-5  (ADD) [I:2:1] -> (I1F1) 102 (md5_p2_v1)
+5  (ADD) [I:2:1] -> (I1F1) 102 (md5_p2)
 6  (ADD) [I:2:2] -> (I1F2) 102
 7  (ADD) [I:2:3] -> (I1F3) 102
 8  (ADD) [I:2:4] -> (I1F4) 102
@@ -163,135 +269,103 @@
 104 -> (O1F1) 304 (ADD) [O:1:4]
 
 
-"md5_slice_v2"
-
-# INPUT: 5 [4 frag, 4 frag, 4 frag, 4 frag, 1 frag]
-# OUTPUT: 1 [4 frag]
-# Remark: each of this subgraph counts for 4 (md5_p1_v2 -> x2, md5_p3 -> x2)
-
-1  (*) [I:1:1] -> (I1F1) 101 (md5_p1_v2)
-2  (*) [I:1:2] -> (I1F2) 101
-3  (*) [I:1:3] -> (I1F3) 101
-4  (*) [I:1:4] -> (I1F4) 101
-201 (*) [I:5:1] -> (I2F1) 101
-101 -> (O1F1) 301 (ADD) [O:1:1]
-5  (ADD) [I:2:1] -> (I1F1) 102 (md5_p2_v2)
-6  (ADD) [I:2:2] -> (I1F2) 102
-7  (ADD) [I:2:3] -> (I1F3) 102
-8  (ADD) [I:2:4] -> (I1F4) 102
-201 -> (I2F1) 102
-102 -> (O1F1) 302 (ADD) [O:1:2]
-9  (ADD) [I:3:1] -> (I1F1) 103 (md5_p3)
-10 (ADD) [I:3:2] -> (I1F2) 103
-11 (ADD) [I:3:3] -> (I1F3) 103
-12 (ADD) [I:3:4] -> (I1F4) 103
-201 -> (I2F1) 103
-103 -> (O1F1) 303 (ADD) [O:1:3]
-13 (ADD) [I:4:1] -> (I1F1) 104 (md5_p4)
-14 (ADD) [I:4:2] -> (I1F2) 104
-15 (ADD) [I:4:3] -> (I1F3) 104
-16 (ADD) [I:4:4] -> (I1F4) 104
-201 -> (I2F1) 104
-104 -> (O1F1) 304 (ADD) [O:1:4]
-
-
-"md5_v1"
+"md5_v1" (md5)
 
 # INPUT: 2 [4 frag, 16 frag]
 # OUTPUT: 1 [4 frag]
-# Remark: each of this ssubgraph count for 2 (first occurence of md5_p1_v1 -> x2)
+# Remark: each of this subgraph count for 2 (first occurrence of md5_p1 -> x2)
 
-1 (*) [I:1:1] -> (I1F1) 101 (md5_slice_v1) 	# Round 1
+1 (*) [I:1:1] -> (I1F1) 101 (md5_slice) 	# Round 1
 2 (*) [I:1:2] -> (I1F2) 101
 3 (*) [I:1:3] -> (I1F3) 101
 4 (*) [I:1:4] -> (I1F4) 101
 201 (*) [I:2:1] -> (I5F1) 101
 101 -> (O1F1) 5 (ADD)
-4  -> (I1F1) 102 (md5_slice_v1) 			# Round 2
+4  -> (I1F1) 102 (md5_slice) 				# Round 2
 5  -> (I1F2) 102
 2  -> (I1F3) 102
 3  -> (I1F4) 102
 202 (*) [I:2:2] -> (I5F1) 102
 102 -> (O1F1) 6 (ADD)
-3  -> (I1F1) 103 (md5_slice_v1) 			# Round 3
+3  -> (I1F1) 103 (md5_slice) 				# Round 3
 6  -> (I1F2) 103
 5  -> (I1F3) 103
 2  -> (I1F4) 103
 203 (*) [I:2:3] -> (I5F1) 103
 103 -> (O1F1) 7 (ADD)
-2  -> (I1F1) 104 (md5_slice_v1) 			# Round 4
+2  -> (I1F1) 104 (md5_slice) 				# Round 4
 7  -> (I1F2) 104
 6  -> (I1F3) 104
 5  -> (I1F4) 104
 204 (*) [I:2:4] -> (I5F1) 104
 104 -> (O1F1) 8 (ADD)
-5  -> (I1F1) 105 (md5_slice_v1) 			# Round 5
+5  -> (I1F1) 105 (md5_slice) 				# Round 5
 8  -> (I1F2) 105
 7  -> (I1F3) 105
 6  -> (I1F4) 105
 205 (*) [I:2:5] -> (I5F1) 105
 105 -> (O1F1) 9 (ADD)
-6  -> (I1F1) 106 (md5_slice_v1) 			# Round 6
+6  -> (I1F1) 106 (md5_slice) 				# Round 6
 9  -> (I1F2) 106
 8  -> (I1F3) 106
 7  -> (I1F4) 106
 206 (*) [I:2:6] -> (I5F1) 106
 106 -> (O1F1) 10 (ADD)
-7  -> (I1F1) 107 (md5_slice_v1) 			# Round 7
+7  -> (I1F1) 107 (md5_slice) 				# Round 7
 10 -> (I1F2) 107
 9  -> (I1F3) 107
 8  -> (I1F4) 107
 207 (*) [I:2:7] -> (I5F1) 107
 107 -> (O1F1) 11 (ADD)
-8  -> (I1F1) 108 (md5_slice_v1) 			# Round 8
+8  -> (I1F1) 108 (md5_slice) 				# Round 8
 11 -> (I1F2) 108
 10 -> (I1F3) 108
 9  -> (I1F4) 108
 208 (*) [I:2:8] -> (I5F1) 108
 108 -> (O1F1) 12 (ADD)
-9  -> (I1F1) 109 (md5_slice_v1) 			# Round 9
+9  -> (I1F1) 109 (md5_slice) 				# Round 9
 12 -> (I1F2) 109
 11 -> (I1F3) 109
 10 -> (I1F4) 109
 209 (*) [I:2:9] -> (I5F1) 109
 109 -> (O1F1) 13 (ADD)
-10 -> (I1F1) 110 (md5_slice_v1) 			# Round 10
+10 -> (I1F1) 110 (md5_slice) 				# Round 10
 13 -> (I1F2) 110
 12 -> (I1F3) 110
 11 -> (I1F4) 110
 210 (*) [I:2:10] -> (I5F1) 110
 110 -> (O1F1) 14 (ADD)
-11 -> (I1F1) 111 (md5_slice_v1) 			# Round 11
+11 -> (I1F1) 111 (md5_slice) 				# Round 11
 14 -> (I1F2) 111
 13 -> (I1F3) 111
 12 -> (I1F4) 111
 211 (*) [I:2:11] -> (I5F1) 111
 111 -> (O1F1) 15 (ADD)
-12 -> (I1F1) 112 (md5_slice_v1) 			# Round 12
+12 -> (I1F1) 112 (md5_slice) 				# Round 12
 15 -> (I1F2) 112
 14 -> (I1F3) 112
 13 -> (I1F4) 112
 212 (*) [I:2:12] -> (I5F1) 112
 112 -> (O1F1) 16 (ADD)
-13 -> (I1F1) 113 (md5_slice_v1) 			# Round 13
+13 -> (I1F1) 113 (md5_slice) 				# Round 13
 16 -> (I1F2) 113
 15 -> (I1F3) 113
 14 -> (I1F4) 113
 213 (*) [I:2:13] -> (I5F1) 113
 113 -> (O1F1) 17 (ADD)
-14 -> (I1F1) 114 (md5_slice_v1) 			# Round 14
+14 -> (I1F1) 114 (md5_slice) 				# Round 14
 17 -> (I1F2) 114
 16 -> (I1F3) 114
 15 -> (I1F4) 114
 214 (*) [I:2:14] -> (I5F1) 114
 114 -> (O1F1) 18 (ADD)
-15 -> (I1F1) 115 (md5_slice_v1) 			# Round 15
+15 -> (I1F1) 115 (md5_slice) 				# Round 15
 18 -> (I1F2) 115
 17 -> (I1F3) 115
 16 -> (I1F4) 115
 215 (*) [I:2:15] -> (I5F1) 115
 115 -> (O1F1) 19 (ADD)
-16 -> (I1F1) 116 (md5_slice_v1) 			# Round 16
+16 -> (I1F1) 116 (md5_slice) 				# Round 16
 19 -> (I1F2) 116
 18 -> (I1F3) 116
 17 -> (I1F4) 116
@@ -542,103 +616,107 @@
 110 -> (O1F4) 68 (ADD) [O:1:2]
 
 
-"md5_v2"
+"md5_v2" (md5)
 
 # INPUT: 2 [4 frag, 16 frag]
 # OUTPUT: 1 [4 frag]
-# Remark: each of this subgraph count for 2 (first occurence of md5_p1_v2 -> x2)
+# Remark: each of this subgraph count for 2 (two possibilities for node 401)
 
-1 (*) [I:1:1] -> (I1F1) 101 (md5_slice_v2) 	# Round 1
-2 (*) [I:1:2] -> (I1F2) 101
-3 (*) [I:1:3] -> (I1F3) 101
-4 (*) [I:1:4] -> (I1F4) 101
+402 (*) [I:1:2] -> 2 (ADD)
+403 (*) [I:1:3] -> 3 (ADD)
+404 (*) [I:1:4] -> 4 (ADD)
+
+401 (*) [I:1:1] -> (I1F1) 101 (md5_slice) 		# Round 1
+2 (ADD) [I:1:2] -> (I1F2) 101
+3 (ADD) [I:1:3] -> (I1F3) 101
+4 (ADD) [I:1:4] -> (I1F4) 101
 201 (*) [I:2:1] -> (I5F1) 101
 101 -> (O1F1) 5 (ADD)
-4  -> (I1F1) 102 (md5_slice_v2) 			# Round 2
+404 -> (I1F1) 102 (md5_slice) 		# Round 2
 5  -> (I1F2) 102
 2  -> (I1F3) 102
 3  -> (I1F4) 102
 202 (*) [I:2:2] -> (I5F1) 102
 102 -> (O1F1) 6 (ADD)
-3  -> (I1F1) 103 (md5_slice_v2) 			# Round 3
+403 -> (I1F1) 103 (md5_slice) 		# Round 3
 6  -> (I1F2) 103
 5  -> (I1F3) 103
 2  -> (I1F4) 103
 203 (*) [I:2:3] -> (I5F1) 103
 103 -> (O1F1) 7 (ADD)
-2  -> (I1F1) 104 (md5_slice_v2) 			# Round 4
+402 -> (I1F1) 104 (md5_slice) 		# Round 4
 7  -> (I1F2) 104
 6  -> (I1F3) 104
 5  -> (I1F4) 104
 204 (*) [I:2:4] -> (I5F1) 104
 104 -> (O1F1) 8 (ADD)
-5  -> (I1F1) 105 (md5_slice_v2) 			# Round 5
+5  -> (I1F1) 105 (md5_slice) 				# Round 5
 8  -> (I1F2) 105
 7  -> (I1F3) 105
 6  -> (I1F4) 105
 205 (*) [I:2:5] -> (I5F1) 105
 105 -> (O1F1) 9 (ADD)
-6  -> (I1F1) 106 (md5_slice_v2) 			# Round 6
+6  -> (I1F1) 106 (md5_slice) 				# Round 6
 9  -> (I1F2) 106
 8  -> (I1F3) 106
 7  -> (I1F4) 106
 206 (*) [I:2:6] -> (I5F1) 106
 106 -> (O1F1) 10 (ADD)
-7  -> (I1F1) 107 (md5_slice_v2) 			# Round 7
+7  -> (I1F1) 107 (md5_slice) 				# Round 7
 10 -> (I1F2) 107
 9  -> (I1F3) 107
 8  -> (I1F4) 107
 207 (*) [I:2:7] -> (I5F1) 107
 107 -> (O1F1) 11 (ADD)
-8  -> (I1F1) 108 (md5_slice_v2) 			# Round 8
+8  -> (I1F1) 108 (md5_slice) 				# Round 8
 11 -> (I1F2) 108
 10 -> (I1F3) 108
 9  -> (I1F4) 108
 208 (*) [I:2:8] -> (I5F1) 108
 108 -> (O1F1) 12 (ADD)
-9  -> (I1F1) 109 (md5_slice_v2) 			# Round 9
+9  -> (I1F1) 109 (md5_slice) 				# Round 9
 12 -> (I1F2) 109
 11 -> (I1F3) 109
 10 -> (I1F4) 109
 209 (*) [I:2:9] -> (I5F1) 109
 109 -> (O1F1) 13 (ADD)
-10 -> (I1F1) 110 (md5_slice_v2) 			# Round 10
+10 -> (I1F1) 110 (md5_slice) 				# Round 10
 13 -> (I1F2) 110
 12 -> (I1F3) 110
 11 -> (I1F4) 110
 210 (*) [I:2:10] -> (I5F1) 110
 110 -> (O1F1) 14 (ADD)
-11 -> (I1F1) 111 (md5_slice_v2) 			# Round 11
+11 -> (I1F1) 111 (md5_slice) 				# Round 11
 14 -> (I1F2) 111
 13 -> (I1F3) 111
 12 -> (I1F4) 111
 211 (*) [I:2:11] -> (I5F1) 111
 111 -> (O1F1) 15 (ADD)
-12 -> (I1F1) 112 (md5_slice_v2) 			# Round 12
+12 -> (I1F1) 112 (md5_slice) 				# Round 12
 15 -> (I1F2) 112
 14 -> (I1F3) 112
 13 -> (I1F4) 112
 212 (*) [I:2:12] -> (I5F1) 112
 112 -> (O1F1) 16 (ADD)
-13 -> (I1F1) 113 (md5_slice_v2) 			# Round 13
+13 -> (I1F1) 113 (md5_slice) 				# Round 13
 16 -> (I1F2) 113
 15 -> (I1F3) 113
 14 -> (I1F4) 113
 213 (*) [I:2:13] -> (I5F1) 113
 113 -> (O1F1) 17 (ADD)
-14 -> (I1F1) 114 (md5_slice_v2) 			# Round 14
+14 -> (I1F1) 114 (md5_slice) 				# Round 14
 17 -> (I1F2) 114
 16 -> (I1F3) 114
 15 -> (I1F4) 114
 214 (*) [I:2:14] -> (I5F1) 114
 114 -> (O1F1) 18 (ADD)
-15 -> (I1F1) 115 (md5_slice_v2) 			# Round 15
+15 -> (I1F1) 115 (md5_slice) 				# Round 15
 18 -> (I1F2) 115
 17 -> (I1F3) 115
 16 -> (I1F4) 115
 215 (*) [I:2:15] -> (I5F1) 115
 115 -> (O1F1) 19 (ADD)
-16 -> (I1F1) 116 (md5_slice_v2) 			# Round 16
+16 -> (I1F1) 116 (md5_slice) 				# Round 16
 19 -> (I1F2) 116
 18 -> (I1F3) 116
 17 -> (I1F4) 116

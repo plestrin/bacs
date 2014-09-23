@@ -58,6 +58,7 @@ struct localCodeEdge{
 static void readerCursor_get_next(struct readerCursor* reader_cursor);
 
 static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
+static void signatureReader_get_graph_symbol(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
 
 static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCursor* reader_cursor, enum irOpcode* opcode, struct array* symbol_array);
 static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor);
@@ -65,7 +66,7 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 #define codeSignatureReader_get_IO_out(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'O')
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char);
 
-static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name);
+static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name, const char* graph_symbol);
 
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
@@ -76,6 +77,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 	struct localCodeEdge 		local_edge;
 	struct array 				local_edge_array;
 	char 						graph_name[CODESIGNATURE_NAME_MAX_SIZE];
+	char 						graph_symbol[CODESIGNATURE_NAME_MAX_SIZE];
 	struct array 				symbol_array;
 
 	buffer = mapFile_map(file_name, &buffer_size);
@@ -102,6 +104,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				switch(reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 	: {
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+						strncpy(graph_symbol, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
 						break;
@@ -120,8 +123,14 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					case READER_TOKEN_GRAPH_NAME 	: {
 						printf("WARNING: in %s, empty signature -> skip\n", __func__);
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+						strncpy(graph_symbol, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
+						break;
+					}
+					case READER_TOKEN_LABEL 		: {
+						signatureReader_get_graph_symbol(&reader_cursor, graph_symbol, CODESIGNATURE_NAME_MAX_SIZE);
+
 						break;
 					}
 					case READER_TOKEN_NODE_ID 		: {
@@ -247,10 +256,11 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						if (array_add(&local_edge_array, &local_edge) < 0){
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
-						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
+						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
 						array_empty(&local_edge_array);
 						array_empty(&symbol_array);
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+						strncpy(graph_symbol, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
 						break;
@@ -292,10 +302,11 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						if (array_add(&local_edge_array, &local_edge) < 0){
 							printf("ERROR: in %s, unable to add element to array\n", __func__);
 						}
-						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
+						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
 						array_empty(&local_edge_array);
 						array_empty(&symbol_array);
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+						strncpy(graph_symbol, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
 						reader_state = READER_STATE_GRAPH;
 						break;
@@ -342,7 +353,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 		printf("ERROR: in %s, syntaxe error: incorrect state at the end of the file\n", __func__);
 	}
 
-	codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name);
+	codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
 
 	array_clean(&local_edge_array);
 	array_clean(&symbol_array);
@@ -522,6 +533,19 @@ static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, c
 
 	for (i = 1; i < reader_cursor->remaining_size && i < buffer_length - 1; i++){
 		if (reader_cursor->cursor[i] == '"'){
+			break;
+		}
+	}
+
+	memcpy(buffer, reader_cursor->cursor + 1, i - 1);
+	buffer[i - 1] = '\0';
+}
+
+static void signatureReader_get_graph_symbol(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length){
+	uint32_t i;
+
+	for (i = 1; i < reader_cursor->remaining_size && i < buffer_length - 1; i++){
+		if (reader_cursor->cursor[i] == ')'){
 			break;
 		}
 	}
@@ -762,7 +786,7 @@ struct localCodeNode{
 int32_t compare_localCodeNode(const void* arg1, const void* arg2);
 int32_t compare_signatureSymbol(const void* arg1, const void* arg2);
 
-static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name){
+static void codeSignatureReader_push_signature(struct codeSignatureCollection* collection, struct array* local_edge_array, struct array* symbol_array, const char* graph_name, const char* graph_symbol){
 	uint32_t 						i;
 	struct localCodeEdge* 			edge;
 	struct localCodeNode* 			node_buffer;
@@ -788,7 +812,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			}
 
 			for (i = 0; i < nb_raw_symbol; i++){
-				symbol_table->symbols[i].id = 0;
+				symbol_table->symbols[i].status = 0;
 				memcpy(symbol_table->symbols[i].name, (char*)array_get(symbol_array, i), CODESIGNATURE_NAME_MAX_SIZE);	
 			}
 
@@ -1010,6 +1034,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		}
 
 		strncpy(code_signature.name, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
+		strncpy(code_signature.symbol, graph_symbol, CODESIGNATURE_NAME_MAX_SIZE);
 		code_signature.sub_graph_handle 	= NULL;
 		code_signature.symbol_table 		= symbol_table;
 

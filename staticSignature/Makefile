@@ -12,7 +12,7 @@ INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
 LDFLAGS			:= -lyajl $(XED_DIR)lib/libxed.a
-CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI)
+CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI) -std=gnu99
 OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)assembly.o 				\
 					$(BUILD_DIR)analysis.o 				\

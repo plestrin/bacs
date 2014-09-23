@@ -25,19 +25,7 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 				return 0;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				if (op1->operation_type.imm.signe == op2->operation_type.imm.signe){
-					#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
-					return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
-				}
-				else{
-					if (ir_imm_operation_get_signed_value(op1) < 0 || ir_imm_operation_get_signed_value(op2) < 0){
-						return 0;
-					}
-					else{
-						#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
-						return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
-					}
-				}
+				return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
 			}
 			case IR_OPERATION_TYPE_INST 	: {
 				return (op1->size == op2->size && op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
@@ -146,7 +134,7 @@ struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, u
 	return node;
 }
 
-struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value){
+struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -157,7 +145,6 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 						= IR_OPERATION_TYPE_IMM;
-		operation->operation_type.imm.signe 	= signe;
 		operation->operation_type.imm.value 	= value;
 		operation->size 						= size;
 		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
@@ -318,13 +305,23 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
-			if (operation->operation_type.imm.signe){
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				#pragma GCC diagnostic ignored "-Wlong-long" /* use of C99 long long integer constant */
-				fprintf(file, "[shape=\"diamond\",label=\"0x%x\"]", ir_imm_operation_get_signed_value(operation));
-			}
-			else{
-				fprintf(file, "[shape=\"diamond\",label=\"0x%llx\"]", ir_imm_operation_get_unsigned_value(operation));
+			switch(operation->size){
+				case 8 	: {
+					fprintf(file, "[shape=\"diamond\",label=\"0x%02x\"]", (uint32_t)(operation->operation_type.imm.value & 0xff));
+					break;
+				}
+				case 16 : {
+					fprintf(file, "[shape=\"diamond\",label=\"0x%04x\"]", (uint32_t)(operation->operation_type.imm.value & 0xffff));
+					break;
+				}
+				case 32 : {
+					fprintf(file, "[shape=\"diamond\",label=\"0x%08x\"]", (uint32_t)(operation->operation_type.imm.value & 0xffffffff));
+					break;
+				}
+				default : {
+					printf("ERROR: in %s, this case is not implemented, size: %u\n", __func__, operation->size);
+					break;
+				}
 			}
 			break;
 		}

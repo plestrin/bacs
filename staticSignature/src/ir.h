@@ -31,6 +31,8 @@ enum irOpcode{
 	IR_INVALID 	= 20 	/* specific */
 };
 
+#define NB_IR_OPCODE 21
+
 char* irOpcode_2_string(enum irOpcode opcode);
 
 enum irRegister{
@@ -134,7 +136,6 @@ struct irOperation{
 			uint32_t 			order;
 		} 						out_mem;
 		struct {
-			uint8_t 			signe;
 			uint64_t 			value;
 		} 						imm;
 		struct {
@@ -173,7 +174,7 @@ int32_t ir_init(struct ir* ir, struct assembly* assembly);
 struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg);
 struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
 struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
-struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint8_t signe, uint64_t value);
+struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
 struct node* ir_add_symbol(struct ir* ir, void* ptr);
 
