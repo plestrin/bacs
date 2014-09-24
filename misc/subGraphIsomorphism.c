@@ -5,33 +5,40 @@
 
 static struct nodeTab* graphIso_create_node_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 static struct labelTab* graphIso_create_label_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 static struct connectivityTab* graphIso_create_connectivity_tab(struct graph* graph);
+#endif
 static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, struct labelTab* label_tab, uint32_t* nb_label);
 
 int32_t compare_labelTabItem_label(const void* arg1, const void* arg2);
 int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2);
 int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2);
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 int32_t compare_connectivityTabItem(const void* arg1, const void* arg2);
+#endif
 
-struct possibleAssignementHeader{
-	uint32_t 	nb_possible_assignement;
+struct possibleAssignmentHeader{
+	uint32_t 	nb_possible_assignment;
 	uint32_t 	node_offset;
 };
 
-struct possibleAssignement{
+struct possibleAssignment{
 	uint32_t 								nb_node;
-	struct possibleAssignementHeader* 		headers;
+	struct possibleAssignmentHeader* 		headers;
 	struct node** 							nodes;
 };
 
-static struct possibleAssignement* possibleAssignement_create(uint32_t nb_node, uint32_t nb_assignement);
-static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error);
-static struct possibleAssignement* possibleAssignement_duplicate(struct possibleAssignement* possible_assignement, uint32_t new_assignement_index, struct node* new_assignement_value);
-static void possibleAssignement_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignement* possible_assignement, uint32_t nb_assignement);
+static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, uint32_t nb_assignment);
+static struct possibleAssignment* possibleAssignment_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error);
+static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t new_assignment_index, struct node* new_assignment_value, uint8_t* error);
+static void possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
+#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
+static uint32_t possibleAssignment_is_empty(struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
+#endif
 
-#define possibleAssignement_delete(possible_assignement) free(possible_assignement);
+#define possibleAssignment_delete(possible_assignment) free(possible_assignment);
 
-static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignement, uint32_t nb_assignement, struct possibleAssignement* possible_assignement, struct array* assignement_array);
+static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array);
 
 /* ===================================================================== */
 /* Handle routines 														 */
@@ -77,6 +84,7 @@ static struct labelTab* graphIso_create_label_tab(struct graph* graph, uint32_t(
 	return label_tab;
 }
 
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 static struct connectivityTab* graphIso_create_connectivity_tab(struct graph* graph){
 	struct node* 			node_cursor;
 	uint32_t 				i;
@@ -96,6 +104,7 @@ static struct connectivityTab* graphIso_create_connectivity_tab(struct graph* gr
 
 	return connectivity_tab;
 }
+#endif
 
 static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, struct labelTab* label_tab, uint32_t* nb_label){
 	uint32_t 					i;
@@ -146,28 +155,38 @@ static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, s
 struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_t(*node_get_label)(struct node*), uint32_t(*edge_get_label)(struct edge*)){
 	struct labelTab* 			label_tab;
 	struct labelFastAccess* 	label_fast;
+	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	struct connectivityTab* 	connectivity_tab;
+	#endif
 	uint32_t 					nb_label;
 	struct graphIsoHandle* 		handle;
 
 	handle = (struct graphIsoHandle*)malloc(sizeof(struct graphIsoHandle));
 	if (handle != NULL){
 		label_tab = graphIso_create_label_tab(graph, node_get_label);
+		#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 		connectivity_tab = graphIso_create_connectivity_tab(graph);
 		if (label_tab != NULL && connectivity_tab != NULL){
+		#else
+		if (label_tab != NULL){
+		#endif
 			label_fast = graphIso_create_label_fast(graph, label_tab, &nb_label);
 			if (label_fast != NULL){
 				handle->graph 				= graph;
 				handle->nb_label 			= nb_label;
 				handle->label_fast 			= label_fast;
 				handle->label_tab 			= label_tab;
+				#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 				handle->connectivity_tab 	= connectivity_tab;
+				#endif
 				handle->edge_get_label 		= edge_get_label;
 			}
 			else{
 				printf("ERROR: in %s, unable to create labelFastAccess\n", __func__);
 				free(label_tab);
+				#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 				free(connectivity_tab);
+				#endif
 				free(handle);
 				handle = NULL;
 			}
@@ -186,68 +205,75 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 }
 
 struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
-	struct possibleAssignement* possible_assignement;
-	struct node** 				assignement;
-	struct array*				assignement_array = NULL;
+	struct possibleAssignment* 	possible_assignment;
+	struct node** 				assignment;
+	struct array*				assignment_array = NULL;
 	uint8_t 					error;
 
 	if (sub_graph_handle->graph->nb_node > 0){
-		assignement_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-		if (assignement_array == NULL){
+		assignment_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+		if (assignment_array == NULL){
 			printf("ERROR: in %s, unable to create array\n", __func__);
 		}
 		else{
-			possible_assignement = possibleAssignement_create_init_first(graph_handle, sub_graph_handle, &error);
-			if (possible_assignement == NULL){
+			possible_assignment = possibleAssignment_create_init_first(graph_handle, sub_graph_handle, &error);
+			if (possible_assignment == NULL){
 				if (error){
-					printf("ERROR: in %s, unable to create first possible assignement\n", __func__);
+					printf("ERROR: in %s, unable to create first possible assignment\n", __func__);
 				}
 			}
 			else{
-				assignement = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-				graphIso_recursive_search(graph_handle, sub_graph_handle, assignement, 0, possible_assignement, assignement_array);
-				possibleAssignement_delete(possible_assignement);
+				assignment = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+				graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, 0, possible_assignment, assignment_array);
+				possibleAssignment_delete(possible_assignment);
 			}
 		}
 	}
 
-	return assignement_array;
+	return assignment_array;
 }
 
-static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignement, uint32_t nb_assignement, struct possibleAssignement* possible_assignement, struct array* assignement_array){
+static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array){
 	uint32_t 		i;
 	uint32_t 		result = 0;
 	uint32_t 		local_result;
+	uint8_t 		error;
 
-	possibleAssignement_update(graph_handle, sub_graph_handle, possible_assignement, nb_assignement);
+	possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment);
 
-	if (nb_assignement == sub_graph_handle->graph->nb_node){
-		if (array_add(assignement_array, assignement) < 0){
-			printf("ERROR: in %s, unable to add assignement to array\n", __func__);
+	#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
+	if (possibleAssignment_is_empty(possible_assignment, nb_assignment)){
+		return 0;
+	}
+	#endif
+
+	if (nb_assignment == sub_graph_handle->graph->nb_node){
+		if (array_add(assignment_array, assignment) < 0){
+			printf("ERROR: in %s, unable to add assignment to array\n", __func__);
 		}
 		return 1;
 	}
 
-	for (i = 0; i < possible_assignement->headers[nb_assignement].nb_possible_assignement; i++){
-		if (possible_assignement->nodes[possible_assignement->headers[nb_assignement].node_offset + i] != NULL){
-			struct possibleAssignement* new_possible_assignement;
+	for (i = 0; i < possible_assignment->headers[nb_assignment].nb_possible_assignment; i++){
+		if (possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i] != NULL){
+			struct possibleAssignment* new_possible_assignment;
 
-			new_possible_assignement = possibleAssignement_duplicate(possible_assignement, nb_assignement, possible_assignement->nodes[possible_assignement->headers[nb_assignement].node_offset + i]);
-			if (new_possible_assignement != NULL){
-				assignement[nb_assignement] = possible_assignement->nodes[possible_assignement->headers[nb_assignement].node_offset + i];
-				local_result = graphIso_recursive_search(graph_handle, sub_graph_handle, assignement, nb_assignement + 1, new_possible_assignement, assignement_array);
-				possibleAssignement_delete(new_possible_assignement);
+			new_possible_assignment = possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i], &error);
+			if (new_possible_assignment != NULL){
+				assignment[nb_assignment] = possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i];
+				local_result = graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, new_possible_assignment, assignment_array);
+				possibleAssignment_delete(new_possible_assignment);
 
 				if (local_result > 0){
 					result += local_result;
 				}
 				else{
-					possible_assignement->nodes[possible_assignement->headers[nb_assignement].node_offset + i] = NULL;
-					possibleAssignement_update(graph_handle, sub_graph_handle, possible_assignement, nb_assignement);
+					possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i] = NULL;
+					possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment);
 				}
 			}
-			else{
-				printf("ERROR: in %s, unable to duplicate possible assignement\n", __func__);
+			else if (error){
+				printf("ERROR: in %s, unable to duplicate possible assignment\n", __func__);
 			}
 		}
 	}
@@ -283,7 +309,9 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 void graphIso_delete_graph_handle(struct graphIsoHandle* handle){
 	free(handle->label_fast);
 	free(handle->label_tab);
+	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	free(handle->connectivity_tab);
+	#endif
 	free(handle);
 }
 
@@ -293,23 +321,23 @@ void graphIso_delete_subGraph_handle(struct subGraphIsoHandle* handle){
 }
 
 /* ===================================================================== */
-/* Possible assignement routines 										 */
+/* Possible assignment routines 										 */
 /* ===================================================================== */
 
-static struct possibleAssignement* possibleAssignement_create(uint32_t nb_node, uint32_t nb_assignement){
-	struct possibleAssignement* possible_assignement;
+static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, uint32_t nb_assignment){
+	struct possibleAssignment* possible_assignment;
 
-	possible_assignement = (struct possibleAssignement*)malloc(sizeof(struct possibleAssignement) + nb_node * sizeof(struct possibleAssignementHeader) + nb_assignement * sizeof(struct node*));
-	if (possible_assignement != NULL){
-		possible_assignement->nb_node 	= nb_node;
-		possible_assignement->headers 	= (struct possibleAssignementHeader*)((char*)possible_assignement + sizeof(struct possibleAssignement));
-		possible_assignement->nodes 	= (struct node**)((char*)possible_assignement->headers + nb_node * sizeof(struct possibleAssignementHeader));
+	possible_assignment = (struct possibleAssignment*)malloc(sizeof(struct possibleAssignment) + nb_node * sizeof(struct possibleAssignmentHeader) + nb_assignment * sizeof(struct node*));
+	if (possible_assignment != NULL){
+		possible_assignment->nb_node 	= nb_node;
+		possible_assignment->headers 	= (struct possibleAssignmentHeader*)((char*)possible_assignment + sizeof(struct possibleAssignment));
+		possible_assignment->nodes 		= (struct node**)((char*)possible_assignment->headers + nb_node * sizeof(struct possibleAssignmentHeader));
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
 
-	return possible_assignement;
+	return possible_assignment;
 }
 
 struct graphNodeList{
@@ -317,12 +345,12 @@ struct graphNodeList{
 	uint32_t size;
 };
 
-static struct possibleAssignement* possibleAssignement_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error){
-	uint32_t 					nb_assignement = 0;
+static struct possibleAssignment* possibleAssignment_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error){
+	uint32_t 					nb_assignment = 0;
 	uint32_t 					i;
 	uint32_t 					j;
 	struct labelFastAccess* 	label_fast_access;
-	struct possibleAssignement* possible_assignement = NULL;
+	struct possibleAssignment* possible_assignment = NULL;
 	struct graphNodeList* 		graph_node_list;
 
 	if (error != NULL){
@@ -348,47 +376,59 @@ static struct possibleAssignement* possibleAssignement_create_init_first(struct 
 				} 
 			}
 
-			nb_assignement += label_fast_access->size - j;
+			nb_assignment += label_fast_access->size - j;
 			graph_node_list[i].offset = label_fast_access->offset + j;
 			graph_node_list[i].size = label_fast_access->size - j;
 		}
 		else{
+			#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 			for (j = 0; j < graph_handle->graph->nb_node; j++){
 				if (graph_handle->connectivity_tab[j].connectivity >= sub_graph_handle->node_tab[i].connectivity){
 					break;
 				}
 			}
 
-			nb_assignement += graph_handle->graph->nb_node - j;
+			nb_assignment += graph_handle->graph->nb_node - j;
 			graph_node_list[i].offset = j;
 			graph_node_list[i].size = graph_handle->graph->nb_node - j;
+			#else
+			nb_assignment += graph_handle->graph->nb_node;
+			graph_node_list[i].offset = 0;
+			graph_node_list[i].size = graph_handle->graph->nb_node;
+			#endif
 		}
 	}
 
-	possible_assignement = possibleAssignement_create(sub_graph_handle->graph->nb_node, nb_assignement);
-	if (possible_assignement != NULL){
-		possible_assignement->headers[0].node_offset = 0;
+	possible_assignment = possibleAssignment_create(sub_graph_handle->graph->nb_node, nb_assignment);
+	if (possible_assignment != NULL){
+		possible_assignment->headers[0].node_offset = 0;
 
 		for	(i = 0; i < sub_graph_handle->graph->nb_node; i++){
-			possible_assignement->headers[i].nb_possible_assignement = graph_node_list[i].size;
+			possible_assignment->headers[i].nb_possible_assignment = graph_node_list[i].size;
 			if (i != sub_graph_handle->graph->nb_node - 1){
-				possible_assignement->headers[i + 1].node_offset = possible_assignement->headers[i].node_offset + graph_node_list[i].size;
+				possible_assignment->headers[i + 1].node_offset = possible_assignment->headers[i].node_offset + graph_node_list[i].size;
 			}
 
 			if (sub_graph_handle->node_tab[i].label != SUBGRAPHISOMORPHISM_JOKER_LABEL){
 				for (j = 0; j < graph_node_list[i].size; j++){
-					possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = graph_handle->label_tab[graph_node_list[i].offset + j].node;
+					possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = graph_handle->label_tab[graph_node_list[i].offset + j].node;
 				}
 			}
 			else{
+				#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 				for (j = 0; j < graph_node_list[i].size; j++){
-					possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = graph_handle->connectivity_tab[graph_node_list[i].offset + j].node;
+					possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = graph_handle->connectivity_tab[graph_node_list[i].offset + j].node;
 				}
+				#else
+				for (j = 0; j < graph_node_list[i].size; j++){
+					possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = graph_handle->label_tab[j].node;
+				}
+				#endif
 			}
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to create possibleAssignement structure\n", __func__);
+		printf("ERROR: in %s, unable to create possibleAssignment structure\n", __func__);
 		if (error != NULL){
 			*error = 1;
 		}
@@ -397,59 +437,79 @@ static struct possibleAssignement* possibleAssignement_create_init_first(struct 
 	exit:
 	free(graph_node_list);
 
-	return possible_assignement;
+	return possible_assignment;
 }
 
-static struct possibleAssignement* possibleAssignement_duplicate(struct possibleAssignement* possible_assignement, uint32_t new_assignement_index, struct node* new_assignement_value){
+static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t new_assignment_index, struct node* new_assignment_value, uint8_t* error){
 	uint32_t 					i;
 	uint32_t 					j;
-	uint32_t 					nb_assignement = 0;
-	struct possibleAssignement* new_possible_assignement;
+	uint32_t 					local_nb_assigment;
+	uint32_t 					nb_assignment = 0;
+	struct possibleAssignment* 	new_possible_assignment;
 
-	for (i = 0; i < possible_assignement->nb_node; i++){
-		if (i != new_assignement_index){
-			for (j = 0; j < possible_assignement->headers[i].nb_possible_assignement; j++){
-				if (possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != NULL && possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != new_assignement_value){
-					nb_assignement ++;
+	if (error != NULL){
+		*error = 0;
+	}
+
+	for (i = 0; i < possible_assignment->nb_node; i++){
+		if (i != new_assignment_index){
+			for (j = 0, local_nb_assigment = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
+					local_nb_assigment ++;
 				}
 			}
+			#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
+			if (local_nb_assigment > 0){
+				nb_assignment += local_nb_assigment;
+			}
+			else{
+				return NULL;
+			}
+			#else
+			nb_assignment += local_nb_assigment;
+			#endif
 		}
 		else{
-			nb_assignement ++;
+			nb_assignment ++;
 		}
 	}
 
-	new_possible_assignement = possibleAssignement_create(possible_assignement->nb_node, nb_assignement);
-	if (new_possible_assignement != NULL){
-		new_possible_assignement->headers[0].node_offset = 0;
+	new_possible_assignment = possibleAssignment_create(possible_assignment->nb_node, nb_assignment);
+	if (new_possible_assignment != NULL){
+		new_possible_assignment->headers[0].node_offset = 0;
 
-		for (i = 0; i < possible_assignement->nb_node; i++){
-			nb_assignement = 0;
+		for (i = 0; i < possible_assignment->nb_node; i++){
+			nb_assignment = 0;
 
-			if (i != new_assignement_index){
-				for (j = 0; j < possible_assignement->headers[i].nb_possible_assignement; j++){
-					if (possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != NULL && possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != new_assignement_value){
-						new_possible_assignement->nodes[new_possible_assignement->headers[i].node_offset + nb_assignement] = possible_assignement->nodes[possible_assignement->headers[i].node_offset + j];
-						nb_assignement ++;
+			if (i != new_assignment_index){
+				for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+					if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
+						new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + nb_assignment] = possible_assignment->nodes[possible_assignment->headers[i].node_offset + j];
+						nb_assignment ++;
 					}
 				}
 			}
 			else{
-				new_possible_assignement->nodes[new_possible_assignement->headers[i].node_offset + nb_assignement] = new_assignement_value;
-				nb_assignement ++;
+				new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + nb_assignment] = new_assignment_value;
+				nb_assignment ++;
 			}
 
-			new_possible_assignement->headers[i].nb_possible_assignement = nb_assignement;
-			if (i != possible_assignement->nb_node - 1){
-				new_possible_assignement->headers[i + 1].node_offset = new_possible_assignement->headers[i].node_offset + nb_assignement;
+			new_possible_assignment->headers[i].nb_possible_assignment = nb_assignment;
+			if (i != possible_assignment->nb_node - 1){
+				new_possible_assignment->headers[i + 1].node_offset = new_possible_assignment->headers[i].node_offset + nb_assignment;
 			}
 		}
 	}
+	else{
+		if (error != NULL){
+			*error = 1;
+		}
+	}
 
-	return new_possible_assignement;
+	return new_possible_assignment;
 }
 
-static void possibleAssignement_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignement* possible_assignement, uint32_t nb_assignement){
+static void possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
 	uint8_t 		match;
 	uint32_t 		i;
 	uint32_t 		j;
@@ -462,20 +522,20 @@ static void possibleAssignement_update(struct graphIsoHandle* graph_handle, stru
 	while(restart){
 		restart = 0;
 
-		for (i = nb_assignement; i < sub_graph_handle->graph->nb_node; i++){
-			for (j = 0; j < possible_assignement->headers[i].nb_possible_assignement; j++){
-				if (possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] != NULL){
+		for (i = nb_assignment; i < sub_graph_handle->graph->nb_node; i++){
+			for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL){
 
 					sub_graph_edge = node_get_head_edge_src(sub_graph_handle->node_tab[i].node);
 					while(sub_graph_edge != NULL){
 						k = (struct nodeTab*)edge_get_dst(sub_graph_edge)->ptr - sub_graph_handle->node_tab;
 
-						for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
-							if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
-								graph_edge = node_get_head_edge_src(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
+						for (l = 0, match = 0; l < possible_assignment->headers[k].nb_possible_assignment && !match; l++){
+							if (possible_assignment->nodes[possible_assignment->headers[k].node_offset + l] != NULL){
+								graph_edge = node_get_head_edge_src(possible_assignment->nodes[possible_assignment->headers[i].node_offset + j]);
 								
 								while(graph_edge != NULL){
-									if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_dst(graph_edge)){
+									if (possible_assignment->nodes[possible_assignment->headers[k].node_offset + l] == edge_get_dst(graph_edge)){
 										if (sub_graph_handle->edge_get_label(sub_graph_edge) == graph_handle->edge_get_label(graph_edge)){
 											match = 1;
 											break;
@@ -487,7 +547,7 @@ static void possibleAssignement_update(struct graphIsoHandle* graph_handle, stru
 							}
 						}
 						if (!match){
-							possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
+							possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = NULL;
 							restart = 1;
 							goto next;
 						}
@@ -499,12 +559,12 @@ static void possibleAssignement_update(struct graphIsoHandle* graph_handle, stru
 					while(sub_graph_edge != NULL){
 						k = (struct nodeTab*)edge_get_src(sub_graph_edge)->ptr - sub_graph_handle->node_tab;
 
-						for (l = 0, match = 0; l < possible_assignement->headers[k].nb_possible_assignement && !match; l++){
-							if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] != NULL){
-								graph_edge = node_get_head_edge_dst(possible_assignement->nodes[possible_assignement->headers[i].node_offset + j]);
+						for (l = 0, match = 0; l < possible_assignment->headers[k].nb_possible_assignment && !match; l++){
+							if (possible_assignment->nodes[possible_assignment->headers[k].node_offset + l] != NULL){
+								graph_edge = node_get_head_edge_dst(possible_assignment->nodes[possible_assignment->headers[i].node_offset + j]);
 								
 								while(graph_edge != NULL){
-									if (possible_assignement->nodes[possible_assignement->headers[k].node_offset + l] == edge_get_src(graph_edge)){
+									if (possible_assignment->nodes[possible_assignment->headers[k].node_offset + l] == edge_get_src(graph_edge)){
 										if (sub_graph_handle->edge_get_label(sub_graph_edge) == graph_handle->edge_get_label(graph_edge)){
 											match = 1;
 											break;
@@ -516,7 +576,7 @@ static void possibleAssignement_update(struct graphIsoHandle* graph_handle, stru
 							}
 						}
 						if (!match){
-							possible_assignement->nodes[possible_assignement->headers[i].node_offset + j] = NULL;
+							possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = NULL;
 							restart = 1;
 							goto next;
 						}
@@ -529,6 +589,20 @@ static void possibleAssignement_update(struct graphIsoHandle* graph_handle, stru
 		}
 	}
 }
+
+#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
+static uint32_t possibleAssignment_is_empty(struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
+	uint32_t i;
+
+	for(i = nb_assignment; i < possible_assignment->nb_node; i++){
+		if (possible_assignment->headers[i].nb_possible_assignment == 0){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+#endif
 
 /* ===================================================================== */
 /* Compare routines 													 */
@@ -582,6 +656,7 @@ int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
 	}
 }
 
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 int32_t compare_connectivityTabItem(const void* arg1, const void* arg2){
 	struct connectivityTab* connectivity_item1 = (struct connectivityTab*)arg1;
 	struct connectivityTab* connectivity_item2 = (struct connectivityTab*)arg2;
@@ -595,5 +670,5 @@ int32_t compare_connectivityTabItem(const void* arg1, const void* arg2){
 	else{
 		return 0;
 	}
-
 }
+#endif

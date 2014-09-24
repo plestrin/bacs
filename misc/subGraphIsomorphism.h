@@ -8,6 +8,9 @@
 
 #define SUBGRAPHISOMORPHISM_JOKER_LABEL 0xffffffff
 
+#define SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1
+
 struct nodeTab{
 	uint32_t 				label;
 	uint32_t 				connectivity;
@@ -19,10 +22,12 @@ struct labelTab{
 	struct node* 			node;
 };
 
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 struct connectivityTab{
 	uint32_t 				connectivity;
 	struct node*			node;
 };
+#endif
 
 struct labelFastAccess{
 	uint32_t 				label;
@@ -35,7 +40,9 @@ struct graphIsoHandle{
 	uint32_t 				nb_label;
 	struct labelFastAccess* label_fast;
 	struct labelTab*		label_tab;
+	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	struct connectivityTab* connectivity_tab;
+	#endif
 	uint32_t(*edge_get_label)(struct edge*);
 };
 
