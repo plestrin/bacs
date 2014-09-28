@@ -32,7 +32,7 @@ struct node{
 	uint32_t 		nb_edge_dst;
 	struct edge*	src_edge_linkedList;
 	struct edge*	dst_edge_linkedList;
-	void* 			ptr;
+	void* 			ptr; 									/* Used in various algorithm: dijktra, isomosphism, dag partial ordering */
 	char 			data[GRAPH_DATA_PADDING_ALIGNEMENT];
 };
 

@@ -17,7 +17,6 @@ void dotPrint_node(void* data, FILE* file, void* arg){
 
 	if (arg == NULL){
 		fprintf(file, "[label=\"%c\"]", *(char*)data);
-		/*fprintf(file, "[label=\"%c - %p\"]", *(char*)data, (void*)data);*/
 	}
 	else{
 		sta_assignement = (struct standaloneAssignement*)arg;
@@ -48,6 +47,11 @@ uint32_t node_get_label(struct node* node){
 			return 0;
 		}
 	}
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+uint32_t edge_get_label(struct edge* edge){
+	return 0;
 }
 
 struct graph* create_graph(){
@@ -216,13 +220,13 @@ int main(){
 	graph = create_graph();
 	sub_graph = create_subGraph();
 
-	graph_handle = graphIso_create_graph_handle(graph, node_get_label);
+	graph_handle = graphIso_create_graph_handle(graph, node_get_label, edge_get_label);
 	if (graph_handle == NULL){
 		printf("ERROR: in %s, unable to create graphHandle\n", __func__);
 		return -1;
 	}
 
-	sub_graph_handle = graphIso_create_sub_graph_handle(sub_graph, node_get_label);
+	sub_graph_handle = graphIso_create_sub_graph_handle(sub_graph, node_get_label, edge_get_label);
 	if (sub_graph_handle == NULL){
 		printf("ERROR: in %s, unable to create subGraphHandle\n", __func__);
 		return -1;
@@ -240,7 +244,7 @@ int main(){
 			printf("Assignement %u:\n", i + 1);
 
 			for (j = 0; j < sub_graph->nb_node; j++){
-				printf("\t %u - %p -> %p (%c)\n", j, (void*)sub_graph_handle->label_tab[j].node->data, (void*)assignement[j]->data, (char)(sub_graph_handle->label_tab[j].label));
+				printf("\t %u - %p -> %p (%c)\n", j, (void*)sub_graph_handle->node_tab[j].node->data, (void*)assignement[j]->data, (char)(sub_graph_handle->node_tab[j].label));
 			}
 
 			sta_assignement.nb_node = sub_graph->nb_node;

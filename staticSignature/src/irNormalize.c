@@ -7,6 +7,8 @@
 
 #include "irNormalize.h"
 
+#include "dagPartialOrder.h"
+
 #ifdef VERBOSE
 #include "multiColumn.h"
 #endif
@@ -18,9 +20,6 @@
 #define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
 #define IR_NORMALIZE_MERGE_ASSOCIATIVE_ADD 			1
 #define IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR 			1
-
-static int32_t irNormalize_sort_node(struct ir* ir);
-static void irNormalize_recursive_sort(struct node** node_buffer, struct node* node, uint32_t* generator);
 
 struct irOperand{
 	struct node*	node;
@@ -254,7 +253,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	struct node* 			next_node_cursor;
 	struct irOperation* 	operation;
 
-	if (irNormalize_sort_node(ir)){
+	if (dagPartialOrder_sort(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort ir node(s)\n", __func__);
 		return;
 	}
@@ -1388,7 +1387,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 	uint32_t 				nb_operand_imm_cursor1;
 	uint32_t 				nb_operand_imm_cursor2;
 
-	if (irNormalize_sort_node(ir)){
+	if (dagPartialOrder_sort(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort IR node(s)\n", __func__);
 		return;
 	}
@@ -1954,73 +1953,6 @@ void ir_normalize_merge_associative_operation(struct ir* ir, enum irOpcode opcod
 /* ===================================================================== */
 /* sorting routines						                                 */
 /* ===================================================================== */
-
-static int32_t irNormalize_sort_node(struct ir* ir){
-	struct node** 	node_buffer;
-	uint32_t 		i;
-	struct node* 	primary_cursor;
-	uint32_t 		generator = IR_NODE_INDEX_FIRST;
-
-	node_buffer = (struct node**)malloc(ir->graph.nb_node * sizeof(struct node*));
-	if (node_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		return -1;
-	}
-
-	for(primary_cursor = graph_get_head_node(&(ir->graph)); primary_cursor != NULL; primary_cursor = node_get_next(primary_cursor)){
-		ir_node_get_operation(primary_cursor)->index = IR_NODE_INDEX_UNSET;
-	}
-
-	for(primary_cursor = graph_get_head_node(&(ir->graph)); primary_cursor != NULL; primary_cursor = node_get_next(primary_cursor)){
-		if (!irOperation_is_index_set(ir_node_get_operation(primary_cursor))){
-			irNormalize_recursive_sort(node_buffer, primary_cursor, &generator);
-		}
-	}
-
-	ir->graph.node_linkedList_head = node_buffer[0];
-	node_buffer[0]->prev = NULL;
-	if (ir->graph.nb_node > 1){
-		node_buffer[0]->next = node_buffer[1];
-
-		for (i = 1; i < ir->graph.nb_node - 1; i++){
-			node_buffer[i]->prev = node_buffer[i - 1];
-			node_buffer[i]->next = node_buffer[i + 1];
-		}
-			
-		node_buffer[i]->prev = node_buffer[i - 1];
-		node_buffer[i]->next = NULL;
-		ir->graph.node_linkedList_tail = node_buffer[i];
-	}
-	else{
-		node_buffer[0]->next = NULL;
-		ir->graph.node_linkedList_tail = node_buffer[0];
-	}
-
-	free(node_buffer);
-
-	return 0;
-}
-
-static void irNormalize_recursive_sort(struct node** node_buffer, struct node* node, uint32_t* generator){
-	struct edge* edge_cursor;
-	struct node* parent_node;
-
-	ir_node_get_operation(node)->index = IR_NODE_INDEX_SETTING;
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		parent_node = edge_get_src(edge_cursor);
-
-		if (ir_node_get_operation(parent_node)->index == IR_NODE_INDEX_UNSET){
-			irNormalize_recursive_sort(node_buffer, parent_node, generator);
-		}
-		else if (ir_node_get_operation(parent_node)->index == IR_NODE_INDEX_SETTING){
-			printf("ERROR: in %s, cycle detected in graph\n", __func__);
-		}
-	}
-
-	ir_node_get_operation(node)->index = *generator;
-	node_buffer[*generator - IR_NODE_INDEX_FIRST] = node;
-	*generator = *generator + 1;
-}
 
 int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 	struct node* access1 = *(struct node**)arg1;

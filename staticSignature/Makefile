@@ -33,7 +33,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)mapFile.o				\
 					$(BUILD_DIR)graph.o 				\
 					$(BUILD_DIR)graphPrintDot.o 		\
-					$(BUILD_DIR)subGraphIsomorphism.o
+					$(BUILD_DIR)subGraphIsomorphism.o 	\
+					$(BUILD_DIR)dagPartialOrder.o
 
 
 ifeq ($(DEBUG),1)

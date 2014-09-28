@@ -119,10 +119,6 @@ enum irDependenceType{
 #define IR_NODE_STATUS_FLAG_NONE 	0x00000000
 #define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
 
-#define IR_NODE_INDEX_UNSET 		0x00000000
-#define IR_NODE_INDEX_SETTING 		0x00000001
-#define IR_NODE_INDEX_FIRST 		0x00000002
-
 struct irOperation{
 	enum irOperationType 		type;
 	union {
@@ -146,12 +142,10 @@ struct irOperation{
 		} 						symbol;
 	} 							operation_type;
 	uint8_t 					size;
-	uint32_t 					index;
 	uint32_t 					status_flag;
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
-#define irOperation_is_index_set(operation) (operation->index >= IR_NODE_INDEX_FIRST)
 
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
