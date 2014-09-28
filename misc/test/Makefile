@@ -10,6 +10,8 @@ TEST_MAPFILE 			:= test_mapFile
 TEST_PAGETABLE 			:= test_pageTable
 TEST_GRAPH 				:= test_graph
 TEST_SUBGRAPHISO 		:= test_subGraphIso
+TEST_DIJKSTRA 			:= test_dijkstra
+TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
 
 CC						:= gcc
 CFLAGS					:= -W -Wall -pedantic -Wextra -g
@@ -26,7 +28,9 @@ all: 										\
 	$(TEST_MAPFILE) 						\
 	$(TEST_PAGETABLE) 						\
 	$(TEST_GRAPH) 							\
-	$(TEST_SUBGRAPHISO)
+	$(TEST_SUBGRAPHISO) 					\
+	$(TEST_DIJKSTRA) 						\
+	$(TEST_DAGPARTIALORDER)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -65,6 +69,12 @@ $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 $(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+$(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphPrintDot.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 
 # *** General compile rules ***
 %.o: %.c
@@ -85,6 +95,8 @@ test_mapFile.o: ../mapFile.h
 test_pageTable.o: ../pageTable.h
 test_graph.o: ../graph.h ../graphPrintDot.h
 test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h
+test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h
+test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
@@ -97,6 +109,8 @@ pageTable.o: ../pageTable.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h
+dijkstra.o: ../graph.h ../dijkstra.h
+dagPartialOrder.o: ../graph.h ../dagPartialOrder.h
 
 clean:
 	@ rm -f *.o
@@ -115,3 +129,5 @@ clean:
 	@ rm -f $(TEST_PAGETABLE)
 	@ rm -f $(TEST_GRAPH)
 	@ rm -f $(TEST_SUBGRAPHISO)
+	@ rm -f $(TEST_DIJKSTRA)
+	@ rm -f $(TEST_DAGPARTIALORDER)
