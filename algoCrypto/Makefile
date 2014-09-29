@@ -4,8 +4,9 @@ CRYPTOPP_DIRECTORY 		:= cryptopp/
 GLADMAN_DIRECTORY 		:= gladman/
 OPENSSL_DIRECTORY 		:= openssl/
 GO_DIRECTORY 			:= go/
+BOTAN_DIRECTORY 		:= botan/
 
-all: test tomCrypt cryptopp gladman openssl go
+all: test tomCrypt cryptopp gladman openssl go botan
 
 test:
 	@ cd $(TEST_DIRECTORY) && $(MAKE)
@@ -25,7 +26,10 @@ openssl:
 go:
 	@ cd $(GO_DIRECTORY) && $(MAKE)
 
-.PHONY: all clean test tomCrypt cryptopp gladman openssl go
+botan:
+	@ cd $(BOTAN_DIRECTORY) && $(MAKE)
+
+.PHONY: all clean test tomCrypt cryptopp gladman openssl go botan
 
 clean:
 	@ cd $(TOMCRYPT_DIRECTORY) && $(MAKE) clean
@@ -34,3 +38,4 @@ clean:
 	@ cd $(GLADMAN_DIRECTORY) && $(MAKE) clean
 	@ cd $(OPENSSL_DIRECTORY) && $(MAKE) clean
 	@ cd $(GO_DIRECTORY) && $(MAKE) clean
+	@ cd $(BOTAN_DIRECTORY) && $(MAKE) clean
