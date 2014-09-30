@@ -4,7 +4,7 @@
 
 #include "callGraph.h"
 
-#define CALLGRAPH_MAX_DEPTH 	512
+#define CALLGRAPH_MAX_DEPTH 	8192
 #define CALLGRAPH_START_DEPTH 	256
 
 static int32_t callGraphNode_add_snippet(struct callGraph* call_graph, struct callGraphNode* call_graph_node, uint32_t start, uint32_t stop, ADDRESS expected_next_address);
@@ -53,7 +53,7 @@ struct callGraph* callGraph_create(struct trace* trace){
 
 int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace){
 	struct instructionIterator 	it;
-	struct node* 				call_graph_stack[CALLGRAPH_MAX_DEPTH];
+	struct node** 				call_graph_stack;
 	uint32_t 					call_graph_ptr;
 	struct callGraphNode* 		call_graph_node;
 	uint32_t 					snippet_start;
@@ -61,10 +61,15 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace){
 	struct callGraphEdge 		call_graph_edge;
 	struct assemblySnippet* 	last_snippet;
 
-	memset(call_graph_stack, 0, sizeof(struct node*) * CALLGRAPH_START_DEPTH);
+	call_graph_stack = (struct node**)calloc(sizeof(struct node*), CALLGRAPH_MAX_DEPTH);
+	if (call_graph_stack == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
 
 	if (array_init(&(call_graph->snippet_array), sizeof(struct assemblySnippet))){
 		printf("ERROR: in %s, unable to init array\n", __func__);
+		free(call_graph_stack);
 		return -1;
 	}
 
@@ -73,6 +78,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace){
 
 	if (assembly_get_instruction(&(trace->assembly), &it, 0)){
 		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+		free(call_graph_stack);
 		return -1;
 	}
 
@@ -217,6 +223,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace){
 		else{
 			if (assembly_get_next_instruction(&(trace->assembly), &it)){
 				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+				free(call_graph_stack);
 				return -1;
 			}
 		}
@@ -225,6 +232,8 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace){
 	if (call_graph_node->last_snippet_offset == -1){
 		graph_remove_node(&(call_graph->graph), call_graph_stack[call_graph_ptr]);
 	}
+
+	free(call_graph_stack);
 
 	return 0;
 }

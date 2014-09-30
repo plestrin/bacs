@@ -388,6 +388,34 @@
 		</result>
 	</recipe>
 
+	<recipe name="BOT_TEA" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_tea"/>
+		<search>
+			<arg value="load trace traceBOT_TEA"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZNK5Botan3TEA9encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan3TEA9decrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan4XTEA9encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan4XTEA9decrypt_nEPKhPhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="tea_enc" number="252"/>
+			<algo name="tea_enc_32" number="4"/>
+			<algo name="tea_dec" number="252"/>
+			<algo name="tea_dec_32" number="4"/>
+			<algo name="xtea_enc" number="252"/>
+			<algo name="xtea_enc_32" number="4"/>
+			<algo name="xtea_dec" number="252"/>
+			<algo name="xtea_dec_32" number="4"/>
+		</result>
+	</recipe>
+
 	<!-- MD5 hash -->
 
 	<recipe name="TEST_MD5_GO0" active="no"> <!-- First MD5 block is broken: due to constant propagation -->
@@ -1639,7 +1667,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V2_CO2" active="yes">
+	<recipe name="GLAD_AES_V2_CO2" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2"/>
 		<search>

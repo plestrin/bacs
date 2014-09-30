@@ -11,7 +11,7 @@ struct dijkstraInternal{
 
 int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_buffer){
 	struct dijkstraInternal* 	internals;
-	struct dijkstraInternal* 	curr_orbital;
+	struct dijkstraInternal* 	curr_orbital = NULL;
 	struct dijkstraInternal* 	next_orbital;
 	uint32_t 					i;
 	struct node* 				node_cursor;
@@ -75,7 +75,7 @@ int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_bu
 
 int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_buffer){
 	struct dijkstraInternal* 	internals;
-	struct dijkstraInternal* 	curr_orbital;
+	struct dijkstraInternal* 	curr_orbital = NULL;
 	struct dijkstraInternal* 	next_orbital;
 	uint32_t 					i;
 	struct node* 				node_cursor;

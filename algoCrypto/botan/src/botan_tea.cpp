@@ -10,14 +10,13 @@ void print_raw_buffer(Botan::byte* buffer, int buffer_length);
 void readBuffer_reverse_endianness(Botan::byte* buffer, int buffer_length);
 
 int main() {
-	uint32_t					key[4] = {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
-	char* 						pt;
-	char* 						ct;
-	char* 						vt;
-	uint32_t					size = 32;
-	Botan::LibraryInitializer 	init;
-	Botan::TEA 					tea;
-	Botan::XTEA 				xtea;
+	uint32_t		key[4] = {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
+	char* 			pt;
+	char* 			ct;
+	char* 			vt;
+	uint32_t		size = 32;
+	Botan::TEA 		tea;
+	Botan::XTEA 	xtea;
 
 	pt 	= (char*)malloc(size);
 	ct 	= (char*)malloc(size);
