@@ -1,0 +1,1799 @@
+<xml>
+
+	<!-- TEA and XTEA encryption and decrytion -->
+
+	<recipe name="TEST_TEA_GO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go0"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_GO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_GO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go1"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_GO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_GO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go2"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_GO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_GO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_go3"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_GO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_GOs" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_gos"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_GOs"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_CO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co0"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_CO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_CO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co1"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_CO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_CO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co2"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_CO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_CO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_co3"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_CO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_COz" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_tea_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_tea_coz"/>
+		<search>
+			<arg value="load trace traceTEST_TEA_COz"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_WD" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_TEA_WD"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_TEA_WR" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_TEA_WR"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_TEA" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea"/>
+		<search>
+			<arg value="load trace traceTOM_TEA"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_TEA" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea"/>
+		<search>
+			<arg value="load trace tracePP_TEA"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_TEA" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_tea"/>
+		<search>
+			<arg value="load trace traceBOT_TEA"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="TEA encrypt" number="1"/>
+			<algo name="TEA decrypt" number="1"/>
+			<algo name="XTEA encrypt" number="1"/>
+			<algo name="XTEA decrypt" number="1"/>
+		</result>
+	</recipe>
+
+	<!-- MD5 hash -->
+
+	<recipe name="TEST_MD5_GO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GOs" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GOs"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_COz" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_COz"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WD" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_MD5_WD"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WR" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_MD5_WR"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_MD5" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
+		<search>
+			<arg value="load trace traceTOM_MD5"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_MD5" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
+		<search>
+			<arg value="load trace traceOPEN_MD5"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_MD5" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
+		<search>
+			<arg value="load trace tracePP_MD5"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg ASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="MD5" number="1"/>
+		</result>
+	</recipe>
+
+	<!-- AES {128, 192 and 256} encryption/decryption. Table implementation -->
+
+	<recipe name="TEST_AES_GO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go0"/>
+		<search>
+			<arg value="load trace traceTEST_AES_GO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go1"/>
+		<search>
+			<arg value="load trace traceTEST_AES_GO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go2"/>
+		<search>
+			<arg value="load trace traceTEST_AES_GO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_go3"/>
+		<search>
+			<arg value="load trace traceTEST_AES_GO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GOs" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_gos"/>
+		<search>
+			<arg value="load trace traceTEST_AES_GOs"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO0" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co0"/>
+		<search>
+			<arg value="load trace traceTEST_AES_CO0"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co1"/>
+		<search>
+			<arg value="load trace traceTEST_AES_CO1"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO2" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co2"/>
+		<search>
+			<arg value="load trace traceTEST_AES_CO2"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO3" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_co3"/>
+		<search>
+			<arg value="load trace traceTEST_AES_CO3"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_COz" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_aes_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_aes_coz"/>
+		<search>
+			<arg value="load trace traceTEST_AES_COz"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_WD" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_AES_WD"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_WR" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_AES_WR"/>
+			<arg value="load ioChecker ../reference/classic.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_AES" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes"/>
+		<search>
+			<arg value="load trace traceTOM_AES"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/> <!-- alternate: create ir TRACE extract arg ir -->
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES 8 round enc" number="1"/>
+			<algo name="AES 8 round dec rev" number="1"/>
+			<algo name="AES 10 round enc" number="1"/>
+			<algo name="AES 10 round dec rev" number="1"/>
+			<algo name="AES 12 round enc" number="1"/>
+			<algo name="AES 12 round dec rev" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES128" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes128"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes128"/>
+		<search>
+			<arg value="load trace tracePP_AES128"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES 8 round enc" number="1"/>
+			<algo name="AES 8 round dec rev" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES192" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes192"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes192"/>
+		<search>
+			<arg value="load trace tracePP_AES192"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES 10 round enc" number="1"/>
+			<algo name="AES 10 round dec rev" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES256" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes256"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes256"/>
+		<search>
+			<arg value="load trace tracePP_AES256"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES 12 round enc" number="1"/>
+			<algo name="AES 12 round dec rev" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_AES" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_aes"/>
+		<search>
+			<arg value="load trace traceOPEN_AES"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GOs"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_COz"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V0_WD"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V0_WR"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GOs"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_COz"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V1_WD"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V1_WR"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_gos"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GOs"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co0"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO0"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co1"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO1"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO2"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co3"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO3"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_coz"/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_COz"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V2_WD"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceGLAD_AES_V2_WR"/>
+			<arg value="load ioChecker ../reference/aes_round.json"/>
+			<arg value="create loop STRICT"/>
+			<arg value="remove redundant loop PACKED"/>
+			<arg value="export loop NOEP"/>
+			<arg value="extract frag arg LASOR_LM"/>
+			<arg value="search arg"/>
+			<arg value="exit"/>
+		</search>
+		<result type="io">
+			<algo name="AES128 inner enc" number="1"/>
+			<algo name="AES128 inner dec" number="1"/>
+			<algo name="AES192 inner enc" number="1"/>
+			<algo name="AES192 inner dec" number="1"/>
+			<algo name="AES256 inner enc" number="1"/>
+			<algo name="AES256 inner dec" number="1"/>
+		</result>
+	</recipe>
+
+</xml>

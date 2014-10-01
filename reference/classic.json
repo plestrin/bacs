@@ -59,6 +59,48 @@
 			}]
 	},
 	{
+		"name":"XTEA encrypt",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
+		"func":"wrapper_xtea_encipher",
+		"arg":[{
+				"type":"input",
+				"multiple_size":8
+			},
+			{
+				"type":"input",
+				"implicit_size":0
+			},
+			{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"output",
+				"input_size":0
+			}]
+	},
+	{
+		"name":"XTEA decrypt",
+		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
+		"func":"wrapper_xtea_decipher",
+		"arg":[{
+				"type":"input",
+				"multiple_size":8
+			},
+			{
+				"type":"input",
+				"implicit_size":0
+			},
+			{
+				"type":"input",
+				"exact_size":16
+			},
+			{
+				"type":"output",
+				"input_size":0
+			}]
+	},
+	{
 		"name":"AES128 inner enc",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_aes.so",
 		"func":"wrapper_aes128_inner_loop_enc",

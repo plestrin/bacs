@@ -95,73 +95,57 @@ class ioRecipe(recipe):
 		sys.stdout.write("Searching " + self.name + " ... ")
 		sys.stdout.flush()
 
-		ioChecker_file = self.arg[self.arg.find("load ioChecker") + 15:]
-		ioChecker_file = ioChecker_file[:ioChecker_file.find(",")]
-		trace_dir = self.arg[self.arg.find("load trace") + 11:]
-		trace_dir = trace_dir[:trace_dir.find(",")]
+		if self.log == None:
+			self.log = open(log_path + self.name + ".log", "w")
 
-		condition1 = hist.hasFilesChanged(["./analysis", ioChecker_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
-		condition2 = hist.hasStringChanged("analysis" + self.name, self.arg)
+		self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
+		self.log.flush()
 
-		if condition1 or condition2:
-			if self.log == None:
-				self.log = open(log_path + self.name + ".log", "w")
+		cmd = ["./analysis"]
+		cmd.extend(self.arg)
 
-			self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
-			self.log.flush()
-
-			cmd = ["./analysis"]
-			cmd.extend(self.arg.split(','))
-
-			time_start = time.time()
-			process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			output_val = process.communicate()
-			process.wait()
-			time_stop = time.time()
+		time_start = time.time()
+		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		output_val = process.communicate()
+		process.wait()
+		time_stop = time.time()
 			
-			self.log.write(output_val[0])
-			self.log.write(output_val[1])
+		self.log.write(output_val[0])
+		self.log.write(output_val[1])
 
-			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
+		if process.returncode == 0:
+			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
 
-				crypto_list = self.result.split(',')
+			regex = re.compile("\*\*\* IO match for [a-zA-Z0-9 ]* \*\*\*")
+			detected_primitive = {}
+			for i in regex.findall(output_val[0]):
+				name = i[17:-4].strip()
 
-				nb_found 	= []
-				nb_expected = []
-				crypto_name = []
+				if name in detected_primitive:
+					detected_primitive[name] = detected_primitive.get(name) + 1
+				else:
+					detected_primitive[name] = 1
 
-				for j in crypto_list:
-					nb_found.append(0)
-					nb_expected.append(int(j[:j.find(':')]))
-					crypto_name.append(j[j.find(':')+1:].strip())
+			for i in self.algo:
+				if i in detected_primitive:
+					nb_expected = self.algo.get(i)
+					nb_detected = detected_primitive.get(i)
 
-				regex = re.compile("\*\*\* IO match for [a-zA-Z0-9 ]* \*\*\*")
-				for j in regex.findall(output_val[0]):
-					found = 0
-					for k in range(len(crypto_list)):
-						if crypto_name[k] == j[17:-4].strip():
-							nb_found[k] = nb_found[k] + 1
-							if nb_found[k] > nb_expected[k]:
-								print("\t" + j[17:-4].strip() + " \x1b[33mEXTRA " + str(nb_found[k]) + "/" + str(nb_expected[k]) + "\x1b[0m")
-								found = 1
-								break
-							else:
-								print("\t" + j[17:-4].strip() + " \x1b[32mOK " + str(nb_found[k]) + "/" + str(nb_expected[k]) + "\x1b[0m")
-								found = 1
-								break
-					if found == 0:
-						print("\t" + j[17:-4].strip() + " \x1b[33mEXTRA ?/?\x1b[0m")
+					if nb_expected < nb_detected:
+						print("\t" + i + " \x1b[33mEXTRA " + str(detected_primitive.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
+					elif nb_expected > nb_detected:
+						print("\t" + i + " \x1b[31mFAIL " + str(detected_primitive.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
+					else:
+						print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
+				else:
+					print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
 
-				for j in range(len(crypto_list)):
-					if nb_found[j] < nb_expected[j]:
-						for k in range(nb_expected[j] - nb_found[j]):
-							print("\t" + crypto_name[j].strip() + " \x1b[31mFAIL " + str(nb_found[j] + k + 1) + "/" + str(nb_expected[j]) + "\x1b[0m")
-			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
+			for i in detected_primitive:
+				if i not in self.algo:
+					print("\t" + i + " \x1b[33mEXTRA " + str(detected_primitive.get(i)) + "/0\x1b[0m")
 		else:
-			sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
+			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+			print(output_val[1])
 
 
 class sigRecipe(recipe):

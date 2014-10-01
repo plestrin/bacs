@@ -82,7 +82,7 @@ int32_t loopEngine_process_strict(struct loopEngine* engine){
 
 		iteration_count[i] = PREDICATE_EQUAL_ZERO(pop_count);
 
-		for (j = 1; j < i; j++){
+		for (j = 1; j < i && j <= engine->trace->nb_instruction - (2*i); j++){
 			pop_count -= PREDICATE_NOT_EQUAL(engine->trace->instructions[j - 1].opcode, engine->trace->instructions[j + i -1].opcode);
 			pop_count += PREDICATE_NOT_EQUAL(engine->trace->instructions[j + i - 1].opcode, engine->trace->instructions[j + (2*i) -1].opcode);
 
@@ -113,15 +113,17 @@ int32_t loopEngine_process_strict(struct loopEngine* engine){
 		}
 
 		for (; j <= engine->trace->nb_instruction - i; j++){
-			if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
-				iteration_counter += iteration_count[j] + 1;
+			if (j >= i){
+				if (iteration_count[j] && (iteration_count[j] + 1) >= LOOP_MINIMAL_NB_ITERATION){
+					iteration_counter += iteration_count[j] + 1;
 
-				token.offset = j - (iteration_count[j] * i);
-				token.length = i;
-				token.nb_iteration = iteration_count[j] + 1;
+					token.offset = j - (iteration_count[j] * i);
+					token.length = i;
+					token.nb_iteration = iteration_count[j] + 1;
 
-				if (array_add(&token_array, &token) < 0){
-					printf("ERROR: in %s, unable to add token to array\n", __func__);
+					if (array_add(&token_array, &token) < 0){
+						printf("ERROR: in %s, unable to add token to array\n", __func__);
+					}
 				}
 			}
 		}
