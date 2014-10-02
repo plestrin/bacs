@@ -186,6 +186,9 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
+void ir_dotPrint_node(void* data, FILE* file, void* arg);
+void ir_dotPrint_edge(void* data, FILE* file, void* arg);
+
 #define ir_clean(ir) 														\
 	graph_clean(&(ir->graph));												\
 

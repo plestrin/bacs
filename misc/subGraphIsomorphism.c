@@ -1,7 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "subGraphIsomorphism.h"
+
+#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+#include "dijkstra.h"
+#endif
 
 static struct nodeTab* graphIso_create_node_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 static struct labelTab* graphIso_create_label_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
@@ -30,11 +35,12 @@ struct possibleAssignment{
 
 static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, uint32_t nb_assignment);
 static struct possibleAssignment* possibleAssignment_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error);
-static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t new_assignment_index, struct node* new_assignment_value, uint8_t* error);
-static void possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
-#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
-static uint32_t possibleAssignment_is_empty(struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
+#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+static struct possibleAssignment* possibleAssignment_duplicate(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, struct node* new_assignment_value, uint8_t* error);
+#else
+static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t nb_assignment, struct node* new_assignment_value, uint8_t* error);
 #endif
+static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
 
 #define possibleAssignment_delete(possible_assignment) free(possible_assignment);
 
@@ -163,6 +169,29 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 
 	handle = (struct graphIsoHandle*)malloc(sizeof(struct graphIsoHandle));
 	if (handle != NULL){
+		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+		handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node);
+		if (handle->dst == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			free(handle);
+			return NULL;
+		}
+		else{
+			uint32_t 		i;
+			struct node* 	node_cursor;
+
+			for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL && i < graph->nb_node; node_cursor = node_get_next(node_cursor), i++){
+				if (dijkstra_dst(graph, node_cursor, handle->dst + (i * graph->nb_node))){
+					printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+				}
+			}
+
+			for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL && i < graph->nb_node; node_cursor = node_get_next(node_cursor), i++){
+				node_cursor->ptr = (void*)i;
+			}
+		}
+		#endif
+
 		label_tab = graphIso_create_label_tab(graph, node_get_label);
 		#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 		connectivity_tab = graphIso_create_connectivity_tab(graph);
@@ -193,6 +222,9 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 		}
 		else{
 			printf("ERROR: in %s, unable to create labelTab\n", __func__);
+			#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+			free(handle->dst);
+			#endif
 			free(handle);
 			handle = NULL;
 		}
@@ -236,16 +268,13 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array){
 	uint32_t 		i;
 	uint32_t 		result = 0;
-	uint32_t 		local_result;
 	uint8_t 		error;
+	uint32_t 		local_nb_possible_assignment;
+	uint32_t 		local_node_offset;
 
-	possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment);
-
-	#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
-	if (possibleAssignment_is_empty(possible_assignment, nb_assignment)){
+	if (possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment)){
 		return 0;
 	}
-	#endif
 
 	if (nb_assignment == sub_graph_handle->graph->nb_node){
 		if (array_add(assignment_array, assignment) < 0){
@@ -254,22 +283,28 @@ static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, s
 		return 1;
 	}
 
-	for (i = 0; i < possible_assignment->headers[nb_assignment].nb_possible_assignment; i++){
-		if (possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i] != NULL){
+	local_nb_possible_assignment = possible_assignment->headers[nb_assignment].nb_possible_assignment;
+	local_node_offset = possible_assignment->headers[nb_assignment].node_offset;
+
+	for (i = 0; i < local_nb_possible_assignment; i++){
+		if (possible_assignment->nodes[local_node_offset + i] != NULL){
 			struct possibleAssignment* new_possible_assignment;
 
-			new_possible_assignment = possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i], &error);
+			#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+			new_possible_assignment = possibleAssignment_duplicate(graph_handle, sub_graph_handle, possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
+			#else
+			new_possible_assignment = possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
+			#endif
 			if (new_possible_assignment != NULL){
-				assignment[nb_assignment] = possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i];
-				local_result = graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, new_possible_assignment, assignment_array);
+				assignment[nb_assignment] = possible_assignment->nodes[local_node_offset + i];
+				result += graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, new_possible_assignment, assignment_array);
 				possibleAssignment_delete(new_possible_assignment);
 
-				if (local_result > 0){
-					result += local_result;
-				}
-				else{
-					possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i] = NULL;
-					possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment);
+				possible_assignment->headers[nb_assignment].nb_possible_assignment = local_nb_possible_assignment - i;
+				possible_assignment->headers[nb_assignment].node_offset = local_node_offset + i;
+				
+				if (possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment)){ /* this one may cost a lot */
+					break;
 				}
 			}
 			else if (error){
@@ -287,6 +322,25 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 
 	handle = (struct subGraphIsoHandle*)malloc(sizeof(struct subGraphIsoHandle));
 	if (handle != NULL){
+		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+		handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node);
+		if (handle->dst == NULL){
+			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			free(handle);
+			return NULL;
+		}
+		else{
+			uint32_t 		i;
+			struct node* 	node_cursor;
+
+			for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL && i < graph->nb_node; node_cursor = node_get_next(node_cursor), i++){
+				if (dijkstra_dst(graph, node_cursor, handle->dst + (i * graph->nb_node))){
+					printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+				}
+			}
+		}
+		#endif
+
 		node_tab = graphIso_create_node_tab(graph, node_get_label);
 		if (node_tab != NULL){
 			handle->graph 			= graph;
@@ -295,6 +349,9 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 		}
 		else{
 			printf("ERROR: in %s, unable to create labelTab\n", __func__);
+			#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+			free(handle->dst);
+			#endif
 			free(handle);
 			handle = NULL;
 		}
@@ -312,10 +369,16 @@ void graphIso_delete_graph_handle(struct graphIsoHandle* handle){
 	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	free(handle->connectivity_tab);
 	#endif
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	free(handle->dst);
+	#endif
 	free(handle);
 }
 
 void graphIso_delete_subGraph_handle(struct subGraphIsoHandle* handle){
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	free(handle->dst);
+	#endif
 	free(handle->node_tab);
 	free(handle);
 }
@@ -439,90 +502,155 @@ static struct possibleAssignment* possibleAssignment_create_init_first(struct gr
 
 	return possible_assignment;
 }
-
-static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t new_assignment_index, struct node* new_assignment_value, uint8_t* error){
+#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+static struct possibleAssignment* possibleAssignment_duplicate(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, struct node* new_assignment_value, uint8_t* error){
 	uint32_t 					i;
 	uint32_t 					j;
-	uint32_t 					local_nb_assigment;
-	uint32_t 					nb_assignment = 0;
+	uint32_t 					local_nb_possible_assignment;
+	uint32_t 					nb_possible_assignment = nb_assignment + 1;
 	struct possibleAssignment* 	new_possible_assignment;
 
-	if (error != NULL){
-		*error = 0;
-	}
+	*error = 0;
 
-	for (i = 0; i < possible_assignment->nb_node; i++){
-		if (i != new_assignment_index){
-			for (j = 0, local_nb_assigment = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+	for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+		if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * nb_assignment + i] != DIJKSTRA_INVALID_DST){
+			for (j = 0, local_nb_possible_assignment = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
 				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
-					local_nb_assigment ++;
+					uint32_t index_k = (uint32_t)(new_assignment_value->ptr);
+					uint32_t index_i = (uint32_t)(possible_assignment->nodes[possible_assignment->headers[i].node_offset + j]->ptr);
+
+					if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * nb_assignment + i] >= graph_handle->dst[graph_handle->graph->nb_node * index_k + index_i]){
+						local_nb_possible_assignment ++;
+					}
 				}
 			}
-			#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
-			if (local_nb_assigment > 0){
-				nb_assignment += local_nb_assigment;
+			if (local_nb_possible_assignment > 0){
+				nb_possible_assignment += local_nb_possible_assignment;
 			}
 			else{
 				return NULL;
 			}
-			#else
-			nb_assignment += local_nb_assigment;
-			#endif
 		}
 		else{
-			nb_assignment ++;
+			printf("ERROR: in %s, this case is not supposed to happen, subgrah is not connected\n", __func__);
 		}
 	}
 
-	new_possible_assignment = possibleAssignment_create(possible_assignment->nb_node, nb_assignment);
+	new_possible_assignment = possibleAssignment_create(possible_assignment->nb_node, nb_possible_assignment);
 	if (new_possible_assignment != NULL){
-		new_possible_assignment->headers[0].node_offset = 0;
+		if (nb_assignment > 0){
+			memcpy(new_possible_assignment->headers, possible_assignment->headers, sizeof(struct possibleAssignmentHeader) * nb_assignment);
+			memcpy(new_possible_assignment->nodes, possible_assignment->nodes, sizeof(struct node*) * nb_assignment);
+		}
 
-		for (i = 0; i < possible_assignment->nb_node; i++){
-			nb_assignment = 0;
+		new_possible_assignment->headers[nb_assignment].node_offset = nb_assignment;
+		new_possible_assignment->headers[nb_assignment].nb_possible_assignment = 1;
+		new_possible_assignment->nodes[new_possible_assignment->headers[nb_assignment].node_offset] = new_assignment_value;
 
-			if (i != new_assignment_index){
+		for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+			local_nb_possible_assignment = 0;
+
+			new_possible_assignment->headers[i].node_offset = new_possible_assignment->headers[i - 1].node_offset + new_possible_assignment->headers[i - 1].nb_possible_assignment;
+
+
+			if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * nb_assignment + i] != DIJKSTRA_INVALID_DST){
 				for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
 					if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
-						new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + nb_assignment] = possible_assignment->nodes[possible_assignment->headers[i].node_offset + j];
-						nb_assignment ++;
+						uint32_t index_k = (uint32_t)(new_assignment_value->ptr);
+						uint32_t index_i = (uint32_t)(possible_assignment->nodes[possible_assignment->headers[i].node_offset + j]->ptr);
+
+						if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * nb_assignment + i] >= graph_handle->dst[graph_handle->graph->nb_node * index_k + index_i]){
+							new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + local_nb_possible_assignment] = possible_assignment->nodes[possible_assignment->headers[i].node_offset + j];
+							local_nb_possible_assignment ++;
+						}
 					}
 				}
 			}
-			else{
-				new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + nb_assignment] = new_assignment_value;
-				nb_assignment ++;
-			}
 
-			new_possible_assignment->headers[i].nb_possible_assignment = nb_assignment;
-			if (i != possible_assignment->nb_node - 1){
-				new_possible_assignment->headers[i + 1].node_offset = new_possible_assignment->headers[i].node_offset + nb_assignment;
-			}
+			new_possible_assignment->headers[i].nb_possible_assignment = local_nb_possible_assignment;
 		}
 	}
 	else{
-		if (error != NULL){
-			*error = 1;
-		}
+		*error = 1;
 	}
 
 	return new_possible_assignment;
 }
+#else
+static struct possibleAssignment* possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t nb_assignment, struct node* new_assignment_value, uint8_t* error){
+	uint32_t 					i;
+	uint32_t 					j;
+	uint32_t 					local_nb_possible_assignment;
+	uint32_t 					nb_possible_assignment = nb_assignment + 1;
+	struct possibleAssignment* 	new_possible_assignment;
 
-static void possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
+	*error = 0;
+
+	for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+		for (j = 0, local_nb_possible_assignment = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+			if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
+				local_nb_possible_assignment ++;
+			}
+		}
+		if (local_nb_possible_assignment > 0){
+			nb_possible_assignment += local_nb_possible_assignment;
+		}
+		else{
+			return NULL;
+		}
+	}
+
+	new_possible_assignment = possibleAssignment_create(possible_assignment->nb_node, nb_possible_assignment);
+	if (new_possible_assignment != NULL){
+		if (nb_assignment > 0){
+			memcpy(new_possible_assignment->headers, possible_assignment->headers, sizeof(struct possibleAssignmentHeader) * nb_assignment);
+			memcpy(new_possible_assignment->nodes, possible_assignment->nodes, sizeof(struct node*) * nb_assignment);
+		}
+
+		new_possible_assignment->headers[nb_assignment].node_offset = nb_assignment;
+		new_possible_assignment->headers[nb_assignment].nb_possible_assignment = 1;
+		new_possible_assignment->nodes[new_possible_assignment->headers[nb_assignment].node_offset] = new_assignment_value;
+
+		for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+			local_nb_possible_assignment = 0;
+
+			new_possible_assignment->headers[i].node_offset = new_possible_assignment->headers[i - 1].node_offset + new_possible_assignment->headers[i - 1].nb_possible_assignment;
+
+			for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
+				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL && possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != new_assignment_value){
+					new_possible_assignment->nodes[new_possible_assignment->headers[i].node_offset + local_nb_possible_assignment] = possible_assignment->nodes[possible_assignment->headers[i].node_offset + j];
+					local_nb_possible_assignment ++;
+				}
+			}
+
+			new_possible_assignment->headers[i].nb_possible_assignment = local_nb_possible_assignment;
+		}
+	}
+	else{
+		*error = 1;
+	}
+
+	return new_possible_assignment;
+}
+#endif
+
+static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
 	uint8_t 		match;
 	uint32_t 		i;
 	uint32_t 		j;
 	uint32_t 		k;
 	uint32_t 		l;
+	uint8_t 		restart = 1;
 	struct edge* 	sub_graph_edge;
 	struct edge* 	graph_edge;
-	uint8_t 		restart = 1;
+	uint32_t 		nb_possible_assignment;
 
 	while(restart){
 		restart = 0;
 
 		for (i = nb_assignment; i < sub_graph_handle->graph->nb_node; i++){
+			nb_possible_assignment = 0;
+
 			for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
 				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL){
 
@@ -583,26 +711,20 @@ static void possibleAssignment_update(struct graphIsoHandle* graph_handle, struc
 
 						sub_graph_edge = edge_get_next_dst(sub_graph_edge);
 					}
+
+					nb_possible_assignment ++;
 				}
 				next:;
 			}
-		}
-	}
-}
-
-#if SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR == 1
-static uint32_t possibleAssignment_is_empty(struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
-	uint32_t i;
-
-	for(i = nb_assignment; i < possible_assignment->nb_node; i++){
-		if (possible_assignment->headers[i].nb_possible_assignment == 0){
-			return 1;
+			if (nb_possible_assignment == 0){
+				return -1;
+			}
 		}
 	}
 
 	return 0;
 }
-#endif
+
 
 /* ===================================================================== */
 /* Compare routines 													 */

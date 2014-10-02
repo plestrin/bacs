@@ -7,10 +7,6 @@
 #include "array.h"
 #include "multiColumn.h"
 
-void ir_dotPrint_node(void* data, FILE* file, void* arg);
-void ir_dotPrint_edge(void* data, FILE* file, void* arg);
-
-
 int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2){
 	if (op1->type == op2->type){
 		switch(op1->type){

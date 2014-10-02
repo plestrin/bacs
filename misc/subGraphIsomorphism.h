@@ -8,8 +8,8 @@
 
 #define SUBGRAPHISOMORPHISM_JOKER_LABEL 0xffffffff
 
-#define SUBGRAPHISOMORPHISM_OPTIM_FAST_ERROR 	1
-#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1 /* only src edge since joker is mostly used for input */
+#define SUBGRAPHISOMORPHISM_OPTIM_MIN_DST 		1
 
 struct nodeTab{
 	uint32_t 				label;
@@ -43,6 +43,9 @@ struct graphIsoHandle{
 	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	struct connectivityTab* connectivity_tab;
 	#endif
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	uint32_t* 				dst;
+	#endif
 	uint32_t(*edge_get_label)(struct edge*);
 };
 
@@ -50,6 +53,9 @@ struct subGraphIsoHandle{
 	struct graph* 			graph;
 	struct nodeTab* 		node_tab;
 	uint32_t(*edge_get_label)(struct edge*);
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	uint32_t* 				dst;
+	#endif
 };
 
 struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_t(*node_get_label)(struct node*), uint32_t(*edge_get_label)(struct edge*));
