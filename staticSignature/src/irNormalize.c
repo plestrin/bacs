@@ -253,7 +253,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	struct node* 			next_node_cursor;
 	struct irOperation* 	operation;
 
-	if (dagPartialOrder_sort(&(ir->graph))){
+	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort ir node(s)\n", __func__);
 		return;
 	}
@@ -1387,7 +1387,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 	uint32_t 				nb_operand_imm_cursor1;
 	uint32_t 				nb_operand_imm_cursor2;
 
-	if (dagPartialOrder_sort(&(ir->graph))){
+	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort IR node(s)\n", __func__);
 		return;
 	}

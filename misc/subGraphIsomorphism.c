@@ -8,6 +8,10 @@
 #include "dijkstra.h"
 #endif
 
+#if SUBGRAPHISOMORPHISM_OPTIM_SORT_SUBGRAPH == 1
+#include "dagPartialOrder.h"
+#endif
+
 static struct nodeTab* graphIso_create_node_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 static struct labelTab* graphIso_create_label_tab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
@@ -276,39 +280,42 @@ static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, s
 		return 0;
 	}
 
-	if (nb_assignment == sub_graph_handle->graph->nb_node){
-		if (array_add(assignment_array, assignment) < 0){
-			printf("ERROR: in %s, unable to add assignment to array\n", __func__);
-		}
-		return 1;
-	}
+	if (nb_assignment < sub_graph_handle->graph->nb_node - 1){
+		local_nb_possible_assignment = possible_assignment->headers[nb_assignment].nb_possible_assignment;
+		local_node_offset = possible_assignment->headers[nb_assignment].node_offset;
 
-	local_nb_possible_assignment = possible_assignment->headers[nb_assignment].nb_possible_assignment;
-	local_node_offset = possible_assignment->headers[nb_assignment].node_offset;
+		for (i = 0; i < local_nb_possible_assignment; i++){
+			if (possible_assignment->nodes[local_node_offset + i] != NULL){
+				struct possibleAssignment* new_possible_assignment;
 
-	for (i = 0; i < local_nb_possible_assignment; i++){
-		if (possible_assignment->nodes[local_node_offset + i] != NULL){
-			struct possibleAssignment* new_possible_assignment;
+				#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+				new_possible_assignment = possibleAssignment_duplicate(graph_handle, sub_graph_handle, possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
+				#else
+				new_possible_assignment = possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
+				#endif
+				if (new_possible_assignment != NULL){
+					assignment[nb_assignment] = possible_assignment->nodes[local_node_offset + i];
+					result += graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, new_possible_assignment, assignment_array);
+					possibleAssignment_delete(new_possible_assignment);
 
-			#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-			new_possible_assignment = possibleAssignment_duplicate(graph_handle, sub_graph_handle, possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
-			#else
-			new_possible_assignment = possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i], &error);
-			#endif
-			if (new_possible_assignment != NULL){
-				assignment[nb_assignment] = possible_assignment->nodes[local_node_offset + i];
-				result += graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, new_possible_assignment, assignment_array);
-				possibleAssignment_delete(new_possible_assignment);
-
-				possible_assignment->headers[nb_assignment].nb_possible_assignment = local_nb_possible_assignment - i;
-				possible_assignment->headers[nb_assignment].node_offset = local_node_offset + i;
-				
-				if (possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment, nb_assignment)){ /* this one may cost a lot */
-					break;
+					possible_assignment->headers[nb_assignment].nb_possible_assignment = local_nb_possible_assignment - i;
+					possible_assignment->headers[nb_assignment].node_offset = local_node_offset + i;
+				}
+				else if (error){
+					printf("ERROR: in %s, unable to duplicate possible assignment\n", __func__);
 				}
 			}
-			else if (error){
-				printf("ERROR: in %s, unable to duplicate possible assignment\n", __func__);
+		}
+	}
+	else{
+		for (i = 0; i < possible_assignment->headers[nb_assignment].nb_possible_assignment; i++){
+			if (possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i] != NULL){
+
+				assignment[nb_assignment] = possible_assignment->nodes[possible_assignment->headers[nb_assignment].node_offset + i];
+				if (array_add(assignment_array, assignment) < 0){
+					printf("ERROR: in %s, unable to add assignment to array\n", __func__);
+				}
+				result ++;
 			}
 		}
 	}
@@ -319,6 +326,12 @@ static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, s
 struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, uint32_t(*node_get_label)(struct node*), uint32_t(*edge_get_label)(struct edge*)){
 	struct nodeTab* 			node_tab;
 	struct subGraphIsoHandle* 	handle;
+
+	#if SUBGRAPHISOMORPHISM_OPTIM_SORT_SUBGRAPH == 1
+	if (dagPartialOrder_sort_dst_src(graph)){
+		printf("ERROR: in %s, unable to sort subgraph\n", __func__);
+	}
+	#endif
 
 	handle = (struct subGraphIsoHandle*)malloc(sizeof(struct subGraphIsoHandle));
 	if (handle != NULL){
@@ -654,6 +667,7 @@ static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, st
 			for (j = 0; j < possible_assignment->headers[i].nb_possible_assignment; j++){
 				if (possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] != NULL){
 
+					#if SUBGRAPHISOMORPHISM_OPTIM_SORT_SUBGRAPH != 1
 					sub_graph_edge = node_get_head_edge_src(sub_graph_handle->node_tab[i].node);
 					while(sub_graph_edge != NULL){
 						k = (struct nodeTab*)edge_get_dst(sub_graph_edge)->ptr - sub_graph_handle->node_tab;
@@ -682,7 +696,8 @@ static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, st
 
 						sub_graph_edge = edge_get_next_src(sub_graph_edge);
 					}
-
+					#endif
+					
 					sub_graph_edge = node_get_head_edge_dst(sub_graph_handle->node_tab[i].node);
 					while(sub_graph_edge != NULL){
 						k = (struct nodeTab*)edge_get_src(sub_graph_edge)->ptr - sub_graph_handle->node_tab;
@@ -711,7 +726,7 @@ static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, st
 
 						sub_graph_edge = edge_get_next_dst(sub_graph_edge);
 					}
-
+					
 					nb_possible_assignment ++;
 				}
 				next:;

@@ -66,7 +66,7 @@ $(TEST_PAGETABLE): test_pageTable.o pageTable.o
 $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o dijkstra.o
+$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o dijkstra.o dagPartialOrder.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o

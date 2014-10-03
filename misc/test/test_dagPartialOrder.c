@@ -63,7 +63,7 @@ int main(){
 			printf("\t%u\n", *(uint32_t*)&(node_cursor->data));
 		}
 
-		if (dagPartialOrder_sort(graph)){
+		if (dagPartialOrder_sort_dst_src(graph)){
 			printf("ERROR: in %s, unable to sort DAG\n", __func__);
 		}
 
