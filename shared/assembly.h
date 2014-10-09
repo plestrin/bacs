@@ -72,6 +72,8 @@ int32_t assembly_check(struct assembly* assembly);
 
 int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly* assembly_dst, uint32_t offset, uint32_t length);
 
+int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assembly_src, struct assembly* assembly_dst);
+
 #define assembly_get_nb_instruction(assembly) ((assembly)->nb_dyn_instruction)
 
 void assembly_clean(struct assembly* assembly);

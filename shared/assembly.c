@@ -582,7 +582,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 			free(assembly_dst->dyn_blocks);
 		}
 		if (assembly_dst->mapping_block != NULL){
-			free( assembly_dst->mapping_block);
+			free(assembly_dst->mapping_block);
 		}
 
 		return -1;
@@ -690,7 +690,74 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 				assembly_dst->dyn_blocks[i].block = (struct asmBlock*)((char*)realloc_mapping + (uint32_t)((char*)assembly_dst->dyn_blocks[i].block - (char*)assembly_dst->mapping_block));
 			}
 		}
+		assembly_dst->mapping_size_block = size;
 		assembly_dst->mapping_block = realloc_mapping;
+	}
+
+	return 0;
+}
+
+int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assembly_src, struct assembly* assembly_dst){
+	uint32_t i;
+	uint32_t j;
+	uint32_t nb_dyn_instruction 	= 0;
+	uint32_t nb_dyn_block 			= 0;
+	uint32_t size 					= 0;
+	uint32_t id_generator 			= 1;
+	uint32_t mapping_block_offset;
+
+	for (i = 0; i < nb_assembly_src; i++){
+		nb_dyn_instruction 	+= assembly_src_buffer[i]->nb_dyn_instruction;
+		nb_dyn_block		+= assembly_src_buffer[i]->nb_dyn_block;
+		size 				+= assembly_src_buffer[i]->mapping_size_block;
+	}
+
+	assembly_dst->nb_dyn_instruction 	= nb_dyn_instruction;
+	assembly_dst->nb_dyn_block 			= nb_dyn_block;
+	assembly_dst->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
+
+	assembly_dst->allocation_type 		= ASSEMBLYALLOCATION_MALLOC;
+	assembly_dst->mapping_size_block 	= size;
+	assembly_dst->mapping_block 		= malloc(assembly_dst->mapping_size_block);
+
+	if (assembly_dst->dyn_blocks == NULL || assembly_dst->mapping_block == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		if (assembly_dst->dyn_blocks != NULL){
+			free(assembly_dst->dyn_blocks);
+		}
+		if (assembly_dst->mapping_block != NULL){
+			free(assembly_dst->mapping_block);
+		}
+
+		return -1;
+	}
+
+	nb_dyn_instruction 	= 0;
+	nb_dyn_block 		= 0;
+	size 				= 0;
+
+	for (i = 0; i < nb_assembly_src; i++){
+		memcpy((char*)assembly_dst->mapping_block + size, assembly_src_buffer[i]->mapping_block, assembly_src_buffer[i]->mapping_size_block);
+		mapping_block_offset = size;
+
+		while(mapping_block_offset - size < assembly_src_buffer[i]->mapping_size_block){
+			((struct asmBlock*)((char*)assembly_dst->mapping_block + mapping_block_offset))->header.id = id_generator ++;
+			mapping_block_offset += ((struct asmBlock*)((char*)assembly_dst->mapping_block + mapping_block_offset))->header.size + sizeof(struct asmBlockHeader);
+		}
+
+		for (j = 0; j < assembly_src_buffer[i]->nb_dyn_block; j++){
+			assembly_dst->dyn_blocks[nb_dyn_block + j].instruction_count = nb_dyn_instruction + assembly_src_buffer[i]->dyn_blocks[j].instruction_count;
+			if (dynBlock_is_valid(assembly_src_buffer[i]->dyn_blocks + j)){
+				assembly_dst->dyn_blocks[nb_dyn_block + j].block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size + ((char*)assembly_src_buffer[i]->dyn_blocks[j].block - (char*)assembly_src_buffer[i]->mapping_block));
+			}
+			else{
+				assembly_dst->dyn_blocks[nb_dyn_block + j].block = NULL;
+			}
+		}
+
+		nb_dyn_instruction 	+= assembly_src_buffer[i]->nb_dyn_instruction;
+		nb_dyn_block 		+= assembly_src_buffer[i]->nb_dyn_block;
+		size 				+= assembly_src_buffer[i]->mapping_size_block;
 	}
 
 	return 0;

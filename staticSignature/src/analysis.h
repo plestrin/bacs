@@ -32,6 +32,7 @@ void analysis_trace_delete(struct analysis* analysis);
 void analysis_frag_print(struct analysis* analysis, char* arg);
 void analysis_frag_set_tag(struct analysis* analysis, char* arg);
 void analysis_frag_locate(struct analysis* analysis, char* arg);
+void analysis_frag_concat(struct analysis* analysis, char* arg);
 void analysis_frag_clean(struct analysis* analysis);
 
 void analysis_frag_create_ir(struct analysis* analysis, char* arg);

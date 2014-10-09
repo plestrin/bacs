@@ -28,7 +28,9 @@ struct trace* trace_load(const char* directory_path);
 
 void trace_print(struct trace* trace, uint32_t start, uint32_t stop);
 
-int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
+#define trace_extract_segment(trace_src, trace_dst, offset, length) assembly_extract_segment(&((trace_src)->assembly), &((trace_dst)->assembly), offset, length)
+
+int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst);
 
 #define trace_get_nb_instruction(trace) assembly_get_nb_instruction(&((trace)->assembly))
 

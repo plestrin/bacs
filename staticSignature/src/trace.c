@@ -30,6 +30,18 @@ struct trace* trace_load(const char* directory_path){
 	return trace;
 }
 
+int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst){
+	struct assembly** 	assembly_src_buffer;
+	uint32_t 			i;
+
+	assembly_src_buffer = (struct assembly**)alloca((sizeof(struct assembly*) * nb_trace_src));
+	for (i = 0; i < nb_trace_src; i++){
+		assembly_src_buffer[i] = &(trace_src_buffer[i]->assembly);
+	}
+
+	return assembly_concat(assembly_src_buffer, nb_trace_src, &(trace_dst->assembly));
+}
+
 void trace_print(struct trace* trace, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
@@ -60,15 +72,6 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop){
 		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
 		printf("0x%08x  %s\n", it.instruction_address, buffer);
 	}
-}
-
-int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
-	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length)){
-		printf("ERROR: in %s, unable to extract assembly segment\n", __func__);
-		return -1;
-	}
-
-	return 0;
 }
 
 void trace_print_location(struct trace* trace, struct codeMap* cm){

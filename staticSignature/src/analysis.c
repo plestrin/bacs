@@ -49,6 +49,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
+	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
@@ -429,6 +430,74 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 	}
 	else{
 		printf("ERROR: in %s, codeMap is NULL, unable to locate\n", __func__);
+	}
+}
+
+void analysis_frag_concat(struct analysis* analysis, char* arg){
+	uint32_t 		i;
+	uint32_t 		nb_index;
+	uint8_t 		start_index;
+	uint32_t 		index;
+	struct trace** 	trace_src_buffer;
+	struct trace 	new_fragment;
+	int32_t 		tag_offset;
+
+	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
+		if (arg[i] >= 48 && arg[i] <= 57){
+			if (start_index == 0){
+				start_index = 1;
+				nb_index ++;
+			}
+		}
+		else{
+			start_index = 0;
+		}
+	}
+
+	if (nb_index < 2){
+		printf("ERROR: in %s, at last two indexes must be specicied (but get %u)\n", __func__, nb_index);
+		return;
+	}
+
+	trace_src_buffer = (struct trace**)alloca(sizeof(struct trace*) * nb_index);
+	trace_init(&new_fragment);
+	tag_offset = snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat ");
+
+	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
+		if (arg[i] >= 48 && arg[i] <= 57){
+			if (start_index == 0){
+				index = atoi(arg + i);
+				if (index < array_get_length(&(analysis->frag_array))){
+					trace_src_buffer[nb_index ++] = (struct trace*)array_get(&(analysis->frag_array), index);
+					if (tag_offset < TRACE_TAG_LENGTH){
+						tag_offset += snprintf(new_fragment.tag + tag_offset, TRACE_TAG_LENGTH - tag_offset, "%u ", index);
+					}
+				}
+				else{
+					printf("ERROR: in %s, the index specified @ %u is incorrect (array size: %u)\n", __func__, nb_index, array_get_length(&(analysis->frag_array)));
+				}
+
+				start_index = 1;
+			}
+		}
+		else{
+			start_index = 0;
+		}
+	}
+
+	if (nb_index < 2){
+		printf("ERROR: in %s, at last two valid indexes must be specicied (but get %u)\n", __func__, nb_index);
+		return;
+	}
+
+	if (trace_concat(trace_src_buffer, nb_index, &new_fragment)){
+		printf("ERROR: in %s, unable to concat the given frags\n", __func__);
+	}
+	else{
+		if (array_add(&(analysis->frag_array), &new_fragment) < 0){
+			printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+			trace_clean(&new_fragment);
+		}
 	}
 }
 
