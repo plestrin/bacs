@@ -10,7 +10,6 @@
 
 #define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1 /* only src edge since joker is mostly used for input */
 #define SUBGRAPHISOMORPHISM_OPTIM_MIN_DST 		1
-#define SUBGRAPHISOMORPHISM_OPTIM_SORT_SUBGRAPH 1
 
 struct nodeTab{
 	uint32_t 				label;
