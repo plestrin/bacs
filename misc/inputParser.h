@@ -2,7 +2,9 @@
 #define INPUTPARSER_H
 
 #include "array.h"
+#ifdef INTERACTIVE
 #include "termReader.h"
+#endif
 
 #define INPUTPARSER_NAME_SIZE 64
 #define INPUTPARSER_DESC_SIZE 256
@@ -28,7 +30,9 @@ struct cmdEntry{
 
 struct inputParser{
 	struct array 		cmd_array;
+#ifdef INTERACTIVE
 	struct termReader 	term;
+#endif
 	char 				exit;
 };
 
@@ -37,7 +41,10 @@ int inputParser_init(struct inputParser* parser);
 int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, char type, void* ctx, void(*func)(void));
 void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv);
 void inputParser_clean(struct inputParser* parser);
-void inputParser_delete(struct inputParser* parser);
+
+#define inputParser_delete(parser) 				\
+	inputParser_clean(parser); 					\
+	free(parser)
 
 void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop);
 

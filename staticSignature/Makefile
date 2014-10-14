@@ -28,7 +28,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
 					$(BUILD_DIR)printBuffer.o			\
-					$(BUILD_DIR)termReader.o			\
 					$(BUILD_DIR)inputParser.o			\
 					$(BUILD_DIR)mapFile.o				\
 					$(BUILD_DIR)graph.o 				\
@@ -45,8 +44,8 @@ CFLAGS			:= $(CFLAGS) -O2
 endif
 
 ifeq ($(VERBOSE),1)
-CFLAGS 			:= $(CFLAGS) -DVERBOSE
-OBJ 			:= $(OBJ) $(BUILD_DIR)workPercent.o
+CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE
+OBJ 			:= $(OBJ) $(BUILD_DIR)workPercent.o $(BUILD_DIR)termReader.o
 endif
 
 
