@@ -1,22 +1,53 @@
 # This file define the following signature(s):
-#	- rc4_prga: pseudo random generation of 1 byte
+#	- rc4_prga_v1: pseudo random generation of 1 byte 		- two additions in one @ 5
+#	- rc4_prga_v2: pseudo random generation of 1 byte 	- two additions
 
-"rc4_prga"
+
+"rc4_prga_v1" (rc4_prga)
 
 # INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
 # OUTPUT: 1 [1 frag]
 # Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on two operands)
 
 1 (*) [I:1:1] -> 2 (ADD)
-2 -> (@) 3 (INPUT)
+2 -> (@) 3 (LOAD)
 4 (*) [I:2:1] -> 5 (ADD)
 3 -> 5
-5 -> (@) 6 (INPUT)
+5 -> (@) 6 (LOAD)
 6 -> 7 (ADD)
 3 -> 7
-7 -> (@) 8 (INPUT)
+7 -> (@) 8 (LOAD)
 8 -> 9 (XOR) [O:1:1]
-10 (INPUT) [I:3:1] -> 9
+10 (LOAD) [I:3:1] -> 9
 11 (*) [I:4:1] -> 2
 11 -> 5
 11 -> 7
+2 -> (@) 12 (STORE)
+6 -> 12
+3 -> 13 (STORE)
+5 -> (@) 13
+
+"rc4_prga_v2" (rc4_prga)
+
+# INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on two operands)
+
+1 (*) [I:1:1] -> 2 (ADD)
+2 -> (@) 3 (LOAD)
+4 (*) [I:2:1] -> 5 (ADD)
+3 -> 5
+5 -> 6 (ADD)
+6 -> (@) 7 (LOAD)
+7 -> 8 (ADD)
+3 -> 8
+8 -> (@) 9 (LOAD)
+9 -> 10 (XOR) [O:1:1]
+11 (LOAD) [I:3:1] -> 10
+12 (*) [I:4:1] -> 2
+12 -> 6
+12 -> 8
+2 -> (@) 13 (STORE)
+7 -> 13
+3 -> 14 (STORE)
+6 -> (@) 14

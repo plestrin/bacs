@@ -26,9 +26,10 @@ enum irOpcode{
 	IR_SHR 		= 15,
 	IR_SUB 		= 16,
 	IR_XOR 		= 17,
-	IR_INPUT 	= 18, 	/* signature */
-	IR_JOKER 	= 19, 	/* signature */
-	IR_INVALID 	= 20 	/* specific */
+	IR_LOAD 	= 18, 	/* signature */
+	IR_STORE 	= 19, 	/* signature */
+	IR_JOKER 	= 20, 	/* signature */
+	IR_INVALID 	= 21 	/* specific */
 };
 
 #define NB_IR_OPCODE 21

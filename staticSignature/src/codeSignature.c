@@ -587,13 +587,13 @@ uint32_t irNode_get_label(struct node* node){
 
 	switch (operation->type){
 		case IR_OPERATION_TYPE_IN_REG 	: {
-			return IR_INPUT;
+			return 0xfffffffd;
 		}
 		case IR_OPERATION_TYPE_IN_MEM 	: {
-			return IR_INPUT;
+			return IR_LOAD;
 		}
 		case IR_OPERATION_TYPE_OUT_MEM 	: {
-			return 0xfffffffd;
+			return IR_STORE;
 		}
 		case IR_OPERATION_TYPE_INST 	: {
 			return operation->operation_type.inst.opcode;
