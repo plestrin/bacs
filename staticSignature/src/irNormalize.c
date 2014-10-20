@@ -18,7 +18,7 @@
 #define IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS 		1
 #define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
 #define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
-#define IR_NORMALIZE_MERGE_ASSOCIATIVE_ADD 			1
+#define IR_NORMALIZE_MERGE_ASSOCIATIVE_ADD 			0
 #define IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR 			1
 
 struct irOperand{
@@ -417,7 +417,79 @@ static void ir_normalize_simplify_instruction_numeric_add(struct ir* ir, struct 
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+/* This the new correct version of rewrite_add. TEST_MD5_WR is broken */
+static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	uint32_t 			nb_imm_operand;
+	struct edge* 		edge_cursor1;
+	struct edge* 		edge_cursor2;
+	struct edge* 		current_edge;
+	struct irOperation*	operand_operation;
+
+	if (node->nb_edge_dst == 1){
+		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
+		ir_remove_node(ir, node);
+
+		*modification = 1;
+		return;
+	}
+
+	for (edge_cursor1 = node_get_head_edge_dst(node), nb_imm_operand = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+		operand_operation = ir_node_get_operation(edge_get_src(edge_cursor1));
+
+		if (operand_operation->type == IR_OPERATION_TYPE_IMM){
+			nb_imm_operand ++;
+		}
+	}
+
+	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL;){
+		current_edge = edge_cursor1;
+		edge_cursor1 = edge_get_next_dst(edge_cursor1);
+		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
+
+		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_ADD){
+			if (edge_get_src(current_edge)->nb_edge_src == 1){
+				graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
+				ir_remove_node(ir, edge_get_src(current_edge));
+
+				*modification = 1;
+				continue;
+			}
+			else if (final){
+				for (edge_cursor2 = node_get_head_edge_src(edge_get_src(current_edge)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_src(edge_cursor2)){
+					if (edge_cursor2 != current_edge && (ir_node_get_operation(edge_get_dst(edge_cursor2))->type != IR_OPERATION_TYPE_OUT_MEM || ir_edge_get_dependence(edge_cursor2)->type == IR_DEPENDENCE_TYPE_ADDRESS)){
+						break;
+					}
+				}
+				if (edge_cursor2 == NULL){
+					if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
+						printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+					}
+					ir_remove_dependence(ir, current_edge);
+
+					*modification = 1;
+					continue;
+				}
+			}
+
+			if (nb_imm_operand > 0){
+				for (edge_cursor2 = node_get_head_edge_dst(edge_get_src(current_edge)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+					if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
+						if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
+							printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+						}
+						ir_remove_dependence(ir, current_edge);
+
+						*modification = 1;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+/* This the old incorrect version of rewrite_add. It should be used with MERGE_ASSOCIATIVE_ADD. TEST_MD5_WR is expected to work */
+#if 0
 static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	uint32_t 			nb_imm_operand;
 	uint32_t 			nb_add_operand;
@@ -481,6 +553,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 		}
 	}
 }
+#endif
 
 static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct node* node, uint8_t* modification){
 	uint32_t 			nb_imm_operand;
@@ -772,7 +845,7 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				printf("WARNING: in %s, PART2_8 instruction is shared, this case is not implemented yet -> skip\n", __func__);
 			}
 		}
-		else if (final){
+		else if (final){ /* to get RC4 PRGA working remove the final here */
 			for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node)){
 					printf("ERROR: in %s, unable to copy dst edge\n", __func__);
@@ -943,8 +1016,8 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 		operand_operation = ir_node_get_operation(operand);
 		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_MOVZX){
 			if (operand->nb_edge_src == 1){
-				for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), operand)){
+				for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+					if (graph_copy_dst_edge(&(ir->graph), edge_get_dst(edge_cursor), operand)){
 						printf("ERROR: in %s, unable to copy dst edge\n", __func__);
 						break;
 					}
