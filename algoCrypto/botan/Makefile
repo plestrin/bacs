@@ -4,14 +4,18 @@ LDFLAGS							:= -lbotan-1.10
 
 TEA_BOTAN_EXAMPLE_NAME 			:= bot_tea
 AES_BOTAN_EXAMPLE_NAME 			:= bot_aes
+SERPENT_BOTAN_EXAMPLE_NAME 		:= bot_serpent
 
 
-all: build/$(TEA_BOTAN_EXAMPLE_NAME) build/$(AES_BOTAN_EXAMPLE_NAME)
+all: build/$(TEA_BOTAN_EXAMPLE_NAME) build/$(AES_BOTAN_EXAMPLE_NAME) build/$(SERPENT_BOTAN_EXAMPLE_NAME)
 
 build/$(TEA_BOTAN_EXAMPLE_NAME): build/botan_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(AES_BOTAN_EXAMPLE_NAME): build/botan_aes.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+build/$(SERPENT_BOTAN_EXAMPLE_NAME): build/botan_serpent.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.cpp

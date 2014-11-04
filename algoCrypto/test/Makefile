@@ -10,15 +10,16 @@ MD5_TEST_NAME 			:= test_md5
 RC4_TEST_NAME 			:= test_rc4
 AES_TEST_NAME 			:= test_aes
 SHA1_TEST_NAME 			:= test_sha1
+SERPENT_TEST_NAME 		:= test_serpent
 
 all: test_go0 test_go1 test_go2 test_go3 test_gos test_co0 test_co1 test_co2 test_co3 test_coz
 
 # GCC compiler
-test_go0: build/$(TEA_TEST_NAME)_go0 build/$(MD5_TEST_NAME)_go0 build/$(RC4_TEST_NAME)_go0 build/$(AES_TEST_NAME)_go0 build/$(SHA1_TEST_NAME)_go0
-test_go1: build/$(TEA_TEST_NAME)_go1 build/$(MD5_TEST_NAME)_go1 build/$(RC4_TEST_NAME)_go1 build/$(AES_TEST_NAME)_go1 build/$(SHA1_TEST_NAME)_go1
-test_go2: build/$(TEA_TEST_NAME)_go2 build/$(MD5_TEST_NAME)_go2 build/$(RC4_TEST_NAME)_go2 build/$(AES_TEST_NAME)_go2 build/$(SHA1_TEST_NAME)_go2
-test_go3: build/$(TEA_TEST_NAME)_go3 build/$(MD5_TEST_NAME)_go3 build/$(RC4_TEST_NAME)_go3 build/$(AES_TEST_NAME)_go3 build/$(SHA1_TEST_NAME)_go3
-test_gos: build/$(TEA_TEST_NAME)_gos build/$(MD5_TEST_NAME)_gos build/$(RC4_TEST_NAME)_gos build/$(AES_TEST_NAME)_gos build/$(SHA1_TEST_NAME)_gos
+test_go0: build/$(TEA_TEST_NAME)_go0 build/$(MD5_TEST_NAME)_go0 build/$(RC4_TEST_NAME)_go0 build/$(AES_TEST_NAME)_go0 build/$(SHA1_TEST_NAME)_go0 build/$(SERPENT_TEST_NAME)_go0
+test_go1: build/$(TEA_TEST_NAME)_go1 build/$(MD5_TEST_NAME)_go1 build/$(RC4_TEST_NAME)_go1 build/$(AES_TEST_NAME)_go1 build/$(SHA1_TEST_NAME)_go1 build/$(SERPENT_TEST_NAME)_go1
+test_go2: build/$(TEA_TEST_NAME)_go2 build/$(MD5_TEST_NAME)_go2 build/$(RC4_TEST_NAME)_go2 build/$(AES_TEST_NAME)_go2 build/$(SHA1_TEST_NAME)_go2 build/$(SERPENT_TEST_NAME)_go2
+test_go3: build/$(TEA_TEST_NAME)_go3 build/$(MD5_TEST_NAME)_go3 build/$(RC4_TEST_NAME)_go3 build/$(AES_TEST_NAME)_go3 build/$(SHA1_TEST_NAME)_go3 build/$(SERPENT_TEST_NAME)_go3
+test_gos: build/$(TEA_TEST_NAME)_gos build/$(MD5_TEST_NAME)_gos build/$(RC4_TEST_NAME)_gos build/$(AES_TEST_NAME)_gos build/$(SHA1_TEST_NAME)_gos build/$(SERPENT_TEST_NAME)_gos
 
 build/$(TEA_TEST_NAME)_go0: build/TEA.go0 build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -29,6 +30,8 @@ build/$(RC4_TEST_NAME)_go0: build/RC4.go0 build/test_rc4.go0 build/printBuffer.g
 build/$(AES_TEST_NAME)_go0: build/AES.go0 build/test_aes.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_go0: build/SHA1.go0 build/test_sha1.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_go0: build/serpent.go0 build/test_serpent.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_go1: build/TEA.go1 build/test_tea.go0 build/printBuffer.go0
@@ -41,6 +44,8 @@ build/$(AES_TEST_NAME)_go1: build/AES.go1 build/test_aes.go0 build/printBuffer.g
 	$(GCC_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_go1: build/SHA1.go1 build/test_sha1.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_go1: build/serpent.go1 build/test_serpent.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_go2: build/TEA.go2 build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -52,6 +57,9 @@ build/$(AES_TEST_NAME)_go2: build/AES.go2 build/test_aes.go0 build/printBuffer.g
 	$(GCC_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_go2: build/SHA1.go2 build/test_sha1.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_go2: build/serpent.go2 build/test_serpent.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+
 
 build/$(TEA_TEST_NAME)_go3: build/TEA.go3 build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -63,6 +71,8 @@ build/$(AES_TEST_NAME)_go3: build/AES.go3 build/test_aes.go0 build/printBuffer.g
 	$(GCC_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_go3: build/SHA1.go3 build/test_sha1.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_go3: build/serpent.go3 build/test_serpent.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_gos: build/TEA.gos build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -73,6 +83,8 @@ build/$(RC4_TEST_NAME)_gos: build/RC4.gos build/test_rc4.go0 build/printBuffer.g
 build/$(AES_TEST_NAME)_gos: build/AES.gos build/test_aes.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_gos: build/SHA1.gos build/test_sha1.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_gos: build/serpent.gos build/test_serpent.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 
 build/%.go0: src/%.c
@@ -97,11 +109,11 @@ build/%.gos: ../%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -Os
 
 # CLANG compiler
-test_co0: build/$(TEA_TEST_NAME)_co0 build/$(MD5_TEST_NAME)_co0 build/$(RC4_TEST_NAME)_co0 build/$(AES_TEST_NAME)_co0 build/$(SHA1_TEST_NAME)_co0
-test_co1: build/$(TEA_TEST_NAME)_co1 build/$(MD5_TEST_NAME)_co1 build/$(RC4_TEST_NAME)_co1 build/$(AES_TEST_NAME)_co1 build/$(SHA1_TEST_NAME)_co1
-test_co2: build/$(TEA_TEST_NAME)_co2 build/$(MD5_TEST_NAME)_co2 build/$(RC4_TEST_NAME)_co2 build/$(AES_TEST_NAME)_co2 build/$(SHA1_TEST_NAME)_co2
-test_co3: build/$(TEA_TEST_NAME)_co3 build/$(MD5_TEST_NAME)_co3 build/$(RC4_TEST_NAME)_co3 build/$(AES_TEST_NAME)_co3 build/$(SHA1_TEST_NAME)_co3
-test_coz: build/$(TEA_TEST_NAME)_coz build/$(MD5_TEST_NAME)_coz build/$(RC4_TEST_NAME)_coz build/$(AES_TEST_NAME)_coz build/$(SHA1_TEST_NAME)_coz
+test_co0: build/$(TEA_TEST_NAME)_co0 build/$(MD5_TEST_NAME)_co0 build/$(RC4_TEST_NAME)_co0 build/$(AES_TEST_NAME)_co0 build/$(SHA1_TEST_NAME)_co0 build/$(SERPENT_TEST_NAME)_co0
+test_co1: build/$(TEA_TEST_NAME)_co1 build/$(MD5_TEST_NAME)_co1 build/$(RC4_TEST_NAME)_co1 build/$(AES_TEST_NAME)_co1 build/$(SHA1_TEST_NAME)_co1 build/$(SERPENT_TEST_NAME)_co1
+test_co2: build/$(TEA_TEST_NAME)_co2 build/$(MD5_TEST_NAME)_co2 build/$(RC4_TEST_NAME)_co2 build/$(AES_TEST_NAME)_co2 build/$(SHA1_TEST_NAME)_co2 build/$(SERPENT_TEST_NAME)_co2
+test_co3: build/$(TEA_TEST_NAME)_co3 build/$(MD5_TEST_NAME)_co3 build/$(RC4_TEST_NAME)_co3 build/$(AES_TEST_NAME)_co3 build/$(SHA1_TEST_NAME)_co3 build/$(SERPENT_TEST_NAME)_co3
+test_coz: build/$(TEA_TEST_NAME)_coz build/$(MD5_TEST_NAME)_coz build/$(RC4_TEST_NAME)_coz build/$(AES_TEST_NAME)_coz build/$(SHA1_TEST_NAME)_coz build/$(SERPENT_TEST_NAME)_coz
 
 build/$(TEA_TEST_NAME)_co0: build/TEA.co0 build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -112,6 +124,8 @@ build/$(RC4_TEST_NAME)_co0: build/RC4.co0 build/test_rc4.co0 build/printBuffer.c
 build/$(AES_TEST_NAME)_co0: build/AES.co0 build/test_aes.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_co0: build/SHA1.co0 build/test_sha1.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_co0: build/serpent.co0 build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co1: build/TEA.co1 build/test_tea.co0 build/printBuffer.co0
@@ -124,6 +138,8 @@ build/$(AES_TEST_NAME)_co1: build/AES.co1 build/test_aes.co0 build/printBuffer.c
 	$(CLANG_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_co1: build/SHA1.co1 build/test_sha1.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_co1: build/serpent.co1 build/test_serpent.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co2: build/TEA.co2 build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -134,6 +150,8 @@ build/$(RC4_TEST_NAME)_co2: build/RC4.co2 build/test_rc4.co0 build/printBuffer.c
 build/$(AES_TEST_NAME)_co2: build/AES.co2 build/test_aes.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_co2: build/SHA1.co2 build/test_sha1.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_co2: build/serpent.co2 build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co3: build/TEA.co3 build/test_tea.co0 build/printBuffer.co0
@@ -146,6 +164,8 @@ build/$(AES_TEST_NAME)_co3: build/AES.co3 build/test_aes.co0 build/printBuffer.c
 	$(CLANG_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_co3: build/SHA1.co3 build/test_sha1.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_co3: build/serpent.co3 build/test_serpent.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_coz: build/TEA.coz build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -156,6 +176,8 @@ build/$(RC4_TEST_NAME)_coz: build/RC4.coz build/test_rc4.co0 build/printBuffer.c
 build/$(AES_TEST_NAME)_coz: build/AES.coz build/test_aes.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(SHA1_TEST_NAME)_coz: build/SHA1.coz build/test_sha1.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(SERPENT_TEST_NAME)_coz: build/serpent.coz build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/%.co0: src/%.c

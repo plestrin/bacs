@@ -14,24 +14,24 @@ static void multiColumnPrinter_constrain_string(char* src, char* dst, uint32_t s
 struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator){
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					i;
-	
+
 	if (nb_column == 0){
 		printf("WARNING: in %s, at least one column must be created\n", __func__);
 		nb_column = 1;
 	}
-	
+
 	printer = (struct multiColumnPrinter*)malloc(sizeof(struct multiColumnPrinter) + (nb_column - 1) * sizeof(struct multiColumnColumn));
 	if (printer != NULL){
 		printer->file = file;
 		printer->nb_column = nb_column;
-		
+
 		if (separator != NULL){
 			strncpy(printer->separator, separator, MULTICOLUMN_STRING_MAX_SIZE);
 		}
 		else{
 			snprintf(printer->separator, MULTICOLUMN_STRING_MAX_SIZE, "%s", MULTICOLUMN_DEFAULT_SEPARATOR);
 		}
-		
+
 		for (i = 0; i < nb_column; i++){
 			if (sizes != NULL){
 				if (sizes[i] >= MULTICOLUMN_STRING_MAX_SIZE){
@@ -60,7 +60,7 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 			else{
 				printer->columns[i].type = MULTICOLUMN_DEFAULT_TYPE;
 			}
-			
+
 			memset(printer->columns[i].title, '\0', MULTICOLUMN_STRING_MAX_SIZE);
 			snprintf(printer->columns[i].title, MULTICOLUMN_STRING_MAX_SIZE, "TITLE %u", i);
 		}
@@ -68,7 +68,7 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
-	
+
 	return printer;
 }
 
@@ -122,11 +122,11 @@ void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t c
 void multiColumnPrinter_print_header(struct multiColumnPrinter* printer){
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	uint32_t	i;
-	
+
 	if (printer != NULL){
-		for (i = 0; i < printer->nb_column; i++){	
+		for (i = 0; i < printer->nb_column; i++){
 			multiColumnPrinter_constrain_string(printer->columns[i].title, print_value, printer->columns[i].size);
-			
+
 			if (i == printer->nb_column - 1){
 				fprintf(printer->file, "%s\n", print_value);
 			}
@@ -147,7 +147,7 @@ void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* pr
 		for (i = 0; i < printer->nb_column; i++){
 			memset(print_value, '-', printer->columns[i].size);
 			print_value[printer->columns[i].size] = '\0';
-			
+
 			if (i == printer->nb_column - 1){
 				fprintf(printer->file, "%s\n", print_value);
 			}
@@ -172,7 +172,7 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 
 	if (printer != NULL){
 		va_start(vl, printer);
-		
+
 		for (i = 0; i < printer->nb_column; i++){
 			switch(printer->columns[i].type){
 			case MULTICOLUMN_TYPE_STRING 	: {
@@ -233,7 +233,7 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 			if (printer->columns[i].type != MULTICOLUMN_TYPE_UNBOUND_STRING){
 				multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
 			}
-			
+
 			if (i == printer->nb_column - 1){
 				if (printer->columns[i].type == MULTICOLUMN_TYPE_UNBOUND_STRING){
 					fprintf(printer->file, "%s\n", value_str);
@@ -254,12 +254,12 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size){
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	uint32_t	i;
-	
+
 	if (printer != NULL){
 		fprintf(printer->file, "\r");
-		for (i = 0; i < printer->nb_column; i++){	
+		for (i = 0; i < printer->nb_column; i++){
 			multiColumnPrinter_constrain_string(string + (i * string_size), print_value, printer->columns[i].size);
-			
+
 			if (i == printer->nb_column - 1){
 				fprintf(printer->file, "%s", print_value);
 			}
@@ -279,7 +279,7 @@ void multiColumnPrinter_delete(struct multiColumnPrinter* printer){
 
 static void multiColumnPrinter_constrain_string(char* src, char* dst, uint32_t size){
 	uint32_t length;
-	
+
 	strncpy(dst, src, MULTICOLUMN_STRING_MAX_SIZE);
 	length = strlen(src);
 	dst[size] = '\0';

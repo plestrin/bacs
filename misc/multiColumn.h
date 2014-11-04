@@ -37,7 +37,7 @@ struct multiColumnPrinter{
 	FILE* 						file;
 	uint32_t 					nb_column;
 	char 						separator[MULTICOLUMN_STRING_MAX_SIZE];
-	struct multiColumnColumn 	columns[1]; 
+	struct multiColumnColumn 	columns[1];
 };
 
 struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator);
