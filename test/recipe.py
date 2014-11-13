@@ -217,7 +217,7 @@ class sigRecipe(recipe):
 						print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
 
 				for i in detected_signature:
-					if i not in self.algo:
+					if i not in self.algo and detected_signature.get(i) > 0:
 						print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/0\x1b[0m")
 
 			else:
