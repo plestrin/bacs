@@ -17,6 +17,8 @@ struct trace{
 
 struct trace* trace_load(const char* directory_path);
 
+struct trace* trace_load_elf(const char* file_path);
+
 #define trace_init(trace) 																								\
 	(trace)->tag[0]		= '\0'; 																						\
 	(trace)->ir 		= NULL

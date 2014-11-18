@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "trace.h"
+#include "assemblyElfLoader.h"
 
 #define TRACE_PATH_MAX_LENGTH 	256
 #define TRACE_BLOCKID_FILE_NAME "blockId.bin"
@@ -17,8 +18,26 @@ struct trace* trace_load(const char* directory_path){
 		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCKID_FILE_NAME);
 		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
 		
-		if (assembly_init(&(trace->assembly), file1_path, file2_path)){
+		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 			printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+			free(trace);
+			trace = NULL;
+		}
+		else{
+			trace_init(trace);
+		}
+	}
+
+	return trace;
+}
+
+struct trace* trace_load_elf(const char* file_path){
+	struct trace* 	trace;
+
+	trace = (struct trace*)malloc(sizeof(struct trace));
+	if (trace != NULL){
+		if (assembly_load_elf(&(trace->assembly), file_path)){
+			printf("ERROR: in %s, unable to init assembly structure from ELF file\n", __func__);
 			free(trace);
 			trace = NULL;
 		}

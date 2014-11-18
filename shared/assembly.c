@@ -27,39 +27,57 @@ struct disassembler disas = {
 	.stack_addr_width 	= XED_ADDRESS_WIDTH_32b
 };
 
-struct assembly* assembly_create(const char* file_name_id, const char* file_name_block){
-	struct assembly* assembly;
-	assembly = (struct assembly*)malloc(sizeof(struct assembly));
-	if (assembly != NULL){
-		if (assembly_init(assembly, file_name_id, file_name_block)){
-			printf("ERROR: in %s, unable to init assembly structure\n", __func__);
-			free(assembly);
-			assembly = NULL;
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-	}
-
-	return assembly;
-}
-
-int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const char* file_name_block){
-	uint64_t 			mapping_size_id;
-	uint64_t			mapping_size_block;
-	uint32_t* 			mapping_id;
-	void* 				mapping_block;
-	uint32_t 			i;
-	uint32_t 			j;
-	struct array 		asmBlock_array;
-	struct asmBlock* 	current_ptr;
-	uint32_t 			current_offset;
-	struct dynBlock* 	dyn_blocks_realloc;
+uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
+	xed_decoded_inst_t 		xedd;
+	xed_error_enum_t 		xed_error;
+	uint32_t 				offset;
+	uint32_t 				result;
 
 	if (disas.xed_init == 0){
 		xed_tables_init();
 		disas.xed_init = 1;
 	}
+
+	for (offset = 0, result = 0; offset < block->header.size;){
+		xed_decoded_inst_zero(&xedd);
+		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+		xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + offset), (block->header.size - offset > 15) ? 15 : (block->header.size - offset));
+		
+		switch(xed_error){
+			case XED_ERROR_NONE : {
+				break;
+			}
+			case XED_ERROR_BUFFER_TOO_SHORT : {
+				printf("ERROR: in %s, not enough bytes provided\n", __func__);
+				return -1;
+			}
+			case XED_ERROR_INVALID_FOR_CHIP : {
+				printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
+				return -1;
+			}
+			case XED_ERROR_GENERAL_ERROR : {
+				printf("ERROR: in %s, could not decode given input\n", __func__);
+				return -1;
+			}
+			default : {
+				printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
+				return -1;
+			}
+		}
+
+		offset += xed_decoded_inst_get_length(&xedd);
+		result ++;
+	}
+
+	return result;
+}
+
+int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block){
+	uint64_t 	mapping_size_id;
+	uint64_t	mapping_size_block;
+	uint32_t* 	mapping_id;
+	void* 		mapping_block;
+	int32_t 	result;
 
 	mapping_id = mapFile_map(file_name_id, &mapping_size_id);
 	mapping_block = mapFile_map(file_name_block, &mapping_size_block);
@@ -75,30 +93,54 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 		return -1;
 	}
 
-	assembly->allocation_type 		= ASSEMBLYALLOCATION_MMAP;
-	assembly->mapping_block 		= mapping_block;
-	assembly->mapping_size_block 	= mapping_size_block;
-	assembly->nb_dyn_block 			= mapping_size_id / sizeof(uint32_t);
+	result = assembly_init(assembly, mapping_id, mapping_size_id, mapping_block, mapping_size_block, ASSEMBLYALLOCATION_MMAP);
+
+	munmap(mapping_id, mapping_size_id);
+
+	return result;
+}
+
+int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, uint64_t buffer_size_id, uint32_t* buffer_block, uint64_t buffer_size_block, enum assemblyAllocation buffer_alloc_block){
+	uint32_t 			i;
+	uint32_t 			j;
+	struct array 		asmBlock_array;
+	struct asmBlock* 	current_ptr;
+	uint32_t 			current_offset;
+	struct dynBlock* 	dyn_blocks_realloc;
+
+	if (disas.xed_init == 0){
+		xed_tables_init();
+		disas.xed_init = 1;
+	}
+
+	assembly->allocation_type 		= buffer_alloc_block;
+	assembly->mapping_block 		= buffer_block;
+	assembly->mapping_size_block 	= buffer_size_block;
+	assembly->nb_dyn_block 			= buffer_size_id / sizeof(uint32_t);
 	assembly->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
 	if (assembly->dyn_blocks == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		munmap(mapping_id, mapping_size_id);
-		munmap(mapping_block, mapping_size_block);
+		switch(buffer_alloc_block){
+			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
+			case ASSEMBLYALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+		}
 		return -1;
 	}
 
 	if (array_init(&asmBlock_array, sizeof(struct asmBlock*))){
 		printf("ERROR: in %s, unable to init array\n", __func__);
 		free(assembly->dyn_blocks);
-		munmap(mapping_id, mapping_size_id);
-		munmap(mapping_block, mapping_size_block);
+		switch(buffer_alloc_block){
+			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
+			case ASSEMBLYALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+		}
 		return -1;
 	}
 
 	current_offset = 0;
-	current_ptr = (struct asmBlock*)((char*)mapping_block + current_offset);
-	while (current_offset != mapping_size_block){
-		if (current_offset + current_ptr->header.size + sizeof(struct asmBlockHeader) > mapping_size_block){
+	current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset);
+	while (current_offset != buffer_size_block){
+		if (current_offset + current_ptr->header.size + sizeof(struct asmBlockHeader) > buffer_size_block){
 			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
 			break;
 		}
@@ -108,7 +150,7 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 			}
 
 			current_offset += sizeof(struct asmBlockHeader) + current_ptr->header.size;
-			current_ptr = (struct asmBlock*)((char*)mapping_block + current_offset);
+			current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset);
 		}
 	}
 
@@ -118,15 +160,15 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 		uint32_t 			idx;
 		struct asmBlock* 	idx_block;
 
-		if (mapping_id[i] != BLACK_LISTED_ID){
+		if (buffer_id[i] != BLACK_LISTED_ID){
 			current_ptr = NULL;
 			while(down < up){
 				idx  = (up + down) / 2;
 				idx_block = *(struct asmBlock**)array_get(&asmBlock_array, idx);
-				if (mapping_id[i] > idx_block->header.id){
+				if (buffer_id[i] > idx_block->header.id){
 					down = idx + 1;
 				}
-				else if (mapping_id[i] < idx_block->header.id){
+				else if (buffer_id[i] < idx_block->header.id){
 					up = idx;
 				}
 				else{
@@ -136,7 +178,7 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 			}
 
 			if (current_ptr == NULL){
-				printf("ERROR: in %s, unable to locate asmBlock %u\n", __func__, mapping_id[i]);
+				printf("ERROR: in %s, unable to locate asmBlock %u\n", __func__, buffer_id[i]);
 				break;
 			}
 
@@ -155,7 +197,7 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 			assembly->dyn_blocks[j].block = current_ptr;
 			j ++;
 		}
-		else if (i == 0 || (i != 0 && mapping_id[i - 1] != BLACK_LISTED_ID)){
+		else if (i == 0 || (i != 0 && buffer_id[i - 1] != BLACK_LISTED_ID)){
 			dynBlock_set_invalid(assembly->dyn_blocks + j);
 			j ++;
 		}
@@ -181,7 +223,6 @@ int32_t assembly_init(struct assembly* assembly, const char* file_name_id, const
 	}
 	
 	array_clean(&asmBlock_array);
-	munmap(mapping_id, mapping_size_id);
 
 	return 0;
 }

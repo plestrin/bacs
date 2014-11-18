@@ -11,7 +11,7 @@ XED_DIR 		:= /home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/extras/xed2-i
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
-LDFLAGS			:= -lyajl $(XED_DIR)lib/libxed.a
+LDFLAGS			:= -lyajl -lelf $(XED_DIR)lib/libxed.a
 CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI) -std=gnu99
 OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)assembly.o 				\
@@ -24,6 +24,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irNormalize.o 			\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)signatureReader.o 		\
+					$(BUILD_DIR)assemblyElfLoader.o 	\
 					$(BUILD_DIR)callGraph.o 			\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\

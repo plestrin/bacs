@@ -71,7 +71,7 @@ int32_t trace_init(struct trace* trace, const char* directory_path){
 
 	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCKID_FILE_NAME);
 	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
-	if (assembly_init(&(trace->assembly), file1_path, file2_path)){
+	if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 		printf("ERROR: in %s, unable to init assembly structure\n", __func__);
 	}
 

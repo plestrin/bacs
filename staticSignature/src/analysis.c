@@ -37,6 +37,7 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check_codeMap)
@@ -162,12 +163,40 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	}
 }
 
+void analysis_trace_load_elf(struct analysis* analysis, char* arg){
+	if (analysis->trace != NULL){
+		printf("WARNING: in %s, deleting previous trace\n", __func__);
+		trace_delete(analysis->trace);
+
+		if (analysis->call_graph != NULL){
+			callGraph_delete(analysis->call_graph);
+			analysis->call_graph = NULL;
+		}
+	}
+
+	if (analysis->code_map != NULL){
+		printf("WARNING: in %s, deleting previous codeMap\n", __func__);
+		codeMap_delete(analysis->code_map);
+		analysis->code_map = NULL;
+	}
+
+	analysis->trace = trace_load_elf(arg);
+	if (analysis->trace == NULL){
+		printf("ERROR: in %s, unable to create trace\n", __func__);
+	}
+}
+
 void analysis_trace_print(struct analysis* analysis, char* arg){
 	uint32_t start = 0;
 	uint32_t stop = 0;
 
 	if (analysis->trace != NULL){
-		inputParser_extract_index(arg, &start, &stop);
+		if (arg == NULL){
+			stop = trace_get_nb_instruction(analysis->trace);
+		}
+		else{
+			inputParser_extract_index(arg, &start, &stop);
+		}
 		trace_print(analysis->trace, start, stop);
 	}
 	else{
