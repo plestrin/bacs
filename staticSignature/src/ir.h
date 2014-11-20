@@ -32,7 +32,7 @@ enum irOpcode{
 	IR_INVALID 	= 21 	/* specific */
 };
 
-#define NB_IR_OPCODE 21
+#define NB_IR_OPCODE 22
 
 char* irOpcode_2_string(enum irOpcode opcode);
 

@@ -556,10 +556,10 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 
 	idx_block_stop = idx_block_start;
-	while(offset + length >= assembly_src->dyn_blocks[idx_block_stop].instruction_count + assembly_src->dyn_blocks[idx_block_stop].block->header.nb_ins && idx_block_stop < assembly_src->nb_dyn_block){
+	while(idx_block_stop < assembly_src->nb_dyn_block && offset + length > assembly_src->dyn_blocks[idx_block_stop].instruction_count + assembly_src->dyn_blocks[idx_block_stop].block->header.nb_ins){
 		size += assembly_src->dyn_blocks[idx_block_stop].block->header.size;
 		idx_block_stop ++;
-		while (!dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_stop)){
+		while (idx_block_stop < assembly_src->nb_dyn_block && !dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_stop)){
 			idx_block_stop ++;
 		}
 	}
