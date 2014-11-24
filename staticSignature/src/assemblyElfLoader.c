@@ -20,13 +20,13 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 
 	if (elf_version(EV_CURRENT) == EV_NONE){
 		printf("ERROR: in %s, ELF library initialization failed\n", __func__);
-		goto exit;
+		return result;
 	}
 
 	file = open(file_path, O_RDONLY);
 	if (file < 0){
 		printf("ERROR: in %s, unable to open file: %s\n", __func__, file_path);
-		goto exit;
+		return result;
 	}
 
 	elf = elf_begin(file, ELF_C_READ, NULL);

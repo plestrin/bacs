@@ -501,6 +501,8 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_AND 		: {return "and";}
 		case IR_DIV 		: {return "div";}
 		case IR_IMUL 		: {return "imul";}
+		case IR_LEA 		: {return "lea";}
+		case IR_MOV 		: {return "mov";}
 		case IR_MOVZX 		: {return "movzx";}
 		case IR_MUL 		: {return "mul";}
 		case IR_NOT 		: {return "not";}
@@ -510,7 +512,6 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_PART1_16 	: {return "part(1/16)";}
 		case IR_ROL 		: {return "rol";}
 		case IR_ROR 		: {return "ror";}
-		case IR_SAR 		: {return "sar";}
 		case IR_SHL 		: {return "shl";}
 		case IR_SHR 		: {return "shr";}
 		case IR_SUB 		: {return "sub";}

@@ -12,27 +12,28 @@ enum irOpcode{
 	IR_AND 		= 1,
 	IR_DIV 		= 2,
 	IR_IMUL 	= 3,
-	IR_MOVZX 	= 4,
-	IR_MUL 		= 5,
-	IR_NOT 		= 6,
-	IR_OR 		= 7,
-	IR_PART1_8 	= 8, 	/* specific */
-	IR_PART2_8 	= 9, 	/* specific */
-	IR_PART1_16 = 10, 	/* specific */
-	IR_ROL 		= 11,
-	IR_ROR 		= 12,
-	IR_SAR 		= 13,
-	IR_SHL 		= 14,
-	IR_SHR 		= 15,
-	IR_SUB 		= 16,
-	IR_XOR 		= 17,
-	IR_LOAD 	= 18, 	/* signature */
-	IR_STORE 	= 19, 	/* signature */
-	IR_JOKER 	= 20, 	/* signature */
-	IR_INVALID 	= 21 	/* specific */
+	IR_LEA 		= 4, 	/* importer */
+	IR_MOV 		= 5, 	/* importer */
+	IR_MOVZX 	= 6,
+	IR_MUL 		= 7,
+	IR_NOT 		= 8,
+	IR_OR 		= 9,
+	IR_PART1_8 	= 10, 	/* specific */
+	IR_PART2_8 	= 11, 	/* specific */
+	IR_PART1_16 = 12, 	/* specific */
+	IR_ROL 		= 13,
+	IR_ROR 		= 14,
+	IR_SHL 		= 15,
+	IR_SHR 		= 16,
+	IR_SUB 		= 17,
+	IR_XOR 		= 18,
+	IR_LOAD 	= 19, 	/* signature */
+	IR_STORE 	= 20, 	/* signature */
+	IR_JOKER 	= 21, 	/* signature */
+	IR_INVALID 	= 22 	/* specific */
 };
 
-#define NB_IR_OPCODE 22
+#define NB_IR_OPCODE 23
 
 char* irOpcode_2_string(enum irOpcode opcode);
 

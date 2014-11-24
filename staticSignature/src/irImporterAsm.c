@@ -6,50 +6,142 @@
 #include "graph.h"
 #include "irRenameEngine.h"
 
-#define IRIMPORTERASM_MAX_INPUT_VARIABLE 4
-
-struct asmInputVariable{
-	uint32_t 			nb_input;
-	struct node* 		base_variable;
-	struct node* 		index_variable;
-	struct node* 		disp_variable;
-	struct node* 		scale_variable;
-	struct node* 		variables[IRIMPORTERASM_MAX_INPUT_VARIABLE];
-};
-
-struct asmOutputVariable{
-	struct node* 		base_variable;
-	struct node* 		index_variable;
-	struct node* 		disp_variable;
-	struct node* 		scale_variable;
-	struct node* 		variable;
-};
-
-static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInputVariable* input_variables, xed_decoded_inst_t* xedd);
-static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void asmVariable_build_mem_address(struct irRenameEngine* engine, struct node* base, struct node* index, struct node* disp, struct node* scale, struct node** address);
-static void asmVariable_build_dependence(struct ir* ir, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables);
-
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
 static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg);
 
-static void special_instruction_add(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_dec(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_inc(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_lea(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_leave(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables);
-static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_pop(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_push(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_shr(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
-static void special_instruction_shl(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd);
+#define IRIMPORTERASM_MAX_INPUT_OPERAND 	2
+#define IRIMPORTERASM_MAX_RISC_INS 			4
 
+static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIMPORTERASM_MAX_INPUT_OPERAND] = {
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_ADD */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_AND */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_DIV */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_IMUL */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_LEA */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_MOV */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_MOVZX */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_MUL */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_NOT */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_OR */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_PART1_8 */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_PART2_8 */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_PART1_16 */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_SHIFT_DISP}, 	/* IR_ROL */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_SHIFT_DISP}, 	/* IR_ROR */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_SHIFT_DISP}, 	/* IR_SHL */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_SHIFT_DISP}, 	/* IR_SHR */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_SUB */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_XOR */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_LOAD */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_STORE */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_JOKER */
+};
+
+static const uint8_t signe_extand_table[NB_IR_OPCODE - 1] = {
+	1, /* IR_ADD */
+	0, /* IR_AND */
+	0, /* IR_DIV */
+	0, /* IR_IMUL */
+	0, /* IR_LEA */
+	0, /* IR_MOV */
+	0, /* IR_MOVZX */
+	0, /* IR_MUL */
+	0, /* IR_NOT */
+	0, /* IR_OR */
+	0, /* IR_PART1_8 */
+	0, /* IR_PART2_8 */
+	0, /* IR_PART1_16 */
+	0, /* IR_ROL */
+	0, /* IR_ROR */
+	0, /* IR_SHL */
+	0, /* IR_SHR */
+	0, /* IR_SUB */
+	0, /* IR_XOR */
+	0, /* IR_LOAD */
+	0, /* IR_STORE */
+	0  /* IR_JOKER */
+};
+
+struct memOperand{
+	xed_reg_enum_t 	base;
+	xed_reg_enum_t 	index;
+	uint8_t 		scale;
+	uint32_t 		disp;
+};
+
+static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem);
+
+enum asmOperandType{
+	ASM_OPERAND_IMM,
+	ASM_OPERAND_REG,
+	ASM_OPERAND_MEM
+};
+
+#define ASM_OPERAND_ROLE_READ_1 	0x00000001
+#define ASM_OPERAND_ROLE_READ_2 	0x00000002
+#define ASM_OPERAND_ROLE_WRITE_1 	0x00000100
+#define ASM_OPERAND_ROLE_READ_ALL 	0x000000ff
+#define ASM_OPERAND_ROLE_WRITE_ALL 	0x0000ff00
+#define ASM_OPERAND_ROLE_ALL 		0x0000ffff
+
+#define ASM_OPERAND_ROLE_IS_READ(role) 			((role) & 0x000000ff)
+#define ASM_OPERAND_ROLE_IS_WRITE(role) 		((role) & 0x0000ff00)
+#define ASM_OPERAND_ROLE_IS_READ_INDEX(role, index) 	((role) & (0x00000001 << ((index) & 0x0000007))) 
+#define ASM_OPERAND_ROLE_IS_WRITE_INDEX(role, index) 	((role) & (0x00000100 << ((index) & 0x0000007))) 
+
+struct asmOperand{
+	uint16_t 				size;
+	struct node*			variable;
+	enum asmOperandType 	type;
+	union{
+		enum irRegister 	reg;
+		uint64_t 			imm;
+		struct memOperand	mem;
+	} 						operand_type;
+};
+
+static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_);
+
+static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand);
+static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode);
+
+static void asmOperand_signe_extend(struct asmOperand* operand, uint16_t size);
+
+struct asmRiscIns{
+	enum irOpcode 			opcode;
+	uint8_t 				nb_input_operand;
+	struct asmOperand 		input_operand[IRIMPORTERASM_MAX_INPUT_OPERAND];
+	struct asmOperand 		output_operand;
+};
+
+static void asmRiscOperand_process(struct irRenameEngine* engine, struct asmRiscIns* risc);
+
+static void asmRiscOperand_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRiscOperand_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc);
+
+struct asmCiscIns{
+	uint8_t 				valid;
+	uint8_t 				nb_ins;
+	struct asmRiscIns 		ins[IRIMPORTERASM_MAX_RISC_INS];
+};
+
+#define ASMCISCINS_IS_VALID(cisc) 		((cisc).valid)
+#define ASMCISCINS_SET_VALID(cisc) 		((cisc).valid = 1)
+#define ASMCISCINS_SET_INVALID(cisc) 	((cisc).valid = 0)
+
+static void cisc_decode_special_call(struct asmCiscIns* cisc, ADDRESS pc);
+static void cisc_decode_special_dec(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc);
+static void cisc_decode_special_inc(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc);
+static void cisc_decode_special_leave(struct asmCiscIns* cisc);
+static void cisc_decode_special_pop(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc);
+static void cisc_decode_special_push(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc);
+static void cisc_decode_special_ret(struct asmCiscIns* cisc);
 
 int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
-	struct asmInputVariable 	input_variables;
-	struct asmOutputVariable 	output_variables;
+	struct asmCiscIns 			cisc;
 	struct irRenameEngine 		engine;
 	struct instructionIterator 	it;
+	uint32_t 					i;
 
 	irRenameEngine_init(engine, ir)
 
@@ -59,20 +151,21 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 	}
 
 	for (;;){
+		ASMCISCINS_SET_INVALID(cisc);
+
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
-			case XED_ICLASS_ADD 		: {
-				special_instruction_add(&engine, &input_variables, &output_variables, &(it.xedd));
+			case XED_ICLASS_BSWAP 		: {break;}
+			case XED_ICLASS_CALL_NEAR 	: {
+				cisc_decode_special_call(&cisc, it.instruction_address);
 				break;
 			}
-			case XED_ICLASS_BSWAP 		: {break;}
-			case XED_ICLASS_CALL_NEAR 	: {break;}
 			case XED_ICLASS_CMP 		: {break;}
 			case XED_ICLASS_DEC 		: {
-				special_instruction_dec(&engine, &input_variables, &output_variables, &(it.xedd));
+				cisc_decode_special_dec(&(it.xedd), &cisc);
 				break;
 			}
 			case XED_ICLASS_INC 		: {
-				special_instruction_inc(&engine, &input_variables, &output_variables, &(it.xedd));
+				cisc_decode_special_inc(&(it.xedd), &cisc);
 				break;
 			}
 			case XED_ICLASS_JB 			: {break;}
@@ -85,42 +178,54 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 			case XED_ICLASS_JNL 		: {break;}
 			case XED_ICLASS_JNZ 		: {break;}
 			case XED_ICLASS_JZ 			: {break;}
-			case XED_ICLASS_LEA 		: {
-				special_instruction_lea(&engine, &input_variables, &output_variables, &(it.xedd));
-				break;
-			}
 			case XED_ICLASS_LEAVE 		: {
-				special_instruction_leave(&engine, &input_variables, &output_variables);
-				break;
-			}
-			case XED_ICLASS_MOV 		: {
-				special_instruction_mov(&engine, &input_variables, &output_variables, &(it.xedd));
+				cisc_decode_special_leave(&cisc);
 				break;
 			}
 			case XED_ICLASS_NOP 		: {break;}
 			case XED_ICLASS_POP 		: {
-				special_instruction_pop(&engine, &input_variables, &output_variables, &(it.xedd));
+				cisc_decode_special_pop(&(it.xedd), &cisc);
 				break;
 			}
 			case XED_ICLASS_PUSH 		: {
-				special_instruction_push(&engine, &input_variables, &output_variables, &(it.xedd));
+				cisc_decode_special_push(&(it.xedd), &cisc);
 				break;
 			}
-			case XED_ICLASS_RET_FAR 	: {break;}
-			case XED_ICLASS_RET_NEAR 	: {break;}
-			case XED_ICLASS_SHL 		: {
-				special_instruction_shl(&engine, &input_variables, &output_variables, &(it.xedd));
+			case XED_ICLASS_RET_FAR 	: {
+				cisc_decode_special_ret(&cisc);
 				break;
 			}
-			case XED_ICLASS_SHR 		: {
-				special_instruction_shr(&engine, &input_variables, &output_variables, &(it.xedd));
+			case XED_ICLASS_RET_NEAR 	: {
+				cisc_decode_special_ret(&cisc);
 				break;
 			}
 			case XED_ICLASS_TEST 		: {break;}
 			default :{
-				asmInputVariable_fetch(&engine, &input_variables, &(it.xedd));
-				asmOutputVariable_fetch(&engine, &output_variables, &(it.xedd));
-				asmVariable_build_dependence(ir, &input_variables, &output_variables);
+				cisc.nb_ins = 1;
+				cisc.ins[0].opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it.xedd)));
+				if (cisc.ins[0].opcode != IR_INVALID){
+					ASMCISCINS_SET_VALID(cisc);
+					asmOperand_decode(&(it.xedd), cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand));
+					asmOperand_decode(&(it.xedd), &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL);
+				}
+			}
+		}
+
+		if (ASMCISCINS_IS_VALID(cisc)){
+			for (i = 0; i < cisc.nb_ins; i++){
+				switch(cisc.ins[i].opcode){
+					case IR_LEA 	:{
+						asmRiscOperand_process_special_lea(&engine, cisc.ins + i);
+						break;
+					}
+					case IR_MOV 	: {
+						asmRiscOperand_process_special_mov(&engine, cisc.ins + i);
+						break;
+					}
+					default 				: {
+						asmRiscOperand_process(&engine, cisc.ins + i);
+					}
+				}
 			}
 		}
 
@@ -140,117 +245,69 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 	return 0;
 }
 
-static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInputVariable* input_variables, xed_decoded_inst_t* xedd){
+static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_){
 	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
+	uint8_t 				nb_memops 	= 0;
+	const xed_inst_t* 		xi 			= xed_decoded_inst_inst(xedd);
 	const xed_operand_t* 	xed_op;
 	xed_operand_enum_t 		op_name;
-	uint8_t 				nb_memops;
+	uint32_t 				nb_read 	= 0;
+	uint32_t 				nb_write 	= 0;
+	uint32_t 				nb_operand 	= 0;
 
-	for (i = 0, nb_memops = 0, input_variables->nb_input = 0, input_variables->base_variable = NULL, input_variables->index_variable = NULL, input_variables->disp_variable = NULL, input_variables->scale_variable = NULL; i < xed_inst_noperands(xi); i++){
+	for (i = 0; i < xed_inst_noperands(xi); i++){
 		xed_op = xed_inst_operand(xi, i);
-		if (xed_operand_read(xed_op)){
-			op_name = xed_operand_name(xed_op);
+		op_name = xed_operand_name(xed_op);
 
+		if ((xed_operand_read(xed_op) && ASM_OPERAND_ROLE_IS_READ_INDEX(selector, nb_read)) || (xed_operand_written(xed_op) && ASM_OPERAND_ROLE_IS_WRITE_INDEX(selector, nb_write))){
 			switch(op_name){
 				case XED_OPERAND_AGEN 	:
 				case XED_OPERAND_MEM0 	:
 				case XED_OPERAND_MEM1 	: {
-					xed_reg_enum_t 	base;
-					xed_reg_enum_t 	index;
-					uint64_t 		displacement;
-					uint32_t 		scale;
+					uint64_t disp;
 
-					base = xed_decoded_inst_get_base_reg(xedd, nb_memops);
-					if (base != XED_REG_INVALID){
-						input_variables->base_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(base));
-						if (input_variables->base_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
+					if (max_nb_operand == nb_operand){
+						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						goto exit;
 					}
 
-					index = xed_decoded_inst_get_index_reg(xedd, nb_memops);
-					if (index != XED_REG_INVALID){
-						input_variables->index_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(index));
-						if (input_variables->index_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
-					}
+					operand_buffer[nb_operand].size 					= xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8;
+					operand_buffer[nb_operand].variable 				= NULL;
+					operand_buffer[nb_operand].type 					= ASM_OPERAND_MEM;
+					operand_buffer[nb_operand].operand_type.mem.base 	= xed_decoded_inst_get_base_reg(xedd, nb_memops);
+					operand_buffer[nb_operand].operand_type.mem.index 	= xed_decoded_inst_get_index_reg(xedd, nb_memops);
+					operand_buffer[nb_operand].operand_type.mem.scale 	= xed_decoded_inst_get_scale(xedd, nb_memops);
 
-					displacement = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
-					if (displacement != 0){
+					disp = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
+					if (disp){
 						switch(xed_decoded_inst_get_memory_displacement_width(xedd, nb_memops)){
 							case 1 : {
-								if (displacement & 0x80){
-									displacement |= 0xffffff00;
-								}
+								disp |= ~(((disp >> 7) & 0x0000000000000001ULL) + 0xffffffffffffffffULL) & 0xffffffffffffff00ULL;
 								break;
 							}
 							case 2 : {
-								if (displacement & 0x8000){
-									displacement |= 0xffff0000;
-								}
+								disp |= ~(((disp >> 15) & 0x0000000000000001ULL) + 0xffffffffffffffffULL) & 0xffffffffffff0000ULL;
 								break;
 							}
 						}
-
-						input_variables->disp_variable = ir_add_immediate(engine->ir, 32, displacement);
-						if (input_variables->disp_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
 					}
+					operand_buffer[nb_operand].operand_type.mem.disp 	= disp;
 
-					scale = xed_decoded_inst_get_scale(xedd, nb_memops);
-					if (scale > 1){
-						input_variables->scale_variable = ir_add_immediate(engine->ir, 32, scale);
-						if (input_variables->scale_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-					}
-					
-					if (op_name != XED_OPERAND_AGEN){
-						struct node* address;
-
-						asmVariable_build_mem_address(engine, input_variables->base_variable, input_variables->index_variable, input_variables->disp_variable, input_variables->scale_variable, &address);
-						if (address != NULL){
-							input_variables->nb_input[input_variables->variables] = ir_add_in_mem(engine->ir, address, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8, irRenameEngine_get_mem_order(engine));
-							if (input_variables->variables[input_variables->nb_input] != NULL){
-								input_variables->nb_input ++;
-								if (input_variables->nb_input == IRIMPORTERASM_MAX_INPUT_VARIABLE){
-									printf("ERROR: in %s, the max number of input variable has been reached\n", __func__);
-									break;
-								}
-							}
-							else{
-								printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
-							}
-						}
-						else{
-							printf("ERROR: in %s, unable to build mem address\n", __func__);
-						}
-					}
-					
-					nb_memops ++;
+					nb_operand ++;
 					break;
 				}
 				case XED_OPERAND_IMM0 	: {
-					uint16_t 	width;
-					uint64_t 	value;
-
-					width = xed_decoded_inst_get_immediate_width_bits(xedd);
-					value = xed_decoded_inst_get_unsigned_immediate(xedd);
-					input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, width, value);
-					if (input_variables->variables[input_variables->nb_input] == NULL){
-						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-					}
-					else{
-						input_variables->nb_input ++;
-						if (input_variables->nb_input == IRIMPORTERASM_MAX_INPUT_VARIABLE){
-							printf("ERROR: in %s, the max number of input variable has been reached\n", __func__);
-							break;
-						}
+					if (max_nb_operand == nb_operand){
+						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						goto exit;
 					}
 
+					operand_buffer[nb_operand].size 					= xed_decoded_inst_get_immediate_width_bits(xedd);
+					operand_buffer[nb_operand].variable 				= NULL;
+					operand_buffer[nb_operand].type 					= ASM_OPERAND_IMM;
+					operand_buffer[nb_operand].operand_type.imm 		= xed_decoded_inst_get_unsigned_immediate(xedd);
+
+					nb_operand ++;
 					break;
 				}
 				case XED_OPERAND_REG0 	:
@@ -262,18 +319,24 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 				case XED_OPERAND_REG6 	:
 				case XED_OPERAND_REG7 	:
 				case XED_OPERAND_REG8 	: {
-					input_variables->variables[input_variables->nb_input] = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(xed_decoded_inst_get_reg(xedd, op_name)));
-					if (input_variables->variables[input_variables->nb_input] == NULL){
-						printf("ERROR: in %s, unable to register reference from the renaming engine\n", __func__);
-					}
-					else{
-						input_variables->nb_input ++;
-						if (input_variables->nb_input == IRIMPORTERASM_MAX_INPUT_VARIABLE){
-							printf("ERROR: in %s, the max number of input variable has been reached\n", __func__);
-							break;
-						}
+					xed_reg_enum_t reg;
+
+					reg = xed_decoded_inst_get_reg(xedd, op_name);
+					if (reg == XED_REG_EFLAGS){
+						break;
 					}
 
+					if (max_nb_operand == nb_operand){
+						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						goto exit;
+					}
+
+					operand_buffer[nb_operand].variable 				= NULL;
+					operand_buffer[nb_operand].type 					= ASM_OPERAND_REG;
+					operand_buffer[nb_operand].operand_type.reg 		= xedRegister_2_irRegister(reg);
+					operand_buffer[nb_operand].size 					= irRegister_get_size(operand_buffer[nb_operand].operand_type.reg);
+
+					nb_operand ++;
 					break;
 				}
 				case XED_OPERAND_BASE0 : {
@@ -281,7 +344,7 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 					break;
 				}
 				case XED_OPERAND_BASE1 : {
-					/* IGNORE: this is ESP for stack instrcution (example: PUSH) */
+					/* IGNORE: this is ESP for stack instruction (example: PUSH) */
 					break;
 				}
 				default : {
@@ -290,232 +353,345 @@ static void asmInputVariable_fetch(struct irRenameEngine* engine, struct asmInpu
 				}
 			}
 		}
-		else{
-			op_name = xed_operand_name(xed_op);
-			if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
-				nb_memops ++;
-			}
+
+		if (xed_operand_read(xed_op)){
+			nb_read ++;
 		}
-	}
-}
-
-static void asmOutputVariable_fetch(struct irRenameEngine* engine, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
-	const xed_operand_t* 	xed_op;
-	xed_operand_enum_t 		op_name;
-	uint8_t 				nb_memops;
-
-	for (i = 0, nb_memops = 0, output_variables->variable = NULL, output_variables->base_variable = NULL, output_variables->index_variable = NULL, output_variables->disp_variable = NULL, output_variables->scale_variable = NULL; i < xed_inst_noperands(xi) && output_variables->variable == NULL; i++){
-		xed_op = xed_inst_operand(xi, i);
 		if (xed_operand_written(xed_op)){
-			op_name = xed_operand_name(xed_op);
-
-			switch(op_name){
-				case XED_OPERAND_MEM0 	:
-				case XED_OPERAND_MEM1 	: {
-					xed_reg_enum_t 	base;
-					xed_reg_enum_t 	index;
-					uint64_t 		displacement;
-					uint32_t 		scale;
-
-					base = xed_decoded_inst_get_base_reg(xedd, nb_memops);
-					if (base != XED_REG_INVALID){
-						output_variables->base_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(base));
-						if (output_variables->base_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
-					}
-
-					index = xed_decoded_inst_get_index_reg(xedd, nb_memops);
-					if (index != XED_REG_INVALID){
-						output_variables->index_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(index));
-						if (output_variables->index_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
-					}
-
-					displacement = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
-					if (displacement != 0){
-						switch(xed_decoded_inst_get_memory_displacement_width(xedd, nb_memops)){
-							case 1 : {
-								if (displacement & 0x80){
-									displacement |= 0xffffff00;
-								}
-								break;
-							}
-							case 2 : {
-								if (displacement & 0x8000){
-									displacement |= 0xffff0000;
-								}
-								break;
-							}
-						}
-
-						output_variables->disp_variable = ir_add_immediate(engine->ir, 32, displacement);
-						if (output_variables->disp_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-					}
-
-					scale = xed_decoded_inst_get_scale(xedd, nb_memops);
-					if (scale > 1){
-						output_variables->scale_variable = ir_add_immediate(engine->ir, 32, scale);
-						if (output_variables->scale_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-					}
-
-					if (op_name != XED_OPERAND_AGEN){
-						struct node* address;
-						struct node* mem;
-
-						asmVariable_build_mem_address(engine, output_variables->base_variable, output_variables->index_variable, output_variables->disp_variable, output_variables->scale_variable, &address);
-						if (address != NULL){
-							output_variables->variable = ir_add_inst(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8);
-							if (output_variables->variable == NULL){
-								printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-								continue;
-							}
-							mem = ir_add_out_mem(engine->ir, address, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8, irRenameEngine_get_mem_order(engine));
-							if (mem == NULL){
-								printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
-							}
-							else{
-								if (ir_add_dependence(engine->ir, output_variables->variable, mem, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-								}
-							}
-						}
-						else{
-							printf("ERROR: in %s, unable to build mem address\n", __func__);
-						}
-					}
-					
-					nb_memops ++;
-					break;
-				}
-				case XED_OPERAND_REG0 	:
-				case XED_OPERAND_REG1 	:
-				case XED_OPERAND_REG2 	:
-				case XED_OPERAND_REG3 	:
-				case XED_OPERAND_REG4 	:
-				case XED_OPERAND_REG5 	:
-				case XED_OPERAND_REG6 	:
-				case XED_OPERAND_REG7 	:
-				case XED_OPERAND_REG8 	: {
-					enum irRegister reg;
-
-					reg = xedRegister_2_irRegister(xed_decoded_inst_get_reg(xedd, op_name));
-					output_variables->variable = ir_add_inst(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), irRegister_get_size(reg));
-					if (output_variables->variable == NULL){
-						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-						continue;
-					}
-					irRenameEngine_set_register_ref(engine, reg, output_variables->variable);
-					break;
-				}
-				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
-					break;
-				}
-			}
+			nb_write ++;
 		}
-		else{
-			op_name = xed_operand_name(xed_op);
-			if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
-				nb_memops ++;
+		if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
+			nb_memops ++;
+		}
+	}
+
+	exit:
+	if (nb_operand_ != NULL){
+		*nb_operand_ = nb_operand;
+	}
+}
+
+static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand){
+	switch(operand->type){
+		case ASM_OPERAND_IMM : {
+			operand->variable = ir_add_immediate(engine->ir, operand->size, operand->operand_type.imm);
+			if (operand->variable == NULL){
+				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 			}
+			break;
+		}
+		case ASM_OPERAND_REG : {
+			operand->variable = irRenameEngine_get_register_ref(engine, operand->operand_type.reg);
+			if (operand->variable == NULL){
+				printf("ERROR: in %s, unable to register reference from the renaming engine\n", __func__);
+			}
+			break;
+		}
+		case ASM_OPERAND_MEM : {
+			struct node* address;
+
+			address = memOperand_build_address(engine, &(operand->operand_type.mem));
+			if (address != NULL){
+				operand->variable = ir_add_in_mem(engine->ir, address, operand->size, irRenameEngine_get_mem_order(engine));
+				if (operand->variable == NULL){
+					printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
+				}
+			}
+			else{
+				printf("ERROR: in %s, unable to build memory address\n", __func__);
+			}
+			break;
 		}
 	}
 }
 
-static void asmVariable_build_mem_address(struct irRenameEngine* engine, struct node* base, struct node* index, struct node* disp, struct node* scale, struct node** address){
-	uint8_t 		nb_operand = 0;
-	struct node* 	operands[3];
+static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode){
+	switch(operand->type){
+		case ASM_OPERAND_REG 	: {
+			operand->variable = ir_add_inst(engine->ir, opcode, operand->size);
+			if (operand->variable == NULL){
+				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+			}
+			else{
+				irRenameEngine_set_register_ref(engine, operand->operand_type.reg, operand->variable);
+			}
+			break;
+		}
+		case ASM_OPERAND_MEM 	: {
+			struct node* address;
+			struct node* mem_write;
 
-	if (base != NULL){
-		operands[nb_operand] = base;
-		nb_operand ++;
+			address = memOperand_build_address(engine, &(operand->operand_type.mem));
+			if (address != NULL){
+				operand->variable = ir_add_inst(engine->ir, opcode, operand->size);
+				if (operand->variable != NULL){
+					mem_write = ir_add_out_mem(engine->ir, address, operand->size, irRenameEngine_get_mem_order(engine));
+					if (mem_write != NULL){
+						if (ir_add_dependence(engine->ir, operand->variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+						}
+					}
+					else{
+						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				}
+			}
+			else{
+				printf("ERROR: in %s, unable to build memory address\n", __func__);
+			}
+			break;
+		}
+		default 				: {
+			printf("ERROR: in %s, this case is not supposed to happen (IMM read operand)\n", __func__);
+		}
 	}
+}
 
-	if (index != NULL){
-		if (scale == NULL){
-			operands[nb_operand] = index;
+static void asmOperand_signe_extend(struct asmOperand* operand, uint16_t size){
+	if (operand->type == ASM_OPERAND_IMM && operand->size < size){
+		switch(operand->size){
+			case 8 : {
+				operand->operand_type.imm |= ~(((operand->operand_type.imm >> 7) & 0x0000000000000001ULL) + 0xffffffffffffffffULL) & 0xffffffffffffff00ULL;
+				break;
+			}
+			case 16 : {
+				operand->operand_type.imm |= ~(((operand->operand_type.imm >> 15) & 0x0000000000000001ULL) + 0xffffffffffffffffULL) & 0xffffffffffff0000ULL;
+				break;
+			}
+		}
+		operand->size = size;
+	}
+}
+
+static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem){
+	struct node* 	base 		= NULL;
+	struct node* 	index 		= NULL;
+	struct node* 	disp 		= NULL;
+	struct node* 	scale 		= NULL;
+	uint8_t 		nb_operand 	= 0;
+	struct node* 	operands[3];
+	struct node* 	address 	= NULL;
+
+	if (mem->base != XED_REG_INVALID){
+		base = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->base));
+		if (base == NULL){
+			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
+		}
+		else{
+			operands[nb_operand] = base;
 			nb_operand ++;
 		}
+	}
+
+	if (mem->scale > 1){
+		scale = ir_add_immediate(engine->ir, 32, mem->scale);
+		if (scale == NULL){
+			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+		}
+	}
+
+	if (mem->index != XED_REG_INVALID){
+		index = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->index));
+		if (index == NULL){
+			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
+		}
 		else{
-			struct node* shl;
-
-			shl = ir_add_inst(engine->ir, IR_MUL, 32);
-			if (shl != NULL){
-				if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
-				}
-				if (ir_add_dependence(engine->ir, scale, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
-				}
-
-				operands[nb_operand] = shl;
+			if (scale == NULL){
+				operands[nb_operand] = index;
 				nb_operand ++;
+			}
+			else{
+				struct node* shl;
+
+				shl = ir_add_inst(engine->ir, IR_MUL, 32);
+				if (shl != NULL){
+					if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					}
+					if (ir_add_dependence(engine->ir, scale, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					}
+
+					operands[nb_operand] = shl;
+					nb_operand ++;
+				}
+				else{
+					printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				}
 			}
 		}
 	}
 
-	if (disp != NULL){
-		operands[nb_operand] = disp;
-		nb_operand ++;
+	if (mem->disp){
+		disp = ir_add_immediate(engine->ir, 32, mem->disp);
+		if (disp == NULL){
+			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+		}
+		else{
+			operands[nb_operand] = disp;
+			nb_operand ++;
+		}
 	}
 
 	switch(nb_operand){
 		case 1 : {
-			*address = operands[0];
+			address = operands[0];
 			break;
 		}
 		case 2 : {
-			*address = ir_add_inst(engine->ir, IR_ADD, 32);
-			if (*address != NULL){
-				if (ir_add_dependence(engine->ir, operands[0], *address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
+			address = ir_add_inst(engine->ir, IR_ADD, 32);
+			if (address != NULL){
+				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 				}
-				if (ir_add_dependence(engine->ir, operands[1], *address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
+				if (ir_add_dependence(engine->ir, operands[1], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 				}
+			}
+			else{
+				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 			}
 			break;
 		}
 		case 3 : {
-			*address = ir_add_inst(engine->ir, IR_ADD, 32);
-			if (*address != NULL){
-				if (ir_add_dependence(engine->ir, operands[0], *address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
+			address = ir_add_inst(engine->ir, IR_ADD, 32);
+			if (address != NULL){
+				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 				}
-				if (ir_add_dependence(engine->ir, operands[1], *address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
+				if (ir_add_dependence(engine->ir, operands[1], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 				}
-				if (ir_add_dependence(engine->ir, operands[2], *address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between ir nodes\n", __func__);
+				if (ir_add_dependence(engine->ir, operands[2], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 				}
+			}
+			else{
+				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
 			}
 			break;
 		}
 		default : {
 			printf("ERROR: in %s, incorrect number of operand(s): %u\n", __func__, nb_operand);
-			*address = NULL;
+		}
+	}
 
+	return address;
+}
+
+static void asmRiscOperand_process(struct irRenameEngine* engine, struct asmRiscIns* risc){
+	uint8_t i;
+
+	if (signe_extand_table[risc->opcode]){
+		for (i = 0; i < risc->nb_input_operand; i++){
+			asmOperand_signe_extend(risc->input_operand + i, risc->output_operand.size);
+		}
+	}
+
+	for (i = 0; i < risc->nb_input_operand; i++){
+		asmOperand_fetch_input(engine, risc->input_operand + i);
+	}
+	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode);
+
+	if (risc->output_operand.variable != NULL){
+		for (i = 0; i < risc->nb_input_operand; i++){
+			if (risc->input_operand[i].variable != NULL){
+				if (ir_add_dependence(engine->ir, risc->input_operand[i].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][i]) == NULL){
+					printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+				}
+			}
 		}
 	}
 }
 
-static void asmVariable_build_dependence(struct ir* ir, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables){
-	uint32_t i;
+static void asmRiscOperand_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc){
+	struct node* address;
+	struct node* mem_write;
 
-	if (output_variables->variable != NULL){
-		for (i = 0; i < input_variables->nb_input; i++){
-			if (ir_add_dependence(ir, input_variables->variables[i], output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+	if (risc->nb_input_operand != 1 || risc->input_operand[0].type != ASM_OPERAND_MEM){
+		printf("ERROR: in %s, incorrect type or number of input operand\n", __func__);
+		return;
+	}
+
+	risc->input_operand[0].variable = memOperand_build_address(engine, &(risc->input_operand[0].operand_type.mem));
+	if (risc->input_operand[0].variable != NULL){
+		switch(risc->output_operand.type){
+			case ASM_OPERAND_REG 	: {
+				irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
+				break;
+			}
+			case ASM_OPERAND_MEM 	: {
+				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem));
+				if (address != NULL){
+					mem_write = ir_add_out_mem(engine->ir, address, risc->output_operand.size, irRenameEngine_get_mem_order(engine));
+					if (mem_write != NULL){
+						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+						}
+					}
+					else{
+						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to build memory address\n", __func__);
+				}
+				break;
+			}
+			default 				: {
+				printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
 			}
 		}
+	}
+	else{
+		printf("ERROR: in %s, unable to build memory address\n", __func__);
+	}
+}
+
+static void asmRiscOperand_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc){
+	struct node* address;
+	struct node* mem_write;
+
+	if (risc->nb_input_operand != 1){
+		printf("ERROR: in %s, incorrect number of input operand\n", __func__);
+		return;
+	}
+
+	asmOperand_fetch_input(engine, risc->input_operand);
+	if (risc->input_operand[0].variable != NULL){
+		switch(risc->output_operand.type){
+			case ASM_OPERAND_REG 	: {
+				irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
+				break;
+			}
+			case ASM_OPERAND_MEM 	: {
+				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem));
+				if (address != NULL){
+					mem_write = ir_add_out_mem(engine->ir, address, risc->output_operand.size, irRenameEngine_get_mem_order(engine));
+					if (mem_write != NULL){
+						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+						}
+					}
+					else{
+						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+					}
+				}
+				else{
+					printf("ERROR: in %s, unable to build memory address\n", __func__);
+				}
+				break;
+			}
+			default 				: {
+				printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+			}
+		}
+	}
+	else{
+		printf("ERROR: in %s, input variable is NULL\n", __func__);
 	}
 }
 
@@ -524,10 +700,9 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_ADD 	: {return IR_ADD;}
 		case XED_ICLASS_AND 	: {return IR_AND;}
 		case XED_ICLASS_DIV		: {return IR_DIV;}
-		case XED_ICLASS_DEC 	: {return IR_SUB;}
 		case XED_ICLASS_IMUL 	: {return IR_IMUL;}
-		case XED_ICLASS_INC 	: {return IR_ADD;}
-		case XED_ICLASS_LEA 	: {return IR_ADD;}
+		case XED_ICLASS_LEA 	: {return IR_LEA;}
+		case XED_ICLASS_MOV 	: {return IR_MOV;}
 		case XED_ICLASS_MOVZX 	: {return IR_MOVZX;}
 		case XED_ICLASS_MUL 	: {return IR_MUL;}
 		case XED_ICLASS_NOT 	: {return IR_NOT;}
@@ -539,7 +714,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SUB 	: {return IR_SUB;}
 		case XED_ICLASS_XOR 	: {return IR_XOR;}
 		default : {
-			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
+			printf("ERROR: in %s, this instruction (%s) cannot be translated into IR Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
 			return IR_INVALID;
 		}
 	}
@@ -555,10 +730,10 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 		case XED_REG_CH 	: {return IR_REG_CH;}
 		case XED_REG_DH 	: {return IR_REG_DH;}
 		case XED_REG_BH 	: {return IR_REG_BH;}
-		case XED_REG_AX 	: {return IR_REG_AX;} 	
-		case XED_REG_CX 	: {return IR_REG_CX;} 	
-		case XED_REG_DX 	: {return IR_REG_DX;} 	
-		case XED_REG_BX 	: {return IR_REG_BX;} 
+		case XED_REG_AX 	: {return IR_REG_AX;}
+		case XED_REG_CX 	: {return IR_REG_CX;}
+		case XED_REG_DX 	: {return IR_REG_DX;}
+		case XED_REG_BX 	: {return IR_REG_BX;}
 		case XED_REG_EAX 	: {return IR_REG_EAX;}
 		case XED_REG_ECX 	: {return IR_REG_ECX;}
 		case XED_REG_EDX 	: {return IR_REG_EDX;}
@@ -568,635 +743,198 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 		case XED_REG_ESI 	: {return IR_REG_ESI;}
 		case XED_REG_EDI 	: {return IR_REG_EDI;}
 		default : {
-			printf("ERROR: in %s, this register (%s) cannot be translated into ir register\n", __func__, xed_reg_enum_t2str(xed_reg));
+			printf("ERROR: in %s, this register (%s) cannot be translated into IR register\n", __func__, xed_reg_enum_t2str(xed_reg));
 			return IR_REG_EAX;
 		}
 	}
 }
 
-static void special_instruction_add(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	uint32_t 			i;
-	uint8_t 			size;
-	struct irOperation* operation;
+static void cisc_decode_special_call(struct asmCiscIns* cisc, ADDRESS pc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 2;
 
-	asmInputVariable_fetch(engine, input_variables, xedd);
-	asmOutputVariable_fetch(engine, output_variables, xedd);
+	cisc->ins[0].opcode 									= IR_SUB;
+	cisc->ins[0].nb_input_operand 							= 2;
+	cisc->ins[0].input_operand[0].size 						= 32;
+	cisc->ins[0].input_operand[0].variable 					= NULL;
+	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[0].input_operand[1].size 						= 32;
+	cisc->ins[0].input_operand[1].variable 					= NULL;
+	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[0].input_operand[1].operand_type.imm 			= 4;
+	cisc->ins[0].output_operand.size 						= 32;
+	cisc->ins[0].output_operand.variable 					= NULL;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
 
-	if ( output_variables->variable != NULL){
-		size = ir_node_get_operation(output_variables->variable)->size;
+	cisc->ins[1].opcode 									= IR_MOV;
+	cisc->ins[1].nb_input_operand 							= 1;
+	cisc->ins[1].input_operand[0].size 						= 32;
+	cisc->ins[1].input_operand[0].variable 					= NULL;
+	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_IMM;
+	cisc->ins[1].input_operand[0].operand_type.imm 			= pc;
+	cisc->ins[1].output_operand.size 						= 32;
+	cisc->ins[1].output_operand.variable 					= NULL;
+	cisc->ins[1].output_operand.type 						= ASM_OPERAND_MEM;
+	cisc->ins[1].output_operand.operand_type.mem.base 		= XED_REG_ESP;
+	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
+	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
+	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
 
-		for (i = 0; i < input_variables->nb_input; i++){
-			operation = ir_node_get_operation(input_variables->variables[i]);
-
-			if (operation->type == IR_OPERATION_TYPE_IMM && operation->size < size){
-				if (operation->operation_type.imm.value & (0x01 << (operation->size - 1))){
-					operation->operation_type.imm.value |= (0xffffffffffffffffULL << size);
-				}
-				operation->size = size;
-			}
-		}
-	}
-
-	asmVariable_build_dependence(engine->ir, input_variables, output_variables);
 }
 
-static void special_instruction_dec(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	asmInputVariable_fetch(engine, input_variables, xedd);
-	asmOutputVariable_fetch(engine, output_variables, xedd);
+static void cisc_decode_special_dec(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 1;
 
-	if (output_variables->variable != NULL){
-		if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-			input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, ir_node_get_operation(output_variables->variable)->size, 1);
-			if (input_variables->variables[input_variables->nb_input] == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-			}
-			else{
-				input_variables->nb_input ++;
-			}
-		}
-		else{
-			printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, incorrect instruction format, missing output operand\n", __func__);
-	}
-
-	asmVariable_build_dependence(engine->ir, input_variables, output_variables);
+	cisc->ins[0].opcode 									= IR_SUB;
+	cisc->ins[0].nb_input_operand 							= 2;
+	asmOperand_decode(xedd, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL);
+	cisc->ins[0].input_operand[1].size 						= cisc->ins[0].input_operand[0].size;
+	cisc->ins[0].input_operand[1].variable 					= NULL;
+	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[0].input_operand[1].operand_type.imm 			= 1;
+	asmOperand_decode(xedd, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
 }
 
-static void special_instruction_inc(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	asmInputVariable_fetch(engine, input_variables, xedd);
-	asmOutputVariable_fetch(engine, output_variables, xedd);
+static void cisc_decode_special_inc(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 1;
 
-	if (output_variables->variable != NULL){
-		if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-			input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, ir_node_get_operation(output_variables->variable)->size, 1);
-			if (input_variables->variables[input_variables->nb_input] == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-			}
-			else{
-				input_variables->nb_input ++;
-			}
-		}
-		else{
-			printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, incorrect instruction format, missing output operand\n", __func__);
-	}
-	
-	asmVariable_build_dependence(engine->ir, input_variables, output_variables);
+	cisc->ins[0].opcode 									= IR_ADD;
+	cisc->ins[0].nb_input_operand 							= 2;
+	asmOperand_decode(xedd, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL);
+	cisc->ins[0].input_operand[1].size 						= cisc->ins[0].input_operand[0].size;
+	cisc->ins[0].input_operand[1].variable 					= NULL;
+	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[0].input_operand[1].operand_type.imm 			= 1;
+	asmOperand_decode(xedd, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
 }
 
-static void special_instruction_lea(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
-	const xed_operand_t* 	xed_op;
-	xed_operand_enum_t 		op_name;
+static void cisc_decode_special_leave(struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 3;
 
-	asmInputVariable_fetch(engine, input_variables, xedd);
+	cisc->ins[0].opcode 									= IR_MOV;
+	cisc->ins[0].nb_input_operand 							= 1;
+	cisc->ins[0].input_operand[0].size 						= 32;
+	cisc->ins[0].input_operand[0].variable 					= NULL;
+	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_EBP;
+	cisc->ins[0].output_operand.size 						= 32;
+	cisc->ins[0].output_operand.variable 					= NULL;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
 
-	for (i = 0, output_variables->variable = NULL; i < xed_inst_noperands(xi) && output_variables->variable == NULL; i++){
-		xed_op = xed_inst_operand(xi, i);
-		if (xed_operand_written(xed_op)){
-			op_name = xed_operand_name(xed_op);
+	cisc->ins[1].opcode 									= IR_MOV;
+	cisc->ins[1].nb_input_operand 							= 1;
+	cisc->ins[1].input_operand[0].size 						= 32;
+	cisc->ins[1].input_operand[0].variable 					= NULL;
+	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_MEM;
+	cisc->ins[1].input_operand[0].operand_type.mem.base 	= XED_REG_ESP;
+	cisc->ins[1].input_operand[0].operand_type.mem.index 	= XED_REG_INVALID;
+	cisc->ins[1].input_operand[0].operand_type.mem.scale 	= 1;
+	cisc->ins[1].input_operand[0].operand_type.mem.disp 	= 0;
+	cisc->ins[1].output_operand.size 						= 32;
+	cisc->ins[1].output_operand.variable 					= NULL;
+	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_EBP;
 
-			switch(op_name){
-				case XED_OPERAND_REG0 	: {
-					enum irRegister reg;
-					
-					reg = xedRegister_2_irRegister(xed_decoded_inst_get_reg(xedd, op_name));
-					output_variables->variable = ir_add_inst(engine->ir, xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(xedd)), irRegister_get_size(reg));
-					if (output_variables->variable == NULL){
-						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-						continue;
-					}
-					irRenameEngine_set_register_ref(engine, reg, output_variables->variable);
-					
-					if (input_variables->base_variable != NULL){
-						if (ir_add_dependence(engine->ir, input_variables->base_variable, output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
-						}
-					}
-					if (input_variables->index_variable != NULL){
-						if (ir_add_dependence(engine->ir, input_variables->index_variable, output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
-						}
-					}
-					if (input_variables->disp_variable != NULL){
-						if (ir_add_dependence(engine->ir, input_variables->disp_variable, output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
-						}
-					}
-
-					break;
-				}
-				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
-					break;
-				}
-			}
-		}
-	}
+	cisc->ins[2].opcode 									= IR_ADD;
+	cisc->ins[2].nb_input_operand 							= 2;
+	cisc->ins[2].input_operand[0].size 						= 32;
+	cisc->ins[2].input_operand[0].variable 					= NULL;
+	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[2].input_operand[1].size 						= 32;
+	cisc->ins[2].input_operand[1].variable 					= NULL;
+	cisc->ins[2].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[2].input_operand[1].operand_type.imm 			= 4;
+	cisc->ins[2].output_operand.size 						= 32;
+	cisc->ins[2].output_operand.variable 					= NULL;
+	cisc->ins[2].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void special_instruction_leave(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables){
-	struct node* 	ebp_register;
-	struct node* 	address;
+static void cisc_decode_special_pop(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 2;
 
-	ebp_register = irRenameEngine_get_register_ref(engine, IR_REG_EBP);
-	if (ebp_register != NULL){
-		irRenameEngine_set_register_ref(engine, IR_REG_ESP, ebp_register);
-	}
-	else{
-		printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-	}
+	cisc->ins[0].opcode 									= IR_MOV;
+	cisc->ins[0].nb_input_operand 							= 1;
+	asmOperand_decode(xedd, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
+	cisc->ins[0].input_operand[0].size 						= cisc->ins[0].output_operand.size;
+	cisc->ins[0].input_operand[0].variable 					= NULL;
+	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_MEM;
+	cisc->ins[0].input_operand[0].operand_type.mem.base 	= XED_REG_ESP;
+	cisc->ins[0].input_operand[0].operand_type.mem.index 	= XED_REG_INVALID;
+	cisc->ins[0].input_operand[0].operand_type.mem.scale 	= 1;
+	cisc->ins[0].input_operand[0].operand_type.mem.disp 	= 0;
 
-	input_variables->nb_input 			= 1;
-	input_variables->base_variable 		= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-	if (input_variables->base_variable == NULL){
-		printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-	}
-	input_variables->index_variable 	= NULL;
-	input_variables->disp_variable		= NULL;
-	input_variables->scale_variable 	= NULL;
-	input_variables->variables[0] 		= NULL;
-
-	asmVariable_build_mem_address(engine, input_variables->base_variable, input_variables->index_variable, input_variables->disp_variable, input_variables->scale_variable, &address);
-	if (address != NULL){
-		input_variables->variables[0] = ir_add_in_mem(engine->ir, address, 32, irRenameEngine_get_mem_order(engine));
-		if (input_variables->variables[0] != NULL){
-			irRenameEngine_set_register_ref(engine, IR_REG_EBP, input_variables->variables[0]);
-		}
-		else{
-			printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to build mem address\n", __func__);
-	}
-
-	if (input_variables->variables[0] != NULL){
-		input_variables->nb_input 			= 0;
-		input_variables->base_variable 		= NULL;
-		input_variables->index_variable 	= NULL;
-		input_variables->disp_variable		= NULL;
-		input_variables->scale_variable 	= NULL;
-		input_variables->variables[0] 		= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-		if (input_variables->variables[0] == NULL){
-			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-		}
-		else{
-			input_variables->nb_input ++;
-		}
-
-		if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-			input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 32, 4);
-			if (input_variables->variables[input_variables->nb_input] == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-			}
-			else{
-				input_variables->nb_input ++;
-			}
-		}
-		else{
-			printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
-		}
-
-		output_variables->variable = ir_add_inst(engine->ir, IR_ADD, 32);
-		if (output_variables->variable == NULL){
-			printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-		}
-		else{
-			irRenameEngine_set_register_ref(engine, IR_REG_ESP, output_variables->variable);
-		}
-
-		asmVariable_build_dependence(engine->ir, input_variables, output_variables);
-	}
+	cisc->ins[1].opcode 									= IR_ADD;
+	cisc->ins[1].nb_input_operand 							= 2;
+	cisc->ins[1].input_operand[0].size 						= 32;
+	cisc->ins[1].input_operand[0].variable 					= NULL;
+	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[1].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[1].input_operand[1].size 						= 32;
+	cisc->ins[1].input_operand[1].variable 					= NULL;
+	cisc->ins[1].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[1].input_operand[1].operand_type.imm 			= cisc->ins[0].output_operand.size / 8;
+	cisc->ins[1].output_operand.size 						= 32;
+	cisc->ins[1].output_operand.variable 					= NULL;
+	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void special_instruction_mov(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
-	const xed_operand_t* 	xed_op;
-	xed_operand_enum_t 		op_name;
-	uint8_t 				nb_memops;
+static void cisc_decode_special_push(xed_decoded_inst_t* xedd, struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 2;
 
-	asmInputVariable_fetch(engine, input_variables, xedd);
+	cisc->ins[1].opcode 									= IR_MOV;
+	asmOperand_decode(xedd, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_READ_1, &(cisc->ins[1].nb_input_operand));
+	asmOperand_signe_extend(cisc->ins[1].input_operand, 32);
+	cisc->ins[1].output_operand.size 						= cisc->ins[1].input_operand[0].size;
+	cisc->ins[1].output_operand.variable 					= NULL;
+	cisc->ins[1].output_operand.type 						= ASM_OPERAND_MEM;
+	cisc->ins[1].output_operand.operand_type.mem.base 		= XED_REG_ESP;
+	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
+	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
+	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
 
-	for (i = 0, nb_memops = 0, output_variables->variable = NULL, output_variables->base_variable = NULL, output_variables->index_variable = NULL, output_variables->disp_variable = NULL, output_variables->scale_variable = NULL; i < xed_inst_noperands(xi); i++){
-		xed_op = xed_inst_operand(xi, i);
-		if (xed_operand_written(xed_op)){
-			op_name = xed_operand_name(xed_op);
-
-			switch(op_name){
-				case XED_OPERAND_MEM0 	:
-				case XED_OPERAND_MEM1 	: {
-					xed_reg_enum_t 	base;
-					xed_reg_enum_t 	index;
-					uint64_t 		displacement;
-					uint32_t 		scale;
-					struct node* 	address;
-					struct node* 	mem;
-
-					base = xed_decoded_inst_get_base_reg(xedd, nb_memops);
-					if (base != XED_REG_INVALID){
-						output_variables->base_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(base));
-						if (output_variables->base_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
-					}
-
-					index = xed_decoded_inst_get_index_reg(xedd, nb_memops);
-					if (index != XED_REG_INVALID){
-						output_variables->index_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(index));
-						if (output_variables->index_variable == NULL){
-							printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-						}
-					}
-
-					displacement = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
-					if (displacement != 0){
-						switch(xed_decoded_inst_get_memory_displacement_width(xedd, nb_memops)){
-							case 1 : {
-								if (displacement & 0x80){
-									displacement |= 0xffffff00;
-								}
-								break;
-							}
-							case 2 : {
-								if (displacement & 0x8000){
-									displacement |= 0xffff0000;
-								}
-								break;
-							}
-						}
-
-						output_variables->disp_variable = ir_add_immediate(engine->ir, 32, displacement);
-						if (output_variables->disp_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-					}
-
-					scale = xed_decoded_inst_get_scale(xedd, nb_memops);
-					if (scale > 1){
-						output_variables->scale_variable = ir_add_immediate(engine->ir, 32, scale);
-						if (output_variables->scale_variable == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-					}
-
-					asmVariable_build_mem_address(engine, output_variables->base_variable, output_variables->index_variable, output_variables->disp_variable, output_variables->scale_variable, &address);
-					if (address != NULL){
-						mem = ir_add_out_mem(engine->ir, address, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8, irRenameEngine_get_mem_order(engine));
-						if (mem == NULL){
-							printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
-						}
-						else{
-							if (ir_add_dependence(engine->ir, input_variables->variables[0], mem, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-							}
-						}
-					}
-					else{
-						printf("ERROR: in %s, unable to build mem address\n", __func__);
-					}
-
-					break;
-				}
-				case XED_OPERAND_REG0 	:
-				case XED_OPERAND_REG1 	:
-				case XED_OPERAND_REG2 	:
-				case XED_OPERAND_REG3 	:
-				case XED_OPERAND_REG4 	:
-				case XED_OPERAND_REG5 	:
-				case XED_OPERAND_REG6 	:
-				case XED_OPERAND_REG7 	:
-				case XED_OPERAND_REG8 	: {
-					irRenameEngine_set_register_ref(engine, xedRegister_2_irRegister(xed_decoded_inst_get_reg(xedd, op_name)), input_variables->variables[0]);
-					break;
-				}
-				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
-					break;
-				}
-			}
-		}
-		else{
-			op_name = xed_operand_name(xed_op);
-			if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
-				nb_memops ++;
-			}
-		}
-	}
+	cisc->ins[0].opcode 									= IR_SUB;
+	cisc->ins[0].nb_input_operand 							= 2;
+	cisc->ins[0].input_operand[0].size 						= 32;
+	cisc->ins[0].input_operand[0].variable 					= NULL;
+	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[0].input_operand[1].size 						= 32;
+	cisc->ins[0].input_operand[1].variable 					= NULL;
+	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[0].input_operand[1].operand_type.imm 			= cisc->ins[1].input_operand[0].size / 8;
+	cisc->ins[0].output_operand.size 						= 32;
+	cisc->ins[0].output_operand.variable 					= NULL;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void special_instruction_pop(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	uint32_t 				i;
-	const xed_inst_t* 		xi = xed_decoded_inst_inst(xedd);
-	const xed_operand_t* 	xed_op;
-	xed_operand_enum_t 		op_name;
-	uint8_t 				nb_memops;
-	struct node* 			address;
-	uint32_t 				order;
-	uint8_t 				size = 0;
+static void cisc_decode_special_ret(struct asmCiscIns* cisc){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 2;
 
-	input_variables->nb_input 			= 1;
-	input_variables->base_variable 		= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-	if (input_variables->base_variable == NULL){
-		printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-	}
-	input_variables->index_variable 	= NULL;
-	input_variables->disp_variable		= NULL;
-	input_variables->scale_variable		= NULL;
-	input_variables->variables[0] 		= NULL;
-
-	asmVariable_build_mem_address(engine, input_variables->base_variable, input_variables->index_variable, input_variables->disp_variable, input_variables->scale_variable, &address);
-	if (address != NULL){
-		order = irRenameEngine_get_mem_order(engine);
-
-		for (i = 0, nb_memops = 0, output_variables->variable = NULL, output_variables->base_variable = NULL, output_variables->index_variable = NULL, output_variables->disp_variable = NULL, output_variables->scale_variable = NULL; i < xed_inst_noperands(xi); i++){
-			xed_op = xed_inst_operand(xi, i);
-			if (xed_operand_written(xed_op)){
-				op_name = xed_operand_name(xed_op);
-
-				switch(op_name){
-					case XED_OPERAND_MEM0 	:
-					case XED_OPERAND_MEM1 	: {
-						xed_reg_enum_t 	base;
-						xed_reg_enum_t 	index;
-						uint64_t 		displacement;
-						uint32_t 		scale;
-						struct node* 	addr;
-
-						base = xed_decoded_inst_get_base_reg(xedd, nb_memops);
-						if (base != XED_REG_INVALID){
-							output_variables->base_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(base));
-							if (output_variables->base_variable == NULL){
-								printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-							}
-						}
-
-						index = xed_decoded_inst_get_index_reg(xedd, nb_memops);
-						if (index != XED_REG_INVALID){
-							output_variables->index_variable = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(index));
-							if (output_variables->index_variable == NULL){
-								printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-							}
-						}
-
-						displacement = xed_decoded_inst_get_memory_displacement(xedd, nb_memops);
-						if (displacement != 0){
-							switch(xed_decoded_inst_get_memory_displacement_width(xedd, nb_memops)){
-								case 1 : {
-									if (displacement & 0x80){
-										displacement |= 0xffffff00;
-									}
-									break;
-								}
-								case 2 : {
-									if (displacement & 0x8000){
-										displacement |= 0xffff0000;
-									}
-									break;
-								}
-							}
-
-							output_variables->disp_variable = ir_add_immediate(engine->ir, 32, displacement);
-							if (output_variables->disp_variable == NULL){
-								printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-							}
-						}
-
-						scale = xed_decoded_inst_get_scale(xedd, nb_memops);
-						if (scale > 1){
-							output_variables->scale_variable = ir_add_immediate(engine->ir, 32, scale);
-							if (output_variables->scale_variable == NULL){
-								printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-							}
-						}
-
-						asmVariable_build_mem_address(engine, output_variables->base_variable, output_variables->index_variable, output_variables->disp_variable, output_variables->scale_variable, &addr);
-						if (addr != NULL){
-							output_variables->variable = ir_add_out_mem(engine->ir, addr, xed_decoded_inst_get_memory_operand_length(xedd, nb_memops) * 8, irRenameEngine_get_mem_order(engine));
-							if (output_variables->variable == NULL){
-								printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
-							}
-							else{
-								size = xed_decoded_inst_get_memory_operand_length(xedd, nb_memops);
-								input_variables->variables[0] = ir_add_in_mem(engine->ir, address, size * 8, order);
-								if (input_variables->variables[0] != NULL){
-									if (ir_add_dependence(engine->ir, input_variables->variables[0], output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-										printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-									}
-								}
-								else{
-									printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
-								}
-							}
-						}
-						else{
-							printf("ERROR: in %s, unable to build mem address\n", __func__);
-						}
-
-						break;
-					}
-					case XED_OPERAND_REG0 	:
-					case XED_OPERAND_REG1 	:
-					case XED_OPERAND_REG2 	:
-					case XED_OPERAND_REG3 	:
-					case XED_OPERAND_REG4 	:
-					case XED_OPERAND_REG5 	:
-					case XED_OPERAND_REG6 	:
-					case XED_OPERAND_REG7 	:
-					case XED_OPERAND_REG8 	: {
-						enum irRegister reg;
-
-						reg = xedRegister_2_irRegister(xed_decoded_inst_get_reg(xedd, op_name));
-						size = irRegister_get_size(reg) / 8;
-						input_variables->variables[0] = ir_add_in_mem(engine->ir, address, size * 8, order);
-						if (input_variables->variables[0] != NULL){
-							irRenameEngine_set_register_ref(engine, reg, input_variables->variables[0]);
-						}
-						else{
-							printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
-						}
-						break;
-					}
-					case XED_OPERAND_BASE0 : {
-						break;
-					}
-					default : {
-						printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
-						break;
-					}
-				}
-			}
-			else{
-				op_name = xed_operand_name(xed_op);
-				if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
-					nb_memops ++;
-				}
-			}
-		}
-	}
-	else{
-		printf("ERROR: in %s, unable to build mem address\n", __func__);
-	}
-
-	if (input_variables->variables[0] != NULL){
-		input_variables->nb_input 			= 0;
-		input_variables->base_variable 		= NULL;
-		input_variables->index_variable 	= NULL;
-		input_variables->disp_variable		= NULL;
-		input_variables->scale_variable		= NULL;
-		input_variables->variables[0] 		= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-		if (input_variables->variables[0] == NULL){
-			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-		}
-		else{
-			input_variables->nb_input ++;
-		}
-
-		if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-			input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 32, size);
-			if (input_variables->variables[input_variables->nb_input] == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-			}
-			else{
-				input_variables->nb_input ++;
-			}
-		}
-		else{
-			printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
-		}
-
-		output_variables->variable = ir_add_inst(engine->ir, IR_ADD, 32);
-		if (output_variables->variable == NULL){
-			printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-		}
-		else{
-			irRenameEngine_set_register_ref(engine, IR_REG_ESP, output_variables->variable);
-		}
-
-		asmVariable_build_dependence(engine->ir, input_variables, output_variables);
-	}
-}
-
-static void special_instruction_push(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	struct node* 	address;
-	uint8_t 		size = 0;
-
-	asmInputVariable_fetch(engine, input_variables, xedd);
-
-	output_variables->base_variable 	= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-	if (output_variables->base_variable == NULL){
-		printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-	}
-	output_variables->index_variable 	= NULL;
-	output_variables->disp_variable		= NULL;
-	output_variables->scale_variable	= NULL;
-	output_variables->variable 			= NULL;
-
-	if (input_variables->nb_input == 1){
-		if (ir_node_get_operation(input_variables->variables[0])->type == IR_OPERATION_TYPE_IMM){
-			ir_node_get_operation(input_variables->variables[0])->size = 32;
-		}
-
-		size = ir_node_get_operation(input_variables->variables[0])->size / 8;
-		asmVariable_build_mem_address(engine, output_variables->base_variable, output_variables->index_variable, output_variables->disp_variable, output_variables->scale_variable, &address);
-		if (address != NULL){
-			output_variables->variable = ir_add_out_mem(engine->ir, address, size * 8, irRenameEngine_get_mem_order(engine));
-			if (output_variables->variable != NULL){
-				if (ir_add_dependence(engine->ir, input_variables->variables[0], output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-				}
-			}
-			else{
-				printf("ERROR: in %s, unable to add memory store to IR\n", __func__);
-			}
-		}		
-		else{
-			printf("ERROR: in %s, unable to build mem address\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, fetch input variable returned a wrong number of input: %u\n", __func__, input_variables->nb_input);
-	}
-
-	if (output_variables->variable != NULL){
-		input_variables->nb_input 			= 0;
-		input_variables->base_variable 		= NULL;
-		input_variables->index_variable 	= NULL;
-		input_variables->disp_variable		= NULL;
-		input_variables->scale_variable		= NULL;
-		input_variables->variables[0] 		= irRenameEngine_get_register_ref(engine, IR_REG_ESP);
-		if (input_variables->variables[0] == NULL){
-			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
-		}
-		else{
-			input_variables->nb_input ++;
-		}
-
-		if (input_variables->nb_input != IRIMPORTERASM_MAX_INPUT_VARIABLE){
-			input_variables->variables[input_variables->nb_input] = ir_add_immediate(engine->ir, 32, size);
-			if (input_variables->variables[input_variables->nb_input] == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-			}
-			else{
-				input_variables->nb_input ++;
-			}
-		}
-		else{
-			printf("ERROR: in %s, unable to add IMM variable to input list\n", __func__);
-		}
-
-		output_variables->variable = ir_add_inst(engine->ir, IR_SUB, 32);
-		if (output_variables->variable == NULL){
-			printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-		}
-		else{
-			irRenameEngine_set_register_ref(engine, IR_REG_ESP, output_variables->variable);
-		}
-
-		asmVariable_build_dependence(engine->ir, input_variables, output_variables);
-	}
-}
-
-static void special_instruction_shr(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	asmInputVariable_fetch(engine, input_variables, xedd);
-	asmOutputVariable_fetch(engine, output_variables, xedd);
-
-	if (output_variables->variable != NULL && input_variables->nb_input == 2){
-		if (ir_add_dependence(engine->ir, input_variables->variables[0], output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-			printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-		}
-
-		if (ir_add_dependence(engine->ir, input_variables->variables[1], output_variables->variable, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-			printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, incorrect instruction format (wrong number of input (%u) or output)\n", __func__, input_variables->nb_input);
-	}
-}
-
-static void special_instruction_shl(struct irRenameEngine* engine, struct asmInputVariable* input_variables, struct asmOutputVariable* output_variables, xed_decoded_inst_t* xedd){
-	asmInputVariable_fetch(engine, input_variables, xedd);
-	asmOutputVariable_fetch(engine, output_variables, xedd);
-
-	if (output_variables->variable != NULL && input_variables->nb_input == 2){
-		if (ir_add_dependence(engine->ir, input_variables->variables[0], output_variables->variable, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-			printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-		}
-
-		if (ir_add_dependence(engine->ir, input_variables->variables[1], output_variables->variable, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-			printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
-		}
-	}
-	else{
-		printf("ERROR: in %s, incorrect instruction format (wrong number of input (%u) or output)\n", __func__, input_variables->nb_input);
-	}
+	cisc->ins[0].opcode 									= IR_ADD;
+	cisc->ins[0].nb_input_operand 							= 2;
+	cisc->ins[0].input_operand[0].size 						= 32;
+	cisc->ins[0].input_operand[0].variable 					= NULL;
+	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[0].input_operand[1].size 						= 32;
+	cisc->ins[0].input_operand[1].variable 					= NULL;
+	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[0].input_operand[1].operand_type.imm 			= 4;
+	cisc->ins[0].output_operand.size 						= 32;
+	cisc->ins[0].output_operand.variable 					= NULL;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
