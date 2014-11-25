@@ -22,6 +22,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irImporterAsm.o 		\
 					$(BUILD_DIR)irRenameEngine.o 		\
 					$(BUILD_DIR)irNormalize.o 			\
+					$(BUILD_DIR)irMemory.o 				\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)signatureReader.o 		\
 					$(BUILD_DIR)assemblyElfLoader.o 	\
