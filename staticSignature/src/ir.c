@@ -203,6 +203,23 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 	return edge;
 }
 
+struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc){
+	struct edge* 			edge;
+	struct irDependence* 	dependence;
+
+	edge = graph_add_edge_(&(ir->graph), operation_src, operation_dst);
+	if (edge == NULL){
+		printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+	}
+	else{
+		dependence = ir_edge_get_dependence(edge);
+		dependence->type = IR_DEPENDENCE_TYPE_MACRO;
+		dependence->dependence_type.macro = desc;
+	}
+
+	return edge;
+}
+
 void ir_remove_node(struct ir* ir, struct node* node){
 	struct edge* 	edge_cursor;
 	uint32_t 		nb_parent;
@@ -344,152 +361,17 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F1 		:{
-			fprintf(file, "[label=\"I1F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F2 		:{
-			fprintf(file, "[label=\"I1F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F3 		:{
-			fprintf(file, "[label=\"I1F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F4 		:{
-			fprintf(file, "[label=\"I1F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F1 		:{
-			fprintf(file, "[label=\"I2F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F2 		:{
-			fprintf(file, "[label=\"I2F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F3 		:{
-			fprintf(file, "[label=\"I2F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F4 		:{
-			fprintf(file, "[label=\"I2F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F1 		:{
-			fprintf(file, "[label=\"I3F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F2 		:{
-			fprintf(file, "[label=\"I3F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F3 		:{
-			fprintf(file, "[label=\"I3F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F4 		:{
-			fprintf(file, "[label=\"I3F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F1 		:{
-			fprintf(file, "[label=\"I4F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F2 		:{
-			fprintf(file, "[label=\"I4F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F3 		:{
-			fprintf(file, "[label=\"I4F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F4 		:{
-			fprintf(file, "[label=\"I4F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F1 		:{
-			fprintf(file, "[label=\"I5F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F2 		:{
-			fprintf(file, "[label=\"I5F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F3 		:{
-			fprintf(file, "[label=\"I5F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F4 		:{
-			fprintf(file, "[label=\"I5F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F1 		:{
-			fprintf(file, "[label=\"O1F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F2 		:{
-			fprintf(file, "[label=\"O1F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F3 		:{
-			fprintf(file, "[label=\"O1F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F4 		:{
-			fprintf(file, "[label=\"O1F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F1 		:{
-			fprintf(file, "[label=\"O2F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F2 		:{
-			fprintf(file, "[label=\"O2F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F3 		:{
-			fprintf(file, "[label=\"O2F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F4 		:{
-			fprintf(file, "[label=\"O2F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F1 		:{
-			fprintf(file, "[label=\"O3F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F2 		:{
-			fprintf(file, "[label=\"O3F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F3 		:{
-			fprintf(file, "[label=\"O3F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F4 		:{
-			fprintf(file, "[label=\"O3F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F1 		:{
-			fprintf(file, "[label=\"O4F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F2 		:{
-			fprintf(file, "[label=\"O4F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F3 		:{
-			fprintf(file, "[label=\"O4F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F4 		:{
-			fprintf(file, "[label=\"O4F4\"]");
-			break;
-		}
 		case IR_DEPENDENCE_TYPE_SHIFT_DISP :{
 			fprintf(file, "[label=\"disp\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_MACRO 		:{
+			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro)){
+				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
+			}
+			else{
+				fprintf(file, "[label=\"O%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
+			}
 			break;
 		}
 	}

@@ -55,7 +55,8 @@ struct signatureNode{
 };
 
 struct signatureEdge{
-	enum irDependenceType type;
+	enum irDependenceType 		type;
+	uint32_t 					macro_desc;
 };
 
 struct codeSignature{

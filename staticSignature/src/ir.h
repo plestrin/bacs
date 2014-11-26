@@ -77,43 +77,8 @@ enum irOperationType{
 enum irDependenceType{
 	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
 	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,
-	IR_DEPENDENCE_TYPE_I1F1 		= 0x00000002,
-	IR_DEPENDENCE_TYPE_I1F2 		= 0x00000003,
-	IR_DEPENDENCE_TYPE_I1F3 		= 0x00000004,
-	IR_DEPENDENCE_TYPE_I1F4 		= 0x00000005,
-	IR_DEPENDENCE_TYPE_I2F1 		= 0x00000006,
-	IR_DEPENDENCE_TYPE_I2F2 		= 0x00000007,
-	IR_DEPENDENCE_TYPE_I2F3 		= 0x00000008,
-	IR_DEPENDENCE_TYPE_I2F4 		= 0x00000009,
-	IR_DEPENDENCE_TYPE_I3F1 		= 0x0000000a,
-	IR_DEPENDENCE_TYPE_I3F2 		= 0x0000000b,
-	IR_DEPENDENCE_TYPE_I3F3 		= 0x0000000c,
-	IR_DEPENDENCE_TYPE_I3F4 		= 0x0000000d,
-	IR_DEPENDENCE_TYPE_I4F1 		= 0x0000000e,
-	IR_DEPENDENCE_TYPE_I4F2 		= 0x0000000f,
-	IR_DEPENDENCE_TYPE_I4F3 		= 0x00000010,
-	IR_DEPENDENCE_TYPE_I4F4 		= 0x00000011,
-	IR_DEPENDENCE_TYPE_I5F1 		= 0x00000012,
-	IR_DEPENDENCE_TYPE_I5F2 		= 0x00000013,
-	IR_DEPENDENCE_TYPE_I5F3 		= 0x00000014,
-	IR_DEPENDENCE_TYPE_I5F4 		= 0x00000015,
-	IR_DEPENDENCE_TYPE_O1F1 		= 0x00000016,
-	IR_DEPENDENCE_TYPE_O1F2 		= 0x00000017,
-	IR_DEPENDENCE_TYPE_O1F3 		= 0x00000018,
-	IR_DEPENDENCE_TYPE_O1F4 		= 0x00000019,
-	IR_DEPENDENCE_TYPE_O2F1 		= 0x0000001a,
-	IR_DEPENDENCE_TYPE_O2F2 		= 0x0000001b,
-	IR_DEPENDENCE_TYPE_O2F3 		= 0x0000001c,
-	IR_DEPENDENCE_TYPE_O2F4 		= 0x0000001d,
-	IR_DEPENDENCE_TYPE_O3F1 		= 0x0000001e,
-	IR_DEPENDENCE_TYPE_O3F2 		= 0x0000001f,
-	IR_DEPENDENCE_TYPE_O3F3 		= 0x00000020,
-	IR_DEPENDENCE_TYPE_O3F4 		= 0x00000021,
-	IR_DEPENDENCE_TYPE_O4F1 		= 0x00000022,
-	IR_DEPENDENCE_TYPE_O4F2 		= 0x00000023,
-	IR_DEPENDENCE_TYPE_O4F3 		= 0x00000024,
-	IR_DEPENDENCE_TYPE_O4F4 		= 0x00000025,
-	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000026
+	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002,
+	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000003
 };
 
 #define irDependenceType_iocustom_get
@@ -156,9 +121,28 @@ int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperati
 
 struct irDependence{
 	enum irDependenceType 		type;
+	union{
+		uint32_t 				macro;
+	} 							dependence_type;
 } __attribute__((__may_alias__));
 
 #define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
+
+
+/* Bit map description of the macro parameter (read the edge labeling prior to modify this mapping)
+	- [0 :6 ] 	reserved
+	- [7] 		0 for input and 1 for output
+	- [8 :15] 	fragment index 0 to 255
+	- [16:23] 	argument index 0 to 255
+	- [24:31] 	reserved
+*/
+
+#define IR_DEPENDENCE_MACRO_DESC_SET_INPUT(nf, na) 		((((nf) & 0x000000ff) << 8) | (((na) & 0x000000ff) << 16))
+#define IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(nf, na) 	((((nf) & 0x000000ff) << 8) | (((na) & 0x000000ff) << 16) | 0x00000080)
+#define IR_DEPENDENCE_MACRO_DESC_IS_INPUT(desc) 		(((desc) & 0x00000080) == 0x00000000)
+#define IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(desc) 		(((desc) & 0x00000080) == 0x00000080)
+#define IR_DEPENDENCE_MACRO_DESC_GET_FRAG(desc) 		(((desc) >> 8) & 0x000000ff)
+#define IR_DEPENDENCE_MACRO_DESC_GET_ARG(desc) 			(((desc) >> 16) & 0x00000ff)
 
 struct ir{
 	struct graph 				graph;
@@ -182,6 +166,7 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr);
 
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
+struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);
 
 void ir_remove_node(struct ir* ir, struct node* node);
 void ir_remove_dependence(struct ir* ir, struct edge* edge);

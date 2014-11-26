@@ -52,6 +52,7 @@ struct localCodeEdge{
 	uint16_t 				dst_output_frag_order;
 
 	enum irDependenceType 	edge_type;
+	uint32_t 				edge_macro_desc;
 	uint8_t 				edge_type_set;
 };
 
@@ -61,7 +62,7 @@ static void signatureReader_get_graph_name(struct readerCursor* reader_cursor, c
 static void signatureReader_get_graph_symbol(struct readerCursor* reader_cursor, char* buffer, uint32_t buffer_length);
 
 static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCursor* reader_cursor, enum irOpcode* opcode, struct array* symbol_array);
-static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor);
+static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor, uint32_t* edge_macro_desc);
 #define codeSignatureReader_get_IO_in(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'I')
 #define codeSignatureReader_get_IO_out(reader_cursor) codeSignatureReader_get_IO(reader_cursor, 'O')
 static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, char first_char);
@@ -215,7 +216,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					case READER_TOKEN_LABEL 		: {
-						local_edge.edge_type = codeSignatureReader_get_irDependenceType(&reader_cursor);
+						local_edge.edge_type = codeSignatureReader_get_irDependenceType(&reader_cursor, &(local_edge.edge_macro_desc));
 						local_edge.edge_type_set = 1;
 
 						reader_state = READER_STATE_EDGE_DESC;
@@ -626,7 +627,7 @@ static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCu
 	return SIGNATURE_NODE_TYPE_SYMBOL;
 }
 
-static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor){
+static enum irDependenceType codeSignatureReader_get_irDependenceType(struct readerCursor* reader_cursor, uint32_t* edge_macro_desc){
 	uint32_t length;
 
 	for (length = 0; length + 1 < reader_cursor->remaining_size; length++){
@@ -636,115 +637,38 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 	}
 
 	if (!strncmp(reader_cursor->cursor + 1, "@", length)){
+		*edge_macro_desc = 0;
 		return IR_DEPENDENCE_TYPE_ADDRESS;
 	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I1F1", length)){
-		return IR_DEPENDENCE_TYPE_I1F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I1F2", length)){
-		return IR_DEPENDENCE_TYPE_I1F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I1F3", length)){
-		return IR_DEPENDENCE_TYPE_I1F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I1F4", length)){
-		return IR_DEPENDENCE_TYPE_I1F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I2F1", length)){
-		return IR_DEPENDENCE_TYPE_I2F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I2F2", length)){
-		return IR_DEPENDENCE_TYPE_I2F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I2F3", length)){
-		return IR_DEPENDENCE_TYPE_I2F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I2F4", length)){
-		return IR_DEPENDENCE_TYPE_I2F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I3F1", length)){
-		return IR_DEPENDENCE_TYPE_I3F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I3F2", length)){
-		return IR_DEPENDENCE_TYPE_I3F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I3F3", length)){
-		return IR_DEPENDENCE_TYPE_I3F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I3F4", length)){
-		return IR_DEPENDENCE_TYPE_I3F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I4F1", length)){
-		return IR_DEPENDENCE_TYPE_I4F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I4F2", length)){
-		return IR_DEPENDENCE_TYPE_I4F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I4F3", length)){
-		return IR_DEPENDENCE_TYPE_I4F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I4F4", length)){
-		return IR_DEPENDENCE_TYPE_I4F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I5F1", length)){
-		return IR_DEPENDENCE_TYPE_I5F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I5F2", length)){
-		return IR_DEPENDENCE_TYPE_I5F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I5F3", length)){
-		return IR_DEPENDENCE_TYPE_I5F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "I5F4", length)){
-		return IR_DEPENDENCE_TYPE_I5F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O1F1", length)){
-		return IR_DEPENDENCE_TYPE_O1F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O1F2", length)){
-		return IR_DEPENDENCE_TYPE_O1F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O1F3", length)){
-		return IR_DEPENDENCE_TYPE_O1F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O1F4", length)){
-		return IR_DEPENDENCE_TYPE_O1F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O2F1", length)){
-		return IR_DEPENDENCE_TYPE_O2F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O2F2", length)){
-		return IR_DEPENDENCE_TYPE_O2F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O2F3", length)){
-		return IR_DEPENDENCE_TYPE_O2F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O2F4", length)){
-		return IR_DEPENDENCE_TYPE_O2F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O3F1", length)){
-		return IR_DEPENDENCE_TYPE_O3F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O3F2", length)){
-		return IR_DEPENDENCE_TYPE_O3F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O3F3", length)){
-		return IR_DEPENDENCE_TYPE_O3F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O3F4", length)){
-		return IR_DEPENDENCE_TYPE_O3F4;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O4F1", length)){
-		return IR_DEPENDENCE_TYPE_O4F1;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O4F2", length)){
-		return IR_DEPENDENCE_TYPE_O4F2;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O4F3", length)){
-		return IR_DEPENDENCE_TYPE_O4F3;
-	}
-	else if (!strncmp(reader_cursor->cursor + 1, "O4F4", length)){
-		return IR_DEPENDENCE_TYPE_O4F4;
+	
+	if (length >= 4 && (reader_cursor->cursor[1] == 'I' || reader_cursor->cursor[1] == 'O')){
+		uint32_t nb_digit1;
+		uint32_t nb_digit2;
+
+		for (nb_digit1 = 0; nb_digit1 < length - 1; nb_digit1 ++){
+			if (reader_cursor->cursor[2 + nb_digit1] < 48 || reader_cursor->cursor[2 + nb_digit1] > 57){
+				break;
+			}
+		}
+
+		if (length >= 3 + nb_digit1 && nb_digit1 > 0 && reader_cursor->cursor[2 + nb_digit1] == 'F'){
+
+			for (nb_digit2 = 0; nb_digit2 < length - 2 - nb_digit1; nb_digit2 ++){
+				if (reader_cursor->cursor[3 + nb_digit1 + nb_digit2] < 48 || reader_cursor->cursor[3 + nb_digit1 + nb_digit2] > 57){
+					break;
+				}
+			}
+
+			if (nb_digit2 > 0){
+				if (reader_cursor->cursor[1] == 'I'){
+					*edge_macro_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(atoi(reader_cursor->cursor + 3 + nb_digit1), atoi(reader_cursor->cursor + 2));
+				}
+				else{
+					*edge_macro_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(atoi(reader_cursor->cursor + 3 + nb_digit1), atoi(reader_cursor->cursor + 2));
+				}
+				return IR_DEPENDENCE_TYPE_MACRO;
+			}
+		}
 	}
 
 	if (length >= 3){
@@ -753,6 +677,8 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 	else{
 		printf("ERROR: in %s, unable to convert string to irDependenceType, by default return DIRECT\n", __func__);
 	}
+
+	*edge_macro_desc = 0;
 	return IR_DEPENDENCE_TYPE_DIRECT;
 }
 
@@ -1027,10 +953,12 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			}
 
 			if (edge->edge_type_set){
-				signature_edge.type = edge->edge_type;
+				signature_edge.type 		= edge->edge_type;
+				signature_edge.macro_desc 	= edge->edge_macro_desc;
 			}
 			else{
-				signature_edge.type = IR_DEPENDENCE_TYPE_DIRECT;
+				signature_edge.type 		= IR_DEPENDENCE_TYPE_DIRECT;
+				signature_edge.macro_desc 	= 0;
 			}
 			if (graph_add_edge(&(code_signature.graph), src_node->graph_node, dst_node->graph_node, &signature_edge) == NULL){
 				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);

@@ -20,8 +20,6 @@ static void codeSignature_recursive_search(struct node* syntax_node, struct ir* 
 static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struct codeSignature* code_signature);
 static void codeSignature_add_occurence_to_ir(struct ir* ir, struct node** assignement, struct codeSignature* code_signature);
 
-static enum irDependenceType signatureNode_get_dependence_type(struct signatureNode* node);
-
 struct codeSignatureCollection* codeSignature_create_collection(){
 	struct codeSignatureCollection* collection;
 
@@ -261,7 +259,7 @@ static void codeSignature_recursive_search(struct node* syntax_node, struct ir* 
 static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struct codeSignature* code_signature){
 	uint32_t 				i;
 	uint32_t 				j;
-	enum irDependenceType 	dependence_type;
+	uint32_t 				macro_dependence_desc;
 	struct node** 			candidats = NULL;
 	uint32_t 				nb_candidat;
 	struct edge* 			edge_cursor;
@@ -273,13 +271,13 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
 
 		if (sig_node->input_number > 0){
-			dependence_type = signatureNode_get_dependence_type(sig_node);
+			macro_dependence_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 			
 			if (candidats == NULL){
 				for (edge_cursor = node_get_head_edge_src(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 					edge_data = ir_edge_get_dependence(edge_cursor);
 
-					if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
+					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
 						nb_candidat ++;
 					}
 				}
@@ -296,7 +294,7 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 				for (edge_cursor = node_get_head_edge_src(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 					edge_data = ir_edge_get_dependence(edge_cursor);
 
-					if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
+					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
 						candidats[nb_candidat ++] = edge_get_dst(edge_cursor);
 					}
 				}
@@ -307,7 +305,7 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 						for (edge_cursor = node_get_head_edge_src(assignement[i]); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 							edge_data = ir_edge_get_dependence(edge_cursor);
 
-							if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_dst(edge_cursor) == candidats[j]){
+							if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_dst(edge_cursor) == candidats[j]){
 								break;
 							}
 						}
@@ -333,13 +331,13 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 			}
 		}
 		else if (sig_node->output_number > 0){
-			dependence_type = signatureNode_get_dependence_type(sig_node);
+			macro_dependence_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->input_frag_order, sig_node->input_number);
 			
 			if (candidats == NULL){
 				for (edge_cursor = node_get_head_edge_dst(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					edge_data = ir_edge_get_dependence(edge_cursor);
 
-					if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
+					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
 						nb_candidat ++;
 					}
 				}
@@ -356,7 +354,7 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 				for (edge_cursor = node_get_head_edge_dst(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					edge_data = ir_edge_get_dependence(edge_cursor);
 
-					if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
+					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
 						candidats[nb_candidat ++] = edge_get_src(edge_cursor);
 					}
 				}
@@ -367,7 +365,7 @@ static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struc
 						for (edge_cursor = node_get_head_edge_dst(assignement[i]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 							edge_data = ir_edge_get_dependence(edge_cursor);
 
-							if (edge_data->type == dependence_type && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_src(edge_cursor) == candidats[j]){
+							if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_src(edge_cursor) == candidats[j]){
 								break;
 							}
 						}
@@ -405,7 +403,6 @@ static void codeSignature_add_occurence_to_ir(struct ir* ir, struct node** assig
 	uint32_t 				i;
 	struct node* 			ir_sym_node;
 	struct signatureNode* 	sig_node;
-	enum irDependenceType 	dependence_type;
 
 	ir_sym_node = ir_add_symbol(ir, code_signature);
 	if (ir_sym_node == NULL){
@@ -417,155 +414,19 @@ static void codeSignature_add_occurence_to_ir(struct ir* ir, struct node** assig
 		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
 
 		if (sig_node->input_number > 0){
-			dependence_type = signatureNode_get_dependence_type(sig_node);
-			if (ir_add_dependence(ir, assignement[i], ir_sym_node, dependence_type) == NULL){
+			if (ir_add_macro_dependence(ir, assignement[i], ir_sym_node, IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number)) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
 
 		if (sig_node->output_number > 0){
-			dependence_type = signatureNode_get_dependence_type(sig_node);
-			if (ir_add_dependence(ir, ir_sym_node, assignement[i], dependence_type) == NULL){
+			if (ir_add_macro_dependence(ir, ir_sym_node, assignement[i], IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number)) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
 	}
 }
 
-static enum irDependenceType signatureNode_get_dependence_type(struct signatureNode* node){
-	if (node->input_number > 0){
-		switch(node->input_number){
-			case 1 : {
-				switch(node->input_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_I1F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_I1F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_I1F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_I1F4;}
-					default : {
-						printf("ERROR: in %s, incorrect input frag order: %u\n", __func__, node->input_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-				break;
-			}
-			case 2 : {
-				switch(node->input_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_I2F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_I2F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_I2F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_I2F4;}
-					default : {
-						printf("ERROR: in %s, incorrect input frag order: %u\n", __func__, node->input_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-				break;
-			}
-			case 3 : {
-				switch(node->input_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_I3F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_I3F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_I3F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_I3F4;}
-					default : {
-						printf("ERROR: in %s, incorrect input frag order: %u\n", __func__, node->input_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-				break;
-			}
-			case 4 : {
-				switch(node->input_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_I4F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_I4F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_I4F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_I4F4;}
-					default : {
-						printf("ERROR: in %s, incorrect input frag order: %u\n", __func__, node->input_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-				break;
-			}
-			case 5 : {
-				switch(node->input_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_I5F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_I5F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_I5F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_I5F4;}
-					default : {
-						printf("ERROR: in %s, incorrect input frag order: %u\n", __func__, node->input_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-				break;
-			}
-			default : {
-				printf("ERROR: in %s, incorrect input number: %u\n", __func__, node->input_number);
-				return IR_DEPENDENCE_TYPE_DIRECT;
-			}
-		}
-	}
-	else if (node->output_number > 0){
-		switch(node->output_number){
-			case 1 : {
-				switch(node->output_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_O1F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_O1F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_O1F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_O1F4;}
-					default : {
-						printf("ERROR: in %s, incorrect output frag order: %u\n", __func__, node->output_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-			}
-			case 2 : {
-				switch(node->output_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_O2F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_O2F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_O2F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_O2F4;}
-					default : {
-						printf("ERROR: in %s, incorrect output frag order: %u\n", __func__, node->output_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-			}
-			case 3 : {
-				switch(node->output_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_O3F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_O3F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_O3F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_O3F4;}
-					default : {
-						printf("ERROR: in %s, incorrect output frag order: %u\n", __func__, node->output_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-			}
-			case 4 : {
-				switch(node->output_frag_order){
-					case 1 : {return IR_DEPENDENCE_TYPE_O4F1;}
-					case 2 : {return IR_DEPENDENCE_TYPE_O4F2;}
-					case 3 : {return IR_DEPENDENCE_TYPE_O4F3;}
-					case 4 : {return IR_DEPENDENCE_TYPE_O4F4;}
-					default : {
-						printf("ERROR: in %s, incorrect output frag order: %u\n", __func__, node->output_frag_order);
-						return IR_DEPENDENCE_TYPE_DIRECT;
-					}
-				}
-			}
-			default : {
-				printf("ERROR: in %s, incorrect output number: %u\n", __func__, node->output_number);
-				return IR_DEPENDENCE_TYPE_DIRECT;
-			}
-		}
-	}
-	else{
-		return IR_DEPENDENCE_TYPE_DIRECT;
-	}
-}
 void codeSignature_clean_collection(struct codeSignatureCollection* collection){
 	struct node* 			node_cursor;
 	struct codeSignature* 	signature_cursor;
@@ -634,17 +495,28 @@ uint32_t signatureNode_get_label(struct node* node){
 uint32_t irEdge_get_label(struct edge* edge){
 	struct irDependence* dependence = ir_edge_get_dependence(edge);
 
-	if (dependence->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-		return IR_DEPENDENCE_TYPE_DIRECT;
+	switch(dependence->type){
+		case IR_DEPENDENCE_TYPE_DIRECT 		: {
+			return IR_DEPENDENCE_TYPE_DIRECT;
+		}
+		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
+			return IR_DEPENDENCE_TYPE_ADDRESS;
+		}
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
+			return IR_DEPENDENCE_TYPE_DIRECT;
+		}
+		case IR_DEPENDENCE_TYPE_MACRO 		: {
+			return IR_DEPENDENCE_TYPE_MACRO | dependence->dependence_type.macro;
+		}
 	}
 
-	return dependence->type;
+	return IR_DEPENDENCE_TYPE_DIRECT;
 }
 
 uint32_t signatureEdge_get_label(struct edge* edge){
 	struct signatureEdge* signature_edge = (struct signatureEdge*)&(edge->data);
 
-	return signature_edge->type;
+	return signature_edge->type | signature_edge->macro_desc;
 }
 
 /* ===================================================================== */
@@ -759,152 +631,17 @@ void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_I1F1 		:{
-			fprintf(file, "[label=\"I1F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F2 		:{
-			fprintf(file, "[label=\"I1F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F3 		:{
-			fprintf(file, "[label=\"I1F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I1F4 		:{
-			fprintf(file, "[label=\"I1F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F1 		:{
-			fprintf(file, "[label=\"I2F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F2 		:{
-			fprintf(file, "[label=\"I2F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F3 		:{
-			fprintf(file, "[label=\"I2F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I2F4 		:{
-			fprintf(file, "[label=\"I2F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F1 		:{
-			fprintf(file, "[label=\"I3F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F2 		:{
-			fprintf(file, "[label=\"I3F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F3 		:{
-			fprintf(file, "[label=\"I3F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I3F4 		:{
-			fprintf(file, "[label=\"I3F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F1 		:{
-			fprintf(file, "[label=\"I4F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F2 		:{
-			fprintf(file, "[label=\"I4F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F3 		:{
-			fprintf(file, "[label=\"I4F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I4F4 		:{
-			fprintf(file, "[label=\"I4F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F1 		:{
-			fprintf(file, "[label=\"I5F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F2 		:{
-			fprintf(file, "[label=\"I5F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F3 		:{
-			fprintf(file, "[label=\"I5F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_I5F4 		:{
-			fprintf(file, "[label=\"I5F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F1 		:{
-			fprintf(file, "[label=\"O1F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F2 		:{
-			fprintf(file, "[label=\"O1F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F3 		:{
-			fprintf(file, "[label=\"O1F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O1F4 		:{
-			fprintf(file, "[label=\"O1F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F1 		:{
-			fprintf(file, "[label=\"O2F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F2 		:{
-			fprintf(file, "[label=\"O2F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F3 		:{
-			fprintf(file, "[label=\"O2F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O2F4 		:{
-			fprintf(file, "[label=\"O2F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F1 		:{
-			fprintf(file, "[label=\"O3F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F2 		:{
-			fprintf(file, "[label=\"O3F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F3 		:{
-			fprintf(file, "[label=\"O3F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O3F4 		:{
-			fprintf(file, "[label=\"O3F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F1 		:{
-			fprintf(file, "[label=\"O4F1\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F2 		:{
-			fprintf(file, "[label=\"O4F2\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F3 		:{
-			fprintf(file, "[label=\"O4F3\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_O4F4 		:{
-			fprintf(file, "[label=\"O4F4\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	:{
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP :{
 			fprintf(file, "[label=\"disp\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_MACRO 		:{
+			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(edge->macro_desc)){
+				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(edge->macro_desc), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(edge->macro_desc));
+			}
+			else{
+				fprintf(file, "[label=\"O%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(edge->macro_desc), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(edge->macro_desc));
+			}
 			break;
 		}
 	}
