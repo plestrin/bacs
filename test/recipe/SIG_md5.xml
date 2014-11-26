@@ -1,0 +1,347 @@
+<xml>
+	<recipe name="TEST_MD5_GO0" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO1" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/>  <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO2" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO3" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GOs" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO0" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v3" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
+			<algo name="md5_p2_v3" number="64"/>
+			<algo name="md5_p3_v2" number="128"/>
+			<algo name="md5_p4_v2" number="64"/>
+			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
+			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO1" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO2" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO3" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_COz" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
+		<search>
+			<arg value="load trace traceTEST_MD5_COz"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v1" number="174"/> <!-- 174 = 96 + (96 - 6 - 4 - 4 - 4) -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="118"/> <!-- 118 = 64 + (64 - 4 - 2 - 2 - 2) -->
+			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WD" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_MD5_WD"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v3" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
+			<algo name="md5_p2_v3" number="64"/>
+			<algo name="md5_p3_v2" number="128"/>
+			<algo name="md5_p4_v2" number="64"/>
+			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
+			<algo name="md5" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WR" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_MD5_WR"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph md5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v3" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
+			<algo name="md5_p2_v3" number="64"/>
+			<algo name="md5_p3_v2" number="128"/>
+			<algo name="md5_p4_v2" number="64"/>
+			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
+			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+		</result>
+	</recipe>
+
+	<recipe name="TOM_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
+		<search>
+			<arg value="load trace traceTOM_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_process"/>
+			<arg value="export callGraph md5_done"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v2" number="192"/>
+			<algo name="md5_p2_v2" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
+		<search>
+			<arg value="load trace traceOPEN_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph MD5"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v2" number="192"/>
+			<algo name="md5_p2_v2" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
+		<search>
+			<arg value="load trace tracePP_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v2" number="192"/>
+			<algo name="md5_p2_v2" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+		</result>
+	</recipe>
+</xml>
