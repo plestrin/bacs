@@ -269,6 +269,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 	}
 }
 
+/* We can implement this routine using a buffer - faster */
 uint8_t irRegister_get_size(enum irRegister reg){
 	switch(reg){
 		case IR_REG_EAX 	: {return 32;}
@@ -377,10 +378,45 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 	}
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+int32_t ir_printDot_filter_macro_node(struct node* node, void* arg){
+	struct edge* 			edge_cursor;
+	struct irDependence* 	dependence;
+
+	for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+		dependence = ir_edge_get_dependence(edge_cursor);
+		if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+			return 1;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		dependence = ir_edge_get_dependence(edge_cursor);
+		if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg){
+	struct irDependence* dependence;
+
+	dependence = ir_edge_get_dependence(edge);
+	if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+		return 1;
+	}
+
+	return 0;
+}
+
 char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
 		case IR_ADD 		: {return "add";}
 		case IR_AND 		: {return "and";}
+		case IR_CMOV 		: {return "cmov";}
 		case IR_DIV 		: {return "div";}
 		case IR_IMUL 		: {return "imul";}
 		case IR_LEA 		: {return "lea";}

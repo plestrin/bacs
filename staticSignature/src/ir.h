@@ -10,30 +10,31 @@
 enum irOpcode{
 	IR_ADD 		= 0,
 	IR_AND 		= 1,
-	IR_DIV 		= 2,
-	IR_IMUL 	= 3,
-	IR_LEA 		= 4, 	/* importer */
-	IR_MOV 		= 5, 	/* importer */
-	IR_MOVZX 	= 6,
-	IR_MUL 		= 7,
-	IR_NOT 		= 8,
-	IR_OR 		= 9,
-	IR_PART1_8 	= 10, 	/* specific */
-	IR_PART2_8 	= 11, 	/* specific */
-	IR_PART1_16 = 12, 	/* specific */
-	IR_ROL 		= 13,
-	IR_ROR 		= 14,
-	IR_SHL 		= 15,
-	IR_SHR 		= 16,
-	IR_SUB 		= 17,
-	IR_XOR 		= 18,
-	IR_LOAD 	= 19, 	/* signature */
-	IR_STORE 	= 20, 	/* signature */
-	IR_JOKER 	= 21, 	/* signature */
-	IR_INVALID 	= 22 	/* specific */
+	IR_CMOV 	= 2, 	/* temp */
+	IR_DIV 		= 3,
+	IR_IMUL 	= 4,
+	IR_LEA 		= 5, 	/* importer */
+	IR_MOV 		= 6, 	/* importer */
+	IR_MOVZX 	= 7,
+	IR_MUL 		= 8,
+	IR_NOT 		= 9,
+	IR_OR 		= 10,
+	IR_PART1_8 	= 11, 	/* specific */
+	IR_PART2_8 	= 12, 	/* specific */
+	IR_PART1_16 = 13, 	/* specific */
+	IR_ROL 		= 14,
+	IR_ROR 		= 15,
+	IR_SHL 		= 16,
+	IR_SHR 		= 17,
+	IR_SUB 		= 18,
+	IR_XOR 		= 19,
+	IR_LOAD 	= 20, 	/* signature */
+	IR_STORE 	= 21, 	/* signature */
+	IR_JOKER 	= 22, 	/* signature */
+	IR_INVALID 	= 23 	/* specific */
 };
 
-#define NB_IR_OPCODE 23
+#define NB_IR_OPCODE 24
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -74,15 +75,6 @@ enum irOperationType{
 	IR_OPERATION_TYPE_SYMBOL
 };
 
-enum irDependenceType{
-	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
-	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,
-	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002,
-	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000003
-};
-
-#define irDependenceType_iocustom_get
-
 #define IR_NODE_STATUS_FLAG_NONE 	0x00000000
 #define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
 
@@ -118,6 +110,13 @@ struct irOperation{
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
 
 int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2);
+
+enum irDependenceType{
+	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
+	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,
+	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002,
+	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000003
+};
 
 struct irDependence{
 	enum irDependenceType 		type;
@@ -171,7 +170,10 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 void ir_remove_node(struct ir* ir, struct node* node);
 void ir_remove_dependence(struct ir* ir, struct edge* edge);
 
-#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
+#define ir_printDot(ir, filters) graphPrintDot_print(&((ir)->graph), NULL, filters, NULL)
+
+int32_t ir_printDot_filter_macro_node(struct node* node, void* arg);
+int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg);
 
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);

@@ -15,6 +15,7 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg);
 static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIMPORTERASM_MAX_INPUT_OPERAND] = {
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_ADD */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_AND */
+	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_CMOV */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_DIV */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_IMUL */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_LEA */
@@ -40,6 +41,7 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 static const uint8_t signe_extand_table[NB_IR_OPCODE - 1] = {
 	1, /* IR_ADD */
 	0, /* IR_AND */
+	0, /* IR_CMOV */
 	0, /* IR_DIV */
 	0, /* IR_IMUL */
 	0, /* IR_LEA */
@@ -114,10 +116,11 @@ struct asmRiscIns{
 	struct asmOperand 		output_operand;
 };
 
-static void asmRiscOperand_process(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc);
 
-static void asmRiscOperand_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc);
-static void asmRiscOperand_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc);
 
 struct asmCiscIns{
 	uint8_t 				valid;
@@ -214,16 +217,20 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 		if (ASMCISCINS_IS_VALID(cisc)){
 			for (i = 0; i < cisc.nb_ins; i++){
 				switch(cisc.ins[i].opcode){
+					case IR_CMOV 	:{
+						asmRisc_process_special_cmov(&engine, cisc.ins + i);
+						break;
+					}
 					case IR_LEA 	:{
-						asmRiscOperand_process_special_lea(&engine, cisc.ins + i);
+						asmRisc_process_special_lea(&engine, cisc.ins + i);
 						break;
 					}
 					case IR_MOV 	: {
-						asmRiscOperand_process_special_mov(&engine, cisc.ins + i);
+						asmRisc_process_special_mov(&engine, cisc.ins + i);
 						break;
 					}
 					default 				: {
-						asmRiscOperand_process(&engine, cisc.ins + i);
+						asmRisc_process(&engine, cisc.ins + i);
 					}
 				}
 			}
@@ -582,7 +589,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	return address;
 }
 
-static void asmRiscOperand_process(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc){
 	uint8_t i;
 
 	if (signe_extand_table[risc->opcode]){
@@ -607,7 +614,47 @@ static void asmRiscOperand_process(struct irRenameEngine* engine, struct asmRisc
 	}
 }
 
-static void asmRiscOperand_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc){
+	printf("WARNING: in %s, translating CMOVxx instruction into glue operation\n", __func__);
+
+	if (risc->nb_input_operand != 1){
+		printf("ERROR: in %s, incorrect number of input operand\n", __func__);
+		return;
+	}
+
+	memcpy(risc->input_operand + 1, &(risc->output_operand), sizeof(struct asmOperand));
+	risc->nb_input_operand ++;
+
+	asmOperand_fetch_input(engine, risc->input_operand + 0);
+	asmOperand_fetch_input(engine, risc->input_operand + 1);
+
+	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode);
+
+	if (risc->output_operand.variable != NULL){
+		if (risc->input_operand[0].variable != NULL){
+			if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
+				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to fetch first input operand\n", __func__);
+		}
+
+		if (risc->input_operand[1].variable != NULL){
+			if (ir_add_dependence(engine->ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
+				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+			}
+		}
+		else{
+			printf("ERROR: in %s, unable to fetch second input operand\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, unable to fetch output operand\n", __func__);
+	}
+}
+
+static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc){
 	struct node* address;
 	struct node* mem_write;
 
@@ -651,7 +698,7 @@ static void asmRiscOperand_process_special_lea(struct irRenameEngine* engine, st
 	}
 }
 
-static void asmRiscOperand_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc){
 	struct node* address;
 	struct node* mem_write;
 
@@ -697,22 +744,38 @@ static void asmRiscOperand_process_special_mov(struct irRenameEngine* engine, st
 
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 	switch (xed_opcode){
-		case XED_ICLASS_ADD 	: {return IR_ADD;}
-		case XED_ICLASS_AND 	: {return IR_AND;}
-		case XED_ICLASS_DIV		: {return IR_DIV;}
-		case XED_ICLASS_IMUL 	: {return IR_IMUL;}
-		case XED_ICLASS_LEA 	: {return IR_LEA;}
-		case XED_ICLASS_MOV 	: {return IR_MOV;}
-		case XED_ICLASS_MOVZX 	: {return IR_MOVZX;}
-		case XED_ICLASS_MUL 	: {return IR_MUL;}
-		case XED_ICLASS_NOT 	: {return IR_NOT;}
-		case XED_ICLASS_OR 		: {return IR_OR;}
-		case XED_ICLASS_ROL 	: {return IR_ROL;}
-		case XED_ICLASS_ROR 	: {return IR_ROR;}
-		case XED_ICLASS_SHL 	: {return IR_SHL;}
-		case XED_ICLASS_SHR 	: {return IR_SHR;}
-		case XED_ICLASS_SUB 	: {return IR_SUB;}
-		case XED_ICLASS_XOR 	: {return IR_XOR;}
+		case XED_ICLASS_ADD 		: {return IR_ADD;}
+		case XED_ICLASS_AND 		: {return IR_AND;}
+		case XED_ICLASS_CMOVB 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVBE 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVL 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVLE 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNB 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNBE 	: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNL 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNLE 	: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNO 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNP 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNS 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVNZ 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVO 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVP 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVS 		: {return IR_CMOV;}
+		case XED_ICLASS_CMOVZ 		: {return IR_CMOV;}
+		case XED_ICLASS_DIV			: {return IR_DIV;}
+		case XED_ICLASS_IMUL 		: {return IR_IMUL;}
+		case XED_ICLASS_LEA 		: {return IR_LEA;}
+		case XED_ICLASS_MOV 		: {return IR_MOV;}
+		case XED_ICLASS_MOVZX 		: {return IR_MOVZX;}
+		case XED_ICLASS_MUL 		: {return IR_MUL;}
+		case XED_ICLASS_NOT 		: {return IR_NOT;}
+		case XED_ICLASS_OR 			: {return IR_OR;}
+		case XED_ICLASS_ROL 		: {return IR_ROL;}
+		case XED_ICLASS_ROR 		: {return IR_ROR;}
+		case XED_ICLASS_SHL 		: {return IR_SHL;}
+		case XED_ICLASS_SHR 		: {return IR_SHR;}
+		case XED_ICLASS_SUB 		: {return IR_SUB;}
+		case XED_ICLASS_XOR 		: {return IR_XOR;}
 		default : {
 			printf("ERROR: in %s, this instruction (%s) cannot be translated into IR Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
 			return IR_INVALID;
