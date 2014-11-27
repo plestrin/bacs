@@ -131,7 +131,7 @@ struct graph* create_graph(){
 	graph_add_edge_(graph, node_b4, node_b6);
 
 	/* print graph */
-	if (graphPrintDot_print(graph, "dijkstra.dot", graph)){
+	if (graphPrintDot_print(graph, "dijkstra.dot", NULL, graph)){
 		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 	}
 

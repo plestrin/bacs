@@ -156,7 +156,7 @@ struct graph* create_graph(){
 	graph_add_edge_(graph, node_b4, node_b6);
 
 	/* print graph */
-	if (graphPrintDot_print(graph, "graph.dot", NULL)){
+	if (graphPrintDot_print(graph, "graph.dot", NULL, NULL)){
 		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 	}
 
@@ -198,7 +198,7 @@ struct graph* create_subGraph(){
 	graph_add_edge_(sub_graph, node_r1, node_b2);
 
 	/* print graph */
-	if (graphPrintDot_print(sub_graph, "subGraph.dot", NULL)){
+	if (graphPrintDot_print(sub_graph, "subGraph.dot", NULL, NULL)){
 		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 	}
 
@@ -251,7 +251,7 @@ int main(){
 			sta_assignement.assignement = assignement;
 
 			snprintf(iso_file_name, 32, "iso_%u.dot", i + 1);
-			if (graphPrintDot_print(graph, iso_file_name, &sta_assignement)){
+			if (graphPrintDot_print(graph, iso_file_name, NULL, &sta_assignement)){
 				printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 			}
 		}

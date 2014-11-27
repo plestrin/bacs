@@ -532,7 +532,7 @@ void codeSignature_printDot_collection(struct codeSignatureCollection* collectio
 
 	graph_register_dotPrint_callback(&(collection->syntax_graph), NULL, syntaxGraph_dotPrint_node, NULL, NULL);
 	printf("Print symbol dependency (syntax graph) in file: \"collection.dot\"\n");
-	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL)){
+	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL, NULL)){
 		printf("ERROR: in %s, graph printDot returned error code\n", __func__);
 	}
 
@@ -572,7 +572,7 @@ void codeSignature_printDot_collection(struct codeSignatureCollection* collectio
 			snprintf(symbol_str, 10, "%u/%u", nb_resolved, signature_cursor->symbol_table->nb_symbol);
 		}
 
-		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL)){
+		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL, NULL)){
 			printf("ERROR: in %s, graph printDot returned error code\n", __func__);
 		}
 

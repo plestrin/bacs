@@ -44,9 +44,9 @@ static inline void trace_create_ir(struct trace* trace){
 	trace->ir = ir_create(&(trace->assembly));
 }
 
-static inline void trace_printDot_ir(struct trace* trace){
+static inline void trace_printDot_ir(struct trace* trace, struct graphPrintDotFilter* filters){
 	if (trace->ir != NULL){
-		ir_printDot(trace->ir);
+		ir_printDot(trace->ir, filters);
 	}
 	else{
 		printf("ERROR: in %s, the IR is NULL for the current trace\n", __func__);

@@ -76,7 +76,7 @@ int main(){
 	}
 
 	/* print graph */
-	if (graphPrintDot_print(graph, "asterix.dot", NULL)){
+	if (graphPrintDot_print(graph, "asterix.dot", NULL, NULL)){
 		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 	}
 

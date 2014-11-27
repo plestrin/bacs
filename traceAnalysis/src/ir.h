@@ -111,7 +111,7 @@ void ir_convert_input_to_inner(struct ir* ir, struct node* node, enum irOpcode o
 
 void ir_print_io(struct ir* ir);
 
-#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
+#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL, NULL)
 
 #define ir_clean(ir) 													\
 	graph_clean(&(ir->graph));											\

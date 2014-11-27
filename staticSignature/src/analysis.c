@@ -55,8 +55,8 @@ int main(int argc, char** argv){
 
 	/* ir specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (usefull for signature)", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Filter [opt] & frag Index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 	"Frag index", 						INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
@@ -484,7 +484,7 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	if (nb_index < 2){
-		printf("ERROR: in %s, at last two indexes must be specicied (but get %u)\n", __func__, nb_index);
+		printf("ERROR: in %s, at last two indexes must be specified (but get %u)\n", __func__, nb_index);
 		return;
 	}
 
@@ -515,7 +515,7 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	if (nb_index < 2){
-		printf("ERROR: in %s, at last two valid indexes must be specicied (but get %u)\n", __func__, nb_index);
+		printf("ERROR: in %s, at last two valid indexes must be specified (but get %u)\n", __func__, nb_index);
 		return;
 	}
 
@@ -573,11 +573,37 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
-	uint32_t index;
+	uint32_t 					index;
+	struct graphPrintDotFilter 	filters;
+	struct graphPrintDotFilter* filters_ptr = NULL;
+	char*						str_ptr;
 
-	index = (uint32_t)atoi(arg);	
+	if (arg[0] < 48 || arg[0] > 57){
+		if (!strncmp(arg, "FLT_MACRO", 9)){
+			filters.node_filter = ir_printDot_filter_macro_node;
+			filters.edge_filter = ir_printDot_filter_macro_edge;
+			filters_ptr = &filters;
+
+			str_ptr = strchr(arg, ' ');
+			if (str_ptr != NULL){
+				index = atoi(str_ptr);
+			}
+			else{
+				printf("ERROR: in %s, unable to locate frag index in the cmd arg\n", __func__);
+				return;
+			}
+		}
+		else{
+			printf("ERROR: in %s, incorrect filter. List of available filter(s):\n\t-FLT_MACRO: prints only macro node\n", __func__);
+			return;
+		}
+	}
+	else{
+		index = (uint32_t)atoi(arg);
+	}
+
 	if (index < array_get_length(&(analysis->frag_array))){
-		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index));
+		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index), filters_ptr);
 	}
 	else{
 		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));

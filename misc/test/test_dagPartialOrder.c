@@ -44,7 +44,7 @@ struct graph* create_graph(){
 		graph_add_edge_(graph, node_10, node_22);
 		graph_add_edge_(graph, node_10, node_21);
 
-		if (graphPrintDot_print(graph, "dag.dot", graph)){
+		if (graphPrintDot_print(graph, "dag.dot", NULL, graph)){
 			printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
 		}
 	}
