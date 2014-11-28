@@ -127,7 +127,6 @@ struct irDependence{
 
 #define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
 
-
 /* Bit map description of the macro parameter (read the edge labeling prior to modify this mapping)
 	- [0 :6 ] 	reserved
 	- [7] 		0 for input and 1 for output
@@ -186,5 +185,6 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 	free(ir);
 
 #include "irNormalize.h"
+#include "irCheck.h"
 
 #endif

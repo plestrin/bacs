@@ -494,7 +494,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	}
 
 	if (mem->scale > 1){
-		scale = ir_add_immediate(engine->ir, 32, mem->scale);
+		scale = ir_add_immediate(engine->ir, 8, mem->scale);
 		if (scale == NULL){
 			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 		}
@@ -513,12 +513,12 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			else{
 				struct node* shl;
 
-				shl = ir_add_inst(engine->ir, IR_MUL, 32);
+				shl = ir_add_inst(engine->ir, IR_SHL, 32);
 				if (shl != NULL){
 					if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 					}
-					if (ir_add_dependence(engine->ir, scale, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					if (ir_add_dependence(engine->ir, scale, shl, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
 						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
 					}
 

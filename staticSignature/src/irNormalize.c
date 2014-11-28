@@ -592,7 +592,7 @@ static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct 
 		}
 
 		if (nb_imm_operand > 1){
-			if (nb_sym_operand == 0 || (value & (0xffffffffffffffffULL >> (64 - size))) != 0xffffffffffffffffULL >> (64 - size)){
+			if ((value & (0xffffffffffffffffULL >> (64 - size))) != 0xffffffffffffffffULL >> (64 - size) || nb_sym_operand == 0){
 				if (possible_rewrite == NULL){
 					possible_rewrite = ir_add_immediate(ir, size, value);
 					if (possible_rewrite == NULL){
@@ -826,8 +826,9 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				}
 
 				operand_operation->operation_type.inst.opcode = IR_SHR;
+				operand_operation->size = ir_node_get_operation(node)->size;
 
-				node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, ir_node_get_operation(node)->size - 8);
+				node_imm_new = ir_add_immediate(ir, 8, 8);
 				if (node_imm_new != NULL){
 					if (ir_add_dependence(ir, node_imm_new, operand, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
 						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
@@ -845,7 +846,7 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				printf("WARNING: in %s, PART2_8 instruction is shared, this case is not implemented yet -> skip\n", __func__);
 			}
 		}
-		else if (final){ /* to get RC4 PRGA working remove the final here */
+		else if (final){ /* to get RC4 PRGA working remove the final here */ /* Do we still need this? */
 			for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node)){
 					printf("ERROR: in %s, unable to copy dst edge\n", __func__);
@@ -889,7 +890,7 @@ static void ir_normalize_simplify_instruction_numeric_mul(struct ir* ir, struct 
 		}
 
 		if (nb_imm_operand > 1){
-			if (nb_sym_operand == 0 || (value & (0xffffffffffffffffULL >> (64 - size))) != 1){
+			if ((value & (0xffffffffffffffffULL >> (64 - size))) != 1 || nb_sym_operand == 0){
 				if (possible_rewrite == NULL){
 					possible_rewrite = ir_add_immediate(ir, size, value);
 					if (possible_rewrite == NULL){
@@ -960,6 +961,7 @@ static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct 
 				else if (__builtin_popcount(ir_imm_operation_get_unsigned_value(operation_cursor)) == 1){
 					ir_node_get_operation(node)->operation_type.inst.opcode = IR_SHL;
 					operation_cursor->operation_type.imm.value = __builtin_ctz(ir_imm_operation_get_unsigned_value(operation_cursor));
+					operation_cursor->size = 8;
 					ir_edge_get_dependence(edge_cursor)->type = IR_DEPENDENCE_TYPE_SHIFT_DISP;
 
 					*modification = 1;
@@ -1135,181 +1137,182 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 	struct edge* 		edge_cursor;
 	struct node* 		node_cursor;
 	struct irOperation*	operation_cursor;
-	struct edge*		edge1;
-	struct edge* 		edge2;
-	struct edge* 		edge3;
-	struct node* 		node1;
+	struct edge*		edge1 				= NULL;
+	struct edge* 		edge2 				= NULL;
+	struct edge* 		edge3 				= NULL;
+	struct node* 		node1 				= NULL;
 	struct node*		node2;
 	struct node*		node3;
-	uint8_t 			simplify;
+	uint8_t 			simplify 			= 0;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
 		*modification = 1;
+
+		return;
 	}
-	else{
-		for (edge_cursor = node_get_head_edge_dst(node), simplify = 0, node1 = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(edge_cursor))) == 0){
+
+	for (edge_cursor = node_get_head_edge_dst(node), simplify = 0, node1 = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		node_cursor = edge_get_src(edge_cursor);
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+			node1 = edge_get_src(edge_cursor);
+			if (operation_cursor->type == IR_OPERATION_TYPE_INST && (operation_cursor->operation_type.inst.opcode == IR_SHL || operation_cursor->operation_type.inst.opcode == IR_SHR)){
+				edge1 = edge_cursor;
+			}
+		}
+		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP && operation_cursor->type == IR_OPERATION_TYPE_IMM){
+			edge2 = edge_cursor;
+			if (ir_imm_operation_get_unsigned_value(operation_cursor) == 0){
 				simplify = 1;
 			}
-			else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
-				node1 = edge_get_src(edge_cursor);
+		}
+		
+	}
+
+	if (simplify && node1 != NULL){
+		graph_transfert_src_edge(&(ir->graph), node1, node);
+		ir_remove_node(ir, node);
+		*modification = 1;
+		
+		return;
+	}
+
+	if (edge1 != NULL && edge2 != NULL){
+		node1 = edge_get_src(edge1);
+		node2 = edge_get_src(edge2);
+
+		if (node1->nb_edge_src > 1){
+			struct node* node_temp;
+
+			node_temp = ir_add_inst(ir, ir_node_get_operation(node1)->operation_type.inst.opcode,  ir_node_get_operation(node1)->size);
+			if (node_temp == NULL){
+				printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+				return;
 			}
+				
+			ir_remove_dependence(ir, edge1);
+			edge1 = ir_add_dependence(ir, node_temp, node, IR_DEPENDENCE_TYPE_DIRECT);
+			if (edge1 == NULL){
+				printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+				return;
+			}
+
+			if (graph_copy_dst_edge(&(ir->graph), node_temp, node1)){
+				printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+			}
+
+			node1 = node_temp;
 		}
 
-		if (simplify && node1 != NULL){
-			graph_transfert_src_edge(&(ir->graph), node1, node);
-			ir_remove_node(ir, node);
-			*modification = 1;
-			return;
-		}
-
-		for (edge_cursor = node_get_head_edge_dst(node), edge1 = NULL, edge2 = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			node_cursor = edge_get_src(edge_cursor);
 			operation_cursor = ir_node_get_operation(node_cursor);
 
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
-				if (operation_cursor->type == IR_OPERATION_TYPE_INST && (operation_cursor->operation_type.inst.opcode == IR_SHL || operation_cursor->operation_type.inst.opcode == IR_SHR)){
-					edge1 = edge_cursor;
-				}
-			}
-			else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 				if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
-					edge2 = edge_cursor;
+					edge3 = edge_cursor;
 				}
 			}
 		}
 
-		if (edge1 != NULL && edge2 != NULL){
-			node1 = edge_get_src(edge1);
-			node2 = edge_get_src(edge2);
+		if (edge3 != NULL){
+			uint64_t value3;
+			uint64_t value2;
 
-			if (node1->nb_edge_src > 1){
-				struct node* node_temp;
+			node3 = edge_get_src(edge3);
+			value2 = ir_imm_operation_get_unsigned_value(ir_node_get_operation(node2));
+			value3 = ir_imm_operation_get_unsigned_value(ir_node_get_operation(node3));
 
-				node_temp = ir_add_inst(ir, ir_node_get_operation(node1)->operation_type.inst.opcode,  ir_node_get_operation(node1)->size);
-				if (node_temp == NULL){
-					printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
-					return;
-				}
-				
-				ir_remove_dependence(ir, edge1);
-				edge1 = ir_add_dependence(ir, node_temp, node, IR_DEPENDENCE_TYPE_DIRECT);
-				if (edge1 == NULL){
-					printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-					return;
-				}
-
-				if (graph_copy_dst_edge(&(ir->graph), node_temp, node1)){
-					printf("ERROR: in %s, unable to copy dst edge\n", __func__);
-				}
-
-				node1 = node_temp;
-			}
-
-			for (edge_cursor = node_get_head_edge_dst(node1), edge3 = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				node_cursor = edge_get_src(edge_cursor);
-				operation_cursor = ir_node_get_operation(node_cursor);
-
-				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-					if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
-						edge3 = edge_cursor;
-					}
-				}
-			}
-
-			if (edge3 != NULL){
-				uint64_t value3;
-				uint64_t value2;
-
-				node3 = edge_get_src(edge3);
-				value2 = ir_imm_operation_get_unsigned_value(ir_node_get_operation(node2));
-				value3 = ir_imm_operation_get_unsigned_value(ir_node_get_operation(node3));
-
-				if (node3->nb_edge_src > 1){
-					if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
-						node3 = ir_add_immediate(ir, ir_node_get_operation(node3)->size, value3 + value2);
-					}
-					else if (value3 > value2){
-						node3 = ir_add_immediate(ir, ir_node_get_operation(node3)->size, value3 - value2);
-						if (node3 == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-						else{
-							ir_remove_dependence(ir, edge3);
-							if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-							}
-						}
-					}
-					else if (value2 > value3){
-						node3 = ir_add_immediate(ir, ir_node_get_operation(node3)->size, value2 - value3);
-						if (node3 == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-						else{
-							ir_remove_dependence(ir, edge3);
-							if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-							}
-						}
-					}
-					else{
-						ir_remove_dependence(ir, edge3);
-						graph_transfert_dst_edge(&(ir->graph), node, node1);
-					}
-				}
-				else{
-					if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
-						ir_node_get_operation(node3)->operation_type.imm.value = value3 + value2;
-					}
-					else if (value3 > value2){
-						ir_node_get_operation(node3)->operation_type.imm.value = value3 - value2;
-					}
-					else if (value2 > value3){
-						ir_node_get_operation(node3)->operation_type.imm.value = value2 - value3;
-					}
-					else{
-						ir_remove_dependence(ir, edge3);
-						graph_transfert_dst_edge(&(ir->graph), node, node1);
-					}
-				}
-
+			if (node3->nb_edge_src > 1){
 				if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
-					graph_transfert_src_edge(&(ir->graph), node1, node);
-					ir_remove_node(ir, node);
+					node3 = ir_add_immediate(ir, 8, value3 + value2);
 				}
-				else{
-					if (value2 > value3){
-						ir_node_get_operation(node1)->operation_type.inst.opcode = IR_SHL;
-					}
-					else if (value2 == value3){
-						ir_remove_node(ir, node1);
-					}
-
-					ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
-					if (node2->nb_edge_src > 1){
-						node2 = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0xffffffffffffffff << value2);
-						if (node2 == NULL){
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
-						}
-						else{
-							ir_remove_dependence(ir, edge2);
-							if (ir_add_dependence(ir, node2, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-							}
-						}
+				else if (value3 > value2){
+					node3 = ir_add_immediate(ir, 8, value3 - value2);
+					if (node3 == NULL){
+						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 					}
 					else{
-						ir_node_get_operation(node2)->operation_type.imm.value = 0xffffffffffffffff << value2;
-						ir_node_get_operation(node2)->size = ir_node_get_operation(node)->size;
-						ir_edge_get_dependence(edge2)->type = IR_DEPENDENCE_TYPE_DIRECT;
+						ir_remove_dependence(ir, edge3);
+						if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
 					}
 				}
-
-				*modification = 1;
+				else if (value2 > value3){
+					node3 = ir_add_immediate(ir, 8, value2 - value3);
+					if (node3 == NULL){
+						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					}
+					else{
+						ir_remove_dependence(ir, edge3);
+						if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
+					}
+				}
+				else{
+					ir_remove_dependence(ir, edge3);
+					graph_transfert_dst_edge(&(ir->graph), node, node1);
+				}
 			}
+			else{
+				if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
+					ir_node_get_operation(node3)->operation_type.imm.value = value3 + value2;
+					ir_node_get_operation(node3)->size = 8;
+				}
+				else if (value3 > value2){
+					ir_node_get_operation(node3)->operation_type.imm.value = value3 - value2;
+					ir_node_get_operation(node3)->size = 8;
+				}
+				else if (value2 > value3){
+					ir_node_get_operation(node3)->operation_type.imm.value = value2 - value3;
+					ir_node_get_operation(node3)->size = 8;
+				}
+				else{
+					ir_remove_dependence(ir, edge3);
+					graph_transfert_dst_edge(&(ir->graph), node, node1);
+				}
+			}
+
+			if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
+				graph_transfert_src_edge(&(ir->graph), node1, node);
+				ir_node_get_operation(node1)->status_flag = ir_node_get_operation(node)->status_flag & IR_NODE_STATUS_FLAG_FINAL;
+				ir_remove_node(ir, node);
+			}
+			else{
+				if (value2 > value3){
+					ir_node_get_operation(node1)->operation_type.inst.opcode = IR_SHL;
+				}
+				else if (value2 == value3){
+					graph_transfert_dst_edge(&(ir->graph), node, node1);
+					ir_remove_node(ir, node1);
+				}
+
+				ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
+				if (node2->nb_edge_src > 1){
+					node2 = ir_add_immediate(ir, ir_node_get_operation(node)->size, (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size + value3)) << value2);
+					if (node2 == NULL){
+						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					}
+					else{
+						ir_remove_dependence(ir, edge2);
+						if (ir_add_dependence(ir, node2, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
+					}
+				}
+				else{
+					ir_node_get_operation(node2)->operation_type.imm.value = (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size + value3)) << value2;
+					ir_node_get_operation(node2)->size = ir_node_get_operation(node)->size;
+					ir_edge_get_dependence(edge2)->type = IR_DEPENDENCE_TYPE_DIRECT;
+				}
+			}
+
+			*modification = 1;
 		}
 	}
 }
@@ -1590,6 +1593,7 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 						break;
 					}
 					case IR_OPERATION_TYPE_INST : {
+						/* What happens if node1_inst_operand has other children? Nothing is broken but is it wise to perform this so called simplification? */
 						if (node1_inst_operand == NULL){
 							node1_inst_operand = edge_cursor;
 						}
@@ -1640,12 +1644,14 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
 								}
 
-								if (ir_add_dependence(ir, new_node, node_cursor1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+								if (ir_add_dependence(ir, new_node, node_cursor1, ir_edge_get_dependence(edge_cursor)->type) == NULL){
 									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
 								}
 							}
 						}
 						operation_cursor1->operation_type.inst.opcode = operation_cursor2->operation_type.inst.opcode;
+						operation_cursor1->size = operation_cursor2->size;
+
 						ir_remove_dependence(ir, node1_imm_operand);
 						ir_remove_dependence(ir, node1_inst_operand);
 
