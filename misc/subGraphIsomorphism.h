@@ -8,12 +8,15 @@
 
 #define SUBGRAPHISOMORPHISM_JOKER_LABEL 0xffffffff
 
-#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1 /* only src edge since joker is mostly used for input */
+#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	0
 #define SUBGRAPHISOMORPHISM_OPTIM_MIN_DST 		1
+#define SUBGRAPHISOMORPHISM_OPTIM_SORT 			0
 
 struct nodeTab{
 	uint32_t 				label;
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	uint32_t 				connectivity;
+#endif
 	struct node*			node;
 };
 
@@ -55,6 +58,9 @@ struct subGraphIsoHandle{
 	uint32_t(*edge_get_label)(struct edge*);
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	uint32_t* 				dst;
+	#endif
+	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+	uint32_t* 				node_order;
 	#endif
 };
 
