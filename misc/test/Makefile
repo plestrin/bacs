@@ -108,7 +108,7 @@ multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
 pageTable.o: ../pageTable.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
-subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h
+subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h
 dijkstra.o: ../graph.h ../dijkstra.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h
 

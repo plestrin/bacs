@@ -23,10 +23,7 @@ struct signatureSymbol{
 };
 
 #define symbolTableEntry_set_resolved(status) 	(status) |= 0x01
-#define symbolTableEntry_set_found(status) 		(status) |= 0x02
-#define symbolTableEntry_set_not_found(status) 	(status) &= 0xfd
 #define symbolTableEntry_is_resolved(status) 	((status) & 0x01)
-#define symbolTableEntry_is_found(status) 		((status) & 0x02)
 
 #define signatureSymbol_set_id(sym, index) (sym)->id = 0x0000ffff | ((index) << 16)
 
@@ -59,6 +56,20 @@ struct signatureEdge{
 	uint32_t 					macro_desc;
 };
 
+struct signatureLink{
+	struct node* 				node;
+	uint32_t 					edge_desc;
+};
+
+struct signatureOccurence{
+	uint32_t 					nb_input;
+	uint32_t 					nb_output;
+	uint32_t 					nb_occurence;
+	struct signatureLink* 		input_buffer;
+	struct signatureLink* 		output_buffer;
+	struct node** 				node_buffer;
+};
+
 struct codeSignature{
 	uint32_t 						id;
 	char  							name[CODESIGNATURE_NAME_MAX_SIZE];
@@ -66,16 +77,20 @@ struct codeSignature{
 	struct graph					graph;
 	struct subGraphIsoHandle* 		sub_graph_handle;
 	struct signatureSymbolTable* 	symbol_table;
+	struct signatureOccurence 		occurence;
 	uint32_t 						state;
 } __attribute__((__may_alias__));
 
 #define syntax_node_get_codeSignature(node) 	((struct codeSignature*)&((node)->data))
 #define syntax_edge_get_index(edge) 			(*(uint32_t*)(edge)->data)
 
-#define codeSignature_state_is_search(code_signature) ((code_signature)->state & 0x00000001)
-#define codeSignature_state_is_found(code_signature) ((code_signature)->state & 0x00000002)
-#define codeSignature_state_set_search(code_signature) (code_signature)->state |= 0x00000001
-#define codeSignature_state_set_found(code_signature) (code_signature)->state |= 0x00000002
+#define codeSignature_state_is_search(code_signature) 	((code_signature)->state & 0x00000001)
+#define codeSignature_state_is_found(code_signature) 	((code_signature)->state & 0x00000002)
+#define codeSignature_state_is_pushed(code_signature) 	((code_signature)->state & 0x00000004)
+#define codeSignature_state_set_search(code_signature) 	(code_signature)->state |= 0x00000001
+#define codeSignature_state_set_found(code_signature) 	(code_signature)->state |= 0x00000002
+#define codeSignature_state_set_pushed(code_signature) 	(code_signature)->state |= 0x00000004
+#define codeSignature_state_set_poped(code_signature) 	(code_signature)->state &= 0xfffffffb
 
 #define codeSignature_clean(code_signature) 																							\
 	graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 																\

@@ -16,9 +16,10 @@ void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
 
 void syntaxGraph_dotPrint_node(void* data, FILE* file, void* arg);
 
-static void codeSignature_recursive_search(struct node* syntax_node, struct ir* ir, struct graphIsoHandle** graph_handle, struct multiColumnPrinter* printer);
-static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struct codeSignature* code_signature);
-static void codeSignature_add_occurence_to_ir(struct ir* ir, struct node** assignement, struct codeSignature* code_signature);
+static void signatureOcurrence_init(struct codeSignature* code_signature, struct array* assignement_array);
+static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_signature);
+static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_signature);
+static void signatureOccurence_clean(struct codeSignature* code_signature);
 
 struct codeSignatureCollection* codeSignature_create_collection(){
 	struct codeSignatureCollection* collection;
@@ -40,6 +41,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	struct codeSignature* 	new_signature;
 	struct codeSignature* 	signature_cursor;
 	uint32_t 				i;
+	struct signatureNode* 	sig_node;
 
 	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
 	if (syntax_node == NULL){
@@ -105,6 +107,23 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 		new_signature->sub_graph_handle->graph = &(new_signature->graph);
 	}
 	graph_register_dotPrint_callback(&(new_signature->graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
+
+	new_signature->occurence.nb_input 		= 0;
+	new_signature->occurence.nb_output 		= 0;
+	new_signature->occurence.nb_occurence 	= 0;
+	new_signature->occurence.input_buffer 	= NULL;
+	new_signature->occurence.output_buffer 	= NULL;
+	new_signature->occurence.node_buffer 	= NULL;
+
+	for (i = 0; i < new_signature->graph.nb_node; i++){
+		sig_node = (struct signatureNode*)&(new_signature->sub_graph_handle->node_tab[i].node->data);
+		if (sig_node->input_number > 0){
+			new_signature->occurence.nb_input ++;
+		}
+		if (sig_node->output_number > 0){
+			new_signature->occurence.nb_output ++;
+		}
+	}
 	
 	return 0;
 }
@@ -113,11 +132,26 @@ void codeSignature_search_collection(struct codeSignatureCollection* collection,
 	struct node* 				node_cursor;
 	uint32_t 					i;
 	uint32_t 					j;
+	struct edge* 				edge_cursor;
 	struct codeSignature* 		signature_cursor;
+	struct codeSignature*		child;
+	struct codeSignature**		signature_buffer;
+	uint32_t 					nb_signature;
 	struct graphIsoHandle* 		graph_handle;
-	struct timespec 			timer_start_time;
-	struct timespec 			timer_stop_time;
+	struct timespec 			timer1_start_time;
+	struct timespec 			timer1_stop_time;
+	struct timespec 			timer2_start_time;
+	struct timespec 			timer2_stop_time;
+	double 						timer2_elapsed_time;
 	struct multiColumnPrinter* 	printer;
+	struct array* 				assignement_array;
+	uint32_t 					found;
+
+	signature_buffer = (struct codeSignature**)malloc(sizeof(struct signature*) * collection->syntax_graph.nb_node);
+	if (signature_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
 
 	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
 	if (printer != NULL){
@@ -132,298 +166,266 @@ void codeSignature_search_collection(struct codeSignatureCollection* collection,
 	}
 	else{
 		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
+		free(signature_buffer);
 		return;
 	}
 
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_start_time)){
 		printf("ERROR: in %s, clock_gettime fails\n", __func__);
 	}
 
-	for (i = 0, graph_handle = NULL; i < nb_ir; i++){
+	for (i = 0; i < nb_ir; i++){
 		for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			signature_cursor = syntax_node_get_codeSignature(node_cursor);
 			signature_cursor->state = 0;
+		}
 
-			if (signature_cursor->symbol_table != NULL){
-				for (j = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
-					symbolTableEntry_set_not_found(signature_cursor->symbol_table->symbols[j].status);
+		do{
+			nb_signature = 0;
+
+			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+				signature_cursor = syntax_node_get_codeSignature(node_cursor);
+				if (codeSignature_state_is_search(signature_cursor)){
+					goto next1;
+				}
+
+				if (node_cursor->nb_edge_dst){
+					for (edge_cursor = node_get_head_edge_dst(node_cursor), found = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+						child = syntax_node_get_codeSignature(edge_get_src(edge_cursor));
+						if (!codeSignature_state_is_search(child)){
+							goto next1;
+						}
+						else if (codeSignature_state_is_found(child)){
+							found = 1;
+						}
+					}
+					if (!found){
+						goto next1;
+					}
+				}
+
+				if (signature_cursor->symbol_table != NULL){
+					for (j = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
+						if (!symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols[j].status)){
+							printf("WARNING: in %s, unresolved symbol: \"%s\", skip signature: \"%s\"\n", __func__, signature_cursor->symbol_table->symbols[j].name, signature_cursor->name);
+							goto next1;
+						}
+					}
+				}
+
+				signature_buffer[nb_signature ++] = signature_cursor;
+
+				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					child = syntax_node_get_codeSignature(edge_get_src(edge_cursor));
+					if (codeSignature_state_is_found(child)){
+						if (!codeSignature_state_is_pushed(child)){
+							signatureOcurrence_push(ir_buffer[i], child);
+						}
+					}
+				}
+
+				next1:;
+			}
+
+			graph_handle = graphIso_create_graph_handle(&(ir_buffer[i]->graph), irNode_get_label, irEdge_get_label);
+			if (graph_handle == NULL){
+				printf("ERROR: in %s, unable to create graphHandle\n", __func__);
+				break;
+			}
+
+			for (j = 0; j < nb_signature; j++){
+				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
+					printf("ERROR: in %s, clock_gettime fails\n", __func__);
+				}
+
+				assignement_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
+
+				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
+					printf("ERROR: in %s, clock_gettime fails\n", __func__);
+				}
+				timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
+
+				codeSignature_state_set_search(signature_buffer[j]);
+				if (assignement_array == NULL){
+					printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
+				}
+				else if (array_get_length(assignement_array) > 0){
+					signatureOcurrence_init(signature_buffer[j], assignement_array);
+					multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
+					array_delete(assignement_array);
+				}
+				else{
+					array_delete(assignement_array);
 				}
 			}
-		}
+
+			graphIso_delete_graph_handle(graph_handle);
+
+			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+				signature_cursor = syntax_node_get_codeSignature(node_cursor);
+				if (!codeSignature_state_is_search(signature_cursor) || !codeSignature_state_is_found(signature_cursor) || !codeSignature_state_is_pushed(signature_cursor)){
+					goto next2;
+				}
+
+				for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+					child = syntax_node_get_codeSignature(edge_get_dst(edge_cursor));
+					if (!codeSignature_state_is_search(child)){
+						goto next2;
+					}
+				}
+
+				signatureOcurrence_pop(ir_buffer[i], signature_cursor);
+
+				next2:;
+			}
+
+		} while(nb_signature);
+		multiColumnPrinter_print_horizontal_separator(printer);
 
 		for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-			codeSignature_recursive_search(node_cursor, ir_buffer[i], &graph_handle, printer);
+			signature_cursor = syntax_node_get_codeSignature(node_cursor);
+			signatureOccurence_clean(signature_cursor);
 		}
-
-		if (graph_handle != NULL){
-			graphIso_delete_graph_handle(graph_handle);
-			graph_handle = NULL;
-		}
-		multiColumnPrinter_print_horizontal_separator(printer);
 	}
 
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_stop_time)){
 		printf("ERROR: in %s, clock_gettime fails\n", __func__);
 	}
 
 	multiColumnPrinter_delete(printer);
-	printf("Total elapsed time: %f\n", (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.);
+	printf("Total elapsed time: %f\n", (timer1_stop_time.tv_sec - timer1_start_time.tv_sec) + (timer1_stop_time.tv_nsec - timer1_start_time.tv_nsec) / 1000000000.);
+
+	free(signature_buffer);
 }
 
-static void codeSignature_recursive_search(struct node* syntax_node, struct ir* ir, struct graphIsoHandle** graph_handle, struct multiColumnPrinter* printer){
-	uint32_t 				i;
-	struct codeSignature* 	code_signature;
-	struct edge* 			edge_cursor;
-	struct codeSignature*	child_code_signature;
-	struct array* 			assignement_array;
-	struct node**			assignement;
-	struct timespec 		timer_start_time;
-	struct timespec 		timer_stop_time;
-	double 					timer_elapsed_time = 0.0;
-
-	code_signature = syntax_node_get_codeSignature(syntax_node);
-	if (codeSignature_state_is_search(code_signature)){
-		return;
-	}
-	codeSignature_state_set_search(code_signature);
-
-	for (edge_cursor = node_get_head_edge_dst(syntax_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		child_code_signature = syntax_node_get_codeSignature(edge_get_src(edge_cursor));
-
-		if (!codeSignature_state_is_search(child_code_signature)){
-			codeSignature_recursive_search(edge_get_src(edge_cursor), ir, graph_handle, printer);
-		}
-		if (codeSignature_state_is_found(child_code_signature)){
-			symbolTableEntry_set_found(code_signature->symbol_table->symbols[syntax_edge_get_index(edge_cursor)].status);
-		}
-	}
-
-	if (code_signature->symbol_table != NULL){
-		for (i = 0; i < code_signature->symbol_table->nb_symbol; i++){
-			if (!symbolTableEntry_is_resolved(code_signature->symbol_table->symbols[i].status)){
-				printf("WARNING: in %s, unresolved symbol: \"%s\", skip signature: \"%s\"\n", __func__, code_signature->symbol_table->symbols[i].name, code_signature->name);
-				return;
-			}
-
-			if (!symbolTableEntry_is_found(code_signature->symbol_table->symbols[i].status)){
-				return;
-			}
-		}
-	}
-
-	if (*graph_handle == NULL){
-		*graph_handle = graphIso_create_graph_handle(&(ir->graph), irNode_get_label, irEdge_get_label);
-		if (*graph_handle == NULL){
-			printf("ERROR: in %s, unable to create graphHandle\n", __func__);
-			return;
-		}
-	}
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
-	}
-
-	assignement_array = graphIso_search(*graph_handle, code_signature->sub_graph_handle);
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
-	}
-	timer_elapsed_time = ((timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.);
-
-	if (assignement_array == NULL){
-		printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
-	}
-	else if (array_get_length(assignement_array) > 0){
-		codeSignature_state_set_found(code_signature);
-
-		multiColumnPrinter_print(printer, code_signature->name, array_get_length(assignement_array), timer_elapsed_time, NULL);
-
-		if (syntax_node->nb_edge_src > 0){
-			for (i = 0; i < array_get_length(assignement_array); i++){
-				assignement = (struct node**)array_get(assignement_array, i);
-				if (!codeSignature_is_occurence_in_ir(assignement, code_signature)){
-					codeSignature_add_occurence_to_ir(ir, assignement, code_signature);
-				}
-			}
-
-			graphIso_delete_graph_handle(*graph_handle);
-			*graph_handle = NULL;
-		}
-		array_delete(assignement_array);
-	}
-	else{
-		array_delete(assignement_array);
-	}
-}
-
-static int32_t codeSignature_is_occurence_in_ir(struct node** assignement, struct codeSignature* code_signature){
+static void signatureOcurrence_init(struct codeSignature* code_signature, struct array* assignement_array){
 	uint32_t 				i;
 	uint32_t 				j;
-	uint32_t 				macro_dependence_desc;
-	struct node** 			candidats = NULL;
-	uint32_t 				nb_candidat;
-	struct edge* 			edge_cursor;
-	struct irDependence* 	edge_data;
+	struct node**			assignement;
+	uint32_t 				nb_input;
+	uint32_t 				nb_output;
 	struct signatureNode* 	sig_node;
 
-
-	for (i = 0; i < code_signature->graph.nb_node; i++){
-		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
-
-		if (sig_node->input_number > 0){
-			macro_dependence_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
-			
-			if (candidats == NULL){
-				for (edge_cursor = node_get_head_edge_src(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-					edge_data = ir_edge_get_dependence(edge_cursor);
-
-					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
-						nb_candidat ++;
-					}
-				}
-
-				if (nb_candidat == 0){
-					return 0;
-				}
-				candidats = (struct node**)malloc(sizeof(struct node*) * nb_candidat);
-				if (candidats == NULL){
-					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					return 0;
-				}
-
-				for (edge_cursor = node_get_head_edge_src(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-					edge_data = ir_edge_get_dependence(edge_cursor);
-
-					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature){
-						candidats[nb_candidat ++] = edge_get_dst(edge_cursor);
-					}
-				}
-			}
-			else{
-				for (j = 0; j < nb_candidat;){
-					if (candidats[j] != NULL){
-						for (edge_cursor = node_get_head_edge_src(assignement[i]); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-							edge_data = ir_edge_get_dependence(edge_cursor);
-
-							if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_dst(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_dst(edge_cursor) == candidats[j]){
-								break;
-							}
-						}
-
-						if (edge_cursor == NULL){
-							if (nb_candidat == 1){
-								free(candidats);
-								return 0;
-							}
-							else{
-								candidats[j] = candidats[nb_candidat - 1];
-								nb_candidat --;
-							}
-						}
-						else{
-							j ++;
-						}
-					}
-					else{
-						j ++;
-					}
-				}
-			}
-		}
-		else if (sig_node->output_number > 0){
-			macro_dependence_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->input_frag_order, sig_node->input_number);
-			
-			if (candidats == NULL){
-				for (edge_cursor = node_get_head_edge_dst(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					edge_data = ir_edge_get_dependence(edge_cursor);
-
-					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
-						nb_candidat ++;
-					}
-				}
-
-				if (nb_candidat == 0){
-					return 0;
-				}
-				candidats = (struct node**)malloc(sizeof(struct node*) * nb_candidat);
-				if (candidats == NULL){
-					printf("ERROR: in %s, unable to allocate memory\n", __func__);
-					return 0;
-				}
-
-				for (edge_cursor = node_get_head_edge_dst(assignement[i]), nb_candidat = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					edge_data = ir_edge_get_dependence(edge_cursor);
-
-					if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature){
-						candidats[nb_candidat ++] = edge_get_src(edge_cursor);
-					}
-				}
-			}
-			else{
-				for (j = 0; j < nb_candidat;){
-					if (candidats[j] != NULL){
-						for (edge_cursor = node_get_head_edge_dst(assignement[i]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-							edge_data = ir_edge_get_dependence(edge_cursor);
-
-							if (edge_data->type == IR_DEPENDENCE_TYPE_MACRO && edge_data->dependence_type.macro == macro_dependence_desc && ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_SYMBOL && ir_node_get_operation(edge_get_src(edge_cursor))->operation_type.symbol.ptr == code_signature && edge_get_src(edge_cursor) == candidats[j]){
-								break;
-							}
-						}
-
-						if (edge_cursor == NULL){
-							if (nb_candidat == 1){
-								free(candidats);
-								return 0;
-							}
-							else{
-								candidats[j] = candidats[nb_candidat - 1];
-								nb_candidat --;
-							}
-						}
-						else{
-							j ++;
-						}
-					}
-					else{
-						j ++;
-					}
-				}
-			}
-		}
+	if (code_signature->occurence.nb_occurence || code_signature->occurence.node_buffer != NULL || code_signature->occurence.input_buffer != NULL || code_signature->occurence.output_buffer != NULL){
+		printf("WARNING: in %s, the signatureOccurence structure has not been cleaned or initialized correctly\n", __func__);
 	}
 
-	if (candidats != NULL){
-		free(candidats);
-	}
+	code_signature->occurence.nb_occurence = array_get_length(assignement_array);
+	code_signature->occurence.input_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->occurence.nb_input);
+	code_signature->occurence.output_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->occurence.nb_output);
+	code_signature->occurence.node_buffer = (struct node**)calloc(code_signature->occurence.nb_occurence, sizeof(struct signatureLink));
 
-	return 1;
-}
+	if (code_signature->occurence.node_buffer == NULL || code_signature->occurence.input_buffer == NULL || code_signature->occurence.output_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	
+		code_signature->occurence.nb_occurence = 0;
+		if (code_signature->occurence.input_buffer != NULL){
+			free(code_signature->occurence.input_buffer);
+			code_signature->occurence.input_buffer = NULL;
+		}
+		if (code_signature->occurence.output_buffer != NULL){
+			free(code_signature->occurence.output_buffer);
+			code_signature->occurence.output_buffer = NULL;
+		}
+		if (code_signature->occurence.node_buffer != NULL){
+			free(code_signature->occurence.node_buffer);
+			code_signature->occurence.node_buffer = NULL;
+		}
 
-static void codeSignature_add_occurence_to_ir(struct ir* ir, struct node** assignement, struct codeSignature* code_signature){
-	uint32_t 				i;
-	struct node* 			ir_sym_node;
-	struct signatureNode* 	sig_node;
-
-	ir_sym_node = ir_add_symbol(ir, code_signature);
-	if (ir_sym_node == NULL){
-		printf("ERROR: in %s, unable to add symbolic node to IR\n", __func__);
 		return;
 	}
 
-	for (i = 0; i < code_signature->graph.nb_node; i++){
-		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
+	for (i = 0; i < code_signature->occurence.nb_occurence; i++){
+		assignement = (struct node**)array_get(assignement_array, i);
+		nb_input = 0;
+		nb_output = 0;
 
-		if (sig_node->input_number > 0){
-			if (ir_add_macro_dependence(ir, assignement[i], ir_sym_node, IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number)) == NULL){
+		for (j = 0; j < code_signature->graph.nb_node; j++){
+			sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[j].node->data);
+
+			if (sig_node->input_number > 0){
+				code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + nb_input].node = assignement[j];
+				code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+				nb_input ++;
+			}
+
+			if (sig_node->output_number > 0){
+				code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + nb_output].node = assignement[j];
+				code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+				nb_output ++;
+			}
+		}
+		if (nb_input != code_signature->occurence.nb_input || nb_output != code_signature->occurence.nb_output){
+			printf("ERROR: in %s, nb input or nb output have not been reached\n", __func__);
+		}
+	}
+
+	codeSignature_state_set_found(code_signature);
+}
+
+static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_signature){
+	uint32_t i;
+	uint32_t j;
+
+	codeSignature_state_set_pushed(code_signature);
+	for (i = 0; i < code_signature->occurence.nb_occurence; i++){
+		code_signature->occurence.node_buffer[i] = ir_add_symbol(ir, code_signature);
+		if (code_signature->occurence.node_buffer[i] == NULL){
+			printf("ERROR: in %s, unable to add symbolic node to IR\n", __func__);
+			continue;
+		}
+
+		for (j = 0; j < code_signature->occurence.nb_input; j++){
+			if (ir_add_macro_dependence(ir, code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + j].node, code_signature->occurence.node_buffer[i], code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
 
-		if (sig_node->output_number > 0){
-			if (ir_add_macro_dependence(ir, ir_sym_node, assignement[i], IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number)) == NULL){
+		for (j = 0; j < code_signature->occurence.nb_output; j++){
+			if (ir_add_macro_dependence(ir, code_signature->occurence.node_buffer[i], code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + j].node, code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
+
+	}
+}
+
+static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_signature){
+	uint32_t i;
+
+	codeSignature_state_set_poped(code_signature);
+	for (i = 0; i < code_signature->occurence.nb_occurence; i++){
+		if (code_signature->occurence.node_buffer[i] != NULL){
+			ir_remove_node(ir, code_signature->occurence.node_buffer[i]);	
+		}
+		code_signature->occurence.node_buffer[i] = NULL;
+	}
+}
+
+static void signatureOccurence_clean(struct codeSignature* code_signature){
+	uint32_t i;
+
+	if (code_signature->occurence.node_buffer != NULL){
+		for (i = 0; i < code_signature->occurence.nb_occurence; i++){
+			if (code_signature->occurence.node_buffer[i] != NULL){
+				printf("ERROR: in %s, this case is not supposed to happen, every instance should have been poped at this point\n", __func__);
+			}
+		}
+	}
+
+	code_signature->occurence.nb_occurence = 0;
+
+	if (code_signature->occurence.input_buffer != NULL){
+		free(code_signature->occurence.input_buffer);
+		code_signature->occurence.input_buffer = NULL;
+	}
+	if (code_signature->occurence.output_buffer != NULL){
+		free(code_signature->occurence.output_buffer);
+		code_signature->occurence.output_buffer = NULL;
+	}
+	if (code_signature->occurence.node_buffer != NULL){
+		free(code_signature->occurence.node_buffer);
+		code_signature->occurence.node_buffer = NULL;
 	}
 }
 
