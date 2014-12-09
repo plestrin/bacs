@@ -45,42 +45,39 @@ class recipe(object):
 		else:
 			sys.stdout.write("no rule\n")
 
-	def trace_prog(self, hist, log_path, pin_path, tool_path, white_list_path, trace_path):
+	def trace_prog(self, log_path, pin_path, tool_path, white_list_path, trace_path):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 
 		if self.trace != "":
-			if hist.hasFilesChanged([pin_path, tool_path, white_list_path, self.trace]):
-				if self.log == None:
-					self.log = open(log_path + self.name + ".log", "w")
+			if self.log == None:
+				self.log = open(log_path + self.name + ".log", "w")
 
-				self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
-				self.log.flush()
+			self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
+			self.log.flush()
 
-				time_start = time.time()
-				process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-				process.wait()
-				time_stop = time.time()
+			time_start = time.time()
+			process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			process.wait()
+			time_stop = time.time()
 
-				output_val = process.communicate()
-				self.log.write(output_val[0])
-				self.log.write(output_val[1])
+			output_val = process.communicate()
+			self.log.write(output_val[0])
+			self.log.write(output_val[1])
 
-				if process.returncode == 0:
-					sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
-				else:
-					sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-					print(output_val[1])
-
-				regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
-				for j in regex.findall(output_val[0]):
-					print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
+			if process.returncode == 0:
+				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 			else:
-				sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
+				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+				print(output_val[1])
+
+			regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
+			for j in regex.findall(output_val[0]):
+				print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
 		else:
 			sys.stdout.write("no rule\n")
 
-	def search(self, hist, log_path):
+	def search(self, log_path):
 		return
 
 	def __del__(self):
@@ -91,7 +88,7 @@ class recipe(object):
 
 class ioRecipe(recipe):
 
-	def search(self, hist, log_path):
+	def search(self, log_path):
 		sys.stdout.write("Searching " + self.name + " ... ")
 		sys.stdout.flush()
 
@@ -150,7 +147,7 @@ class ioRecipe(recipe):
 
 class sigRecipe(recipe):
 
-	def search(self, hist, log_path):
+	def search(self, log_path):
 		sys.stdout.write("Searching " + self.name + " ... ")
 		sys.stdout.flush()
 
@@ -163,66 +160,56 @@ class sigRecipe(recipe):
 			elif a.startswith("load trace"):
 				trace_dir = a[11:]
 
-		if signature_file != None and trace_dir != None:
-			condition1 = hist.hasFilesChanged(["./signature", signature_file, trace_dir + "/ins.bin", trace_dir + "/op.bin", trace_dir + "/data.bin"])
-		else:
-			condition1 = True
-		condition2 = hist.hasStringChanged("signature" + self.name, str(self.arg))
+		if self.log == None:
+			self.log = open(log_path + self.name + ".log", "w")
 
-		if condition1 or condition2:
-			if self.log == None:
-				self.log = open(log_path + self.name + ".log", "w")
+		self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
+		self.log.flush()
 
-			self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
-			self.log.flush()
+		cmd = ["./signature"]
+		cmd.extend(self.arg)
 
-			cmd = ["./signature"]
-			cmd.extend(self.arg)
-
-			time_start = time.time()
-			process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			output_val = process.communicate()
-			process.wait()
-			time_stop = time.time()
+		time_start = time.time()
+		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		output_val = process.communicate()
+		process.wait()
+		time_stop = time.time()
 			
-			self.log.write(output_val[0])
-			self.log.write(output_val[1])
+		self.log.write(output_val[0])
+		self.log.write(output_val[1])
 
-			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
+		if process.returncode == 0:
+			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
 
-				regex = re.compile("[a-zA-Z0-9_]+ +\| [0-9]+ +\| [0-9]+\.[0-9]+ *")
-				detected_signature = {}
-				for i in regex.findall(output_val[0]):
-					name = i[:i.find(' ')].strip()
-					occu = int(i[35: 35 + i[35:].find(' ')])
+			regex = re.compile("[a-zA-Z0-9_]+ +\| [0-9]+ +\| [0-9]+\.[0-9]+ *")
+			detected_signature = {}
+			for i in regex.findall(output_val[0]):
+				name = i[:i.find(' ')].strip()
+				occu = int(i[35: 35 + i[35:].find(' ')])
 
-					if name in detected_signature:
-						detected_signature[name] = occu + detected_signature.get(name)
+				if name in detected_signature:
+					detected_signature[name] = occu + detected_signature.get(name)
+				else:
+					detected_signature[name] = occu
+
+			for i in self.algo:
+				if i in detected_signature:
+					nb_expected = self.algo.get(i)
+					nb_detected = detected_signature.get(i)
+
+					if nb_expected < nb_detected:
+						print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
+					elif nb_expected > nb_detected:
+						print("\t" + i + " \x1b[31mFAIL " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
 					else:
-						detected_signature[name] = occu
+						print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
+				else:
+					print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
 
-				for i in self.algo:
-					if i in detected_signature:
-						nb_expected = self.algo.get(i)
-						nb_detected = detected_signature.get(i)
+			for i in detected_signature:
+				if i not in self.algo and detected_signature.get(i) > 0:
+					print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/0\x1b[0m")
 
-						if nb_expected < nb_detected:
-							print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-						elif nb_expected > nb_detected:
-							print("\t" + i + " \x1b[31mFAIL " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-						else:
-							print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-					else:
-						print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
-
-				for i in detected_signature:
-					if i not in self.algo and detected_signature.get(i) > 0:
-						print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/0\x1b[0m")
-
-			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
 		else:
-			sys.stdout.write("\x1b[36mPASS\x1b[0m\n")
-
+			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+			print(output_val[1])

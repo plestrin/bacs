@@ -3,7 +3,6 @@
 import sys
 import subprocess
 import xml.etree.ElementTree as ET
-import history
 from recipe import ioRecipe, sigRecipe
 
 # How to improve this script:
@@ -32,7 +31,6 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 	print("ERROR: incorrect action type")
 	exit()
 
-hist = history.history(HISTORY_FILE_PATH)
 recipes = []
 
 # VERIFY step
@@ -104,31 +102,29 @@ if action == "TRACE" or action == "ALL":
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for r in recipes:
-		r.trace_prog(hist, LOG_PATH, PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, TRACE_PATH)
+		r.trace_prog(LOG_PATH, PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, TRACE_PATH)
 
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	if hist.hasFilesChanged([MAKEFILE_ANAL_PATH]):
-		makefile = open("makefile_anal", "w")
-		return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_anal/g", MAKEFILE_ANAL_PATH], stdout = makefile)
-		makefile.close()
-		if return_value != 0:
-			print("ERROR: unable to create the Makefile")
-			exit()
+	makefile = open("makefile_anal", "w")
+	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_anal/g", MAKEFILE_ANAL_PATH], stdout = makefile)
+	makefile.close()
+	if return_value != 0:
+		print("ERROR: unable to create the Makefile")
+		exit()
 	sys.stdout.write("Building Analysis program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "--makefile=makefile_anal", "analysis"])
 	if return_value != 0:
 		print("ERROR: unable to build Analysis program")
 		exit()
-	if hist.hasFilesChanged([MAKEFILE_SIG_PATH]):
-		makefile = open("makefile_sig", "w")
-		return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_sig/g", MAKEFILE_SIG_PATH], stdout = makefile)
-		makefile.close()
-		if return_value != 0:
-			print("ERROR: unable to create the Makefile")
-			exit()
+	makefile = open("makefile_sig", "w")
+	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_sig/g", MAKEFILE_SIG_PATH], stdout = makefile)
+	makefile.close()
+	if return_value != 0:
+		print("ERROR: unable to create the Makefile")
+		exit()
 	sys.stdout.write("Building Signature program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "--makefile=makefile_sig", "signature"])
@@ -140,8 +136,4 @@ if action == "SEARCH" or action == "ALL":
 # SEARCH step
 if action == "SEARCH" or action == "ALL":
 	for r in recipes:
-		r.search(hist, LOG_PATH)
-
-
-# CLEAN step
-hist.save()
+		r.search(LOG_PATH)
