@@ -41,7 +41,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	struct codeSignature* 	new_signature;
 	struct codeSignature* 	signature_cursor;
 	uint32_t 				i;
-	struct signatureNode* 	sig_node;
+	struct signatureNode* 	sig_node_cursor;
 
 	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
 	if (syntax_node == NULL){
@@ -115,12 +115,12 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	new_signature->occurence.output_buffer 	= NULL;
 	new_signature->occurence.node_buffer 	= NULL;
 
-	for (i = 0; i < new_signature->graph.nb_node; i++){
-		sig_node = (struct signatureNode*)&(new_signature->sub_graph_handle->node_tab[i].node->data);
-		if (sig_node->input_number > 0){
+	for (node_cursor = graph_get_head_node(&(new_signature->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		sig_node_cursor = (struct signatureNode*)&(node_cursor->data);
+		if (sig_node_cursor->input_number > 0){
 			new_signature->occurence.nb_input ++;
 		}
-		if (sig_node->output_number > 0){
+		if (sig_node_cursor->output_number > 0){
 			new_signature->occurence.nb_output ++;
 		}
 	}
