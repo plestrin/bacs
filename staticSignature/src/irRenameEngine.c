@@ -2,22 +2,6 @@
 #include <stdio.h>
 
 #include "irRenameEngine.h"
-/*
-static void irImporter_merge_reg_variable(struct irRenameEngine* engine, enum irRegister src_reg, struct alias* alias_dst, int8_t alias_dst_size, enum irOpcode part_op);
-
-static void irImporter_merge_reg_variable(struct irRenameEngine* engine, enum irRegister src_reg, struct alias* alias_dst, int8_t alias_dst_size, enum irOpcode part_op){
-	if (engine->register_alias[src_reg].ir_node == NULL){
-		engine->register_alias[src_reg].type 		= IRRENAMEENGINE_TYPE_READ;
-		engine->register_alias[src_reg].ir_node 	= ir_add_in_reg(engine->ir, src_reg);
-		if (engine->register_alias[src_reg].ir_node == NULL){
-			printf("ERROR: in %s, unable to add input to IR\n", __func__);
-			return;
-		}
-	}
-
-	ir_convert_node_to_inst(alias_dst->ir_node, part_op, alias_dst_size);
-	ir_add_dependence(engine->ir, engine->register_alias[src_reg].ir_node, alias_dst->ir_node, IR_DEPENDENCE_TYPE_DIRECT);
-}*/
 
 #define MAX_NB_INNER_REGISTER 3
 
@@ -325,41 +309,77 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 	struct irRegisterBuffer list;
 	struct node* 			node = NULL;
 	enum irRegister 		reg1;
+	enum irRegister 		reg2;
 	uint8_t 				family;
 	enum irOpcode 			new_ins;
 
 	irRenameEngine_get_list(engine, reg, &list);
 	if (list.nb_register){
 		reg1 = irRenameEngine_pop_list(engine, &list);
-		if (list.nb_register){
-			printf("ERROR: in %s, this case is not implemented yet, more than one element in the dependence list\n", __func__);
-		}
-		else{
-			family = registerFamily[reg];
-			if (family == registerFamily[reg1]){
-				if (larger[family][registerIndex[reg1]][registerIndex[reg]]){
-					new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
+		family = registerFamily[reg];
+		if (family == registerFamily[reg1]){
+			if (larger[family][registerIndex[reg1]][registerIndex[reg]]){
+				new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
 
-					if (new_ins != IR_INVALID){
-						engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, new_ins, irRegister_get_size(reg));
-						engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
-						engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
-						if (engine->register_alias[reg].ir_node == NULL){
-							printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-						}
-						else{
-							ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, engine->register_alias[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
-							node = engine->register_alias[reg].ir_node;
-						}
+				if (new_ins != IR_INVALID){
+					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, new_ins, irRegister_get_size(reg));
+					engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
+					engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
+					if (engine->register_alias[reg].ir_node == NULL){
+						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+					}
+					else{
+						ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, engine->register_alias[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+						node = engine->register_alias[reg].ir_node;
 					}
 				}
 				else{
-					printf("ERROR: in %s, this case is not impelmented yet, smaller dependence\n", __func__);
+					printf("ERROR: in %s, unable to choose correct instruction, INVALID\n", __func__);
 				}
 			}
 			else{
-				printf("ERROR: in %s, register is in dependence list but not in the same family (%s - %s)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+				if (list.nb_register){
+					reg2 = irRenameEngine_pop_list(engine, &list);
+					if (list.nb_register){
+						printf("ERROR: in %s, this case is not implemented yet, more than two element in the dependence list\n", __func__);
+					}
+					else{
+						printf("ERROR: in %s, this case is not implemented yet, %s and %s in the dependence list for %s\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
+					}
+				}
+				else{
+					if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
+						new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
+
+						if (new_ins != IR_INVALID){
+							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, reg);
+							engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
+							engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+
+							if (engine->register_alias[reg].ir_node != NULL){
+								engine->register_alias[reg1].type = IRRENAMEENGINE_TYPE_EXTEND;
+
+								ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, new_ins, irRegister_get_size(reg1));
+								ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+
+								node = engine->register_alias[reg].ir_node;
+							}
+							else{
+								printf("ERROR: in %s, unable to add input to IR\n", __func__);
+							}
+						}
+						else{
+							printf("ERROR: in %s, unable to choose correct instruction, INVALID\n", __func__);
+						}
+					}
+					else{
+						printf("ERROR: in %s, this case is not implemented yet, smaller write dependence (%s - %s)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+					}
+				}
 			}
+		}
+		else{
+			printf("ERROR: in %s, register is in dependence list but not in the same family (%s - %s)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
 		}
 	}
 	else{

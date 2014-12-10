@@ -577,6 +577,10 @@ static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCu
 		*opcode = IR_MUL;
 		return SIGNATURE_NODE_TYPE_OPCODE;
 	}
+	else if (!strncmp(reader_cursor->cursor + 1, "MOVZX", length)){
+		*opcode = IR_MOVZX;
+		return SIGNATURE_NODE_TYPE_OPCODE;
+	}
 	else if (!strncmp(reader_cursor->cursor + 1, "NOT", length)){
 		*opcode = IR_NOT;
 		return SIGNATURE_NODE_TYPE_OPCODE;

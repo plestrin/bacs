@@ -106,28 +106,34 @@ void ir_check(struct ir* ir){
 								case IR_OPERATION_TYPE_IMM 		: 
 								case IR_OPERATION_TYPE_INST 	: {
 									switch(operation_cursor->operation_type.inst.opcode){
-										case IR_MOVZX 	: {
+										case IR_MOVZX 		: {
 											if (operation_cursor->size <= operand->size){
 												printf("WARNING: in %s, found size mismatch (%u -> %s:%u)\n", __func__, operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 											}
 											break;
 										}
-										case IR_PART1_8 : {
+										case IR_PART1_8 	: {
 											if (operation_cursor->size != 8 || operand->size % 8 != 0 || operand->size <= 8){
 												printf("WARNING: in %s, found size mismatch (%u -> %s:%u)\n", __func__, operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 											}
 											break;
 										}
-										case IR_PART2_8 : {
+										case IR_PART2_8 	: {
 											if (operation_cursor->size != 8 || operand->size % 8 != 0 || operand->size < 16){
 												printf("WARNING: in %s, found size mismatch (%u -> %s:%u)\n", __func__, operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 											}
 											break;
 										}
-										case IR_ROL 	:
-										case IR_ROR 	:
-										case IR_SHL 	:
-										case IR_SHR 	: {
+										case IR_PART1_16 	:{
+											if (operation_cursor->size != 16 || operand->size % 16 != 0 || operand->size <= 16){
+												printf("WARNING: in %s, found size mismatch (%u -> %s:%u)\n", __func__, operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
+											}
+											break;
+										}
+										case IR_ROL 		:
+										case IR_ROR 		:
+										case IR_SHL 		:
+										case IR_SHR 		: {
 											if (dependence->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 												if (operand->size != 8){
 													printf("WARNING: in %s, incorrect operand size for displacement: %u\n", __func__, operand->size);
@@ -140,7 +146,7 @@ void ir_check(struct ir* ir){
 											}
 											break;
 										}
-										default 		: {
+										default 			: {
 											if (operation_cursor->size != operand->size){
 												printf("WARNING: in %s, found size mismatch (%u -> %s:%u)\n", __func__, operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 											}
