@@ -162,6 +162,11 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr);
 	ir_node_get_operation(node)->size = size_; 								\
 	ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
 
+#define ir_convert_node_to_imm(node, value_, size_) 						\
+	ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM; 				\
+	ir_node_get_operation(node)->operation_type.imm.value = value_; 		\
+	ir_node_get_operation(node)->size = size_; 								\
+	ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);
@@ -186,5 +191,6 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
 #include "irNormalize.h"
 #include "irCheck.h"
+#include "irVariableSize.h"
 
 #endif
