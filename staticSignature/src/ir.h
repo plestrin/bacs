@@ -75,6 +75,12 @@ enum irOperationType{
 	IR_OPERATION_TYPE_SYMBOL
 };
 
+struct irMemAccess{
+	struct node* 	prev;
+	struct node* 	next;
+	uint32_t 		order;
+};
+
 #define IR_NODE_STATUS_FLAG_NONE 	0x00000000
 #define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
 
@@ -85,11 +91,8 @@ struct irOperation{
 			enum irRegister 	reg;
 		} 						in_reg;
 		struct {
-			uint32_t 			order;
-		} 						in_mem;
-		struct {
-			uint32_t 			order;
-		} 						out_mem;
+			struct irMemAccess 	access;
+		} 						mem;
 		struct {
 			uint64_t 			value;
 		} 						imm;
@@ -108,6 +111,18 @@ struct irOperation{
 
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
+
+#define ir_mem_get_next(op) ((op).operation_type.mem.access.next);
+#define ir_mem_get_prev(op) ((op).operation_type.mem.access.prev);
+
+static inline void ir_mem_remove(struct irOperation* operation){
+	if (operation->operation_type.mem.access.next != NULL){
+		ir_node_get_operation(operation->operation_type.mem.access.next)->operation_type.mem.access.prev = operation->operation_type.mem.access.prev;
+	}
+	if (operation->operation_type.mem.access.prev != NULL){
+		ir_node_get_operation(operation->operation_type.mem.access.prev)->operation_type.mem.access.next = operation->operation_type.mem.access.next;
+	}
+}
 
 int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2);
 
@@ -150,23 +165,37 @@ struct ir* ir_create(struct assembly* assembly);
 int32_t ir_init(struct ir* ir, struct assembly* assembly);
 
 struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg);
-struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
-struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order);
+struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev);
+struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev);
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
 struct node* ir_add_symbol(struct ir* ir, void* ptr);
 
-#define ir_convert_node_to_inst(node, opcode_, size_)						\
-	ir_node_get_operation(node)->type = IR_OPERATION_TYPE_INST; 			\
-	ir_node_get_operation(node)->operation_type.inst.opcode = opcode_; 		\
-	ir_node_get_operation(node)->size = size_; 								\
-	ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
+static inline void ir_convert_node_to_inst(struct node* node, enum irOpcode opcode, uint8_t size){
+	struct irOperation* operation = ir_node_get_operation(node);	
 
-#define ir_convert_node_to_imm(node, value_, size_) 						\
-	ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM; 				\
-	ir_node_get_operation(node)->operation_type.imm.value = value_; 		\
-	ir_node_get_operation(node)->size = size_; 								\
-	ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_remove(operation);
+	}
+
+	operation->type = IR_OPERATION_TYPE_INST;
+	operation->operation_type.inst.opcode = opcode;
+	operation->size = size;
+	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
+}
+
+static inline void ir_convert_node_to_imm(struct node* node, uint64_t value, uint8_t size){
+	struct irOperation* operation = ir_node_get_operation(node);	
+
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_remove(operation);
+	}
+
+	operation->type = IR_OPERATION_TYPE_IMM;
+	operation->operation_type.imm.value = value;
+	operation->size = size;
+	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
+}
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);

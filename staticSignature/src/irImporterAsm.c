@@ -403,6 +403,9 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 				if (operand->variable == NULL){
 					printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
 				}
+				else{
+					irRenameEngine_set_mem_order(engine, operand->variable);
+				}
 			}
 			else{
 				printf("ERROR: in %s, unable to build memory address\n", __func__);
@@ -434,6 +437,7 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 				if (operand->variable != NULL){
 					mem_write = ir_add_out_mem(engine->ir, address, operand->size, irRenameEngine_get_mem_order(engine));
 					if (mem_write != NULL){
+						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, operand->variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
 						}
@@ -675,6 +679,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 				if (address != NULL){
 					mem_write = ir_add_out_mem(engine->ir, address, risc->output_operand.size, irRenameEngine_get_mem_order(engine));
 					if (mem_write != NULL){
+						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
 						}
@@ -719,6 +724,7 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 				if (address != NULL){
 					mem_write = ir_add_out_mem(engine->ir, address, risc->output_operand.size, irRenameEngine_get_mem_order(engine));
 					if (mem_write != NULL){
+						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
 						}

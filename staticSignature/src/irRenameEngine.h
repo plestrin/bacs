@@ -22,20 +22,21 @@ struct alias{
 
 struct irRenameEngine{
 	struct alias 		register_alias[NB_IR_REGISTER];
-	uint32_t 			mem_op_order;
+	struct node* 		prev_mem_access;
 	uint32_t 			reg_op_order;
 	struct ir* 			ir;
 };
 
 #define irRenameEngine_init(engine, ir_) 													\
 	memset(&((engine).register_alias), 0, sizeof(struct alias) * NB_IR_REGISTER); 			\
-	(engine).mem_op_order = 1; 																\
+	(engine).prev_mem_access = NULL; 														\
 	(engine).reg_op_order = 1; 																\
 	(engine).ir = (ir_);
 
 struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg);
 
-#define irRenameEngine_get_mem_order(engine) ((engine)->mem_op_order ++)
+#define irRenameEngine_get_mem_order(engine) ((engine)->prev_mem_access)
+#define irRenameEngine_set_mem_order(engine, mem_access_) (engine)->prev_mem_access = mem_access_
 #define irRenameEngine_get_reg_order(engine) ((engine)->reg_op_order ++)
 
 void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegister reg, struct node* node);

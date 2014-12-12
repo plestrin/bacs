@@ -75,16 +75,16 @@ struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg){
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_IN_REG;
-		operation->operation_type.in_reg.reg 	= reg;
-		operation->size 						= irRegister_get_size(reg);
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+		operation->type 								= IR_OPERATION_TYPE_IN_REG;
+		operation->operation_type.in_reg.reg 			= reg;
+		operation->size 								= irRegister_get_size(reg);
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
 }
 
-struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order){
+struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -94,10 +94,18 @@ struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, ui
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_IN_MEM;
-		operation->operation_type.in_mem.order 	= order;
-		operation->size 						= size;
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+		operation->type 								= IR_OPERATION_TYPE_IN_MEM;
+		operation->operation_type.mem.access.prev 		= prev;
+		operation->operation_type.mem.access.next 		= NULL;
+		if (prev == NULL){
+			operation->operation_type.mem.access.order 	= 1;
+		}
+		else{
+			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
+			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
+		}
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -107,7 +115,7 @@ struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, ui
 	return node;
 }
 
-struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, uint32_t order){
+struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -117,10 +125,18 @@ struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, u
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_OUT_MEM;
-		operation->operation_type.out_mem.order = order;
-		operation->size 						= size;
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_FINAL;
+		operation->type 								= IR_OPERATION_TYPE_OUT_MEM;
+		operation->operation_type.mem.access.prev 		= prev;
+		operation->operation_type.mem.access.next 		= NULL;
+		if (prev == NULL){
+			operation->operation_type.mem.access.order 	= 1;
+		}
+		else{
+			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
+			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
+		}
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_FINAL;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -140,10 +156,10 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_IMM;
-		operation->operation_type.imm.value 	= value;
-		operation->size 						= size;
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+		operation->type 								= IR_OPERATION_TYPE_IMM;
+		operation->operation_type.imm.value 			= value;
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -159,10 +175,10 @@ struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size){
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_INST;
-		operation->operation_type.inst.opcode 	= opcode;
-		operation->size 						= size;
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+		operation->type 								= IR_OPERATION_TYPE_INST;
+		operation->operation_type.inst.opcode 			= opcode;
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -178,10 +194,10 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr){
 	}
 	else{
 		operation = ir_node_get_operation(node);
-		operation->type 						= IR_OPERATION_TYPE_SYMBOL;
-		operation->operation_type.symbol.ptr 	= ptr;
-		operation->size 						= 1;
-		operation->status_flag 					= IR_NODE_STATUS_FLAG_NONE;
+		operation->type 								= IR_OPERATION_TYPE_SYMBOL;
+		operation->operation_type.symbol.ptr 			= ptr;
+		operation->size 								= 1;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -225,6 +241,10 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	uint32_t 		nb_parent;
 	struct node** 	parent;
 	uint32_t 		i;
+
+	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_remove(ir_node_get_operation(node));
+	}
 
 	for (edge_cursor = node_get_head_edge_dst(node), nb_parent = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (edge_get_src(edge_cursor)->nb_edge_src == 1)){
