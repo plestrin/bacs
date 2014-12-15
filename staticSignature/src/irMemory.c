@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "irMemory.h"
 
@@ -15,32 +16,224 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 	}
 }
 
-static int32_t ir_normalize_search_alias_conflict(struct irOperation* op1, struct irOperation* op2, enum irOperationType alias_type, enum aliasingStrategy strategy){
-	struct node* 			node_cursor;
-	struct irOperation* 	operation_cursor;
+static int32_t ir_normalize_cannot_alias(struct node* addr1, struct node* addr2){
+	struct irOperation* op_ad1;
+	struct irOperation* op_ad2;
+	struct edge*		edge_cursor1;
+	struct edge*		edge_cursor2;
+	struct node* 		node_cursor1;
+	struct node* 		node_cursor2;
+	uint8_t* 			operand_buffer2;
+	uint8_t 			nb_imm;
+	uint8_t 			nb_oth;
+	uint32_t 			i;
 
-	node_cursor = op1->operation_type.mem.access.next;
-	if (op1->operation_type.mem.access.next == NULL){
-		printf("ERROR: in %s, found NULL pointer insted of the expected element\n", __func__);
+	if (addr1 == addr2){
+		printf("ERROR: in %s, this case is supposed to happen, testing aliasing but get equal nodes\n", __func__);
 		return 0;
 	}
-	operation_cursor = ir_node_get_operation(node_cursor);
-	while(operation_cursor != op2){
+	
+	op_ad1 = ir_node_get_operation(addr1);
+	op_ad2 = ir_node_get_operation(addr2);
+
+	if (op_ad1->type == IR_OPERATION_TYPE_IMM && op_ad1->type == IR_OPERATION_TYPE_IMM){
+		if (ir_imm_operation_get_unsigned_value(op_ad1) == ir_imm_operation_get_unsigned_value(op_ad2)){
+			return 1;
+		}
+		return 0;
+	}
+	else if (op_ad1->type == IR_OPERATION_TYPE_INST && op_ad2->type == IR_OPERATION_TYPE_INST){
+		if (op_ad1->operation_type.inst.opcode == op_ad2->operation_type.inst.opcode && op_ad1->operation_type.inst.opcode == IR_ADD){
+			operand_buffer2 = (uint8_t*)alloca(sizeof(uint8_t) * addr2->nb_edge_dst);
+			
+			memset(operand_buffer2, 0, sizeof(uint8_t) * addr2->nb_edge_dst);
+
+			for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+				node_cursor1 = edge_get_src(edge_cursor1);
+
+				if (ir_node_get_operation(edge_cursor1)->type == IR_OPERATION_TYPE_IMM){
+					if (nb_imm){
+						return 1;
+					}
+					
+					for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm ++; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+						node_cursor2 = edge_get_src(edge_cursor2);
+
+						if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2))){
+							return 1;
+						}
+					}
+				}
+				else{
+					for (edge_cursor2 = node_get_head_edge_dst(addr2), i = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2), i++){
+						node_cursor2 = edge_get_src(edge_cursor2);
+
+						if (node_cursor2 == node_cursor1){
+							operand_buffer2[i] = 1;
+							break;
+						}
+					}
+					if (edge_cursor2 == NULL){
+						return 1;
+					}
+				}
+			}
+
+			for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm = 0, i = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2), i++){
+				if (operand_buffer2[i] == 0){
+					node_cursor2 = edge_get_src(edge_cursor2);
+
+					if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM){
+						if (nb_imm){
+							return 1;
+						}
+
+						for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm ++; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1), i++){
+							node_cursor1 = edge_get_src(edge_cursor1);
+
+							if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2))){
+								return 1;
+							}
+						}
+					}
+					else{
+						return 1;
+					}
+				}
+			}
+
+			return 0;
+		}
+		else{
+			printf("WARNING: in %s, found address operands which are (%s - %s)\n", __func__, irOpcode_2_string(op_ad1->operation_type.inst.opcode), irOpcode_2_string(op_ad2->operation_type.inst.opcode));
+		}
+	}
+	else if (op_ad1->type == IR_OPERATION_TYPE_INST){
+		if (op_ad1->operation_type.inst.opcode == IR_ADD){
+			for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm = 0, nb_oth = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+				node_cursor1 = edge_get_src(edge_cursor1);
+
+				if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM){
+					if (nb_imm){
+						return 1;
+					}
+					nb_imm ++;
+					if (ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == 0){
+						return 1;
+					}
+				}
+				else{
+					if (nb_oth){
+						return 1;
+					}
+					nb_oth ++;
+					if (node_cursor1 != addr2){
+						return 1;
+					}
+				}
+			}
+			if (nb_imm && nb_oth){
+				return 0;
+			}
+			else{
+				return 1;
+			}
+		}
+		else{
+			printf("WARNING: in %s, found address operand which is %s\n", __func__, irOpcode_2_string(op_ad1->operation_type.inst.opcode));
+		}
+	}
+	else if (op_ad2->type == IR_OPERATION_TYPE_INST){
+		if (op_ad2->operation_type.inst.opcode == IR_ADD){
+			for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm = 0, nb_oth = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+				node_cursor2 = edge_get_src(edge_cursor2);
+
+				if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM){
+					if (nb_imm){
+						return 1;
+					}
+					nb_imm ++;
+					if (ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2)) == 0){
+						return 1;
+					}
+				}
+				else{
+					if (nb_oth){
+						return 1;
+					}
+					nb_oth ++;
+					if (node_cursor2 != addr1){
+						return 1;
+					}
+				}
+			}
+			if (nb_imm && nb_oth){
+				return 0;
+			}
+			else{
+				return 1;
+			}
+		}
+		else{
+			printf("WARNING: in %s, found address operand which is %s\n", __func__, irOpcode_2_string(op_ad2->operation_type.inst.opcode));
+		}
+	}
+
+	return 1;
+}
+
+static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum irOperationType alias_type, enum aliasingStrategy strategy){
+	struct node* 			node_cursor;
+	struct irOperation* 	operation_cursor;
+	struct edge* 			edge_cursor;
+	struct node* 			addr1;
+	struct node* 			addr_cursor;
+
+	node_cursor = ir_node_get_operation(node1)->operation_type.mem.access.next;
+	if (node_cursor == NULL){
+		printf("ERROR: in %s, found NULL pointer instead of the expected element\n", __func__);
+		return 0;
+	}
+
+	while(node_cursor != node2){
+		operation_cursor = ir_node_get_operation(node_cursor);
 		if (operation_cursor->type == alias_type){
 			if (strategy == ALIASING_STRATEGY_STRICT){
 				return 1;
 			}
 			else{
-				/* to be continued */
-				printf("WARNING: in %s, foudn possible aliasing case\n", __func__);
+				addr1 = NULL;
+				addr_cursor = NULL;
+
+				for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+						addr1 = edge_get_src(edge_cursor);
+						break;
+					}
+				}
+
+				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+						addr_cursor = edge_get_src(edge_cursor);
+						break;
+					}
+				}
+
+				if (addr1 != NULL && addr_cursor != NULL){
+					if (ir_normalize_cannot_alias(addr1, addr_cursor)){
+						return 1;
+					}
+				}
+				else{
+					printf("ERROR: in %s, memory access with no address operand\n", __func__);
+				}
 			}
 		}
 		node_cursor = operation_cursor->operation_type.mem.access.next;
-		if (op1->operation_type.mem.access.next == NULL){
-			printf("ERROR: in %s, found NULL pointer insted of the expected element\n", __func__);
-			break;;
+		if (node_cursor == NULL){
+			printf("ERROR: in %s, found NULL pointer instead of the expected element\n", __func__);
+			break;
 		}
-		operation_cursor = ir_node_get_operation(node_cursor);
 	}
 
 	return 0;
@@ -94,7 +287,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 						struct node* stored_value = NULL;
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(operation_prev, operation_next, IR_OPERATION_TYPE_OUT_MEM, strategy)){
+							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy)){
 								continue;
 							}
 						}
@@ -138,7 +331,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(operation_prev, operation_next, IR_OPERATION_TYPE_OUT_MEM, strategy)){
+							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy)){
 								continue;
 							}
 						}
@@ -175,7 +368,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(operation_prev, operation_next, IR_OPERATION_TYPE_IN_MEM, strategy)){
+							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy)){
 								continue;
 							}
 						}

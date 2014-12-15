@@ -38,7 +38,7 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_JOKER */
 };
 
-static const uint8_t signe_extand_table[NB_IR_OPCODE - 1] = {
+static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	1, /* IR_ADD */
 	0, /* IR_AND */
 	0, /* IR_CMOV */
@@ -57,7 +57,7 @@ static const uint8_t signe_extand_table[NB_IR_OPCODE - 1] = {
 	0, /* IR_ROR */
 	0, /* IR_SHL */
 	0, /* IR_SHR */
-	0, /* IR_SUB */
+	1, /* IR_SUB */
 	0, /* IR_XOR */
 	0, /* IR_LOAD */
 	0, /* IR_STORE */
@@ -107,7 +107,7 @@ static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* opera
 static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand);
 static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode);
 
-static void asmOperand_signe_extend(struct asmOperand* operand, uint16_t size);
+static void asmOperand_sign_extend(struct asmOperand* operand, uint16_t size);
 
 struct asmRiscIns{
 	enum irOpcode 			opcode;
@@ -217,11 +217,11 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 		if (ASMCISCINS_IS_VALID(cisc)){
 			for (i = 0; i < cisc.nb_ins; i++){
 				switch(cisc.ins[i].opcode){
-					case IR_CMOV 	:{
+					case IR_CMOV 	: {
 						asmRisc_process_special_cmov(&engine, cisc.ins + i);
 						break;
 					}
-					case IR_LEA 	:{
+					case IR_LEA 	: {
 						asmRisc_process_special_lea(&engine, cisc.ins + i);
 						break;
 					}
@@ -461,7 +461,7 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 	}
 }
 
-static void asmOperand_signe_extend(struct asmOperand* operand, uint16_t size){
+static void asmOperand_sign_extend(struct asmOperand* operand, uint16_t size){
 	if (operand->type == ASM_OPERAND_IMM && operand->size < size){
 		switch(operand->size){
 			case 8 : {
@@ -596,9 +596,9 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc){
 	uint8_t i;
 
-	if (signe_extand_table[risc->opcode]){
+	if (sign_extand_table[risc->opcode]){
 		for (i = 0; i < risc->nb_input_operand; i++){
-			asmOperand_signe_extend(risc->input_operand + i, risc->output_operand.size);
+			asmOperand_sign_extend(risc->input_operand + i, risc->output_operand.size);
 		}
 	}
 
@@ -963,7 +963,7 @@ static void cisc_decode_special_push(xed_decoded_inst_t* xedd, struct asmCiscIns
 
 	cisc->ins[1].opcode 									= IR_MOV;
 	asmOperand_decode(xedd, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_READ_1, &(cisc->ins[1].nb_input_operand));
-	asmOperand_signe_extend(cisc->ins[1].input_operand, 32);
+	asmOperand_sign_extend(cisc->ins[1].input_operand, 32);
 	cisc->ins[1].output_operand.size 						= cisc->ins[1].input_operand[0].size;
 	cisc->ins[1].output_operand.variable 					= NULL;
 	cisc->ins[1].output_operand.type 						= ASM_OPERAND_MEM;
@@ -990,7 +990,7 @@ static void cisc_decode_special_push(xed_decoded_inst_t* xedd, struct asmCiscIns
 
 static void cisc_decode_special_ret(struct asmCiscIns* cisc){
 	cisc->valid 											= 1;
-	cisc->nb_ins 											= 2;
+	cisc->nb_ins 											= 1;
 
 	cisc->ins[0].opcode 									= IR_ADD;
 	cisc->ins[0].nb_input_operand 							= 2;
