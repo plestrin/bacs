@@ -4,7 +4,16 @@
 
 #include "irMemory.h"
 
+#define IRMEMORY_ALIAS_HEURISTIC_ESP 1
+
 int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
+
+#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+#define IRMEMORY_MAX_BASE_SYM_DST 3
+
+static uint32_t ir_normalize_addr_depend_on_esp(struct node* node, uint32_t dst);
+
+#endif
 
 static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t size_dst){
 	if (size_src == 32 && size_dst == 8){
@@ -36,6 +45,12 @@ static int32_t ir_normalize_cannot_alias(struct node* addr1, struct node* addr2)
 	op_ad1 = ir_node_get_operation(addr1);
 	op_ad2 = ir_node_get_operation(addr2);
 
+	#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+	if (ir_normalize_addr_depend_on_esp(addr1, 0) != ir_normalize_addr_depend_on_esp(addr2, 0)){
+		return 0;
+	}
+	#endif
+
 	if (op_ad1->type == IR_OPERATION_TYPE_IMM && op_ad1->type == IR_OPERATION_TYPE_IMM){
 		if (ir_imm_operation_get_unsigned_value(op_ad1) == ir_imm_operation_get_unsigned_value(op_ad2)){
 			return 1;
@@ -51,7 +66,7 @@ static int32_t ir_normalize_cannot_alias(struct node* addr1, struct node* addr2)
 			for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
 				node_cursor1 = edge_get_src(edge_cursor1);
 
-				if (ir_node_get_operation(edge_cursor1)->type == IR_OPERATION_TYPE_IMM){
+				if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM){
 					if (nb_imm){
 						return 1;
 					}
@@ -88,7 +103,7 @@ static int32_t ir_normalize_cannot_alias(struct node* addr1, struct node* addr2)
 							return 1;
 						}
 
-						for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm ++; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1), i++){
+						for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm ++; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
 							node_cursor1 = edge_get_src(edge_cursor1);
 
 							if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2))){
@@ -391,6 +406,56 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 		free(access_list);
 	}
 }
+
+#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+
+static uint32_t ir_normalize_addr_depend_on_esp(struct node* node, uint32_t dst){
+	struct edge* 		edge_cursor;
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+	struct irOperation* operation;
+
+	if (dst == 0){
+		operation = ir_node_get_operation(node);
+		if (operation->type == IR_OPERATION_TYPE_IN_REG && operation->operation_type.in_reg.reg == IR_REG_ESP){
+			return 1;
+		}
+		else if (operation->type != IR_OPERATION_TYPE_INST){
+			return 0;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		node_cursor = edge_get_src(edge_cursor);
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_REG && operation_cursor->operation_type.in_reg.reg == IR_REG_ESP){
+			return 1;
+		}
+	}
+
+	if (dst != IRMEMORY_MAX_BASE_SYM_DST){
+		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			node_cursor = edge_get_src(edge_cursor);
+			operation_cursor = ir_node_get_operation(node_cursor);
+
+			if (operation_cursor->type == IR_OPERATION_TYPE_INST){
+				if (ir_normalize_addr_depend_on_esp(node_cursor, dst + 1)){
+					return 1;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+#endif
+
+
+/* ===================================================================== */
+/* Sorting routines						                                 */
+/* ===================================================================== */
 
 int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 	struct node* access1 = *(struct node**)arg1;
