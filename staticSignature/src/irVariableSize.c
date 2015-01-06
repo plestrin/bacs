@@ -5,6 +5,123 @@
 
 #include "dagPartialOrder.h"
 
+const uint8_t irRegisterSize[NB_IR_REGISTER] = {
+	32, 	/* IR_REG_EAX 	*/
+	16, 	/* IR_REG_AX 	*/
+	8, 		/* IR_REG_AH 	*/
+	8, 		/* IR_REG_AL 	*/
+	32, 	/* IR_REG_EBX 	*/
+	16, 	/* IR_REG_BX 	*/
+	8, 		/* IR_REG_BH 	*/
+	8, 		/* IR_REG_BL 	*/
+	32, 	/* IR_REG_ECX 	*/
+	16, 	/* IR_REG_CX 	*/
+	8, 		/* IR_REG_CH 	*/
+	8, 		/* IR_REG_CL 	*/
+	32, 	/* IR_REG_EDX 	*/
+	16, 	/* IR_REG_DX 	*/
+	8, 		/* IR_REG_DH 	*/
+	8, 		/* IR_REG_DL 	*/
+	32, 	/* IR_REG_ESP 	*/
+	32, 	/* IR_REG_EBP 	*/
+	32, 	/* IR_REG_ESI 	*/
+	32 		/* IR_REG_EDI 	*/
+};
+
+static enum irRegister irRegister_resize(enum irRegister reg, uint8_t size){
+	switch(reg){
+		case IR_REG_EAX  : {
+			if (size == 8){
+				return IR_REG_AL; /* IR_REG_AH ? */
+			}
+			else if (size == 16){
+				return IR_REG_AX;
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for EAX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_AX : {
+			if (size == 8){
+				return IR_REG_AL; /* IR_REG_AH ? */
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for AX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_EBX  : {
+			if (size == 8){
+				return IR_REG_BL; /* IR_REG_BH ? */
+			}
+			else if (size == 16){
+				return IR_REG_BX;
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for EBX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_BX : {
+			if (size == 8){
+				return IR_REG_BL; /* IR_REG_BH ? */
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for BX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_ECX  : {
+			if (size == 8){
+				return IR_REG_CL; /* IR_REG_CH ? */
+			}
+			else if (size == 16){
+				return IR_REG_CX;
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for ECX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_CX : {
+			if (size == 8){
+				return IR_REG_CL; /* IR_REG_CH ? */
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for CX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_EDX  : {
+			if (size == 8){
+				return IR_REG_DL; /* IR_REG_DH ? */
+			}
+			else if (size == 16){
+				return IR_REG_DX;
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for EDX\n", __func__, size);
+			}
+			break;
+		}
+		case IR_REG_DX : {
+			if (size == 8){
+				return IR_REG_DL; /* IR_REG_DH ? */
+			}
+			else{
+				printf("ERROR: in %s, %u is an incorrect size for DX\n", __func__, size);
+			}
+			break;
+		}
+		default : {
+			printf("ERROR: in %s, register %s cannot be resized\n", __func__, irRegister_2_string(reg));
+		}
+	}
+
+	return reg;
+}
+
 #define NB_TEMPLATE 4
 
 static const uint64_t template[NB_TEMPLATE][2] = {
@@ -39,7 +156,7 @@ static inline void mask_limit_to_size(struct mask* mask, uint8_t size){
 	}
 }
 
-static void mask_get_dst(struct node* node, struct mask* mask);
+static void mask_get_src(struct node* node, struct mask* mask);
 
 static void modify_mask_ins_and(struct node* node, struct mask* mask);
 static void modify_mask_ins_shl(struct node* node, struct mask* mask);
@@ -73,11 +190,11 @@ struct mask* irVariableSize_propogate_mask(struct ir* ir){
 		switch(operation_cursor->type){
 			case IR_OPERATION_TYPE_IMM 		:
 			case IR_OPERATION_TYPE_IN_REG 	: {
-				mask_get_dst(node_cursor, mask_buffer + i);
+				mask_get_src(node_cursor, mask_buffer + i);
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				mask_get_dst(node_cursor, mask_buffer + i);
+				mask_get_src(node_cursor, mask_buffer + i);
 				break;
 			}
 			case IR_OPERATION_TYPE_OUT_MEM 	: {
@@ -85,7 +202,7 @@ struct mask* irVariableSize_propogate_mask(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				mask_get_dst(node_cursor, mask_buffer + i);
+				mask_get_src(node_cursor, mask_buffer + i);
 				switch(operation_cursor->operation_type.inst.opcode){
 					case IR_AND : {
 						modify_mask_ins_and(node_cursor, mask_buffer + i);
@@ -116,7 +233,7 @@ struct mask* irVariableSize_propogate_mask(struct ir* ir){
 	return mask_buffer;
 }
 
-static void mask_get_dst(struct node* node, struct mask* mask){
+static void mask_get_src(struct node* node, struct mask* mask){
 	struct edge* 		edge_cursor;
 	struct irOperation* operation_cursor;
 	struct mask* 		dst_mask;
@@ -206,7 +323,7 @@ void irVariableSize_shrink(struct ir* ir){
 	struct irOperation* operation_cursor;
 	uint8_t 			i;
 
-	for(node_cursor = graph_get_head_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL;){
+	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL;){
 		mask_cursor = (struct mask*)node_cursor->ptr;
 		operation_cursor = ir_node_get_operation(node_cursor);
 
@@ -218,7 +335,8 @@ void irVariableSize_shrink(struct ir* ir){
 				else if (templateSize[i] < operation_cursor->size){
 					switch(operation_cursor->type){
 						case IR_OPERATION_TYPE_IN_REG 	: {
-							printf("WARNING: in %s, this case is not implemented yet (shrink IN REG)\n", __func__);
+							operation_cursor->operation_type.in_reg.reg = irRegister_resize(operation_cursor->operation_type.in_reg.reg, templateSize[i]);
+							operation_cursor->size = irRegister_get_size(operation_cursor->operation_type.in_reg.reg);
 							break;
 						}
 						case IR_OPERATION_TYPE_IN_MEM 	: {
@@ -270,8 +388,8 @@ void irVariableSize_shrink(struct ir* ir){
 			}
 		}
 		else{
-			if (graph_get_head_node(&(ir->graph)) != node_cursor){
-				node_cursor = graph_get_head_node(&(ir->graph));
+			if (graph_get_tail_node(&(ir->graph)) != node_cursor){
+				node_cursor = graph_get_tail_node(&(ir->graph));
 			}
 			else{
 				next_node_cursor = node_cursor;
@@ -326,7 +444,7 @@ void irVariableSize_adapt(struct ir* ir){
 					continue;
 				}
 
-				/* Add instrcution to convert size */
+				/* Add instruction to convert size */
 				if (operation_cursor->size == 32 && parent_operation->size == 8){
 					new_ins = ir_add_inst(ir, IR_MOVZX, 32);
 				}

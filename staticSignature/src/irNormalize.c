@@ -488,7 +488,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 }
 
 static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct node* node, uint8_t* modification){
-	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, 0xffffffffffffffff, &)
+	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size)), &)
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"

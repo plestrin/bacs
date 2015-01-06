@@ -14,4 +14,8 @@ void irVariableSize_adapt(struct ir* ir);
 
 #define irVariable_mask_delete(mask_buffer) free(mask_buffer)
 
+extern const uint8_t irRegisterSize[NB_IR_REGISTER];
+
+#define irRegister_get_size(reg) irRegisterSize[reg]
+
 #endif

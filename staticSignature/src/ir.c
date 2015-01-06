@@ -289,34 +289,6 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 	}
 }
 
-/* We can implement this routine using a buffer - faster */
-uint8_t irRegister_get_size(enum irRegister reg){
-	switch(reg){
-		case IR_REG_EAX 	: {return 32;}
-		case IR_REG_AX 		: {return 16;}
-		case IR_REG_AH 		: {return 8;}
-		case IR_REG_AL 		: {return 8;}
-		case IR_REG_EBX 	: {return 32;}
-		case IR_REG_BX 		: {return 16;}
-		case IR_REG_BH 		: {return 8;}
-		case IR_REG_BL 		: {return 8;}
-		case IR_REG_ECX 	: {return 32;}
-		case IR_REG_CX 		: {return 16;}
-		case IR_REG_CH 		: {return 8;}
-		case IR_REG_CL 		: {return 8;}
-		case IR_REG_EDX 	: {return 32;}
-		case IR_REG_DX 		: {return 16;}
-		case IR_REG_DH 		: {return 8;}
-		case IR_REG_DL 		: {return 8;}
-		case IR_REG_ESP 	: {return 32;}
-		case IR_REG_EBP 	: {return 32;}
-		case IR_REG_ESI 	: {return 32;}
-		case IR_REG_EDI 	: {return 32;}
-	}
-
-	return 0;
-}
-
 /* ===================================================================== */
 /* Printing functions						                             */
 /* ===================================================================== */

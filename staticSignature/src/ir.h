@@ -64,7 +64,6 @@ enum irRegister{
 #define NB_IR_REGISTER 20
 
 char* irRegister_2_string(enum irRegister reg);
-uint8_t irRegister_get_size(enum irRegister reg);
 
 enum irOperationType{
 	IR_OPERATION_TYPE_IN_REG,
