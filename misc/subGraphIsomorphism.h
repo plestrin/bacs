@@ -11,7 +11,7 @@
 #define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1
 #define SUBGRAPHISOMORPHISM_OPTIM_MIN_DST 		1
 #define SUBGRAPHISOMORPHISM_OPTIM_SORT 			1
-#define SUBGRAPHISOMORPHISM_OPTIM_MEM_ALLOC 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_SUBGRAPH_EDGE 1
 
 struct nodeTab{
 	uint32_t 				label;
@@ -25,6 +25,14 @@ struct labelTab{
 	uint32_t 				label;
 	struct node* 			node;
 };
+
+#if SUBGRAPHISOMORPHISM_OPTIM_SUBGRAPH_EDGE == 1
+struct edgeTab{
+	uint32_t 				label;
+	uint32_t 				src;
+	uint32_t 				dst;
+};
+#endif
 
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 struct connectivityTab{
@@ -56,7 +64,11 @@ struct graphIsoHandle{
 struct subGraphIsoHandle{
 	struct graph* 			graph;
 	struct nodeTab* 		node_tab;
+	#if SUBGRAPHISOMORPHISM_OPTIM_SUBGRAPH_EDGE == 1
+	struct edgeTab* 		edge_tab;
+	#else
 	uint32_t(*edge_get_label)(struct edge*);
+	#endif
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	uint32_t* 				dst;
 	#endif
