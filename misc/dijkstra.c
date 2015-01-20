@@ -67,7 +67,6 @@ int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_bu
 		dst_buffer[i] = internal_cursor->dst;
 	}
 
-
 	free(internals);
 
 	return 0;
@@ -130,7 +129,6 @@ int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_
 		internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
 		dst_buffer[i] = internal_cursor->dst;
 	}
-
 
 	free(internals);
 

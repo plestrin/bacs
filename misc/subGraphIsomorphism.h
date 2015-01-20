@@ -13,35 +13,34 @@
 #define SUBGRAPHISOMORPHISM_OPTIM_SORT 			1
 
 struct nodeTab{
-	uint32_t 				label;
+	uint32_t 		label;
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-	uint32_t 				connectivity;
+	uint32_t 		connectivity;
 #endif
-	struct node*			node;
+	struct node*	node;
 };
 
 struct labelTab{
-	uint32_t 				label;
-	struct node* 			node;
+	uint32_t 		label;
+	struct node* 	node;
+#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
+	uint32_t 		connectivity;
+#endif
+#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	uint32_t 		index;
+#endif
 };
 
 struct edgeTab{
-	uint32_t 				label;
-	uint32_t 				src;
-	uint32_t 				dst;
+	uint32_t 		label;
+	uint32_t 		src;
+	uint32_t 		dst;
 };
-
-#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-struct connectivityTab{
-	uint32_t 				connectivity;
-	struct node*			node;
-};
-#endif
 
 struct labelFastAccess{
-	uint32_t 				label;
-	uint32_t 				offset;
-	uint32_t 				size;
+	uint32_t 		label;
+	uint32_t 		offset;
+	uint32_t 		size;
 };
 
 struct graphIsoHandle{
@@ -50,10 +49,10 @@ struct graphIsoHandle{
 	struct labelFastAccess* label_fast;
 	struct labelTab*		label_tab;
 	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-	struct connectivityTab* connectivity_tab;
+	struct labelTab** 		connectivity_mapping;
 	#endif
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-	uint32_t* 				dst;
+	uint32_t** 				dst;
 	#endif
 	uint32_t(*edge_get_label)(struct edge*);
 };
