@@ -279,7 +279,7 @@ static int cmReaderJSON_end_map(void* ctx){
 	struct cmReaderJSON* cm_reader = (struct cmReaderJSON*)ctx;
 
 	if (cm_reader->actual_map_level == ROUTINE_MAP_LEVEL){
-		if (codeMAp_add_static_routine(cm_reader->cm, &(cm_reader->current_routine))){
+		if (codeMap_add_static_routine(cm_reader->cm, &(cm_reader->current_routine))){
 			printf("ERROR: in %s, unable to add routine to code map\n", __func__);
 		}
 	}

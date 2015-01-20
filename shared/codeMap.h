@@ -75,7 +75,7 @@ int codeMap_add_vdso(struct codeMap* cm, char white_listed);
 
 int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image);
 int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section);
-int codeMAp_add_static_routine(struct codeMap* cm, struct cm_routine* routine);
+int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine);
 
 struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address);
 struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address);

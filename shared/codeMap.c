@@ -276,7 +276,7 @@ int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section){
 	return 0;
 }
 
-int codeMAp_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
+int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 	struct cm_routine*	new_routine = NULL;
 	struct cm_routine**	cursor;
 
