@@ -68,6 +68,50 @@ struct node* graph_add_node(struct graph* graph, void* data){
 	return node;
 }
 
+struct node* graph_insert_node_(struct graph* graph, struct node* root){
+	struct node* node;
+
+	node = graph_allocate_node(graph);
+	if (node == NULL){
+		printf("ERROR: in %s, unable to allocate node\n", __func__);
+	}
+	else{
+		node->nb_edge_src 			= 0;
+		node->nb_edge_dst 			= 0;
+		node->next 					= root->next;
+		node->prev 					= root;
+		node->src_edge_linkedList 	= NULL;
+		node->dst_edge_linkedList 	= NULL;
+		node->ptr 					= NULL;
+
+		if (node->next != NULL){
+			node->next->prev = node;
+		}
+		else{
+			graph->node_linkedList_tail = node;
+		}
+
+		root->next = node;
+		graph->nb_node ++;
+	}
+	
+	return node;
+}
+
+struct node* graph_insert_node(struct graph* graph, struct node* root, void* data){
+	struct node* node;
+
+	node = graph_insert_node_(graph, root);
+	if (node != NULL){
+		graph_node_set_data(graph, node, data)
+	}
+	else{
+		printf("ERROR: in %s, node is NULL\n", __func__);
+	}
+	
+	return node;
+}
+
 void graph_transfert_src_edge(struct graph* graph, struct node* node1, struct node* node2){
 	struct edge* edge_cursor;
 	struct edge* edge_current;

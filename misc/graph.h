@@ -73,6 +73,9 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);
 
+struct node* graph_insert_node_(struct graph* graph, struct node* root);
+struct node* graph_insert_node(struct graph* graph, struct node* root, void* data);
+
 void graph_transfert_src_edge(struct graph* graph, struct node* node1, struct node* node2);
 void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct node* node2);
 
