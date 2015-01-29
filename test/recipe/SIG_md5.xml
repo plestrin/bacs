@@ -248,7 +248,7 @@
 			<algo name="md5_p3_v2" number="128"/>
 			<algo name="md5_p4_v2" number="64"/>
 			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
-			<algo name="md5" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
 
