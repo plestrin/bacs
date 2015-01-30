@@ -12,29 +12,30 @@ enum irOpcode{
 	IR_AND 		= 1,
 	IR_CMOV 	= 2, 	/* temp */
 	IR_DIV 		= 3,
-	IR_IMUL 	= 4,
-	IR_LEA 		= 5, 	/* importer */
-	IR_MOV 		= 6, 	/* importer */
-	IR_MOVZX 	= 7,
-	IR_MUL 		= 8,
-	IR_NOT 		= 9,
-	IR_OR 		= 10,
-	IR_PART1_8 	= 11, 	/* specific */
-	IR_PART2_8 	= 12, 	/* specific */
-	IR_PART1_16 = 13, 	/* specific */
-	IR_ROL 		= 14,
-	IR_ROR 		= 15,
-	IR_SHL 		= 16,
-	IR_SHR 		= 17,
-	IR_SUB 		= 18,
-	IR_XOR 		= 19,
-	IR_LOAD 	= 20, 	/* signature */
-	IR_STORE 	= 21, 	/* signature */
-	IR_JOKER 	= 22, 	/* signature */
-	IR_INVALID 	= 23 	/* specific */
+	IR_IDIV 	= 4,
+	IR_IMUL 	= 5,
+	IR_LEA 		= 6, 	/* importer */
+	IR_MOV 		= 7, 	/* importer */
+	IR_MOVZX 	= 8,
+	IR_MUL 		= 9,
+	IR_NOT 		= 10,
+	IR_OR 		= 11,
+	IR_PART1_8 	= 12, 	/* specific */
+	IR_PART2_8 	= 13, 	/* specific */
+	IR_PART1_16 = 14, 	/* specific */
+	IR_ROL 		= 15,
+	IR_ROR 		= 16,
+	IR_SHL 		= 17,
+	IR_SHR 		= 18,
+	IR_SUB 		= 19,
+	IR_XOR 		= 20,
+	IR_LOAD 	= 21, 	/* signature */
+	IR_STORE 	= 22, 	/* signature */
+	IR_JOKER 	= 23, 	/* signature */
+	IR_INVALID 	= 24 	/* specific */
 };
 
-#define NB_IR_OPCODE 24
+#define NB_IR_OPCODE 25
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -56,12 +57,16 @@ enum irRegister{
 	IR_REG_DH 		= 14,
 	IR_REG_DL 		= 15,
 	IR_REG_ESP 		= 16,
-	IR_REG_EBP 		= 17,
-	IR_REG_ESI 		= 18,
-	IR_REG_EDI 		= 19
+	IR_REG_SP 		= 17,
+	IR_REG_EBP 		= 18,
+	IR_REG_BP 		= 19,
+	IR_REG_ESI 		= 20,
+	IR_REG_SI 		= 21,
+	IR_REG_EDI 		= 22,
+	IR_REG_DI 		= 23
 };
 
-#define NB_IR_REGISTER 20
+#define NB_IR_REGISTER 24
 
 char* irRegister_2_string(enum irRegister reg);
 
@@ -82,6 +87,8 @@ struct irMemAccess{
 
 #define IR_NODE_STATUS_FLAG_NONE 	0x00000000
 #define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
+#define IR_NODE_STATUS_FLAG_ERROR 	0x40000000
+#define IR_NODE_STATUS_FLAG_TEST 	0x80000000
 
 struct irOperation{
 	enum irOperationType 		type;
@@ -129,8 +136,11 @@ enum irDependenceType{
 	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
 	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,
 	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002,
-	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000003
+	IR_DEPENDENCE_TYPE_DIVISOR 		= 0x00000003,
+	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000004
 };
+
+#define NB_DEPENDENCE_TYPE 4
 
 struct irDependence{
 	enum irDependenceType 		type;
@@ -169,6 +179,9 @@ struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, s
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
 struct node* ir_add_symbol(struct ir* ir, void* ptr);
+
+struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
+struct node* ir_insert_inst(struct ir* ir, struct node* root, enum irOpcode opcode, uint8_t size);
 
 static inline void ir_convert_node_to_inst(struct node* node, enum irOpcode opcode, uint8_t size){
 	struct irOperation* operation = ir_node_get_operation(node);	

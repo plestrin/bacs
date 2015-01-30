@@ -16,7 +16,8 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_ADD */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_AND */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_CMOV */
-	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_DIV */
+	{IR_DEPENDENCE_TYPE_DIVISOR, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_DIV */
+	{IR_DEPENDENCE_TYPE_DIVISOR, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_IDIV */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_IMUL */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_LEA */
 	{IR_DEPENDENCE_TYPE_DIRECT, IR_DEPENDENCE_TYPE_DIRECT}, 		/* IR_MOV */
@@ -40,9 +41,10 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 
 static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	1, /* IR_ADD */
-	0, /* IR_AND */
+	1, /* IR_AND */
 	0, /* IR_CMOV */
 	0, /* IR_DIV */
+	0, /* IR_IDIV */
 	0, /* IR_IMUL */
 	0, /* IR_LEA */
 	0, /* IR_MOV */
@@ -58,7 +60,7 @@ static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	0, /* IR_SHL */
 	0, /* IR_SHR */
 	1, /* IR_SUB */
-	0, /* IR_XOR */
+	1, /* IR_XOR */
 	0, /* IR_LOAD */
 	0, /* IR_STORE */
 	0  /* IR_JOKER */
@@ -769,6 +771,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_CMOVS 		: {return IR_CMOV;}
 		case XED_ICLASS_CMOVZ 		: {return IR_CMOV;}
 		case XED_ICLASS_DIV			: {return IR_DIV;}
+		case XED_ICLASS_IDIV		: {return IR_IDIV;}
 		case XED_ICLASS_IMUL 		: {return IR_IMUL;}
 		case XED_ICLASS_LEA 		: {return IR_LEA;}
 		case XED_ICLASS_MOV 		: {return IR_MOV;}
@@ -803,6 +806,10 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 		case XED_REG_CX 	: {return IR_REG_CX;}
 		case XED_REG_DX 	: {return IR_REG_DX;}
 		case XED_REG_BX 	: {return IR_REG_BX;}
+		case XED_REG_SP 	: {return IR_REG_SP;}
+		case XED_REG_BP 	: {return IR_REG_BP;}
+		case XED_REG_SI 	: {return IR_REG_SI;}
+		case XED_REG_DI 	: {return IR_REG_DI;}
 		case XED_REG_EAX 	: {return IR_REG_EAX;}
 		case XED_REG_ECX 	: {return IR_REG_ECX;}
 		case XED_REG_EDX 	: {return IR_REG_EDX;}

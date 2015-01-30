@@ -7,6 +7,7 @@
 
 void ir_check_connectivity(struct ir* ir);
 void ir_check_size(struct ir* ir);
+void ir_check_order(struct ir* ir);
 
 #define ir_check(ir) 				\
 	ir_check_connectivity(ir); 		\

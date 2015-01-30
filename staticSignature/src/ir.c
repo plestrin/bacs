@@ -203,6 +203,44 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr){
 	return node;
 }
 
+struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value){
+	struct node* 			node;
+	struct irOperation* 	operation;
+
+	node = graph_insert_node_(&(ir->graph), root);
+	if (node == NULL){
+		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+	}
+	else{
+		operation = ir_node_get_operation(node);
+		operation->type 								= IR_OPERATION_TYPE_IMM;
+		operation->operation_type.imm.value 			= value;
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+	}
+
+	return node;
+}
+
+struct node* ir_insert_inst(struct ir* ir, struct node* root, enum irOpcode opcode, uint8_t size){
+	struct node* 			node;
+	struct irOperation* 	operation;
+
+	node = graph_insert_node_(&(ir->graph), root);
+	if (node == NULL){
+		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+	}
+	else{
+		operation = ir_node_get_operation(node);
+		operation->type 								= IR_OPERATION_TYPE_INST;
+		operation->operation_type.inst.opcode 			= opcode;
+		operation->size 								= size;
+		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+	}
+
+	return node;
+}
+
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type){
 	struct edge* 			edge;
 	struct irDependence* 	dependence;
@@ -299,29 +337,35 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 
 	switch(operation->type){
 		case IR_OPERATION_TYPE_IN_REG 		: {
-			fprintf(file, "[shape=\"box\",label=\"%s\"]", irRegister_2_string(operation->operation_type.in_reg.reg));
+			fprintf(file, "[shape=\"box\",label=\"%s\"", irRegister_2_string(operation->operation_type.in_reg.reg));
 			break;
 		}
 		case IR_OPERATION_TYPE_IN_MEM 		: {
-			fprintf(file, "[shape=\"box\",label=\"LOAD\"]");
+			fprintf(file, "[shape=\"box\",label=\"LOAD\"");
 			break;
 		}
 		case IR_OPERATION_TYPE_OUT_MEM 		: {
-			fprintf(file, "[shape=\"box\",label=\"STORE\"]");
+			fprintf(file, "[shape=\"box\",label=\"STORE\"");
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
+			if (operation->status_flag & IR_NODE_STATUS_FLAG_FINAL){
+				fprintf(file, "[shape=\"Mdiamond\"");
+			}
+			else{
+				fprintf(file, "[shape=\"diamond\"");
+			}
 			switch(operation->size){
 				case 8 	: {
-					fprintf(file, "[shape=\"diamond\",label=\"0x%02x\"]", (uint32_t)(operation->operation_type.imm.value & 0xff));
+					fprintf(file, ",label=\"0x%02x\"", (uint32_t)(operation->operation_type.imm.value & 0xff));
 					break;
 				}
 				case 16 : {
-					fprintf(file, "[shape=\"diamond\",label=\"0x%04x\"]", (uint32_t)(operation->operation_type.imm.value & 0xffff));
+					fprintf(file, ",label=\"0x%04x\"", (uint32_t)(operation->operation_type.imm.value & 0xffff));
 					break;
 				}
 				case 32 : {
-					fprintf(file, "[shape=\"diamond\",label=\"0x%08x\"]", (uint32_t)(operation->operation_type.imm.value & 0xffffffff));
+					fprintf(file, ",label=\"0x%08x\"", (uint32_t)(operation->operation_type.imm.value & 0xffffffff));
 					break;
 				}
 				default : {
@@ -332,13 +376,24 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 		: {
-			fprintf(file, "[label=\"%s\"]", irOpcode_2_string(operation->operation_type.inst.opcode));
+			if (operation->status_flag & IR_NODE_STATUS_FLAG_FINAL){
+				fprintf(file, "[shape=\"octagon\"label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
+			}
+			else{
+				fprintf(file, "[label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
+			}
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fprintf(file, "[label=\"SYMBOL\"]");
+			fprintf(file, "[label=\"SYMBOL\"");
 			break;
 		}
+	}
+	if (operation->status_flag & IR_NODE_STATUS_FLAG_ERROR){
+		fprintf(file, ",color=\"red\"]");
+	}
+	else{
+		fprintf(file, "]");
 	}
 }
 
@@ -354,11 +409,15 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP :{
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
 			fprintf(file, "[label=\"disp\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_MACRO 		:{
+		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
+			fprintf(file, "[label=\"/\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_MACRO 		: {
 			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro)){
 				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
 			}
@@ -410,6 +469,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_AND 		: {return "and";}
 		case IR_CMOV 		: {return "cmov";}
 		case IR_DIV 		: {return "div";}
+		case IR_IDIV 		: {return "idiv";}
 		case IR_IMUL 		: {return "imul";}
 		case IR_LEA 		: {return "lea";}
 		case IR_MOV 		: {return "mov";}
@@ -454,9 +514,13 @@ char* irRegister_2_string(enum irRegister reg){
 		case IR_REG_DH 		: {return "DH";}
 		case IR_REG_DL 		: {return "DL";}
 		case IR_REG_ESP 	: {return "ESP";}
+		case IR_REG_SP 		: {return "SP";}
 		case IR_REG_EBP 	: {return "EBP";}
+		case IR_REG_BP 		: {return "BP";}
 		case IR_REG_ESI 	: {return "ESI";}
+		case IR_REG_SI 		: {return "SI";}
 		case IR_REG_EDI 	: {return "EDI";}
+		case IR_REG_DI 		: {return "DI";}
 	}
 
 	return NULL;

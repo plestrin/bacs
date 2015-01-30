@@ -31,9 +31,13 @@ static uint8_t registerFamily[NB_IR_REGISTER] = {
 	3, /* IR_REG_DH */
 	3, /* IR_REG_DL */
 	4, /* IR_REG_ESP */
-	4, /* IR_REG_EBP */
-	4, /* IR_REG_ESI */
-	4  /* IR_REG_EDI */
+	4, /* IR_REG_SP */
+	5, /* IR_REG_EBP */
+	5, /* IR_REG_BP */
+	6, /* IR_REG_ESI */
+	6, /* IR_REG_SI */
+	7, /* IR_REG_EDI */
+	7  /* IR_REG_DI */
 };
 
 static uint8_t registerIndex[NB_IR_REGISTER] = {
@@ -54,42 +58,64 @@ static uint8_t registerIndex[NB_IR_REGISTER] = {
 	2, /* IR_REG_DH */
 	3, /* IR_REG_DL */
 	0, /* IR_REG_ESP */
-	1, /* IR_REG_EBP */
-	2, /* IR_REG_ESI */
-	3  /* IR_REG_EDI */
+	1, /* IR_REG_SP */
+	0, /* IR_REG_EBP */
+	1, /* IR_REG_BP */
+	0, /* IR_REG_ESI */
+	1, /* IR_REG_SI */
+	0, /* IR_REG_EDI */
+	1  /* IR_REG_DI */
 };
 
 
-#define NB_IRREGISTER_FAMILY 	5
+#define NB_IRREGISTER_FAMILY 	8
 #define MAX_REGISTER_PER_FAMILY 4
 
 static uint8_t larger[NB_IRREGISTER_FAMILY][MAX_REGISTER_PER_FAMILY][MAX_REGISTER_PER_FAMILY] = {
 	{
-		{0, 1, 1, 1},
+		{0, 1, 1, 1}, /* _A_ family */
 		{0, 0, 1, 1},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0}
 	},
 	{
-		{0, 1, 1, 1},
+		{0, 1, 1, 1}, /* _B_ family */
 		{0, 0, 1, 1},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0}
 	},
 	{
-		{0, 1, 1, 1},
+		{0, 1, 1, 1}, /* _C_ family */
 		{0, 0, 1, 1},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0}
 	},
 	{
-		{0, 1, 1, 1},
+		{0, 1, 1, 1}, /* _D_ family */
 		{0, 0, 1, 1},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0}
 	},
 	{
+		{0, 1, 0, 0}, /* _SP family */
 		{0, 0, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0}
+	},
+	{
+		{0, 1, 0, 0}, /* _BP family */
+		{0, 0, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0}
+	},
+	{
+		{0, 1, 0, 0}, /* _SI family */
+		{0, 0, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0}
+	},
+	{
+		{0, 1, 0, 0}, /* _DI family */
 		{0, 0, 0, 0},
 		{0, 0, 0, 0},
 		{0, 0, 0, 0}
@@ -98,31 +124,49 @@ static uint8_t larger[NB_IRREGISTER_FAMILY][MAX_REGISTER_PER_FAMILY][MAX_REGISTE
 
 static enum irOpcode partIns[NB_IRREGISTER_FAMILY][MAX_REGISTER_PER_FAMILY][MAX_REGISTER_PER_FAMILY] = {
 	{
-		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8},
+		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8}, /* _A_ family */
 		{IR_INVALID, IR_INVALID , IR_PART2_8, IR_PART1_8},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
 	},
 	{
-		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8},
+		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8}, /* _B_ family */
 		{IR_INVALID, IR_INVALID , IR_PART2_8, IR_PART1_8},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
 	},
 	{
-		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8},
+		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8}, /* _C_ family */
 		{IR_INVALID, IR_INVALID , IR_PART2_8, IR_PART1_8},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
 	},
 	{
-		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8},
+		{IR_INVALID, IR_PART1_16, IR_PART2_8, IR_PART1_8}, /* _D_ family */
 		{IR_INVALID, IR_INVALID , IR_PART2_8, IR_PART1_8},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
 	},
 	{
+		{IR_INVALID, IR_PART1_16, IR_INVALID, IR_INVALID}, /* _SP family */
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
+	},
+	{
+		{IR_INVALID, IR_PART1_16, IR_INVALID, IR_INVALID}, /* _BP family */
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
+	},
+	{
+		{IR_INVALID, IR_PART1_16, IR_INVALID, IR_INVALID}, /* _SI family */
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
+		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
+	},
+	{
+		{IR_INVALID, IR_PART1_16, IR_INVALID, IR_INVALID}, /* _DI family */
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID},
 		{IR_INVALID, IR_INVALID , IR_INVALID, IR_INVALID}
@@ -131,7 +175,7 @@ static enum irOpcode partIns[NB_IRREGISTER_FAMILY][MAX_REGISTER_PER_FAMILY][MAX_
 
 static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegister reg, struct irRegisterBuffer* list){
 	uint8_t i;
-	uint8_t nb_inner;
+	uint8_t nb_inner = 0;
 	uint8_t nb_newer;
 
 	switch(reg){
@@ -255,9 +299,53 @@ static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegist
 			nb_inner = 2;
 			break;
 		}
-		default 			: {
-			list->nb_register = 0;
-			return;
+		case IR_REG_ESP 	: {
+			list->registers[0] = IR_REG_SP;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_SP 	: {
+			list->registers[0] = IR_REG_ESP;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_EBP 	: {
+			list->registers[0] = IR_REG_BP;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_BP 	: {
+			list->registers[0] = IR_REG_EBP;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_ESI 	: {
+			list->registers[0] = IR_REG_SI;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_SI 	: {
+			list->registers[0] = IR_REG_ESI;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_EDI 	: {
+			list->registers[0] = IR_REG_DI;
+
+			nb_inner = 1;
+			break;
+		}
+		case IR_REG_DI 	: {
+			list->registers[0] = IR_REG_EDI;
+
+			nb_inner = 1;
+			break;
 		}
 	}
 
@@ -472,6 +560,22 @@ void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegis
 			engine->register_alias[IR_REG_DL].ir_node = NULL;
 			break;
 		}
+		case IR_REG_ESP 		: {
+			engine->register_alias[IR_REG_SP].ir_node = NULL;
+			break;
+		}
+		case IR_REG_EBP 		: {
+			engine->register_alias[IR_REG_BP].ir_node = NULL;
+			break;
+		}
+		case IR_REG_ESI 		: {
+			engine->register_alias[IR_REG_SI].ir_node = NULL;
+			break;
+		}
+		case IR_REG_EDI 		: {
+			engine->register_alias[IR_REG_DI].ir_node = NULL;
+			break;
+		}
 		default 			: {
 			break;
 		}
@@ -483,7 +587,7 @@ void irRenameEngine_tag_final_node(struct irRenameEngine* engine){
 	struct irOperation* operation;
 
 	for (i = 0; i < NB_IR_REGISTER; i++){
-		if (engine->register_alias[i].ir_node != NULL){
+		if (engine->register_alias[i].ir_node != NULL  && ALIAS_IS_WRITE(engine->register_alias[i].type)){
 			operation = ir_node_get_operation(engine->register_alias[i].ir_node);
 			operation->status_flag |= IR_NODE_STATUS_FLAG_FINAL;
 		}

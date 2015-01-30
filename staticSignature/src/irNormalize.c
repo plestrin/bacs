@@ -8,17 +8,20 @@
 #include "irNormalize.h"
 
 #include "irMemory.h"
+#include "irVariableSize.h"
 #include "dagPartialOrder.h"
 
 #ifdef VERBOSE
 #include "multiColumn.h"
 #endif
 
+#define IR_NORMALIZE_REMOVE_DEAD_CODE 				1
 #define IR_NORMALIZE_SIMPLIFY_INSTRUCTION			1
 #define IR_NORMALIZE_REMOVE_SUBEXPRESSION 			1
 #define IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS 		1
-#define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
 #define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
+#define IR_NORMALIZE_EXPAND_VARIABLE				1
+#define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
 #define IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR 			1
 #define IR_NORMALIZE_ALIASING_SENSITIVITY 			1 /* 0=WEAK, 1=CHECK, 2+=STRICT */
 
@@ -43,8 +46,6 @@ int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
 		multiColumnPrinter_set_column_size(printer, 0, 32); 																								\
 		multiColumnPrinter_set_title(printer, 0, "RULE"); 																									\
 		multiColumnPrinter_set_title(printer, 1, "TIME"); 																									\
-																																							\
-		multiColumnPrinter_print_header(printer); 																											\
 	} 																																						\
 	else{ 																																					\
 		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__); 																				\
@@ -82,135 +83,162 @@ void ir_normalize(struct ir* ir){
 	#ifdef VERBOSE
 	uint32_t 	round_counter = 0;
 	uint8_t 	modification_copy;
+	double 		timer_1_elapsed_time = 0.0;
+	double 		timer_2_elapsed_time = 0.0;
+	double 		timer_3_elapsed_time = 0.0;
+	double 		timer_4_elapsed_time = 0.0;
+	double 		timer_5_elapsed_time = 0.0;
+	double 		timer_6_elapsed_time = 0.0;
 	#endif
+	uint8_t 	modification = 0;
 
 	INIT_TIMER
+
+	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
+	ir_normalize_remove_dead_code(ir, &modification);
+	#ifdef VERBOSE
+	if (modification){
+		printf("INFO: in %s, modification simplify instruction @ START\n", __func__);
+	}
+	#endif
+	modification = 1;
+	#else
+	modification = 1;
+	#endif
+
 	
-	{
-		uint8_t modification = 1;
+	while(modification){
+		modification = 0;
+
 		#ifdef VERBOSE
-		double timer_1_elapsed_time = 0.0;
-		double timer_2_elapsed_time = 0.0;
-		double timer_3_elapsed_time = 0.0;
-		double timer_4_elapsed_time = 0.0;
-		double timer_5_elapsed_time = 0.0;
+		printf("*** ROUND %u ***\n", round_counter);
+		modification_copy = 0;
 		#endif
-
-		while(modification){
-			modification = 0;
-
-			#ifdef VERBOSE
-			printf("*** ROUND %u ***\n", round_counter);
-			modification_copy = 0;
-			#endif
-
-			#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-			START_TIMER
-			ir_normalize_simplify_instruction(ir, &modification, 0);
-			STOP_TIMER
-			#ifdef VERBOSE
-			timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-			if (modification){
-				printf("INFO: in %s, modification simplify instruction @ %u\n", __func__, round_counter);
-				modification = 0;
-				modification_copy = 1;
-			}
-			#endif
-			#endif
-
-			#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-			START_TIMER
-			ir_normalize_remove_subexpression(ir, &modification);
-			STOP_TIMER
-			#ifdef VERBOSE
-			timer_2_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-			if (modification){
-				printf("INFO: in %s, modification remove subexpression @ %u\n", __func__, round_counter);
-				modification = 0;
-				modification_copy = 1;
-			}
-			#endif
-			#endif
-
-			#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-			START_TIMER
-			#if IR_NORMALIZE_ALIASING_SENSITIVITY == 0
-			ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_WEAK);
-			#elif IR_NORMALIZE_ALIASING_SENSITIVITY == 1
-			ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_CHECK);
-			#else
-			ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_STRICT);
-			#endif
-			STOP_TIMER
-			#ifdef VERBOSE
-			timer_3_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-			if (modification){
-				printf("INFO: in %s, modification simplify memory @ %u\n", __func__, round_counter);
-				modification = 0;
-				modification_copy = 1;
-			}
-			#endif
-			#endif
-
-			#if IR_NORMALIZE_FACTOR_INSTRUCTION == 1
-			START_TIMER
-			ir_normalize_factor_instruction(ir, &modification);
-			STOP_TIMER
-			#ifdef VERBOSE
-			timer_4_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-			if (modification){
-				printf("INFO: in %s, modification factor instruction @ %u\n", __func__, round_counter);
-				modification = 0;
-				modification_copy = 1;
-			}
-			#endif
-			#endif
-
-			#if IR_NORMALIZE_DISTRIBUTE_IMMEDIATE == 1
-			START_TIMER
-			ir_normalize_distribute_immediate(ir, &modification);
-			STOP_TIMER
-			#ifdef VERBOSE
-			timer_5_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-			if (modification){
-				printf("INFO: in %s, modification distribute immediate @ %u\n", __func__, round_counter);
-				modification_copy = 1;
-			}
-			#endif
-			#endif
-			
-			#ifdef VERBOSE
-			modification = modification_copy;
-			round_counter ++;
-			#endif
-		}
 
 		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
 		START_TIMER
-		ir_normalize_simplify_instruction(ir, &modification, 1);
+		ir_normalize_simplify_instruction(ir, &modification, 0);
 		STOP_TIMER
 		#ifdef VERBOSE
 		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification simplify instruction @ FINAL\n", __func__);
+			printf("INFO: in %s, modification simplify instruction @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
+		START_TIMER
+		ir_normalize_remove_subexpression(ir, &modification);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_2_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification remove subexpression @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
+		START_TIMER
+		#if IR_NORMALIZE_ALIASING_SENSITIVITY == 0
+		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_WEAK);
+		#elif IR_NORMALIZE_ALIASING_SENSITIVITY == 1
+		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_CHECK);
+		#else
+		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_STRICT);
+		#endif
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_3_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification simplify memory @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_FACTOR_INSTRUCTION == 1
+		START_TIMER
+		ir_normalize_factor_instruction(ir, &modification);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_4_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification factor instruction @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_DISTRIBUTE_IMMEDIATE == 1
+		START_TIMER
+		ir_normalize_distribute_immediate(ir, &modification);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_5_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification distribute immediate @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_EXPAND_VARIABLE == 1
+		START_TIMER
+		ir_normalize_expand_variable(ir, &modification);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_6_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification expand variable @ %u\n", __func__, round_counter);
+			modification_copy = 1;
 		}
 		#endif
 		#endif
 
 		#ifdef VERBOSE
-		multiColumnPrinter_print(printer, "Simplify instruction", timer_1_elapsed_time, NULL);
-		multiColumnPrinter_print(printer, "Remove subexpression", timer_2_elapsed_time, NULL);
-		multiColumnPrinter_print(printer, "Simplify memory access", timer_3_elapsed_time, NULL);
-		multiColumnPrinter_print(printer, "Factor instruction", timer_4_elapsed_time, NULL);
-		multiColumnPrinter_print(printer, "Distribute immediate", timer_5_elapsed_time, NULL);
+		modification = modification_copy;
+		round_counter ++;
 		#endif
 	}
+
+	#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
+	START_TIMER
+	ir_normalize_simplify_instruction(ir, &modification, 1);
+	STOP_TIMER
+	#ifdef VERBOSE
+	timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+	if (modification){
+		printf("INFO: in %s, modification simplify instruction @ FINAL\n", __func__);
+	}
+	#endif
+	#endif
+
+	#ifdef VERBOSE
+	multiColumnPrinter_print_header(printer);
+
+	multiColumnPrinter_print(printer, "Simplify instruction", timer_1_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Remove subexpression", timer_2_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Simplify memory access", timer_3_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Factor instruction", timer_4_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Distribute immediate", timer_5_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Expand variable", timer_6_elapsed_time, NULL);
+	#endif
 	
 	#if IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR == 1
 	{
@@ -224,25 +252,95 @@ void ir_normalize(struct ir* ir){
 	CLEAN_TIMER
 }
 
+void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
+	struct node* 			node_cursor;
+	struct node* 			prev_node_cursor;
+	struct irOperation* 	operation_cursor;
+
+	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
+		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+	}
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)), prev_node_cursor = NULL; node_cursor != NULL;){
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		switch (operation_cursor->type){
+			case IR_OPERATION_TYPE_IN_REG 	: {
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, node_cursor);
+					*modification = 1;
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_IN_MEM 	: {
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, node_cursor);
+					*modification = 1;
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_OUT_MEM  : {
+				break;
+			}
+			case IR_OPERATION_TYPE_IMM 		: {
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, node_cursor);
+					*modification = 1;
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_INST 	: {
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, node_cursor);
+					*modification = 1;
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_SYMBOL 	: {
+				break;
+			}
+		}
+
+		if (prev_node_cursor != NULL){
+			if (node_get_next(prev_node_cursor) != node_cursor){
+				node_cursor = node_get_next(prev_node_cursor);
+			}
+			else{
+				prev_node_cursor = node_cursor;
+				node_cursor = node_get_next(node_cursor);
+			}
+		}
+		else{
+			if (graph_get_head_node(&(ir->graph)) != node_cursor){
+				node_cursor = graph_get_head_node(&(ir->graph));
+			}
+			else{
+				prev_node_cursor = node_cursor;
+				node_cursor = node_get_next(node_cursor);
+			}
+		}
+	}
+}
+
 static void ir_normalize_simplify_instruction_numeric_add(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
-static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct node* node, uint8_t* modification);
+static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_numeric_mul(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_symbolic_or(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
-static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
-static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification);
+static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification);
+static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
-static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
-static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification);
+static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification);
+static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification);
-static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification);
 
 
 void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uint8_t final){
@@ -267,52 +365,52 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 				}
 				case IR_AND 		: {
 					ir_normalize_simplify_instruction_numeric_and(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_and(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_and(ir, node_cursor, modification);
 					break;
 				}
 				case IR_IMUL 		: {
 					ir_normalize_simplify_instruction_numeric_imul(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_imul(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_imul(ir, node_cursor, modification);
 					break;
 				}
 				case IR_MOVZX 		: {
-					ir_normalize_simplify_instruction_rewrite_movzx(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_movzx(ir, node_cursor, modification);
 					break;
 				}
 				case IR_MUL 		: {
 					ir_normalize_simplify_instruction_numeric_mul(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_mul(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_mul(ir, node_cursor, modification);
 					break;
 				}
 				case IR_OR 			: {
 					ir_normalize_simplify_instruction_symbolic_or(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_or(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_or(ir, node_cursor, modification);
 					break;
 				}
 				case IR_PART1_8 	: {
-					ir_normalize_simplify_instruction_rewrite_part1_8(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_part1_8(ir, node_cursor, modification);
 					break;
 				}
 				case IR_ROL 		: {
-					ir_normalize_simplify_instruction_rewrite_rol(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_rol(ir, node_cursor, modification);
 					break;
 				}
 				case IR_SHL 		: {
 					ir_normalize_simplify_instruction_numeric_shl(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_shl(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_shl(ir, node_cursor, modification);
 					break;
 				}
 				case IR_SHR 		: {
-					ir_normalize_simplify_instruction_rewrite_shr(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_shr(ir, node_cursor, modification);
 					break;
 				}
 				case IR_SUB 		: {
-					ir_normalize_simplify_instruction_rewrite_sub(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_sub(ir, node_cursor, modification);
 					break;
 				}
 				case IR_XOR 		: {
 					ir_normalize_simplify_instruction_symbolic_xor(ir, node_cursor, modification);
-					ir_normalize_simplify_instruction_rewrite_xor(ir, node_cursor, modification, final);
+					ir_normalize_simplify_instruction_rewrite_xor(ir, node_cursor, modification);
 					break;
 				}
 				default 			: {
@@ -491,52 +589,70 @@ static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct 
 	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size)), &)
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
-	uint32_t 			nb_imm_operand;
-	uint32_t 			nb_and_operand;
+static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct node* node, uint8_t* modification){
+	struct node* 		imm_operand 	= NULL;
+	struct edge* 		and_operand 	= NULL;
+	struct node*		movzx_operand 	= NULL;
 	struct edge* 		edge_cursor1;
 	struct edge* 		edge_cursor2;
 	struct irOperation*	operand_operation;
-	struct edge* 		and_operand;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
+		
 		*modification = 1;
+		return;
 	}
-	else{
-		for (edge_cursor1 = node_get_head_edge_dst(node), nb_imm_operand = 0, nb_and_operand = 0, and_operand = NULL; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
-			operand_operation = ir_node_get_operation(edge_get_src(edge_cursor1));
 
-			if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-				nb_imm_operand ++;
-			}
-			else if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_AND){
-				nb_and_operand ++;
-				for (edge_cursor2 = node_get_head_edge_dst(edge_get_src(edge_cursor1)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-					if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
-						and_operand = edge_cursor1;
+	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+		operand_operation = ir_node_get_operation(edge_get_src(edge_cursor1));
+
+		if (operand_operation->type == IR_OPERATION_TYPE_IMM){
+			imm_operand = edge_get_src(edge_cursor1);
+		}
+		else if (operand_operation->type == IR_OPERATION_TYPE_INST){
+			if (operand_operation->operation_type.inst.opcode == IR_AND){
+				if (and_operand != NULL){
+					printf("WARNING: in %s, multiple AND operands, can't decide how to associate IMM\n", __func__);
+					return;
+				}
+				else{
+					for (edge_cursor2 = node_get_head_edge_dst(edge_get_src(edge_cursor1)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+						if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
+							and_operand = edge_cursor1;
+						}
 					}
 				}
 			}
-			else{
+			else if (operand_operation->operation_type.inst.opcode == IR_MOVZX){
+				movzx_operand = edge_get_src(edge_cursor1);
+			}
+		}
+	}
+
+	if (node->nb_edge_dst == 2 && imm_operand != NULL && movzx_operand != NULL){
+		if (movzx_operand->nb_edge_dst == 1){
+			if ((~ir_imm_operation_get_unsigned_value(ir_node_get_operation(imm_operand)) & (0xffffffffffffffff >> (64 - ir_node_get_operation(edge_get_src(node_get_head_edge_dst(movzx_operand)))->size))) == 0){
+				graph_transfert_src_edge(&(ir->graph), movzx_operand, node);
+				ir_remove_node(ir, node);
+		
+				*modification = 1;
 				return;
 			}
 		}
-
-		if (nb_imm_operand > 0 && nb_and_operand > 0 && and_operand != NULL){
-			if (nb_and_operand > 1){
-				printf("WARNING: in %s, multiple AND operands, can't decide how to associate IMM\n", __func__);
-				return;
-			}
-
-			if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(and_operand))){
-				printf("ERROR: in %s, unable to copy dst edge\n", __func__);
-			}
-			ir_remove_dependence(ir, and_operand);
-			*modification = 1;
+		else{
+			printf("ERROR: in %s, MOVZX has a wrong number of dst edge: %u\n", __func__, movzx_operand->nb_edge_dst);
 		}
+	}
+
+	if (imm_operand != NULL && and_operand != NULL){
+		if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(and_operand))){
+			printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+		}
+		ir_remove_dependence(ir, and_operand);
+
+		*modification = 1;
 	}
 }
 
@@ -608,8 +724,7 @@ static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 			edge_cursor;
 	struct edge* 			edge_current;
 	struct irOperation*		operation_cursor;
@@ -642,38 +757,53 @@ static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct
 	}
 }
 
-static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struct node* node, uint8_t* modification){
+	struct edge* 		edge;
 	struct node* 		operand;
 	struct irOperation*	operand_operation;
 	struct node* 		node_imm_new;
 
 	if (node->nb_edge_dst == 1){
-		operand = edge_get_src(node_get_head_edge_dst(node));
+		edge = node_get_head_edge_dst(node);
+		operand = edge_get_src(edge);
 		operand_operation = ir_node_get_operation(operand);
 		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_PART1_8){
-			if (operand->nb_edge_src == 1){
-				node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0x000000ff);
-				if (node_imm_new != NULL){
-					if (ir_add_dependence(ir, node_imm_new, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-					}
-					else{
-						ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
+			if (operand->nb_edge_dst == 1){
+				if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size != ir_node_get_operation(node)->size){
+					return;
+				}
+			}
 
+			node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0x000000ff);
+			if (node_imm_new != NULL){
+				if (ir_add_dependence(ir, node_imm_new, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+				}
+				else{
+					ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
+					if (operand->nb_edge_src == 1){
 						graph_transfert_dst_edge(&(ir->graph), node, operand);
 						ir_remove_node(ir, operand);
 						*modification = 1;
 					}
-				}
-				else{
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					else{
+						graph_copy_dst_edge(&(ir->graph), node, operand);
+						ir_remove_dependence(ir, edge);
+						*modification = 1;
+					}
 				}
 			}
 			else{
-				printf("WARNING: in %s, PART1_8 instruction is shared, this case is not implemented yet -> skip\n", __func__);
+				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
 			}
 		}
 		else if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_PART2_8){
+			if (operand->nb_edge_dst == 1){
+				if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size != ir_node_get_operation(node)->size){
+					return;
+				}
+			}
+
 			if (operand->nb_edge_src == 1){
 				ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
 
@@ -715,8 +845,7 @@ static void ir_normalize_simplify_instruction_numeric_mul(struct ir* ir, struct 
 	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, 1, *)
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 			edge_cursor;
 	struct edge* 			edge_current;
 	struct irOperation*		operation_cursor;
@@ -787,8 +916,7 @@ static void ir_normalize_simplify_instruction_symbolic_or(struct ir* ir, struct 
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification){
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
@@ -796,8 +924,7 @@ static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct n
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification){
 	struct node* 		operand;
 	struct irOperation*	operand_operation;
 
@@ -807,11 +934,13 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 		if (operand_operation->type == IR_OPERATION_TYPE_INST){
 			if (operand_operation->operation_type.inst.opcode == IR_MOVZX){
 				if (operand->nb_edge_dst == 1){
-					graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(operand)), node);
+					if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size == ir_node_get_operation(node)->size){
+						graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(operand)), node);
 
-					ir_remove_node(ir, node);
+						ir_remove_node(ir, node);
 
-					*modification = 1;
+						*modification = 1;
+					}
 				}
 				else{
 					printf("ERROR: in %s, MOVZX instruction has %u operand(s)\n", __func__, operand->nb_edge_dst);
@@ -828,7 +957,7 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
 	struct irOperation*	operand_operation;
 
@@ -922,8 +1051,7 @@ static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct 
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
 	struct node* 		node_cursor;
 	struct irOperation*	operation_cursor;
@@ -1107,8 +1235,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 	edge_cursor;
 	uint8_t 		simplify = 0;
 	struct node* 	operand = NULL;
@@ -1131,7 +1258,7 @@ static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct 
 
 /* WARNING operand role is not determined precisely */
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
 	struct irOperation*	operand_operation;
 
@@ -1200,8 +1327,7 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
 	struct irOperation*	operand_operation;
 
@@ -1265,6 +1391,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 			continue;
 		}
 
+		next:
 		for (edge_cursor1 = node_get_head_edge_src(main_cursor); edge_cursor1 != NULL; edge_cursor1 = next_edge_cursor1){
 			next_edge_cursor1 = edge_get_next_src(edge_cursor1);
 
@@ -1327,6 +1454,35 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 								}
 
 								*modification = 1;
+								goto next;
+							}
+							else if (nb_match == node1->nb_edge_dst){
+								for (i = 0; i < node1->nb_edge_dst; i++){
+									if (operand_buffer[i].edge2 != NULL){
+										ir_remove_dependence(ir, operand_buffer[i].edge2);
+									}
+								}
+
+								if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								}
+
+								*modification = 1;
+								goto next;
+							}
+							else if (nb_match == node2->nb_edge_dst){
+								for (i = 0, nb_edge_dst = node1->nb_edge_dst; i < nb_edge_dst; i++){
+									if (operand_buffer[i].edge2 != NULL){
+										ir_remove_dependence(ir, operand_buffer[i].edge1);
+									}
+								}
+
+								if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								}
+
+								*modification = 1;
+								goto next;
 							}
 							else if (nb_match > 1 && nb_operand_imm_node1 < 2 && nb_operand_imm_node2 < 2 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
 								new_intermediate_inst = ir_add_inst(ir, operation1->operation_type.inst.opcode, operation1->size);
@@ -1360,7 +1516,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 									}
 
 									*modification = 1;
-									break;
+									goto next;
 								}
 							}
 						}

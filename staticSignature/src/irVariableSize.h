@@ -3,19 +3,14 @@
 
 #include "ir.h"
 
-struct mask{
-	uint64_t 	p1;
-	uint64_t 	p2;
-};
-
-struct mask* irVariableSize_propogate_mask(struct ir* ir);
-void irVariableSize_shrink(struct ir* ir);
-void irVariableSize_adapt(struct ir* ir);
-
-#define irVariable_mask_delete(mask_buffer) free(mask_buffer)
-
 extern const uint8_t irRegisterSize[NB_IR_REGISTER];
 
 #define irRegister_get_size(reg) irRegisterSize[reg]
+
+void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification);
+
+#define valid_operand_size_ins_movzx(ins, op) 		((ins)->size > (op)->size && (ins)->size % (op)->size == 0)
+#define valid_operand_size_ins_partX_8(ins, op) 	((ins)->size == 8 && (op)->size % 8 == 0 && (op)->size > 8)
+#define valid_operand_size_ins_partX_16(ins, op) 	((ins)->size == 16 && (op)->size % 16 == 0 && (op)->size > 16)
 
 #endif

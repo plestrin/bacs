@@ -46,7 +46,7 @@ build/$(DES_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_des.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.cpp
-	$(CXX) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
 clean:
 	@ rm -f build/*

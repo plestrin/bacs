@@ -507,6 +507,9 @@ uint32_t irEdge_get_label(struct edge* edge){
 		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
 			return IR_DEPENDENCE_TYPE_DIRECT;
 		}
+		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
+			return IR_DEPENDENCE_TYPE_DIRECT;
+		}
 		case IR_DEPENDENCE_TYPE_MACRO 		: {
 			return IR_DEPENDENCE_TYPE_MACRO | dependence->dependence_type.macro;
 		}
@@ -633,11 +636,15 @@ void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"@\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP :{
+		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
 			fprintf(file, "[label=\"disp\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_MACRO 		:{
+		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
+			fprintf(file, "[label=\"/\"]");
+			break;
+		}
+		case IR_DEPENDENCE_TYPE_MACRO 		: {
 			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(edge->macro_desc)){
 				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(edge->macro_desc), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(edge->macro_desc));
 			}
