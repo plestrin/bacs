@@ -19,6 +19,9 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 	if (size_src == 32 && size_dst == 8){
 		return IR_PART1_8;
 	}
+	else if (size_src == 32 && size_dst == 16){
+		return IR_PART1_16;
+	}
 	else{
 		printf("ERROR: in %s, this case is not implemented (src=%u, dst=%u)\n", __func__, size_src, size_dst);
 		return IR_PART1_8;

@@ -1,53 +1,98 @@
 # This file define the following signature(s):
-#	- rc4_prga_v1: pseudo random generation of 1 byte 		- two additions in one @ 5
-#	- rc4_prga_v2: pseudo random generation of 1 byte 	- two additions
-
+#															S[i] 		Volatile 	First
+#	- rc4_prga_v1: pseudo random generation of 1 byte 		no 			yes 		yes
+#	- rc4_prga_v2: pseudo random generation of 1 byte 		no 			yes 		no
+#	- rc4_prga_v3: pseudo random generation of 1 byte 		no 			no 			no
+#
+# Help to understand the previous column title =):
+# 	- S[i] is the computation of S[i] address in the signature? If no, it is an input parameter. It has been designed that way, in order to avoid the effect of potential constant simplification (the value of S is known and maybe so is the value of i)
+# 	- VOlatile, is S[j] read again from memory after the swap? The other possibility is to keep it in a register from the first read.
+# 	- First, for the first iteration j = 0 and some specific simplifications are done on this basis.
 
 "rc4_prga_v1" (rc4_prga)
 
-# INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
+# INPUT: 3 [1 frag (S + i), 1 frag (S), 1 frag (message)]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on two operands)
+# Remark: each of this subgraph occurrence counts for 1 in the subgraph isomorphism
 
-1 (*) [I:1:1] -> 2 (ADD)
-2 -> (@) 3 (LOAD)
-4 (*) [I:2:1] -> 5 (ADD)
-3 -> 5
-5 -> (@) 6 (LOAD)
-6 -> 7 (ADD)
-3 -> 7
-7 -> (@) 8 (LOAD)
-8 -> 9 (XOR) [O:1:1]
-10 (LOAD) [I:3:1] -> 9
-11 (*) [I:4:1] -> 2
-11 -> 5
-11 -> 7
-2 -> (@) 12 (STORE)
-6 -> 12
-3 -> 13 (STORE)
-5 -> (@) 13
+1 (*) [I:1:1] -> (@) 2 (LOAD)
+2 -> 3 (MOVZX)
+3 -> 4 (ADD)
+5 (*) [I:2:1] -> 4
+4 -> (@) 6 (LOAD)
+6 -> 7 (STORE)
+1 -> (@) 7
+4 -> (@) 8 (STORE)
+2 -> 8
+1 -> (@) 9 (LOAD)
+9 -> 10 (MOVZX)
+10 -> 11 (ADD)
+3 -> 11
+11 -> 12 (AND)
+12 -> 13 (ADD)
+5 -> 13
+13 -> (@) 14 (LOAD)
+14 -> 15 (MOVZX)
+15 -> 16 (XOR) [O:1:1]
+17 (*) [I:3:1] -> 16
+
 
 "rc4_prga_v2" (rc4_prga)
 
-# INPUT: 4 [1 frag, 1 frag, 1 frag, 1 frag]
+# INPUT: 4 [1 frag (S + i), 1 frag (S), 1 frag (j), 1 frag (message)]
 # OUTPUT: 1 [1 frag]
-# Remark: each of this subgraph occurence counts for 4 in the subgraph isomorphism (2 jokers input can be mapped on two operands)
+# Remark: each of this subgraph occurrence counts for 1 in the subgraph isomorphism
 
-1 (*) [I:1:1] -> 2 (ADD)
-2 -> (@) 3 (LOAD)
-4 (*) [I:2:1] -> 5 (ADD)
-3 -> 5
-5 -> 6 (ADD)
-6 -> (@) 7 (LOAD)
-7 -> 8 (ADD)
-3 -> 8
-8 -> (@) 9 (LOAD)
-9 -> 10 (XOR) [O:1:1]
-11 (LOAD) [I:3:1] -> 10
-12 (*) [I:4:1] -> 2
-12 -> 6
-12 -> 8
-2 -> (@) 13 (STORE)
-7 -> 13
-3 -> 14 (STORE)
-6 -> (@) 14
+1 (*) [I:1:1] -> (@) 2 (LOAD)
+2 -> 3 (MOVZX)
+3 -> 4 (ADD)
+5 (*) [I:3:1] -> 4
+4 -> 6 (AND)
+6 -> 7 (ADD)
+7 -> (@) 8 (LOAD)
+8 -> 9 (STORE)
+1 -> (@) 9
+7 -> (@) 10 (STORE)
+2 -> 10
+1 -> (@) 11 (LOAD)
+11 -> 12 (MOVZX)
+12 -> 13 (ADD)
+3 -> 13
+13 -> 14 (AND)
+14 -> 15 (ADD)
+16 (*) [I:2:1] -> 15
+16 -> 7
+15 -> (@) 17 (LOAD)
+17 -> 18 (MOVZX)
+18 -> 19 (XOR) [O:1:1]
+20 (*) [I:4:1] -> 19
+
+
+"rc4_prga_v3" (rc4_prga)
+
+# INPUT: 4 [1 frag (S + i), 1 frag (S), 1 frag (j), 1 frag (message)]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 1 in the subgraph isomorphism
+
+1 (*) [I:1:1] -> (@) 2 (LOAD)
+2 -> 3 (MOVZX)
+3 -> 4 (ADD)
+5 (*) [I:3:1] -> 4
+4 -> 6 (AND)
+6 -> 7 (ADD)
+7 -> (@) 8 (LOAD)
+8 -> 9 (STORE)
+1 -> (@) 9
+7 -> (@) 10 (STORE)
+2 -> 10
+8 -> 11 (MOVZX)
+11 -> 12 (ADD)
+3 -> 12
+12 -> 13 (AND)
+13 -> 14 (ADD)
+15 (*) [I:2:1] -> 14
+15 -> 7
+14 -> (@) 16 (LOAD)
+16 -> 17 (MOVZX)
+17 -> 18 (XOR) [O:1:1]
+19 (*) [I:4:1] -> 18
