@@ -130,8 +130,6 @@ static inline void ir_mem_remove(struct irOperation* operation){
 	}
 }
 
-int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2);
-
 enum irDependenceType{
 	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
 	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,

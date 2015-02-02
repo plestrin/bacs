@@ -7,34 +7,6 @@
 #include "array.h"
 #include "multiColumn.h"
 
-int32_t irOperation_equal(const struct irOperation* op1, const  struct irOperation* op2){
-	if (op1->type == op2->type){
-		switch(op1->type){
-			case IR_OPERATION_TYPE_IN_REG 	: {
-				return (op1->operation_type.in_reg.reg == op2->operation_type.in_reg.reg);
-			}
-			case IR_OPERATION_TYPE_IN_MEM 	: {
-				return 0;
-
-			}
-			case IR_OPERATION_TYPE_OUT_MEM 	: {
-				return 0;
-			}
-			case IR_OPERATION_TYPE_IMM 		: {
-				return ir_imm_operation_get_unsigned_value(op1) == ir_imm_operation_get_unsigned_value(op2);
-			}
-			case IR_OPERATION_TYPE_INST 	: {
-				return (op1->size == op2->size && op1->operation_type.inst.opcode == op2->operation_type.inst.opcode);
-			}
-			case IR_OPERATION_TYPE_SYMBOL 	: {
-				return (op1->size == op2->size && op1->operation_type.symbol.ptr == op2->operation_type.symbol.ptr);
-			}
-		}
-	}
-
-	return 0;
-}
-
 struct ir* ir_create(struct assembly* assembly){
 	struct ir* ir;
 

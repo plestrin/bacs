@@ -1378,8 +1378,8 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 	struct irOperation* 	operation1;
 	struct irOperation* 	operation2;
 	struct edge* 			operand_cursor;
-	struct edge* 			next_edge_cursor1;
-	struct edge* 			next_edge_cursor2;
+	struct edge* 			prev_edge_cursor1;
+	struct edge* 			prev_edge_cursor2;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort IR node(s)\n", __func__);
@@ -1391,137 +1391,163 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 			continue;
 		}
 
-		next:
-		for (edge_cursor1 = node_get_head_edge_src(main_cursor); edge_cursor1 != NULL; edge_cursor1 = next_edge_cursor1){
-			next_edge_cursor1 = edge_get_next_src(edge_cursor1);
-
+		for (edge_cursor1 = node_get_head_edge_src(main_cursor), prev_edge_cursor1 = NULL; edge_cursor1 != NULL;){
 			node1 = edge_get_dst(edge_cursor1);
 			operation1 = ir_node_get_operation(node1);
 
-			if (operation1->type == IR_OPERATION_TYPE_INST){
-				for (edge_cursor2 = edge_get_next_src(edge_cursor1); edge_cursor2 != NULL; edge_cursor2 = next_edge_cursor2){
-					next_edge_cursor2 = edge_get_next_src(edge_cursor2);
-				
-					node2 = edge_get_dst(edge_cursor2);
-					operation2 = ir_node_get_operation(node2);
+			if (operation1->type != IR_OPERATION_TYPE_INST){
+				goto next_cursor1;
+			}
+			
+			for (edge_cursor2 = edge_get_next_src(edge_cursor1), prev_edge_cursor2 = NULL; edge_cursor2 != NULL;){
+				node2 = edge_get_dst(edge_cursor2);
+				operation2 = ir_node_get_operation(node2);
 
-					if (irOperation_equal(operation1, operation2) && node1 != node2){
-						if (node1->nb_edge_dst > IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND){
-							printf("WARNING: in %s, IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND has been reached: %u for %s\n", __func__, node1->nb_edge_dst, irOpcode_2_string(operation1->operation_type.inst.opcode));
+				if (operation2->type != IR_OPERATION_TYPE_INST || operation1->size != operation2->size || operation1->operation_type.inst.opcode != operation2->operation_type.inst.opcode || node1 == node2 || ir_edge_get_dependence(edge_cursor1)->type != ir_edge_get_dependence(edge_cursor2)->type){
+					goto next_cursor2;
+				}
+					
+				if (node1->nb_edge_dst > IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND){
+					printf("WARNING: in %s, IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND has been reached: %u for %s\n", __func__, node1->nb_edge_dst, irOpcode_2_string(operation1->operation_type.inst.opcode));
+					goto next_cursor2;
+				}
+
+				for (operand_cursor = node_get_head_edge_dst(node1), i = 0, nb_operand_imm_node1 = 0; operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor), i++){
+					operand_buffer[i].edge1 = operand_cursor;
+					if (operand_cursor == edge_cursor1){
+						operand_buffer[i].edge2 = edge_cursor2;
+					}
+					else{
+						operand_buffer[i].edge2 = NULL;
+					}
+					if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM){
+						nb_operand_imm_node1 ++;
+						if (nb_operand_imm_node1 > 1){
+							goto next_cursor2;
 						}
-						else{
-							for (operand_cursor = node_get_head_edge_dst(node1), i = 0, nb_operand_imm_node1 = 0; operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor), i++){
-								operand_buffer[i].edge1 = operand_cursor;
-								operand_buffer[i].edge2 = NULL;
-								if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM){
-									nb_operand_imm_node1 ++;
+					}
+				}
+
+				for (operand_cursor = node_get_head_edge_dst(node2), nb_match = 1, nb_operand_imm_node2 = 0; operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
+					if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM){
+						nb_operand_imm_node2 ++;
+						if (nb_operand_imm_node2 > 1){
+							goto next_cursor2;
+						}
+					}
+
+					if (operand_cursor == edge_cursor2){
+						continue;
+					}
+
+					for (i = 0; i < node1->nb_edge_dst; i++){
+						if (operand_buffer[i].edge2 == NULL){
+							if (ir_edge_get_dependence(operand_buffer[i].edge1)->type == ir_edge_get_dependence(operand_cursor)->type){
+								if (edge_get_src(operand_cursor) == edge_get_src(operand_buffer[i].edge1)){
+									operand_buffer[i].edge2 = operand_cursor;
+									nb_match ++;
+									break;
 								}
-							}
-
-							if (node1->nb_edge_dst != node2->nb_edge_dst && nb_operand_imm_node1 > 1){
-								continue;
-							}
-
-							for (operand_cursor = node_get_head_edge_dst(node2), nb_match = 0, nb_operand_imm_node2 = 0; operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
-								if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM){
-									nb_operand_imm_node2 ++;
-								}
-
-								for (i = 0; i < node1->nb_edge_dst; i++){
-									if (operand_buffer[i].edge2 == NULL){
-										if (edge_get_src(operand_cursor) == edge_get_src(operand_buffer[i].edge1)){
-											operand_buffer[i].edge2 = operand_cursor;
-											nb_match ++;
-											break;
-										}
-										else if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM && ir_node_get_operation(edge_get_src(operand_buffer[i].edge1))->type == IR_OPERATION_TYPE_IMM){
-											if (irOperation_equal(ir_node_get_operation(edge_get_src(operand_cursor)), ir_node_get_operation(edge_get_src(operand_buffer[i].edge1)))){
-												operand_buffer[i].edge2 = operand_cursor;
-												nb_match ++;
-												break;
-											}
-										}
+								else if (ir_node_get_operation(edge_get_src(operand_cursor))->type == IR_OPERATION_TYPE_IMM && ir_node_get_operation(edge_get_src(operand_buffer[i].edge1))->type == IR_OPERATION_TYPE_IMM){
+									if (ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(operand_cursor))) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(operand_buffer[i].edge1)))){
+										operand_buffer[i].edge2 = operand_cursor;
+										nb_match ++;
+										break;
 									}
-								}
-							}
-
-							if (nb_match == node1->nb_edge_dst && nb_match == node2->nb_edge_dst){
-								graph_transfert_src_edge(&(ir->graph), node1, node2);
-								ir_remove_node(ir, node2);
-
-								if(next_edge_cursor1 == edge_cursor2){
-									next_edge_cursor1 = edge_get_next_src(edge_cursor1);
-								}
-
-								*modification = 1;
-								goto next;
-							}
-							else if (nb_match == node1->nb_edge_dst){
-								for (i = 0; i < node1->nb_edge_dst; i++){
-									if (operand_buffer[i].edge2 != NULL){
-										ir_remove_dependence(ir, operand_buffer[i].edge2);
-									}
-								}
-
-								if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-								}
-
-								*modification = 1;
-								goto next;
-							}
-							else if (nb_match == node2->nb_edge_dst){
-								for (i = 0, nb_edge_dst = node1->nb_edge_dst; i < nb_edge_dst; i++){
-									if (operand_buffer[i].edge2 != NULL){
-										ir_remove_dependence(ir, operand_buffer[i].edge1);
-									}
-								}
-
-								if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-								}
-
-								*modification = 1;
-								goto next;
-							}
-							else if (nb_match > 1 && nb_operand_imm_node1 < 2 && nb_operand_imm_node2 < 2 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
-								new_intermediate_inst = ir_add_inst(ir, operation1->operation_type.inst.opcode, operation1->size);
-								if (new_intermediate_inst == NULL){
-									printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
-								}
-								else{
-									if(next_edge_cursor1 == edge_cursor2){
-										next_edge_cursor1 = edge_get_next_src(edge_cursor2);
-									}
-
-									nb_edge_dst = node1->nb_edge_dst;
-
-									for (i = 0; i < nb_edge_dst; i++){
-										if (operand_buffer[i].edge2 != NULL){
-											if (ir_add_dependence(ir, edge_get_src(operand_buffer[i].edge1), new_intermediate_inst, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-												printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-											}
-
-											ir_remove_dependence(ir, operand_buffer[i].edge2);
-											ir_remove_dependence(ir, operand_buffer[i].edge1);
-										}
-									}
-
-									if (ir_add_dependence(ir, new_intermediate_inst, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-									}
-
-									if (ir_add_dependence(ir, new_intermediate_inst, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
-									}
-
-									*modification = 1;
-									goto next;
 								}
 							}
 						}
 					}
 				}
+
+				/* CASE 1 */
+				if (nb_match == node1->nb_edge_dst && nb_match == node2->nb_edge_dst){
+					graph_transfert_src_edge(&(ir->graph), node1, node2);
+					ir_remove_node(ir, node2);
+
+					*modification = 1;
+					edge_cursor2 = prev_edge_cursor2;
+					goto next_cursor2;
+				}
+				/* CASE 2 */
+				else if (nb_match > 1 && nb_match == node1->nb_edge_dst){
+					for (i = 0; i < node1->nb_edge_dst; i++){
+						ir_remove_dependence(ir, operand_buffer[i].edge2);
+					}
+
+					if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+					}
+
+					*modification = 1;
+					edge_cursor2 = prev_edge_cursor2;
+					goto next_cursor2;
+				}
+				/* CASE 3 */
+				else if (nb_match > 1 && nb_match == node2->nb_edge_dst){
+					for (i = 0, nb_edge_dst = node1->nb_edge_dst; i < nb_edge_dst; i++){
+						if (operand_buffer[i].edge2 != NULL){
+							ir_remove_dependence(ir, operand_buffer[i].edge1);
+						}
+					}
+
+					if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+					}
+
+					*modification = 1;
+					edge_cursor1 = prev_edge_cursor1;
+					goto next_cursor1;
+				}
+				/* CASE 4 */
+				else if (nb_match > 1 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
+					new_intermediate_inst = ir_add_inst(ir, operation1->operation_type.inst.opcode, operation1->size);
+					if (new_intermediate_inst == NULL){
+						printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+					}
+					else{
+						for (i = 0, nb_edge_dst = node1->nb_edge_dst; i < nb_edge_dst; i++){
+							if (operand_buffer[i].edge2 != NULL){
+								if (ir_add_dependence(ir, edge_get_src(operand_buffer[i].edge1), new_intermediate_inst, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								}
+
+								ir_remove_dependence(ir, operand_buffer[i].edge2);
+								ir_remove_dependence(ir, operand_buffer[i].edge1);
+							}
+						}
+
+						if (ir_add_dependence(ir, new_intermediate_inst, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
+
+						if (ir_add_dependence(ir, new_intermediate_inst, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
+
+						*modification = 1;
+						edge_cursor1 = prev_edge_cursor1;
+						goto next_cursor1;
+					}
+				}
+
+				next_cursor2:
+				prev_edge_cursor2 = edge_cursor2;
+				if (edge_cursor2 == NULL){
+					edge_cursor2 = edge_get_next_src(edge_cursor1);
+				}
+				else{
+					edge_cursor2 = edge_get_next_src(edge_cursor2);
+				}
+			}
+
+			next_cursor1:
+			prev_edge_cursor1 = edge_cursor1;
+			if (edge_cursor1 == NULL){
+				edge_cursor1 = node_get_head_edge_src(main_cursor);
+			}
+			else{
+				edge_cursor1 = edge_get_next_src(edge_cursor1);
 			}
 		}
 	}
