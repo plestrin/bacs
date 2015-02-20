@@ -8,7 +8,7 @@
 void print_raw_buffer(byte* buffer, int buffer_length);
 void readBuffer_reverse_endianness(byte* buffer, int buffer_length);
 
-int main(int argc, char* argv[]) {
+int main() {
 	uint32_t	key[4] = {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
 	char* 		pt;
 	char* 		ct;

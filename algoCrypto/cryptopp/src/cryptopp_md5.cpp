@@ -7,7 +7,7 @@
 
 void print_raw_buffer(byte* buffer, int buffer_length);
 
-int main(int argc, char* argv[]) {
+int main(){
 	char 				message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	byte 				hash[CryptoPP::Weak::MD5::DIGESTSIZE];
 	CryptoPP::Weak::MD5 md5;

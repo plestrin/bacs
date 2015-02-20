@@ -7,7 +7,7 @@
 
 void print_raw_buffer(byte* buffer, int buffer_length);
 
-int main(int argc, char* argv[]) {
+int main() {
 	byte 					plaintext[] = "Hello World!";
 	byte					key[] = "Key";
 	byte* 					ciphertext;

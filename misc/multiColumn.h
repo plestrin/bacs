@@ -50,6 +50,4 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...);
 void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size);
 void multiColumnPrinter_delete(struct multiColumnPrinter* printer);
 
-
-
 #endif

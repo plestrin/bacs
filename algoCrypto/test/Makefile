@@ -12,6 +12,7 @@ AES_TEST_NAME 			:= test_aes
 SHA1_TEST_NAME 			:= test_sha1
 SERPENT_TEST_NAME 		:= test_serpent
 DES_TEST_NAME 			:= test_des
+TWOFISH_TEST_NAME 		:= test_twofish
 
 all: test_go0 test_go1 test_go2 test_go3 test_gos test_co0 test_co1 test_co2 test_co3 test_coz
 
@@ -22,7 +23,8 @@ test_go0: 	build/$(TEA_TEST_NAME)_go0 		\
 			build/$(AES_TEST_NAME)_go0 		\
 			build/$(SHA1_TEST_NAME)_go0 	\
 			build/$(SERPENT_TEST_NAME)_go0 	\
-			build/$(DES_TEST_NAME)_go0
+			build/$(DES_TEST_NAME)_go0 		\
+			build/$(TWOFISH_TEST_NAME)_go0
 
 test_go1: 	build/$(TEA_TEST_NAME)_go1 		\
 			build/$(MD5_TEST_NAME)_go1 		\
@@ -30,7 +32,8 @@ test_go1: 	build/$(TEA_TEST_NAME)_go1 		\
 			build/$(AES_TEST_NAME)_go1 		\
 			build/$(SHA1_TEST_NAME)_go1 	\
 			build/$(SERPENT_TEST_NAME)_go1 	\
-			build/$(DES_TEST_NAME)_go1
+			build/$(DES_TEST_NAME)_go1 		\
+			build/$(TWOFISH_TEST_NAME)_go1
 
 test_go2: 	build/$(TEA_TEST_NAME)_go2 		\
 			build/$(MD5_TEST_NAME)_go2 		\
@@ -38,7 +41,8 @@ test_go2: 	build/$(TEA_TEST_NAME)_go2 		\
 			build/$(AES_TEST_NAME)_go2 		\
 			build/$(SHA1_TEST_NAME)_go2 	\
 			build/$(SERPENT_TEST_NAME)_go2 	\
-			build/$(DES_TEST_NAME)_go2
+			build/$(DES_TEST_NAME)_go2 		\
+			build/$(TWOFISH_TEST_NAME)_go2
 
 test_go3: 	build/$(TEA_TEST_NAME)_go3 		\
 			build/$(MD5_TEST_NAME)_go3 		\
@@ -46,7 +50,8 @@ test_go3: 	build/$(TEA_TEST_NAME)_go3 		\
 			build/$(AES_TEST_NAME)_go3 		\
 			build/$(SHA1_TEST_NAME)_go3 	\
 			build/$(SERPENT_TEST_NAME)_go3 	\
-			build/$(DES_TEST_NAME)_go3
+			build/$(DES_TEST_NAME)_go3 		\
+			build/$(TWOFISH_TEST_NAME)_go3
 
 test_gos: 	build/$(TEA_TEST_NAME)_gos 		\
 			build/$(MD5_TEST_NAME)_gos 		\
@@ -54,7 +59,8 @@ test_gos: 	build/$(TEA_TEST_NAME)_gos 		\
 			build/$(AES_TEST_NAME)_gos 		\
 			build/$(SHA1_TEST_NAME)_gos 	\
 			build/$(SERPENT_TEST_NAME)_gos 	\
-			build/$(DES_TEST_NAME)_gos
+			build/$(DES_TEST_NAME)_gos 		\
+			build/$(TWOFISH_TEST_NAME)_gos
 
 build/$(TEA_TEST_NAME)_go0: build/TEA.go0 build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -69,6 +75,8 @@ build/$(SHA1_TEST_NAME)_go0: build/SHA1.go0 build/test_sha1.go0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_go0: build/serpent.go0 build/test_serpent.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 build/$(DES_TEST_NAME)_go0: build/DES.go0 build/test_des.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_go0: build/twofish.go0 build/test_twofish.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_go1: build/TEA.go1 build/test_tea.go0 build/printBuffer.go0
@@ -85,6 +93,8 @@ build/$(SERPENT_TEST_NAME)_go1: build/serpent.go1 build/test_serpent.go0 build/p
 	$(GCC_CC) -o $@ $^
 build/$(DES_TEST_NAME)_go1: build/DES.go1 build/test_des.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_go1: build/twofish.go1 build/test_twofish.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_go2: build/TEA.go2 build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -99,6 +109,8 @@ build/$(SHA1_TEST_NAME)_go2: build/SHA1.go2 build/test_sha1.go0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_go2: build/serpent.go2 build/test_serpent.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 build/$(DES_TEST_NAME)_go2: build/DES.go2 build/test_des.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_go2: build/twofish.go2 build/test_twofish.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_go3: build/TEA.go3 build/test_tea.go0 build/printBuffer.go0
@@ -115,6 +127,8 @@ build/$(SERPENT_TEST_NAME)_go3: build/serpent.go3 build/test_serpent.go0 build/p
 	$(GCC_CC) -o $@ $^
 build/$(DES_TEST_NAME)_go3: build/DES.go3 build/test_des.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_go3: build/twofish.go3 build/test_twofish.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_gos: build/TEA.gos build/test_tea.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
@@ -129,6 +143,8 @@ build/$(SHA1_TEST_NAME)_gos: build/SHA1.gos build/test_sha1.go0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_gos: build/serpent.gos build/test_serpent.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 build/$(DES_TEST_NAME)_gos: build/DES.gos build/test_des.go0 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_gos: build/twofish.gos build/test_twofish.go0 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^
 
 build/%.go0: src/%.c
@@ -159,7 +175,8 @@ test_co0: 	build/$(TEA_TEST_NAME)_co0 			\
 			build/$(AES_TEST_NAME)_co0 			\
 			build/$(SHA1_TEST_NAME)_co0 		\
 			build/$(SERPENT_TEST_NAME)_co0 		\
-			build/$(DES_TEST_NAME)_co0
+			build/$(DES_TEST_NAME)_co0 			\
+			build/$(TWOFISH_TEST_NAME)_co0
 
 test_co1: 	build/$(TEA_TEST_NAME)_co1 			\
 			build/$(MD5_TEST_NAME)_co1 			\
@@ -167,7 +184,8 @@ test_co1: 	build/$(TEA_TEST_NAME)_co1 			\
 			build/$(AES_TEST_NAME)_co1 			\
 			build/$(SHA1_TEST_NAME)_co1 		\
 			build/$(SERPENT_TEST_NAME)_co1 		\
-			build/$(DES_TEST_NAME)_co1
+			build/$(DES_TEST_NAME)_co1 			\
+			build/$(TWOFISH_TEST_NAME)_co1
 
 test_co2: 	build/$(TEA_TEST_NAME)_co2 			\
 			build/$(MD5_TEST_NAME)_co2 			\
@@ -175,7 +193,8 @@ test_co2: 	build/$(TEA_TEST_NAME)_co2 			\
 			build/$(AES_TEST_NAME)_co2 			\
 			build/$(SHA1_TEST_NAME)_co2 		\
 			build/$(SERPENT_TEST_NAME)_co2 		\
-			build/$(DES_TEST_NAME)_co2
+			build/$(DES_TEST_NAME)_co2 			\
+			build/$(TWOFISH_TEST_NAME)_co2
 
 test_co3: 	build/$(TEA_TEST_NAME)_co3 			\
 			build/$(MD5_TEST_NAME)_co3 			\
@@ -183,7 +202,8 @@ test_co3: 	build/$(TEA_TEST_NAME)_co3 			\
 			build/$(AES_TEST_NAME)_co3 			\
 			build/$(SHA1_TEST_NAME)_co3 		\
 			build/$(SERPENT_TEST_NAME)_co3 		\
-			build/$(DES_TEST_NAME)_co3
+			build/$(DES_TEST_NAME)_co3 			\
+			build/$(TWOFISH_TEST_NAME)_co3
 
 test_coz: 	build/$(TEA_TEST_NAME)_coz 			\
 			build/$(MD5_TEST_NAME)_coz 			\
@@ -191,7 +211,8 @@ test_coz: 	build/$(TEA_TEST_NAME)_coz 			\
 			build/$(AES_TEST_NAME)_coz 			\
 			build/$(SHA1_TEST_NAME)_coz 		\
 			build/$(SERPENT_TEST_NAME)_coz 		\
-			build/$(DES_TEST_NAME)_coz
+			build/$(DES_TEST_NAME)_coz 			\
+			build/$(TWOFISH_TEST_NAME)_coz
 
 build/$(TEA_TEST_NAME)_co0: build/TEA.co0 build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -206,6 +227,8 @@ build/$(SHA1_TEST_NAME)_co0: build/SHA1.co0 build/test_sha1.co0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_co0: build/serpent.co0 build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(DES_TEST_NAME)_co0: build/DES.co0 build/test_des.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_co0: build/twofish.co0 build/test_twofish.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co1: build/TEA.co1 build/test_tea.co0 build/printBuffer.co0
@@ -222,6 +245,8 @@ build/$(SERPENT_TEST_NAME)_co1: build/serpent.co1 build/test_serpent.co0 build/p
 	$(CLANG_CC) -o $@ $^
 build/$(DES_TEST_NAME)_co1: build/DES.co1 build/test_des.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_co1: build/twofish.co1 build/test_twofish.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co2: build/TEA.co2 build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -236,6 +261,8 @@ build/$(SHA1_TEST_NAME)_co2: build/SHA1.co2 build/test_sha1.co0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_co2: build/serpent.co2 build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(DES_TEST_NAME)_co2: build/DES.co2 build/test_des.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_co2: build/twofish.co2 build/test_twofish.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_co3: build/TEA.co3 build/test_tea.co0 build/printBuffer.co0
@@ -252,6 +279,8 @@ build/$(SERPENT_TEST_NAME)_co3: build/serpent.co3 build/test_serpent.co0 build/p
 	$(CLANG_CC) -o $@ $^
 build/$(DES_TEST_NAME)_co3: build/DES.co3 build/test_des.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_co3: build/twofish.co3 build/test_twofish.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
 
 build/$(TEA_TEST_NAME)_coz: build/TEA.coz build/test_tea.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
@@ -266,6 +295,8 @@ build/$(SHA1_TEST_NAME)_coz: build/SHA1.coz build/test_sha1.co0 build/printBuffe
 build/$(SERPENT_TEST_NAME)_coz: build/serpent.coz build/test_serpent.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 build/$(DES_TEST_NAME)_coz: build/DES.coz build/test_des.co0 build/printBuffer.co0
+	$(CLANG_CC) -o $@ $^
+build/$(TWOFISH_TEST_NAME)_coz: build/twofish.coz build/test_twofish.co0 build/printBuffer.co0
 	$(CLANG_CC) -o $@ $^
 
 build/%.co0: src/%.c
