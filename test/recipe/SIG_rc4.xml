@@ -1,5 +1,5 @@
 <xml>
-	<recipe name="TEST_RC4_GO0" active="no">
+	<recipe name="TEST_RC4_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go0"/>
 		<search>
@@ -94,7 +94,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_RC4_CO0" active="no">
+	<recipe name="TEST_RC4_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_co0"/>
 		<search>
@@ -189,7 +189,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_RC4_WD" active="no">
+	<recipe name="TEST_RC4_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -245,11 +245,11 @@
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_RC4" active="no"> <!-- This implementation uses MMX regsiters -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algocrypto/openssl/ build/openssl_rc4"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
+	<recipe name="BOT_RC4" active="no"> <!-- the callGraph is broken for BOTAN - do not activate unless you known what you are doing -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
 		<search>
-			<arg value="load trace traceOPEN_RC4"/>
+			<arg value="load trace traceBOT_RC4"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/> <!-- Modify this value -->

@@ -98,7 +98,7 @@ void ir_normalize(struct ir* ir){
 	ir_normalize_remove_dead_code(ir, &modification);
 	#ifdef VERBOSE
 	if (modification){
-		printf("INFO: in %s, modification simplify instruction @ START\n", __func__);
+		printf("INFO: in %s, modification remove dead code @ START\n", __func__);
 	}
 	#endif
 	modification = 1;

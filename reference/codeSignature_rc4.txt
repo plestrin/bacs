@@ -6,7 +6,7 @@
 #
 # Help to understand the previous column title =):
 # 	- S[i] is the computation of S[i] address in the signature? If no, it is an input parameter. It has been designed that way, in order to avoid the effect of potential constant simplification (the value of S is known and maybe so is the value of i)
-# 	- VOlatile, is S[j] read again from memory after the swap? The other possibility is to keep it in a register from the first read.
+# 	- Volatile, is S[j] read again from memory after the swap? The other possibility is to keep it in a register from the first read.
 # 	- First, for the first iteration j = 0 and some specific simplifications are done on this basis.
 
 "rc4_prga_v1" (rc4_prga)

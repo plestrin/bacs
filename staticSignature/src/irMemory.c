@@ -4,16 +4,13 @@
 
 #include "irMemory.h"
 
+#include "irVariableRange.h"
+#include "dagPartialOrder.h"
+
+
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 1
 
 int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
-
-#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-#define IRMEMORY_MAX_BASE_SYM_DST 3
-
-static uint32_t ir_normalize_addr_depend_on_esp(struct node* node, uint32_t dst);
-
-#endif
 
 static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t size_dst){
 	if (size_src == 32 && size_dst == 8){
@@ -28,184 +25,195 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 	}
 }
 
-static int32_t ir_normalize_cannot_alias(struct node* addr1, struct node* addr2){
-	struct irOperation* op_ad1;
-	struct irOperation* op_ad2;
-	struct edge*		edge_cursor1;
-	struct edge*		edge_cursor2;
-	struct node* 		node_cursor1;
-	struct node* 		node_cursor2;
-	uint8_t* 			operand_buffer2;
-	uint8_t 			nb_imm;
-	uint8_t 			nb_oth;
-	uint32_t 			i;
+enum aliasResult{
+	MAY_ALIAS,
+	MUST_ALIAS,
+	CANNOT_ALIAS
+};
 
-	if (addr1 == addr2){
-		printf("ERROR: in %s, this case is supposed to happen, testing aliasing but get equal nodes\n", __func__);
-		return 0;
-	}
-	
-	op_ad1 = ir_node_get_operation(addr1);
-	op_ad2 = ir_node_get_operation(addr2);
+#define ADDRESS_NB_MAX_DEPENDENCE 32 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
+#define FINGERPRINT_MAX_RECURSION_LEVEL 4
 
+struct addrFingerprint{
+	uint32_t 			nb_dependence;
 	#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-	if (ir_normalize_addr_depend_on_esp(addr1, 0) != ir_normalize_addr_depend_on_esp(addr2, 0)){
-		return 0;
-	}
+	uint32_t 			flag;
 	#endif
+	struct {
+		struct node* 	node;
+		uint32_t 		flag;
+		uint32_t 		label;
+	} 					dependence[ADDRESS_NB_MAX_DEPENDENCE];
+};
 
-	if (op_ad1->type == IR_OPERATION_TYPE_IMM && op_ad1->type == IR_OPERATION_TYPE_IMM){
-		if (ir_imm_operation_get_unsigned_value(op_ad1) == ir_imm_operation_get_unsigned_value(op_ad2)){
-			return 1;
-		}
-		return 0;
+static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr_fgp, uint32_t recursion_level, uint32_t parent_label){
+	struct irOperation* operation;
+	struct edge* 		operand_cursor;
+	uint32_t 			nb_dependence;
+
+	if (recursion_level == 0){
+		addr_fgp->nb_dependence = 0;
+		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+		addr_fgp->flag = 0;
+		#endif
 	}
-	else if (op_ad1->type == IR_OPERATION_TYPE_INST && op_ad2->type == IR_OPERATION_TYPE_INST){
-		if (op_ad1->operation_type.inst.opcode == op_ad2->operation_type.inst.opcode && op_ad1->operation_type.inst.opcode == IR_ADD){
-			operand_buffer2 = (uint8_t*)alloca(sizeof(uint8_t) * addr2->nb_edge_dst);
-			
-			memset(operand_buffer2, 0, sizeof(uint8_t) * addr2->nb_edge_dst);
+	else if (recursion_level == FINGERPRINT_MAX_RECURSION_LEVEL){
+		return;
+	}
 
-			for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
-				node_cursor1 = edge_get_src(edge_cursor1);
+	if (addr_fgp->nb_dependence < ADDRESS_NB_MAX_DEPENDENCE){
+		addr_fgp->dependence[addr_fgp->nb_dependence].node = node;
+		addr_fgp->dependence[addr_fgp->nb_dependence].flag = parent_label & 0x7fffffff;
+		addr_fgp->dependence[addr_fgp->nb_dependence].label = addr_fgp->nb_dependence;
 
-				if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM){
-					if (nb_imm){
-						return 1;
-					}
-					
-					for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm ++; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-						node_cursor2 = edge_get_src(edge_cursor2);
+		addr_fgp->nb_dependence ++;
+	}
+	else{
+		printf("ERROR: in %s, the max number of dependence has been reached\n", __func__);
+		return;
+	}
 
-						if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2))){
-							return 1;
-						}
-					}
-				}
-				else{
-					for (edge_cursor2 = node_get_head_edge_dst(addr2), i = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2), i++){
-						node_cursor2 = edge_get_src(edge_cursor2);
+	operation = ir_node_get_operation(node);
+	nb_dependence = addr_fgp->nb_dependence;
 
-						if (node_cursor2 == node_cursor1){
-							operand_buffer2[i] = 1;
-							break;
-						}
-					}
-					if (edge_cursor2 == NULL){
-						return 1;
-					}
+	switch(operation->type){
+		case IR_OPERATION_TYPE_INST 	: {
+			if (operation->operation_type.inst.opcode == IR_ADD){
+				for (operand_cursor = node_get_head_edge_dst(node); operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
+					addrFingerprint_init(edge_get_src(operand_cursor), addr_fgp, recursion_level + 1, addr_fgp->nb_dependence);
 				}
 			}
-
-			for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm = 0, i = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2), i++){
-				if (operand_buffer2[i] == 0){
-					node_cursor2 = edge_get_src(edge_cursor2);
-
-					if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM){
-						if (nb_imm){
-							return 1;
-						}
-
-						for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm ++; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
-							node_cursor1 = edge_get_src(edge_cursor1);
-
-							if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2))){
-								return 1;
-							}
-						}
-					}
-					else{
-						return 1;
-					}
-				}
+			break;
+		}
+		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+		case IR_OPERATION_TYPE_IN_REG 	: {
+			if (operation->operation_type.in_reg.reg == IR_REG_ESP){
+				addr_fgp->flag |= 0x00000001;
 			}
+			break;
+		}
+		#endif
+		default 						: {
+			break;
+		}
+	}
 
-			return 0;
+	if (nb_dependence == addr_fgp->nb_dependence){
+		addr_fgp->dependence[nb_dependence - 1].flag |= 0x80000000;
+	}
+
+	return;
+}
+
+static void addrFingerprint_remove(struct addrFingerprint* addr_fgp, uint32_t start, uint32_t label){
+	uint32_t i;
+
+	for (i = start; i < addr_fgp->nb_dependence; ){
+		if ((addr_fgp->dependence[i].flag & 0x7fffffff) == label){
+			if (addr_fgp->dependence[i].flag & 0x80000000){
+				addrFingerprint_remove(addr_fgp, i + 1, addr_fgp->dependence[i].label);
+			}
+			if (i + 1 < addr_fgp->nb_dependence){
+				addr_fgp->dependence[i].node 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].node;
+				addr_fgp->dependence[i].flag 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].flag;
+				addr_fgp->dependence[i].label 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].label;
+			}
+			addr_fgp->nb_dependence --;
 		}
 		else{
-			printf("WARNING: in %s, found address operands which are (%s - %s)\n", __func__, irOpcode_2_string(op_ad1->operation_type.inst.opcode), irOpcode_2_string(op_ad2->operation_type.inst.opcode));
+			i ++;
 		}
 	}
-	else if (op_ad1->type == IR_OPERATION_TYPE_INST){
-		if (op_ad1->operation_type.inst.opcode == IR_ADD){
-			for (edge_cursor1 = node_get_head_edge_dst(addr1), nb_imm = 0, nb_oth = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
-				node_cursor1 = edge_get_src(edge_cursor1);
+}
 
-				if (ir_node_get_operation(node_cursor1)->type == IR_OPERATION_TYPE_IMM){
-					if (nb_imm){
-						return 1;
-					}
-					nb_imm ++;
-					if (ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor1)) == 0){
-						return 1;
-					}
+static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr1_fgp_ptr, struct node* addr2){
+	struct addrFingerprint 	addr1_fgp;
+	struct addrFingerprint 	addr2_fgp;
+	uint32_t 				i;
+	uint32_t 				j;
+	struct irVariableRange 	range1;
+	struct irVariableRange 	range2;
+	uint32_t 				nb_dependence_left1;
+	uint32_t 				nb_dependence_left2;
+	struct node* 			dependence_left1[ADDRESS_NB_MAX_DEPENDENCE];
+	struct node* 			dependence_left2[ADDRESS_NB_MAX_DEPENDENCE];
+
+	memcpy(&addr1_fgp, addr1_fgp_ptr, sizeof(struct addrFingerprint));
+	addrFingerprint_init(addr2, &addr2_fgp, 0, 0);
+
+	for (i = 0; i < addr1_fgp.nb_dependence; ){
+		for (j = 0; j < addr2_fgp.nb_dependence; j++){
+			if (addr1_fgp.dependence[i].node == addr2_fgp.dependence[j].node){
+				addrFingerprint_remove(&addr1_fgp, i + 1, addr1_fgp.dependence[i].label);
+				addrFingerprint_remove(&addr2_fgp, j + 1, addr2_fgp.dependence[j].label);
+
+				if (i + 1 < addr1_fgp.nb_dependence){
+					addr1_fgp.dependence[i].node 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].node;
+					addr1_fgp.dependence[i].flag 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].flag;
+					addr1_fgp.dependence[i].label 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].label;
 				}
-				else{
-					if (nb_oth){
-						return 1;
-					}
-					nb_oth ++;
-					if (node_cursor1 != addr2){
-						return 1;
-					}
+				addr1_fgp.nb_dependence --;
+
+				if (j + 1 < addr2_fgp.nb_dependence){
+					addr2_fgp.dependence[j].node 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].node;
+					addr2_fgp.dependence[j].flag 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].flag;
+					addr2_fgp.dependence[j].label 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].label;
 				}
+				addr2_fgp.nb_dependence --;
+
+				goto next;
 			}
-			if (nb_imm && nb_oth){
-				return 0;
-			}
-			else{
-				return 1;
-			}
+		}
+		i ++;
+		next:;
+	}
+
+	for (i = 0, nb_dependence_left1 = 0; i < addr1_fgp.nb_dependence; i++){
+		if (addr1_fgp.dependence[i].flag & 0x80000000){
+			dependence_left1[nb_dependence_left1 ++] = addr1_fgp.dependence[i].node;
+		}
+	}
+
+	for (j = 0, nb_dependence_left2 = 0; j < addr2_fgp.nb_dependence; j++){
+		if (addr2_fgp.dependence[j].flag & 0x80000000){
+			dependence_left2[nb_dependence_left2 ++] = addr2_fgp.dependence[j].node;
+		}
+	}
+
+	irVariableRange_get_range_additive_list(&range1, dependence_left1, nb_dependence_left1);
+	irVariableRange_get_range_additive_list(&range2, dependence_left2, nb_dependence_left2);
+
+	if (irVariableRange_is_cst(range1) && irVariableRange_is_cst(range2)){
+		if (irVariableRange_cst_equal(range1, range2)){
+			return MUST_ALIAS;
 		}
 		else{
-			printf("WARNING: in %s, found address operand which is %s\n", __func__, irOpcode_2_string(op_ad1->operation_type.inst.opcode));
+			return CANNOT_ALIAS;
 		}
 	}
-	else if (op_ad2->type == IR_OPERATION_TYPE_INST){
-		if (op_ad2->operation_type.inst.opcode == IR_ADD){
-			for (edge_cursor2 = node_get_head_edge_dst(addr2), nb_imm = 0, nb_oth = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-				node_cursor2 = edge_get_src(edge_cursor2);
-
-				if (ir_node_get_operation(node_cursor2)->type == IR_OPERATION_TYPE_IMM){
-					if (nb_imm){
-						return 1;
-					}
-					nb_imm ++;
-					if (ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_cursor2)) == 0){
-						return 1;
-					}
-				}
-				else{
-					if (nb_oth){
-						return 1;
-					}
-					nb_oth ++;
-					if (node_cursor2 != addr1){
-						return 1;
-					}
-				}
-			}
-			if (nb_imm && nb_oth){
-				return 0;
-			}
-			else{
-				return 1;
-			}
+	else if (irVariableRange_intersect(&range1, &range2)){
+		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+		if ((addr1_fgp.flag & 0x00000001) == (addr2_fgp.flag & 0x00000001)){
+			return MAY_ALIAS;
 		}
 		else{
-			printf("WARNING: in %s, found address operand which is %s\n", __func__, irOpcode_2_string(op_ad2->operation_type.inst.opcode));
+			return CANNOT_ALIAS;
 		}
+		#else
+		return MAY_ALIAS;
+		#endif
 	}
 
-	return 1;
+	return CANNOT_ALIAS;
 }
 
 static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum irOperationType alias_type, enum aliasingStrategy strategy){
 	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
 	struct edge* 			edge_cursor;
-	struct node* 			addr1;
+	struct node* 			addr1 = NULL;
 	struct node* 			addr_cursor;
+	struct addrFingerprint 	addr1_fgp;
 
 	node_cursor = ir_node_get_operation(node1)->operation_type.mem.access.next;
 	if (node_cursor == NULL){
@@ -220,17 +228,17 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 				return 1;
 			}
 			else{
-				addr1 = NULL;
-				addr_cursor = NULL;
-
-				for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-						addr1 = edge_get_src(edge_cursor);
-						break;
+				if (addr1 == NULL){
+					for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+						if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+							addr1 = edge_get_src(edge_cursor);
+							addrFingerprint_init(addr1, &addr1_fgp, 0, 0);
+							break;
+						}
 					}
 				}
 
-				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				for (edge_cursor = node_get_head_edge_dst(node_cursor), addr_cursor = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
 						addr_cursor = edge_get_src(edge_cursor);
 						break;
@@ -238,7 +246,7 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 				}
 
 				if (addr1 != NULL && addr_cursor != NULL){
-					if (ir_normalize_cannot_alias(addr1, addr_cursor)){
+					if (ir_normalize_alias_analysis(&addr1_fgp, addr_cursor) != CANNOT_ALIAS){
 						return 1;
 					}
 				}
@@ -258,12 +266,29 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 }
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
-	struct node* 	node_cursor;
-	struct edge* 	edge_cursor;
-	uint32_t 		nb_mem_access;
-	struct node** 	access_list = NULL;
-	uint32_t 		access_list_alloc_size;
-	uint32_t 		i;
+	struct node* 			node_cursor;
+	struct edge* 			edge_cursor;
+	uint32_t 				nb_mem_access;
+	struct node** 			access_list = NULL;
+	uint32_t 				access_list_alloc_size;
+	uint32_t 				i;
+	struct irVariableRange* range_buffer;
+
+	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
+		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+		return;
+	}
+
+	range_buffer = (struct irVariableRange*)malloc(sizeof(struct irVariableRange) * ir->graph.nb_node);
+	if (range_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+		node_cursor->ptr =  range_buffer + i;
+		irVariableRange_compute(node_cursor);
+	}
 
 	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		if (node_cursor->nb_edge_src > 1){
@@ -408,52 +433,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	if (access_list != NULL){
 		free(access_list);
 	}
+	free(range_buffer);
 }
-
-#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-
-static uint32_t ir_normalize_addr_depend_on_esp(struct node* node, uint32_t dst){
-	struct edge* 		edge_cursor;
-	struct node* 		node_cursor;
-	struct irOperation* operation_cursor;
-	struct irOperation* operation;
-
-	if (dst == 0){
-		operation = ir_node_get_operation(node);
-		if (operation->type == IR_OPERATION_TYPE_IN_REG && operation->operation_type.in_reg.reg == IR_REG_ESP){
-			return 1;
-		}
-		else if (operation->type != IR_OPERATION_TYPE_INST){
-			return 0;
-		}
-	}
-
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		node_cursor = edge_get_src(edge_cursor);
-		operation_cursor = ir_node_get_operation(node_cursor);
-
-		if (operation_cursor->type == IR_OPERATION_TYPE_IN_REG && operation_cursor->operation_type.in_reg.reg == IR_REG_ESP){
-			return 1;
-		}
-	}
-
-	if (dst != IRMEMORY_MAX_BASE_SYM_DST){
-		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			node_cursor = edge_get_src(edge_cursor);
-			operation_cursor = ir_node_get_operation(node_cursor);
-
-			if (operation_cursor->type == IR_OPERATION_TYPE_INST){
-				if (ir_normalize_addr_depend_on_esp(node_cursor, dst + 1)){
-					return 1;
-				}
-			}
-		}
-	}
-
-	return 0;
-}
-
-#endif
 
 
 /* ===================================================================== */
