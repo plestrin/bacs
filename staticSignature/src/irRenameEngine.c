@@ -67,7 +67,6 @@ static uint8_t registerIndex[NB_IR_REGISTER] = {
 	1  /* IR_REG_DI */
 };
 
-
 #define NB_IRREGISTER_FAMILY 	8
 #define MAX_REGISTER_PER_FAMILY 4
 
@@ -374,7 +373,7 @@ static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, st
 			max_ts = engine->register_alias[list->registers[i]].order;
 			reg = list->registers[i];
 		}
-		else if (max_ts == engine->register_alias[list->registers[i]].order && !ALIAS_IS_EXTEND(engine->register_alias[list->registers[i]].type)){
+		else if (max_ts == engine->register_alias[list->registers[i]].order && (ALIAS_IS_EXTEND(engine->register_alias[reg].type) || ALIAS_IS_WRITE(engine->register_alias[list->registers[i]].type))){
 			reg = list->registers[i];
 		}
 	}
@@ -391,7 +390,6 @@ static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, st
 
 	return reg;
 }
-
 
 struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg){
 	struct irRegisterBuffer list;
@@ -455,7 +453,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						}
 					}
 					else{
-						printf("ERROR: in %s, this case is not implemented yet, %s and %s in the dependence list for %s\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
+						printf("ERROR: in %s, this case is not implemented yet, %s and %s in the dependence list of %s\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
 					}
 				}
 				else{
@@ -484,7 +482,39 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						}
 					}
 					else{
-						printf("ERROR: in %s, this case is not implemented yet, smaller write dependence (%s - %s)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+						if (engine->register_alias[reg].ir_node){
+							uint32_t 		size_reg1;
+							uint32_t 		size_reg;
+							struct node* 	imm_mask;
+							struct node* 	ins_and;
+							struct node* 	ins_movzx;
+
+							size_reg 	= irRegister_get_size(reg);
+							size_reg1 	= irRegister_get_size(reg1);
+
+							imm_mask 	= ir_add_immediate(engine->ir, size_reg, (0xffffffffffffffff >> (64 - size_reg)) << size_reg1);
+							ins_and 	= ir_add_inst(engine->ir, IR_AND, size_reg);
+							node 		= ir_add_inst(engine->ir, IR_OR, size_reg);
+							ins_movzx 	= ir_add_inst(engine->ir, IR_MOVZX, size_reg);
+
+							if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
+								printf("ERROR: in %s, unable to add node to IR\n", __func__);
+							}
+							else{
+								ir_add_dependence(engine->ir, imm_mask, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, ins_and, node, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, ins_movzx, node, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, ins_movzx, IR_DEPENDENCE_TYPE_DIRECT);
+
+								engine->register_alias[reg].ir_node = node;
+								engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
+								engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+							}
+						}
+						else{
+							printf("ERROR: in %s, this case is not implemented yet, smaller write dependence (%s - %s = NULL)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+						}
 					}
 				}
 			}
