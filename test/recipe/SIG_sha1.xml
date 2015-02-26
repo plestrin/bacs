@@ -6,9 +6,14 @@
 			<arg value="load trace traceTEST_SHA1_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -19,9 +24,14 @@
 			<arg value="load trace traceTEST_SHA1_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -32,9 +42,14 @@
 			<arg value="load trace traceTEST_SHA1_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -45,9 +60,14 @@
 			<arg value="load trace traceTEST_SHA1_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -58,9 +78,14 @@
 			<arg value="load trace traceTEST_SHA1_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -71,22 +96,32 @@
 			<arg value="load trace traceTEST_SHA1_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO1" active="no">
+	<recipe name="TEST_SHA1_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co1"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -97,9 +132,14 @@
 			<arg value="load trace traceTEST_SHA1_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -110,9 +150,14 @@
 			<arg value="load trace traceTEST_SHA1_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 
@@ -123,9 +168,14 @@
 			<arg value="load trace traceTEST_SHA1_COz"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 </xml>
