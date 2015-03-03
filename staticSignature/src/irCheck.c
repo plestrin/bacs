@@ -111,7 +111,9 @@ void ir_check_size(struct ir* ir){
 						case IR_ROL 		:
 						case IR_ROR 		:
 						case IR_SHL 		:
-						case IR_SHR 		:{
+						case IR_SHLD 		:
+						case IR_SHR 		:
+						case IR_SHRD 		: {
 							if (dependence->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 								if (operand->size != 8 && operation_cursor->size != operand->size){
 									printf("ERROR: in %s, incorrect operand size for displacement: %u\n", __func__, operand->size);
@@ -145,59 +147,63 @@ void ir_check_size(struct ir* ir){
 }
 
 static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
-	2, 	/* IR_ADD 						*/
-	2, 	/* IR_AND 						*/
-	2, 	/* IR_CMOV 						*/
-	2, 	/* IR_DIV 						*/
-	2, 	/* IR_IDIV 						*/
-	2, 	/* IR_IMUL 						*/
-	0, 	/* IR_LEA 	It doesn't matter 	*/
-	0, 	/* IR_MOV 	It doesn't matter 	*/
-	1, 	/* IR_MOVZX 					*/
-	2, 	/* IR_MUL 						*/
-	1, 	/* IR_NOT 						*/
-	2, 	/* IR_OR 						*/
-	1, 	/* IR_PART1_8 					*/
-	1, 	/* IR_PART2_8 					*/
-	1, 	/* IR_PART1_16 					*/
-	2, 	/* IR_ROL 						*/
-	2, 	/* IR_ROR 						*/
-	2, 	/* IR_SHL 						*/
-	2, 	/* IR_SHR 						*/
-	2, 	/* IR_SUB 						*/
-	2, 	/* IR_XOR 						*/
-	0, 	/* IR_LOAD 	It doesn't matter 	*/
-	0, 	/* IR_STORE It doesn't matter 	*/
-	0, 	/* IR_JOKER It doesn't matter 	*/
-	0, 	/* IR_INVALID It doesn't matter */
+	2, 	/* 0  IR_ADD 						*/
+	2, 	/* 1  IR_AND 						*/
+	2, 	/* 2  IR_CMOV 						*/
+	2, 	/* 3  IR_DIV 						*/
+	2, 	/* 4  IR_IDIV 						*/
+	2, 	/* 5  IR_IMUL 						*/
+	0, 	/* 6  IR_LEA 	It doesn't matter 	*/
+	0, 	/* 7  IR_MOV 	It doesn't matter 	*/
+	1, 	/* 8  IR_MOVZX 						*/
+	2, 	/* 9  IR_MUL 						*/
+	1, 	/* 10 IR_NOT 						*/
+	2, 	/* 11 IR_OR 						*/
+	1, 	/* 12 IR_PART1_8 					*/
+	1, 	/* 13 IR_PART2_8 					*/
+	1, 	/* 14 IR_PART1_16 					*/
+	2, 	/* 15 IR_ROL 						*/
+	2, 	/* 16 IR_ROR 						*/
+	2, 	/* 17 IR_SHL 						*/
+	3, 	/* 18 IR_SHLD 						*/
+	2, 	/* 19 IR_SHR 						*/
+	3, 	/* 20 IR_SHRD 						*/
+	2, 	/* 21 IR_SUB 						*/
+	2, 	/* 22 IR_XOR 						*/
+	0, 	/* 23 IR_LOAD 	It doesn't matter 	*/
+	0, 	/* 24 IR_STORE It doesn't matter 	*/
+	0, 	/* 25 IR_JOKER It doesn't matter 	*/
+	0, 	/* 26 IR_INVALID It doesn't matter 	*/
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
-	0xffffffff, /* IR_ADD 						*/
-	0xffffffff, /* IR_AND 						*/
-	0x00000002, /* IR_CMOV 						*/
-	0x00000002, /* IR_DIV 						*/
-	0x00000002, /* IR_IDIV 						*/
-	0xffffffff, /* IR_IMUL 						*/
-	0x00000000, /* IR_LEA 	It doesn't matter 	*/
-	0x00000000, /* IR_MOV 	It doesn't matter 	*/
-	0x00000001, /* IR_MOVZX 					*/
-	0xffffffff, /* IR_MUL 						*/
-	0x00000001, /* IR_NOT 						*/
-	0xffffffff, /* IR_OR 						*/
-	0x00000001, /* IR_PART1_8 					*/
-	0x00000001, /* IR_PART2_8 					*/
-	0x00000001, /* IR_PART1_16 					*/
-	0x00000002, /* IR_ROL 						*/
-	0x00000002, /* IR_ROR 						*/
-	0x00000002, /* IR_SHL 						*/
-	0x00000002, /* IR_SHR 						*/
-	0x00000002, /* IR_SUB 						*/
-	0xffffffff, /* IR_XOR 						*/
-	0x00000000, /* IR_LOAD 	It doesn't matter 	*/
-	0x00000000, /* IR_STORE It doesn't matter 	*/
-	0x00000000, /* IR_JOKER It doesn't matter 	*/
-	0x00000000, /* IR_INVALID It doesn't matter */
+	0xffffffff, /* 0  IR_ADD 						*/
+	0xffffffff, /* 1  IR_AND 						*/
+	0x00000002, /* 2  IR_CMOV 						*/
+	0x00000002, /* 3  IR_DIV 						*/
+	0x00000002, /* 4  IR_IDIV 						*/
+	0xffffffff, /* 5  IR_IMUL 						*/
+	0x00000000, /* 6  IR_LEA 	It doesn't matter 	*/
+	0x00000000, /* 7  IR_MOV 	It doesn't matter 	*/
+	0x00000001, /* 8  IR_MOVZX 						*/
+	0xffffffff, /* 9  IR_MUL 						*/
+	0x00000001, /* 10 IR_NOT 						*/
+	0xffffffff, /* 11 IR_OR 						*/
+	0x00000001, /* 12 IR_PART1_8 					*/
+	0x00000001, /* 13 IR_PART2_8 					*/
+	0x00000001, /* 14 IR_PART1_16 					*/
+	0x00000002, /* 15 IR_ROL 						*/
+	0x00000002, /* 16 IR_ROR 						*/
+	0x00000002, /* 17 IR_SHL 						*/
+	0x00000003, /* 18 IR_SHLD 						*/
+	0x00000002, /* 19 IR_SHR 						*/
+	0x00000003, /* 20 IR_SHRD 						*/
+	0x00000002, /* 21 IR_SUB 						*/
+	0xffffffff, /* 22 IR_XOR 						*/
+	0x00000000, /* 23 IR_LOAD 	It doesn't matter 	*/
+	0x00000000, /* 24 IR_STORE It doesn't matter 	*/
+	0x00000000, /* 25 IR_JOKER It doesn't matter 	*/
+	0x00000000, /* 26 IR_INVALID It doesn't matter 	*/
 };
 
 void ir_check_connectivity(struct ir* ir){
@@ -468,7 +474,6 @@ void ir_check_connectivity(struct ir* ir){
 						}
 						break;
 					}
-
 					case IR_SHL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -486,7 +491,27 @@ void ir_check_connectivity(struct ir* ir){
 						}
 						break;
 					}
-
+					case IR_SHLD 		: {
+						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
+								printf("ERROR: in %s, incorrect dependence type %u for inst SHLD\n", __func__, i);
+								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+							}
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type DIRECT: %u for inst SHLD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_DIRECT]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_ROUND_OFF] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type ROUND_OFF: %u for inst SHLD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_ROUND_OFF]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type SHIFT_DISP: %u for inst SHLD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						break;
+					}
 					case IR_SHR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -504,7 +529,27 @@ void ir_check_connectivity(struct ir* ir){
 						}
 						break;
 					}
-
+					case IR_SHRD 		: {
+						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
+								printf("ERROR: in %s, incorrect dependence type %u for inst SHRD\n", __func__, i);
+								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+							}
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type DIRECT: %u for inst SHRD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_DIRECT]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_ROUND_OFF] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type ROUND_OFF: %u for inst SHRD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_ROUND_OFF]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type SHIFT_DISP: %u for inst SHRD\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						break;
+					}
 					case IR_SUB 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){

@@ -514,7 +514,6 @@ static void ir_normalize_simplify_instruction_numeric_add(struct ir* ir, struct 
 	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, 0, +)
 }
 
-/* This the new correct version of rewrite_add. TEST_MD5_WR is broken */
 static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	uint32_t 			nb_imm_operand;
 	struct edge* 		edge_cursor1;

@@ -26,16 +26,18 @@ enum irOpcode{
 	IR_ROL 		= 15,
 	IR_ROR 		= 16,
 	IR_SHL 		= 17,
-	IR_SHR 		= 18,
-	IR_SUB 		= 19,
-	IR_XOR 		= 20,
-	IR_LOAD 	= 21, 	/* signature */
-	IR_STORE 	= 22, 	/* signature */
-	IR_JOKER 	= 23, 	/* signature */
-	IR_INVALID 	= 24 	/* specific */
+	IR_SHLD 	= 18,
+	IR_SHR 		= 19,
+	IR_SHRD 	= 20,
+	IR_SUB 		= 21,
+	IR_XOR 		= 22,
+	IR_LOAD 	= 23, 	/* signature */
+	IR_STORE 	= 24, 	/* signature */
+	IR_JOKER 	= 25, 	/* signature */
+	IR_INVALID 	= 26 	/* specific */
 };
 
-#define NB_IR_OPCODE 25
+#define NB_IR_OPCODE 27 /* after updating this value, please grep in the code on NB_IR_OPCODE because a lot of static arrays depend on this value */
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -131,14 +133,15 @@ static inline void ir_mem_remove(struct irOperation* operation){
 }
 
 enum irDependenceType{
-	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000,
-	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001,
-	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002,
-	IR_DEPENDENCE_TYPE_DIVISOR 		= 0x00000003,
-	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000004
+	IR_DEPENDENCE_TYPE_DIRECT 		= 0x00000000, 	/* 1  Default dependence type 											*/
+	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001, 	/* 2  Address 															*/
+	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002, 	/* 3  Used for the last operand of {ROL, ROR, SHL, SHLD, SHR, SHLD} 	*/
+	IR_DEPENDENCE_TYPE_DIVISOR 		= 0x00000003, 	/* 4  Used for the last operand of {DIV, IDIV} 							*/
+	IR_DEPENDENCE_TYPE_ROUND_OFF 	= 0x00000004,	/* 5  Used for the second operand of {SHLD, SHRD} 						*/
+	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000005 	/* 6  Signature input and output parameters 							*/
 };
 
-#define NB_DEPENDENCE_TYPE 4
+#define NB_DEPENDENCE_TYPE 5
 
 struct irDependence{
 	enum irDependenceType 		type;

@@ -32,7 +32,7 @@ enum aliasResult{
 };
 
 #define ADDRESS_NB_MAX_DEPENDENCE 32 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
-#define FINGERPRINT_MAX_RECURSION_LEVEL 4
+#define FINGERPRINT_MAX_RECURSION_LEVEL 5
 
 struct addrFingerprint{
 	uint32_t 			nb_dependence;

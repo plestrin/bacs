@@ -389,6 +389,10 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"/\"]");
 			break;
 		}
+		case IR_DEPENDENCE_TYPE_ROUND_OFF 	: {
+			fprintf(file, "[label=\"s\"]"); 		/* the s is used to tag special operands */
+			break;
+		}
 		case IR_DEPENDENCE_TYPE_MACRO 		: {
 			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro)){
 				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
@@ -455,7 +459,9 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_ROL 		: {return "rol";}
 		case IR_ROR 		: {return "ror";}
 		case IR_SHL 		: {return "shl";}
+		case IR_SHLD 		: {return "shld";}
 		case IR_SHR 		: {return "shr";}
+		case IR_SHRD 		: {return "shrd";}
 		case IR_SUB 		: {return "sub";}
 		case IR_XOR 		: {return "xor";}
 		case IR_LOAD 		: {return "load";}
