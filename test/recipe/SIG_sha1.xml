@@ -1,5 +1,5 @@
 <xml>
-	<recipe name="TEST_SHA1_GO0" active="no">
+	<recipe name="TEST_SHA1_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go0"/>
 		<search>
@@ -13,11 +13,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO1" active="no">
+	<recipe name="TEST_SHA1_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go1"/>
 		<search>
@@ -31,11 +31,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO2" active="no">
+	<recipe name="TEST_SHA1_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go2"/>
 		<search>
@@ -49,11 +49,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO3" active="no">
+	<recipe name="TEST_SHA1_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go3"/>
 		<search>
@@ -67,11 +67,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GOs" active="no">
+	<recipe name="TEST_SHA1_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_gos"/>
 		<search>
@@ -85,11 +85,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO0" active="no">
+	<recipe name="TEST_SHA1_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
 		<search>
@@ -103,7 +103,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
@@ -121,11 +121,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO2" active="no">
+	<recipe name="TEST_SHA1_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co2"/>
 		<search>
@@ -139,11 +139,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO3" active="no">
+	<recipe name="TEST_SHA1_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co3"/>
 		<search>
@@ -157,11 +157,11 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_COz" active="no">
+	<recipe name="TEST_SHA1_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_coz"/>
 		<search>
@@ -175,7 +175,116 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_init" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_SHA1_WD"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="sha1_init" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_SHA1_WR"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="sha1_init" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_SHA1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
+		<search>
+			<arg value="load trace traceTOM_SHA1"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_process"/>
+			<arg value="export callGraph sha1_done"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="sha1_init" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_SHA1" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
+		<search>
+			<arg value="load trace tracePP_SHA1"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP4SHA19TransformEPjPKj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<!-- The message expand is not separated from the compression phase -->
+		</result>
+	</recipe>
+
+	<recipe name="BOT_SHA1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_sha1"/>
+		<search>
+			<arg value="load trace traceBOT_SHA1"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan7SHA_16010compress_nEPKhj"/> <!-- I don't why but this method seems to be called 6 times-->
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="sha1_init" number="6"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_SHA1" active="no"> <!-- It uses large register, but there is also callgraph issue here -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
+		<search>
+			<arg value="load trace traceOPEN_SHA1"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph SHA1_Final"/> <!-- SHA1_Update seems promising too, but I am unable to export it through the callGraph -->
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 </xml>

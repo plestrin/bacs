@@ -959,6 +959,7 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
 	struct irOperation*	operand_operation;
+	struct node* 		new_imm;
 
 	if (node->nb_edge_dst == 2){
 		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
@@ -972,7 +973,21 @@ static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct 
 					break;
 				}
 				else{
-					printf("WARNING: in %s, found IMM operand but it is shared -> skip\n", __func__);
+					new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, ir_node_get_operation(node)->size - ir_imm_operation_get_unsigned_value(operand_operation));
+					if (new_imm == NULL){
+						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					}
+					else{
+						if (ir_add_dependence(ir, new_imm, node, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						}
+						else{
+							ir_remove_dependence(ir, edge_cursor);
+							ir_node_get_operation(node)->operation_type.inst.opcode = IR_ROR;
+
+							*modification = 1;
+						}
+					}
 				}
 			}
 		}
