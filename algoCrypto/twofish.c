@@ -285,10 +285,11 @@ static void rs_mult(const uint8_t* in, uint8_t* out){
 }
 
 void twofish128_key_init(uint32_t* key, struct twofishKey* twofish_key){
-	uint32_t i;
-	uint32_t a;
-	uint32_t b;
-	uint8_t  S[4*TWOFISH_128_K];
+	uint8_t 	i;
+	uint32_t 	j;
+	uint32_t 	a;
+	uint32_t 	b;
+	uint8_t  	S[4*TWOFISH_128_K];
 
 	for (i = 0; i < TWOFISH_128_K; i++){
 		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
@@ -303,19 +304,20 @@ void twofish128_key_init(uint32_t* key, struct twofishKey* twofish_key){
 		twofish_key->ks[2*i + 1] = ROLc(a + 2*b, 9);
 	}
 
-	for (i = 0; i < 256; i++){
-		twofish_key->sbox[0][i] = MDS[0][SBOX[1][SBOX[0][SBOX[0][i] ^ S[0]] ^ S[4]]];
-		twofish_key->sbox[1][i] = MDS[1][SBOX[0][SBOX[0][SBOX[1][i] ^ S[1]] ^ S[5]]];
-		twofish_key->sbox[2][i] = MDS[2][SBOX[1][SBOX[1][SBOX[0][i] ^ S[2]] ^ S[6]]];
-		twofish_key->sbox[3][i] = MDS[3][SBOX[0][SBOX[1][SBOX[1][i] ^ S[3]] ^ S[7]]];
+	for (j = 0; j < 256; j++){
+		twofish_key->sbox[0][j] = MDS[0][SBOX[1][SBOX[0][SBOX[0][j] ^ S[0]] ^ S[4]]];
+		twofish_key->sbox[1][j] = MDS[1][SBOX[0][SBOX[0][SBOX[1][j] ^ S[1]] ^ S[5]]];
+		twofish_key->sbox[2][j] = MDS[2][SBOX[1][SBOX[1][SBOX[0][j] ^ S[2]] ^ S[6]]];
+		twofish_key->sbox[3][j] = MDS[3][SBOX[0][SBOX[1][SBOX[1][j] ^ S[3]] ^ S[7]]];
 	}
 }
 
 void twofish192_key_init(uint32_t* key, struct twofishKey* twofish_key){
-	uint32_t i;
-	uint32_t a;
-	uint32_t b;
-	uint8_t  S[4*TWOFISH_192_K];
+	uint8_t 	i;
+	uint32_t 	j;
+	uint32_t 	a;
+	uint32_t 	b;
+	uint8_t  	S[4*TWOFISH_192_K];
 
 	for (i = 0; i < TWOFISH_192_K; i++){
 		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
@@ -330,19 +332,20 @@ void twofish192_key_init(uint32_t* key, struct twofishKey* twofish_key){
 		twofish_key->ks[2*i + 1] = ROLc(a + 2*b, 9);
 	}
 
-	for (i = 0; i < 256; i++){
-		twofish_key->sbox[0][i] = MDS[0][SBOX[1][SBOX[0][SBOX[0][SBOX[1][i] ^ S[0]] ^ S[4]] ^ S[8 ]]];
-		twofish_key->sbox[1][i] = MDS[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][i] ^ S[1]] ^ S[5]] ^ S[9 ]]];
-		twofish_key->sbox[2][i] = MDS[2][SBOX[1][SBOX[1][SBOX[0][SBOX[0][i] ^ S[2]] ^ S[6]] ^ S[10]]];
-		twofish_key->sbox[3][i] = MDS[3][SBOX[0][SBOX[1][SBOX[1][SBOX[0][i] ^ S[3]] ^ S[7]] ^ S[11]]];
+	for (j = 0; j < 256; j++){
+		twofish_key->sbox[0][j] = MDS[0][SBOX[1][SBOX[0][SBOX[0][SBOX[1][j] ^ S[0]] ^ S[4]] ^ S[8 ]]];
+		twofish_key->sbox[1][j] = MDS[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][j] ^ S[1]] ^ S[5]] ^ S[9 ]]];
+		twofish_key->sbox[2][j] = MDS[2][SBOX[1][SBOX[1][SBOX[0][SBOX[0][j] ^ S[2]] ^ S[6]] ^ S[10]]];
+		twofish_key->sbox[3][j] = MDS[3][SBOX[0][SBOX[1][SBOX[1][SBOX[0][j] ^ S[3]] ^ S[7]] ^ S[11]]];
 	}
 }
 
 void twofish256_key_init(uint32_t* key, struct twofishKey* twofish_key){
-	uint32_t i;
-	uint32_t a;
-	uint32_t b;
-	uint8_t  S[4*TWOFISH_256_K];
+	uint8_t 	i;
+	uint32_t 	j;
+	uint32_t 	a;
+	uint32_t 	b;
+	uint8_t  	S[4*TWOFISH_256_K];
 
 	for (i = 0; i < TWOFISH_256_K; i++){
 		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
@@ -357,11 +360,11 @@ void twofish256_key_init(uint32_t* key, struct twofishKey* twofish_key){
 		twofish_key->ks[2*i + 1] = ROLc(a + 2*b, 9);
 	}
 
-	for (i = 0; i < 256; i++){
-		twofish_key->sbox[0][i] = MDS[0][SBOX[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][i] ^ S[0]] ^ S[4]] ^ S[8 ]] ^ S[12]]];
-		twofish_key->sbox[1][i] = MDS[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][SBOX[0][i] ^ S[1]] ^ S[5]] ^ S[9 ]] ^ S[13]]];
-		twofish_key->sbox[2][i] = MDS[2][SBOX[1][SBOX[1][SBOX[0][SBOX[0][SBOX[0][i] ^ S[2]] ^ S[6]] ^ S[10]] ^ S[14]]];
-		twofish_key->sbox[3][i] = MDS[3][SBOX[0][SBOX[1][SBOX[1][SBOX[0][SBOX[1][i] ^ S[3]] ^ S[7]] ^ S[11]] ^ S[15]]];
+	for (j = 0; j < 256; j++){
+		twofish_key->sbox[0][j] = MDS[0][SBOX[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][j] ^ S[0]] ^ S[4]] ^ S[8 ]] ^ S[12]]];
+		twofish_key->sbox[1][j] = MDS[1][SBOX[0][SBOX[0][SBOX[1][SBOX[1][SBOX[0][j] ^ S[1]] ^ S[5]] ^ S[9 ]] ^ S[13]]];
+		twofish_key->sbox[2][j] = MDS[2][SBOX[1][SBOX[1][SBOX[0][SBOX[0][SBOX[0][j] ^ S[2]] ^ S[6]] ^ S[10]] ^ S[14]]];
+		twofish_key->sbox[3][j] = MDS[3][SBOX[0][SBOX[1][SBOX[1][SBOX[0][SBOX[1][j] ^ S[3]] ^ S[7]] ^ S[11]] ^ S[15]]];
 	}
 }
 

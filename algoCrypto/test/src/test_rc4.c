@@ -16,7 +16,7 @@ int main(){
 	char*	ciphertext;
 	char* 	deciphertext;
 
-	uint64_t plaintext_length = strlen(plaintext);
+	size_t 	plaintext_length = strlen(plaintext);
 	uint8_t key_length = strlen(key);
 
 	ciphertext = (char*)malloc(plaintext_length);
