@@ -1,6 +1,6 @@
 CXX							:= g++
 CXXFLAGS					:= -W -Wall -I/usr/include/botan-1.10/
-LDFLAGS						:= -lbotan-1.10
+LDFLAGS						:= -lbotan-1.10 -ldl
 
 TEA_BOTAN_EXAMPLE_NAME 		:= bot_tea
 AES_BOTAN_EXAMPLE_NAME 		:= bot_aes
