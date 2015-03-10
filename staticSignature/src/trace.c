@@ -61,38 +61,6 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 	return assembly_concat(assembly_src_buffer, nb_trace_src, &(trace_dst->assembly));
 }
 
-void trace_print(struct trace* trace, uint32_t start, uint32_t stop){
-	uint32_t 					i;
-	struct instructionIterator 	it;
-	char 						buffer[256];
-
-	if (assembly_get_instruction(&(trace->assembly), &it, start)){
-		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
-		return;
-	}
-
-	if (it.prev_black_listed){
-		printf("[...]\n");
-	}
-
-	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
-	printf("0x%08x  %s\n", it.instruction_address, buffer);
-
-	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(&(trace->assembly)); i++){
-		if (assembly_get_next_instruction(&(trace->assembly), &it)){
-			printf("ERROR: in %s, unable to fetch next instruction %u from the assembly\n", __func__, i);
-			break;
-		}
-
-		if (it.prev_black_listed){
-			printf("[...]\n");
-		}
-
-		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
-		printf("0x%08x  %s\n", it.instruction_address, buffer);
-	}
-}
-
 void trace_print_location(struct trace* trace, struct codeMap* cm){
 	struct cm_routine* 			routine  = NULL;
 	struct cm_section* 			section;

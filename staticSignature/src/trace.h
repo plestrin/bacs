@@ -28,7 +28,7 @@ struct trace* trace_load_elf(const char* file_path);
 		printf("ERROR: in %s, assembly check failed\n", __func__); 														\
 	}
 
-void trace_print(struct trace* trace, uint32_t start, uint32_t stop);
+#define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop)
 
 #define trace_extract_segment(trace_src, trace_dst, offset, length) assembly_extract_segment(&((trace_src)->assembly), &((trace_dst)->assembly), offset, length)
 

@@ -32,6 +32,7 @@ struct dynBlock{
 };
 
 #define dynBlock_is_valid(dyn_block) ((dyn_block)->block != NULL)
+#define dynBlock_is_invalid(dyn_block) ((dyn_block)->block == NULL)
 #define dynBlock_set_invalid(dyn_block) (dyn_block)->block = NULL
 
 uint32_t asmBlock_count_nb_ins(struct asmBlock* block);
@@ -71,6 +72,8 @@ int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id,
 int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIterator* it, uint32_t index);
 int32_t assembly_get_next_instruction(struct assembly* assembly, struct instructionIterator* it);
 
+int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
+
 int32_t assembly_check(struct assembly* assembly);
 
 int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly* assembly_dst, uint32_t offset, uint32_t length);
@@ -78,6 +81,8 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assembly_src, struct assembly* assembly_dst);
 
 #define assembly_get_nb_instruction(assembly) ((assembly)->nb_dyn_instruction)
+
+void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop);
 
 void assembly_clean(struct assembly* assembly);
 

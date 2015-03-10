@@ -7,20 +7,39 @@
 #include "codeMap.h"
 
 struct assemblySnippet{
-	uint32_t 				offset;
-	uint32_t 				length;
-	ADDRESS 				expected_next_address;
-	int32_t 				next_snippet_offset;
-	int32_t 				prev_snippet_offset;
+	uint32_t 			offset;
+	uint32_t 			length;
+	ADDRESS 			expected_next_address;
+	int32_t 			next_snippet_offset;
+	int32_t 			prev_snippet_offset;
 };
 
-struct callGraphNode{
-	int32_t 				last_snippet_offset;
-	uint32_t 				nb_instruction;
-	struct cm_routine* 		routine;
+enum functionType{
+	FUNCTION_VALID,
+	FUNCTION_INVALID
 };
 
-#define callGraph_node_get_data(node) 	((struct callGraphNode*)&((node)->data))
+struct function{
+	enum functionType 	type;
+	int32_t 			last_snippet_offset;
+	struct cm_routine* 	routine;
+} __attribute__((__may_alias__));
+
+#define callGraph_node_get_function(node) 	((struct function*)&((node)->data))
+
+#define function_init_valid(func) 														\
+	(func)->type = FUNCTION_VALID; 														\
+	(func)->last_snippet_offset = -1; 													\
+	(func)->routine = NULL;
+
+#define function_init_invalid(func) 													\
+	(func)->type = FUNCTION_INVALID; 													\
+	(func)->last_snippet_offset = -1; 													\
+	(func)->routine = NULL;
+
+#define function_is_valid(func) 	((func)->type == FUNCTION_VALID)
+#define function_is_invalid(func) 	((func)->type == FUNCTION_INVALID)
+#define function_set_invalid(func) 	(func)->type = FUNCTION_INVALID
 
 enum callGraphEdgeType{
 	CALLGRAPH_EDGE_CALL,
@@ -28,24 +47,28 @@ enum callGraphEdgeType{
 };
 
 struct callGraphEdge{
-	enum callGraphEdgeType 	type;
-	uint32_t 				ins_offset;
-};
+	enum callGraphEdgeType type;
+} __attribute__((__may_alias__));
 
 #define callGraph_edge_get_data(edge) 	((struct callGraphEdge*)&((edge)->data))
 
 struct callGraph{
 	struct graph 			graph;
 	struct array 			snippet_array;
+	struct assembly* 		assembly_ref;
 };
 
-struct callGraph* callGraph_create(struct trace* trace);
-int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace);
+struct callGraph* callGraph_create(struct trace* trace, uint32_t index_start, uint32_t index_stop);
+int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32_t start, uint32_t stop);
 
 void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map);
 void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map);
 
 #define callGraph_printDot(call_graph) graphPrintDot_print(&(call_graph->graph), "callGraph.dot", NULL, call_graph)
+
+void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map);
+
+void callGraph_print_stack(struct callGraph* call_graph, uint32_t index);
 
 int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* trace, struct array* frag_array, char* name_filter);
 

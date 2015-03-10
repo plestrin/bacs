@@ -199,6 +199,12 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, uint
 		}
 		else if (i == 0 || (i != 0 && buffer_id[i - 1] != BLACK_LISTED_ID)){
 			dynBlock_set_invalid(assembly->dyn_blocks + j);
+			if (j){
+				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 1].instruction_count + assembly->dyn_blocks[j - 1].block->header.nb_ins;
+			}
+			else{
+				assembly->dyn_blocks[j].instruction_count = 0;
+			}
 			j ++;
 		}
 	}
@@ -237,7 +243,7 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 
 	while(down < up){
 		idx  = (up + down) / 2;
-		if (!dynBlock_is_valid(assembly->dyn_blocks + idx)){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + idx)){
 			if (idx != down){
 				idx --;
 			}
@@ -256,7 +262,7 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 			it->dyn_block_index 		= idx;
 			it->instruction_sub_index 	= index - assembly->dyn_blocks[idx].instruction_count;
 			it->instruction_offset 		= 0;
-			if (it->instruction_sub_index == 0 && idx > 0 && !dynBlock_is_valid(assembly->dyn_blocks + (idx - 1))){
+			if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
 				it->prev_black_listed = 1;
 			}
 			else{
@@ -268,7 +274,7 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 	}
 
 	if (!found){
-		printf("ERROR: in %s, unable to locate the dyn block containing the index %u\n", __func__, index);
+		printf("ERROR: in %s, unable to locate the dyn block containing the index %u (tot nb instruction: %u)\n", __func__, index, assembly->nb_dyn_instruction);
 		return -1;
 	}
 
@@ -379,6 +385,24 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 	return 0;
 }
 
+int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
+	uint32_t instruction_offset;
+
+	for (instruction_offset = 0; instruction_offset != block->header.size; ){
+		xed_decoded_inst_zero(xedd);
+		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), (block->header.size - instruction_offset > 15) ? 15 : (block->header.size - instruction_offset)) == XED_ERROR_NONE){
+			instruction_offset += xed_decoded_inst_get_length(xedd);
+		}
+		else{
+			printf("ERROR: in %s, unable to decode instruction in block %u. Run \"Check trace\" for more information\n", __func__, block->header.id);
+			return -1;
+		}		
+	}
+
+	return 0;
+}
+
 int32_t assembly_check(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
@@ -407,6 +431,25 @@ int32_t assembly_check(struct assembly* assembly){
 				switch(xed_error){
 					case XED_ERROR_NONE : {
 						nb_instruction ++;
+						switch(xed_decoded_inst_get_iclass(&xedd)){
+							case XED_ICLASS_CALL_FAR 	:
+							case XED_ICLASS_CALL_NEAR 	: {
+								if (nb_instruction !=  block->header.nb_ins){
+									printf("WARNING: in %s, found CALL instruction that is not at the end of a block\n", __func__);
+								}
+								break;
+							}
+							case XED_ICLASS_RET_FAR 	:
+							case XED_ICLASS_RET_NEAR 	: {
+								if (nb_instruction !=  block->header.nb_ins){
+									printf("WARNING: in %s, found RET instruction that is not at the end of a block\n", __func__);
+								}
+								break;
+							}
+							default 					: {
+								break;
+							}
+						}
 						break;
 					}
 					case XED_ERROR_BUFFER_TOO_SHORT : {
@@ -802,6 +845,38 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 	}
 
 	return 0;
+}
+
+void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
+	uint32_t 					i;
+	struct instructionIterator 	it;
+	char 						buffer[256];
+
+	if (assembly_get_instruction(assembly, &it, start)){
+		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
+		return;
+	}
+
+	if (it.prev_black_listed){
+		printf("[...]\n");
+	}
+
+	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
+	printf("0x%08x  %s\n", it.instruction_address, buffer);
+
+	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(assembly); i++){
+		if (assembly_get_next_instruction(assembly, &it)){
+			printf("ERROR: in %s, unable to fetch next instruction %u from the assembly\n", __func__, i);
+			break;
+		}
+
+		if (it.prev_black_listed){
+			printf("[...]\n");
+		}
+
+		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
+		printf("0x%08x  %s\n", it.instruction_address, buffer);
+	}
 }
 
 void assembly_clean(struct assembly* assembly){

@@ -55,9 +55,10 @@ int main(int argc, char** argv){
 
 	/* ir specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Filter [opt] & frag Index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Filter [opt] & frag index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check ir", 				"Perform a set of tests on the IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check_ir)
+	
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
@@ -65,9 +66,11 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_clean_collection)
 
 	/* callGraph specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"Specify OS", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot callGraph", 		"Write the call graph in the dot format", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check callGraph", 			"Perform some check on the callGraph", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -259,6 +262,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	ADDRESS 					pc;
 	struct instructionIterator 	it;
+	uint32_t 					i;
 
 	pc = strtoul((const char*)arg, NULL, 16);
 
@@ -270,23 +274,29 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	#error Please specify an architecture {ARCH_32 or ARCH_64}
 	#endif
 
-	if (assembly_get_instruction(&(analysis->trace->assembly), &it, 0)){
-		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
-		return;
-	}
+	for (i = 0; i < analysis->trace->assembly.nb_dyn_block; i++){
+		if (dynBlock_is_valid(analysis->trace->assembly.dyn_blocks + i)){
+			if (pc >= analysis->trace->assembly.dyn_blocks[i].block->header.address && analysis->trace->assembly.dyn_blocks[i].block->header.address + analysis->trace->assembly.dyn_blocks[i].block->header.size > pc){
+				if (assembly_get_instruction(&(analysis->trace->assembly), &it, analysis->trace->assembly.dyn_blocks[i].instruction_count)){
+					printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+					continue;
+				}
 
-	for (;;){
-		if (it.instruction_address == pc){
-			printf("\t- Found EIP in trace at offset: %u\n", it.instruction_index);
-		}
+				for (;;){
+					if (it.instruction_address == pc){
+						printf("\t- Found EIP in trace at offset: %u\n", it.instruction_index);
+						break;
+					}
 
-		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(analysis->trace->assembly)) - 1){
-			break;
-		}
-		else{
-			if (assembly_get_next_instruction(&(analysis->trace->assembly), &it)){
-				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
-				return;
+					if (it.instruction_index == analysis->trace->assembly.dyn_blocks[i].instruction_count + analysis->trace->assembly.dyn_blocks[i].block->header.nb_ins - 1){
+						break;
+					}
+
+					if (assembly_get_next_instruction(&(analysis->trace->assembly), &it)){
+						printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -734,6 +744,9 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 /* ===================================================================== */
 
 void analysis_call_create(struct analysis* analysis, char* arg){
+	uint32_t start = 0;
+	uint32_t stop;
+
 	if (analysis->call_graph != NULL){
 		printf("WARNING: in %s, deleting previous callGraph\n", __func__);
 		callGraph_delete(analysis->call_graph);
@@ -744,15 +757,18 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 		printf("ERROR: %s, trace is NULL\n", __func__);
 	}
 	else{
-		analysis->call_graph = callGraph_create(analysis->trace);
+		stop = trace_get_nb_instruction(analysis->trace);
+		inputParser_extract_index(arg, &start, &stop);
+
+		analysis->call_graph = callGraph_create(analysis->trace, start, stop);
 		if (analysis->call_graph == NULL){
 			printf("ERROR: in %s, unable to create callGraph\n", __func__);
 		}
 		else if (analysis->code_map != NULL){
-			if (!strcmp(arg, "LINUX")){
+			if (strstr(arg, "LINUX")){
 				callGraph_locate_in_codeMap_linux(analysis->call_graph, analysis->trace, analysis->code_map);
 			}
-			else if (!strcmp(arg, "WINDOWS")){
+			else if (strstr(arg, "WINDOWS")){
 				callGraph_locate_in_codeMap_windows(analysis->call_graph, analysis->trace, analysis->code_map);
 			}
 			else{
@@ -771,6 +787,15 @@ void analysis_call_printDot(struct analysis* analysis){
 	}
 }
 
+void analysis_call_check(struct analysis* analysis){
+	if (analysis->call_graph == NULL){
+		printf("ERROR: in %s, callGraph is NULL cannot check\n", __func__);
+	}
+	else{
+		callGraph_check(analysis->call_graph, analysis->code_map);
+	}
+}
+
 void analysis_call_export(struct analysis* analysis, char* arg){
 	if (analysis->call_graph == NULL){
 		printf("ERROR: in %s, callGraph is NULL cannot export\n", __func__);
@@ -779,5 +804,14 @@ void analysis_call_export(struct analysis* analysis, char* arg){
 		if (callGraph_export_inclusive(analysis->call_graph, analysis->trace, &(analysis->frag_array), arg)){
 			printf("ERROR: in %s, unable to export callGraph\n", __func__);
 		}
+	}
+}
+
+void analysis_call_print_stack(struct analysis* analysis, char* arg){
+	if (analysis->call_graph == NULL){
+		printf("ERROR: in %s, callGraph is NULL cannot print stack\n", __func__);
+	}
+	else{
+		callGraph_print_stack(analysis->call_graph, atoi(arg));
 	}
 }

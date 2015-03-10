@@ -321,21 +321,23 @@ void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop){
 	if (input != NULL){
 		offset1 = strpbrk(input, "0123456789[");
 
-		length = strlen(offset1);
-		if (length >= 4 && offset1[0] == '['){
-			offset2 = strchr(offset1, ':');
-			if (offset2 != NULL){
-				*start = atoi(offset1 + 1);
-				*stop  = atoi(offset2 + 1);
+		if (offset1 != NULL){
+			length = strlen(offset1);
+			if (length >= 4 && offset1[0] == '['){
+				offset2 = strchr(offset1, ':');
+				if (offset2 != NULL){
+					*start = atoi(offset1 + 1);
+					*stop  = atoi(offset2 + 1);
+				}
+				else{
+					*start = atoi(offset1 + 1);
+					*stop  = *start + 1;
+				}
 			}
 			else{
-				*start = atoi(offset1 + 1);
+				*start = atoi(offset1);
 				*stop  = *start + 1;
 			}
-		}
-		else{
-			*start = atoi(offset1);
-			*stop  = *start + 1;
 		}
 	}
 }

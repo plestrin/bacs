@@ -45,7 +45,9 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg);
 
 void analysis_call_create(struct analysis* analysis, char* arg);
 void analysis_call_printDot(struct analysis* analysis);
+void analysis_call_check(struct analysis* analysis);
 void analysis_call_export(struct analysis* analysis, char* arg);
+void analysis_call_print_stack(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 
