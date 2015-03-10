@@ -1,6 +1,7 @@
 # This file define the following signature(s):
 #	- aes_t4 		: one round of the AES encryption/decryption (round 1 to 9), four tables version
-#	- aes_t1 		: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete four version should be required since which of the for table is actually used)
+#	- aes_t1_v1 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two version should be required since which of the for table is actually used. 1 )
+#	- aes_t1_v2 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two version should be required since which of the for table is actually used. 2 )
 # 	- aes_r9		: 9 rounds of {aes_t4 | aes_t1}
 # 	- aes_r11 		: 11 rounds of {aes_t4 | aes_t1}
 # 	- aes_r13 		: 13 rounds of {aes_t4 | aes_t1}
@@ -100,7 +101,7 @@
 76 (*) [I:2:4] -> 75
 
 
-"aes_t1" (aes_r1)
+"aes_t1_v1" (aes_r1)
 
 # INPUT: 2 [4 frag, 4 frag]
 # OUTPUT: 1 [4 frag]
@@ -201,6 +202,113 @@
 72 -> 211 (ROR)
 73 -> 212 (ROR)
 74 -> 75 (XOR) [O:1:4]
+210 -> 75
+211 -> 75
+212 -> 75
+76 (*) [I:2:4] -> 75
+
+
+"aes_t1_v2" (aes_r1)
+
+# INPUT: 2 [4 frag, 4 frag]
+# OUTPUT: 1 [4 frag]
+# Remark: each of this subgraph occurrence counts for 4 in the subgraph isomorphism (four rotations of the initial pattern)
+
+1 (*) [I:1:1] -> 5 (SHR) 		# 1
+2 (*) [I:1:2] -> 6 (SHR)
+3 (*) [I:1:3] -> 7 (SHR)
+4 (*) [I:1:4] -> 8 (SHL)
+5 -> 9 (AND)
+6 -> 10 (AND)
+7 -> 11 (AND)
+8 -> 12 (AND)
+9 -> 13 (ADD)
+10 -> 14 (ADD)
+11 -> 15 (ADD)
+12 -> 16 (ADD)
+13 -> (@) 17 (LOAD)
+14 -> (@) 18 (LOAD)
+15 -> (@) 19 (LOAD)
+16 -> (@) 20 (LOAD)
+18 -> 201 (ROR)
+19 -> 202 (ROR)
+20 -> 203 (ROR)
+17 -> 21 (XOR) [O:1:1]
+201 -> 21
+202 -> 21
+203 -> 21
+22 (*) [I:2:1] -> 21
+
+2 -> 23 (SHR) 					# 2
+3 -> 24 (SHR)
+4 -> 25 (SHR)
+1 -> 26 (SHL)
+23 -> 27 (AND)
+24 -> 28 (AND)
+25 -> 29 (AND)
+26 -> 30 (AND)
+27 -> 31 (ADD)
+28 -> 32 (ADD)
+29 -> 33 (ADD)
+30 -> 34 (ADD)
+31 -> (@) 35 (LOAD)
+32 -> (@) 36 (LOAD)
+33 -> (@) 37 (LOAD)
+34 -> (@) 38 (LOAD)
+36 -> 204 (ROR)
+37 -> 205 (ROR)
+38 -> 206 (ROR)
+35 -> 39 (XOR) [O:1:2]
+204 -> 39
+205 -> 39
+206 -> 39
+40 (*) [I:2:2] -> 39
+
+3 -> 41 (SHR) 					# 3
+4 -> 42 (SHR)
+1 -> 43 (SHR)
+2 -> 44 (SHL)
+41 -> 45 (AND)
+42 -> 46 (AND)
+43 -> 47 (AND)
+44 -> 48 (AND)
+45 -> 49 (ADD)
+46 -> 50 (ADD)
+47 -> 51 (ADD)
+48 -> 52 (ADD)
+49 -> (@) 53 (LOAD)
+50 -> (@) 54 (LOAD)
+51 -> (@) 55 (LOAD)
+52 -> (@) 56 (LOAD)
+54 -> 207 (ROR)
+55 -> 208 (ROR)
+56 -> 209 (ROR)
+53 -> 57 (XOR) [O:1:3]
+207 -> 57
+208 -> 57
+209 -> 57
+58 (*) [I:2:3] -> 57
+
+4 -> 59 (SHR) 					# 4
+1 -> 60 (SHR)
+2 -> 61 (SHR)
+3 -> 62 (SHL)
+59 -> 63 (AND)
+60 -> 64 (AND)
+61 -> 65 (AND)
+62 -> 66 (AND)
+63 -> 67 (ADD)
+64 -> 68 (ADD)
+65 -> 69 (ADD)
+66 -> 70 (ADD)
+67 -> (@) 71 (LOAD)
+68 -> (@) 72 (LOAD)
+69 -> (@) 73 (LOAD)
+70 -> (@) 74 (LOAD)
+72 -> 210 (ROR)
+73 -> 211 (ROR)
+74 -> 212 (ROR)
+71 -> 75 (XOR) [O:1:4]
 210 -> 75
 211 -> 75
 212 -> 75

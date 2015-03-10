@@ -259,25 +259,25 @@
 			<arg value="load trace traceBOT_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN5Botan7SHA_16010compress_nEPKhj"/> <!-- I don't why but this method seems to be called 6 times-->
+			<arg value="export callGraph _ZN5Botan7SHA_16010compress_nEPKhj"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="sha1_init" number="6"/>
+			<algo name="sha1_init" number="2"/>
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_SHA1" active="no"> <!-- It uses large register, but there is also callgraph issue here -->
+	<recipe name="OPEN_SHA1" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
 		<search>
 			<arg value="load trace traceOPEN_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph SHA1_Final"/> <!-- SHA1_Update seems promising too, but I am unable to export it through the callGraph -->
+			<arg value="export callGraph SHA1_Final"/> <!-- SHA1_Update seems promising too, but since it uses large register I give up -->
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

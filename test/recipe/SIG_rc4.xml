@@ -245,7 +245,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="BOT_RC4" active="no"> <!-- the callGraph is broken for BOTAN - do not activate unless you known what you are doing -->
+	<recipe name="BOT_RC4" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
 		<search>

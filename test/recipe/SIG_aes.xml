@@ -333,6 +333,33 @@
 		</result>
 	</recipe>
 
+	<recipe name="BOT_AES" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_aes"/>
+		<search>
+			<arg value="load trace traceBOT_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1289encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1929encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_2569encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1289decrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1929decrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_2569decrypt_nEPKhPhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="1440"/> <!-- 1440 = (8 + 10 + 12 + 8 + 10 + 12) * 24-->
+			<algo name="aes_t1_v2" number="24"/> <!-- 24 = (1 + 1 + 1 + 1 + 1 + 1) * 4-->
+			<algo name="aes_r9" number="312"/> <!-- 312 = 24 * (4 + 2 + 4 + 2) + 4 * (1 + 1 + 1 + 1 + 1 + 1) -->
+			<algo name="aes_r11" number="112"/> <!-- 112 = 24 * (2 + 2) + 4 * (1 + 1 + 1 + 1) -->
+			<algo name="aes_r13" number="8"/> <!-- 8 = 4 * (1 + 1) -->
+		</result>
+	</recipe>
+
 	<recipe name="GLAD_AES_V0_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
@@ -1140,7 +1167,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1162,7 +1189,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1184,7 +1211,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1206,7 +1233,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1228,7 +1255,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1250,7 +1277,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1272,7 +1299,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1294,7 +1321,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1316,7 +1343,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1338,7 +1365,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1360,7 +1387,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
@@ -1382,7 +1409,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
 			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
