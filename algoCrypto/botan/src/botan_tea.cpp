@@ -59,69 +59,55 @@ static void botan_patch(){
 }
 
 static void botan_tea_xtea() {
-	uint32_t		key[4] = {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
-	char* 			pt;
-	char* 			ct;
-	char* 			vt;
-	uint32_t		size = 32;
+	unsigned char 	key[16]	= {0x12, 0x45, 0xf0, 0x6a, 0x45, 0x89, 0xfe, 0x60, 0x50, 0xAA, 0x78, 0x59, 0xf5, 0x69, 0x41, 0xbb};
+	unsigned char 	pt[8] 	= {0x45, 0xb7, 0x28, 0xba, 0xd7, 0x8f, 0x1a, 0x1f};
+	char 			ct[8];
+	char 			vt[8];
 	Botan::TEA 		tea;
 	Botan::XTEA 	xtea;
 
-	pt 	= (char*)malloc(size);
-	ct 	= (char*)malloc(size);
-	vt 	= (char*)malloc(size);
-	if (pt == NULL || ct == NULL || vt == NULL){
-		std::cout << "ERROR: unable to allocate memory" << std::endl;
-		return;
-	}
-
-	memset(pt, 0, size);
-	strncpy(pt, "Hello World!", size);
-
-	std::cout << "Plaintext:      \"" << pt << "\"" << std::endl << "Key: \t\t";
+	std::cout << "Plaintext:       ";
+	print_raw_buffer((Botan::byte*)pt, 8);
+	std::cout << std::endl << "Key:             ";
 	print_raw_buffer((Botan::byte*)key, 16);
 
 	/* Botan TEA seems to be Big endian */
-	readBuffer_reverse_endianness((Botan::byte*)pt, size);
+	readBuffer_reverse_endianness((Botan::byte*)pt, 8);
 	readBuffer_reverse_endianness((Botan::byte*)key, 16);
 
 	tea.set_key((Botan::byte*)key, 16);
-	tea.encrypt_n((Botan::byte*)pt, (Botan::byte*)ct, 4);
-	tea.decrypt_n((Botan::byte*)ct, (Botan::byte*)vt, 4);
+	tea.encrypt_n((Botan::byte*)pt, (Botan::byte*)ct, 1);
+	tea.decrypt_n((Botan::byte*)ct, (Botan::byte*)vt, 1);
 
-	if (!memcmp(pt, vt, size)){
-		std::cout << std::endl << "Ciphertext TEA: ";
-		readBuffer_reverse_endianness((Botan::byte*)ct, size);
-		print_raw_buffer((Botan::byte*)ct, size);
-		std::cout << std::endl << "Recovery TEA:   OK" << std::endl;
+	if (!memcmp(pt, vt, 8)){
+		std::cout << std::endl << "Ciphertext TEA:  ";
+		readBuffer_reverse_endianness((Botan::byte*)ct, 8);
+		print_raw_buffer((Botan::byte*)ct, 8);
+		std::cout << std::endl << "Recovery:        OK" << std::endl;
 	}
 	else{
 		std::cout << std::endl << "Ciphertext TEA: ";
-		readBuffer_reverse_endianness((Botan::byte*)ct, size);
-		print_raw_buffer((Botan::byte*)ct, size);
-		std::cout << std::endl << "Recovery TEA:   FAIL" << std::endl;
+		readBuffer_reverse_endianness((Botan::byte*)ct, 8);
+		print_raw_buffer((Botan::byte*)ct, 8);
+		std::cout << std::endl << "Recovery:        FAIL" << std::endl;
 	}
 
 	xtea.set_key((Botan::byte*)key, 16);
-	xtea.encrypt_n((Botan::byte*)pt, (Botan::byte*)ct, 4);
-	xtea.decrypt_n((Botan::byte*)ct, (Botan::byte*)vt, 4);
+	xtea.encrypt_n((Botan::byte*)pt, (Botan::byte*)ct, 1);
+	xtea.decrypt_n((Botan::byte*)ct, (Botan::byte*)vt, 1);
 
-	if (!memcmp(pt, vt, size)){
-		std::cout << "Ciphertext XTEA:";
-		readBuffer_reverse_endianness((Botan::byte*)ct, size);
-		print_raw_buffer((Botan::byte*)ct, size);
-		std::cout << std::endl << "Recovery XTEA:  OK" << std::endl;
+	if (!memcmp(pt, vt, 8)){
+		std::cout << "Ciphertext XTEA: ";
+		readBuffer_reverse_endianness((Botan::byte*)ct, 8);
+		print_raw_buffer((Botan::byte*)ct, 8);
+		std::cout << std::endl << "Recovery:        OK" << std::endl;
 	}
 	else{
 		std::cout << "Ciphertext XTEA:";
-		readBuffer_reverse_endianness((Botan::byte*)ct, size);
-		print_raw_buffer((Botan::byte*)ct, size);
-		std::cout << std::endl << "Recovery XTEA:  FAIL" << std::endl;
+		readBuffer_reverse_endianness((Botan::byte*)ct, 8);
+		print_raw_buffer((Botan::byte*)ct, 8);
+		std::cout << std::endl << "Recovery:        FAIL" << std::endl;
 	}
-
-	free(pt);
-	free(ct);
-	free(vt);
 }
 
 void print_raw_buffer(Botan::byte* buffer, int buffer_length){

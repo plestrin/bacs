@@ -10,60 +10,40 @@
 #endif
 
 int main(){
-	char* 			plaintext		= NULL;
-	char* 			ciphertext 		= NULL;
-	char* 			deciphertext 	= NULL;
-	uint32_t		size 			= 32;
-	uint32_t		key[4]	 		= {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
+	unsigned char 	plaintext[TEA_BLOCK_NB_BYTE]		= {0x45, 0xb7, 0x28, 0xba, 0xd7, 0x8f, 0x1a, 0x1f};
+	char 			ciphertext[TEA_BLOCK_NB_BYTE];
+	char  			deciphertext[TEA_BLOCK_NB_BYTE];
+	unsigned char 	key[TEA_KEY_NB_BYTE]	 			= {0x12, 0x45, 0xf0, 0x6a, 0x45, 0x89, 0xfe, 0x60, 0x50, 0xAA, 0x78, 0x59, 0xf5, 0x69, 0x41, 0xbb};
+		
+	printf("Plaintext:       ");
+	printBuffer_raw(stdout, (char*)plaintext, TEA_BLOCK_NB_BYTE);
+	printf("\nKey:             ");
+	printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
+
+	tea_encrypt((uint32_t*)plaintext, (uint32_t*)key, (uint32_t*)ciphertext);
+	tea_decrypt((uint32_t*)ciphertext, (uint32_t*)key, (uint32_t*)deciphertext);
 	
-	plaintext 		= (char*)malloc(size);
-	ciphertext 		= (char*)malloc(size);
-	deciphertext 	= (char*)malloc(size);
-	if (plaintext != NULL && ciphertext != NULL && deciphertext != NULL){
-		memset(plaintext, 0, size);
-		strncpy(plaintext, "Hello World!", size);
+	printf("\nCiphertext TEA:  ");
+	printBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
 		
-		printf("Plaintext:\t\"%s\"\n", plaintext);
-		printf("Key: \t\t");
-		printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
-		printf("\n");
-
-		tea_encipher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
-
-		printf("Ciphertext TEA: ");
-		printBuffer_raw(stdout, ciphertext, size);
-		printf("\n");
-
-		tea_decipher((uint32_t*)ciphertext, (uint64_t)size, key, (uint32_t*)deciphertext);
-		
-		if (memcmp(plaintext, deciphertext, size) == 0){
-			printf("Recovery TEA: \tOK\n");
-		}
-		else{
-			printf("Recovery TEA: \tFAIL\n");
-		}
-
-		xtea_encipher((uint32_t*)plaintext, (uint64_t)size, key, (uint32_t*)ciphertext);
-
-		printf("Ciphertext XTEA:");
-		printBuffer_raw(stdout, ciphertext, size);
-		printf("\n");
-
-		xtea_decipher((uint32_t*)ciphertext, (uint64_t)size, key, (uint32_t*)deciphertext);
-		
-		if (memcmp(plaintext, deciphertext, size) == 0){
-			printf("Recovery XTEA: \tOK\n");
-		}
-		else{
-			printf("Recovery XTEA: \tFAIL\n");
-		}
-
-		free(plaintext);
-		free(ciphertext);
-		free(deciphertext);
+	if (memcmp(plaintext, deciphertext, TEA_BLOCK_NB_BYTE) == 0){
+		printf("\nRecovery:        OK\n");
 	}
 	else{
-		printf("ERROR: unable to allocate memory\n");
+		printf("\nRecovery:        FAIL\n");
+	}
+
+	xtea_encrypt((uint32_t*)plaintext, (uint32_t*)key, (uint32_t*)ciphertext);
+	xtea_decrypt((uint32_t*)ciphertext, (uint32_t*)key, (uint32_t*)deciphertext);
+
+	printf("Ciphertext XTEA: ");
+	printBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
+	
+	if (memcmp(plaintext, deciphertext, TEA_BLOCK_NB_BYTE) == 0){
+		printf("\nRecovery:        OK\n");
+	}
+	else{
+		printf("\nRecovery:        FAIL\n");
 	}
 	
 	return 0;

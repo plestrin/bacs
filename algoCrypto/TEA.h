@@ -10,16 +10,15 @@
 
 /* 
  * No padding is done, make sure the data length is a multiple of the block size.
- * - data			: input message. It's length is a multiple of the block size.
- * - data_length 	: size of the input
+ * - data			: one block of input message
  * - key			: 128 bits key
- * - output 		: output message. Its length is equal to the length of the input
+ * - output 		: one block of output message
  */
 
-void tea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
-void tea_decipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
+void tea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output);
+void tea_decrypt(uint32_t* data, uint32_t* key, uint32_t* output);
 
-void xtea_encipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
-void xtea_decipher(uint32_t* data, uint64_t data_length, uint32_t* key, uint32_t* output);
+void xtea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output);
+void xtea_decrypt(uint32_t* data, uint32_t* key, uint32_t* output);
 
 #endif

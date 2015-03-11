@@ -6,62 +6,40 @@
 #include "printBuffer.h"
 
 int main(){
-	char* 			plaintext		= NULL;
-	char* 			ciphertext 		= NULL;
-	char* 			deciphertext 	= NULL;
-	uint32_t		size 			= 32;
-	uint32_t		key[4]	 		= {0x1245F06A, 0x4589FE60, 0x50AA7859, 0xF56941BB};
+	unsigned char 	pt[8]		= {0x45, 0xb7, 0x28, 0xba, 0xd7, 0x8f, 0x1a, 0x1f};
+	unsigned char 	ct[8];
+	unsigned char 	vt[8];
+	unsigned char 	key[16] 	= {0x12, 0x45, 0xf0, 0x6a, 0x45, 0x89, 0xfe, 0x60, 0x50, 0xAA, 0x78, 0x59, 0xf5, 0x69, 0x41, 0xbb};
 	symmetric_key 	skey;
-	uint32_t 		i;
-	
-	plaintext 		= (char*)malloc(size);
-	ciphertext 		= (char*)malloc(size);
-	deciphertext 	= (char*)malloc(size);
-	if (plaintext != NULL && ciphertext != NULL && deciphertext != NULL){
-		memset(plaintext, 0, size);
-		strncpy(plaintext, "Hello World!", size);
 		
-		printf("Plaintext:\t\"%s\"\n", plaintext);
-		printf("Key: \t\t");
-		printBuffer_raw(stdout, (char*)key, 16);
-		printf("\n");
+	printf("Plaintext:       ");
+	printBuffer_raw(stdout, (char*)pt, 8);
+	printf("\nKey:             ");
+	printBuffer_raw(stdout, (char*)key, 16);
 
-		if (xtea_setup((const unsigned char*)key, 16, 32, &skey) != CRYPT_OK){
-			printf("ERROR: unable to setup xtea key\n");
-			return -1;
-		}
+	if (xtea_setup(key, 16, 32, &skey) != CRYPT_OK){
+		printf("ERROR: unable to setup xtea key\n");
+		return 0;
+	}
 
-		for (i = 0; i < size; i+= 8){
-			if (xtea_ecb_encrypt((const unsigned char*)plaintext + i, (unsigned char *)ciphertext + i, &skey) != CRYPT_OK){
-				printf("ERROR: unable to encrypt xtea\n");
-				break;
-			}
-		}
+	if (xtea_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+		printf("ERROR: unable to encrypt xtea\n");
+		return 0;
+	}
 
-		for (i = 0; i < size; i+= 8){
-			if (xtea_ecb_decrypt((const unsigned char*)ciphertext + i, (unsigned char *)deciphertext + i, &skey) != CRYPT_OK){
-				printf("ERROR: unable to decrypt xtea\n");
-				return -1;
-			}
-		}
+	if (xtea_ecb_decrypt(ct, vt, &skey) != CRYPT_OK){
+		printf("ERROR: unable to decrypt xtea\n");
+		return 0;
+	}
 
-		printf("Ciphertext XTEA:");
-		printBuffer_raw(stdout, ciphertext, size);
+	printf("\nCiphertext XTEA: ");
+	printBuffer_raw(stdout, (char*)ct, 8);
 		
-		if (memcmp(plaintext, deciphertext, size) == 0){
-			printf("\nRecovery XTEA: \tOK\n");
-		}
-		else{
-			printf("\nRecovery XTEA: \tFAIL\n");
-		}
-
-
-		free(plaintext);
-		free(ciphertext);
-		free(deciphertext);
+	if (memcmp(pt, vt, 8) == 0){
+		printf("\nRecovery:        OK\n");
 	}
 	else{
-		printf("ERROR: unable to allocate memory\n");
+		printf("\nRecovery:        FAIL\n");
 	}
 
 	return 0;
