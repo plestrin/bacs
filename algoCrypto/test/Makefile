@@ -6,6 +6,11 @@ CLANG_CC 				:= clang
 CLANG_CFLAGS 			:= -pedantic -Weverything -Wno-cast-align -Wno-newline-eof -Wno-unused-macros
 
 TEA_TEST_NAME			:= test_tea
+ECB_TEA_TEST_NAME 		:= test_ecb_tea
+CBC_TEA_TEST_NAME 		:= test_cbc_tea
+OFB_TEA_TEST_NAME 		:= test_ofb_tea
+CFB_TEA_TEST_NAME 		:= test_cfb_tea
+CTR_TEA_TEST_NAME 		:= test_ctr_tea
 MD5_TEST_NAME 			:= test_md5
 RC4_TEST_NAME 			:= test_rc4
 AES_TEST_NAME 			:= test_aes
@@ -20,6 +25,11 @@ DES_TEST_NAME 			:= test_des
 TWOFISH_TEST_NAME 		:= test_twofish
 
 TARGETS 				:= 	$(TEA_TEST_NAME) 			\
+							$(ECB_TEA_TEST_NAME) 		\
+							$(CBC_TEA_TEST_NAME) 		\
+							$(OFB_TEA_TEST_NAME) 		\
+							$(CFB_TEA_TEST_NAME) 		\
+							$(CTR_TEA_TEST_NAME) 		\
 							$(MD5_TEST_NAME) 			\
 							$(RC4_TEST_NAME) 			\
 							$(AES_TEST_NAME) 			\
@@ -36,6 +46,16 @@ COMPILATIONS 			:= go0 go1 go2 go3 gos co0 co1 co2 co3 coz
 
 define TEMPLATE
 build/$$(TEA_TEST_NAME)_$(1): build/TEA.$(1) build/test_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(ECB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ecb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CBC_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_cbc_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(OFB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ofb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CFB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_cfb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CTR_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ctr_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(MD5_TEST_NAME)_$(1): build/MD5.$(1) build/test_md5.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
