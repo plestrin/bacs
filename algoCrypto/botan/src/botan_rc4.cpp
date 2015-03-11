@@ -69,8 +69,8 @@ static void botan_rc4() {
 	deciphertext = (unsigned char*)malloc(plaintext_length);
 
 	if (ciphertext != NULL && deciphertext != NULL){
-		std::cout << "Plaintext:   \"" << plaintext << "\"" << std::endl;
-		std::cout << "Key:         \"" << key << "\"" << std::endl;
+		std::cout << "Plaintext:  \"" << plaintext << "\"" << std::endl;
+		std::cout << "Key:        \"" << key << "\"" << std::endl;
 
 		rc4_enc.set_key((Botan::byte*)key, sizeof(key) - 1);
 		rc4_enc.cipher((Botan::byte*)plaintext, (Botan::byte*)ciphertext, plaintext_length);
@@ -79,14 +79,14 @@ static void botan_rc4() {
 		rc4_dec.cipher((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, plaintext_length);
 
 		if (!memcmp(plaintext, deciphertext, plaintext_length)){
-			std::cout << "Ciphertext : ";
+			std::cout << "Ciphertext: ";
 			print_raw_buffer((Botan::byte*)ciphertext, plaintext_length);
-			std::cout << std::endl << "Recovery :   OK" << std::endl;
+			std::cout << std::endl << "Check:      OK" << std::endl;
 		}
 		else{
-			std::cout << "Ciphertext : ";
+			std::cout << "Ciphertext: ";
 			print_raw_buffer((Botan::byte*)ciphertext, plaintext_length);
-			std::cout << std::endl << "Recovery :   FAIL" << std::endl;
+			std::cout << std::endl << "Check:      FAIL" << std::endl;
 		}
 	}
 }

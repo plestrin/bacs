@@ -73,7 +73,7 @@ static void botan_aes(){
 	print_raw_buffer((Botan::byte*)plaintext, 16);
 
 	/* 128 bits AES */
-	std::cout << std::endl << "Key: \t\t";
+	std::cout << std::endl << "Key 128:        ";
 	print_raw_buffer((Botan::byte*)key_128, 16);
 
 	aes128.set_key((Botan::byte*)key_128, 16);
@@ -81,18 +81,18 @@ static void botan_aes(){
 	aes128.decrypt_n((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, 1);
 
 	if (!memcmp(plaintext, deciphertext, 16)){
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 128: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   OK" << std::endl;
+		std::cout << std::endl << "Recovery 128:   OK" << std::endl;
 	}
 	else{
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 128: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   FAIL" << std::endl;
+		std::cout << std::endl << "Recovery 128:   FAIL" << std::endl;
 	}
 
 	/* 192 bits AES */
-	std::cout << "Key: \t\t";
+	std::cout << "Key 192:        ";
 	print_raw_buffer((Botan::byte*)key_192, 24);
 
 	aes192.set_key((Botan::byte*)key_192, 24);
@@ -100,18 +100,18 @@ static void botan_aes(){
 	aes192.decrypt_n((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, 1);
 
 	if (!memcmp(plaintext, deciphertext, 16)){
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 192: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   OK" << std::endl;
+		std::cout << std::endl << "Recovery 192:   OK" << std::endl;
 	}
 	else{
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 192: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   FAIL" << std::endl;
+		std::cout << std::endl << "Recovery 192:   FAIL" << std::endl;
 	}
 
 	/* 256 bits AES */
-	std::cout << "Key: \t\t";
+	std::cout << "Key 256:        ";
 	print_raw_buffer((Botan::byte*)key_256, 32);
 
 	aes256.set_key((Botan::byte*)key_256, 32);
@@ -119,14 +119,14 @@ static void botan_aes(){
 	aes256.decrypt_n((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, 1);
 
 	if (!memcmp(plaintext, deciphertext, 16)){
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 256: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   OK" << std::endl;
+		std::cout << std::endl << "Recovery 256:   OK" << std::endl;
 	}
 	else{
-		std::cout << std::endl << "Ciphertext AES: ";
+		std::cout << std::endl << "Ciphertext 256: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery AES:   FAIL" << std::endl;
+		std::cout << std::endl << "Recovery 256:   FAIL" << std::endl;
 	}
 }
 

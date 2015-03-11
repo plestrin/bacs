@@ -67,10 +67,10 @@ static void botan_serpent() {
 
 	Botan::Serpent 	serpent;
 
-	std::cout << "Plaintext:          ";
+	std::cout << "Plaintext:  ";
 	print_raw_buffer((Botan::byte*)plaintext, 16);
 
-	std::cout << std::endl << "Key:                ";
+	std::cout << std::endl << "Key:        ";
 	print_raw_buffer((Botan::byte*)key, KEY_SIZE);
 
 	serpent.set_key((Botan::byte*)key, KEY_SIZE);
@@ -78,14 +78,14 @@ static void botan_serpent() {
 	serpent.decrypt_n((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, 1);
 
 	if (!memcmp(plaintext, deciphertext, 16)){
-		std::cout << std::endl << "Ciphertext Serpent: ";
+		std::cout << std::endl << "Ciphertext: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery Serpent:   OK" << std::endl;
+		std::cout << std::endl << "Recovery:   OK" << std::endl;
 	}
 	else{
-		std::cout << std::endl << "Ciphertext Serpent: ";
+		std::cout << std::endl << "Ciphertext: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 16);
-		std::cout << std::endl << "Recovery Serpent:   FAIL" << std::endl;
+		std::cout << std::endl << "Recovery:   FAIL" << std::endl;
 	}
 }
 

@@ -58,9 +58,7 @@ int main(){
 
 	AES_encrypt(pt, ct, &ekey192);
 
-	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
-	printf("\nKey 192:        ");
+	printf("Key 192:        ");
 	printBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
 	printBuffer_raw(stdout, (char*)ct, 16);
@@ -87,9 +85,7 @@ int main(){
 
 	AES_encrypt(pt, ct, &ekey256);
 
-	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
-	printf("\nKey 256:        ");
+	printf("Key 256:        ");
 	printBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
 	printBuffer_raw(stdout, (char*)ct, 16);

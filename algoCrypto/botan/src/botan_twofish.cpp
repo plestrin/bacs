@@ -73,7 +73,7 @@ static void botan_twofish() {
 	print_raw_buffer((Botan::byte*)plaintext, 16);
 
 	/* 128 bits TWOFISH */
-	std::cout << std::endl << "Key: \t\t";
+	std::cout << std::endl << "Key 128:        ";
 	print_raw_buffer((Botan::byte*)key_128, 16);
 
 	twofish128.set_key((Botan::byte*)key_128, 16);
@@ -92,7 +92,7 @@ static void botan_twofish() {
 	}
 
 	/* 192 bits TWOFISH */
-	std::cout << "Key: \t\t";
+	std::cout << "Key 192:        ";
 	print_raw_buffer((Botan::byte*)key_192, 24);
 
 	twofish192.set_key((Botan::byte*)key_192, 24);
@@ -111,7 +111,7 @@ static void botan_twofish() {
 	}
 
 	/* 256 bits TWOFISH */
-	std::cout << "Key: \t\t";
+	std::cout << "Key 256:        ";
 	print_raw_buffer((Botan::byte*)key_256, 32);
 
 	twofish256.set_key((Botan::byte*)key_256, 32);

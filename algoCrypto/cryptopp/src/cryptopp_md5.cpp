@@ -14,7 +14,7 @@ int main(){
 
 	md5.CalculateDigest(hash, (unsigned char*)message, strlen(message));
 
-	std::cout << "Plaintext: " << message << std::endl;
+	std::cout << "Plaintext: \"" << message << "\"" << std::endl;
 	std::cout << "MD5 hash:  ";
 	print_raw_buffer(hash, sizeof(hash));
 	std::cout << std::endl;

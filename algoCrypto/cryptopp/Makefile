@@ -3,9 +3,7 @@ CXXFLAGS						:= -W -Wall -pedantic -Wextra -g
 LDFLAGS							:= -lcryptopp
 
 TEA_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_tea
-AES128_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes128
-AES192_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes192
-AES256_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_aes256
+AES_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_aes
 MD5_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_md5
 RC4_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_rc4
 SERPENT_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_serpent
@@ -15,9 +13,7 @@ SHA1_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_sha1
 
 
 all: build/$(TEA_CRYPTOPP_EXAMPLE_NAME) 	\
-	 build/$(AES128_CRYPTOPP_EXAMPLE_NAME) 	\
-	 build/$(AES192_CRYPTOPP_EXAMPLE_NAME) 	\
-	 build/$(AES256_CRYPTOPP_EXAMPLE_NAME) 	\
+	 build/$(AES_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(MD5_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(RC4_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(SERPENT_CRYPTOPP_EXAMPLE_NAME) \
@@ -28,13 +24,7 @@ all: build/$(TEA_CRYPTOPP_EXAMPLE_NAME) 	\
 build/$(TEA_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(AES128_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes128.o
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-build/$(AES192_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes192.o
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-build/$(AES256_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes256.o
+build/$(AES_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(MD5_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_md5.o

@@ -65,10 +65,10 @@ static void botan_des() {
 
 	Botan::DES 	des;
 
-	std::cout << "Plaintext:   ";
+	std::cout << "Plaintext:  ";
 	print_raw_buffer((Botan::byte*)plaintext, 8);
 
-	std::cout << std::endl << "Key:         ";
+	std::cout << std::endl << "Key:        ";
 	print_raw_buffer((Botan::byte*)key, 8);
 
 	des.set_key((Botan::byte*)key, 8);
@@ -76,14 +76,14 @@ static void botan_des() {
 	des.decrypt_n((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, 1);
 
 	if (!memcmp(plaintext, deciphertext, 8)){
-		std::cout << std::endl << "Ciphertext : ";
+		std::cout << std::endl << "Ciphertext: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 8);
-		std::cout << std::endl << "Recovery :   OK" << std::endl;
+		std::cout << std::endl << "Recovery:   OK" << std::endl;
 	}
 	else{
-		std::cout << std::endl << "Ciphertext : ";
+		std::cout << std::endl << "Ciphertext: ";
 		print_raw_buffer((Botan::byte*)ciphertext, 8);
-		std::cout << std::endl << "Recovery :   FAIL" << std::endl;
+		std::cout << std::endl << "Recovery:   FAIL" << std::endl;
 	}
 }
 

@@ -46,9 +46,7 @@ int main(){
 	twofish_encrypt((uint32_t*)pt, &twofish_key192, (uint32_t*)ct);
 	twofish_decrypt((uint32_t*)ct, &twofish_key192, (uint32_t*)vt);
 
-	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
-	printf("\nKey 192:        ");
+	printf("Key 192:        ");
 	printBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
 	printBuffer_raw(stdout, (char*)ct, 16);
@@ -65,9 +63,7 @@ int main(){
 	twofish_encrypt((uint32_t*)pt, &twofish_key256, (uint32_t*)ct);
 	twofish_decrypt((uint32_t*)ct, &twofish_key256, (uint32_t*)vt);
 
-	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
-	printf("\nKey 256:        ");
+	printf("Key 256:        ");
 	printBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
 	printBuffer_raw(stdout, (char*)ct, 16);
