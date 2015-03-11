@@ -3,6 +3,10 @@
 
 #include "mode.h"
 
+#ifdef WIN32
+#include "windowsComp.h"
+#endif
+
 static inline void xor(void* input1, void* input2, void* output, uint32_t size){
 	uint32_t i;
 

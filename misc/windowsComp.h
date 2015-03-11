@@ -17,6 +17,10 @@
 #	define mkdir(name, perm) CreateDirectoryA((name), NULL)
 #endif
 
+#ifndef inline
+# 	define inline __inline
+#endif
+
 char* windowsComp_sanitize_path(char* path);
 
 #endif
