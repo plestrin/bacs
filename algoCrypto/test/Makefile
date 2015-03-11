@@ -1,7 +1,7 @@
 MISC_DIRECTORY 			:= /home/pierre/Documents/bacs/misc/
 
 GCC_CC					:= gcc
-GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra
+GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra -std=gnu99
 CLANG_CC 				:= clang
 CLANG_CFLAGS 			:= -pedantic -Weverything -Wno-cast-align -Wno-newline-eof -Wno-unused-macros
 
@@ -9,6 +9,11 @@ TEA_TEST_NAME			:= test_tea
 MD5_TEST_NAME 			:= test_md5
 RC4_TEST_NAME 			:= test_rc4
 AES_TEST_NAME 			:= test_aes
+ECB_AES_TEST_NAME 		:= test_ecb_aes
+CBC_AES_TEST_NAME 		:= test_cbc_aes
+OFB_AES_TEST_NAME 		:= test_ofb_aes
+CFB_AES_TEST_NAME 		:= test_cfb_aes
+CTR_AES_TEST_NAME 		:= test_ctr_aes
 SHA1_TEST_NAME 			:= test_sha1
 SERPENT_TEST_NAME 		:= test_serpent
 DES_TEST_NAME 			:= test_des
@@ -18,6 +23,11 @@ TARGETS 				:= 	$(TEA_TEST_NAME) 			\
 							$(MD5_TEST_NAME) 			\
 							$(RC4_TEST_NAME) 			\
 							$(AES_TEST_NAME) 			\
+							$(ECB_AES_TEST_NAME) 		\
+							$(CBC_AES_TEST_NAME) 		\
+							$(OFB_AES_TEST_NAME) 		\
+							$(CFB_AES_TEST_NAME) 		\
+							$(CTR_AES_TEST_NAME) 		\
 							$(SHA1_TEST_NAME) 			\
 							$(SERPENT_TEST_NAME) 		\
 							$(DES_TEST_NAME) 			\
@@ -32,6 +42,16 @@ build/$(MD5_TEST_NAME)_$(1): build/MD5.$(1) build/test_md5.$$(shell echo $(1) | 
 build/$(RC4_TEST_NAME)_$(1): build/RC4.$(1) build/test_rc4.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(AES_TEST_NAME)_$(1): build/AES.$(1) build/test_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(ECB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ecb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CBC_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_cbc_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(OFB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ofb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CFB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_cfb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(CTR_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ctr_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(SHA1_TEST_NAME)_$(1): build/SHA1.$(1) build/test_sha1.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
