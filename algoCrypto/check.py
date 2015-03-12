@@ -17,36 +17,35 @@ ckeck_list = [
 	# TEA ECB
 	[
 		r'test/build/test_ecb_tea_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_ecb_tea'
+		r'tomCrypt/build/tom_ecb_tea',
+		r'botan/build/bot_ecb_tea'
 	],
 
 	# TEA CBC
 	[
 		r'test/build/test_cbc_tea_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_cbc_tea'
+		r'tomCrypt/build/tom_cbc_tea',
+		r'botan/build/bot_cbc_tea'
 	],
 
 	# TEA OFB
 	[
 		r'test/build/test_ofb_tea_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_ofb_tea'
+		r'tomCrypt/build/tom_ofb_tea',
+		r'botan/build/bot_ofb_tea'
 	],
 
 	# TEA CFB
 	[
 		r'test/build/test_cfb_tea_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_cfb_tea'
+		r'tomCrypt/build/tom_cfb_tea',
+		r'botan/build/bot_cfb_tea'
 	],
 
 	# TEA CTR
 	[
 		r'test/build/test_ctr_tea_[gc]o[0-9sz]',
 		r'tomCrypt/build/tom_ctr_tea'
-	],
-	# AES ECB
-	[
-		r'test/build/test_ecb_aes_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_ecb_aes',
 	],
 
 	# MD5
@@ -55,7 +54,7 @@ ckeck_list = [
 		r'openssl/build/openssl_md5',
 		r'cryptopp/build/cryptopp_md5',
 		r'tomCrypt/build/tom_md5',
-		r'go/build/go_md5',
+		r'go/build/go_md5'
 	],
 	
 	# RC4
@@ -65,7 +64,7 @@ ckeck_list = [
 		r'cryptopp/build/cryptopp_rc4',
 		r'tomCrypt/build/tom_rc4',
 		r'botan/build/bot_rc4',
-		r'go/build/go_rc4',
+		r'go/build/go_rc4'
 	],
 
 	# AES
@@ -74,25 +73,36 @@ ckeck_list = [
 		r'openssl/build/openssl_aes',
 		r'cryptopp/build/cryptopp_aes',
 		r'tomCrypt/build/tom_aes',
-		r'botan/build/bot_aes',
+		r'botan/build/bot_aes'
+	],
+
+	# AES ECB
+	[
+		r'test/build/test_ecb_aes_[gc]o[0-9sz]',
+		r'tomCrypt/build/tom_ecb_aes',
+		r'botan/build/bot_ecb_aes'
 	],
 
 	# AES CBC
 	[
 		r'test/build/test_cbc_aes_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_cbc_aes'
+		r'tomCrypt/build/tom_cbc_aes',
+		r'botan/build/bot_cbc_aes'
+
 	],
 
 	# AES OFB
 	[
 		r'test/build/test_ofb_aes_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_ofb_aes'
+		r'tomCrypt/build/tom_ofb_aes',
+		r'botan/build/bot_ofb_aes'
 	],
 
 	# AES CFB
 	[
 		r'test/build/test_cfb_aes_[gc]o[0-9sz]',
-		r'tomCrypt/build/tom_cfb_aes'
+		r'tomCrypt/build/tom_cfb_aes',
+		r'botan/build/bot_cfb_aes'
 	],
 
 	# AES CTR
