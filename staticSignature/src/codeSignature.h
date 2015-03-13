@@ -22,8 +22,8 @@ struct signatureSymbol{
 	char 		name[CODESIGNATURE_NAME_MAX_SIZE];
 };
 
-#define symbolTableEntry_set_resolved(status) 	(status) |= 0x01
-#define symbolTableEntry_is_resolved(status) 	((status) & 0x01)
+#define symbolTableEntry_set_resolved(symbol) 	((symbol)->status) |= 0x01
+#define symbolTableEntry_is_resolved(symbol) 	((symbol)->status & 0x01)
 
 #define signatureSymbol_set_id(sym, index) (sym)->id = 0x0000ffff | ((index) << 16)
 
@@ -93,7 +93,9 @@ struct codeSignature{
 #define codeSignature_state_set_poped(code_signature) 	(code_signature)->state &= 0xfffffffb
 
 #define codeSignature_clean(code_signature) 																							\
-	graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 																\
+	if ((code_signature)->sub_graph_handle != NULL){ 																					\
+		graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 															\
+	} 																																	\
 	graph_clean(&((code_signature)->graph)); 																							\
 	if ((code_signature)->symbol_table != NULL){ 																						\
 		free((code_signature)->symbol_table); 																							\

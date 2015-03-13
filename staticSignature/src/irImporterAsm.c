@@ -280,7 +280,7 @@ static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* opera
 					uint64_t disp;
 
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 						goto exit;
 					}
 
@@ -311,7 +311,7 @@ static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* opera
 				}
 				case XED_OPERAND_IMM0 	: {
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 						goto exit;
 					}
 
@@ -340,7 +340,7 @@ static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* opera
 					}
 
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u\n", __func__, max_nb_operand);
+						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 						goto exit;
 					}
 
@@ -361,7 +361,7 @@ static void asmOperand_decode(xed_decoded_inst_t* xedd, struct asmOperand* opera
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s, opcode: %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
+					printf("ERROR: in %s, operand type not supported: %s for instruction %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
 					break;
 				}
 			}
