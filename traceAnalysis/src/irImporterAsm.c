@@ -495,7 +495,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SUB 	: {return IR_SUB;}
 		case XED_ICLASS_XOR 	: {return IR_XOR;}
 		default : {
-			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, instruction_opcode_2_string(xed_opcode));
+			printf("ERROR: in %s, this instruction (%s) cannot be translated into ir Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
 			return IR_ADD;
 		}
 	}

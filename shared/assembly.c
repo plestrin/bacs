@@ -851,6 +851,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
 	char 						buffer[256];
+	xed_print_info_t 			print_info;
 
 	if (assembly_get_instruction(assembly, &it, start)){
 		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
@@ -861,8 +862,22 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 		printf("[...]\n");
 	}
 
-	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
-	printf("0x%08x  %s\n", it.instruction_address, buffer);
+	xed_init_print_info(&print_info);
+	print_info.blen 					= 256;
+	print_info.buf  					= buffer;
+	print_info.context  				= NULL;
+	print_info.disassembly_callback		= NULL;
+	print_info.format_options_valid 	= 0;
+	print_info.p 						= &(it.xedd);
+	print_info.runtime_address 			= it.instruction_address;
+	print_info.syntax 					= XED_SYNTAX_INTEL;
+	
+	if (xed_format_generic(&print_info)){
+		printf("0x%08x  %s\n", it.instruction_address, buffer);
+	}
+	else{
+		printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+	}
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(assembly); i++){
 		if (assembly_get_next_instruction(assembly, &it)){
@@ -874,8 +889,22 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 			printf("[...]\n");
 		}
 
-		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, 256, it.instruction_address);
-		printf("0x%08x  %s\n", it.instruction_address, buffer);
+		xed_init_print_info(&print_info);
+		print_info.blen 					= 256;
+		print_info.buf  					= buffer;
+		print_info.context  				= NULL;
+		print_info.disassembly_callback		= NULL;
+		print_info.format_options_valid 	= 0;
+		print_info.p 						= &(it.xedd);
+		print_info.runtime_address 			= it.instruction_address;
+		print_info.syntax 					= XED_SYNTAX_INTEL;
+
+		if (xed_format_generic(&print_info)){
+			printf("0x%08x  %s\n", it.instruction_address, buffer);
+		}
+		else{
+			printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+		}
 	}
 }
 

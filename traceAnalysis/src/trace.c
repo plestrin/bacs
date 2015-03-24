@@ -90,7 +90,7 @@ void trace_check(struct trace* trace){
 	for (i = 0, expected_offset = 0; i < trace->nb_instruction; i++){
 		if (trace->instructions[i].nb_operand != 0){
 			if (trace->instructions[i].operand_offset != expected_offset){
-				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u - (previous instruction nb operand(s): %u, opcode: %s, offset: %u)\n", __func__, i, expected_offset, trace->instructions[i].operand_offset, trace->instructions[i - 1].nb_operand, instruction_opcode_2_string(trace->instructions[i - 1].opcode), trace->instructions[i - 1].operand_offset);
+				printf("ERROR: in %s, instruction %u, expected operand offset %u, but get %u - (previous instruction nb operand(s): %u, opcode: %s, offset: %u)\n", __func__, i, expected_offset, trace->instructions[i].operand_offset, trace->instructions[i - 1].nb_operand, xed_iclass_enum_t2str(trace->instructions[i - 1].opcode), trace->instructions[i - 1].operand_offset);
 			}
 			expected_offset = trace->instructions[i].operand_offset + trace->instructions[i].nb_operand;
 			if (expected_offset * sizeof(struct operand) > trace->alloc_size_op){
@@ -239,7 +239,7 @@ void trace_print(struct trace* trace, uint32_t start, uint32_t stop, struct mult
 				default : {printf("ERROR: in %s, unexpected data size\n", __func__); break;}
 			}
 		}
-		multiColumnPrinter_print(printer, trace->instructions[i].pc, instruction_opcode_2_string(trace->instructions[i].opcode), read_access, write_access, NULL);
+		multiColumnPrinter_print(printer, trace->instructions[i].pc, xed_iclass_enum_t2str(trace->instructions[i].opcode), read_access, write_access, NULL);
 	}
 
 	if (delete_printer){
@@ -251,14 +251,29 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
 	char 						buffer[MULTICOLUMN_STRING_MAX_SIZE];
+	xed_print_info_t 			print_info;
 
 	if (assembly_get_instruction(&(trace->assembly), &it, start)){
 		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
 		return;
 	}
 
-	xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
-	printf("%s\n", buffer);
+	xed_init_print_info(&print_info);
+	print_info.blen 					= 256;
+	print_info.buf  					= buffer;
+	print_info.context  				= NULL;
+	print_info.disassembly_callback		= NULL;
+	print_info.format_options_valid 	= 0;
+	print_info.p 						= &(it.xedd);
+	print_info.runtime_address 			= it.instruction_address;
+	print_info.syntax 					= XED_SYNTAX_INTEL;
+
+	if (xed_format_generic(&print_info)){
+		printf("0x%08x  %s\n", it.instruction_address, buffer);
+	}
+	else{
+		printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+	}
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(&(trace->assembly)); i++){
 		if (assembly_get_next_instruction(&(trace->assembly), &it)){
@@ -266,8 +281,22 @@ void trace_print_asm(struct trace* trace, uint32_t start, uint32_t stop){
 			break;
 		}
 
-		xed_decoded_inst_dump_intel_format(&(it.xedd), buffer, MULTICOLUMN_STRING_MAX_SIZE, it.instruction_address);
-		printf("%s\n", buffer);
+		xed_init_print_info(&print_info);
+		print_info.blen 					= 256;
+		print_info.buf  					= buffer;
+		print_info.context  				= NULL;
+		print_info.disassembly_callback		= NULL;
+		print_info.format_options_valid 	= 0;
+		print_info.p 						= &(it.xedd);
+		print_info.runtime_address 			= it.instruction_address;
+		print_info.syntax 					= XED_SYNTAX_INTEL;
+
+		if (xed_format_generic(&print_info)){
+			printf("0x%08x  %s\n", it.instruction_address, buffer);
+		}
+		else{
+			printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+		}
 	}
 }
 

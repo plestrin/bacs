@@ -52,7 +52,7 @@ void memAccess_print(struct memAccess* mem_access, int nb_mem_access){
 			default : {printf("WARNING: in %s, unexpected data size\n", __func__); break;}
 			}
 
-			multiColumnPrinter_print(printer, mem_access[i].order, value_str, mem_access[i].address, mem_access[i].size, instruction_opcode_2_string(mem_access[i].opcode), mem_access[i].group, NULL);
+			multiColumnPrinter_print(printer, mem_access[i].order, value_str, mem_access[i].address, mem_access[i].size, xed_iclass_enum_t2str(mem_access[i].opcode), mem_access[i].group, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);

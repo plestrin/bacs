@@ -9,7 +9,7 @@ from recipe import ioRecipe, sigRecipe
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/pin"
+PIN_PATH 				= "/home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/pin"
 TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
 WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
 MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"
@@ -17,7 +17,6 @@ MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
 MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
 LOG_PATH 				= "/home/pierre/Documents/bacs/test/"
-HISTORY_FILE_PATH 		= "/home/pierre/Documents/bacs/test/.testHistory"
 
 if len(sys.argv) != 3:
 	print("ERROR: incorrect number of argument")

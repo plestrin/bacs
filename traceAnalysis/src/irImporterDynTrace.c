@@ -81,7 +81,7 @@ static void import_std_in_1ir_1or(struct ir* ir, struct irRenameEngine* engine, 
 		}
 	}
 	else{
-		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, xed_iclass_enum_t2str(instruction->opcode));
 	}
 }
 
@@ -108,7 +108,7 @@ static void import_std_in_1imr_1or(struct ir* ir, struct irRenameEngine* engine,
 		}
 	}
 	else{
-		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, xed_iclass_enum_t2str(instruction->opcode));
 	}
 }
 
@@ -135,7 +135,7 @@ static void import_std_in_1imr_1omr(struct ir* ir, struct irRenameEngine* engine
 		}
 	}
 	else{
-		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, xed_iclass_enum_t2str(instruction->opcode));
 	}
 }
 
@@ -178,7 +178,7 @@ static void import_std_ins_1imr_1ioptmr_1omr(struct ir* ir, struct irRenameEngin
 		}
 	}
 	else{
-		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, instruction_opcode_2_string(instruction->opcode));
+		printf("WARNING: in %s, incorrect instruction format %s\n",  __func__, xed_iclass_enum_t2str(instruction->opcode));
 	}
 }
 
@@ -308,7 +308,7 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 					} 
 				}
 				else{
-					printf("WARNING: in %s, incorrect instruction format (operand index): %s\n",  __func__, instruction_opcode_2_string(ir->trace->instructions[i].opcode));
+					printf("WARNING: in %s, incorrect instruction format (operand index): %s\n",  __func__, xed_iclass_enum_t2str(ir->trace->instructions[i].opcode));
 				}
 				break;
 			}
@@ -332,7 +332,7 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 					}
 				}
 				else{
-					printf("WARNING: in %s, incorrect instruction format (operand index): %s\n",  __func__, instruction_opcode_2_string(ir->trace->instructions[i].opcode));
+					printf("WARNING: in %s, incorrect instruction format (operand index): %s\n",  __func__, xed_iclass_enum_t2str(ir->trace->instructions[i].opcode));
 				}
 				break;
 			}
@@ -389,7 +389,7 @@ int32_t irImporterDynTrace_import(struct ir* ir){
 				break;
 			}
 			default : {
-				printf("ERROR: in %s, incorrect opcode: %s\n", __func__, instruction_opcode_2_string(ir->trace->instructions[i].opcode));
+				printf("ERROR: in %s, incorrect opcode: %s\n", __func__, xed_iclass_enum_t2str(ir->trace->instructions[i].opcode));
 				break;
 			}
 		}

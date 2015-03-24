@@ -562,19 +562,19 @@ void analysis_frag_print_percent(struct analysis* analysis){
 	printf("Included opcode(s): ");
 	for (i = 0; i < nb_opcode; i++){
 		if (i == nb_opcode - 1){
-			printf("%s\n", instruction_opcode_2_string(opcode[i]));
+			printf("%s\n", xed_iclass_enum_t2str(opcode[i]));
 		}
 		else{
-			printf("%s, ", instruction_opcode_2_string(opcode[i]));
+			printf("%s, ", xed_iclass_enum_t2str(opcode[i]));
 		}
 	}
 	printf("Excluded opcode(s): ");
 	for (i = 0; i < nb_excluded_opcode; i++){
 		if (i == nb_excluded_opcode - 1){
-			printf("%s\n", instruction_opcode_2_string(excluded_opcode[i]));
+			printf("%s\n", xed_iclass_enum_t2str(excluded_opcode[i]));
 		}
 		else{
-			printf("%s, ", instruction_opcode_2_string(excluded_opcode[i]));
+			printf("%s, ", xed_iclass_enum_t2str(excluded_opcode[i]));
 		}
 	}
 	#endif

@@ -98,7 +98,6 @@ struct instruction{
 	uint32_t 		nb_operand;
 };
 
-const char* instruction_opcode_2_string(uint32_t opcode);
 const char* reg_2_string(enum reg reg);
 
 int32_t reg_is_contained_in(enum reg reg1, enum reg reg2);

@@ -7,7 +7,7 @@ SRC_DIR 		:= src/
 BUILD_DIR 		:= build/
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/pierre/Documents/pin-2.13-65163-gcc.4.4.7-linux/extras/xed2-ia32/
+XED_DIR 		:= /home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/extras/xed-ia32/
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
