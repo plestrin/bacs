@@ -552,10 +552,18 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SUB 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
-								printf("ERROR: in %s, incorrect dependence type %u for inst PART1_16\n", __func__, i);
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SUBSTITUTE && nb_dependence[i] > 0){
+								printf("ERROR: in %s, incorrect dependence type %u for inst SUB\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
 							}
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type DIRECT: %u for inst SUB\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_DIRECT]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_SUBSTITUTE] != 1){
+							printf("ERROR: in %s, incorrect number of dependence of type SUBSTITUTE: %u for inst SUB\n", __func__, nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP]);
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
 						}
 						break;
 					}

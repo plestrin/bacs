@@ -1270,32 +1270,92 @@ static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct 
 	}
 }
 
-/* WARNING operand role is not determined precisely */
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
-	struct irOperation*	operand_operation;
+	struct irOperation*	operation_cursor;
+	struct edge* 		operand1 = NULL;
+	struct edge* 		operand2 = NULL;
 
-	if (node->nb_edge_dst == 2){
-		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			operand_operation = ir_node_get_operation(edge_get_src(edge_cursor));
-			if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-				if (ir_node_get_operation(node)->size != operand_operation->size){
-					printf("WARNING: in %s, operation (SUB) and operand are not of equal size (%u, %u)\n", __func__, ir_node_get_operation(node)->size, operand_operation->size);
-				}
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		switch(ir_edge_get_dependence(edge_cursor)->type){
+			case IR_DEPENDENCE_TYPE_DIRECT 			: {
+				operand1 = edge_cursor;
+				break;
+			}
+			case IR_DEPENDENCE_TYPE_SUBSTITUTE 		: {
+				operand2 = edge_cursor;
+				break;
+			}
+			default 								: {
+				break;
+			}
+		}
+	}
 
-				if (edge_get_src(edge_cursor)->nb_edge_src == 1){
-					operand_operation->operation_type.imm.value = (uint64_t)(-ir_imm_operation_get_signed_value(operand_operation));
-					ir_node_get_operation(node)->operation_type.inst.opcode = IR_ADD;
+	if (operand1 != NULL && operand2 != NULL){
+		operation_cursor = ir_node_get_operation(edge_get_src(operand1));
+		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_ADD && edge_get_src(operand2)->nb_edge_src > 1){
+			for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				if (edge_get_src(edge_cursor) == edge_get_src(operand2)){
+					struct node* add_node = NULL;
+
+					if (edge_get_src(operand1)->nb_edge_src > 1){
+						add_node = ir_add_inst(ir, IR_ADD, operation_cursor->size);
+						if (add_node != NULL){
+							for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+								if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
+									if (ir_add_dependence(ir, edge_get_src(edge_cursor), add_node, ir_edge_get_dependence(edge_cursor)->type) == NULL){
+										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									}
+								}
+							}
+						}
+						else{
+							printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+							return;
+						}
+					}
+					else{
+						ir_remove_dependence(ir, edge_cursor);
+						add_node = edge_get_src(operand1);
+					}
+
+					graph_transfert_src_edge(&(ir->graph), add_node, node);
+					ir_remove_node(ir, node);
 
 					*modification = 1;
-					break;
-				}
-				else{
-					printf("WARNING: in %s, found IMM operand but it is shared -> skip\n", __func__);
+					return;
 				}
 			}
 		}
+
+		operation_cursor = ir_node_get_operation(edge_get_src(operand2));
+		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_ADD && edge_get_src(operand1)->nb_edge_src > 1){
+			for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand2)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				if (edge_get_src(edge_cursor) == edge_get_src(operand1)){
+					printf("WARNING: in %s, this case is not implemented yet (sub by a sum)\n", __func__);
+					break;
+				}
+			}
+		}
+			
+		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
+			if (edge_get_src(operand2)->nb_edge_src == 1){
+				operation_cursor->operation_type.imm.value = (uint64_t)(-ir_imm_operation_get_signed_value(operation_cursor));
+				ir_edge_get_dependence(operand2)->type = IR_DEPENDENCE_TYPE_DIRECT;
+				ir_node_get_operation(node)->operation_type.inst.opcode = IR_ADD;
+
+				*modification = 1;
+				return;
+			}
+			else{
+				printf("WARNING: in %s, this case is not implemented yet (shared imm)\n", __func__);
+			}
+		}
+	}
+	else{
+		printf("ERROR: in %s, the connectivity is wrong. Run the check procedure for more details\n", __func__);
 	}
 }
 

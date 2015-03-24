@@ -389,7 +389,8 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			fprintf(file, "[label=\"/\"]");
 			break;
 		}
-		case IR_DEPENDENCE_TYPE_ROUND_OFF 	: {
+		case IR_DEPENDENCE_TYPE_ROUND_OFF 	:
+		case IR_DEPENDENCE_TYPE_SUBSTITUTE  : {
 			fprintf(file, "[label=\"s\"]"); 		/* the s is used to tag special operands */
 			break;
 		}

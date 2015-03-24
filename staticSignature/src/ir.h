@@ -137,11 +137,12 @@ enum irDependenceType{
 	IR_DEPENDENCE_TYPE_ADDRESS 		= 0x00000001, 	/* 2  Address 															*/
 	IR_DEPENDENCE_TYPE_SHIFT_DISP 	= 0x00000002, 	/* 3  Used for the last operand of {ROL, ROR, SHL, SHLD, SHR, SHLD} 	*/
 	IR_DEPENDENCE_TYPE_DIVISOR 		= 0x00000003, 	/* 4  Used for the last operand of {DIV, IDIV} 							*/
-	IR_DEPENDENCE_TYPE_ROUND_OFF 	= 0x00000004,	/* 5  Used for the second operand of {SHLD, SHRD} 						*/
-	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000005 	/* 6  Signature input and output parameters 							*/
+	IR_DEPENDENCE_TYPE_ROUND_OFF 	= 0x00000004, 	/* 5  Used for the second operand of {SHLD, SHRD} 						*/
+	IR_DEPENDENCE_TYPE_SUBSTITUTE 	= 0x00000005, 	/* 6  Used for the last operand of {SUB} 								*/
+	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000006 	/* 7  Signature input and output parameters 							*/
 };
 
-#define NB_DEPENDENCE_TYPE 5
+#define NB_DEPENDENCE_TYPE 6
 
 struct irDependence{
 	enum irDependenceType 		type;
