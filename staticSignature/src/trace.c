@@ -1,30 +1,61 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <dirent.h> 
+#include <string.h>
 
 #include "trace.h"
 #include "assemblyElfLoader.h"
 
 #define TRACE_PATH_MAX_LENGTH 	256
-#define TRACE_BLOCKID_FILE_NAME "blockId.bin"
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
+#define TRACE_NB_MAX_THREAD 	64
 
 struct trace* trace_load(const char* directory_path){
 	struct trace* 	trace;
 	char 			file1_path[TRACE_PATH_MAX_LENGTH];
 	char 			file2_path[TRACE_PATH_MAX_LENGTH];
+	DIR* 			directory;
+	struct dirent* 	entry;
+	uint32_t 		thread_id[TRACE_NB_MAX_THREAD];
+	uint32_t 		thread_counter = 0;
 
 	trace = (struct trace*)malloc(sizeof(struct trace));
 	if (trace != NULL){
-		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCKID_FILE_NAME);
-		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
-		
-		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
-			printf("ERROR: in %s, unable to init assembly structure\n", __func__);
-			free(trace);
-			trace = NULL;
+		directory = opendir(directory_path);
+		if (directory != NULL){
+			while ((entry = readdir(directory)) != NULL){
+				if (!memcmp(entry->d_name, "blockId", 7) && !strcmp(entry->d_name + 7 + strspn(entry->d_name + 7, "0123456789"), ".bin")){
+					if (thread_counter == TRACE_NB_MAX_THREAD){
+						printf("WARNING: in %s, the max number of thread has been reached, increment TRACE_NB_MAX_THREAD\n", __func__);
+						break;
+					}
+					else{
+						thread_id[thread_counter ++] = atoi(entry->d_name + 7);
+					}
+				}
+			}
+			closedir(directory);
+
+			if (thread_counter > 1){
+				printf("WARNING: in %s, several thread traces have been found, loading the first (%u)\n", __func__, thread_id[0]);
+			}
+
+			snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);
+			snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
+			
+			if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
+				printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+				free(trace);
+				trace = NULL;
+			}
+			else{
+				trace_init(trace);
+			}
 		}
 		else{
-			trace_init(trace);
+			printf("ERROR: in %s, unable to open directory: \"%s\"\n", __func__, directory_path);
+			free(trace);
+			trace = NULL;
 		}
 	}
 

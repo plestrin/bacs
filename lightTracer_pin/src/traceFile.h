@@ -10,7 +10,7 @@
 
 #define TRACEFILE_NAME_MAX_LENGTH 		256
 
-#define TRACEFILE_CM_FILE_NAME			"codeMap.json"
+#define TRACEFILE_CM_FILE_NAME			"cm.json"
 #define TRACEFILE_BLOCK_FILE_NAME 		"block.bin"
 
 struct traceFile{
@@ -23,7 +23,6 @@ struct traceFile* traceFile_create(const char* dir_name);
 int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name);
 
 void traceFile_print_codeMap(struct traceFile* trace_file, struct codeMap* cm);
-
 
 #define traceFile_get_dir_name(trace_file) (trace_file)->dir_name
 

@@ -87,7 +87,7 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 							std::cerr << "ERROR: in " << __func__ << ", unable to add routine " << RTN_Name(routine) << " to code map structure" << std::endl;
 							break;
 						}
-						else{
+						else if (white_listed == CODEMAP_NOT_WHITELISTED){
 							RTN_Open(routine);
 							RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)TOOL_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
 							RTN_Close(routine);
@@ -200,12 +200,6 @@ int TOOL_init(const char* trace_dir_name, const char* white_list_file_name){
 	}
 	#endif
 
-	/*tracer.trace_buffer->local_offset_ins 	= 0;
-	tracer.trace_buffer->local_offset_op 	= 0;
-	tracer.trace_buffer->local_offset_data 	= 0;
-	tracer.trace_buffer->global_offset_op 	= 0;
-	tracer.trace_buffer->global_offset_data = 0;*/
-
 	return 0;
 
 	fail:
@@ -230,6 +224,8 @@ int TOOL_init(const char* trace_dir_name, const char* white_list_file_name){
 /* ===================================================================== */
 
 int main(int argc, char * argv[]){
+	PIN_InitSymbols();
+
 	if (PIN_Init(argc, argv)){
 		std::cerr << "ERROR: in %s, unable to init PIN" << std::endl << KNOB_BASE::StringKnobSummary();
 		return -1;
