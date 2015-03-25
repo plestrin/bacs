@@ -10,7 +10,7 @@
 #define TRACE_INS_FILE_NAME 	"ins.bin"
 #define TRACE_OP_FILE_NAME 		"op.bin"
 #define TRACE_DATA_FILE_NAME 	"data.bin"
-#define TRACE_BLOCKID_FILE_NAME "blockId.bin"
+#define TRACE_BLOCKID_FILE_NAME "blockId0.bin"
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
 
 static void trace_clean_(struct trace* trace);

@@ -45,7 +45,35 @@ class recipe(object):
 		else:
 			sys.stdout.write("no rule\n")
 
-	def trace_prog(self, log_path, pin_path, tool_path, white_list_path, trace_path):
+	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
+		return
+
+	def search(self, log_path):
+		return
+
+	def __del__(self):
+		if self.log != None:
+			self.log.close()
+			self.log = None
+
+
+class ioRecipe(recipe):
+	TOOL = "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
+	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/tracer/"
+
+	is_tool_built = False
+
+	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
+		if not ioRecipe.is_tool_built:
+			sys.stdout.write("Building Trace program: ... ")
+			sys.stdout.flush()
+			return_value = subprocess.call(["make", "-C", ioRecipe.TOOL_SRC_DIR])
+			if return_value != 0:
+				print("ERROR: unable to build Trace program")
+				exit()
+			else:
+				ioRecipe.is_tool_built = True
+
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 
@@ -57,7 +85,7 @@ class recipe(object):
 			self.log.flush()
 
 			time_start = time.time()
-			process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			process = subprocess.Popen([pin_path, "-t", TOOL, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 			process.wait()
 			time_stop = time.time()
 
@@ -76,17 +104,6 @@ class recipe(object):
 				print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
 		else:
 			sys.stdout.write("no rule\n")
-
-	def search(self, log_path):
-		return
-
-	def __del__(self):
-		if self.log != None:
-			self.log.close()
-			self.log = None
-
-
-class ioRecipe(recipe):
 
 	def search(self, log_path):
 		sys.stdout.write("Searching " + self.name + " ... ")
@@ -146,6 +163,48 @@ class ioRecipe(recipe):
 
 
 class sigRecipe(recipe):
+	TOOL = "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
+	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/lightTracer_pin/"
+
+	is_tool_built = False
+
+	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
+		if not sigRecipe.is_tool_built:
+			sys.stdout.write("Building Trace program: ... ")
+			sys.stdout.flush()
+			return_value = subprocess.call(["make", "-C", sigRecipe.TOOL_SRC_DIR])
+			if return_value != 0:
+				print("ERROR: unable to build Trace program")
+				exit()
+			else:
+				sigRecipe.is_tool_built = True
+
+		sys.stdout.write("Tracing " + self.name + " ... ")
+		sys.stdout.flush()
+
+		if self.trace != "":
+			if self.log == None:
+				self.log = open(log_path + self.name + ".log", "w")
+
+			self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
+			self.log.flush()
+
+			time_start = time.time()
+			process = subprocess.Popen([pin_path, "-t", sigRecipe.TOOL, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			process.wait()
+			time_stop = time.time()
+
+			output_val = process.communicate()
+			self.log.write(output_val[0])
+			self.log.write(output_val[1])
+
+			if process.returncode == 0:
+				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+			else:
+				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
+				print(output_val[1])
+		else:
+			sys.stdout.write("\x1b[36mSKIP\x1b[0m\n")
 
 	def search(self, log_path):
 		sys.stdout.write("Searching " + self.name + " ... ")

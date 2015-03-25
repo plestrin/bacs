@@ -10,13 +10,11 @@ from recipe import ioRecipe, sigRecipe
 #	- archive previous reports
 
 PIN_PATH 				= "/home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/pin"
-TOOL_PATH 				= "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
 WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
-MAKEFILE_TRACE_PATH 	= "/home/pierre/Documents/bacs/tracer/"
 MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
 MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
-LOG_PATH 				= "/home/pierre/Documents/bacs/test/"
+LOG_PATH 				= "/home/pierre/Documents/bacs/test/log/"
 
 if len(sys.argv) != 3:
 	print("ERROR: incorrect number of argument")
@@ -87,21 +85,10 @@ if action == "BUILD" or action == "ALL":
 	for r in recipes:
 		r.build_prog(LOG_PATH)
 
-
-# COMPILE TRACE step
-if action == "TRACE" or action == "ALL":
-	sys.stdout.write("Building Trace program: ... ")
-	sys.stdout.flush()
-	return_value = subprocess.call(["make", "-C", MAKEFILE_TRACE_PATH])
-	if return_value != 0:
-		print("ERROR: unable to build Trace program")
-		exit()
-
-
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for r in recipes:
-		r.trace_prog(LOG_PATH, PIN_PATH, TOOL_PATH, WHITE_LIST_PATH, TRACE_PATH)
+		r.trace_prog(LOG_PATH, PIN_PATH, WHITE_LIST_PATH, TRACE_PATH)
 
 
 # COMPILE SEARCH step

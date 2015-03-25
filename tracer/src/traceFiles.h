@@ -14,7 +14,7 @@
 #define TRACEFILES_OP_FILE_NAME			"op.bin"
 #define TRACEFILES_DATA_FILE_NAME		"data.bin"
 #define TRACEFILES_CM_FILE_NAME			"cm.json"
-#define TRACEFILES_BLOCKID_FILE_NAME 	"blockId.bin"
+#define TRACEFILES_BLOCKID_FILE_NAME 	"blockId0.bin"
 #define TRACEFILES_BLOCK_FILE_NAME 		"block.bin"
 
 struct traceFiles{
