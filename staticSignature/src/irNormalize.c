@@ -1339,7 +1339,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 				}
 			}
 		}
-			
+
 		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
 			if (edge_get_src(operand2)->nb_edge_src == 1){
 				operation_cursor->operation_type.imm.value = (uint64_t)(-ir_imm_operation_get_signed_value(operation_cursor));

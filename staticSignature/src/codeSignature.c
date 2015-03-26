@@ -79,7 +79,6 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 					if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
 						printf("ERROR: in %s, unable to add edge to the syntax tree\n", __func__);
 					}
-					break;
 				}
 			}
 			if (node_cursor == NULL){
