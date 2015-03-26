@@ -8,20 +8,32 @@
 #include "codeMap.h"
 
 #define TRACE_TAG_LENGTH 32
+#define TRACE_PATH_MAX_LENGTH 	256
+
+enum traceType{
+	EXECUTION_TRACE,
+	ELF_TRACE,
+	FRAGMENT_TRACE
+};
 
 struct trace{
 	char 				tag[TRACE_TAG_LENGTH];
 	struct assembly 	assembly;
 	struct ir* 			ir;
+	enum traceType 		type;
+	char 				directory_path[TRACE_PATH_MAX_LENGTH];
 };
 
 struct trace* trace_load(const char* directory_path);
 
+void trace_change_thread(struct trace* trace, uint32_t thread_id);
+
 struct trace* trace_load_elf(const char* file_path);
 
-#define trace_init(trace) 																								\
+#define trace_init(trace, type_) 																						\
 	(trace)->tag[0]		= '\0'; 																						\
-	(trace)->ir 		= NULL
+	(trace)->ir 		= NULL; 																						\
+	(trace)->type 		= type_
 
 #define trace_check(trace) 																								\
 	if (assembly_check(&((trace)->assembly))){ 																			\

@@ -909,16 +909,22 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 }
 
 void assembly_clean(struct assembly* assembly){
-	free(assembly->dyn_blocks);
+	if (assembly->dyn_blocks != NULL){
+		free(assembly->dyn_blocks);
+		assembly->dyn_blocks = NULL;
+	}
 
-	switch(assembly->allocation_type){
-		case ASSEMBLYALLOCATION_MALLOC : {
-			free(assembly->mapping_block);
-			break;
+	if (assembly->mapping_block != NULL){
+		switch(assembly->allocation_type){
+			case ASSEMBLYALLOCATION_MALLOC : {
+				free(assembly->mapping_block);
+				break;
+			}
+			case ASSEMBLYALLOCATION_MMAP : {
+				munmap(assembly->mapping_block, assembly->mapping_size_block);
+				break;
+			}
 		}
-		case ASSEMBLYALLOCATION_MMAP : {
-			munmap(assembly->mapping_block, assembly->mapping_size_block);
-			break;
-		}
+		assembly->mapping_block = NULL;
 	}
 }

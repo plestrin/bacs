@@ -21,6 +21,7 @@ struct analysis{
 struct analysis* analysis_create();
 
 void analysis_trace_load(struct analysis* analysis, char* arg);
+void analysis_trace_change_thread(struct analysis* analysis, char* arg);
 void analysis_trace_load_elf(struct analysis* analysis, char* arg);
 void analysis_trace_print(struct analysis* analysis, char* arg);
 void analysis_trace_check(struct analysis* analysis);

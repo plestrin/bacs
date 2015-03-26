@@ -6,7 +6,6 @@
 #include "trace.h"
 #include "assemblyElfLoader.h"
 
-#define TRACE_PATH_MAX_LENGTH 	256
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
 #define TRACE_NB_MAX_THREAD 	64
 
@@ -18,9 +17,12 @@ struct trace* trace_load(const char* directory_path){
 	struct dirent* 	entry;
 	uint32_t 		thread_id[TRACE_NB_MAX_THREAD];
 	uint32_t 		thread_counter = 0;
+	uint32_t 		i;
 
 	trace = (struct trace*)malloc(sizeof(struct trace));
 	if (trace != NULL){
+		strncpy(trace->directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
+
 		directory = opendir(directory_path);
 		if (directory != NULL){
 			while ((entry = readdir(directory)) != NULL){
@@ -37,7 +39,16 @@ struct trace* trace_load(const char* directory_path){
 			closedir(directory);
 
 			if (thread_counter > 1){
-				printf("WARNING: in %s, several thread traces have been found, loading the first (%u)\n", __func__, thread_id[0]);
+				printf("INFO: in %s, several thread traces have been found, loading the first (%u):\n", __func__, thread_id[0]);
+				for (i = 0; i < thread_counter; i++){
+					if (i == 0){
+						printf("\t- Thread: %u (loaded)\n", thread_id[i]);
+					}
+					else{
+						printf("\t- Thread: %u\n", thread_id[i]);
+					}
+				}
+				printf("Use: \"change thread\" commande to load a different thread\n");
 			}
 
 			snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);
@@ -49,7 +60,7 @@ struct trace* trace_load(const char* directory_path){
 				trace = NULL;
 			}
 			else{
-				trace_init(trace);
+				trace_init(trace, EXECUTION_TRACE);
 			}
 		}
 		else{
@@ -60,6 +71,30 @@ struct trace* trace_load(const char* directory_path){
 	}
 
 	return trace;
+}
+
+void trace_change_thread(struct trace* trace, uint32_t thread_id){
+	char file1_path[TRACE_PATH_MAX_LENGTH];
+	char file2_path[TRACE_PATH_MAX_LENGTH];
+
+	if (trace->type == EXECUTION_TRACE){
+		if (trace->ir != NULL){
+			ir_delete(trace->ir)
+			trace->ir = NULL;
+		}
+
+		assembly_clean(&(trace->assembly));
+
+		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", trace->directory_path, thread_id);
+		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", trace->directory_path, TRACE_BLOCK_FILE_NAME);
+			
+		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
+			printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+		}
+	}
+	else{
+		printf("ERROR: in %s, the trace was made from and ELF file there is no thread\n", __func__);
+	}
 }
 
 struct trace* trace_load_elf(const char* file_path){
@@ -73,7 +108,7 @@ struct trace* trace_load_elf(const char* file_path){
 			trace = NULL;
 		}
 		else{
-			trace_init(trace);
+			trace_init(trace, ELF_TRACE);
 		}
 	}
 

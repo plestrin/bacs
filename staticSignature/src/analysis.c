@@ -37,6 +37,7 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "change thread", 			"Switch the current thread", 					"Thread Index", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change_thread)
 	ADD_CMD_TO_INPUT_PARSER(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
@@ -166,6 +167,15 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	}
 }
 
+void analysis_trace_change_thread(struct analysis* analysis, char* arg){
+	if (analysis->trace != NULL){
+		trace_change_thread(analysis->trace, atoi(arg));
+	}
+	else{
+		printf("ERROR: in %s, trace is NULL\n", __func__);
+	}
+}
+
 void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		printf("WARNING: in %s, deleting previous trace\n", __func__);
@@ -240,7 +250,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	struct trace 	fragment;
 
 	if (analysis->trace != NULL){
-		trace_init(&fragment);
+		trace_init(&fragment, FRAGMENT_TRACE);
 		inputParser_extract_index(arg, &start, &stop);
 		if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 			printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
@@ -499,7 +509,7 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	trace_src_buffer = (struct trace**)alloca(sizeof(struct trace*) * nb_index);
-	trace_init(&new_fragment);
+	trace_init(&new_fragment, FRAGMENT_TRACE);
 	tag_offset = snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat ");
 
 	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
