@@ -391,7 +391,7 @@ static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, st
 	return reg;
 }
 
-struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg){
+struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg, uint32_t instruction_index){
 	struct irRegisterBuffer list;
 	struct node* 			node = NULL;
 	enum irRegister 		reg1;
@@ -408,7 +408,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
 
 				if (new_ins != IR_INVALID){
-					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, new_ins, irRegister_get_size(reg));
+					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, instruction_index, irRegister_get_size(reg), new_ins);
 					engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 					engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
 					if (engine->register_alias[reg].ir_node == NULL){
@@ -430,20 +430,20 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						printf("ERROR: in %s, this case is not implemented yet, more than two element in the dependence list\n", __func__);
 					}
 					else if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
-						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, reg);
+						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, instruction_index, reg);
 						engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 						engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
 
 						if (engine->register_alias[reg].ir_node != NULL){
 							engine->register_alias[reg1].type = IRRENAMEENGINE_TYPE_EXTEND;
 
-							ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg1]], irRegister_get_size(reg1));
+							ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, irRegister_get_size(reg1), partIns[family][registerIndex[reg]][registerIndex[reg1]]);
 							ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 							engine->register_alias[reg2].type = IRRENAMEENGINE_TYPE_EXTEND;
 							engine->register_alias[reg2].order = engine->register_alias[reg1].order;
 
-							ir_convert_node_to_inst(engine->register_alias[reg2].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg2]], irRegister_get_size(reg2));
+							ir_convert_node_to_inst(engine->register_alias[reg2].ir_node, ir_node_get_operation(engine->register_alias[reg2].ir_node)->index, irRegister_get_size(reg2), partIns[family][registerIndex[reg]][registerIndex[reg2]]);
 							ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 							node = engine->register_alias[reg].ir_node;
@@ -461,14 +461,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
 
 						if (new_ins != IR_INVALID){
-							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, reg);
+							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, instruction_index, reg);
 							engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 							engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
 
 							if (engine->register_alias[reg].ir_node != NULL){
 								engine->register_alias[reg1].type = IRRENAMEENGINE_TYPE_EXTEND;
 
-								ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, new_ins, irRegister_get_size(reg1));
+								ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, irRegister_get_size(reg1), new_ins);
 								ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 								node = engine->register_alias[reg].ir_node;
@@ -493,9 +493,9 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 							size_reg1 	= irRegister_get_size(reg1);
 
 							imm_mask 	= ir_add_immediate(engine->ir, size_reg, (0xffffffffffffffff >> (64 - size_reg)) << size_reg1);
-							ins_and 	= ir_add_inst(engine->ir, IR_AND, size_reg);
-							node 		= ir_add_inst(engine->ir, IR_OR, size_reg);
-							ins_movzx 	= ir_add_inst(engine->ir, IR_MOVZX, size_reg);
+							ins_and 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_AND);
+							node 		= ir_add_inst(engine->ir, instruction_index, size_reg, IR_OR);
+							ins_movzx 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_MOVZX);
 
 							if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
 								printf("ERROR: in %s, unable to add node to IR\n", __func__);
@@ -526,7 +526,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 	else{
 		node = engine->register_alias[reg].ir_node;
 		if (node == NULL){
-			node = ir_add_in_reg(engine->ir, reg);
+			node = ir_add_in_reg(engine->ir, instruction_index, reg);
 			if (node != NULL){
 				engine->register_alias[reg].ir_node = node;
 				engine->register_alias[reg].order 	= irRenameEngine_get_reg_order(engine);

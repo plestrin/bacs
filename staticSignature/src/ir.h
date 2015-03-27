@@ -92,6 +92,9 @@ struct irMemAccess{
 #define IR_NODE_STATUS_FLAG_ERROR 	0x40000000
 #define IR_NODE_STATUS_FLAG_TEST 	0x80000000
 
+#define IR_INSTRUCTION_INDEX_IMMEDIATE 	0xfffffffe
+#define IR_INSTRUCTION_INDEX_UNKOWN 	0xffffffff
+
 struct irOperation{
 	enum irOperationType 		type;
 	union {
@@ -112,6 +115,7 @@ struct irOperation{
 		} 						symbol;
 	} 							operation_type;
 	uint8_t 					size;
+	uint32_t 					index;
 	uint32_t 					status_flag;
 } __attribute__((__may_alias__));
 
@@ -175,18 +179,18 @@ struct ir{
 struct ir* ir_create(struct assembly* assembly);
 int32_t ir_init(struct ir* ir, struct assembly* assembly);
 
-struct node* ir_add_in_reg(struct ir* ir, enum irRegister reg);
-struct node* ir_add_in_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev);
-struct node* ir_add_out_mem(struct ir* ir, struct node* address, uint8_t size, struct node* prev);
+struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg);
+struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev);
+struct node* ir_add_out_mem(struct ir* ir, uint32_t index,  uint8_t size, struct node* address, struct node* prev);
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
-struct node* ir_add_inst(struct ir* ir, enum irOpcode opcode, uint8_t size);
+struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode);
 struct node* ir_add_symbol(struct ir* ir, void* ptr);
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
-struct node* ir_insert_inst(struct ir* ir, struct node* root, enum irOpcode opcode, uint8_t size);
+struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode);
 
-static inline void ir_convert_node_to_inst(struct node* node, enum irOpcode opcode, uint8_t size){
-	struct irOperation* operation = ir_node_get_operation(node);	
+static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, uint8_t size, enum irOpcode opcode){
+	struct irOperation* operation = ir_node_get_operation(node);
 
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_remove(operation);
@@ -195,11 +199,12 @@ static inline void ir_convert_node_to_inst(struct node* node, enum irOpcode opco
 	operation->type = IR_OPERATION_TYPE_INST;
 	operation->operation_type.inst.opcode = opcode;
 	operation->size = size;
+	operation->index = index;
 	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
 }
 
-static inline void ir_convert_node_to_imm(struct node* node, uint64_t value, uint8_t size){
-	struct irOperation* operation = ir_node_get_operation(node);	
+static inline void ir_convert_node_to_imm(struct node* node, uint8_t size, uint64_t value){
+	struct irOperation* operation = ir_node_get_operation(node);
 
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_remove(operation);
@@ -208,6 +213,7 @@ static inline void ir_convert_node_to_imm(struct node* node, uint64_t value, uin
 	operation->type = IR_OPERATION_TYPE_IMM;
 	operation->operation_type.imm.value = value;
 	operation->size = size;
+	operation->index = IR_INSTRUCTION_INDEX_IMMEDIATE;
 	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
 }
 

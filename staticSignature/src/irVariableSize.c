@@ -117,7 +117,7 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 
 					if (child->size == ir_node_get_operation(operand)->size && !(child->type == IR_OPERATION_TYPE_INST && child->operation_type.inst.opcode == IR_MOVZX)){
 						if (shift == NULL){
-							shift = ir_add_inst(ir, IR_SHR, child->size);
+							shift = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, child->size, IR_SHR);
 							if (shift){
 								struct node* disp;
 
@@ -229,19 +229,19 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 
 				/* Add instruction to convert size */
 				if (operation_cursor->size == 32 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_MOVZX, 32);
+					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 32, IR_MOVZX);
 				}
 				else if (operation_cursor->size == 8 && operand_operation->size == 32){
-					new_ins = ir_add_inst(ir, IR_PART1_8, 8);
+					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 8, IR_PART1_8);
 				}
 				else if (operation_cursor->size == 32 && operand_operation->size == 16){
-					new_ins = ir_add_inst(ir, IR_MOVZX, 32);
+					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 32, IR_MOVZX);
 				}
 				else if (operation_cursor->size == 16 && operand_operation->size == 32){
-					new_ins = ir_add_inst(ir, IR_PART1_16, 16);
+					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 16, IR_PART1_16);
 				}
 				else if (operation_cursor->size == 16 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_MOVZX, 16);
+					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 16, IR_MOVZX);
 				}
 				else{
 					printf("ERROR: in %s, this case is not implemented, size mismatch %u -> %u\n", __func__, operand_operation->size, operation_cursor->size);
@@ -376,7 +376,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 
 									mask = ir_insert_immediate(ir, node_cursor, 32, 0xffffffffffffffff >> (64 - ir_node_get_operation(node_cursor)->size));
 									if (mask){
-										and_tab[i] = ir_insert_inst(ir, node_cursor, IR_AND, 32);
+										and_tab[i] = ir_insert_inst(ir, node_cursor, IR_INSTRUCTION_INDEX_UNKOWN, 32, IR_AND);
 										if (and_tab[i]){
 											if (ir_add_dependence(ir, mask, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 												printf("ERROR: in %s, unable to add dependency to IR\n", __func__);

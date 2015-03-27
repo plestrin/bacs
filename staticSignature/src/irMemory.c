@@ -343,7 +343,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 
 						if (stored_value != NULL){
 							if (operation_prev->size > operation_next->size){
-								ir_convert_node_to_inst(access_list[i], ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size);
+								ir_convert_node_to_inst(access_list[i], ir_node_get_operation(access_list[i])->index, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size);
 								graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
 
 								if (ir_add_dependence(ir, stored_value, access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -380,7 +380,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 						}
 
 						if (operation_prev->size > operation_next->size){
-							ir_convert_node_to_inst(access_list[i], ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size);
+							ir_convert_node_to_inst(access_list[i], ir_node_get_operation(access_list[i])->index, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size), operation_next->size);
 							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
 
 							if (ir_add_dependence(ir, access_list[i - 1], access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -390,7 +390,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							access_list[i] = access_list[i - 1];
 						}
 						else if (operation_prev->size < operation_next->size){
-							ir_convert_node_to_inst(access_list[i - 1], ir_normalize_choose_part_opcode(operation_next->size, operation_prev->size), operation_prev->size);
+							ir_convert_node_to_inst(access_list[i - 1], ir_node_get_operation(access_list[i - 1])->index, ir_normalize_choose_part_opcode(operation_next->size, operation_prev->size), operation_prev->size);
 							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i - 1]));
 
 							if (ir_add_dependence(ir, access_list[i], access_list[i - 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){

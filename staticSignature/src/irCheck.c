@@ -655,3 +655,31 @@ void ir_check_order(struct ir* ir){
 		}
 	}
 }
+
+void ir_check_instruction_index(struct ir* ir){
+	struct node* 		node_cursor;
+	struct edge*		edge_cursor;
+	struct irOperation* operation_cursor;
+	struct irOperation* operand;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
+			if (operation_cursor->index != IR_INSTRUCTION_INDEX_IMMEDIATE){
+				printf("ERROR: in %s, incorrect index value for immediate node\n", __func__);
+				operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+			}
+		}
+
+		for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			operand = ir_node_get_operation(edge_get_src(edge_cursor));
+
+			if (operand->index > operation_cursor->index){
+				printf("ERROR: in %s, a node has an operand with a higher index\n", __func__);
+				operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+				break;
+			}
+		}
+	}
+}

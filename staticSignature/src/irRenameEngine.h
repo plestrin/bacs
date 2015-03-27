@@ -33,7 +33,7 @@ struct irRenameEngine{
 	(engine).reg_op_order = 1; 																\
 	(engine).ir = (ir_);
 
-struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg);
+struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg, uint32_t instruction_index);
 
 #define irRenameEngine_get_mem_order(engine) ((engine)->prev_mem_access)
 #define irRenameEngine_set_mem_order(engine, mem_access_) (engine)->prev_mem_access = mem_access_

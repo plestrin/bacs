@@ -1119,7 +1119,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 		if (node1->nb_edge_src > 1){
 			struct node* node_temp;
 
-			node_temp = ir_add_inst(ir, ir_node_get_operation(node1)->operation_type.inst.opcode,  ir_node_get_operation(node1)->size);
+			node_temp = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode);
 			if (node_temp == NULL){
 				printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
 				return;
@@ -1301,7 +1301,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 					struct node* add_node = NULL;
 
 					if (edge_get_src(operand1)->nb_edge_src > 1){
-						add_node = ir_add_inst(ir, IR_ADD, operation_cursor->size);
+						add_node = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor->size, IR_ADD);
 						if (add_node != NULL){
 							for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
@@ -1575,7 +1575,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				}
 				/* CASE 4 */
 				else if (nb_match > 1 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
-					new_intermediate_inst = ir_add_inst(ir, operation1->operation_type.inst.opcode, operation1->size);
+					new_intermediate_inst = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode);
 					if (new_intermediate_inst == NULL){
 						printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
 					}
@@ -1696,7 +1696,7 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 							node_cursor3 = edge_get_src(edge_cursor);
 							operation_cursor3 = ir_node_get_operation(node_cursor3);
 
-							new_node = ir_add_inst(ir, operation_cursor1->operation_type.inst.opcode, operation_cursor1->size);
+							new_node = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
 							if (new_node == NULL){
 								printf("ERROR: in %s, unable to add inst node to IR\n", __func__);
 							}
@@ -1827,7 +1827,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					struct edge* 			op2;
 					enum irDependenceType 	common_operand_dependence_type = IR_DEPENDENCE_TYPE_DIRECT;
 
-					new_node1 = ir_add_inst(ir, operation_cursor1->operation_type.inst.opcode, operation_cursor1->size);
+					new_node1 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
 					if (new_node1 == NULL){
 						printf("ERROR: in %s, unable to add inst to IR\n", __func__);
 						goto next;
@@ -1863,7 +1863,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					}
 
 					if (new_node2 == NULL){
-						new_node2 = ir_add_inst(ir, opcode, operation_cursor1->size);
+						new_node2 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, opcode);
 						if (new_node2 == NULL){
 							printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
 							goto next;

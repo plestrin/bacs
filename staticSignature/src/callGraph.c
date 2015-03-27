@@ -730,7 +730,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
 			start_index = snippet->offset;
 
-			trace_init(&fragment);
+			trace_init(&fragment, FRAGMENT_TRACE);
 			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
 				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
 			}
