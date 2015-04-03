@@ -344,4 +344,27 @@
 			<algo name="md5_v1" number="4"/>
 		</result>
 	</recipe>
+
+	<recipe name="BOT_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
+		<search>
+			<arg value="load trace traceBOT_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="md5_p1_v2" number="192"/>
+			<algo name="md5_p2_v2" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+		</result>
+	</recipe>
 </xml>
