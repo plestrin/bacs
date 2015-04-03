@@ -21,6 +21,10 @@ static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_si
 static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_signature);
 static void signatureOccurence_clean(struct codeSignature* code_signature);
 
+/* ===================================================================== */
+/* Code Signature Collection routines									 */
+/* ===================================================================== */
+
 struct codeSignatureCollection* codeSignature_create_collection(){
 	struct codeSignatureCollection* collection;
 

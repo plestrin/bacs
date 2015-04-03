@@ -346,8 +346,8 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 						goto exit;
 					}
-
-					operand_buffer[nb_operand].size 					= irRegister_get_size(operand_buffer[nb_operand].operand_type.reg);
+					
+					operand_buffer[nb_operand].size 					= irRegister_get_size(xedRegister_2_irRegister(reg));
 					operand_buffer[nb_operand].instruction_index 		= it->instruction_index;
 					operand_buffer[nb_operand].variable 				= NULL;
 					operand_buffer[nb_operand].type 					= ASM_OPERAND_REG;
