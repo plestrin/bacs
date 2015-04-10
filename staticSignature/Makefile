@@ -41,7 +41,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)dagPartialOrder.o 		\
 					$(BUILD_DIR)dijkstra.o
 
-
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g
 else
@@ -50,9 +49,8 @@ endif
 
 ifeq ($(VERBOSE),1)
 CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE
-OBJ 			:= $(OBJ) $(BUILD_DIR)workPercent.o $(BUILD_DIR)termReader.o
+OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o
 endif
-
 
 all: $(PROG_NAME)
 

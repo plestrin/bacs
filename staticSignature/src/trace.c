@@ -48,7 +48,7 @@ struct trace* trace_load(const char* directory_path){
 						printf("\t- Thread: %u\n", thread_id[i]);
 					}
 				}
-				printf("Use: \"change thread\" commande to load a different thread\n");
+				printf("Use: \"change thread\" command to load a different thread\n");
 			}
 
 			snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);

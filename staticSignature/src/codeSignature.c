@@ -19,6 +19,35 @@ void syntaxGraph_dotPrint_node(void* data, FILE* file, void* arg);
 static void signatureOcurrence_init(struct codeSignature* code_signature, struct array* assignement_array);
 static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_signature);
 static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_signature);
+
+#if VERBOSE == 1
+
+#define MAX_CLASS_THRESHOLD 2
+
+enum parameterSimilarity{
+	PARAMETER_EQUAL 	= 0x00000001,
+	PARAMETER_PERMUT 	= 0x00000003,
+	PARAMETER_OVERLAP 	= 0x00000007,
+	PARAMETER_DISJOINT 	= 0x0000000f
+};
+
+#define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_parameter_in + (code_signature)->nb_parameter_out) + sizeof(struct node*) * ((code_signature)->nb_frag_tot_in + (code_signature)->nb_frag_tot_out))
+
+struct parameterMapping{
+	uint32_t 					nb_fragment;
+	struct node** 				node_buffer;
+	enum parameterSimilarity 	similarity;
+};
+
+static enum parameterSimilarity signatureOccurence_find_parameter_similarity(struct node** parameter_list1, struct node** parameter_list2, uint32_t size);
+static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* class, struct parameterMapping* new_mapping, uint32_t nb_in, uint32_t nb_out);
+static void signatureOccurence_print_node(struct irOperation* operation);
+static void signatureOccurence_print_location(struct parameterMapping* parameter);
+
+static void signatureOccurence_print(struct codeSignature* codeSignature);
+
+#endif
+
 static void signatureOccurence_clean(struct codeSignature* code_signature);
 
 /* ===================================================================== */
@@ -130,21 +159,34 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 
 	graph_register_dotPrint_callback(&(new_signature->graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
 
-	new_signature->occurence.nb_input 		= 0;
-	new_signature->occurence.nb_output 		= 0;
 	new_signature->occurence.nb_occurence 	= 0;
 	new_signature->occurence.input_buffer 	= NULL;
 	new_signature->occurence.output_buffer 	= NULL;
 	new_signature->occurence.node_buffer 	= NULL;
 
+	new_signature->nb_parameter_in 	= 0;
+	new_signature->nb_parameter_out = 0;
+	new_signature->nb_frag_tot_in 	= 0;
+	new_signature->nb_frag_tot_out 	= 0;
+
 	for (node_cursor = graph_get_head_node(&(new_signature->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		sig_node_cursor = (struct signatureNode*)&(node_cursor->data);
 		if (sig_node_cursor->input_number > 0){
-			new_signature->occurence.nb_input ++;
+			new_signature->nb_frag_tot_in ++;
+			if (sig_node_cursor->input_number > new_signature->nb_parameter_in){
+				new_signature->nb_parameter_in = sig_node_cursor->input_number;
+			}
 		}
 		if (sig_node_cursor->output_number > 0){
-			new_signature->occurence.nb_output ++;
+			new_signature->nb_frag_tot_out ++;
+			if (sig_node_cursor->output_number > new_signature->nb_parameter_out){
+				new_signature->nb_parameter_out = sig_node_cursor->output_number;
+			}
 		}
+	}
+
+	if (new_signature->nb_parameter_in == 0 || new_signature->nb_parameter_in == 0){
+		printf("ERROR: in %s, the signature has an incorrect number of parameter\n", __func__);
 	}
 	
 	return 0;
@@ -272,6 +314,9 @@ void codeSignature_search_collection(struct codeSignatureCollection* collection,
 					signatureOcurrence_init(signature_buffer[j], assignement_array);
 					multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
 					array_delete(assignement_array);
+					#if VERBOSE == 1
+					signatureOccurence_print(signature_buffer[j]);
+					#endif
 				}
 				else{
 					array_delete(assignement_array);
@@ -330,8 +375,8 @@ static void signatureOcurrence_init(struct codeSignature* code_signature, struct
 	}
 
 	code_signature->occurence.nb_occurence = array_get_length(assignement_array);
-	code_signature->occurence.input_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->occurence.nb_input);
-	code_signature->occurence.output_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->occurence.nb_output);
+	code_signature->occurence.input_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->nb_frag_tot_in);
+	code_signature->occurence.output_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->nb_frag_tot_out);
 	code_signature->occurence.node_buffer = (struct node**)calloc(code_signature->occurence.nb_occurence, sizeof(struct signatureLink));
 
 	if (code_signature->occurence.node_buffer == NULL || code_signature->occurence.input_buffer == NULL || code_signature->occurence.output_buffer == NULL){
@@ -363,19 +408,16 @@ static void signatureOcurrence_init(struct codeSignature* code_signature, struct
 			sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[j].node->data);
 
 			if (sig_node->input_number > 0){
-				code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + nb_input].node = assignement[j];
-				code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+				code_signature->occurence.input_buffer[i * code_signature->nb_frag_tot_in + nb_input].node = assignement[j];
+				code_signature->occurence.input_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 				nb_input ++;
 			}
 
 			if (sig_node->output_number > 0){
-				code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + nb_output].node = assignement[j];
-				code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+				code_signature->occurence.output_buffer[i * code_signature->nb_frag_tot_out + nb_output].node = assignement[j];
+				code_signature->occurence.output_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
 				nb_output ++;
 			}
-		}
-		if (nb_input != code_signature->occurence.nb_input || nb_output != code_signature->occurence.nb_output){
-			printf("ERROR: in %s, nb input or nb output have not been reached\n", __func__);
 		}
 	}
 
@@ -394,14 +436,14 @@ static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_si
 			continue;
 		}
 
-		for (j = 0; j < code_signature->occurence.nb_input; j++){
-			if (ir_add_macro_dependence(ir, code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + j].node, code_signature->occurence.node_buffer[i], code_signature->occurence.input_buffer[i * code_signature->occurence.nb_input + j].edge_desc) == NULL){
+		for (j = 0; j < code_signature->nb_frag_tot_in; j++){
+			if (ir_add_macro_dependence(ir, code_signature->occurence.input_buffer[i * code_signature->nb_frag_tot_in + j].node, code_signature->occurence.node_buffer[i], code_signature->occurence.input_buffer[i * code_signature->nb_frag_tot_in + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
 
-		for (j = 0; j < code_signature->occurence.nb_output; j++){
-			if (ir_add_macro_dependence(ir, code_signature->occurence.node_buffer[i], code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + j].node, code_signature->occurence.output_buffer[i * code_signature->occurence.nb_output + j].edge_desc) == NULL){
+		for (j = 0; j < code_signature->nb_frag_tot_out; j++){
+			if (ir_add_macro_dependence(ir, code_signature->occurence.node_buffer[i], code_signature->occurence.output_buffer[i * code_signature->nb_frag_tot_out + j].node, code_signature->occurence.output_buffer[i * code_signature->nb_frag_tot_out + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
@@ -420,6 +462,378 @@ static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_sig
 		code_signature->occurence.node_buffer[i] = NULL;
 	}
 }
+
+#if VERBOSE == 1
+
+static enum parameterSimilarity signatureOccurence_find_parameter_similarity(struct node** parameter_list1, struct node** parameter_list2, uint32_t size){
+	uint32_t 					i;
+	uint32_t 					j;
+	enum parameterSimilarity 	result = PARAMETER_EQUAL;
+	uint32_t 					nb_found = 0;
+
+	for (i = 0; i < size; i++){
+		for (j = 0; j < size; j++){
+			if (parameter_list1[i] == parameter_list2[j]){
+				nb_found ++;
+				if (i != j){
+					result |= 0x00000002;
+				}
+				break;
+			}
+		}
+	}
+
+	if (nb_found == 0){
+		result = PARAMETER_DISJOINT;
+	}
+	else if (nb_found != size){
+		result = PARAMETER_OVERLAP;
+	}
+
+	return result;
+}
+
+static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* class, struct parameterMapping* new_mapping, uint32_t nb_in, uint32_t nb_out){
+	uint32_t 					i;
+	enum parameterSimilarity* 	similarity;
+
+	similarity = (enum parameterSimilarity*)alloca(sizeof(enum parameterSimilarity) * (nb_in + nb_out));
+
+	for (i = 0; i < nb_in; i++){
+		similarity[i] = signatureOccurence_find_parameter_similarity(class[i].node_buffer, new_mapping[i].node_buffer, class[i].nb_fragment);
+		if (similarity[i] == PARAMETER_OVERLAP || similarity[i] == PARAMETER_DISJOINT){
+			return -1;
+		}
+	}
+
+	for (i = 0; i < nb_out; i++){
+		similarity[nb_in + i] = signatureOccurence_find_parameter_similarity(class[nb_in + i].node_buffer, new_mapping[nb_in + i].node_buffer, class[nb_in + i].nb_fragment);
+		if (similarity[nb_in + i] == PARAMETER_OVERLAP || similarity[nb_in + i] == PARAMETER_DISJOINT){
+			return -1;
+		}
+	}
+
+	for (i = 0; i < nb_in + nb_out; i++){
+		class[i].similarity |= similarity[i];
+	}
+
+	return 0;
+}
+
+static void signatureOccurence_print_node(struct irOperation* operation){
+	if (operation->index == 0xfffffffe){
+		printf("IMM");
+	}
+	else if (operation->index == IR_INSTRUCTION_INDEX_UNKOWN){
+		printf("??");
+	}
+	else{
+		switch(operation->type){
+			case IR_OPERATION_TYPE_IN_REG 	: {
+				printf("%s@%u", irRegister_2_string(operation->operation_type.in_reg.reg), operation->index);
+				break;
+			}
+			case IR_OPERATION_TYPE_IN_MEM 	: {
+				printf("IMEM@%u", operation->index);
+				break;
+			}
+			case IR_OPERATION_TYPE_OUT_MEM 	: {
+				printf("OMEM@%u", operation->index);
+				break;
+			}
+			default 						: {
+				printf("%u", operation->index);
+				break;
+			}
+		}
+	}
+}
+
+static void signatureOccurence_print_location(struct parameterMapping* parameter){
+	uint32_t 			i;
+	struct irOperation* operation;
+	uint8_t 			is_input_buffer;
+	struct node* 		address;
+	struct node* 		base;
+	uint64_t 			buffer_start_offset;
+	uint8_t* 			buffer;
+	uint8_t 			buffer_access_size;
+	uint64_t 			offset;
+
+	if (parameter->nb_fragment == 0){
+		return;
+	}
+
+	buffer = alloca(sizeof(uint8_t) * (2 * parameter->nb_fragment - 1));
+	memset(buffer, 0, sizeof(uint8_t) * (2 * parameter->nb_fragment - 1));
+
+	for (i = 0, is_input_buffer = 1, base = NULL; i < parameter->nb_fragment && is_input_buffer == 1; i++){
+		operation = ir_node_get_operation(parameter->node_buffer[i]);
+		if (operation->type == IR_OPERATION_TYPE_IN_MEM){
+			address = edge_get_src(node_get_head_edge_dst(parameter->node_buffer[i]));
+			if (ir_node_get_operation(address)->type == IR_OPERATION_TYPE_INST && ir_node_get_operation(address)->operation_type.inst.opcode == IR_ADD && address->nb_edge_dst == 2){
+				struct node* op1;
+				struct node* op2;
+
+				op1 = edge_get_src(node_get_head_edge_dst(address));
+				if (ir_node_get_operation(op1)->type != IR_OPERATION_TYPE_IMM){
+					op2 = edge_get_src(edge_get_next_dst(node_get_head_edge_dst(address)));
+				}
+				else{
+					op2 = op1;
+					op1 = edge_get_src(edge_get_next_dst(node_get_head_edge_dst(address)));
+				}
+
+				if (ir_node_get_operation(op1)->type != IR_OPERATION_TYPE_IMM && ir_node_get_operation(op2)->type == IR_OPERATION_TYPE_IMM){
+					if (base == NULL || (base == op1 && buffer_access_size == ir_node_get_operation(parameter->node_buffer[i])->size)){
+						if (base == NULL){
+							base = op1;
+							buffer_access_size = ir_node_get_operation(parameter->node_buffer[i])->size;
+							buffer_start_offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2));
+							if (buffer_start_offset >= (parameter->nb_fragment - 1) * (buffer_access_size / 8)){
+								buffer_start_offset -= (parameter->nb_fragment - 1) * (buffer_access_size / 8);
+								buffer[parameter->nb_fragment - 1] = 1;
+							}
+							else{
+								buffer[buffer_start_offset / (buffer_access_size /8)] = 1;
+								buffer_start_offset = 0;
+							}
+							
+						}
+						else{
+							offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2)); 
+							if (buffer_start_offset <= offset && offset < buffer_start_offset + 2 * parameter->nb_fragment * (buffer_access_size / 8)){
+								if ((offset - buffer_start_offset) % (buffer_access_size / 8) == 0){
+									if (buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)] == 0){
+										buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)] = 1;
+									}
+									else{
+										is_input_buffer = 0;
+									}
+								}
+								else{
+									is_input_buffer = 0;
+								}
+							}
+							else{
+								is_input_buffer = 0;
+							}
+						}
+					}
+					else{
+						is_input_buffer = 0;
+					}
+				}
+				else{
+					is_input_buffer = 0;
+				}
+			}
+			else{
+				is_input_buffer = 0;
+			}
+		}
+		else{
+			is_input_buffer = 0;
+		}
+	}
+
+	if (is_input_buffer){
+		for (i = 0; i < 2 * parameter->nb_fragment - 1; i++){
+			if (buffer[i]){
+				offset = buffer_start_offset + i * (buffer_access_size / 8);
+				break;  
+			}
+		}
+
+		for ( ; i < 2 * parameter->nb_fragment - 1; i++){
+			if (!buffer[i]){
+				break;
+			}
+		}
+
+		if ((buffer_start_offset + i * (buffer_access_size / 8)) - offset == parameter->nb_fragment * (buffer_access_size / 8)){
+			operation = ir_node_get_operation(base);
+			signatureOccurence_print_node(operation);
+			printf("[%llu:%llu]\n", offset, buffer_start_offset + i * (buffer_access_size / 8));
+			return;
+		}
+	}
+
+	printf("{");
+	for (i = 0; i < parameter->nb_fragment; i++){
+		operation = ir_node_get_operation(parameter->node_buffer[i]);
+		signatureOccurence_print_node(operation);
+		if (i != parameter->nb_fragment - 1){
+			printf(" ");
+		}
+		
+	}
+	printf("}\n");
+}
+
+static void signatureOccurence_print(struct codeSignature* code_signature){
+	uint32_t 					i;
+	uint32_t 					j;
+	uint32_t 					k;
+	struct signatureNode* 		sig_node;
+	uint32_t* 					nb_frag_input 		= NULL;
+	uint32_t* 					nb_frag_output 		= NULL;
+	struct parameterMapping* 	parameter_mapping 	= NULL;
+	struct array* 				class_array 		= NULL;
+	struct signatureLink* 		link;
+	struct parameterMapping* 	class;
+	int32_t 					class_index;
+
+	if (code_signature->occurence.node_buffer == NULL || code_signature->occurence.input_buffer == NULL || code_signature->occurence.output_buffer == NULL){
+		printf("WARNING: in %s, the signatureOccurence structure has not been initialized correctly\n", __func__);
+		goto exit;
+	}
+
+	nb_frag_input = (uint32_t*)calloc(code_signature->nb_frag_tot_in, sizeof(uint32_t));
+	nb_frag_output = (uint32_t*)calloc(code_signature->nb_frag_tot_out, sizeof(uint32_t));
+
+	if (nb_frag_input == NULL || nb_frag_input == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		goto exit;
+	}
+
+	for (i = 0; i < code_signature->graph.nb_node; i++){
+		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
+
+		if (sig_node->input_number > 0){
+			nb_frag_input[sig_node->input_number - 1] ++;
+		}
+		if (sig_node->output_number > 0){
+			nb_frag_output[sig_node->output_number - 1] ++;
+		}
+	}
+
+	for (i = 0; i < code_signature->graph.nb_node; i++){
+		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
+
+		if (sig_node->input_number > 0){
+			if (sig_node->input_frag_order > nb_frag_input[sig_node->input_number - 1]){
+				printf("ERROR: in %s, input frag number %u is out of range %u\n", __func__, sig_node->input_frag_order, nb_frag_input[sig_node->input_number - 1]);
+				goto exit;
+			}
+		}
+		if (sig_node->output_number > 0){
+			if (sig_node->output_frag_order > nb_frag_output[sig_node->output_number - 1]){
+				printf("ERROR: in %s, output frag number %u is out of range %u\n", __func__, sig_node->output_frag_order, nb_frag_output[sig_node->output_number - 1]);
+				goto exit;
+			}
+		}
+	}
+
+	parameter_mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(code_signature));
+	if (parameter_mapping == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		goto exit;
+	}
+
+	for (i = 0, j = 0; i < code_signature->nb_parameter_in; i++){
+		parameter_mapping[i].nb_fragment 	= nb_frag_input[i];
+		parameter_mapping[i].node_buffer 	= (struct node**)(parameter_mapping + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
+		parameter_mapping[i].similarity 	= PARAMETER_EQUAL;
+		j += nb_frag_input[i];
+	}
+
+	for (i = 0; i < code_signature->nb_parameter_out; i++){
+		parameter_mapping[code_signature->nb_parameter_in + i].nb_fragment 	= nb_frag_output[i];
+		parameter_mapping[code_signature->nb_parameter_in + i].node_buffer 	= (struct node**)(parameter_mapping + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
+		parameter_mapping[code_signature->nb_parameter_in + i].similarity 	= PARAMETER_EQUAL;
+		j += nb_frag_output[i];
+	}
+
+	class_array = array_create(parameterMapping_get_size(code_signature));
+	if (class_array == NULL){
+		printf("ERROR: in %s, unable to create arry\n", __func__);
+		goto exit;
+	}
+
+	for (i = 0; i < code_signature->occurence.nb_occurence; i++){
+		for (j = 0; j < code_signature->nb_frag_tot_in; j++){
+			link = code_signature->occurence.input_buffer + (i * code_signature->nb_frag_tot_in) + j;
+			parameter_mapping[IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1].node_buffer[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+		}
+		for (j = 0; j < code_signature->nb_frag_tot_out; j++){
+			link = code_signature->occurence.output_buffer + (i * code_signature->nb_frag_tot_out) + j;
+			parameter_mapping[code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1].node_buffer[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+		}
+
+		for (j = 0; j < array_get_length(class_array); j++){
+			class = (struct parameterMapping*)array_get(class_array, j);
+			if (signatureOccurence_try_append_to_class(class, parameter_mapping, code_signature->nb_parameter_in, code_signature->nb_parameter_out) == 0){
+				break;
+			}
+		}
+		if (j == array_get_length(class_array)){
+			class_index = array_add(class_array, parameter_mapping);
+			if (class_index < 0){
+				printf("ERROR: in %s, unable to add new element to array\n", __func__);
+			}
+			else{
+				class = (struct parameterMapping*)array_get(class_array, class_index);
+				for (k = 0, j = 0; k < code_signature->nb_parameter_in + code_signature->nb_parameter_out; k++){
+					class[k].node_buffer = (struct node**)(class + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
+					j += class[k].nb_fragment;
+				}
+			}
+		}
+	}
+
+	if (array_get_length(class_array) > MAX_CLASS_THRESHOLD){
+		printf("WARNING: in %s, too many result clusters to be printed (%d)\n", __func__, array_get_length(class_array));
+		goto exit;
+	}
+
+	for (i = 0; i < array_get_length(class_array); i++){
+		class = (struct parameterMapping*)array_get(class_array, i);
+		
+		printf("CLUSTER %u/%u:\n", i + 1, array_get_length(class_array));
+		for (j = 0; j < code_signature->nb_parameter_in; j++){
+			if (class[j].similarity == PARAMETER_EQUAL){
+				printf("\t Parameter I%u EQUAL = ", j);
+			}
+			else if (class[j].similarity == PARAMETER_PERMUT){
+				printf("\t Parameter I%u PERMUT = ", j);
+			}
+			else{
+				printf("\t Parameter I%u UNKNOWN = ", j);
+			}
+			signatureOccurence_print_location(class + j);
+		}
+		for (j = 0; j < code_signature->nb_parameter_out; j++){
+			if (class[code_signature->nb_parameter_in + j].similarity == PARAMETER_EQUAL){
+				printf("\t Parameter O%u EQUAL = ", j);
+			}
+			else if (class[code_signature->nb_parameter_in + j].similarity == PARAMETER_PERMUT){
+				printf("\t Parameter O%u PERMUT = ", j);
+			}
+			else{
+				printf("\t Parameter O%u UNKNOWN = ", j);
+			}
+			signatureOccurence_print_location(class + code_signature->nb_parameter_in + j);
+		}
+	}
+
+	exit:
+	if (nb_frag_input != NULL){
+		free(nb_frag_input);
+	}
+	if (nb_frag_output != NULL){
+		free(nb_frag_output);
+	}
+	if (parameter_mapping != NULL){
+		free(parameter_mapping);
+	}
+	if (class_array != NULL){
+		array_delete(class_array);
+	}
+
+}
+
+#endif
 
 static void signatureOccurence_clean(struct codeSignature* code_signature){
 	uint32_t i;

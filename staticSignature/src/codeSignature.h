@@ -62,8 +62,6 @@ struct signatureLink{
 };
 
 struct signatureOccurence{
-	uint32_t 					nb_input;
-	uint32_t 					nb_output;
 	uint32_t 					nb_occurence;
 	struct signatureLink* 		input_buffer;
 	struct signatureLink* 		output_buffer;
@@ -79,6 +77,10 @@ struct codeSignature{
 	struct signatureSymbolTable* 	symbol_table;
 	struct signatureOccurence 		occurence;
 	uint32_t 						state;
+	uint32_t 						nb_parameter_in;
+	uint32_t 						nb_parameter_out;
+	uint32_t 						nb_frag_tot_in;
+	uint32_t 						nb_frag_tot_out;
 } __attribute__((__may_alias__));
 
 #define syntax_node_get_codeSignature(node) 	((struct codeSignature*)&((node)->data))
