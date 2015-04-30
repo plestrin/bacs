@@ -671,6 +671,10 @@ void ir_check_instruction_index(struct ir* ir){
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
 
+		if (operation_cursor->index == IR_INSTRUCTION_INDEX_ADDRESS){
+			continue;
+		}
+
 		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
 			if (operation_cursor->index != IR_INSTRUCTION_INDEX_IMMEDIATE){
 				printf("ERROR: in %s, incorrect index value for immediate node\n", __func__);

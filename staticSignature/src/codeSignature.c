@@ -41,7 +41,7 @@ struct parameterMapping{
 
 static enum parameterSimilarity signatureOccurence_find_parameter_similarity(struct node** parameter_list1, struct node** parameter_list2, uint32_t size);
 static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* class, struct parameterMapping* new_mapping, uint32_t nb_in, uint32_t nb_out);
-static void signatureOccurence_print_node(struct irOperation* operation);
+static void signatureOccurence_print_node(struct node* node);
 static void signatureOccurence_print_location(struct parameterMapping* parameter);
 
 static void signatureOccurence_print(struct codeSignature* codeSignature);
@@ -520,30 +520,66 @@ static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* c
 	return 0;
 }
 
-static void signatureOccurence_print_node(struct irOperation* operation){
-	if (operation->index == 0xfffffffe){
-		printf("IMM");
-	}
-	else if (operation->index == IR_INSTRUCTION_INDEX_UNKOWN){
-		printf("??");
-	}
-	else{
-		switch(operation->type){
-			case IR_OPERATION_TYPE_IN_REG 	: {
-				printf("%s@%u", irRegister_2_string(operation->operation_type.in_reg.reg), operation->index);
-				break;
+static void signatureOccurence_print_node(struct node* node){
+	struct irOperation* operation;
+	struct edge* 		edge_cursor;
+
+	operation = ir_node_get_operation(node);
+	switch(operation->index){
+		case IR_INSTRUCTION_INDEX_IMMEDIATE 	: {
+			printf("IMM=%llx", ir_imm_operation_get_unsigned_value(operation));
+			break;
+		}
+		case IR_INSTRUCTION_INDEX_ADDRESS 		: 
+		case IR_INSTRUCTION_INDEX_UNKOWN 		: {
+			switch(operation->type){
+				case IR_OPERATION_TYPE_IN_REG 	: {
+					printf("%s@??", irRegister_2_string(operation->operation_type.in_reg.reg));
+					break;
+				}
+				case IR_OPERATION_TYPE_IN_MEM 	: {
+					printf("IMEM@??");
+					break;
+				}
+				case IR_OPERATION_TYPE_OUT_MEM 	: {
+					printf("OMEM@??");
+					break;
+				}
+				case IR_OPERATION_TYPE_INST 	: {
+					printf("%s(", irOpcode_2_string(operation->operation_type.inst.opcode));
+					for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+						signatureOccurence_print_node(edge_get_src(edge_cursor));
+						printf(",");
+					}
+					printf("\b)");
+
+					break;
+				}
+				default 						: {
+					printf("??");
+					break;
+				}
 			}
-			case IR_OPERATION_TYPE_IN_MEM 	: {
-				printf("IMEM@%u", operation->index);
-				break;
-			}
-			case IR_OPERATION_TYPE_OUT_MEM 	: {
-				printf("OMEM@%u", operation->index);
-				break;
-			}
-			default 						: {
-				printf("%u", operation->index);
-				break;
+			break;
+		}
+		default 								: {
+			switch(operation->type){
+				case IR_OPERATION_TYPE_IN_REG 	: {
+					printf("%s@%u", irRegister_2_string(operation->operation_type.in_reg.reg), operation->index);
+					break;
+				}
+				case IR_OPERATION_TYPE_IN_MEM 	: {
+					printf("IMEM@%u", operation->index);
+					break;
+				}
+				case IR_OPERATION_TYPE_OUT_MEM 	: {
+					printf("OMEM@%u", operation->index);
+					break;
+				}
+				default 						: {
+					printf("%u", operation->index);
+					break;
+				}
 			}
 		}
 	}
@@ -652,8 +688,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 		}
 
 		if ((buffer_start_offset + i * (buffer_access_size / 8)) - offset == parameter->nb_fragment * (buffer_access_size / 8)){
-			operation = ir_node_get_operation(base);
-			signatureOccurence_print_node(operation);
+			signatureOccurence_print_node(base);
 			printf("[%llu:%llu]\n", offset, buffer_start_offset + i * (buffer_access_size / 8));
 			return;
 		}
@@ -661,8 +696,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 
 	printf("{");
 	for (i = 0; i < parameter->nb_fragment; i++){
-		operation = ir_node_get_operation(parameter->node_buffer[i]);
-		signatureOccurence_print_node(operation);
+		signatureOccurence_print_node(parameter->node_buffer[i]);
 		if (i != parameter->nb_fragment - 1){
 			printf(" ");
 		}

@@ -527,7 +527,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			else{
 				struct node* shl;
 
-				shl = ir_add_inst(engine->ir, instruction_index, 32, IR_SHL);
+				shl = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_SHL);
 				if (shl != NULL){
 					if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
@@ -563,7 +563,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			break;
 		}
 		case 2 : {
-			address = ir_add_inst(engine->ir, instruction_index, 32, IR_ADD);
+			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
@@ -578,7 +578,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			break;
 		}
 		case 3 : {
-			address = ir_add_inst(engine->ir, instruction_index, 32, IR_ADD);
+			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);

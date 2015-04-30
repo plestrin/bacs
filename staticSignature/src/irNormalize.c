@@ -1537,6 +1537,9 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				/* CASE 1 */
 				if (nb_match == node1->nb_edge_dst && nb_match == node2->nb_edge_dst){
 					graph_transfert_src_edge(&(ir->graph), node1, node2);
+					if (operation2->index < operation1->index){
+						operation1->index = operation2->index;
+					}
 					ir_remove_node(ir, node2);
 
 					*modification = 1;
