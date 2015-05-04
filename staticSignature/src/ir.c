@@ -312,6 +312,72 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 /* ===================================================================== */
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+void ir_print_location_node(struct node* node, struct assembly* assembly){
+	struct irOperation* operation;
+	struct edge* 		edge_cursor;
+
+	operation = ir_node_get_operation(node);
+	switch(operation->index){
+		case IR_INSTRUCTION_INDEX_IMMEDIATE 	: {
+			printf("IMM=%llx", ir_imm_operation_get_unsigned_value(operation));
+			break;
+		}
+		case IR_INSTRUCTION_INDEX_ADDRESS 		: 
+		case IR_INSTRUCTION_INDEX_UNKOWN 		: {
+			switch(operation->type){
+				case IR_OPERATION_TYPE_IN_REG 	: {
+					printf("%s@??", irRegister_2_string(operation->operation_type.in_reg.reg));
+					break;
+				}
+				case IR_OPERATION_TYPE_IN_MEM 	: {
+					printf("IMEM@??");
+					break;
+				}
+				case IR_OPERATION_TYPE_OUT_MEM 	: {
+					printf("OMEM@??");
+					break;
+				}
+				case IR_OPERATION_TYPE_INST 	: {
+					printf("%s(", irOpcode_2_string(operation->operation_type.inst.opcode));
+					for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+						ir_print_location_node(edge_get_src(edge_cursor), assembly);
+						printf(",");
+					}
+					printf("\b)");
+
+					break;
+				}
+				default 						: {
+					printf("??");
+					break;
+				}
+			}
+			break;
+		}
+		default 								: {
+			switch(operation->type){
+				case IR_OPERATION_TYPE_IN_REG 	: {
+					printf("%s@%u", irRegister_2_string(operation->operation_type.in_reg.reg), operation->index);
+					break;
+				}
+				case IR_OPERATION_TYPE_IN_MEM 	: {
+					printf("IMEM@%u", operation->index);
+					break;
+				}
+				case IR_OPERATION_TYPE_OUT_MEM 	: {
+					printf("OMEM@%u", operation->index);
+					break;
+				}
+				default 						: {
+					printf("%u", operation->index);
+					break;
+				}
+			}
+		}
+	}
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void ir_dotPrint_node(void* data, FILE* file, void* arg){
 	struct irOperation* operation = (struct irOperation*)data;
 

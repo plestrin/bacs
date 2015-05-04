@@ -12,6 +12,37 @@
 
 int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
 
+static void ir_normalize_print_alias_conflict(struct node* node1, struct node* node2, const char* type){
+	struct node* addr1 = NULL;
+	struct node* addr2 = NULL;
+	struct edge* edge_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+			addr1 = edge_get_src(edge_cursor);
+			break;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+			addr2 = edge_get_src(edge_cursor);
+			break;
+		}
+	}
+
+	if (addr1 && addr2){
+		printf("Aliasing conflict %s: ", type);
+		ir_print_location_node(addr1, NULL);
+		printf(", ");
+		ir_print_location_node(addr2, NULL);
+		printf("\n");
+	}
+	else{
+		printf("ERROR: in %s, unable to get memory access address\n", __func__);
+	}
+}
+
 static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t size_dst){
 	if (size_src == 32 && size_dst == 8){
 		return IR_PART1_8;
@@ -207,7 +238,7 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	return CANNOT_ALIAS;
 }
 
-static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum irOperationType alias_type, enum aliasingStrategy strategy){
+static struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum irOperationType alias_type, enum aliasingStrategy strategy){
 	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
 	struct edge* 			edge_cursor;
@@ -218,14 +249,14 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 	node_cursor = ir_node_get_operation(node1)->operation_type.mem.access.next;
 	if (node_cursor == NULL){
 		printf("ERROR: in %s, found NULL pointer instead of the expected element\n", __func__);
-		return 0;
+		return NULL;
 	}
 
 	while(node_cursor != node2){
 		operation_cursor = ir_node_get_operation(node_cursor);
 		if (operation_cursor->type == alias_type){
 			if (strategy == ALIASING_STRATEGY_STRICT){
-				return 1;
+				return node_cursor;
 			}
 			else{
 				if (addr1 == NULL){
@@ -247,7 +278,7 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 
 				if (addr1 != NULL && addr_cursor != NULL){
 					if (ir_normalize_alias_analysis(&addr1_fgp, addr_cursor) != CANNOT_ALIAS){
-						return 1;
+						return node_cursor;
 					}
 				}
 				else{
@@ -262,7 +293,7 @@ static int32_t ir_normalize_search_alias_conflict(struct node* node1, struct nod
 		}
 	}
 
-	return 0;
+	return NULL;
 }
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
@@ -273,6 +304,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	uint32_t 				access_list_alloc_size;
 	uint32_t 				i;
 	struct irVariableRange* range_buffer;
+	struct node*			alias;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort DAG\n", __func__);
@@ -330,7 +362,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 						struct node* stored_value = NULL;
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy)){
+							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+							if (alias){
+								if (strategy == ALIASING_STRATEGY_PRINT){
+									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
+								}
+								continue;
+							}
+							else if (strategy == ALIASING_STRATEGY_PRINT){
 								continue;
 							}
 						}
@@ -374,7 +413,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy)){
+							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+							if (alias){
+								if (strategy == ALIASING_STRATEGY_PRINT){
+									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
+								}
+								continue;
+							}
+							else if (strategy == ALIASING_STRATEGY_PRINT){
 								continue;
 							}
 						}
@@ -411,7 +457,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
 
 						if (strategy != ALIASING_STRATEGY_WEAK){
-							if (ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy)){
+							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy);
+							if (alias){
+								if (strategy == ALIASING_STRATEGY_PRINT){
+									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
+								}
+								continue;
+							}
+							else if (strategy == ALIASING_STRATEGY_PRINT){
 								continue;
 							}
 						}

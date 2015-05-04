@@ -7,6 +7,7 @@
 #include "printBuffer.h"
 #include "readBuffer.h"
 #include "ir.h"
+#include "irMemory.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
@@ -59,6 +60,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Filter [opt] & frag index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "check ir", 				"Perform a set of tests on the IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
@@ -691,6 +693,40 @@ void analysis_frag_check_ir(struct analysis* analysis, char* arg){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
 			ir_check(fragment->ir);
+		}
+		else{
+			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+		}
+	}
+}
+
+void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	struct trace* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->ir != NULL){
+			ir_print_aliasing(fragment->ir);
 		}
 		else{
 			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);

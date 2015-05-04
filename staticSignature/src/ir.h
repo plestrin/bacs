@@ -226,6 +226,8 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge);
 
 #define ir_printDot(ir, filters) graphPrintDot_print(&((ir)->graph), NULL, filters, NULL)
 
+void ir_print_location_node(struct node* node, struct assembly* assembly);
+
 int32_t ir_printDot_filter_macro_node(struct node* node, void* arg);
 int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg);
 
