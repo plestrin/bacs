@@ -32,10 +32,11 @@ enum parameterSimilarity{
 };
 
 #define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_parameter_in + (code_signature)->nb_parameter_out) + sizeof(struct node*) * ((code_signature)->nb_frag_tot_in + (code_signature)->nb_frag_tot_out))
+#define parameterMapping_get_node_buffer(mapping) ((struct node**)((char*)(mapping) + (mapping)->node_buffer_offset))
 
 struct parameterMapping{
 	uint32_t 					nb_fragment;
-	struct node** 				node_buffer;
+	size_t 						node_buffer_offset;
 	enum parameterSimilarity 	similarity;
 };
 
@@ -499,14 +500,14 @@ static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* c
 	similarity = (enum parameterSimilarity*)alloca(sizeof(enum parameterSimilarity) * (nb_in + nb_out));
 
 	for (i = 0; i < nb_in; i++){
-		similarity[i] = signatureOccurence_find_parameter_similarity(class[i].node_buffer, new_mapping[i].node_buffer, class[i].nb_fragment);
+		similarity[i] = signatureOccurence_find_parameter_similarity(parameterMapping_get_node_buffer(class + i), parameterMapping_get_node_buffer(new_mapping + i), class[i].nb_fragment);
 		if (similarity[i] == PARAMETER_OVERLAP || similarity[i] == PARAMETER_DISJOINT){
 			return -1;
 		}
 	}
 
 	for (i = 0; i < nb_out; i++){
-		similarity[nb_in + i] = signatureOccurence_find_parameter_similarity(class[nb_in + i].node_buffer, new_mapping[nb_in + i].node_buffer, class[nb_in + i].nb_fragment);
+		similarity[nb_in + i] = signatureOccurence_find_parameter_similarity(parameterMapping_get_node_buffer(class + nb_in + i), parameterMapping_get_node_buffer(new_mapping + nb_in + i), class[nb_in + i].nb_fragment);
 		if (similarity[nb_in + i] == PARAMETER_OVERLAP || similarity[nb_in + i] == PARAMETER_DISJOINT){
 			return -1;
 		}
@@ -538,9 +539,9 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 	memset(buffer, 0, sizeof(uint8_t) * (2 * parameter->nb_fragment - 1));
 
 	for (i = 0, is_input_buffer = 1, base = NULL; i < parameter->nb_fragment && is_input_buffer == 1; i++){
-		operation = ir_node_get_operation(parameter->node_buffer[i]);
+		operation = ir_node_get_operation(parameterMapping_get_node_buffer(parameter)[i]);
 		if (operation->type == IR_OPERATION_TYPE_IN_MEM){
-			address = edge_get_src(node_get_head_edge_dst(parameter->node_buffer[i]));
+			address = edge_get_src(node_get_head_edge_dst(parameterMapping_get_node_buffer(parameter)[i]));
 			if (ir_node_get_operation(address)->type == IR_OPERATION_TYPE_INST && ir_node_get_operation(address)->operation_type.inst.opcode == IR_ADD && address->nb_edge_dst == 2){
 				struct node* op1;
 				struct node* op2;
@@ -555,10 +556,10 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 				}
 
 				if (ir_node_get_operation(op1)->type != IR_OPERATION_TYPE_IMM && ir_node_get_operation(op2)->type == IR_OPERATION_TYPE_IMM){
-					if (base == NULL || (base == op1 && buffer_access_size == ir_node_get_operation(parameter->node_buffer[i])->size)){
+					if (base == NULL || (base == op1 && buffer_access_size == ir_node_get_operation(parameterMapping_get_node_buffer(parameter)[i])->size)){
 						if (base == NULL){
 							base = op1;
-							buffer_access_size = ir_node_get_operation(parameter->node_buffer[i])->size;
+							buffer_access_size = ir_node_get_operation(parameterMapping_get_node_buffer(parameter)[i])->size;
 							buffer_start_offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2));
 							if (buffer_start_offset >= (parameter->nb_fragment - 1) * (buffer_access_size / 8)){
 								buffer_start_offset -= (parameter->nb_fragment - 1) * (buffer_access_size / 8);
@@ -630,7 +631,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 
 	printf("{");
 	for (i = 0; i < parameter->nb_fragment; i++){
-		ir_print_location_node(parameter->node_buffer[i], NULL);
+		ir_print_location_node(parameterMapping_get_node_buffer(parameter)[i], NULL);
 		if (i != parameter->nb_fragment - 1){
 			printf(" ");
 		}
@@ -642,7 +643,6 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 static void signatureOccurence_print(struct codeSignature* code_signature){
 	uint32_t 					i;
 	uint32_t 					j;
-	uint32_t 					k;
 	struct signatureNode* 		sig_node;
 	uint32_t* 					nb_frag_input 		= NULL;
 	uint32_t* 					nb_frag_output 		= NULL;
@@ -650,7 +650,6 @@ static void signatureOccurence_print(struct codeSignature* code_signature){
 	struct array* 				class_array 		= NULL;
 	struct signatureLink* 		link;
 	struct parameterMapping* 	class;
-	int32_t 					class_index;
 
 	if (code_signature->occurence.node_buffer == NULL || code_signature->occurence.input_buffer == NULL || code_signature->occurence.output_buffer == NULL){
 		printf("WARNING: in %s, the signatureOccurence structure has not been initialized correctly\n", __func__);
@@ -700,16 +699,16 @@ static void signatureOccurence_print(struct codeSignature* code_signature){
 	}
 
 	for (i = 0, j = 0; i < code_signature->nb_parameter_in; i++){
-		parameter_mapping[i].nb_fragment 	= nb_frag_input[i];
-		parameter_mapping[i].node_buffer 	= (struct node**)(parameter_mapping + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
-		parameter_mapping[i].similarity 	= PARAMETER_EQUAL;
+		parameter_mapping[i].nb_fragment 			= nb_frag_input[i];
+		parameter_mapping[i].node_buffer_offset 	= (code_signature->nb_parameter_in - i + code_signature->nb_parameter_out) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
+		parameter_mapping[i].similarity 			= PARAMETER_EQUAL;
 		j += nb_frag_input[i];
 	}
 
 	for (i = 0; i < code_signature->nb_parameter_out; i++){
-		parameter_mapping[code_signature->nb_parameter_in + i].nb_fragment 	= nb_frag_output[i];
-		parameter_mapping[code_signature->nb_parameter_in + i].node_buffer 	= (struct node**)(parameter_mapping + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
-		parameter_mapping[code_signature->nb_parameter_in + i].similarity 	= PARAMETER_EQUAL;
+		parameter_mapping[code_signature->nb_parameter_in + i].nb_fragment 			= nb_frag_output[i];
+		parameter_mapping[code_signature->nb_parameter_in + i].node_buffer_offset 	= (code_signature->nb_parameter_out - i) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
+		parameter_mapping[code_signature->nb_parameter_in + i].similarity 			= PARAMETER_EQUAL;
 		j += nb_frag_output[i];
 	}
 
@@ -722,11 +721,11 @@ static void signatureOccurence_print(struct codeSignature* code_signature){
 	for (i = 0; i < code_signature->occurence.nb_occurence; i++){
 		for (j = 0; j < code_signature->nb_frag_tot_in; j++){
 			link = code_signature->occurence.input_buffer + (i * code_signature->nb_frag_tot_in) + j;
-			parameter_mapping[IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1].node_buffer[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+			parameterMapping_get_node_buffer(parameter_mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
 		}
 		for (j = 0; j < code_signature->nb_frag_tot_out; j++){
 			link = code_signature->occurence.output_buffer + (i * code_signature->nb_frag_tot_out) + j;
-			parameter_mapping[code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1].node_buffer[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+			parameterMapping_get_node_buffer(parameter_mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
 		}
 
 		for (j = 0; j < array_get_length(class_array); j++){
@@ -736,16 +735,8 @@ static void signatureOccurence_print(struct codeSignature* code_signature){
 			}
 		}
 		if (j == array_get_length(class_array)){
-			class_index = array_add(class_array, parameter_mapping);
-			if (class_index < 0){
+			if (array_add(class_array, parameter_mapping) < 0){
 				printf("ERROR: in %s, unable to add new element to array\n", __func__);
-			}
-			else{
-				class = (struct parameterMapping*)array_get(class_array, class_index);
-				for (k = 0, j = 0; k < code_signature->nb_parameter_in + code_signature->nb_parameter_out; k++){
-					class[k].node_buffer = (struct node**)(class + (code_signature->nb_parameter_in + code_signature->nb_parameter_out)) + j;
-					j += class[k].nb_fragment;
-				}
 			}
 		}
 	}
