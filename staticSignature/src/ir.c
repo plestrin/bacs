@@ -423,7 +423,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		}
 		case IR_OPERATION_TYPE_INST 		: {
 			if (operation->status_flag & IR_NODE_STATUS_FLAG_FINAL){
-				fprintf(file, "[shape=\"octagon\"label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
+				fprintf(file, "[shape=\"octagon\",label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
 			}
 			else{
 				fprintf(file, "[label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));

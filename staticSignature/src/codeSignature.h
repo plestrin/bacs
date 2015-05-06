@@ -12,8 +12,8 @@
 #define CODESIGNATURE_NAME_MAX_SIZE 32
 
 /* Status bitmap description:
-	- bit 1 : has the symbol been resolved?
-	- bit 2 : has the symbol been found ?
+	- bit 1 : has the symbol been resolved
+	- bit 2 : has the symbol been found
 */
 
 struct signatureSymbol{

@@ -49,7 +49,7 @@ endif
 
 ifeq ($(VERBOSE),1)
 CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE
-OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o
+OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o $(BUILD_DIR)printResult.o
 endif
 
 all: $(PROG_NAME)
