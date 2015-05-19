@@ -4,7 +4,6 @@
 
 #include "ir.h"
 #include "irImporterAsm.h"
-#include "array.h"
 #include "multiColumn.h"
 
 struct ir* ir_create(struct assembly* assembly){
@@ -26,11 +25,18 @@ struct ir* ir_create(struct assembly* assembly){
 }
 
 int32_t ir_init(struct ir* ir, struct assembly* assembly){
+	if (saturateLayer_init(&(ir->saturate_layer))){
+		printf("ERROR: in %s, unable to init saturate layer\n", __func__);
+		return -1;
+	}
+
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
+
 	
 	if (irImporterAsm_import(ir, assembly)){
 		printf("ERROR: in %s, trace asm import has failed\n", __func__);
+		saturateLayer_clean(ir, &(ir->saturate_layer));
 		return -1;
 	}
 	

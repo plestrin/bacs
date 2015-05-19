@@ -6,6 +6,28 @@
 
 #include "array.h"
 #include "graph.h"
+
+struct codeSignatureCollection{
+	uint32_t 		code_signature_id_generator;
+	struct graph 	syntax_graph;
+};
+
+struct codeSignatureCollection* codeSignatureCollection_create();
+
+#define codeSignatureCollection_init(collection) 																					\
+	graph_init(&((collection)->syntax_graph), sizeof(struct codeSignature), sizeof(uint32_t)); 										\
+	(collection)->code_signature_id_generator = 0;
+
+#define codeSignatureCollection_get_new_id(collection) ((collection)->code_signature_id_generator ++)
+
+void codeSignatureCollection_printDot(struct codeSignatureCollection* collection);
+
+void codeSignatureCollection_clean(struct codeSignatureCollection* collection);
+
+#define codeSignatureCollection_delete(collection) 																					\
+	codeSignatureCollection_clean(collection); 																						\
+	free(collection);
+
 #include "subGraphIsomorphism.h"
 #include "ir.h"
 
@@ -56,6 +78,11 @@ struct signatureEdge{
 	uint32_t 					macro_desc;
 };
 
+uint32_t irNode_get_label(struct node* node);
+uint32_t signatureNode_get_label(struct node* node);
+uint32_t irEdge_get_label(struct edge* edge);
+uint32_t signatureEdge_get_label(struct edge* edge);
+
 struct signatureLink{
 	struct node* 				node;
 	uint32_t 					edge_desc;
@@ -103,30 +130,8 @@ struct codeSignature{
 		free((code_signature)->symbol_table); 																							\
 	}
 
-struct codeSignatureCollection{
-	uint32_t 		code_signature_id_generator;
-	struct graph 	syntax_graph;
-};
-
-struct codeSignatureCollection* codeSignature_create_collection();
-
-#define codeSignature_init_collection(collection) 																						\
-	graph_init(&((collection)->syntax_graph), sizeof(struct codeSignature), sizeof(uint32_t)); 											\
-	(collection)->code_signature_id_generator = 0
-
 int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
 
-#define codeSignature_get_new_id(collection) ((collection)->code_signature_id_generator ++)
-
 void codeSignature_search_collection(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir);
-
-void codeSignature_printDot_collection(struct codeSignatureCollection* collection);
-
-void codeSignature_clean_collection(struct codeSignatureCollection* collection);
-
-#define codeSignature_delete_collection(collection) 																					\
-	codeSignature_clean_collection(collection); 																						\
-	free(collection)
-
 
 #endif

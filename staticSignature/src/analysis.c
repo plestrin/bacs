@@ -62,11 +62,17 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "check ir", 				"Perform a set of tests on the IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check_ir)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	
+	/* saturate specific command */
+	ADD_CMD_TO_INPUT_PARSER(parser, "learn saturate rules", 	"Detect potential saturation possibilties", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_learn_saturateRules)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print saturate rules", 	"Print saturation rules", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->saturate_rules), 			saturateRules_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "saturate ir", 				"Saturate the IR", 								"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_saturate_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "unsaturate ir", 			"Unsaturate the IR", 							"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_unsaturate_ir)
+
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_printDot_collection)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignature_clean_collection)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_clean)
 
 	/* callGraph specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
@@ -98,11 +104,11 @@ struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	codeSignature_init_collection(&(analysis->code_signature_collection));
+	codeSignatureCollection_init(&(analysis->code_signature_collection));
 
 	if (array_init(&(analysis->frag_array), sizeof(struct trace))){
 		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
-		codeSignature_clean_collection(&(analysis->code_signature_collection));
+		codeSignatureCollection_clean(&(analysis->code_signature_collection));
 		free(analysis);
 		return NULL;
 	}
@@ -111,10 +117,19 @@ struct analysis* analysis_create(){
 	analysis->code_map 		= NULL;
 	analysis->call_graph 	= NULL;
 
+	if (saturateRules_init(&(analysis->saturate_rules))){
+		printf("ERROR: in %s, unable to init saturate\n", __func__);
+		array_clean(&(analysis->frag_array));
+		codeSignatureCollection_clean(&(analysis->code_signature_collection));
+		free(analysis);
+	}
+
 	return analysis;
 }
 
 void analysis_delete(struct analysis* analysis){
+	saturateRules_clean(&(analysis->saturate_rules));
+
 	if (analysis->call_graph != NULL){
 		callGraph_delete(analysis->call_graph);
 		analysis->call_graph = NULL;
@@ -123,7 +138,7 @@ void analysis_delete(struct analysis* analysis){
 	analysis_frag_clean(analysis);
 	array_clean(&(analysis->frag_array));
 
-	codeSignature_clean_collection(&(analysis->code_signature_collection));
+	codeSignatureCollection_clean(&(analysis->code_signature_collection));
 
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -734,6 +749,82 @@ void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
 	}
 }
 
+/* ===================================================================== */
+/* saturate functions						                             */
+/* ===================================================================== */
+
+void analysis_learn_saturateRules(struct analysis* analysis){
+	saturateRules_reset(&(analysis->saturate_rules));
+	saturateRules_learn_associative_conflict(&(analysis->saturate_rules), &(analysis->code_signature_collection));
+}
+
+void analysis_frag_saturate_ir(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	struct trace* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->ir != NULL){
+			irSaturate_saturate(&(analysis->saturate_rules), fragment->ir);
+		}
+		else{
+			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+		}
+	}
+}
+
+void analysis_frag_unsaturate_ir(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	struct trace* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->ir != NULL){
+			irSaturate_unsaturate(fragment->ir);
+		}
+		else{
+			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+		}
+	}
+}
 
 /* ===================================================================== */
 /* code signature functions						                         */

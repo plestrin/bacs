@@ -6,6 +6,7 @@
 #include "assembly.h"
 #include "graph.h"
 #include "graphPrintDot.h"
+#include "array.h"
 
 enum irOpcode{
 	IR_ADD 		= 0,
@@ -174,7 +175,8 @@ struct irDependence{
 #define IR_DEPENDENCE_MACRO_DESC_GET_ARG(desc) 			(((desc) >> 16) & 0x00000ff)
 
 struct ir{
-	struct graph 				graph;
+	struct graph graph;
+	struct array saturate_layer;
 };
 
 struct ir* ir_create(struct assembly* assembly);
@@ -235,6 +237,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
 #define ir_clean(ir) 														\
+	saturateLayer_clean(ir, &(ir->saturate_layer)); 						\
 	graph_clean(&(ir->graph));												\
 
 #define ir_delete(ir) 														\
@@ -244,5 +247,6 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 #include "irNormalize.h"
 #include "irCheck.h"
 #include "irVariableSize.h"
+#include "irSaturate.h"
 
 #endif

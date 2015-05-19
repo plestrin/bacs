@@ -7,11 +7,6 @@
 #include "multiColumn.h"
 #include "printResult.h"
 
-uint32_t irNode_get_label(struct node* node);
-uint32_t signatureNode_get_label(struct node* node);
-uint32_t irEdge_get_label(struct edge* edge);
-uint32_t signatureEdge_get_label(struct edge* edge);
-
 void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
 void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
 
@@ -28,12 +23,12 @@ static void signatureOccurence_clean(struct codeSignature* code_signature);
 /* Code Signature Collection routines									 */
 /* ===================================================================== */
 
-struct codeSignatureCollection* codeSignature_create_collection(){
+struct codeSignatureCollection* codeSignatureCollection_create(){
 	struct codeSignatureCollection* collection;
 
 	collection = (struct codeSignatureCollection*)malloc(sizeof(struct codeSignatureCollection));
 	if (collection != NULL){
-		codeSignature_init_collection(collection);
+		codeSignatureCollection_init(collection);
 	}
 	else{
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -71,7 +66,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 		}
 	}
 	if (node_cursor == NULL){
-		new_signature->id = codeSignature_get_new_id(collection);
+		new_signature->id = codeSignatureCollection_get_new_id(collection);
 	}
 
 	if (new_signature->symbol_table != NULL){
@@ -464,7 +459,7 @@ static void signatureOccurence_clean(struct codeSignature* code_signature){
 	}
 }
 
-void codeSignature_clean_collection(struct codeSignatureCollection* collection){
+void codeSignatureCollection_clean(struct codeSignatureCollection* collection){
 	struct node* 			node_cursor;
 	struct codeSignature* 	signature_cursor;
 
@@ -575,7 +570,7 @@ uint32_t signatureEdge_get_label(struct edge* edge){
 /* Printing routines													 */
 /* ===================================================================== */
 
-void codeSignature_printDot_collection(struct codeSignatureCollection* collection){
+void codeSignatureCollection_printDot(struct codeSignatureCollection* collection){
 	struct node* 				node_cursor;
 	struct codeSignature* 		signature_cursor;
 	struct multiColumnPrinter*	printer;
