@@ -7,7 +7,6 @@
 static uint32_t irSaturate_search_asso_seq(struct node* node, struct assoSeq* asso_seq);
 static int32_t irSaturate_check_asso_seq(struct assoSeq* asso_seq);
 static int32_t irSaturate_compare_asso_seq(struct assoSeq* asso_seq1, struct assoSeq* asso_seq2);
-static void irSaturate_print_asso_seq(struct assoSeq* asso_seq);
 
 struct assoGraphHeader{
 	enum irOpcode 	opcode;
@@ -20,6 +19,7 @@ struct assoGraphHeader{
 static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir);
 static void irSaturate_extract_asso_graph(struct node* node, struct assoGraphHeader* header, struct node** input_buffer, struct node** output_buffer);
 static int32_t irSaturate_check_asso_subgraph(struct node** selection_input, uint32_t nb_input, struct node** selection_output, uint32_t nb_output, struct node** selection_remaining, uint32_t* nb_remaining);
+static int32_t irSaturate_is_node_yet_exist(struct node** selection_input, uint32_t nb_input, struct node** selection_output, uint32_t nb_output);
 
 #define IRSATURATE_MAX_RECURSION_LEVEL 4
 
@@ -80,7 +80,7 @@ static uint32_t irSaturate_search_asso_seq(struct node* node, struct assoSeq* as
 		}
 		else{
 			if (asso_seq->nb_output < IRSATURATE_ASSOSEQ_MAX_OUTPUT){
-				asso_seq->buffer_output[asso_seq->nb_output ++] = node_cursor;
+				asso_seq->buffer_output[asso_seq->nb_output ++] = signatureNode_get_label(node_cursor);
 			}
 			else{
 				printf("ERROR: in %s, IRSATURATE_ASSOSEQ_MAX_OUTPUT has been reached\n", __func__);
@@ -97,7 +97,7 @@ static uint32_t irSaturate_search_asso_seq(struct node* node, struct assoSeq* as
 		}
 		else{
 			if (asso_seq->nb_input < IRSATURATE_ASSOSEQ_MAX_INPUT){
-				asso_seq->buffer_input[asso_seq->nb_input ++] = node_cursor;
+				asso_seq->buffer_input[asso_seq->nb_input ++] = signatureNode_get_label(node_cursor);
 			}
 			else{
 				printf("ERROR: in %s, IRSATURATE_ASSOSEQ_MAX_INPUT has been reached\n", __func__);
@@ -108,9 +108,19 @@ static uint32_t irSaturate_search_asso_seq(struct node* node, struct assoSeq* as
 	return result;
 }
 
-static int32_t irSaturate_check_asso_seq(struct assoSeq* asso_seq){
-	uint32_t i;
+int32_t irSaturate_compare_label(const void* a, const void* b){
+	if (*(uint32_t*)a < *(uint32_t*)b){
+		return -1;
+	}
+	else if (*(uint32_t*)a > *(uint32_t*)b){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
 
+static int32_t irSaturate_check_asso_seq(struct assoSeq* asso_seq){
 	if (asso_seq->nb_output > 1){
 		printf("WARNING: in %s, associative sequence with more than one output -> skip\n", __func__);
 		return 1;
@@ -121,78 +131,23 @@ static int32_t irSaturate_check_asso_seq(struct assoSeq* asso_seq){
 		return 1;
 	}
 
-	for (i = 0; i < asso_seq->nb_input; i++){
-		if (((struct signatureNode*)&(asso_seq->buffer_input[i]->data))->type != SIGNATURE_NODE_TYPE_OPCODE){
-			printf("WARNING: in %s, associative sequence includes none operational input -> skip\n", __func__);
-			return 1;
-		}
+	if (asso_seq->nb_input == 1){
+		asso_seq->buffer_input[asso_seq->nb_input ++] = SUBGRAPHISOMORPHISM_JOKER_LABEL;
 	}
 
-	for (i = 0; i < asso_seq->nb_output; i++){
-		if (((struct signatureNode*)&(asso_seq->buffer_output[i]->data))->type != SIGNATURE_NODE_TYPE_OPCODE){
-			printf("WARNING: in %s, associative sequence includes none operational output -> skip\n", __func__);
-			return 1;
-		}
-	}
+	qsort(asso_seq->buffer_input, asso_seq->nb_input, sizeof(uint32_t), irSaturate_compare_label);
+	qsort(asso_seq->buffer_output, asso_seq->nb_output, sizeof(uint32_t), irSaturate_compare_label);
 
 	return 0;
 }
 
-static int32_t irSaturate_compare_asso_seq(struct assoSeq* asso_seq1, struct assoSeq* asso_seq2){
-	uint32_t i;
-	uint32_t j;
-	uint32_t label_input1[IRSATURATE_ASSOSEQ_MAX_INPUT];
-	uint32_t label_input2[IRSATURATE_ASSOSEQ_MAX_INPUT];
-	uint32_t label_output1[IRSATURATE_ASSOSEQ_MAX_OUTPUT];
-	uint32_t label_output2[IRSATURATE_ASSOSEQ_MAX_OUTPUT];
 
+static int32_t irSaturate_compare_asso_seq(struct assoSeq* asso_seq1, struct assoSeq* asso_seq2){
 	if ((asso_seq1->opcode != asso_seq2->opcode) || (asso_seq1->nb_input != asso_seq2->nb_input) || (asso_seq1->nb_output != asso_seq2->nb_output)){
 		return 1;
 	}
 
-	for (i = 0; i < asso_seq1->nb_input; i++){
-		label_input1[i] = signatureNode_get_label(asso_seq1->buffer_input[i]);
-		label_input2[i] = signatureNode_get_label(asso_seq2->buffer_input[i]);
-	}
-
-	for (i = 0; i < asso_seq1->nb_input; i++){
-		for (j = i; j < asso_seq2->nb_input; j++){
-			if (label_input1[i] == label_input2[j]){
-				if (i != j){
-					label_input2[i] ^= label_input2[j];
-					label_input2[j] ^= label_input2[i];
-					label_input2[i] ^= label_input2[j];
-				}
-				break;
-			}
-		}
-		if (j == asso_seq2->nb_input){
-			return 1;
-		}
-	}
-
-	for (i = 0; i < asso_seq1->nb_output; i++){
-		label_output1[i] = signatureNode_get_label(asso_seq1->buffer_output[i]);
-		label_output2[i] = signatureNode_get_label(asso_seq2->buffer_output[i]);
-	}
-
-	for (i = 0; i < asso_seq1->nb_output; i++){
-		for (j = i; j < asso_seq2->nb_output; j++){
-			if (label_output1[i] == label_output2[j]){
-				if (i != j){
-					label_output2[i] ^= label_output2[j];
-					label_output2[j] ^= label_output2[i];
-					label_output2[i] ^= label_output2[j];
-				}
-				break;
-			}
-		}
-		if (j == asso_seq2->nb_output){
-			return 1;
-		}
-	}
-
-	return 0;
+	return memcmp(asso_seq1->buffer_input, asso_seq2->buffer_input, sizeof(uint32_t)) | memcmp(asso_seq1->buffer_output, asso_seq2->buffer_output, sizeof(uint32_t));
 }
 
 void irSaturate_saturate(struct saturateRules* saturate_rules, struct ir* ir){
@@ -211,14 +166,25 @@ void irSaturate_saturate(struct saturateRules* saturate_rules, struct ir* ir){
 	#ifdef VERBOSE
 	{
 		uint32_t i;
-		uint32_t nb_valid_element;
+		uint32_t nb_node;
+		uint32_t nb_edge;
 
-		for (i = 0, nb_valid_element = 0; i < array_get_length(&(ir->saturate_layer)); i++){
-			if (((struct saturateElement*)array_get(&(ir->saturate_layer), i))->type != SATURATE_ELEMENT_INVALID){
-				nb_valid_element ++;
+		for (i = 0, nb_node = 0, nb_edge = 0; i < array_get_length(&(ir->saturate_layer)); i++){
+			switch (((struct saturateElement*)array_get(&(ir->saturate_layer), i))->type){
+				case SATURATE_ELEMENT_NODE : {
+					nb_node ++;
+					break;
+				}
+				case SATURATE_ELEMENT_EDGE : {
+					nb_edge ++;
+					break;
+				}
+				case SATURATE_ELEMENT_INVALID : {
+					break;
+				}
 			}
 		}
-		printf("INFO: in %s, %u element(s) has been added to the graph (%u are redundant)\n", __func__, nb_valid_element, array_get_length(&(ir->saturate_layer)) - nb_valid_element);
+		printf("INFO: in %s, %u node(s) and %u edge(s) has been added to the graph (%u are redundant)\n", __func__, nb_node, nb_edge, array_get_length(&(ir->saturate_layer)) - (nb_node + nb_edge));
 	}
 	#endif
 }
@@ -554,7 +520,7 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 
 			for (i = 0; i < array_get_length(&(saturate_rules->asso_seq_array)); i++){
 				asso_seq = (struct assoSeq*)array_get(&(saturate_rules->asso_seq_array), i);
-				if (asso_seq->opcode == graph_header.opcode){
+				if (asso_seq->opcode == graph_header.opcode && asso_seq->nb_input <= graph_header.nb_input && asso_seq->nb_output <= graph_header.nb_output){
 
 					if (parameter_buffer == NULL){
 						parameter_buffer_size = IRSATURATE_ASSOSEQ_MAX_INPUT * graph_header.nb_input + IRSATURATE_ASSOSEQ_MAX_OUTPUT * graph_header.nb_output;
@@ -579,7 +545,7 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 						}
 
 						for (k = 0; k < graph_header.nb_input; k++){
-							if (signatureNode_get_label(asso_seq->buffer_input[j]) == irNode_get_label(input_buffer[k]) || signatureNode_get_label(asso_seq->buffer_input[j]) == SUBGRAPHISOMORPHISM_JOKER_LABEL){
+							if (asso_seq->buffer_input[j] == irNode_get_label(input_buffer[k]) || asso_seq->buffer_input[j] == SUBGRAPHISOMORPHISM_JOKER_LABEL){
 								if (input_match_header[j].match_offset + input_match_header[j].nb_match == parameter_buffer_size){
 									parameter_buffer_size = IRSATURATE_ASSOSEQ_MAX_INPUT * graph_header.nb_input + IRSATURATE_ASSOSEQ_MAX_OUTPUT * graph_header.nb_output;
 									parameter_buffer = (struct node**)realloc(parameter_buffer, sizeof(struct node*) * parameter_buffer_size);
@@ -610,7 +576,7 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 						}
 
 						for (k = 0; k < graph_header.nb_output; k++){
-							if (signatureNode_get_label(asso_seq->buffer_output[j]) == irNode_get_label(output_buffer[k]) || signatureNode_get_label(asso_seq->buffer_output[j]) == SUBGRAPHISOMORPHISM_JOKER_LABEL){
+							if (asso_seq->buffer_output[j] == irNode_get_label(output_buffer[k]) || asso_seq->buffer_output[j] == SUBGRAPHISOMORPHISM_JOKER_LABEL){
 								if (output_match_header[j].match_offset + output_match_header[j].nb_match == parameter_buffer_size){
 									parameter_buffer_size = IRSATURATE_ASSOSEQ_MAX_INPUT * graph_header.nb_input + IRSATURATE_ASSOSEQ_MAX_OUTPUT * graph_header.nb_output;
 									parameter_buffer = (struct node**)realloc(parameter_buffer, sizeof(struct node*) * parameter_buffer_size);
@@ -629,12 +595,17 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 					}
 
 					if (selection_remaining == NULL){
-						selection_remaining_size = graph_header.nb_input - asso_seq->nb_input;
-						selection_remaining = (struct node**)malloc(sizeof(struct node*) * selection_remaining_size);
+						if (graph_header.nb_input > asso_seq->nb_input){
+							selection_remaining_size = graph_header.nb_input - asso_seq->nb_input;
+							selection_remaining = (struct node**)malloc(sizeof(struct node*) * selection_remaining_size);
 
-						if (selection_remaining == NULL){
-							printf("ERROR: in %s, unable to allocate memory\n", __func__);
-							continue;
+							if (selection_remaining == NULL){
+								printf("ERROR: in %s, unable to allocate memory\n", __func__);
+								continue;
+							}
+						}
+						else{
+							selection_remaining_size = 0;
 						}
 					}
 					else if (selection_remaining_size < graph_header.nb_input - asso_seq->nb_input){
@@ -704,7 +675,7 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 
 							if (nb_remaining > 0){
 								for (j = 0, nb_reschedule = 0; j < asso_seq->nb_input; j++){
-									if (signatureNode_get_label(asso_seq->buffer_input[j]) == SUBGRAPHISOMORPHISM_JOKER_LABEL){
+									if (asso_seq->buffer_input[j] == SUBGRAPHISOMORPHISM_JOKER_LABEL){
 										reschedule_loc[nb_reschedule ++] = j;
 									}
 								}
@@ -740,6 +711,10 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 									saturateLayer_push_edge(&(ir->saturate_layer), sequence_index, NULL, 0, selection_output[j]);
 								}
 							}
+						}
+
+						if (asso_seq->nb_output == 0){
+							goto inc_input;
 						}
 
 						j = asso_seq->nb_output - 1;
@@ -821,123 +796,198 @@ static void irSaturate_extract_asso_graph(struct node* node, struct assoGraphHea
 }
 
 static int32_t irSaturate_check_asso_subgraph(struct node** selection_input, uint32_t nb_input, struct node** selection_output, uint32_t nb_output, struct node** selection_remaining, uint32_t* nb_remaining){
-	uint32_t 			i;
-	enum irOpcode 		opcode;
-	struct edge* 		edge_buffer[IRSATURATE_MAX_RECURSION_LEVEL];
-	uint8_t 			dst[IRSATURATE_ASSOSEQ_MAX_INPUT] = {0};
-	struct edge* 		edge_cursor;
-	struct node*		node_cursor;
-	struct irOperation* operation_cursor;
-	uint32_t 			dst_ctr;
-	uint32_t 			remaining_offset;
-
-	if (nb_output > 1){
-		printf("WARNING: in %s, this case (%u output) is not implemented\n", __func__, nb_output);
+	
+	if (irSaturate_is_node_yet_exist(selection_input, nb_input, selection_output, nb_output) == 0){
 		return 1;
 	}
 
-	for (edge_cursor = node_get_head_edge_dst(selection_output[0]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		node_cursor = edge_get_src(edge_cursor);
-		operation_cursor = ir_node_get_operation(node_cursor);
+	if (nb_output == 0){
+		printf("ERROR: in %s, no output this case is not implemented yet\n", __func__);
+	}
+	else if (nb_output == 1){
+		uint32_t 			i;
+		enum irOpcode 		opcode;
+		struct edge* 		edge_buffer[IRSATURATE_MAX_RECURSION_LEVEL];
+		uint8_t 			dst[IRSATURATE_ASSOSEQ_MAX_INPUT] = {0};
+		struct edge* 		edge_cursor;
+		struct node*		node_cursor;
+		struct irOperation* operation_cursor;
+		uint32_t 			dst_ctr;
+		uint32_t 			remaining_offset;
 
-		if (operation_cursor->type == IR_OPERATION_TYPE_INST && irSaturate_opcode_is_associative(operation_cursor->operation_type.inst.opcode)){
-			opcode = operation_cursor->operation_type.inst.opcode;
-			memset(dst, 0, sizeof(dst));
 
-			edge_buffer[0] = node_get_head_edge_dst(node_cursor);
-			for (dst_ctr = 0, remaining_offset = 0; ; ){
-				node_cursor = edge_get_src(edge_buffer[dst_ctr]);
-				operation_cursor = ir_node_get_operation(node_cursor);
+		
+		for (edge_cursor = node_get_head_edge_dst(selection_output[0]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			node_cursor = edge_get_src(edge_cursor);
+			operation_cursor = ir_node_get_operation(node_cursor);
 
-				if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == opcode && dst_ctr + 1 < IRSATURATE_MAX_RECURSION_LEVEL){
-					edge_buffer[++ dst_ctr] = node_get_head_edge_dst(node_cursor);
-				}
-				else{
-					for (i = 0; i < nb_input; i++){
-						if (node_cursor == selection_input[i]){
-							if (dst[i] != 0){
-								printf("ERROR: in %s, several paths from input to output\n", __func__);
+			if (operation_cursor->type == IR_OPERATION_TYPE_INST && irSaturate_opcode_is_associative(operation_cursor->operation_type.inst.opcode)){
+				opcode = operation_cursor->operation_type.inst.opcode;
+				memset(dst, 0, sizeof(dst));
+
+				edge_buffer[0] = node_get_head_edge_dst(node_cursor);
+				for (dst_ctr = 0, remaining_offset = 0; ; ){
+					node_cursor = edge_get_src(edge_buffer[dst_ctr]);
+					operation_cursor = ir_node_get_operation(node_cursor);
+
+					if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == opcode && dst_ctr + 1 < IRSATURATE_MAX_RECURSION_LEVEL){
+						edge_buffer[++ dst_ctr] = node_get_head_edge_dst(node_cursor);
+					}
+					else{
+						for (i = 0; i < nb_input; i++){
+							if (node_cursor == selection_input[i]){
+								if (dst[i] != 0){
+									printf("ERROR: in %s, several paths from input to output\n", __func__);
+								}
+								dst[i] = dst_ctr + 1;
+								break;
 							}
-							dst[i] = dst_ctr + 1;
+						}
+						if (i == nb_input){
+							if (remaining_offset < *nb_remaining){
+								selection_remaining[remaining_offset ++] = node_cursor;
+							}
+							else{
+								printf("ERROR: in %s, the selection buffer for the remaining input is full\n", __func__);
+							}
+						}
+
+						do{
+							if (edge_buffer[dst_ctr] == NULL){
+								if (dst_ctr != 0){
+									dst_ctr --;
+									edge_buffer[dst_ctr] = edge_get_next_dst(edge_buffer[dst_ctr]);
+								}
+								else{
+									goto next;
+								}
+							}
+							else{
+								edge_buffer[dst_ctr] = edge_get_next_dst(edge_buffer[dst_ctr]);
+							}
+						} while(edge_buffer[dst_ctr] == NULL);
+					}
+				}
+			}
+
+			next:;
+			for (i = 0; i < nb_input; i++){
+				if (dst[i] == 0){
+					break;
+				}
+			}
+			if (i == nb_input){
+				*nb_remaining = remaining_offset;
+				return 0;
+			}
+		}
+	}
+	else{
+		printf("WARNING: in %s, this case (%u output) is not implemented\n", __func__, nb_output);
+	}
+
+	return 1;
+}
+
+static int32_t irSaturate_is_node_yet_exist(struct node** selection_input, uint32_t nb_input, struct node** selection_output, uint32_t nb_output){
+	struct edge* 	edge_cursor1;
+	struct edge* 	edge_cursor2;
+	struct node* 	node;
+	uint32_t 		i;
+
+	if (nb_input){
+		for (edge_cursor1 = node_get_head_edge_src(selection_input[0]); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_src(edge_cursor1)){
+			node = edge_get_dst(edge_cursor1);
+
+			if (node->nb_edge_dst == nb_input && node->nb_edge_src >= nb_output && ir_node_get_operation(node)->type == IR_OPERATION_TYPE_INST){
+				for (edge_cursor2 = node_get_head_edge_dst(node); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+					for (i = 0; i < nb_input; i++){
+						if (edge_get_src(edge_cursor2) == selection_input[i]){
 							break;
 						}
 					}
 					if (i == nb_input){
-						if (remaining_offset < *nb_remaining){
-							selection_remaining[remaining_offset ++] = node_cursor;
-						}
-						else{
-							printf("ERROR: in %s, the selection buffer for the remaining input is full\n", __func__);
+						break;
+					}
+				}
+				if (edge_cursor2 != NULL){
+					continue;
+				}
+
+				for (i = 0; i < nb_output; i++){
+					for (edge_cursor2 = node_get_head_edge_src(node); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_src(edge_cursor2)){
+						if (edge_get_dst(edge_cursor2) == selection_output[i]){
+							break;
 						}
 					}
-
-					do{
-						if (edge_buffer[dst_ctr] == NULL){
-							if (dst_ctr != 0){
-								dst_ctr --;
-								edge_buffer[dst_ctr] = edge_get_next_dst(edge_buffer[dst_ctr]);
-							}
-							else{
-								goto next;
-							}
-						}
-						else{
-							edge_buffer[dst_ctr] = edge_get_next_dst(edge_buffer[dst_ctr]);
-						}
-					} while(edge_buffer[dst_ctr] == NULL);
+					if (edge_cursor2 == NULL){
+						break;
+					}
+				}
+				if (i == nb_output){
+					return 0;
 				}
 			}
 		}
+	}
+	else if (nb_output){
+		for (edge_cursor1 = node_get_head_edge_dst(selection_output[0]); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+			node = edge_get_src(edge_cursor1);
 
-		next:;
-		for (i = 0; i < nb_input; i++){
-			if (dst[i] == 0){
-				break;
+			if (node->nb_edge_src >= nb_output && ir_node_get_operation(node)->type == IR_OPERATION_TYPE_INST){
+				for (i = 0; i < nb_output; i++){
+					for (edge_cursor2 = node_get_head_edge_src(node); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_src(edge_cursor2)){
+						if (edge_get_dst(edge_cursor2) == selection_output[i]){
+							break;
+						}
+					}
+					if (edge_cursor2 == NULL){
+						break;
+					}
+				}
+				if (i == nb_output){
+					return 0;
+				}
 			}
 		}
-		if (i == nb_input){
-			*nb_remaining = remaining_offset;
-			return 0;
-		}
+	}
+	else{
+		printf("ERROR: in %s, not input and no output, this method should not have been called in a first place\n", __func__);
 	}
 
 	return 1;
 }
 
 void saturateRules_print(struct saturateRules* saturate_rules){
-	uint32_t i;
+	uint32_t 		i;
+	uint32_t 		j;
+	struct assoSeq* asso_seq;
 
 	if (array_get_length(&(saturate_rules->asso_seq_array))){
 		printf("Associative conflict(s) detected in the signature collection:\n");
 		
 		for (i = 0; i < array_get_length(&(saturate_rules->asso_seq_array)); i++){
-			printf("\t- ");
-			irSaturate_print_asso_seq((struct assoSeq*)array_get(&(saturate_rules->asso_seq_array), i));
-			printf("\n");
+			asso_seq = (struct assoSeq*)array_get(&(saturate_rules->asso_seq_array), i);
+
+			printf("\t- %s {", irOpcode_2_string(asso_seq->opcode));
+			for (j = 0; j < asso_seq->nb_input; j++){
+				if (j == asso_seq->nb_input - 1){
+					printf("0x%08x} -> {", asso_seq->buffer_input[j]);
+				}
+				else{
+					printf("0x%08x, ", asso_seq->buffer_input[j]);
+				}
+			}
+
+			for (j = 0; j < asso_seq->nb_output; j++){
+				if (j == asso_seq->nb_output - 1){
+					printf("0x%08x", asso_seq->buffer_output[j]);
+				}
+				else{
+					printf("0x%08x, ", asso_seq->buffer_output[j]);
+				}
+			}
+			printf("}\n");
 		}
 	}
-}
-
-static void irSaturate_print_asso_seq(struct assoSeq* asso_seq){
-	uint32_t i;
-
-	printf("%s {", irOpcode_2_string(asso_seq->opcode));
-	for (i = 0; i < asso_seq->nb_input; i++){
-		if (i == asso_seq->nb_input - 1){
-			printf("0x%08x} -> %u -> {", signatureNode_get_label(asso_seq->buffer_input[i]), asso_seq->nb_node);
-		}
-		else{
-			printf("0x%08x, ", signatureNode_get_label(asso_seq->buffer_input[i]));
-		}
-	}
-
-	for (i = 0; i < asso_seq->nb_output; i++){
-		if (i == asso_seq->nb_output - 1){
-			printf("0x%08x", signatureNode_get_label(asso_seq->buffer_output[i]));
-		}
-		else{
-			printf("0x%08x, ", signatureNode_get_label(asso_seq->buffer_output[i]));
-		}
-	}
-	printf("}");
 }

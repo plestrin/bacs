@@ -84,6 +84,11 @@ struct array* array_create(uint32_t element_size){
 int32_t array_init(struct array* array, uint32_t element_size){
 	_array_init(&(array->pages));
 
+	if (element_size == 0){
+		printf("ERROR: in %s, element size is equal to 0\n", __func__);
+		return -1;
+	}
+
 	array->buffer = (char*)malloc(ARRAY_DEFAULT_ALLOC_SIZE);
 	if (array->buffer != NULL){
 		array->nb_allocated_byte 	= ARRAY_DEFAULT_ALLOC_SIZE;

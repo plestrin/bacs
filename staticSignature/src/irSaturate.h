@@ -15,9 +15,9 @@
 struct assoSeq{
 	enum irOpcode 	opcode;
 	uint32_t 		nb_input;
-	struct node* 	buffer_input[IRSATURATE_ASSOSEQ_MAX_INPUT];
+	uint32_t 		buffer_input[IRSATURATE_ASSOSEQ_MAX_INPUT];
 	uint32_t 		nb_output;
-	struct node* 	buffer_output[IRSATURATE_ASSOSEQ_MAX_OUTPUT];
+	uint32_t 		buffer_output[IRSATURATE_ASSOSEQ_MAX_OUTPUT];
 	uint32_t 		nb_node;
 };
 
