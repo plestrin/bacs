@@ -43,7 +43,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)dijkstra.o
 
 ifeq ($(DEBUG),1)
-CFLAGS			:= $(CFLAGS) -g
+CFLAGS			:= $(CFLAGS) -g3
 else
 CFLAGS			:= $(CFLAGS) -O2
 endif
