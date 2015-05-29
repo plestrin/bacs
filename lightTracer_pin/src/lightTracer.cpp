@@ -104,7 +104,10 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 /* ===================================================================== */
 
 void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void* buffer, UINT64 numElements, void* arg){
-	FILE* file = (FILE*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	FILE* 		file = (FILE*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	uint64_t 	i;
+	uint64_t 	rewrite_offset;
+	uint32_t* 	buffer_id;
 
 	if (file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
@@ -119,8 +122,19 @@ void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, vo
 		PIN_SetThreadData(light_tracer.thread_key, file, tid);
 	}
 
+	for (i = 1, rewrite_offset = 1, buffer_id = (uint32_t*)buffer; i < numElements; i++){
+		if (buffer_id[i - 1] == BLACK_LISTED_ID){
+			if (buffer_id[i] != BLACK_LISTED_ID){
+				buffer_id[rewrite_offset ++] = buffer_id[i];
+			}
+		}
+		else{
+			buffer_id[rewrite_offset ++] = buffer_id[i];
+		}
+	}
+
 	if (file != NULL){
-		fwrite(buffer, sizeof(uint32_t), numElements, file);
+		fwrite(buffer, sizeof(uint32_t), rewrite_offset, file);
 	}
 
 	return buffer;

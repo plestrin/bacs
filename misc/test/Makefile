@@ -14,7 +14,7 @@ TEST_DIJKSTRA 			:= test_dijkstra
 TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
 
 CC						:= gcc
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -DINTERACTIVE -DVERBOSE
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DVERBOSE
 LDFLAGS					:=
 
 all: 										\

@@ -7,8 +7,8 @@
 /* One can implement special callback mecanisms here */
 #define graph_node_set_data(graph, node, data_) 	memcpy(&((node)->data), (data_), (graph)->node_data_size);
 #define graph_edge_set_data(graph, edge, data_) 	memcpy(&((edge)->data), (data_), (graph)->edge_data_size);
-#define graph_node_clean_data(graph, node) 			
-#define graph_edge_clean_data(graph, edge) 			
+#define graph_node_clean_data(graph, node)
+#define graph_edge_clean_data(graph, edge)
 
 struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size){
 	struct graph* graph;
