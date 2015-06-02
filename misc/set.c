@@ -60,7 +60,7 @@ void set_remove(struct set* set, void* element){
 					free(block_cursor);
 				}
 				else{
-					memcpy(block_cursor->data + (i * set->element_size), block_cursor->data + ((i + 1) * set->element_size), set->element_size * (block_cursor->nb_element - (i + 1)));
+					memmove(block_cursor->data + (i * set->element_size), block_cursor->data + ((i + 1) * set->element_size), set->element_size * (block_cursor->nb_element - (i + 1)));
 					block_cursor->nb_element --;
 				}
 
