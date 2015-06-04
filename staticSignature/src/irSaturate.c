@@ -17,14 +17,38 @@ struct selection{
 	struct node* 	buffer_input[ASSOSIG_MAX_INPUT];
 	struct node* 	buffer_output[ASSOSIG_MAX_OUTPUT];
 	struct array 	pending_array;
+	struct array 	extra_output_array;
 };
 
-#define selection_init(selection) 				array_init(&((selection)->pending_array), sizeof(struct node*))
+static inline int32_t selection_init(struct selection* selection){
+	if (array_init(&(selection->pending_array), sizeof(struct node*))){
+		printf("ERROR: in %s, unable to init array\n", __func__);
+		return 1;
+	}
+
+	if (array_init(&(selection->extra_output_array), sizeof(struct node*))){
+		printf("ERROR: in %s, unable to init array\n", __func__);
+		return 1;
+	}
+
+	return 0;
+}
+
 #define selection_add_pending(selection, node) 	array_add(&((selection)->pending_array), &(node))
 #define selection_get_nb_pending(selection) 	array_get_length(&((selection)->pending_array))
 #define selection_get_pending(selection, index) (*((struct node**)array_get(&((selection)->pending_array), index)))
-#define selection_flush_pending(selection) 		array_empty(&((selection)->pending_array))
-#define selection_clean(selection) 				array_clean(&((selection)->pending_array))
+
+#define selection_add_extra_output(selection, node) 	array_add(&((selection)->extra_output_array), &(node))
+#define selection_get_nb_extra_output(selection) 		array_get_length(&((selection)->extra_output_array))
+#define selection_get_extra_output(selection, index) 	(*((struct node**)array_get(&((selection)->extra_output_array), index)))
+
+#define selection_flush(selection) 											\
+	array_empty(&((selection)->pending_array)); 							\
+	array_empty(&((selection)->extra_output_array));
+
+#define selection_clean(selection) 											\
+	array_clean(&((selection)->pending_array)); 							\
+	array_clean(&((selection)->extra_output_array));
 
 /* ===================================================================== */
 /* AssoGraph functions						                             */
@@ -96,7 +120,7 @@ static void assoGraph_reset(struct assoGraph* asso_graph, enum irOpcode opcode){
 	uint32_t i;
 
 	for (i = 0; i < array_get_length(&(asso_graph->node_array)); i++){
-		assoGraph_node_set_done((struct node*)array_get(&(asso_graph->node_array), i));
+		assoGraph_node_set_done(*(struct node**)array_get(&(asso_graph->node_array), i));
 	}
 
 	array_empty(&(asso_graph->node_array));
@@ -110,7 +134,7 @@ static void assoGraph_extract(struct assoGraph* asso_graph, struct node* node){
 	struct node* 		node_cursor;
 	struct irOperation* operation;
 
-	if (array_add(&(asso_graph->node_array), node) < 0){
+	if (array_add(&(asso_graph->node_array), &node) < 0){
 		printf("ERROR: in %s, unable to add element to array\n", __func__);
 		return;
 	}
@@ -153,7 +177,7 @@ static int32_t assoGraph_check_selection(struct assoGraph* asso_graph, struct se
 	uint32_t 		dst;
 
 	for (i = 0; i < array_get_length(&(asso_graph->node_array)); i++){
-		assoGraph_node_set_graph((struct node*)array_get(&(asso_graph->node_array), i));
+		assoGraph_node_set_graph(*(struct node**)array_get(&(asso_graph->node_array), i));
 	}
 	
 	for (i = 0; i < selection->nb_input; i++){
@@ -254,6 +278,22 @@ static int32_t assoGraph_check_selection(struct assoGraph* asso_graph, struct se
 			return 1;
 		}
 		else{
+			if (selection->nb_output){
+				for (edge_cursor = node_get_head_edge_src(result); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+					node = edge_get_dst(edge_cursor);
+					for (k = 0; k < selection->nb_output; k++){
+						if (node == selection->buffer_output[k]){
+							break;
+						}
+					}
+					if (k == selection->nb_output){
+						if (selection_add_extra_output(selection, node) < 0){
+							printf("ERROR: in %s, unable to add element to array\n", __func__);
+						}
+					}
+				}
+			}
+
 			return 0;
 		}
 	}
@@ -376,62 +416,77 @@ static int32_t assoSig_compare(struct assoSig* asso_sig1, struct assoSig* asso_s
 }
 
 /* ===================================================================== */
-/* SaturateLayer functions						                         */
+/* SaturateBuilder functions						                     */
 /* ===================================================================== */
+
+enum saturateElement_type{
+	SATURATE_ELEMENT_NODE,
+	SATURATE_ELEMENT_EDGE,
+	SATURATE_ELEMENT_SHARED
+};
+
+struct saturateElement{
+	enum saturateElement_type 		type;
+	struct unode* 					layer_node;
+	union {
+		struct {
+			enum irOperationType 	type;
+			enum irOpcode 			opcode;
+			uint8_t 				size;
+			struct node*			ptr;
+
+		} 							node;
+		struct {
+			enum irDependenceType 	type;
+			int32_t 				src_id;
+			struct node*			src_ptr;
+			int32_t 				dst_id;
+			struct node*			dst_ptr;
+			struct edge* 			ptr;
+		} 							edge;
+		struct {
+			uint32_t 				id;
+		} 							shared;
+	} 								element_type;
+};
+
+struct saturateBuilder{
+	struct ugraph* 					graph_layer;
+	struct array 					element_array;
+};
+
+static inline int32_t saturateBuilder_init(struct saturateBuilder* builder, struct ugraph* graph_layer){
+	builder->graph_layer = graph_layer;
+	return array_init(&(builder->element_array), sizeof(struct saturateElement));
+}
+
+#define saturateBuilder_clean(builder) array_clean(&((builder)->element_array))
 
 union saturateElementWrapper{
 	struct{
 		union saturateElementWrapper* 	src_head;
 		union saturateElementWrapper* 	dst_head;
 		union saturateElementWrapper* 	ll;
+		uint32_t 						id;
 	} 									node;
 	struct{
 		union saturateElementWrapper* 	src_ll;
 		union saturateElementWrapper* 	dst_ll;
 		struct saturateElement* 		ptr;
+		uint32_t 						id;
 	} 									edge;
 };
 
-static uint8_t saturateLayer_compute_pearson_hash(union saturateElementWrapper* wrapper);
-static int32_t saturateLayer_compare_saturate_node(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2);
-static int32_t saturateLayer_compare_saturate_edge(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2);
-static void saturateLayer_remove_redundant_element(struct array* layer);
-
-static inline int32_t saturateLayer_push_operation(struct array* layer, enum irOpcode opcode){
-	struct saturateElement element;
-
-	element.type 						= SATURATE_ELEMENT_NODE;
-	element.element_type.node.type 		= IR_OPERATION_TYPE_INST;
-	element.element_type.node.opcode 	= opcode;
-	element.element_type.node.size 		= 32;
-	element.element_type.node.ptr 		= NULL;
-
-	return array_add(layer, &element);
-}
-
-static inline void saturateLayer_push_edge(struct array* layer, int32_t src_id, struct node* src_ptr, int32_t dst_id, struct node* dst_ptr){
-	struct saturateElement element;
-
-	if ((src_id < 0 && src_ptr == NULL) || (dst_id < 0 && dst_ptr == NULL)){
-		printf("ERROR: in %s, incorrect element id for src or dst\n", __func__);
-		return;
-	}
-
-	element.type 						= SATURATE_ELEMENT_EDGE;
-	element.element_type.edge.type 		= IR_DEPENDENCE_TYPE_DIRECT;
-	element.element_type.edge.src_id 	= src_id;
-	element.element_type.edge.src_ptr 	= src_ptr;
-	element.element_type.edge.dst_id 	= dst_id;
-	element.element_type.edge.dst_ptr 	= dst_ptr;
-	element.element_type.edge.ptr 		= NULL;
-
-	if (array_add(layer, &element) < 0){
-		printf("ERROR: in %s, unable to add edge to saturation layer\n", __func__);
-	}
-}
-
-static void saturateLayer_push_selection(struct array* layer, struct selection* selection, struct assoSig* asso_sig);
-static void saturateLayer_commit(struct ir* ir, struct array* layer);
+static uint8_t saturateBuilder_compute_pearson_hash(union saturateElementWrapper* wrapper);
+static int32_t saturateBuilder_compare_saturate_node(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2);
+static int32_t saturateBuilder_compare_saturate_edge(struct saturateElement* element1, struct saturateElement* element2);
+static void saturateBuilder_remove_redundant_element(struct saturateBuilder* builder);
+static int32_t saturateBuilder_push_operation(struct saturateBuilder* builder, struct unode** layer_node, enum irOpcode opcode);
+static int32_t saturateBuilder_push_edge(struct saturateBuilder* builder, struct unode** layer_node, int32_t src_id, struct node* src_ptr, int32_t dst_id, struct node* dst_ptr);
+static void saturateBuilder_push_selection(struct saturateBuilder* builder, struct selection* selection, struct assoSig* asso_sig);
+static int32_t saturateBuilder_commit_node(struct saturateElement* element, struct ir* ir);
+static int32_t saturateBuilder_commit_edge(struct saturateBuilder* builder, struct saturateElement* element, struct ir* ir);
+static void saturateBuilder_commit(struct saturateBuilder* builder, struct ir* ir);
 
 static const uint8_t T[256] = {
 	 98,  6, 85,150, 36, 23,112,164,135,207,169,  5, 26, 64,165,219,
@@ -452,7 +507,7 @@ static const uint8_t T[256] = {
 	 43,119,224, 71,122,142, 42,160,104, 48,247,103, 15, 11,138,239 
 };
 
-static uint8_t saturateLayer_compute_pearson_hash(union saturateElementWrapper* wrapper){
+static uint8_t saturateBuilder_compute_pearson_hash(union saturateElementWrapper* wrapper){
 	union saturateElementWrapper* 	cursor;
 	uint8_t 						local_hash;
 	uint8_t 						global_hash;
@@ -476,7 +531,7 @@ static uint8_t saturateLayer_compute_pearson_hash(union saturateElementWrapper* 
 	return global_hash;
 }
 
-static int32_t saturateLayer_compare_saturate_node(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2){
+static int32_t saturateBuilder_compare_saturate_node(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2){
 	uint32_t 						nb_edge_node1;
 	uint32_t 						nb_edge_node2;
 	union saturateElementWrapper* 	cursor1;
@@ -511,18 +566,18 @@ static int32_t saturateLayer_compare_saturate_node(union saturateElementWrapper*
 	return 0;
 }
 
-static int32_t saturateLayer_compare_saturate_edge(union saturateElementWrapper* wrapper1, union saturateElementWrapper* wrapper2){
-	if ((wrapper1->edge.ptr->element_type.edge.dst_ptr != NULL && wrapper2->edge.ptr->element_type.edge.dst_ptr != NULL) && (wrapper1->edge.ptr->element_type.edge.dst_ptr == wrapper2->edge.ptr->element_type.edge.dst_ptr)){
+static int32_t saturateBuilder_compare_saturate_edge(struct saturateElement* element1, struct saturateElement* element2){
+	if ((element1->element_type.edge.dst_ptr != NULL && element2->element_type.edge.dst_ptr != NULL) && (element1->element_type.edge.dst_ptr == element2->element_type.edge.dst_ptr)){
 		return 0;
 	}
-	if ((wrapper1->edge.ptr->element_type.edge.dst_ptr == NULL && wrapper2->edge.ptr->element_type.edge.dst_ptr == NULL) && (wrapper1->edge.ptr->element_type.edge.dst_id == wrapper2->edge.ptr->element_type.edge.dst_id)){
+	if ((element1->element_type.edge.dst_ptr == NULL && element2->element_type.edge.dst_ptr == NULL) && (element1->element_type.edge.dst_id == element2->element_type.edge.dst_id)){
 		return 0;
 	}
 
 	return 1;
 }
 
-static void saturateLayer_remove_redundant_element(struct array* layer){
+static void saturateBuilder_remove_redundant_element(struct saturateBuilder* builder){
 	uint32_t 						i;
 	union saturateElementWrapper* 	wrapper_buffer;
 	struct saturateElement* 		saturate_element;
@@ -534,24 +589,26 @@ static void saturateLayer_remove_redundant_element(struct array* layer){
 	union saturateElementWrapper*	edge_cursor2;
 	union saturateElementWrapper*	tmp;
 
-	wrapper_buffer = (union saturateElementWrapper*)malloc(sizeof(union saturateElementWrapper) * array_get_length(layer));
+	wrapper_buffer = (union saturateElementWrapper*)malloc(sizeof(union saturateElementWrapper) * array_get_length(&(builder->element_array)));
 	if (wrapper_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		return;
 	}
 
-	for (i = 0; i < array_get_length(layer); i++){
-		saturate_element = (struct saturateElement*)array_get(layer, i);
+	for (i = 0; i < array_get_length(&(builder->element_array)); i++){
+		saturate_element = (struct saturateElement*)array_get(&(builder->element_array), i);
 
 		switch(saturate_element->type){
 			case SATURATE_ELEMENT_NODE : {
 				wrapper_buffer[i].node.src_head = NULL;
 				wrapper_buffer[i].node.dst_head = NULL;
 				wrapper_buffer[i].node.ll = NULL;
+				wrapper_buffer[i].node.id = i;
 				break;
 			}
 			case SATURATE_ELEMENT_EDGE : {
 				wrapper_buffer[i].edge.ptr = saturate_element;
+				wrapper_buffer[i].edge.id = i;
 				if (saturate_element->element_type.edge.src_ptr == NULL){
 					wrapper_buffer[i].edge.src_ll = wrapper_buffer[saturate_element->element_type.edge.src_id].node.src_head;
 					wrapper_buffer[saturate_element->element_type.edge.src_id].node.src_head = wrapper_buffer + i;
@@ -568,7 +625,7 @@ static void saturateLayer_remove_redundant_element(struct array* layer){
 				}
 				break;
 			}
-			case SATURATE_ELEMENT_INVALID : {
+			case SATURATE_ELEMENT_SHARED : {
 				break;
 			}
 		}
@@ -578,28 +635,30 @@ static void saturateLayer_remove_redundant_element(struct array* layer){
 		memset(hash_map, 0, sizeof(hash_map));
 		stop = 1;
 
-		for (i = 0; i < array_get_length(layer); i++){
-			saturate_element = (struct saturateElement*)array_get(layer, i);
+		for (i = 0; i < array_get_length(&(builder->element_array)); i++){
+			saturate_element = (struct saturateElement*)array_get(&(builder->element_array), i);
 
 			if (saturate_element->type == SATURATE_ELEMENT_NODE){
 				for (edge_cursor1 = wrapper_buffer[i].node.src_head; edge_cursor1 != NULL; edge_cursor1 = edge_cursor1->edge.src_ll){
-					if (edge_cursor1->edge.ptr->type != SATURATE_ELEMENT_INVALID){
+					if (edge_cursor1->edge.ptr->type != SATURATE_ELEMENT_SHARED){
 						for (edge_cursor2 = edge_cursor1->edge.src_ll; edge_cursor2 != NULL; edge_cursor2 = edge_cursor2->edge.src_ll){
-							if (saturateLayer_compare_saturate_edge(edge_cursor1, edge_cursor2) == 0){
-								edge_cursor2->edge.ptr->type = SATURATE_ELEMENT_INVALID;
+							if (saturateBuilder_compare_saturate_edge(edge_cursor1->edge.ptr, edge_cursor2->edge.ptr) == 0){
+								edge_cursor2->edge.ptr->type = SATURATE_ELEMENT_SHARED;
+								edge_cursor2->edge.ptr->element_type.shared.id = edge_cursor1->edge.id;
 							}
 						}
 					}
 				}
 
-
-				hash = saturateLayer_compute_pearson_hash(wrapper_buffer + i);
+				hash = saturateBuilder_compute_pearson_hash(wrapper_buffer + i);
 				for (wrapper_cursor = hash_map[hash]; wrapper_cursor != NULL; wrapper_cursor = wrapper_cursor->node.ll){
-					if (saturateLayer_compare_saturate_node(wrapper_cursor, wrapper_buffer + i) == 0){
-						saturate_element->type = SATURATE_ELEMENT_INVALID;
+					if (saturateBuilder_compare_saturate_node(wrapper_cursor, wrapper_buffer + i) == 0){
+						saturate_element->type = SATURATE_ELEMENT_SHARED;
+						saturate_element->element_type.shared.id = wrapper_cursor->node.id;
 
-						for (edge_cursor1 = wrapper_buffer[i].node.dst_head; edge_cursor1 != NULL; edge_cursor1 = edge_cursor1->edge.dst_ll){
-							edge_cursor1->edge.ptr->type = SATURATE_ELEMENT_INVALID;
+						for (edge_cursor1 = wrapper_buffer[i].node.dst_head, edge_cursor2 = wrapper_cursor->node.dst_head; edge_cursor1 != NULL && edge_cursor2 != NULL; edge_cursor1 = edge_cursor1->edge.dst_ll, edge_cursor2 = edge_cursor2->edge.dst_ll){
+							edge_cursor1->edge.ptr->type = SATURATE_ELEMENT_SHARED;
+							edge_cursor1->edge.ptr->element_type.shared.id = edge_cursor2->edge.id;
 						}
 
 						for (edge_cursor1 = wrapper_buffer[i].node.src_head; edge_cursor1 != NULL; edge_cursor1 = tmp){
@@ -624,115 +683,213 @@ static void saturateLayer_remove_redundant_element(struct array* layer){
 	free(wrapper_buffer);
 }
 
-static void saturateLayer_push_selection(struct array* layer, struct selection* selection, struct assoSig* asso_sig){
-	uint32_t 	i;
-	int32_t 	index_signature;
-	int32_t 	index_pending;
+static int32_t saturateBuilder_push_operation(struct saturateBuilder* builder, struct unode** layer_node, enum irOpcode opcode){
+	struct saturateElement element;
+
+	if (*layer_node == NULL){
+		*layer_node = graphLayer_new_layer(builder->graph_layer);
+		if (*layer_node == NULL){
+			printf("ERROR: in %s, unable to create new layer\n", __func__);
+			return -1;
+		}
+	}
+
+	element.type 						= SATURATE_ELEMENT_NODE;
+	element.layer_node 					= *layer_node;
+	element.element_type.node.type 		= IR_OPERATION_TYPE_INST;
+	element.element_type.node.opcode 	= opcode;
+	element.element_type.node.size 		= 32;
+	element.element_type.node.ptr 		= NULL;
+
+	return array_add(&(builder->element_array), &element);
+}
+
+static int32_t saturateBuilder_push_edge(struct saturateBuilder* builder, struct unode** layer_node, int32_t src_id, struct node* src_ptr, int32_t dst_id, struct node* dst_ptr){
+	struct saturateElement element;
+
+	if ((src_id < 0 && src_ptr == NULL) || (dst_id < 0 && dst_ptr == NULL)){
+		printf("ERROR: in %s, incorrect element id for src or dst\n", __func__);
+		return - 1;
+	}
+
+	if (*layer_node == NULL){
+		*layer_node = graphLayer_new_layer(builder->graph_layer);
+		if (*layer_node == NULL){
+			printf("ERROR: in %s, unable to create new layer\n", __func__);
+			return -1;
+		}
+	}
+
+	element.type 						= SATURATE_ELEMENT_EDGE;
+	element.layer_node 					= *layer_node;
+	element.element_type.edge.type 		= IR_DEPENDENCE_TYPE_DIRECT;
+	element.element_type.edge.src_id 	= src_id;
+	element.element_type.edge.src_ptr 	= src_ptr;
+	element.element_type.edge.dst_id 	= dst_id;
+	element.element_type.edge.dst_ptr 	= dst_ptr;
+	element.element_type.edge.ptr 		= NULL;
+
+	return array_add(&(builder->element_array), &element);
+}
+
+static void saturateBuilder_push_selection(struct saturateBuilder* builder, struct selection* selection, struct assoSig* asso_sig){
+	uint32_t 		i;
+	int32_t 		index_signature;
+	int32_t 		index_pending;
+	struct unode* 	layer_node = NULL;
 
 	if (selection_get_nb_pending(selection) > 0){ 
 		if (asso_sig->nb_reschedule_pending_in == 1){
-			index_signature = saturateLayer_push_operation(layer, asso_sig->opcode);
-			index_pending = saturateLayer_push_operation(layer, asso_sig->opcode);
+			index_signature = saturateBuilder_push_operation(builder, &layer_node, asso_sig->opcode);
+			index_pending = saturateBuilder_push_operation(builder, &layer_node, asso_sig->opcode);
 			for (i = 0; i < asso_sig->nb_input; i++){
 				if (asso_sig->buffer_reschedule_pending_in[0] != i){
-					saturateLayer_push_edge(layer, 0, selection->buffer_input[i], index_signature, NULL);
+					saturateBuilder_push_edge(builder, &layer_node, 0, selection->buffer_input[i], index_signature, NULL);
 				}
 				else{
-					saturateLayer_push_edge(layer, 0, selection->buffer_input[i], index_pending, NULL);
-					saturateLayer_push_edge(layer, index_pending, NULL, index_signature, NULL);
+					saturateBuilder_push_edge(builder, &layer_node, 0, selection->buffer_input[i], index_pending, NULL);
+					saturateBuilder_push_edge(builder, &layer_node, index_pending, NULL, index_signature, NULL);
 				}
-			}
-			for (i = 0; i < asso_sig->nb_output; i++){
-				saturateLayer_push_edge(layer, index_signature, NULL, 0, selection->buffer_output[i]);
 			}
 			for (i = 0; i < selection_get_nb_pending(selection); i++){
-				saturateLayer_push_edge(layer, 0, selection_get_pending(selection, i), index_pending, NULL);
+				saturateBuilder_push_edge(builder, &layer_node, 0, selection_get_pending(selection, i), index_pending, NULL);
 			}
 		}
-		else if(asso_sig->nb_reschedule_pending_in > 1){
+		else if(asso_sig->nb_reschedule_pending_in == 0 || asso_sig->nb_reschedule_pending_in > 1){
 			printf("WARNING: in %s, I don't know where I should reschedule pending operation(s)\n", __func__);
+			return;
 		}
-		selection_flush_pending(selection);
 	}
 	else{
-		index_signature = saturateLayer_push_operation(layer, asso_sig->opcode);
+		index_signature = saturateBuilder_push_operation(builder, &layer_node, asso_sig->opcode);
 		for (i = 0; i < selection->nb_input; i++){
-			saturateLayer_push_edge(layer, 0, selection->buffer_input[i], index_signature, NULL);
+			saturateBuilder_push_edge(builder, &layer_node, 0, selection->buffer_input[i], index_signature, NULL);
 		}
-		for (i = 0; i < selection->nb_output; i++){
-			saturateLayer_push_edge(layer, index_signature, NULL, 0, selection->buffer_output[i]);
-		}
+	}
+
+	for (i = 0; i < selection->nb_output; i++){
+		saturateBuilder_push_edge(builder, &layer_node, index_signature, NULL, 0, selection->buffer_output[i]);
+	}
+	for (i = 0; i < selection_get_nb_extra_output(selection); i++){
+		saturateBuilder_push_edge(builder, &layer_node, index_signature, NULL, 0, selection_get_extra_output(selection, i));
 	}
 }
 
-static void saturateLayer_commit(struct ir* ir, struct array* layer){
+static int32_t saturateBuilder_commit_node(struct saturateElement* element, struct ir* ir){
+	if (element->element_type.node.ptr == NULL){
+		if (element->element_type.node.type == IR_OPERATION_TYPE_INST){
+			element->element_type.node.ptr = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, element->element_type.node.size, element->element_type.node.opcode);
+			if (element->element_type.node.ptr == NULL){
+				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				return - 1;
+			}
+			if (irlayer_add_node(element->layer_node, element->element_type.node.ptr)){
+				printf("ERROR: in %s, unable to add node to layer\n", __func__);
+				return -1;
+			}
+		}
+		else{
+			printf("ERROR: in %s, node type not implemented\n", __func__);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int32_t saturateBuilder_commit_edge(struct saturateBuilder* builder, struct saturateElement* element, struct ir* ir){
+	struct saturateElement* src_ptr;
+	struct saturateElement* dst_ptr;
+
+	if (element->element_type.edge.ptr == NULL){
+		if (element->element_type.edge.src_ptr == NULL){
+			src_ptr = (struct saturateElement*)array_get(&(builder->element_array), element->element_type.edge.src_id);
+			if (saturateBuilder_commit_node(src_ptr, ir)){
+				printf("ERROR: in %s, unable to commit node\n", __func__);
+				return -1;
+			}
+			element->element_type.edge.src_ptr = src_ptr->element_type.node.ptr;
+		}
+
+		if (element->element_type.edge.dst_ptr == NULL){
+			dst_ptr = (struct saturateElement*)array_get(&(builder->element_array), element->element_type.edge.dst_id);
+			if (saturateBuilder_commit_node(dst_ptr, ir)){
+				printf("ERROR: in %s, unable to commit node\n", __func__);
+				return -1;
+			}
+			element->element_type.edge.dst_ptr = dst_ptr->element_type.node.ptr;
+		}
+
+		element->element_type.edge.ptr = ir_add_dependence(ir, element->element_type.edge.src_ptr, element->element_type.edge.dst_ptr, element->element_type.edge.type);
+		if (element->element_type.edge.ptr == NULL){
+			printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+			return -1;
+		}
+		else{
+			if (irlayer_add_edge(element->layer_node, element->element_type.edge.ptr)){
+				printf("ERROR: in %s, unable to add edge to layer\n", __func__);
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void saturateBuilder_commit(struct saturateBuilder* builder, struct ir* ir){
 	uint32_t 				i;
 	struct saturateElement* saturate_element;
+	struct saturateElement* shared_saturate_element;
 
-	for (i = 0; i < array_get_length(layer); i++){
-		saturate_element = (struct saturateElement*)array_get(layer, i);
+	for (i = 0; i < array_get_length(&(builder->element_array)); i++){
+		saturate_element = (struct saturateElement*)array_get(&(builder->element_array), i);
 
 		switch(saturate_element->type){
 			case SATURATE_ELEMENT_NODE : {
-				if (saturate_element->element_type.node.type == IR_OPERATION_TYPE_INST){
-					saturate_element->element_type.node.ptr = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, saturate_element->element_type.node.size, saturate_element->element_type.node.opcode);
-					if (saturate_element->element_type.node.ptr == NULL){
-						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
-						return;
-					}
-				}
-				else{
-					printf("ERROR: in %s, node type not implemented\n", __func__);
+				if (saturateBuilder_commit_node(saturate_element, ir)){
+					printf("ERROR: in %s, unable to commit node\n", __func__);
 				}
 				break;
 			}
 			case SATURATE_ELEMENT_EDGE : {
-				if (saturate_element->element_type.edge.src_ptr == NULL){
-					saturate_element->element_type.edge.src_ptr = ((struct saturateElement*)array_get(layer, saturate_element->element_type.edge.src_id))->element_type.node.ptr;
+				if (saturateBuilder_commit_edge(builder, saturate_element, ir)){
+					printf("ERROR: in %s, unable to commit edge\n", __func__);
+				}
+				break;
+			}
+			case SATURATE_ELEMENT_SHARED : {
+				shared_saturate_element = (struct saturateElement*)array_get(&(builder->element_array), saturate_element->element_type.shared.id);
+				while(shared_saturate_element->type == SATURATE_ELEMENT_SHARED){
+					shared_saturate_element = (struct saturateElement*)array_get(&(builder->element_array), shared_saturate_element->element_type.shared.id);
 				}
 
-				if (saturate_element->element_type.edge.dst_ptr == NULL){
-					saturate_element->element_type.edge.dst_ptr = ((struct saturateElement*)array_get(layer, saturate_element->element_type.edge.dst_id))->element_type.node.ptr;
-				}
-
-				if (saturate_element->element_type.edge.src_ptr != NULL && saturate_element->element_type.edge.src_ptr != NULL){
-					saturate_element->element_type.edge.ptr = ir_add_dependence(ir, saturate_element->element_type.edge.src_ptr, saturate_element->element_type.edge.dst_ptr, saturate_element->element_type.edge.type);
-					if (saturate_element->element_type.edge.ptr == NULL){
-						printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+				switch (shared_saturate_element->type){
+					case SATURATE_ELEMENT_NODE : {
+						if (saturateBuilder_commit_node(shared_saturate_element, ir)){
+							printf("ERROR: in %s, unable to commit node\n", __func__);
+						}
+						else{
+							if (irlayer_add_node(saturate_element->layer_node, shared_saturate_element->element_type.node.ptr)){
+								printf("ERROR: in %s, unable to add node to layer\n", __func__);
+							}
+						}
+						break;
+					}
+					case SATURATE_ELEMENT_EDGE : {
+						if (saturateBuilder_commit_edge(builder, shared_saturate_element, ir)){
+							printf("ERROR: in %s, unable to commit edge\n", __func__);
+						}
+						else{
+							if (irlayer_add_edge(saturate_element->layer_node, shared_saturate_element->element_type.edge.ptr)){
+								printf("ERROR: in %s, unable to add edge to layer\n", __func__);
+							}
+						}
+						break;
+					}
+					case SATURATE_ELEMENT_SHARED : {
+						break;
 					}
 				}
-				else{
-					printf("ERROR: in %s, unable to add edge on the node is missing\n", __func__);
-				}
-				break;
-			}
-			case SATURATE_ELEMENT_INVALID : {
-				break;
-			}
-		}
-	}
-}
-
-void saturateLayer_remove(struct ir* ir, struct array* layer){
-	uint32_t 				i;
-	struct saturateElement* saturate_element;
-
-	for (i = array_get_length(layer); i > 0; i--){
-		saturate_element = (struct saturateElement*)array_get(layer, i - 1);
-		switch(saturate_element->type){
-			case SATURATE_ELEMENT_NODE : {
-				if (saturate_element->element_type.node.ptr != NULL){
-					graph_remove_node(&(ir->graph), saturate_element->element_type.node.ptr);
-				}
-				break;
-			}
-			case SATURATE_ELEMENT_EDGE : {
-				if (saturate_element->element_type.edge.ptr != NULL){
-					graph_remove_edge(&(ir->graph), saturate_element->element_type.edge.ptr);
-				}
-				break;
-			}
-			case SATURATE_ELEMENT_INVALID : {
 				break;
 			}
 		}
@@ -815,45 +972,22 @@ void saturateRules_print(struct saturateRules* saturate_rules){
 	}
 }
 
-static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir);
+static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir, struct saturateBuilder* builder);
 
 void irSaturate_saturate(struct saturateRules* saturate_rules, struct ir* ir){
-	if (!saturateLayer_is_empty(&(ir->saturate_layer))){
-		#ifdef VERBOSE
-		printf("INFO: in %s, removing former saturation layer\n", __func__);
-		#endif
-		saturateLayer_reset(ir, &(ir->saturate_layer));
+	struct saturateBuilder builder;
+
+	if (saturateBuilder_init(&builder, &(ir->graph_layer))){
+		printf("ERROR: in %s, unable to init saturateBuilder\n", __func__);
+		return;
 	}
 
-	irSaturate_asso(saturate_rules, ir);
+	irSaturate_asso(saturate_rules, ir, &builder);
 
-	saturateLayer_remove_redundant_element(&(ir->saturate_layer));
-	saturateLayer_commit(ir, &(ir->saturate_layer));
+	saturateBuilder_remove_redundant_element(&builder);
+	saturateBuilder_commit(&builder, ir);
 
-	#ifdef VERBOSE
-	{
-		uint32_t i;
-		uint32_t nb_node;
-		uint32_t nb_edge;
-
-		for (i = 0, nb_node = 0, nb_edge = 0; i < array_get_length(&(ir->saturate_layer)); i++){
-			switch (((struct saturateElement*)array_get(&(ir->saturate_layer), i))->type){
-				case SATURATE_ELEMENT_NODE : {
-					nb_node ++;
-					break;
-				}
-				case SATURATE_ELEMENT_EDGE : {
-					nb_edge ++;
-					break;
-				}
-				case SATURATE_ELEMENT_INVALID : {
-					break;
-				}
-			}
-		}
-		printf("INFO: in %s, %u node(s) and %u edge(s) has been added to the graph (%u are redundant)\n", __func__, nb_node, nb_edge, array_get_length(&(ir->saturate_layer)) - (nb_node + nb_edge));
-	}
-	#endif
+	saturateBuilder_clean(&builder);
 }
 
 
@@ -865,7 +999,7 @@ struct matchHeader{
 
 #define matchHeader_get_state_offset(header) ((header)->state + (header)->match_offset)
 
-static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir){
+static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir, struct saturateBuilder* builder){
 	uint32_t 			i;
 	uint32_t 			j;
 	uint32_t 			k;
@@ -1029,7 +1163,8 @@ static void irSaturate_asso(struct saturateRules* saturate_rules, struct ir* ir)
 						}
 
 						if (!assoGraph_check_selection(&asso_graph, &selection)){
-							saturateLayer_push_selection(&(ir->saturate_layer), &selection, asso_sig);
+							saturateBuilder_push_selection(builder, &selection, asso_sig);
+							selection_flush(&selection);
 						}
 
 						if (asso_sig->nb_output == 0){

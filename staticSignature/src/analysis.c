@@ -66,8 +66,6 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "learn saturate rules", 	"Detect potential saturation possibilties", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_learn_saturateRules)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print saturate rules", 	"Print saturation rules", 						NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->saturate_rules), 			saturateRules_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "saturate ir", 				"Saturate the IR", 								"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_saturate_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "unsaturate ir", 			"Unsaturate the IR", 							"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_unsaturate_ir)
-
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
@@ -785,40 +783,6 @@ void analysis_frag_saturate_ir(struct analysis* analysis, char* arg){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
 			irSaturate_saturate(&(analysis->saturate_rules), fragment->ir);
-		}
-		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
-		}
-	}
-}
-
-void analysis_frag_unsaturate_ir(struct analysis* analysis, char* arg){
-	uint32_t 		index;
-	uint32_t 		start;
-	uint32_t 		stop;
-	uint32_t 		i;
-	struct trace* 	fragment;
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
-	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
-	}
-
-	for (i = start; i < stop; i++){
-		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		if (fragment->ir != NULL){
-			irSaturate_unsaturate(fragment->ir);
 		}
 		else{
 			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);

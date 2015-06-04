@@ -154,8 +154,8 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 		}
 	}
 
-	if (new_signature->nb_parameter_in == 0 || new_signature->nb_parameter_in == 0){
-		printf("ERROR: in %s, the signature has an incorrect number of parameter\n", __func__);
+	if (new_signature->nb_parameter_in == 0 || new_signature->nb_parameter_out == 0){
+		printf("WARNING: in %s, signature \"%s\" has an incorrect number of parameter\n", __func__, new_signature->name);
 	}
 	
 	return 0;

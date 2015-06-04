@@ -44,7 +44,6 @@ void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
 
 void analysis_learn_saturateRules(struct analysis* analysis);
 void analysis_frag_saturate_ir(struct analysis* analysis, char* arg);
-void analysis_frag_unsaturate_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
 

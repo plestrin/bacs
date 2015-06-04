@@ -35,55 +35,11 @@ void saturateRules_learn_associative_conflict(struct saturateRules* saturate_rul
 void saturateRules_print(struct saturateRules* saturate_rules);
 
 void irSaturate_saturate(struct saturateRules* saturate_rules, struct ir* ir);
-#define irSaturate_unsaturate(ir)  												\
-	saturateLayer_reset(ir, &(ir->saturate_layer));
 
 #define saturateRules_reset(saturate_rules) 									\
 	array_empty(&((saturate_rules)->asso_sig_array));
 
 #define saturateRules_clean(saturate_rules) 									\
 	array_clean(&((saturate_rules)->asso_sig_array));
-
-enum saturateElement_type{
-	SATURATE_ELEMENT_NODE,
-	SATURATE_ELEMENT_EDGE,
-	SATURATE_ELEMENT_INVALID
-};
-
-struct saturateElement{
-	enum saturateElement_type 		type;
-	union {
-		struct {
-			enum irOperationType 	type;
-			enum irOpcode 			opcode;
-			uint8_t 				size;
-			struct node*			ptr;
-
-		} 							node;
-		struct {
-			enum irDependenceType 	type;
-			int32_t 				src_id;
-			struct node*			src_ptr;
-			int32_t 				dst_id;
-			struct node*			dst_ptr;
-			struct edge*			ptr;
-		} 							edge;
-	} 								element_type;
-};
-
-#define saturateLayer_init(layer)												\
-	array_init(layer, sizeof(struct saturateElement))
-
-#define saturateLayer_is_empty(layer) (array_get_length(layer) == 0)
-
-void saturateLayer_remove(struct ir* ir, struct array* layer);
-
-#define saturateLayer_reset(ir, layer) 											\
-	saturateLayer_remove(ir, layer); 											\
-	array_empty(layer);
-
-#define saturateLayer_clean(ir, layer)											\
-	saturateLayer_remove(ir, layer); 											\
-	array_clean(layer);
 
 #endif
