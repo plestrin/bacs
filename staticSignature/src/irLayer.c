@@ -83,6 +83,22 @@ void ir_edge_layerSet_rem(struct edge* edge, struct unode* layer_node){
 	}
 }
 
+void ir_edge_layerSet_clean(struct edge* edge){
+	struct setIterator 		iterator;
+	struct unode** 			layer_node_ptr;
+	struct irLayer* 		layer;
+
+	if (ir_edge_layerSet_get(edge) != NULL){
+		for (layer_node_ptr = (struct unode**)setIterator_get_first(ir_edge_layerSet_get(edge), &iterator); layer_node_ptr != NULL; layer_node_ptr = (struct unode**)setIterator_get_next(&iterator)){
+			layer = graphLayer_node_get_layer(*layer_node_ptr);
+
+			set_remove(layer->edge_set, &edge);
+		}
+
+		set_delete(ir_edge_layerSet_get(edge));
+	}
+}
+
 int32_t irLayer_init(struct irLayer* layer){
 	layer->node_set = set_create(sizeof(struct node*), IRLAYER_NB_NODE_PER_BLOCK);
 	layer->edge_set = set_create(sizeof(struct edge*), IRLAYER_NB_EDGE_PER_BLOCK);
@@ -101,7 +117,7 @@ int32_t irLayer_init(struct irLayer* layer){
 	return 0;
 }
 
-int32_t irlayer_add_node(struct unode* layer_node, struct node* node){
+int32_t irLayer_add_node(struct unode* layer_node, struct node* node){
 	struct irLayer* layer = graphLayer_node_get_layer(layer_node);
 
 	if (set_add(layer->node_set, &node)){
@@ -118,7 +134,7 @@ int32_t irlayer_add_node(struct unode* layer_node, struct node* node){
 	return 0;
 }
 
-int32_t irlayer_add_edge(struct unode* layer_node, struct edge* edge){
+int32_t irLayer_add_edge(struct unode* layer_node, struct edge* edge){
 	struct irLayer* layer = graphLayer_node_get_layer(layer_node);
 
 	if (set_add(layer->edge_set, &edge)){
@@ -177,7 +193,7 @@ void irLayer_clean(struct unode* layer_node, struct ir* ir){
 
 struct irEquivalenceClass* irEquivalenceClass_add_node(struct irEquivalenceClass* class, struct node* node){
 	if (ir_node_equivalenceClass_get(node) != NULL){
-		if (class != NULL){
+		if (class != NULL && class != ir_node_equivalenceClass_get(node)){
 			printf("ERROR: in %s, this case is not implemented yet\n", __func__);
 		}
 		else{
@@ -189,6 +205,9 @@ struct irEquivalenceClass* irEquivalenceClass_add_node(struct irEquivalenceClass
 			if (set_add(class, &node)){
 				printf("ERROR: in %s, unable to add element to set\n", __func__);
 				return NULL;
+			}
+			else{
+				ir_node_equivalenceClass_set(node, class);
 			}
 		}
 		else{

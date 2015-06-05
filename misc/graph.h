@@ -75,8 +75,8 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 	(graph)->dotPrint_edge_data = (edge_data); 																									\
 	(graph)->dotPrint_epilogue 	= (epilogue);
 
-#define graph_register_node_clean_call_back(graph, callback) ((graph)->node_clean_data) = callback)
-#define graph_register_edge_clean_call_back(graph, callback) ((graph)->edge_clean_data) = callback)
+#define graph_register_node_clean_call_back(graph, callback) ((graph)->node_clean_data = callback)
+#define graph_register_edge_clean_call_back(graph, callback) ((graph)->edge_clean_data = callback)
 
 struct node* graph_add_node_(struct graph* graph);
 struct node* graph_add_node(struct graph* graph, void* data);

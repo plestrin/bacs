@@ -26,7 +26,12 @@ struct ir* ir_create(struct assembly* assembly){
 
 int32_t ir_init(struct ir* ir, struct assembly* assembly){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
+
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
+
+	#ifdef IRLAYER
+	graph_register_edge_clean_call_back(&(ir->graph), ir_edge_layerSet_clean);
+	#endif
 	
 	if (irImporterAsm_import(ir, assembly)){
 		printf("ERROR: in %s, trace asm import has failed\n", __func__);

@@ -21,7 +21,6 @@ struct assoSig{
 	uint32_t 		buffer_output[ASSOSIG_MAX_OUTPUT];
 	uint32_t 		nb_node;
 	uint32_t 		nb_reschedule_pending_in;
-	uint32_t 		buffer_reschedule_pending_in[ASSOSIG_MAX_INPUT];
 };
 
 struct saturateRules{

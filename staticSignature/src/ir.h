@@ -249,15 +249,16 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
 #ifdef IRLAYER
-#define ir_clean(ir) 														\
-	graphLayer_clean(&(ir->graph_layer), ir); 								\
+#define ir_clean(ir) 																	\
+	graphLayer_clean(&(ir->graph_layer), ir); 											\
+	graph_register_node_clean_call_back(&(ir->graph), irEquivalenceClass_rem_node); 	\
 	graph_clean(&(ir->graph));
 #else
 #define ir_clean(ir) graph_clean(&(ir->graph));
 #endif
 
-#define ir_delete(ir) 														\
-	ir_clean(ir); 															\
+#define ir_delete(ir) 																	\
+	ir_clean(ir); 																		\
 	free(ir);
 
 #include "irNormalize.h"
