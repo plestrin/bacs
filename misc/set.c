@@ -85,6 +85,28 @@ void set_clean(struct set* set){
 	}
 }
 
+int32_t set_are_disjoint(struct set* set1, struct set* set2){
+	struct setIterator 	iterator1;
+	struct setIterator 	iterator2;
+	void* 				data1;
+	void* 				data2;
+
+	if (set1->element_size != set2->element_size){
+		printf("ERROR: in %s, unable to compare sets since their element differ (%u vs %u)\n", __func__, set1->element_size, set2->element_size);
+		return 0;
+	}
+
+	for (data1 = setIterator_get_first(set1, &iterator1); data1 != NULL; data1 = setIterator_get_next(&iterator1)){
+		for (data2 = setIterator_get_first(set2, &iterator2); data2 != NULL; data2 = setIterator_get_next(&iterator2)){
+			if (!memcmp(data1, data2, set1->element_size)){
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 void* setIterator_get_first(struct set* set, struct setIterator* iterator){
 	iterator->set 		= set;
 	iterator->block 	= &(set->block);

@@ -36,7 +36,9 @@ struct set* set_create(uint32_t element_size, uint32_t nb_element_block);
 int32_t set_add(struct set* set, void* element);
 void set_remove(struct set* set, void* element);
 
-int32_t set_merge(struct set* set1, struct set* set2);
+#define set_get_length(set) ((set)->nb_element_tot)
+
+int32_t set_are_disjoint(struct set* set1, struct set* set2);
 
 #define set_empty(set) 																\
 	set_clean(set); 																\
