@@ -2,6 +2,7 @@
 #define CODEMAP_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "address.h"
 
@@ -93,5 +94,6 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address);
 #define CODEMAP_IS_ADDRESS_IN_SECTION(sec, addr) 	((sec)->address_start <= (addr) && (sec)->address_stop >= (addr))
 #define CODEMAP_IS_ADDRESS_IN_IMAGE(img, addr) 		((img)->address_start <= (addr) && (img)->address_stop >= (addr))
 
+void codeMap_print_address_info(struct codeMap* cm, ADDRESS address, FILE* file);
 
 #endif

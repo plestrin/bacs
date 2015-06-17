@@ -286,6 +286,9 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	#error Please specify an architecture {ARCH_32 or ARCH_64}
 	#endif
 
+	codeMap_print_address_info(analysis->code_map, pc, stdout);
+	printf("\n");
+
 	for (i = 0; i < analysis->trace->assembly.nb_dyn_block; i++){
 		if (dynBlock_is_valid(analysis->trace->assembly.dyn_blocks + i)){
 			if (pc >= analysis->trace->assembly.dyn_blocks[i].block->header.address && analysis->trace->assembly.dyn_blocks[i].block->header.address + analysis->trace->assembly.dyn_blocks[i].block->header.size > pc){

@@ -874,3 +874,21 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 
 	return CODEMAP_NOT_WHITELISTED;
 }
+
+void codeMap_print_address_info(struct codeMap* cm, ADDRESS address, FILE* file){
+	struct cm_routine* rtn;
+
+	if (cm != NULL && (rtn = codeMap_search_routine(cm, address)) != NULL){
+		#if defined ARCH_32
+		fprintf(file, "IMG:%s+0x%x ", CODEMAP_ROUTINE_GET_IMAGE(rtn)->name, address - CODEMAP_ROUTINE_GET_IMAGE(rtn)->address_start);
+		fprintf(file, "SEC:%s+0x%x ", CODEMAP_ROUTINE_GET_SECTION(rtn)->name, address - CODEMAP_ROUTINE_GET_SECTION(rtn)->address_start);
+		fprintf(file, "RTN:%s+0x%x", rtn->name, address - rtn->address_start);
+		#elif defined ARCH_64
+		fprintf(file, "IMG:%s+0x%llx ", CODEMAP_ROUTINE_GET_IMAGE(rtn)->name, address - CODEMAP_ROUTINE_GET_IMAGE(rtn)->address_start);
+		fprintf(file, "SEC:%s+0x%llx ", CODEMAP_ROUTINE_GET_SECTION(rtn)->name, address - CODEMAP_ROUTINE_GET_SECTION(rtn)->address_start);
+		fprintf(file, "RTN:%s+0x%llx", rtn->name, address - rtn->address_start);
+		#else
+		#error Please specify an architecture {ARCH_32 or ARCH_64}
+		#endif
+	}
+}

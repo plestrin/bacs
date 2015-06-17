@@ -345,7 +345,7 @@ static void signatureOcurrence_init(struct codeSignature* code_signature, struct
 	code_signature->occurence.nb_occurence = array_get_length(assignement_array);
 	code_signature->occurence.input_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->nb_frag_tot_in);
 	code_signature->occurence.output_buffer = (struct signatureLink*)malloc(sizeof(struct signatureLink) * code_signature->occurence.nb_occurence * code_signature->nb_frag_tot_out);
-	code_signature->occurence.node_buffer = (struct node**)calloc(code_signature->occurence.nb_occurence, sizeof(struct signatureLink));
+	code_signature->occurence.node_buffer = (struct node**)calloc(code_signature->occurence.nb_occurence, sizeof(struct node*));
 
 	if (code_signature->occurence.node_buffer == NULL || code_signature->occurence.input_buffer == NULL || code_signature->occurence.output_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
