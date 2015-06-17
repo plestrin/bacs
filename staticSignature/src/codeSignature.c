@@ -16,7 +16,6 @@ static void signatureOcurrence_init(struct codeSignature* code_signature, struct
 static void signatureOcurrence_push(struct ir* ir, struct codeSignature* code_signature);
 static void signatureOcurrence_pop(struct ir* ir, struct codeSignature* code_signature);
 
-
 static void signatureOccurence_clean(struct codeSignature* code_signature);
 
 /* ===================================================================== */

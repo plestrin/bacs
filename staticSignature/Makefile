@@ -26,15 +26,12 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irCheck.o 				\
 					$(BUILD_DIR)irVariableSize.o 		\
 					$(BUILD_DIR)irVariableRange.o 		\
-					$(BUILD_DIR)irSaturate.o 			\
-					$(BUILD_DIR)irLayer.o 				\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)signatureReader.o 		\
 					$(BUILD_DIR)assemblyElfLoader.o 	\
 					$(BUILD_DIR)callGraph.o 			\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
-					$(BUILD_DIR)set.o 					\
 					$(BUILD_DIR)printBuffer.o			\
 					$(BUILD_DIR)inputParser.o			\
 					$(BUILD_DIR)mapFile.o				\
@@ -42,8 +39,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)graphPrintDot.o 		\
 					$(BUILD_DIR)subGraphIsomorphism.o 	\
 					$(BUILD_DIR)dagPartialOrder.o 		\
-					$(BUILD_DIR)dijkstra.o 				\
-					$(BUILD_DIR)ugraph.o
+					$(BUILD_DIR)dijkstra.o
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g3

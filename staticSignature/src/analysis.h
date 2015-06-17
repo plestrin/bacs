@@ -6,7 +6,6 @@
 #include "trace.h"
 #include "codeSignature.h"
 #include "callGraph.h"
-#include "irSaturate.h"
 
 struct analysis{
 	struct trace* 					trace;
@@ -14,7 +13,6 @@ struct analysis{
 	struct codeSignatureCollection 	code_signature_collection;
 	struct callGraph* 				call_graph;
 	struct array					frag_array;
-	struct saturateRules 			saturate_rules;
 };
 
 struct analysis* analysis_create();
@@ -41,9 +39,6 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 void analysis_frag_check_ir(struct analysis* analysis, char* arg);
 void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
-
-void analysis_learn_saturateRules(struct analysis* analysis);
-void analysis_frag_saturate_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
 

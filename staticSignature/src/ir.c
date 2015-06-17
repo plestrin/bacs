@@ -28,20 +28,12 @@ int32_t ir_init(struct ir* ir, struct assembly* assembly){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
-
-	#ifdef IRLAYER
-	graph_register_edge_clean_call_back(&(ir->graph), ir_edge_layerSet_clean);
-	#endif
 	
 	if (irImporterAsm_import(ir, assembly)){
 		printf("ERROR: in %s, trace asm import has failed\n", __func__);
 		return -1;
 	}
 
-	#ifdef IRLAYER
-	graphLayer_init(&(ir->graph_layer));
-	#endif
-	
 	return 0;
 }
 
@@ -60,10 +52,6 @@ struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
 		operation->size 								= irRegister_get_size(reg);
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -92,10 +80,6 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -128,10 +112,6 @@ struct node* ir_add_out_mem(struct ir* ir, uint32_t index, uint8_t size, struct 
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_FINAL;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			printf("ERROR: in %s, unable to add address dependence\n", __func__);
@@ -156,10 +136,6 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 		operation->size 								= size;
 		operation->index 								= IR_INSTRUCTION_INDEX_IMMEDIATE;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -180,10 +156,6 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -204,10 +176,6 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr){
 		operation->size 								= 1;
 		operation->index 								= 0;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -228,10 +196,6 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 		operation->size 								= size;
 		operation->index 								= IR_INSTRUCTION_INDEX_IMMEDIATE;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -252,10 +216,6 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
-		#ifdef IRLAYER
-		operation->layer_set 							= NULL;
-		operation->equivalence_class 					= NULL;
-		#endif
 	}
 
 	return node;
@@ -272,9 +232,6 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 	else{
 		dependence = ir_edge_get_dependence(edge);
 		dependence->type 					= type;
-		#ifdef IRLAYER
-		dependence->layer_set 				= NULL;
-		#endif
 	}
 
 	return edge;
@@ -292,9 +249,6 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 		dependence = ir_edge_get_dependence(edge);
 		dependence->type 					= IR_DEPENDENCE_TYPE_MACRO;
 		dependence->dependence_type.macro 	= desc;
-		#ifdef IRLAYER
-		dependence->layer_set 				= NULL;
-		#endif
 	}
 
 	return edge;
@@ -305,14 +259,6 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	uint32_t 		nb_parent;
 	struct node** 	parent;
 	uint32_t 		i;
-
-	#ifdef IRLAYER
-	if (ir_node_get_operation(node)->layer_set != NULL){
-		return;
-	}
-
-	irEquivalenceClass_rem_node(node);
-	#endif
 
 	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_remove(ir_node_get_operation(node));
@@ -353,12 +299,6 @@ void ir_remove_node(struct ir* ir, struct node* node){
 
 void ir_remove_dependence(struct ir* ir, struct edge* edge){
 	struct node* node_src;
-
-	#ifdef IRLAYER
-	if (ir_edge_get_dependence(edge)->layer_set != NULL){
-		return;
-	}
-	#endif
 
 	node_src = edge_get_src(edge);
 	graph_remove_edge(&(ir->graph), edge);

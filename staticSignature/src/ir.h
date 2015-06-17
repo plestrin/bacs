@@ -5,7 +5,6 @@
 
 #include "assembly.h"
 #include "graph.h"
-#include "ugraph.h"
 #include "graphPrintDot.h"
 #include "array.h"
 
@@ -122,10 +121,6 @@ struct irOperation{
 	uint8_t 					size;
 	uint32_t 					index;
 	uint32_t 					status_flag;
-	#ifdef IRLAYER
-	void* 						layer_set;
-	void* 						equivalence_class;
-	#endif
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
@@ -162,9 +157,6 @@ struct irDependence{
 	union{
 		uint32_t 				macro;
 	} 							dependence_type;
-	#ifdef IRLAYER
-	void* 						layer_set;
-	#endif
 } __attribute__((__may_alias__));
 
 #define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
@@ -186,9 +178,6 @@ struct irDependence{
 
 struct ir{
 	struct graph graph;
-	#ifdef IRLAYER
-	struct ugraph graph_layer;
-	#endif
 };
 
 struct ir* ir_create(struct assembly* assembly);
@@ -248,23 +237,14 @@ int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
-#ifdef IRLAYER
-#define ir_clean(ir) 																	\
-	graphLayer_clean(&(ir->graph_layer), ir); 											\
-	graph_register_node_clean_call_back(&(ir->graph), irEquivalenceClass_rem_node); 	\
-	graph_clean(&(ir->graph));
-#else
 #define ir_clean(ir) graph_clean(&(ir->graph));
-#endif
 
-#define ir_delete(ir) 																	\
-	ir_clean(ir); 																		\
+#define ir_delete(ir) 											\
+	ir_clean(ir); 												\
 	free(ir);
 
 #include "irNormalize.h"
 #include "irCheck.h"
 #include "irVariableSize.h"
-#include "irSaturate.h"
-#include "irLayer.h"
 
 #endif

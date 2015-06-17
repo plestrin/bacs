@@ -34,6 +34,7 @@ struct set* set_create(uint32_t element_size, uint32_t nb_element_block);
 	(set)->block.prev 		= NULL;
 
 int32_t set_add(struct set* set, void* element);
+void* set_get(struct set* set, uint32_t index);
 void set_remove(struct set* set, void* element);
 
 #define set_get_length(set) ((set)->nb_element_tot)

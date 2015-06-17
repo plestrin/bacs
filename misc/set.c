@@ -45,6 +45,22 @@ int32_t set_add(struct set* set, void* element){
 	return -1;
 }
 
+void* set_get(struct set* set, uint32_t index){
+	struct setBlock* 	block_cursor;
+	uint32_t 			nb;
+
+	for (block_cursor = &(set->block), nb = 0; block_cursor != NULL; block_cursor = block_cursor->next){
+		if (nb + set->nb_element_block > index){
+			return block_cursor->data + (index - nb);
+		}
+		else{
+			nb += set->nb_element_block;
+		}
+	}
+
+	return NULL;
+}
+
 void set_remove(struct set* set, void* element){
 	struct setBlock* 	block_cursor;
 	uint32_t 			i;

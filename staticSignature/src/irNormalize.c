@@ -440,7 +440,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	}
 }
 
-/* I would be good if I can use this stub for evry numeric simplifciation. IMUL SHR */
+/* I would be good if I can use this stub for every numeric simplifciation. IMUL SHR */
 #define ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, identity_el, operation) 													\
 	{ 																																						\
 		uint32_t 			nb_imm_operand 		= 0; 																										\
