@@ -13,6 +13,7 @@ TEST_SUBGRAPHISO 		:= test_subGraphIso
 TEST_DIJKSTRA 			:= test_dijkstra
 TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
 TEST_SET 				:= test_set
+TEST_UGRAPH 			:= test_ugraph
 
 CC						:= gcc
 CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DVERBOSE
@@ -32,7 +33,8 @@ all: 										\
 	$(TEST_SUBGRAPHISO) 					\
 	$(TEST_DIJKSTRA) 						\
 	$(TEST_DAGPARTIALORDER) 				\
-	$(TEST_SET)
+	$(TEST_SET) 							\
+	$(TEST_UGRAPH)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -80,6 +82,9 @@ $(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphP
 $(TEST_SET): test_set.o set.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_UGRAPH): test_ugraph.o ugraph.o set.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 # *** General compile rules ***
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -102,6 +107,7 @@ test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot
 test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h
 test_set.o: ../set.h
+test_ugraph.o: ../ugraph.h ../set.h
 array.o: ../array.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
@@ -117,6 +123,7 @@ subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstr
 dijkstra.o: ../graph.h ../dijkstra.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h
 set.o: ../set.h
+ugraph.o: ../ugraph.h ../set.h
 
 clean:
 	@ rm -f *.o
@@ -138,3 +145,4 @@ clean:
 	@ rm -f $(TEST_DIJKSTRA)
 	@ rm -f $(TEST_DAGPARTIALORDER)
 	@ rm -f $(TEST_SET)
+	@ rm -f $(TEST_UGRAPH)
