@@ -115,7 +115,8 @@ struct irOperation{
 			enum irOpcode 		opcode;
 		} 						inst;
 		struct {
-			void* 				ptr;
+			void* 				result_ptr;
+			int32_t 			index;
 		} 						symbol;
 	} 							operation_type;
 	uint8_t 					size;
@@ -188,7 +189,7 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 struct node* ir_add_out_mem(struct ir* ir, uint32_t index,  uint8_t size, struct node* address, struct node* prev);
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode);
-struct node* ir_add_symbol(struct ir* ir, void* ptr);
+struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index);
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
 struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode);

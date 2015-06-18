@@ -12,14 +12,15 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	uint32_t 				nb_output;
 	uint32_t 				nb_intern;
 	struct signatureNode* 	sig_node;
+	struct irOperation* 	operation;
 
 	result->state 				= RESULTSTATE_IDLE;
 	result->signature 			= code_signature;
-	result->nb_occurence 		= array_get_length(assignement_array);
-	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurence * code_signature->nb_frag_tot_in);
-	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurence * code_signature->nb_frag_tot_out);
-	result->intern_node_buffer 	= (struct node**)malloc(sizeof(struct node*) * result->nb_occurence * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)));
-	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurence, sizeof(struct node*));
+	result->nb_occurrence 		= array_get_length(assignement_array);
+	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_in);
+	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_out);
+	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)));
+	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurrence, sizeof(struct node*));
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->symbol_node_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -40,7 +41,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 		return -1;
 	}
 
-	for (i = 0; i < result->nb_occurence; i++){
+	for (i = 0; i < result->nb_occurrence; i++){
 		assignement = (struct node**)array_get(assignement_array, i);
 		nb_input 	= 0;
 		nb_output 	= 0;
@@ -48,21 +49,49 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 		for (j = 0; j < code_signature->graph.nb_node; j++){
 			sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[j].node->data);
+			operation = ir_node_get_operation(assignement[j]);
 
-			if (sig_node->input_number > 0){
-				result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].node = assignement[j];
-				result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
-				nb_input ++;
+			if (operation->type == IR_OPERATION_TYPE_SYMBOL){
+				if (sig_node->input_number > 0){
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.node 		= NULL;
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= operation->operation_type.symbol.result_ptr;
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.index 	= operation->operation_type.symbol.index;
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+					nb_input ++;
+				}
+
+				if (sig_node->output_number > 0){
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.node 	= NULL;
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= operation->operation_type.symbol.result_ptr;
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.index 	= operation->operation_type.symbol.index;
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+					nb_output ++;
+				}
+
+				if (sig_node->input_number == 0 && sig_node->output_number == 0){
+					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].node 		= NULL;
+					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].result 	= operation->operation_type.symbol.result_ptr;
+					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].index 		= operation->operation_type.symbol.index;
+				}
 			}
+			else{
+				if (sig_node->input_number > 0){
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.node 		= assignement[j];
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= NULL;
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+					nb_input ++;
+				}
 
-			if (sig_node->output_number > 0){
-				result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].node = assignement[j];
-				result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
-				nb_output ++;
-			}
+				if (sig_node->output_number > 0){
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.node 	= assignement[j];
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= NULL;
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+					nb_output ++;
+				}
 
-			if (sig_node->input_number == 0 && sig_node->output_number == 0){
-				result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern] = assignement[j];
+				if (sig_node->input_number == 0 && sig_node->output_number == 0){
+					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].node = assignement[j];
+				}
 			}
 		}
 	}
@@ -74,24 +103,41 @@ void result_push(struct result* result, struct ir* ir){
 	uint32_t i;
 	uint32_t j;
 
-	codeSignature_state_set_pushed(result->signature);
 	result->state = RESULTSTATE_PUSH;
 
-	for (i = 0; i < result->nb_occurence; i++){
-		result->symbol_node_buffer[i] = ir_add_symbol(ir, result->signature);
+	for (i = 0; i < result->nb_occurrence; i++){
+		result->symbol_node_buffer[i] = ir_add_symbol(ir, result, i);
 		if (result->symbol_node_buffer[i] == NULL){
 			printf("ERROR: in %s, unable to add symbolic node to IR\n", __func__);
 			continue;
 		}
 
 		for (j = 0; j < result->signature->nb_frag_tot_in; j++){
-			if (ir_add_macro_dependence(ir, result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].node, result->symbol_node_buffer[i], result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].edge_desc) == NULL){
+			if (result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node == NULL){
+				result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node = result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.result->symbol_node_buffer[result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.index];
+			}
+
+			if (result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node == NULL){
+				printf("ERROR: in %s, unsatisfied input dependence\n", __func__);
+				continue;
+			}
+
+			if (ir_add_macro_dependence(ir, result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node, result->symbol_node_buffer[i], result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
 
 		for (j = 0; j < result->signature->nb_frag_tot_out; j++){
-			if (ir_add_macro_dependence(ir, result->symbol_node_buffer[i], result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].node, result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].edge_desc) == NULL){
+			if (result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node == NULL){
+				result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node = result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.result->symbol_node_buffer[result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.index];
+			}
+
+			if (result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node == NULL){
+				printf("ERROR: in %s, unsatisfied input dependence\n", __func__);
+				continue;
+			}
+
+			if (ir_add_macro_dependence(ir, result->symbol_node_buffer[i], result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node, result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].edge_desc) == NULL){
 				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
 			}
 		}
@@ -100,15 +146,27 @@ void result_push(struct result* result, struct ir* ir){
 
 void result_pop(struct result* result, struct ir* ir){
 	uint32_t i;
+	uint32_t j;
 
-	codeSignature_state_set_poped(result->signature);
 	result->state = RESULTSTATE_IDLE;
 
-	for (i = 0; i < result->nb_occurence; i++){
+	for (i = 0; i < result->nb_occurrence; i++){
 		if (result->symbol_node_buffer[i] != NULL){
 			ir_remove_node(ir, result->symbol_node_buffer[i]);	
 		}
 		result->symbol_node_buffer[i] = NULL;
+
+		for (j = 0; j < result->signature->nb_frag_tot_in; j++){
+			if (result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.result != NULL){
+				result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node = NULL;
+			}
+		}
+
+		for (j = 0; j < result->signature->nb_frag_tot_out; j++){
+			if (result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.result != NULL){
+				result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node = NULL;
+			}
+		}
 	}
 }
 
@@ -383,14 +441,24 @@ void result_print(struct result* result){
 		goto exit;
 	}
 
-	for (i = 0; i < result->nb_occurence; i++){
+	for (i = 0; i < result->nb_occurrence; i++){
 		for (j = 0; j < code_signature->nb_frag_tot_in; j++){
 			link = result->in_mapping_buffer + (i * code_signature->nb_frag_tot_in) + j;
-			parameterMapping_get_node_buffer(parameter_mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+			if (link->virtual_node.node == NULL){
+				printf("ERROR: in %s, input node is virtual, I don't kown how to handle that case\n", __func__);
+				goto exit;
+			}
+
+			parameterMapping_get_node_buffer(parameter_mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
 		}
 		for (j = 0; j < code_signature->nb_frag_tot_out; j++){
 			link = result->ou_mapping_buffer + (i * code_signature->nb_frag_tot_out) + j;
-			parameterMapping_get_node_buffer(parameter_mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->node;
+			if (link->virtual_node.node == NULL){
+				printf("ERROR: in %s, output node is virtual, I don't kown how to handle that case\n", __func__);
+				goto exit;
+			}
+
+			parameterMapping_get_node_buffer(parameter_mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
 		}
 
 		for (j = 0; j < array_get_length(class_array); j++){

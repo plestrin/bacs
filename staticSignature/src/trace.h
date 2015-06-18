@@ -47,13 +47,8 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 
 #define trace_get_nb_instruction(trace) assembly_get_nb_instruction(&((trace)->assembly))
 
-static inline void trace_create_ir(struct trace* trace){
-	if (trace->ir != NULL){
-		printf("WARNING: in %s, an IR has already been built for the current trace - deleting\n", __func__);
-		ir_delete(trace->ir);
-	}
-	trace->ir = ir_create(&(trace->assembly));
-}
+void trace_create_ir(struct trace* trace);
+void trace_normalize_ir(struct trace* trace);
 
 static inline void trace_printDot_ir(struct trace* trace, struct graphPrintDotFilter* filters){
 	if (trace->ir != NULL){
@@ -66,6 +61,8 @@ static inline void trace_printDot_ir(struct trace* trace, struct graphPrintDotFi
 
 void trace_print_location(struct trace* trace, struct codeMap* cm);
 double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode);
+
+void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature);
 
 void trace_clean(struct trace* trace);
 

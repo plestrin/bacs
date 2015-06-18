@@ -134,6 +134,58 @@ struct trace* trace_load_elf(const char* file_path){
 	return trace;
 }
 
+void trace_create_ir(struct trace* trace){
+	uint32_t 		i;
+	struct result* 	result;
+
+	if (trace->ir != NULL){
+		printf("WARNING: in %s, an IR has already been built for fragment \"%s\" - deleting\n", __func__, trace->tag);
+		ir_delete(trace->ir);
+
+		if(array_get_length(&(trace->result_array))){
+			printf("WARNING: in %s, discarding outdated result(s) for fragment \"%s\"\n", __func__, trace->tag);
+			for (i = 0; i < array_get_length(&(trace->result_array)); i++){
+				result = (struct result*)array_get(&(trace->result_array), i);
+				result_clean(result)
+			}
+			array_empty(&(trace->result_array));
+		}
+	}
+	trace->ir = ir_create(&(trace->assembly));
+	if (trace->ir == NULL){
+		printf("ERROR: in %s, unable to create IR for fragment \"%s\"\n", __func__, trace->tag);
+	}
+}
+
+void trace_normalize_ir(struct trace* trace){
+	uint32_t 		i;
+	struct result* 	result;
+
+	if (trace->ir == NULL){
+		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
+		return;
+	}
+
+	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
+		result = (struct result*)array_get(&(trace->result_array), i);
+		if (result->state != RESULTSTATE_IDLE){
+			printf("ERROR: in %s, cannot normalize IR of fragment \"%s\" resulls have been exported\n", __func__, trace->tag);
+			return;
+		}
+	}
+
+	if(array_get_length(&(trace->result_array))){
+		printf("WARNING: in %s, discarding outdated result(s) for fragment \"%s\"\n", __func__, trace->tag);
+		for (i = 0; i < array_get_length(&(trace->result_array)); i++){
+			result = (struct result*)array_get(&(trace->result_array), i);
+			result_clean(result)
+		}
+		array_empty(&(trace->result_array));
+	}
+
+	ir_normalize(trace->ir);
+}
+
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst){
 	struct assembly** 	assembly_src_buffer;
 	uint32_t 			i;
@@ -216,6 +268,51 @@ double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* o
 	return (double)nb_found_instruction / (double)((nb_effective_instruction == 0) ? 1 : nb_effective_instruction);
 }
 
+void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct result* 	result;
+	uint32_t* 		exported_result 	= NULL;
+	uint32_t 		nb_exported_result;
+
+	if (trace->ir == NULL){
+		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
+		goto exit;
+	}
+
+	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->result_array)));
+	if (exported_result == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		goto exit;
+	}
+
+	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->result_array)); i++){
+		result = (struct result*)array_get(&(trace->result_array), i);
+		if (result->state != RESULTSTATE_IDLE){
+			printf("ERROR: in %s, results have already been exported (%s), unable to export twice - rebuild IR\n", __func__, result->signature->name);
+			goto exit;
+		}
+		else{
+			for (j = 0; j < nb_signature; j++){
+				if (signature_buffer[j] == result->signature){
+					#ifdef VERBOSE
+					printf("Export %u occurrence(s) of %s in fragment %s\n", result->nb_occurrence, result->signature->name, trace->tag);
+					#endif
+					exported_result[nb_exported_result ++] = i;
+				}
+			}
+		}
+	}
+
+	for (i = 0; i < nb_exported_result; i++){
+		result_push((struct result*)array_get(&(trace->result_array), exported_result[i]), trace->ir);
+	}	
+
+	exit:
+	if (exported_result != NULL){
+		free(exported_result);
+	}
+}
 
 void trace_clean(struct trace* trace){
 	struct result* 	result;

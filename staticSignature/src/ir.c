@@ -161,7 +161,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 	return node;
 }
 
-struct node* ir_add_symbol(struct ir* ir, void* ptr){
+struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -172,7 +172,8 @@ struct node* ir_add_symbol(struct ir* ir, void* ptr){
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_SYMBOL;
-		operation->operation_type.symbol.ptr 			= ptr;
+		operation->operation_type.symbol.result_ptr 	= result_ptr;
+		operation->operation_type.symbol.index 			= index;
 		operation->size 								= 1;
 		operation->index 								= 0;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;

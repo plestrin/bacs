@@ -239,6 +239,7 @@ void codeSignature_search_collection(struct codeSignatureCollection* collection,
 					if (codeSignature_state_is_found(child)){
 						if (!codeSignature_state_is_pushed(child)){
 							result_push((struct result*)array_get(&(trace_buffer[i]->result_array), child->result_index), trace_buffer[i]->ir);
+							codeSignature_state_set_pushed(child);
 						}
 					}
 				}
@@ -304,6 +305,7 @@ void codeSignature_search_collection(struct codeSignatureCollection* collection,
 				}
 
 				result_pop((struct result*)array_get(&(trace_buffer[i]->result_array), signature_cursor->result_index), trace_buffer[i]->ir);
+				codeSignature_state_set_poped(signature_cursor);
 
 				next2:;
 			}
@@ -498,7 +500,7 @@ uint32_t irNode_get_label(struct node* node){
 			return 0xfffffffe;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
-			return 0x0000ffff | (((struct codeSignature*)operation->operation_type.symbol.ptr)->id << 16);
+			return 0x0000ffff | (((struct result*)operation->operation_type.symbol.result_ptr)->signature->id << 16);
 		}
 	}
 

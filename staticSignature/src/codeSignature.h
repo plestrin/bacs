@@ -19,6 +19,7 @@ struct codeSignatureCollection* codeSignatureCollection_create();
 	(collection)->code_signature_id_generator = 0;
 
 #define codeSignatureCollection_get_new_id(collection) ((collection)->code_signature_id_generator ++)
+#define codeSignaturecollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
 
 void codeSignatureCollection_printDot(struct codeSignatureCollection* collection);
 

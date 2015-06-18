@@ -5,9 +5,15 @@
 
 #include "codeSignature.h"
 
+struct virtualNode{
+	struct node* 	node;
+	struct result* 	result;
+	uint32_t 		index;
+};
+
 struct signatureLink{
-	struct node* 				node;
-	uint32_t 					edge_desc;
+	struct virtualNode 		virtual_node;
+	uint32_t 				edge_desc;
 };
 
 enum resultState{
@@ -18,10 +24,10 @@ enum resultState{
 struct result{
 	enum resultState 			state;
 	struct codeSignature* 		signature;
-	uint32_t 					nb_occurence;
+	uint32_t 					nb_occurrence;
 	struct signatureLink* 		in_mapping_buffer;
 	struct signatureLink* 		ou_mapping_buffer;
-	struct node**				intern_node_buffer;
+	struct virtualNode*			intern_node_buffer;
 	struct node** 				symbol_node_buffer;
 };
 
@@ -36,17 +42,17 @@ void result_print(struct result* result);
 	free((result)->intern_node_buffer); 							\
 	free((result)->symbol_node_buffer);
 
-
-/* TODO list1:
-	- design a result structure
-	- push the result structure into an array
-	- print result from that structure: try to give advice on the fragment size in terms of bbl (just a usefull feature)
-
+/*
    TODO list2:
-   	- make a method to export result to IR: ("select which result to export and so on")
+   	- write the export wrapper: fragment to export signature and so on
+   	- pop the result to the IR
+   	- (OPT) clean what can be cleaned (experimental part)
+   	- (OPT) try to give advice on the fragment size in terms of bbl (just a usefull feature)
 
    TODO list3:
-   	- built a connectivity graph between high export symbols
+   	- try to some clustering not to push to many symbols (can be done in TODO list 2)
+   	- find path between symbols
+   	- lowest common ancestor
 
    TODO list4:
    	- list occurence of a fragment in trace juste to know which larger fragement can we create
