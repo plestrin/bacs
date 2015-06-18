@@ -5,9 +5,18 @@
 
 #include "trace.h"
 #include "assemblyElfLoader.h"
+#include "result.h"
 
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
 #define TRACE_NB_MAX_THREAD 	64
+
+int32_t trace_init(struct trace* trace, enum traceType type){
+	trace->tag[0]	= '\0';
+	trace->ir 		= NULL;
+	trace->type 	= type;
+
+	return array_init(&(trace->result_array), sizeof(struct result));
+}
 
 struct trace* trace_load(const char* directory_path){
 	struct trace* 	trace;
@@ -60,7 +69,12 @@ struct trace* trace_load(const char* directory_path){
 				trace = NULL;
 			}
 			else{
-				trace_init(trace, EXECUTION_TRACE);
+				if (trace_init(trace, EXECUTION_TRACE)){
+					printf("ERROR: in %s, unable to init executionTrace\n", __func__);
+					assembly_clean(&(trace->assembly));
+					free(trace);
+					trace = NULL;
+				}
 			}
 		}
 		else{
@@ -108,7 +122,12 @@ struct trace* trace_load_elf(const char* file_path){
 			trace = NULL;
 		}
 		else{
-			trace_init(trace, ELF_TRACE);
+			if (trace_init(trace, ELF_TRACE)){
+				printf("ERROR: in %s, unabvle to init elfTrace\n", __func__);
+				assembly_clean(&(trace->assembly));
+				free(trace);
+				trace = NULL;
+			}
 		}
 	}
 
@@ -222,6 +241,15 @@ double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* o
 
 
 void trace_clean(struct trace* trace){
+	struct result* 	result;
+	uint32_t 		i; 
+
+	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
+		result = (struct result*)array_get(&(trace->result_array), i);
+		result_clean(result)
+	}
+	array_clean(&(trace->result_array));
+
 	if (trace->ir != NULL){
 		ir_delete(trace->ir)
 	}

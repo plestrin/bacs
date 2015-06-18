@@ -6,6 +6,7 @@
 #include "assembly.h"
 #include "ir.h"
 #include "codeMap.h"
+#include "array.h"
 
 #define TRACE_TAG_LENGTH 32
 #define TRACE_PATH_MAX_LENGTH 	256
@@ -22,6 +23,7 @@ struct trace{
 	struct ir* 			ir;
 	enum traceType 		type;
 	char 				directory_path[TRACE_PATH_MAX_LENGTH];
+	struct array 		result_array;
 };
 
 struct trace* trace_load(const char* directory_path);
@@ -30,10 +32,7 @@ void trace_change_thread(struct trace* trace, uint32_t thread_id);
 
 struct trace* trace_load_elf(const char* file_path);
 
-#define trace_init(trace, type_) 																						\
-	(trace)->tag[0]		= '\0'; 																						\
-	(trace)->ir 		= NULL; 																						\
-	(trace)->type 		= type_
+int32_t trace_init(struct trace* trace, enum traceType type);
 
 #define trace_check(trace) 																								\
 	if (assembly_check(&((trace)->assembly))){ 																			\

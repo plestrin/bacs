@@ -83,18 +83,6 @@ uint32_t signatureNode_get_label(struct node* node);
 uint32_t irEdge_get_label(struct edge* edge);
 uint32_t signatureEdge_get_label(struct edge* edge);
 
-struct signatureLink{
-	struct node* 				node;
-	uint32_t 					edge_desc;
-};
-
-struct signatureOccurence{
-	uint32_t 					nb_occurence;
-	struct signatureLink* 		input_buffer;
-	struct signatureLink* 		output_buffer;
-	struct node** 				node_buffer;
-};
-
 struct codeSignature{
 	uint32_t 						id;
 	char  							name[CODESIGNATURE_NAME_MAX_SIZE];
@@ -102,7 +90,7 @@ struct codeSignature{
 	struct graph					graph;
 	struct subGraphIsoHandle* 		sub_graph_handle;
 	struct signatureSymbolTable* 	symbol_table;
-	struct signatureOccurence 		occurence;
+	int32_t 						result_index;
 	uint32_t 						state;
 	uint32_t 						nb_parameter_in;
 	uint32_t 						nb_parameter_out;
@@ -132,6 +120,8 @@ struct codeSignature{
 
 int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
 
-void codeSignature_search_collection(struct codeSignatureCollection* collection, struct ir** ir_buffer, uint32_t nb_ir);
+#include "trace.h"
+
+void codeSignature_search_collection(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace);
 
 #endif

@@ -8,6 +8,7 @@
 #include "readBuffer.h"
 #include "ir.h"
 #include "irMemory.h"
+#include "result.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
@@ -48,10 +49,10 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
-	/* traceFragement specific commands */
+	/* traceFragment specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragement in the codeMap", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
@@ -66,7 +67,8 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_printDot)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print result", 			"Print code signature result in details", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_print_result)
 
 	/* callGraph specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
@@ -252,18 +254,22 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	struct trace 	fragment;
 
 	if (analysis->trace != NULL){
-		trace_init(&fragment, FRAGMENT_TRACE);
+		if (trace_init(&fragment, FRAGMENT_TRACE)){
+			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+			return;
+		}
+
 		inputParser_extract_index(arg, &start, &stop);
 		if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 			printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
+			return;
 		}
-		else{
-			snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
 
-			if (array_add(&(analysis->frag_array), &fragment) < 0){
-				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
-				trace_clean(&fragment);
-			}
+		snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
+
+		if (array_add(&(analysis->frag_array), &fragment) < 0){
+			printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+			trace_clean(&fragment);
 		}
 	}
 	else{
@@ -514,7 +520,11 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	trace_src_buffer = (struct trace**)alloca(sizeof(struct trace*) * nb_index);
-	trace_init(&new_fragment, FRAGMENT_TRACE);
+	if (trace_init(&new_fragment, FRAGMENT_TRACE)){
+		printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+		return;
+	}
+
 	tag_offset = snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat ");
 
 	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
@@ -747,8 +757,8 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	uint32_t 		stop;
 	uint32_t 		i;
 	struct trace* 	fragment;
-	struct ir**		ir_buffer;
-	uint32_t 		nb_ir;
+	struct trace**	trace_buffer;
+	uint32_t 		nb_trace;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -766,26 +776,82 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		stop = array_get_length(&(analysis->frag_array));
 	}
 
-	ir_buffer = (struct ir**)malloc(sizeof(struct ir*) * (stop - start));
-	if (ir_buffer == NULL){
+	trace_buffer = (struct trace**)malloc(sizeof(struct trace*) * (stop - start));
+	if (trace_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		return;
 	}
 
-	for (i = start, nb_ir = 0; i < stop; i++){
+	for (i = start, nb_trace = 0; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
-			ir_buffer[nb_ir ++] = fragment->ir;
+			trace_buffer[nb_trace ++] = fragment;
 		}
 		else{
 			printf("ERROR: in %s, the IR is NULL for fragment %u\n", __func__, i);
 		}
 	}
 
-	codeSignature_search_collection(&(analysis->code_signature_collection), ir_buffer, nb_ir);
-	free(ir_buffer);
+	codeSignature_search_collection(&(analysis->code_signature_collection), trace_buffer, nb_trace);
+	free(trace_buffer);
 }
 
+void analysis_code_signature_clean(struct analysis* analysis){
+	struct trace* 	fragment;
+	uint32_t 		i;
+	uint32_t 		j;
+	struct result* 	result;
+
+	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+
+		if (array_get_length(&(fragment->result_array))){
+			for (j = 0; j < array_get_length(&(fragment->result_array)); j++){
+				result = (struct result*)array_get(&(fragment->result_array), j);
+				if (result->state == RESULTSTATE_PUSH && fragment->ir != NULL){
+					ir_delete(fragment->ir)
+					fragment->ir = NULL;
+				}
+				result_clean(result)
+			}
+			array_empty(&(fragment->result_array));
+		}
+	}
+
+	codeSignatureCollection_clean(&(analysis->code_signature_collection));
+}
+
+void analysis_code_signature_print_result(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	uint32_t 		j;
+	struct trace* 	fragment;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		for (j = 0; j < array_get_length(&(fragment->result_array)); j++){
+			result_print((struct result*)array_get(&(fragment->result_array), j));
+		}
+	}
+}
 
 /* ===================================================================== */
 /* call graph functions						    	                     */

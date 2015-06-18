@@ -730,20 +730,24 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
 			start_index = snippet->offset;
 
-			trace_init(&fragment, FRAGMENT_TRACE);
+			if (trace_init(&fragment, FRAGMENT_TRACE)){
+				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+				return -1;
+			}
 			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
 				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
+				return -1;
 			}
-			else{
-				printf("INFO: in %s, export trace fragment [%u:%u]\n", __func__, start_index, stop_index);
-				if (func->routine != NULL){
-					snprintf(fragment.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
-				}
+			
+			printf("INFO: in %s, export trace fragment [%u:%u]\n", __func__, start_index, stop_index);
+			if (func->routine != NULL){
+				snprintf(fragment.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
+			}
 
-				if (array_add(frag_array, &fragment) < 0){
-					printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
-					trace_clean(&fragment);
-				}
+			if (array_add(frag_array, &fragment) < 0){
+				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+				trace_clean(&fragment);
+				return -1;
 			}
 		}
 	}

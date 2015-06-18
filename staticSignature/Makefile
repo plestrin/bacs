@@ -28,6 +28,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irVariableRange.o 		\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)signatureReader.o 		\
+					$(BUILD_DIR)result.o 				\
 					$(BUILD_DIR)assemblyElfLoader.o 	\
 					$(BUILD_DIR)callGraph.o 			\
 					$(BUILD_DIR)multiColumn.o 			\
@@ -49,7 +50,7 @@ endif
 
 ifeq ($(VERBOSE),1)
 CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE
-OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o $(BUILD_DIR)printResult.o
+OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o
 endif
 
 all: $(PROG_NAME)
