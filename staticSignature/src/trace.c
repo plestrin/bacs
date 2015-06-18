@@ -147,45 +147,22 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 }
 
 void trace_print_location(struct trace* trace, struct codeMap* cm){
-	struct cm_routine* 			routine  = NULL;
-	struct cm_section* 			section;
-	struct cm_image* 			image;
-	struct instructionIterator 	it;
+	uint32_t i;
 
-	if (assembly_get_instruction(&(trace->assembly), &it, 0)){
-		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
-		return;
-	}
-
-	for (;;){
-		if (routine == NULL || !CODEMAP_IS_ADDRESS_IN_ROUTINE(routine, it.instruction_address)){
-			routine = codeMap_search_routine(cm, it.instruction_address);
-			if (routine != NULL){
-				section = CODEMAP_ROUTINE_GET_SECTION(routine);
-				image = CODEMAP_SECTION_GET_IMAGE(section);
-
-				#if defined ARCH_32
-				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\", Offset: 0x%08x\n", image->name, section->name, routine->name, it.instruction_address- routine->address_start);
-				#elif defined ARCH_64
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				printf("\t- Image: \"%s\", Section: \"%s\", Routine: \"%s\", Offset: 0x%llx\n", image->name, section->name, routine->name, it.instruction_address - routine->address_start);
-				#else
-				#error Please specify an architecture {ARCH_32 or ARCH_64}
-				#endif
-			}
-			else{
-				printf("WARNING: in %s, instruction at offset %u does not belong to a routine\n", __func__, it.instruction_index);
-			}
-		}
-
-		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(trace->assembly)) - 1){
-			break;
+	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
+		if (dynBlock_is_valid(trace->assembly.dyn_blocks + i)){
+			#if defined ARCH_32
+			printf("\t-BBL %u [%u:%u] 0x%08x:", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
+			#elif defined ARCH_64
+			printf("\t-BBL %u [%u:%u] 0x%0llx:", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
+			#else
+			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			#endif
+			codeMap_print_address_info(cm, trace->assembly.dyn_blocks[i].block->header.address, stdout);
+			printf("\n");
 		}
 		else{
-			if (assembly_get_next_instruction(&(trace->assembly), &it)){
-				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
-				break;
-			}
+			printf("\t-[...]\n");
 		}
 	}
 }

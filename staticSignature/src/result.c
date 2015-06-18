@@ -195,10 +195,10 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 	uint8_t 			is_input_buffer;
 	struct node* 		address;
 	struct node* 		base;
-	uint64_t 			buffer_start_offset;
+	uint64_t 			buffer_start_offset = 0;
 	uint8_t* 			buffer;
-	uint8_t 			buffer_access_size;
-	uint64_t 			offset;
+	uint8_t 			buffer_access_size 	= 0;
+	uint64_t 			offset              = 0;
 
 	if (parameter->nb_fragment == 0){
 		return;

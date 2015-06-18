@@ -30,7 +30,7 @@ void result_push(struct result* result, struct ir* ir);
 void result_pop(struct result* result, struct ir* ir);
 void result_print(struct result* result);
 
-#define result_clean(result) 							\
+#define result_clean(result) 										\
 	free((result)->in_mapping_buffer); 								\
 	free((result)->ou_mapping_buffer); 								\
 	free((result)->intern_node_buffer); 							\
