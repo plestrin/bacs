@@ -61,6 +61,23 @@ void* set_get(struct set* set, uint32_t index){
 	return NULL;
 }
 
+int32_t set_search(struct set* set, void* element){
+	struct setBlock* 	block_cursor;
+	int32_t 			index;
+	uint32_t 			i;
+
+	for (block_cursor = &(set->block), index = 0; block_cursor != NULL; block_cursor = block_cursor->next){
+		for (i = 0; i < block_cursor->nb_element; i++){
+			if (!memcmp(block_cursor->data + i * set->element_size, element, set->element_size)){
+				return index + i;
+			}
+		}
+		index += set->nb_element_block;
+	}
+
+	return index - (set->nb_element_tot + 1);
+}
+
 void set_remove(struct set* set, void* element){
 	struct setBlock* 	block_cursor;
 	uint32_t 			i;
@@ -90,17 +107,6 @@ void set_remove(struct set* set, void* element){
 	printf("ERROR: in %s, unable to find element %p in set\n", __func__, element);
 }
 
-void set_clean(struct set* set){
-	struct setBlock* block_cursor;
-	struct setBlock* block_delete;
-
-	for (block_cursor = set->block.next; block_cursor != NULL; ){
-		block_delete = block_cursor;
-		block_cursor = block_cursor->next;
-		free(block_delete);
-	}
-}
-
 int32_t set_are_disjoint(struct set* set1, struct set* set2){
 	struct setIterator 	iterator1;
 	struct setIterator 	iterator2;
@@ -121,6 +127,36 @@ int32_t set_are_disjoint(struct set* set1, struct set* set2){
 	}
 
 	return 0;
+}
+
+void* set_export_buffer(struct set* set){
+	uint8_t* 			buffer;
+	struct setBlock* 	block_cursor;
+	uint32_t 			offset;
+
+	buffer = (uint8_t*)malloc(set->nb_element_tot * set->element_size);
+	if (buffer != NULL){
+		for (block_cursor = &(set->block), offset = 0; block_cursor != NULL; block_cursor = block_cursor->next){
+			memcpy(buffer + offset, block_cursor->data, set->element_size * block_cursor->nb_element);
+			offset += set->element_size * block_cursor->nb_element;
+		}
+	}
+	else{
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+
+	return buffer;
+}
+
+void set_clean(struct set* set){
+	struct setBlock* block_cursor;
+	struct setBlock* block_delete;
+
+	for (block_cursor = set->block.next; block_cursor != NULL; ){
+		block_delete = block_cursor;
+		block_cursor = block_cursor->next;
+		free(block_delete);
+	}
 }
 
 void* setIterator_get_first(struct set* set, struct setIterator* iterator){

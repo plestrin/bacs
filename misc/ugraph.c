@@ -67,7 +67,26 @@ int32_t ugraph_add_edge(struct unode* unode1, struct unode* unode2){
 		return -1;
 	}
 
-	return 1;
+	return 0;
+}
+
+int32_t ugraph_add_unique_edge(struct unode* unode1, struct unode* unode2){
+	if (set_get_length(&(unode1->edge_set)) > set_get_length(&(unode2->edge_set))){
+		if (set_search(&(unode2->edge_set), &unode1) < 0){
+			return ugraph_add_edge(unode1, unode2);
+		}
+		else{
+			return 0; 
+		}
+	}
+	else{
+		if (set_search(&(unode1->edge_set), &unode2) < 0){
+			return ugraph_add_edge(unode1, unode2);
+		}
+		else{
+			return 0; 
+		}
+	}
 }
 
 void ugraph_remove_node(struct ugraph* ugraph, struct unode* unode){

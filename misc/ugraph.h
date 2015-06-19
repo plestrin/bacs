@@ -46,6 +46,7 @@ struct ugraph* ugraph_create(uint32_t node_size);
 struct unode* ugraph_add_node_(struct ugraph* ugraph);
 struct unode* ugraph_add_node(struct ugraph* ugraph, void* data);
 int32_t ugraph_add_edge(struct unode* unode1, struct unode* unode2);
+int32_t ugraph_add_unique_edge(struct unode* unode1, struct unode* unode2);
 
 #define ugraph_remove_edge(unode1, unode2) 																													\
 	set_remove(&(unode1->edge_set), &unode2); 																												\
