@@ -73,7 +73,7 @@ $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 $(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o dijkstra.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o
+$(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphPrintDot.o
@@ -104,7 +104,7 @@ test_mapFile.o: ../mapFile.h
 test_pageTable.o: ../pageTable.h
 test_graph.o: ../graph.h ../graphPrintDot.h
 test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h
-test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h
+test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h
 test_set.o: ../set.h
 test_ugraph.o: ../ugraph.h ../set.h
@@ -120,7 +120,7 @@ pageTable.o: ../pageTable.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h
-dijkstra.o: ../graph.h ../dijkstra.h
+dijkstra.o: ../graph.h ../dijkstra.h ../array.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h
 set.o: ../set.h
 ugraph.o: ../ugraph.h ../set.h

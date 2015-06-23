@@ -4,33 +4,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "array.h"
 #include "graph.h"
-
-struct codeSignatureCollection{
-	uint32_t 		code_signature_id_generator;
-	struct graph 	syntax_graph;
-};
-
-struct codeSignatureCollection* codeSignatureCollection_create();
-
-#define codeSignatureCollection_init(collection) 																					\
-	graph_init(&((collection)->syntax_graph), sizeof(struct codeSignature), sizeof(uint32_t)); 										\
-	(collection)->code_signature_id_generator = 0;
-
-#define codeSignatureCollection_get_new_id(collection) ((collection)->code_signature_id_generator ++)
-#define codeSignaturecollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
-
-void codeSignatureCollection_printDot(struct codeSignatureCollection* collection);
-
-void codeSignatureCollection_clean(struct codeSignatureCollection* collection);
-
-#define codeSignatureCollection_delete(collection) 																					\
-	codeSignatureCollection_clean(collection); 																						\
-	free(collection);
-
 #include "subGraphIsomorphism.h"
 #include "ir.h"
+#include "trace.h"
 
 #define CODESIGNATURE_NAME_MAX_SIZE 32
 
@@ -45,7 +22,7 @@ struct signatureSymbol{
 	char 		name[CODESIGNATURE_NAME_MAX_SIZE];
 };
 
-#define symbolTableEntry_set_resolved(symbol) 	((symbol)->status) |= 0x01
+#define symbolTableEntry_set_resolved(symbol) 	((symbol)->status |= 0x01)
 #define symbolTableEntry_is_resolved(symbol) 	((symbol)->status & 0x01)
 
 #define signatureSymbol_set_id(sym, index) (sym)->id = 0x0000ffff | ((index) << 16)
@@ -100,7 +77,6 @@ struct codeSignature{
 } __attribute__((__may_alias__));
 
 #define syntax_node_get_codeSignature(node) 	((struct codeSignature*)&((node)->data))
-#define syntax_edge_get_index(edge) 			(*(uint32_t*)(edge)->data)
 
 #define codeSignature_state_is_search(code_signature) 	((code_signature)->state & 0x00000001)
 #define codeSignature_state_is_found(code_signature) 	((code_signature)->state & 0x00000002)
@@ -110,19 +86,37 @@ struct codeSignature{
 #define codeSignature_state_set_pushed(code_signature) 	(code_signature)->state |= 0x00000004
 #define codeSignature_state_set_poped(code_signature) 	(code_signature)->state &= 0xfffffffb
 
-#define codeSignature_clean(code_signature) 																							\
-	if ((code_signature)->sub_graph_handle != NULL){ 																					\
-		graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 															\
-	} 																																	\
-	graph_clean(&((code_signature)->graph)); 																							\
-	if ((code_signature)->symbol_table != NULL){ 																						\
-		free((code_signature)->symbol_table); 																							\
+#define codeSignature_clean(code_signature) 																						\
+	if ((code_signature)->sub_graph_handle != NULL){ 																				\
+		graphIso_delete_subGraph_handle((code_signature)->sub_graph_handle); 														\
+	} 																																\
+	graph_clean(&((code_signature)->graph)); 																						\
+	if ((code_signature)->symbol_table != NULL){ 																					\
+		free((code_signature)->symbol_table); 																						\
 	}
 
-int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
+struct codeSignatureCollection{
+	uint32_t 		code_signature_id_generator;
+	struct graph 	syntax_graph;
+};
 
-#include "trace.h"
+struct codeSignatureCollection* codeSignatureCollection_create();
 
-void codeSignature_search_collection(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace);
+#define codeSignatureCollection_init(collection) 																					\
+	graph_init(&((collection)->syntax_graph), sizeof(struct codeSignature), sizeof(uint32_t)); 										\
+	(collection)->code_signature_id_generator = 0;
+
+#define codeSignatureCollection_get_new_id(collection) ((collection)->code_signature_id_generator ++)
+#define codeSignaturecollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
+
+void codeSignatureCollection_printDot(struct codeSignatureCollection* collection);
+int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection* collection, struct codeSignature* code_signature);
+void codeSignatureCollection_search(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace);
+
+void codeSignatureCollection_clean(struct codeSignatureCollection* collection);
+
+#define codeSignatureCollection_delete(collection) 																					\
+	codeSignatureCollection_clean(collection); 																						\
+	free(collection);
 
 #endif

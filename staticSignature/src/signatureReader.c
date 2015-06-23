@@ -974,7 +974,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		code_signature.sub_graph_handle 	= NULL;
 		code_signature.symbol_table 		= symbol_table;
 
-		if (codeSignature_add_signature_to_collection(collection, &code_signature)){
+		if (codeSignatureCollection_add_codeSignature(collection, &code_signature)){
 			printf("ERROR: in %s, unable to add signature to collection\n", __func__);
 		}
 

@@ -9,6 +9,7 @@
 #include "ir.h"
 #include "irMemory.h"
 #include "result.h"
+#include "traceMine.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
@@ -56,6 +57,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print result", 			"Print code signature result in details", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 		INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
+	ADD_CMD_TO_INPUT_PARSER(parser, "mine frag", 				"Search for relation between results in IR", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_mine)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
@@ -656,6 +658,33 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	free(signature_buffer);
 }
 
+void analysis_frag_mine(struct analysis* analysis, char* arg){
+	uint32_t index;
+	uint32_t start;
+	uint32_t stop;
+	uint32_t i;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		traceMine_mine((struct trace*)array_get(&(analysis->frag_array), i));
+	}
+}
+
 void analysis_frag_clean(struct analysis* analysis){
 	uint32_t i;
 
@@ -876,7 +905,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		}
 	}
 
-	codeSignature_search_collection(&(analysis->code_signature_collection), trace_buffer, nb_trace);
+	codeSignatureCollection_search(&(analysis->code_signature_collection), trace_buffer, nb_trace);
 	free(trace_buffer);
 }
 

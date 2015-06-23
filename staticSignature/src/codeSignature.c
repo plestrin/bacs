@@ -8,7 +8,7 @@
 #include "result.h"
 
 /* ===================================================================== */
-/* Code Signature Collection routines									 */
+/* codeSignatureCollection routines										 */
 /* ===================================================================== */
 
 void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
@@ -30,7 +30,7 @@ struct codeSignatureCollection* codeSignatureCollection_create(){
 	return collection;
 }
 
-int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection* collection, struct codeSignature* code_signature){
+int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection* collection, struct codeSignature* code_signature){
 	struct node* 			syntax_node;
 	struct node* 			node_cursor;
 	struct codeSignature* 	new_signature;
@@ -149,7 +149,7 @@ int32_t codeSignature_add_signature_to_collection(struct codeSignatureCollection
 	return 0;
 }
 
-void codeSignature_search_collection(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace){
+void codeSignatureCollection_search(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace){
 	struct node* 				node_cursor;
 	uint32_t 					i;
 	uint32_t 					j;
@@ -387,7 +387,6 @@ void codeSignatureCollection_printDot(struct codeSignatureCollection* collection
 	}
 }
 
-
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 	struct signatureNode* node = (struct signatureNode*)data;
@@ -570,7 +569,3 @@ uint32_t signatureEdge_get_label(struct edge* edge){
 
 	return signature_edge->type | signature_edge->macro_desc;
 }
-
-/* ===================================================================== */
-/* Printing routines													 */
-/* ===================================================================== */

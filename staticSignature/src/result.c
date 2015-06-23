@@ -4,6 +4,10 @@
 
 #include "result.h"
 
+/* ===================================================================== */
+/* result routines														 */
+/* ===================================================================== */
+
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array){
 	uint32_t 				i;
 	uint32_t 				j;
@@ -172,53 +176,8 @@ void result_pop(struct result* result, struct ir* ir){
 
 #define MAX_CLASS_THRESHOLD 2
 
-enum parameterSimilarity{
-	PARAMETER_EQUAL 	= 0x00000001,
-	PARAMETER_PERMUT 	= 0x00000003,
-	PARAMETER_OVERLAP 	= 0x00000007,
-	PARAMETER_DISJOINT 	= 0x0000000f
-};
-
-struct parameterMapping{
-	uint32_t 					nb_fragment;
-	size_t 						node_buffer_offset;
-	enum parameterSimilarity 	similarity;
-};
-
-#define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_parameter_in + (code_signature)->nb_parameter_out) + sizeof(struct node*) * ((code_signature)->nb_frag_tot_in + (code_signature)->nb_frag_tot_out))
-#define parameterMapping_get_node_buffer(mapping) ((struct node**)((char*)(mapping) + (mapping)->node_buffer_offset))
-
-static enum parameterSimilarity signatureOccurence_find_parameter_similarity(struct node** parameter_list1, struct node** parameter_list2, uint32_t size);
 static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* class, struct parameterMapping* new_mapping, uint32_t nb_in, uint32_t nb_out);
 static void signatureOccurence_print_location(struct parameterMapping* parameter);
-
-static enum parameterSimilarity signatureOccurence_find_parameter_similarity(struct node** parameter_list1, struct node** parameter_list2, uint32_t size){
-	uint32_t 					i;
-	uint32_t 					j;
-	enum parameterSimilarity 	result = PARAMETER_EQUAL;
-	uint32_t 					nb_found = 0;
-
-	for (i = 0; i < size; i++){
-		for (j = 0; j < size; j++){
-			if (parameter_list1[i] == parameter_list2[j]){
-				nb_found ++;
-				if (i != j){
-					result |= 0x00000002;
-				}
-				break;
-			}
-		}
-	}
-
-	if (nb_found == 0){
-		result = PARAMETER_DISJOINT;
-	}
-	else if (nb_found != size){
-		result = PARAMETER_OVERLAP;
-	}
-
-	return result;
-}
 
 static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* class, struct parameterMapping* new_mapping, uint32_t nb_in, uint32_t nb_out){
 	uint32_t 					i;
@@ -227,14 +186,14 @@ static int32_t signatureOccurence_try_append_to_class(struct parameterMapping* c
 	similarity = (enum parameterSimilarity*)alloca(sizeof(enum parameterSimilarity) * (nb_in + nb_out));
 
 	for (i = 0; i < nb_in; i++){
-		similarity[i] = signatureOccurence_find_parameter_similarity(parameterMapping_get_node_buffer(class + i), parameterMapping_get_node_buffer(new_mapping + i), class[i].nb_fragment);
+		similarity[i] = parameterSimilarity_get(parameterMapping_get_node_buffer(class + i), class[i].nb_fragment, parameterMapping_get_node_buffer(new_mapping + i), class[i].nb_fragment);
 		if (similarity[i] == PARAMETER_OVERLAP || similarity[i] == PARAMETER_DISJOINT){
 			return -1;
 		}
 	}
 
 	for (i = 0; i < nb_out; i++){
-		similarity[nb_in + i] = signatureOccurence_find_parameter_similarity(parameterMapping_get_node_buffer(class + nb_in + i), parameterMapping_get_node_buffer(new_mapping + nb_in + i), class[nb_in + i].nb_fragment);
+		similarity[nb_in + i] = parameterSimilarity_get(parameterMapping_get_node_buffer(class + nb_in + i), class[nb_in + i].nb_fragment, parameterMapping_get_node_buffer(new_mapping + nb_in + i), class[nb_in + i].nb_fragment);
 		if (similarity[nb_in + i] == PARAMETER_OVERLAP || similarity[nb_in + i] == PARAMETER_DISJOINT){
 			return -1;
 		}
@@ -370,69 +329,15 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 void result_print(struct result* result){
 	uint32_t 					i;
 	uint32_t 					j;
-	struct signatureNode* 		sig_node;
-	uint32_t* 					nb_frag_input 		= NULL;
-	uint32_t* 					nb_frag_output 		= NULL;
-	struct parameterMapping* 	parameter_mapping 	= NULL;
+	struct parameterMapping* 	parameter_mapping;
 	struct array* 				class_array 		= NULL;
-	struct signatureLink* 		link;
 	struct parameterMapping* 	class;
 	struct codeSignature* 		code_signature 		= result->signature;
 
-	nb_frag_input = (uint32_t*)calloc(code_signature->nb_frag_tot_in, sizeof(uint32_t));
-	nb_frag_output = (uint32_t*)calloc(code_signature->nb_frag_tot_out, sizeof(uint32_t));
-
-	if (nb_frag_input == NULL || nb_frag_input == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		goto exit;
-	}
-
-	for (i = 0; i < code_signature->graph.nb_node; i++){
-		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
-
-		if (sig_node->input_number > 0){
-			nb_frag_input[sig_node->input_number - 1] ++;
-		}
-		if (sig_node->output_number > 0){
-			nb_frag_output[sig_node->output_number - 1] ++;
-		}
-	}
-
-	for (i = 0; i < code_signature->graph.nb_node; i++){
-		sig_node = (struct signatureNode*)&(code_signature->sub_graph_handle->node_tab[i].node->data);
-
-		if (sig_node->input_number > 0){
-			if (sig_node->input_frag_order > nb_frag_input[sig_node->input_number - 1]){
-				printf("ERROR: in %s, input frag number %u is out of range %u\n", __func__, sig_node->input_frag_order, nb_frag_input[sig_node->input_number - 1]);
-				goto exit;
-			}
-		}
-		if (sig_node->output_number > 0){
-			if (sig_node->output_frag_order > nb_frag_output[sig_node->output_number - 1]){
-				printf("ERROR: in %s, output frag number %u is out of range %u\n", __func__, sig_node->output_frag_order, nb_frag_output[sig_node->output_number - 1]);
-				goto exit;
-			}
-		}
-	}
-
-	parameter_mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(code_signature));
+	parameter_mapping = parameterMapping_create(code_signature);
 	if (parameter_mapping == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		goto exit;
-	}
-
-	for (i = 0, j = 0; i < code_signature->nb_parameter_in; i++){
-		parameter_mapping[i].nb_fragment 			= nb_frag_input[i];
-		parameter_mapping[i].node_buffer_offset 	= (code_signature->nb_parameter_in - i + code_signature->nb_parameter_out) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
-		parameter_mapping[i].similarity 			= PARAMETER_EQUAL;
-		j += nb_frag_input[i];
-	}
-
-	for (i = 0; i < code_signature->nb_parameter_out; i++){
-		parameter_mapping[code_signature->nb_parameter_in + i].nb_fragment 			= nb_frag_output[i];
-		parameter_mapping[code_signature->nb_parameter_in + i].node_buffer_offset 	= (code_signature->nb_parameter_out - i) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
-		parameter_mapping[code_signature->nb_parameter_in + i].similarity 			= PARAMETER_EQUAL;
-		j += nb_frag_output[i];
+		printf("ERROR: in %s, unable to create parameterMapping\n", __func__);
+		return;
 	}
 
 	class_array = array_create(parameterMapping_get_size(code_signature));
@@ -442,23 +347,9 @@ void result_print(struct result* result){
 	}
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		for (j = 0; j < code_signature->nb_frag_tot_in; j++){
-			link = result->in_mapping_buffer + (i * code_signature->nb_frag_tot_in) + j;
-			if (link->virtual_node.node == NULL){
-				printf("ERROR: in %s, input node is virtual, I don't kown how to handle that case\n", __func__);
-				goto exit;
-			}
-
-			parameterMapping_get_node_buffer(parameter_mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
-		}
-		for (j = 0; j < code_signature->nb_frag_tot_out; j++){
-			link = result->ou_mapping_buffer + (i * code_signature->nb_frag_tot_out) + j;
-			if (link->virtual_node.node == NULL){
-				printf("ERROR: in %s, output node is virtual, I don't kown how to handle that case\n", __func__);
-				goto exit;
-			}
-
-			parameterMapping_get_node_buffer(parameter_mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
+		if (parameterMapping_fill(parameter_mapping, result, i)){
+			printf("ERROR: in %s, unable to fetch occurrence %u\n", __func__, i);
+			continue;
 		}
 
 		for (j = 0; j < array_get_length(class_array); j++){
@@ -510,17 +401,147 @@ void result_print(struct result* result){
 	}
 
 	exit:
-	if (nb_frag_input != NULL){
-		free(nb_frag_input);
-	}
-	if (nb_frag_output != NULL){
-		free(nb_frag_output);
-	}
-	if (parameter_mapping != NULL){
-		free(parameter_mapping);
-	}
+	free(parameter_mapping);
 	if (class_array != NULL){
 		array_delete(class_array);
 	}
 
+}
+
+/* ===================================================================== */
+/* parameterMapping routines											 */
+/* ===================================================================== */
+
+struct parameterMapping* parameterMapping_create(struct codeSignature* signature){
+	struct parameterMapping* mapping;
+
+	mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(signature));
+	if (mapping != NULL){
+		if (parameterMapping_init(mapping, signature)){
+			printf("ERROR: in %s, unable to init parameterMapping\n", __func__);
+			free(mapping);
+			mapping = NULL;
+		}
+	}
+	else{
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+	}
+
+	return mapping;
+}
+
+int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSignature* signature){
+	uint32_t 				i;
+	uint32_t 				j;
+	struct signatureNode* 	sig_node;
+
+	memset(mapping, 0, parameterMapping_get_size(signature));
+
+	for (i = 0; i < signature->graph.nb_node; i++){
+		sig_node = (struct signatureNode*)&(signature->sub_graph_handle->node_tab[i].node->data);
+
+		if (sig_node->input_number > 0){
+			mapping[sig_node->input_number - 1].nb_fragment ++;
+		}
+		if (sig_node->output_number > 0){
+			mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment ++;
+		}
+	}
+
+	for (i = 0; i < signature->graph.nb_node; i++){
+		sig_node = (struct signatureNode*)&(signature->sub_graph_handle->node_tab[i].node->data);
+
+		if (sig_node->input_number > 0){
+			if (sig_node->input_frag_order > mapping[sig_node->input_number - 1].nb_fragment){
+				printf("ERROR: in %s, input frag number %u is out of range %u\n", __func__, sig_node->input_frag_order, mapping[sig_node->input_number - 1].nb_fragment);
+				return -1;
+			}
+		}
+		if (sig_node->output_number > 0){
+			if (sig_node->output_frag_order > mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment){
+				printf("ERROR: in %s, output frag number %u is out of range %u\n", __func__, sig_node->output_frag_order, mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment);
+				return -1;
+			}
+		}
+	}
+
+	for (i = 0, j = 0; i < signature->nb_parameter_in; i++){
+		mapping[i].node_buffer_offset 	= (signature->nb_parameter_in - i + signature->nb_parameter_out) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
+		mapping[i].similarity 			= PARAMETER_EQUAL;
+		j += mapping[i].nb_fragment;
+	}
+
+	for (i = 0; i < signature->nb_parameter_out; i++){
+		mapping[signature->nb_parameter_in + i].node_buffer_offset 	= (signature->nb_parameter_out - i) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
+		mapping[signature->nb_parameter_in + i].similarity 			= PARAMETER_EQUAL;
+		j += mapping[signature->nb_parameter_in + i].nb_fragment;
+	}
+
+	return 0;
+}
+
+int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* result, uint32_t index){
+	uint32_t 				i;
+	struct signatureLink* 	link;
+
+	for (i = 0; i < result->signature->nb_frag_tot_in; i++){
+		link = result->in_mapping_buffer + (index * result->signature->nb_frag_tot_in) + i;
+		if (link->virtual_node.node == NULL){
+			printf("ERROR: in %s, input node is virtual, I don't kown how to handle that case\n", __func__);
+			return -1;
+		}
+
+		parameterMapping_get_node_buffer(mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
+	}
+
+	for (i = 0; i < result->signature->nb_frag_tot_out; i++){
+		link = result->ou_mapping_buffer + (index * result->signature->nb_frag_tot_out) + i;
+		if (link->virtual_node.node == NULL){
+			printf("ERROR: in %s, output node is virtual, I don't kown how to handle that case\n", __func__);
+			return -1;
+		}
+
+		parameterMapping_get_node_buffer(mapping + (result->signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
+	}
+
+	return 0;
+}
+
+enum parameterSimilarity parameterSimilarity_get(struct node** parameter_list1, uint32_t size1, struct node** parameter_list2, uint32_t size2){
+	uint32_t 					i;
+	uint32_t 					j;
+	enum parameterSimilarity 	result;
+	uint32_t 					nb_found;
+
+	if (size1 == size2){
+		result = PARAMETER_EQUAL;
+	}
+	else if (size1 < size2){
+		result = PARAMETER_SUPERSET;
+	}
+	else{
+		result = PARAMETER_SUBSET;
+	}
+
+	for (i = 0, nb_found = 0; i < size1; i++){
+		for (j = 0; j < size2; j++){
+			if (parameter_list1[i] == parameter_list2[j]){
+				nb_found ++;
+				if (i != j){
+					result |= PARAMETER_PERMUT;
+				}
+				break;
+			}
+		}
+		if (j == size2 && nb_found != 0){
+			return PARAMETER_OVERLAP;
+		}
+	}
+
+	if (nb_found == 0){
+		return PARAMETER_DISJOINT;
+	}
+	else{
+		return result;
+	}
 }
