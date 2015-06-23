@@ -151,7 +151,7 @@ enum irDependenceType{
 	IR_DEPENDENCE_TYPE_MACRO 		= 0x00000006 	/* 7  Signature input and output parameters 							*/
 };
 
-#define NB_DEPENDENCE_TYPE 6
+#define NB_DEPENDENCE_TYPE 7
 
 struct irDependence{
 	enum irDependenceType 		type;
@@ -227,6 +227,8 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 
 void ir_remove_node(struct ir* ir, struct node* node);
 void ir_remove_dependence(struct ir* ir, struct edge* edge);
+
+void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_node);
 
 #define ir_printDot(ir, filters) graphPrintDot_print(&((ir)->graph), NULL, filters, NULL)
 

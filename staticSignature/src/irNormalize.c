@@ -256,6 +256,7 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 	struct node* 			node_cursor;
 	struct node* 			prev_node_cursor;
 	struct irOperation* 	operation_cursor;
+	uint8_t 				local_modification;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort DAG\n", __func__);
@@ -268,14 +269,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 			case IR_OPERATION_TYPE_IN_REG 	: {
 				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
-					*modification = 1;
+					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
 				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
-					*modification = 1;
+					local_modification = 1;
 				}
 				break;
 			}
@@ -285,14 +286,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 			case IR_OPERATION_TYPE_IMM 		: {
 				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
-					*modification = 1;
+					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
 				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
-					*modification = 1;
+					local_modification = 1;
 				}
 				break;
 			}
@@ -319,6 +320,10 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 				node_cursor = node_get_next(node_cursor);
 			}
 		}
+	}
+
+	if (modification != NULL){
+		*modification = local_modification;
 	}
 }
 

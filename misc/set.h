@@ -43,6 +43,7 @@ void set_remove(struct set* set, void* element);
 int32_t set_are_disjoint(struct set* set1, struct set* set2);
 
 void* set_export_buffer(struct set* set);
+void* set_export_buffer_unique(struct set* set, uint32_t* nb_element);
 
 #define set_empty(set) 																\
 	set_clean(set); 																\

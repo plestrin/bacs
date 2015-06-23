@@ -14,7 +14,7 @@ void ir_check_size(struct ir* ir){
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
 
-		if (operation_cursor->size % 8){
+		if (operation_cursor->size % 8 && operation_cursor->type != IR_OPERATION_TYPE_SYMBOL){
 			printf("ERROR: in %s, incorrect size: %u is not a multiple of 8\n", __func__, operation_cursor->size);
 			operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
 			continue;
@@ -68,6 +68,10 @@ void ir_check_size(struct ir* ir){
 				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					operand = ir_node_get_operation(edge_get_src(edge_cursor));
 					dependence = ir_edge_get_dependence(edge_cursor);
+
+					if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+						continue;
+					}
 
 					switch(operation_cursor->operation_type.inst.opcode){
 						case IR_DIV 		:
@@ -325,6 +329,9 @@ void ir_check_connectivity(struct ir* ir){
 				switch(operation_cursor->operation_type.inst.opcode){
 					case IR_ADD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst ADD\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -334,6 +341,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_AND 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst AND\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -343,6 +353,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_CMOV 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst CMOV\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -353,6 +366,9 @@ void ir_check_connectivity(struct ir* ir){
 					case IR_DIV 		: 
 					case IR_IDIV 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIVISOR && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst %s\n", __func__, i, irOpcode_2_string(operation_cursor->operation_type.inst.opcode));
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -370,6 +386,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_IMUL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst IMUL\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -385,6 +404,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_MOVZX 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst MOVZX\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -394,6 +416,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_MUL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst MUL\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -403,6 +428,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_NOT 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst NOT\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -412,6 +440,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_OR 			: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst OR\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -421,6 +452,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART1_8 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst PART1_8\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -430,6 +464,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART2_8 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst PART2_8\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -439,6 +476,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART1_16 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst PART1_16\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -448,6 +488,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_ROL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst ROL\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -465,6 +508,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_ROR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst ROR\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -482,6 +528,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst SHL\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -499,6 +548,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHLD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst SHLD\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -520,6 +572,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst SHR\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -537,6 +592,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHRD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst SHRD\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -558,6 +616,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SUB 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SUBSTITUTE && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst SUB\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -575,6 +636,9 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_XOR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
 								printf("ERROR: in %s, incorrect dependence type %u for inst PART1_16\n", __func__, i);
 								operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
@@ -685,7 +749,7 @@ void ir_check_instruction_index(struct ir* ir){
 		for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			operand = ir_node_get_operation(edge_get_src(edge_cursor));
 
-			if (operand->index != IR_INSTRUCTION_INDEX_IMMEDIATE && operand->index != IR_INSTRUCTION_INDEX_UNKOWN){
+			if (operand->index != IR_INSTRUCTION_INDEX_IMMEDIATE && operand->index != IR_INSTRUCTION_INDEX_UNKOWN && operand->index != IR_INSTRUCTION_INDEX_ADDRESS){
 				if (operand->index > operation_cursor->index){
 					printf("ERROR: in %s, a node (index: %u) has an operand with a higher index (%u)\n", __func__, operation_cursor->index, operand->index);
 					operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;

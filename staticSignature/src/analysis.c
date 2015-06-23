@@ -358,6 +358,8 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
 	uint32_t 					nb_excluded_opcode = 3;
 	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
+	#define IRDESCRIPTOR_MAX_LENGTH 32
+	char 						ir_descriptor[IRDESCRIPTOR_MAX_LENGTH];
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -393,28 +395,36 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	}
 	#endif
 
-	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
 		multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
 		multiColumnPrinter_set_column_size(printer, 2, 8);
 		multiColumnPrinter_set_column_size(printer, 3, 16);
+		multiColumnPrinter_set_column_size(printer, 4, IRDESCRIPTOR_MAX_LENGTH);
 
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
 		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT32);
 		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_DOUBLE);
 
-		multiColumnPrinter_set_title(printer, 0, (char*)"Index");
-		multiColumnPrinter_set_title(printer, 1, (char*)"Tag");
-		multiColumnPrinter_set_title(printer, 2, (char*)"# Ins");
-		multiColumnPrinter_set_title(printer, 3, (char*)"Percent (%%)");
+		multiColumnPrinter_set_title(printer, 0, "Index");
+		multiColumnPrinter_set_title(printer, 1, "Tag");
+		multiColumnPrinter_set_title(printer, 2, "Ins");
+		multiColumnPrinter_set_title(printer, 3, "Percent (%)");
+		multiColumnPrinter_set_title(printer, 4, "IR");
 
 		multiColumnPrinter_print_header(printer);
 
 		for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 			percent = trace_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-			multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, NULL);
+			if (fragment->ir == NULL){
+				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "NULL");
+			}
+			else{
+				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->ir->graph.nb_node, fragment->ir->graph.nb_edge);
+			}
+			multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, NULL);
 		}
 
 		multiColumnPrinter_delete(printer);
@@ -422,6 +432,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	else{
 		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
 	}
+	#undef IRDESCRIPTOR_MAX_LENGTH
 }
 
 void analysis_frag_set_tag(struct analysis* analysis, char* arg){

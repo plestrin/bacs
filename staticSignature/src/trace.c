@@ -274,6 +274,9 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	struct result* 	result;
 	uint32_t* 		exported_result 	= NULL;
 	uint32_t 		nb_exported_result;
+	struct set* 	node_set 			= NULL;
+	struct node** 	footprint 			= NULL;
+	uint32_t 		nb_node_footprint;
 
 	if (trace->ir == NULL){
 		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
@@ -304,13 +307,42 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		}
 	}
 
+	node_set = set_create(sizeof(struct node*), 512);
+	if (node_set == NULL){
+		printf("ERROR: in %s, unable to create set\n", __func__);
+		goto exit;
+	}
+
 	for (i = 0; i < nb_exported_result; i++){
-		result_push((struct result*)array_get(&(trace->result_array), exported_result[i]), trace->ir);
-	}	
+		result = (struct result*)array_get(&(trace->result_array), exported_result[i]);
+		result_push(result, trace->ir);
+		
+		for (j = 0; j < result->nb_occurrence; j++){
+			result_get_footprint(result, j, node_set);
+		}
+	}
+
+	footprint = (struct node**)set_export_buffer_unique(node_set, &nb_node_footprint);
+	if (footprint == NULL){
+		printf("ERROR: in %s, unable to export set\n", __func__);
+		goto exit;
+	}
+
+	set_delete(node_set);
+	node_set = NULL;
+
+	ir_remove_footprint(trace->ir, footprint, nb_node_footprint);
+	ir_normalize_remove_dead_code(trace->ir, NULL);
 
 	exit:
 	if (exported_result != NULL){
 		free(exported_result);
+	}
+	if (node_set != NULL){
+		set_delete(node_set);
+	}
+	if (footprint != NULL){
+		free(footprint);
 	}
 }
 

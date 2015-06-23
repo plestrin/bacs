@@ -23,7 +23,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	result->nb_occurrence 		= array_get_length(assignement_array);
 	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_in);
 	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_out);
-	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)));
+	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * result_get_nb_internal_node(result));
 	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurrence, sizeof(struct node*));
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->symbol_node_buffer == NULL){
@@ -73,9 +73,10 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 				}
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
-					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].node 		= NULL;
-					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].result 	= operation->operation_type.symbol.result_ptr;
-					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].index 		= operation->operation_type.symbol.index;
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].node 			= NULL;
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= operation->operation_type.symbol.result_ptr;
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].index 			= operation->operation_type.symbol.index;
+					nb_intern ++;
 				}
 			}
 			else{
@@ -94,7 +95,9 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 				}
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
-					result->intern_node_buffer[i * (code_signature->graph.nb_node - (code_signature->nb_frag_tot_in + code_signature->nb_frag_tot_out)) + nb_intern].node = assignement[j];
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].node 			= assignement[j];
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= NULL;
+					nb_intern ++;
 				}
 			}
 		}
@@ -169,6 +172,26 @@ void result_pop(struct result* result, struct ir* ir){
 		for (j = 0; j < result->signature->nb_frag_tot_out; j++){
 			if (result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.result != NULL){
 				result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node = NULL;
+			}
+		}
+	}
+}
+
+void result_get_footprint(struct result* result, uint32_t index, struct set* set){
+	uint32_t i;
+
+	if (index >= result->nb_occurrence){
+		printf("ERROR: in %s, incorrect index %u (max is %u)\n", __func__, index, result->nb_occurrence);
+		return;
+	}
+
+	for (i = 0; i < result_get_nb_internal_node(result); i++){
+		if (result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node == NULL){
+			result_get_footprint(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].result, result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].index, set);
+		}
+		else{
+			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node))){
+				printf("ERROR: in %s, unable to add element to set\n", __func__);
 			}
 		}
 	}

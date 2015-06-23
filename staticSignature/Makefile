@@ -41,7 +41,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)graphPrintDot.o 		\
 					$(BUILD_DIR)subGraphIsomorphism.o 	\
 					$(BUILD_DIR)dagPartialOrder.o 		\
-					$(BUILD_DIR)dijkstra.o
+					$(BUILD_DIR)dijkstra.o 				\
+					$(BUILD_DIR)set.o
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g3

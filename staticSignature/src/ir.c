@@ -4,6 +4,7 @@
 
 #include "ir.h"
 #include "irImporterAsm.h"
+#include "result.h"
 #include "multiColumn.h"
 
 struct ir* ir_create(struct assembly* assembly){
@@ -175,7 +176,7 @@ struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
 		operation->operation_type.symbol.result_ptr 	= result_ptr;
 		operation->operation_type.symbol.index 			= index;
 		operation->size 								= 1;
-		operation->index 								= 0;
+		operation->index 								= IR_INSTRUCTION_INDEX_UNKOWN;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 	}
 
@@ -295,6 +296,36 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	}
 	else{
 		graph_remove_node(&(ir->graph), node);
+	}
+}
+
+void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_node){
+	uint32_t 		i;
+	struct edge* 	edge_cursor;
+
+	for (i = 0; i < nb_node; i++){
+		for (edge_cursor = node_get_head_edge_dst(node_buffer[i]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_MACRO){
+				break;
+			}
+		}
+		if (edge_cursor != NULL){
+			continue;
+		}
+		for (edge_cursor = node_get_head_edge_src(node_buffer[i]); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_MACRO){
+				break;
+			}
+		}
+		if (edge_cursor != NULL){
+			continue;
+		}
+
+		if (ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_OUT_MEM){
+			ir_mem_remove(ir_node_get_operation(node_buffer[i]));
+		}
+
+		graph_remove_node(&(ir->graph), node_buffer[i]);
 	}
 }
 
@@ -432,7 +463,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fprintf(file, "[label=\"SYMBOL\"");
+			fprintf(file, "[label=\"%s\"", ((struct result*)(operation->operation_type.symbol.result_ptr))->signature->name);
 			break;
 		}
 	}

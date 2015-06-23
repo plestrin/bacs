@@ -134,6 +134,11 @@ void irVariableRange_compute(struct node* node){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
+			range = ir_node_get_range(node);
+
+			range->lower_bound = 0;
+			range->upper_bound = 0xffffffffffffffff;
+			
 			break;
 		}
 	}

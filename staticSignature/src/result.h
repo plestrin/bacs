@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "codeSignature.h"
+#include "set.h"
 
 struct virtualNode{
 	struct node* 	node;
@@ -32,8 +33,12 @@ struct result{
 };
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
+
+#define result_get_nb_internal_node(result) ((result)->signature->graph.nb_node - ((result)->signature->nb_frag_tot_in + (result)->signature->nb_frag_tot_out))
+
 void result_push(struct result* result, struct ir* ir);
 void result_pop(struct result* result, struct ir* ir);
+void result_get_footprint(struct result* result, uint32_t index, struct set* set);
 void result_print(struct result* result);
 
 #define result_clean(result) 										\
@@ -69,8 +74,6 @@ int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* r
 
 /*
    TODO list2:
-   	- write the export wrapper: fragment to export signature and so on
-   	- push the result to the IR
    	- (OPT) clean what can be cleaned (experimental part)
    	- (OPT) try to give advice on the fragment size in terms of bbl (just a useful feature)
 
