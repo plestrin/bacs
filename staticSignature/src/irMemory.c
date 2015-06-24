@@ -67,9 +67,7 @@ enum aliasResult{
 
 struct addrFingerprint{
 	uint32_t 			nb_dependence;
-	#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
 	uint32_t 			flag;
-	#endif
 	struct {
 		struct node* 	node;
 		uint32_t 		flag;
@@ -84,20 +82,19 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 
 	if (recursion_level == 0){
 		addr_fgp->nb_dependence = 0;
-		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-		addr_fgp->flag = 0;
-		#endif
+		addr_fgp->flag 			= 0;
 	}
 	else if (recursion_level == FINGERPRINT_MAX_RECURSION_LEVEL){
+		addr_fgp->flag |= 0x0000002;
 		return;
 	}
 
 	if (addr_fgp->nb_dependence < ADDRESS_NB_MAX_DEPENDENCE){
 		addr_fgp->dependence[addr_fgp->nb_dependence].node = node;
 		addr_fgp->dependence[addr_fgp->nb_dependence].flag = parent_label & 0x7fffffff;
-		addr_fgp->dependence[addr_fgp->nb_dependence].label = addr_fgp->nb_dependence;
+		addr_fgp->dependence[addr_fgp->nb_dependence].label = addr_fgp->nb_dependence + 1;
 
-		addr_fgp->nb_dependence ++;
+		nb_dependence = ++ addr_fgp->nb_dependence;
 	}
 	else{
 		printf("ERROR: in %s, the max number of dependence has been reached\n", __func__);
@@ -105,13 +102,12 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	}
 
 	operation = ir_node_get_operation(node);
-	nb_dependence = addr_fgp->nb_dependence;
 
 	switch(operation->type){
 		case IR_OPERATION_TYPE_INST 	: {
 			if (operation->operation_type.inst.opcode == IR_ADD){
 				for (operand_cursor = node_get_head_edge_dst(node); operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
-					addrFingerprint_init(edge_get_src(operand_cursor), addr_fgp, recursion_level + 1, addr_fgp->nb_dependence);
+					addrFingerprint_init(edge_get_src(operand_cursor), addr_fgp, recursion_level + 1, nb_dependence);
 				}
 			}
 			break;
@@ -136,20 +132,22 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	return;
 }
 
-static void addrFingerprint_remove(struct addrFingerprint* addr_fgp, uint32_t start, uint32_t label){
+static void addrFingerprint_remove(struct addrFingerprint* addr_fgp, uint32_t index){
 	uint32_t i;
+	uint32_t label;
 
-	for (i = start; i < addr_fgp->nb_dependence; ){
+	label = addr_fgp->dependence[index].label;
+
+	if (index + 1  < addr_fgp->nb_dependence){
+		addr_fgp->dependence[index].node 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].node;
+		addr_fgp->dependence[index].flag 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].flag;
+		addr_fgp->dependence[index].label 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].label;
+	}
+	addr_fgp->nb_dependence --;
+
+	for (i = 0; i < addr_fgp->nb_dependence; ){
 		if ((addr_fgp->dependence[i].flag & 0x7fffffff) == label){
-			if (addr_fgp->dependence[i].flag & 0x80000000){
-				addrFingerprint_remove(addr_fgp, i + 1, addr_fgp->dependence[i].label);
-			}
-			if (i + 1 < addr_fgp->nb_dependence){
-				addr_fgp->dependence[i].node 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].node;
-				addr_fgp->dependence[i].flag 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].flag;
-				addr_fgp->dependence[i].label 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].label;
-			}
-			addr_fgp->nb_dependence --;
+			addrFingerprint_remove(addr_fgp, i);
 		}
 		else{
 			i ++;
@@ -175,22 +173,8 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	for (i = 0; i < addr1_fgp.nb_dependence; ){
 		for (j = 0; j < addr2_fgp.nb_dependence; j++){
 			if (addr1_fgp.dependence[i].node == addr2_fgp.dependence[j].node){
-				addrFingerprint_remove(&addr1_fgp, i + 1, addr1_fgp.dependence[i].label);
-				addrFingerprint_remove(&addr2_fgp, j + 1, addr2_fgp.dependence[j].label);
-
-				if (i + 1 < addr1_fgp.nb_dependence){
-					addr1_fgp.dependence[i].node 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].node;
-					addr1_fgp.dependence[i].flag 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].flag;
-					addr1_fgp.dependence[i].label 	= addr1_fgp.dependence[addr1_fgp.nb_dependence - 1].label;
-				}
-				addr1_fgp.nb_dependence --;
-
-				if (j + 1 < addr2_fgp.nb_dependence){
-					addr2_fgp.dependence[j].node 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].node;
-					addr2_fgp.dependence[j].flag 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].flag;
-					addr2_fgp.dependence[j].label 	= addr2_fgp.dependence[addr2_fgp.nb_dependence - 1].label;
-				}
-				addr2_fgp.nb_dependence --;
+				addrFingerprint_remove(&addr1_fgp, i);
+				addrFingerprint_remove(&addr2_fgp, j);
 
 				goto next;
 			}
