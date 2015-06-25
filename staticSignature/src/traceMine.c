@@ -24,7 +24,9 @@ uint32_t irEdge_get_distance(void* arg){
 
 enum synthesisNodeType{
 	SYNTHESISNODETYPE_RESULT,
-	SYNTHESISNODETYPE_PATH,
+	SYNTHESISNODETYPE_IO_PATH,
+	SYNTHESISNODETYPE_II_PATH,
+	SYNTHESISNODETYPE_IR_NODE
 };
 
 struct signatureInstance{
@@ -117,12 +119,23 @@ struct synthesisNode{
 	union{
 		struct signatureCluster* 	cluster;
 		struct array* 				path;
+		struct node*				ir_node;
 	}								node_type;
 } __attribute__((__may_alias__));
 
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)&((node)->data))
 
+#define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
+
+#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0x80000000)
+#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0xc0000000)
+#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0x80000000)
+#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
+#define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
+
 void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
+void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
+
 void synthesisGraph_clean_node(struct node* node);
 
 static struct array* traceMine_cluster_results(struct array* result_array){
@@ -194,6 +207,127 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 	return cluster_array;
 }
 
+static void traceMine_search_IO_path(struct signatureCluster* cluster_in, uint32_t parameter_in, struct signatureCluster* cluster_ou, uint32_t parameter_ou, struct ir* ir, struct graph* synthesis_graph){
+	int32_t 				return_code;
+	struct array* 			path = NULL;
+	struct synthesisNode 	synthesis_path;
+	struct node* 			node_path;
+	uint32_t 				edge_tag;
+
+
+	return_code = dijkstra_min_path(&(ir->graph), signatureCluster_get_ou_parameter(cluster_ou, parameter_ou), signatureCluster_get_nb_frag_ou(cluster_ou, parameter_ou), signatureCluster_get_in_parameter(cluster_in, parameter_in), signatureCluster_get_nb_frag_in(cluster_in, parameter_in), &path, irEdge_get_distance);
+	if (return_code < 0){
+		printf("ERROR: in %s, unable to compute min path\n", __func__);
+	}
+	else if(return_code == 0){
+		synthesis_path.type 			= SYNTHESISNODETYPE_IO_PATH;
+		synthesis_path.node_type.path 	= path;
+
+		if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
+			printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		}
+		else{
+			edge_tag = synthesisGraph_get_edge_tag_output(parameter_ou);
+			if (graph_add_edge(synthesis_graph, cluster_ou->synthesis_graph_node, node_path, &edge_tag) == NULL){
+				printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+			}
+			edge_tag = synthesisGraph_get_edge_tag_input(parameter_in);
+			if (graph_add_edge(synthesis_graph, node_path, cluster_in->synthesis_graph_node, &edge_tag) == NULL){
+				printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+			}
+
+			path = NULL;
+		}
+	}
+
+	if (path != NULL){
+		array_delete(path);
+	}
+}
+
+static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t parameter1, struct signatureCluster* cluster2, uint32_t parameter2, struct ir* ir, struct graph* synthesis_graph){
+	struct node* 			ancestor;
+	struct array* 			path1 = NULL;
+	struct array* 			path2 = NULL;
+	struct synthesisNode 	synthesis_ancestor;
+	struct synthesisNode 	synthesis_path;
+	struct node* 			node_ancestor;
+	struct node* 			node_path;
+	uint32_t 				edge_tag;
+
+	ancestor = dijkstra_lowest_common_ancestor(&(ir->graph), signatureCluster_get_in_parameter(cluster1, parameter1), signatureCluster_get_nb_frag_in(cluster1, parameter1), signatureCluster_get_in_parameter(cluster2, parameter2), signatureCluster_get_nb_frag_in(cluster2, parameter2), &path1, &path2, irEdge_get_distance);
+	if (ancestor != NULL){
+		synthesis_ancestor.type 				= SYNTHESISNODETYPE_IR_NODE;
+		synthesis_ancestor.node_type.ir_node 	= ancestor;
+
+		if ((node_ancestor = graph_add_node(synthesis_graph, &synthesis_ancestor)) == NULL){
+			printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		}
+		else{
+			if (array_get_length(path1) > 0){
+				synthesis_path.type 			= SYNTHESISNODETYPE_II_PATH;
+				synthesis_path.node_type.path 	= path1;
+
+				if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
+					printf("ERROR: in %s, unable to add node to graph\n", __func__);
+				}
+				else{
+					edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
+					if (graph_add_edge(synthesis_graph, node_ancestor, node_path, &edge_tag) == NULL){
+						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					}
+					edge_tag = synthesisGraph_get_edge_tag_input(parameter1);
+					if (graph_add_edge(synthesis_graph, node_path, cluster1->synthesis_graph_node, &edge_tag) == NULL){
+						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					}
+
+					path1 = NULL;
+				}
+			}
+			else{
+				edge_tag = synthesisGraph_get_edge_tag_input(parameter1);
+				if (graph_add_edge(synthesis_graph, node_ancestor, cluster1->synthesis_graph_node, &edge_tag) == NULL){
+					printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+				}
+			}
+
+			if (array_get_length(path2) > 0){
+				synthesis_path.type 			= SYNTHESISNODETYPE_II_PATH;
+				synthesis_path.node_type.path 	= path2;
+
+				if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
+					printf("ERROR: in %s, unable to add node to graph\n", __func__);
+				}
+				else{
+					edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
+					if (graph_add_edge(synthesis_graph, node_ancestor, node_path, &edge_tag) == NULL){
+						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					}
+					edge_tag = synthesisGraph_get_edge_tag_input(parameter2);
+					if (graph_add_edge(synthesis_graph, node_path, cluster2->synthesis_graph_node, &edge_tag) == NULL){
+						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					}
+
+					path2 = NULL;
+				}
+			}
+			else{
+				edge_tag = synthesisGraph_get_edge_tag_input(parameter2);
+				if (graph_add_edge(synthesis_graph, node_ancestor, cluster2->synthesis_graph_node, &edge_tag) == NULL){
+					printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+				}
+			}
+		}
+	}
+
+	if (path1 != NULL){
+		array_delete(path1);
+	}
+	if (path2 != NULL){
+		array_delete(path2);
+	}			
+}
+
 static int32_t traceMine_find_cluster_relation(struct array* cluster_array, struct ir* ir, struct graph* synthesis_graph){
 	struct signatureCluster* 	cluster_i;
 	struct signatureCluster* 	cluster_j;
@@ -202,9 +336,6 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 	uint32_t 					k;
 	uint32_t 					l;
 	struct synthesisNode 		synthesis_node;
-	struct array* 				path 			= NULL;
-	int32_t 					return_code;
-	struct node* 				node;
 
 	for (i = 0; i < array_get_length(cluster_array); i++){
 		struct signatureCluster* cluster = (struct signatureCluster*)array_get(cluster_array, i);
@@ -215,6 +346,12 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 		if ((cluster->synthesis_graph_node = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
 			printf("ERROR: in %s, unable to add node to graph\n", __func__);
 			continue;
+		}
+
+		for (j = 0; j < cluster->nb_in_parameter; j++){
+			for (k = j + 1; k < cluster->nb_ou_parameter; k++){
+				traceMine_search_II_path(cluster, j, cluster, k, ir, synthesis_graph);
+			}
 		}
 	}
 
@@ -229,35 +366,20 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 
 			for (k = 0; k < cluster_i->nb_in_parameter; k++){
 				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
-					return_code = dijkstra_min_path(&(ir->graph), signatureCluster_get_ou_parameter(cluster_j, l), signatureCluster_get_nb_frag_ou(cluster_j, l), signatureCluster_get_in_parameter(cluster_i, k), signatureCluster_get_nb_frag_in(cluster_i, k), &path, irEdge_get_distance);
-					if (return_code < 0){
-						printf("ERROR: in %s, unable to compute min path\n", __func__);
-					}
-					else if(return_code == 0){
-						synthesis_node.type 			= SYNTHESISNODETYPE_PATH;
-						synthesis_node.node_type.path 	= path;
-
-						if ((node = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
-							printf("ERROR: in %s, unable to add node to graph\n", __func__);
-						}
-						else{
-							if (graph_add_edge_(synthesis_graph, cluster_j->synthesis_graph_node, node) == NULL){
-								printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
-							}
-							if (graph_add_edge_(synthesis_graph, node, cluster_i->synthesis_graph_node) == NULL){
-								printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
-							}
-
-							path = NULL;
-						}
-					}
+					traceMine_search_IO_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
 				}
 			}
 		}
-	}
 
-	if (path != NULL){
-		array_delete(path);
+		for (j = i + 1; j < array_get_length(cluster_array); j++){
+			cluster_j = (struct signatureCluster*)array_get(cluster_array, j);
+
+			for (k = 0; k < cluster_i->nb_in_parameter; k++){
+				for (l = 0; l < cluster_j->nb_in_parameter; l++){
+					traceMine_search_II_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
+				}
+			}
+		}
 	}
 
 	return 0;
@@ -275,8 +397,8 @@ void traceMine_mine(struct trace* trace){
 		return;
 	}
 
-	graph_init(&synthesis_graph, sizeof(struct synthesisNode), 0);
-	graph_register_dotPrint_callback(&synthesis_graph, NULL, synthesisGraph_printDot_node, NULL, NULL);
+	graph_init(&synthesis_graph, sizeof(struct synthesisNode), sizeof(uint32_t));
+	graph_register_dotPrint_callback(&synthesis_graph, NULL, synthesisGraph_printDot_node, synthesisGraph_printDot_edge, NULL);
 	graph_register_node_clean_call_back(&synthesis_graph, synthesisGraph_clean_node);
 
 	if ((cluster_array = traceMine_cluster_results(&trace->result_array)) == NULL){
@@ -338,48 +460,71 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 			}
 			break;
 		}
-		case SYNTHESISNODETYPE_PATH : {
-			if (array_get_length(synthesis_node->node_type.path) == 1){
-				operation = ir_node_get_operation(*(struct node**)array_get(synthesis_node->node_type.path, 0));
-				switch(operation->type){
-					case IR_OPERATION_TYPE_INST 	: {
-						fprintf(file, "[shape=plaintext,label=<%s<BR ALIGN=\"LEFT\"/>>]", irOpcode_2_string(operation->operation_type.inst.opcode));
-						break;
-					}
-					default 						: {
-						printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
-					}
-				}
+		case SYNTHESISNODETYPE_IO_PATH : {
+			if (array_get_length(synthesis_node->node_type.path) == 0){
+				fprintf(file, "[shape=plaintext,label=<->");
 			}
 			else{
-				for (i = 0; i < array_get_length(synthesis_node->node_type.path); i++){
-					if (i == 0){
-						operation = ir_node_get_operation(*(struct node**)array_get(synthesis_node->node_type.path, 0));
-						fprintf(file, "[shape=plaintext,label=<");
-					}
-					else{
-						edge = *(struct edge**)array_get(synthesis_node->node_type.path, i);
-						operation = ir_node_get_operation(edge_get_src(edge));
-					}
+				fprintf(file, "[shape=plaintext,label=<");
+				for (i = array_get_length(synthesis_node->node_type.path); i > 0; i --){
+					edge = *(struct edge**)array_get(synthesis_node->node_type.path, i - 1);
+					operation = ir_node_get_operation(edge_get_dst(edge));
 
-					if (i + 1 == array_get_length(synthesis_node->node_type.path)){
-						fprintf(file, ">]");
-					}
-					else{
-						switch(operation->type){
-							case IR_OPERATION_TYPE_INST 	: {
-								fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
-								break;
-							}
-							default 						: {
-								printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
-							}
+					switch(operation->type){
+						case IR_OPERATION_TYPE_INST 	: {
+							fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
+							break;
+						}
+						default 						: {
+							printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
 						}
 					}
 				}
+				fprintf(file, ">]");
 			}
 			break;
 		}
+		case SYNTHESISNODETYPE_II_PATH : {
+			if (array_get_length(synthesis_node->node_type.path) > 0){
+				fprintf(file, "[shape=plaintext,label=<");
+				for (i = 0; i < array_get_length(synthesis_node->node_type.path); i++){
+					edge = *(struct edge**)array_get(synthesis_node->node_type.path, i);
+					operation = ir_node_get_operation(edge_get_dst(edge));
+						
+					switch(operation->type){
+						case IR_OPERATION_TYPE_INST 	: {
+							fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
+							break;
+						}
+						default 						: {
+							printf("ERROR: in %s, this case is not supposed to happen: incorrect operation on path\n", __func__);
+							break;
+						}
+					}
+				}
+				fprintf(file, ">]");
+			}
+			else{
+				printf("ERROR: in %s, this case is not supposed to happen: empty II path\n", __func__);
+			}
+			break;
+		}
+		case SYNTHESISNODETYPE_IR_NODE : {
+			ir_dotPrint_node(ir_node_get_operation(synthesis_node->node_type.ir_node), file, NULL);
+			break;
+		}
+	}
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
+	uint32_t tag = *(uint32_t*)data;
+
+	if (synthesisGraph_edge_is_input(tag)){
+		fprintf(file, "[label=\"I%u\"]", synthesisGraph_edge_get_parameter(tag));
+	}
+	else if (synthesisGraph_edge_is_output(tag)){
+		fprintf(file, "[label=\"O%u\"]", synthesisGraph_edge_get_parameter(tag));
 	}
 }
 
@@ -387,7 +532,7 @@ void synthesisGraph_clean_node(struct node* node){
 	struct synthesisNode* synthesis_node;
 
 	synthesis_node = synthesisGraph_get_synthesisNode(node);
-	if (synthesis_node->type == SYNTHESISNODETYPE_PATH){
+	if (synthesis_node->type == SYNTHESISNODETYPE_IO_PATH || synthesis_node->type == SYNTHESISNODETYPE_II_PATH){
 		array_delete(synthesis_node->node_type.path);
 	}
 }
