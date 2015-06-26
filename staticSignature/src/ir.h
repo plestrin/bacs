@@ -247,6 +247,7 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 	free(ir);
 
 #include "irNormalize.h"
+#include "irMemory.h"
 #include "irCheck.h"
 #include "irVariableSize.h"
 

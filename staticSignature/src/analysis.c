@@ -6,14 +6,11 @@
 #include "inputParser.h"
 #include "printBuffer.h"
 #include "readBuffer.h"
-#include "ir.h"
-#include "irMemory.h"
 #include "result.h"
 #include "traceMine.h"
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
-
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)										\
 	{																													\

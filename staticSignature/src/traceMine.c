@@ -1,30 +1,33 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "traceMine.h"
 #include "result.h"
 #include "dijkstra.h"
 
-uint32_t irEdge_get_distance(void* arg){
-	struct irDependence* dependence = (struct irDependence*)arg;
+/* 	DIRECT, 				ADDRESS, 				SHIFT_DISP, 			DIVISOR, 				ROUND_OFF, 				SUBSTITUTE, 			MACRO*/
+static const uint32_t irEdge_distance_array_OI[NB_DEPENDENCE_TYPE] = {
+	0, 						DIJKSTRA_INVALID_DST, 	0, 						0, 						0, 						0, 						DIJKSTRA_INVALID_DST
+};
 
-	switch(dependence->type){
-		case IR_DEPENDENCE_TYPE_DIRECT 		: {return 1;}
-		case IR_DEPENDENCE_TYPE_ADDRESS 	: {return DIJKSTRA_INVALID_DST;}
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {return 1;}
-		case IR_DEPENDENCE_TYPE_DIVISOR 	: {return 1;}
-		case IR_DEPENDENCE_TYPE_ROUND_OFF 	: {return 1;}
-		case IR_DEPENDENCE_TYPE_SUBSTITUTE 	: {return 1;}
-		case IR_DEPENDENCE_TYPE_MACRO 		: {return DIJKSTRA_INVALID_DST;}
-	}
+static const uint32_t irEdge_distance_array_II[2][NB_DEPENDENCE_TYPE] = {
+	{0, 					1, 						0, 						0, 						0, 						0, 						DIJKSTRA_INVALID_DST},
+	{DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST, 	DIJKSTRA_INVALID_DST}
+};
 
-	return 1;
+uint32_t irEdge_get_distance_OI(void* arg){
+	return irEdge_distance_array_OI[((struct irDependence*)arg)->type];
+}
+
+uint32_t irEdge_get_distance_II(void* arg, uint32_t dst){
+	return irEdge_distance_array_II[dst][((struct irDependence*)arg)->type];
 }
 
 enum synthesisNodeType{
 	SYNTHESISNODETYPE_RESULT,
-	SYNTHESISNODETYPE_IO_PATH,
+	SYNTHESISNODETYPE_OI_PATH,
 	SYNTHESISNODETYPE_II_PATH,
 	SYNTHESISNODETYPE_IR_NODE
 };
@@ -136,6 +139,178 @@ struct synthesisNode{
 void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
 void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
 
+int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){
+	struct synthesisNode* synthesis_node1  = synthesisGraph_get_synthesisNode(*(struct node**)data1);
+	struct synthesisNode* synthesis_node2  = synthesisGraph_get_synthesisNode(*(struct node**)data2);
+
+	if (synthesis_node1->node_type.ir_node < synthesis_node2->node_type.ir_node){
+		return -1;
+	}
+	else if (synthesis_node1->node_type.ir_node > synthesis_node2->node_type.ir_node){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int32_t synthesisGraph_compare_II_path(const void* data1, const void* data2){
+	struct node* 			node1 = *(struct node**)data1;
+	struct node* 			node2 = *(struct node**)data2;
+	struct synthesisNode* 	synthesis_node1  = synthesisGraph_get_synthesisNode(node1);
+	struct synthesisNode* 	synthesis_node2  = synthesisGraph_get_synthesisNode(node2);
+	uint32_t 				i;
+	struct edge* 			edge_cursor1;
+	struct edge* 			edge_cursor2;
+
+	for (edge_cursor1 = node_get_head_edge_dst(node1), edge_cursor2 = node_get_head_edge_dst(node2); edge_cursor1 != NULL && edge_cursor2 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1), edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+		if (*(uint32_t*)&(edge_cursor1->data) < *(uint32_t*)&(edge_cursor2->data)){
+			return -1;
+		}
+		else if (*(uint32_t*)&(edge_cursor1->data) > *(uint32_t*)&(edge_cursor2->data)){
+			return 1;
+		}
+		else if (edge_get_src(edge_cursor1) < edge_get_src(edge_cursor2)){
+			return -1;
+		}
+		else if (edge_get_src(edge_cursor1) > edge_get_src(edge_cursor2)){
+			return 1;
+		}
+	}
+
+	if (edge_cursor1 == NULL && edge_cursor2 != NULL){
+		return -1;
+	}
+	else if (edge_cursor1 != NULL && edge_cursor2 == NULL){
+		return 1;
+	}
+
+	for (i = 0; i < array_get_length(synthesis_node1->node_type.path) && i < array_get_length(synthesis_node2->node_type.path); i++){
+		edge_cursor1 = *(struct edge**)array_get(synthesis_node1->node_type.path, i);
+		edge_cursor2 = *(struct edge**)array_get(synthesis_node2->node_type.path, i);
+
+		if (edge_get_dst(edge_cursor1) < edge_get_dst(edge_cursor2)){
+			return -1;
+		}
+		else if (edge_get_dst(edge_cursor1) > edge_get_dst(edge_cursor2)){
+			return 1;
+		}
+	}
+
+	if (i < array_get_length(synthesis_node2->node_type.path)){
+		return -1;
+	}
+	else if(i < array_get_length(synthesis_node1->node_type.path)){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
+	struct edge* edge1 = *(struct edge**)data1;
+	struct edge* edge2 = *(struct edge**)data2;
+
+	if (*(uint32_t*)&(edge1->data) < *(uint32_t*)&(edge2->data)){
+		return -1;
+	}
+	else if (*(uint32_t*)&(edge1->data) > *(uint32_t*)&(edge2->data)){
+		return 1;
+	}
+	else if (edge_get_src(edge1) < edge_get_src(edge2)){
+		return -1;
+	}
+	else if (edge_get_src(edge1) > edge_get_src(edge2)){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static void synthesisGraph_pack(struct graph* synthesis_graph){
+	struct node* 			node_cursor;
+	struct edge* 			edge_cursor;
+	struct node** 			node_buffer;
+	struct edge** 			edge_buffer;
+	uint32_t 				nb_node;
+	uint32_t 				nb_edge;
+	struct synthesisNode* 	synthesis_node_cursor;
+	uint32_t 				i;
+	uint32_t 				j;
+
+	node_buffer = (struct node**)malloc(sizeof(struct node*) * synthesis_graph->nb_node);
+	edge_buffer = (struct edge**)node_buffer;
+	if (node_buffer == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return;
+	}
+
+	for (node_cursor = graph_get_head_node(synthesis_graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
+
+		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE){
+			node_buffer[nb_node ++] = node_cursor;
+		}
+	}
+
+	qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_ir_node);
+
+	for (i = 1, j = 0; i < nb_node; i++){
+		if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
+			graph_transfert_src_edge(synthesis_graph, node_buffer[j], node_buffer[i]);
+			graph_remove_node(synthesis_graph, node_buffer[i]);
+		}
+		else{
+			j = i;
+		}
+	}
+
+	for (node_cursor = graph_get_head_node(synthesis_graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
+
+		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_II_PATH){
+			node_buffer[nb_node ++] = node_cursor;
+		}
+	}
+
+	qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_II_path);
+
+	for (i = 1, j = 0; i < nb_node; i++){
+		if (synthesisGraph_compare_II_path(node_buffer + j, node_buffer + i) == 0){
+			graph_transfert_src_edge(synthesis_graph, node_buffer[j], node_buffer[i]);
+			graph_remove_node(synthesis_graph, node_buffer[i]);
+		}
+		else{
+			j = i;
+		}
+	}
+
+	for (node_cursor = graph_get_head_node(synthesis_graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
+
+		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_RESULT){
+			for (edge_cursor = node_get_head_edge_dst(node_cursor), nb_edge = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				edge_buffer[nb_edge ++] = edge_cursor;
+			}
+
+			qsort(edge_buffer, nb_edge, sizeof(struct edge*), synthesisGraph_compare_edge);
+
+			for (i = 1, j = 0; i < nb_edge; i++){
+				if (synthesisGraph_compare_edge(edge_buffer + j, edge_buffer + i) == 0){
+					graph_remove_edge(synthesis_graph, edge_buffer[i]);
+				}
+				else{
+					j = i;
+				}
+			}
+		}
+	}
+
+	free(node_buffer);
+}
+
 void synthesisGraph_clean_node(struct node* node);
 
 static struct array* traceMine_cluster_results(struct array* result_array){
@@ -207,7 +382,7 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 	return cluster_array;
 }
 
-static void traceMine_search_IO_path(struct signatureCluster* cluster_in, uint32_t parameter_in, struct signatureCluster* cluster_ou, uint32_t parameter_ou, struct ir* ir, struct graph* synthesis_graph){
+static void traceMine_search_OI_path(struct signatureCluster* cluster_in, uint32_t parameter_in, struct signatureCluster* cluster_ou, uint32_t parameter_ou, struct ir* ir, struct graph* synthesis_graph){
 	int32_t 				return_code;
 	struct array* 			path = NULL;
 	struct synthesisNode 	synthesis_path;
@@ -215,12 +390,12 @@ static void traceMine_search_IO_path(struct signatureCluster* cluster_in, uint32
 	uint32_t 				edge_tag;
 
 
-	return_code = dijkstra_min_path(&(ir->graph), signatureCluster_get_ou_parameter(cluster_ou, parameter_ou), signatureCluster_get_nb_frag_ou(cluster_ou, parameter_ou), signatureCluster_get_in_parameter(cluster_in, parameter_in), signatureCluster_get_nb_frag_in(cluster_in, parameter_in), &path, irEdge_get_distance);
+	return_code = dijkstra_min_path(&(ir->graph), signatureCluster_get_ou_parameter(cluster_ou, parameter_ou), signatureCluster_get_nb_frag_ou(cluster_ou, parameter_ou), signatureCluster_get_in_parameter(cluster_in, parameter_in), signatureCluster_get_nb_frag_in(cluster_in, parameter_in), &path, irEdge_get_distance_OI);
 	if (return_code < 0){
 		printf("ERROR: in %s, unable to compute min path\n", __func__);
 	}
 	else if(return_code == 0){
-		synthesis_path.type 			= SYNTHESISNODETYPE_IO_PATH;
+		synthesis_path.type 			= SYNTHESISNODETYPE_OI_PATH;
 		synthesis_path.node_type.path 	= path;
 
 		if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
@@ -255,7 +430,7 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 	struct node* 			node_path;
 	uint32_t 				edge_tag;
 
-	ancestor = dijkstra_lowest_common_ancestor(&(ir->graph), signatureCluster_get_in_parameter(cluster1, parameter1), signatureCluster_get_nb_frag_in(cluster1, parameter1), signatureCluster_get_in_parameter(cluster2, parameter2), signatureCluster_get_nb_frag_in(cluster2, parameter2), &path1, &path2, irEdge_get_distance);
+	ancestor = dijkstra_lowest_common_ancestor(&(ir->graph), signatureCluster_get_in_parameter(cluster1, parameter1), signatureCluster_get_nb_frag_in(cluster1, parameter1), signatureCluster_get_in_parameter(cluster2, parameter2), signatureCluster_get_nb_frag_in(cluster2, parameter2), &path1, &path2, irEdge_get_distance_II);
 	if (ancestor != NULL){
 		synthesis_ancestor.type 				= SYNTHESISNODETYPE_IR_NODE;
 		synthesis_ancestor.node_type.ir_node 	= ancestor;
@@ -366,7 +541,7 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 
 			for (k = 0; k < cluster_i->nb_in_parameter; k++){
 				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
-					traceMine_search_IO_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
+					traceMine_search_OI_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
 				}
 			}
 		}
@@ -410,6 +585,8 @@ void traceMine_mine(struct trace* trace){
 		printf("ERROR: in %s, unable to find relation between clusters\n", __func__);
 	}
 
+	synthesisGraph_pack(&synthesis_graph);
+
 	snprintf(synthesis_graph_name, SYNTHESISGRAPHG_NAME_MAX_LENGTH, "synthesis_%s.dot", trace->tag);
 	for (i = 0; i < SYNTHESISGRAPHG_NAME_MAX_LENGTH; i++){
 		switch(synthesis_graph_name[i]){
@@ -441,6 +618,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 	struct signatureInstance* 	instance;
 	struct edge* 				edge;
 	struct irOperation* 		operation;
+	struct irDependence* 		dependence;
 
 	synthesis_node = (struct synthesisNode*)data;
 	switch(synthesis_node->type){
@@ -460,7 +638,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 			}
 			break;
 		}
-		case SYNTHESISNODETYPE_IO_PATH : {
+		case SYNTHESISNODETYPE_OI_PATH : {
 			if (array_get_length(synthesis_node->node_type.path) == 0){
 				fprintf(file, "[shape=plaintext,label=<->");
 			}
@@ -490,8 +668,18 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				for (i = 0; i < array_get_length(synthesis_node->node_type.path); i++){
 					edge = *(struct edge**)array_get(synthesis_node->node_type.path, i);
 					operation = ir_node_get_operation(edge_get_dst(edge));
+					dependence = ir_edge_get_dependence(edge);
 						
 					switch(operation->type){
+						case IR_OPERATION_TYPE_IN_MEM 	: {
+							if (dependence->type == IR_DEPENDENCE_TYPE_ADDRESS){
+								fprintf(file, "@ LOAD<BR ALIGN=\"LEFT\"/>");
+							}
+							else{
+								fprintf(file, "LOAD<BR ALIGN=\"LEFT\"/>");
+							}
+							break;
+						}
 						case IR_OPERATION_TYPE_INST 	: {
 							fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
 							break;
@@ -532,7 +720,7 @@ void synthesisGraph_clean_node(struct node* node){
 	struct synthesisNode* synthesis_node;
 
 	synthesis_node = synthesisGraph_get_synthesisNode(node);
-	if (synthesis_node->type == SYNTHESISNODETYPE_IO_PATH || synthesis_node->type == SYNTHESISNODETYPE_II_PATH){
+	if (synthesis_node->type == SYNTHESISNODETYPE_OI_PATH || synthesis_node->type == SYNTHESISNODETYPE_II_PATH){
 		array_delete(synthesis_node->node_type.path);
 	}
 }

@@ -6,7 +6,7 @@
 
 #include "irVariableRange.h"
 #include "dagPartialOrder.h"
-
+#include "set.h"
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 1
 
@@ -280,25 +280,26 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 	return NULL;
 }
 
+
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
 	uint32_t 				nb_mem_access;
-	struct node** 			access_list = NULL;
+	struct node** 			access_list 			= NULL;
 	uint32_t 				access_list_alloc_size;
 	uint32_t 				i;
-	struct irVariableRange* range_buffer;
+	struct irVariableRange* range_buffer 			= NULL;
 	struct node*			alias;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort DAG\n", __func__);
-		return;
+		goto exit;
 	}
 
 	range_buffer = (struct irVariableRange*)malloc(sizeof(struct irVariableRange) * ir->graph.nb_node);
 	if (range_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
-		return;
+		goto exit;
 	}
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
@@ -335,8 +336,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 				qsort(access_list, nb_mem_access, sizeof(struct node*), compare_order_memoryNode);
 
 				for (i = 1; i < nb_mem_access; i++){
-					struct irOperation* 		operation_prev;
-					struct irOperation* 		operation_next;
+					struct irOperation* operation_prev;
+					struct irOperation* operation_next;
 
 					operation_prev = ir_node_get_operation(access_list[i - 1]);
 					operation_next = ir_node_get_operation(access_list[i]);
@@ -345,15 +346,26 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 						struct node* stored_value = NULL;
 
-						if (strategy != ALIASING_STRATEGY_WEAK){
-							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
-							if (alias){
-								if (strategy == ALIASING_STRATEGY_PRINT){
+						switch(strategy){
+							case ALIASING_STRATEGY_WEAK 	: {
+								break;
+							}
+							case ALIASING_STRATEGY_STRICT 	:
+							case ALIASING_STRATEGY_CHECK 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+								if (alias){
+									continue;
+								}
+								break;
+							}
+							case ALIASING_STRATEGY_PRINT 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
 								}
-								continue;
-							}
-							else if (strategy == ALIASING_STRATEGY_PRINT){
+								else{
+									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+								}
 								continue;
 							}
 						}
@@ -396,15 +408,26 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					/* LOAD -> LOAD */
 					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 
-						if (strategy != ALIASING_STRATEGY_WEAK){
-							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
-							if (alias){
-								if (strategy == ALIASING_STRATEGY_PRINT){
+						switch(strategy){
+							case ALIASING_STRATEGY_WEAK 	: {
+								break;
+							}
+							case ALIASING_STRATEGY_STRICT 	:
+							case ALIASING_STRATEGY_CHECK 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+								if (alias){
+									continue;
+								}
+								break;
+							}
+							case ALIASING_STRATEGY_PRINT 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy);
+								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
 								}
-								continue;
-							}
-							else if (strategy == ALIASING_STRATEGY_PRINT){
+								else{
+									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+								}
 								continue;
 							}
 						}
@@ -440,15 +463,26 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					/* STORE -> STORE */
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
 
-						if (strategy != ALIASING_STRATEGY_WEAK){
-							alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy);
-							if (alias){
-								if (strategy == ALIASING_STRATEGY_PRINT){
+						switch(strategy){
+							case ALIASING_STRATEGY_WEAK 	: {
+								break;
+							}
+							case ALIASING_STRATEGY_STRICT 	:
+							case ALIASING_STRATEGY_CHECK 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy);
+								if (alias){
+									continue;
+								}
+								break;
+							}
+							case ALIASING_STRATEGY_PRINT 	: {
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy);
+								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
 								}
-								continue;
-							}
-							else if (strategy == ALIASING_STRATEGY_PRINT){
+								else{
+									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+								}
 								continue;
 							}
 						}
@@ -467,10 +501,13 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 		}
 	}
 
+	exit:
 	if (access_list != NULL){
 		free(access_list);
 	}
-	free(range_buffer);
+	if (range_buffer != NULL){
+		free(range_buffer);
+	}
 }
 
 
