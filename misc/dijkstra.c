@@ -327,8 +327,6 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t 
 	return 0;
 }
 
-/* je pense que je peux avoir seulement un seul next, et toi ??*/
-
 struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** node_buffer1, uint32_t nb_node_buffer1, struct node** node_buffer2, uint32_t nb_node_buffer2, struct array** path1, struct array** path2, uint32_t(*edge_get_distance)(void*,uint32_t)){
 	struct dijkstraInternal{
 		struct edge*				path;
@@ -346,7 +344,7 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 	struct dijkstraInternal* 	next_orbital;
 	struct dijkstraInternal* 	internal_cursor;
 	struct edge* 				edge_cursor;
-	uint32_t 					dst;
+	uint32_t 					dst = 0;
 
 	if (dijkstra_reset_path(path1)){
 		printf("ERROR: in %s, unable to reset path\n", __func__);

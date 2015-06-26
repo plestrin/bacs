@@ -1,12 +1,13 @@
 # This file define the following signature(s):
-#	- tea_enc: 		one round of the TEA encrypt algorithm
-# 	- tea_enc_32: 	32 rounds of the TEA encyption algorithm
-# 	- tea_dec: 		one round of the TEA decrypt algorithm
-# 	- tea_dec_32: 	32 rounds of the TEA decyption algorithm
-#	- xtea_enc: 	one round of the XTEA encrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
-#	- xtea_enc_32: 	32 rounds of the XTEA encyption algorithm 
-# 	- xtea_dec: 	one round of the XTEA decrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
-# 	- xtea_dec_32: 	32 rounds of the XTEA decyption algorithm  
+#	- tea_enc: 			one round of the TEA encrypt algorithm
+# 	- tea_enc_32: 		32 rounds of the TEA encyption algorithm
+# 	- tea_dec: 			one round of the TEA decrypt algorithm
+# 	- tea_dec_32: 		32 rounds of the TEA decyption algorithm
+#	- xtea_enc: 		one round of the XTEA encrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
+#	- xtea_enc_32_v1: 	32 rounds of the XTEA encyption algorithm. No key collosion, may be due to offline key schedule
+#	- xtea_enc_32_v2: 	32 rounds of the XTEA encyption algorithm. Key collision, no offline key schedule.
+# 	- xtea_dec: 		one round of the XTEA decrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
+# 	- xtea_dec_32: 		32 rounds of the XTEA decyption algorithm  
 
 
 "tea_enc"
@@ -432,7 +433,7 @@
 2 -> 19
 
 
-"xtea_enc_32"
+"xtea_enc_32_v1"
 
 # INPUT: 2 [2 frag, 64 frag]
 # OUTPUT: 1 [2 frag]
@@ -658,6 +659,236 @@
 1312 -> (I1F2) 132
 65 (*) [I:2:63] -> (I2F1) 132
 66 (*) [I:2:64] -> (I2F2) 132
+132 -> (O1F1) 1321 (ADD) [O:1:1]
+132 -> (O1F2) 1322 (ADD) [O:1:2]
+
+
+"xtea_enc_32_v2"
+
+# INPUT: 2 [2 frag, 56 frag]
+# OUTPUT: 1 [2 frag]
+
+1 (*) [I:1:1] -> (I1F1) 101 (xtea_enc)
+2 (*) [I:1:2] -> (I1F2) 101
+3 (*) [I:2:1] -> (I2F1) 101
+4 (*) [I:2:2] -> (I2F2) 101
+101 -> (O1F1) 1011 (ADD)
+101 -> (O1F2) 1012 (ADD)
+
+1011 -> (I1F1) 102 (xtea_enc)
+1012 -> (I1F2) 102
+5 (*) [I:2:3] -> (I2F1) 102
+6 (*) [I:2:4] -> (I2F2) 102
+102 -> (O1F1) 1021 (ADD)
+102 -> (O1F2) 1022 (ADD)
+
+1021 -> (I1F1) 103 (xtea_enc)
+1022 -> (I1F2) 103
+6 -> (I2F1) 103
+7 (*) [I:2:5] -> (I2F2) 103
+103 -> (O1F1) 1031 (ADD)
+103 -> (O1F2) 1032 (ADD)
+
+1031 -> (I1F1) 104 (xtea_enc)
+1032 -> (I1F2) 104
+8 (*) [I:2:6] -> (I2F1) 104
+9 (*) [I:2:7] -> (I2F2) 104
+104 -> (O1F1) 1041 (ADD)
+104 -> (O1F2) 1042 (ADD)
+
+1041 -> (I1F1) 105 (xtea_enc)
+1042 -> (I1F2) 105
+9 -> (I2F1) 105
+10 (*) [I:2:8] -> (I2F2) 105
+105 -> (O1F1) 1051 (ADD)
+105 -> (O1F2) 1052 (ADD)
+
+1051 -> (I1F1) 106 (xtea_enc)
+1052 -> (I1F2) 106
+11 (*) [I:2:9] -> (I2F1) 106
+12 (*) [I:2:10] -> (I2F2) 106
+106 -> (O1F1) 1061 (ADD)
+106 -> (O1F2) 1062 (ADD)
+
+1061 -> (I1F1) 107 (xtea_enc)
+1062 -> (I1F2) 107
+13 (*) [I:2:11] -> (I2F1) 107
+14 (*) [I:2:12] -> (I2F2) 107
+107 -> (O1F1) 1071 (ADD)
+107 -> (O1F2) 1072 (ADD)
+
+1071 -> (I1F1) 108 (xtea_enc)
+1072 -> (I1F2) 108
+15 (*) [I:2:13] -> (I2F1) 108
+16 (*) [I:2:14] -> (I2F2) 108
+108 -> (O1F1) 1081 (ADD)
+108 -> (O1F2) 1082 (ADD)
+
+1081 -> (I1F1) 109 (xtea_enc)
+1082 -> (I1F2) 109
+17 (*) [I:2:15] -> (I2F1) 109
+18 (*) [I:2:16] -> (I2F2) 109
+109 -> (O1F1) 1091 (ADD)
+109 -> (O1F2) 1092 (ADD)
+
+1091 -> (I1F1) 110 (xtea_enc)
+1092 -> (I1F2) 110
+19 (*) [I:2:17] -> (I2F1) 110
+20 (*) [I:2:18] -> (I2F2) 110
+110 -> (O1F1) 1101 (ADD)
+110 -> (O1F2) 1102 (ADD)
+
+1101 -> (I1F1) 111 (xtea_enc)
+1102 -> (I1F2) 111
+21 (*) [I:2:19] -> (I2F1) 111
+22 (*) [I:2:20] -> (I2F2) 111
+111 -> (O1F1) 1111 (ADD)
+111 -> (O1F2) 1112 (ADD)
+
+1111 -> (I1F1) 112 (xtea_enc)
+1112 -> (I1F2) 112
+22 -> (I2F1) 112
+23 (*) [I:2:21] -> (I2F2) 112
+112 -> (O1F1) 1121 (ADD)
+112 -> (O1F2) 1122 (ADD)
+
+1121 -> (I1F1) 113 (xtea_enc)
+1122 -> (I1F2) 113
+24 (*) [I:2:22] -> (I2F1) 113
+25 (*) [I:2:23] -> (I2F2) 113
+113 -> (O1F1) 1131 (ADD)
+113 -> (O1F2) 1132 (ADD)
+
+1131 -> (I1F1) 114 (xtea_enc)
+1132 -> (I1F2) 114
+25 -> (I2F1) 114
+26 (*) [I:2:24] -> (I2F2) 114
+114 -> (O1F1) 1141 (ADD)
+114 -> (O1F2) 1142 (ADD)
+
+1141 -> (I1F1) 115 (xtea_enc)
+1142 -> (I1F2) 115
+27 (*) [I:2:25] -> (I2F1) 115
+28 (*) [I:2:26] -> (I2F2) 115
+115 -> (O1F1) 1151 (ADD)
+115 -> (O1F2) 1152 (ADD)
+
+1151 -> (I1F1) 116 (xtea_enc)
+1152 -> (I1F2) 116
+29 (*) [I:2:27] -> (I2F1) 116
+30 (*) [I:2:28] -> (I2F2) 116
+116 -> (O1F1) 1161 (ADD)
+116 -> (O1F2) 1162 (ADD)
+
+1161 -> (I1F1) 117 (xtea_enc)
+1162 -> (I1F2) 117
+31 (*) [I:2:29] -> (I2F1) 117
+32 (*) [I:2:30] -> (I2F2) 117
+117 -> (O1F1) 1171 (ADD)
+117 -> (O1F2) 1172 (ADD)
+
+1171 -> (I1F1) 118 (xtea_enc)
+1172 -> (I1F2) 118
+33 (*) [I:2:31] -> (I2F1) 118
+34 (*) [I:2:32] -> (I2F2) 118
+118 -> (O1F1) 1181 (ADD)
+118 -> (O1F2) 1182 (ADD)
+
+1181 -> (I1F1) 119 (xtea_enc)
+1182 -> (I1F2) 119
+35 (*) [I:2:33] -> (I2F1) 119
+36 (*) [I:2:34] -> (I2F2) 119
+119 -> (O1F1) 1191 (ADD)
+119 -> (O1F2) 1192 (ADD)
+
+1191 -> (I1F1) 120 (xtea_enc)
+1192 -> (I1F2) 120
+37 (*) [I:2:35] -> (I2F1) 120
+38 (*) [I:2:36] -> (I2F2) 120
+120 -> (O1F1) 1201 (ADD)
+120 -> (O1F2) 1202 (ADD)
+
+1201 -> (I1F1) 121 (xtea_enc)
+1202 -> (I1F2) 121
+38 -> (I2F1) 121
+39 (*) [I:2:37] -> (I2F2) 121
+121 -> (O1F1) 1211 (ADD)
+121 -> (O1F2) 1212 (ADD)
+
+1211 -> (I1F1) 122 (xtea_enc)
+1212 -> (I1F2) 122
+40 (*) [I:2:38] -> (I2F1) 122
+41 (*) [I:2:39] -> (I2F2) 122
+122 -> (O1F1) 1221 (ADD)
+122 -> (O1F2) 1222 (ADD)
+
+1221 -> (I1F1) 123 (xtea_enc)
+1222 -> (I1F2) 123
+41 -> (I2F1) 123
+42 (*) [I:2:40] -> (I2F2) 123
+123 -> (O1F1) 1231 (ADD)
+123 -> (O1F2) 1232 (ADD)
+
+1231 -> (I1F1) 124 (xtea_enc)
+1232 -> (I1F2) 124
+43 (*) [I:2:41] -> (I2F1) 124
+44 (*) [I:2:42] -> (I2F2) 124
+124 -> (O1F1) 1241 (ADD)
+124 -> (O1F2) 1242 (ADD)
+
+1241 -> (I1F1) 125 (xtea_enc)
+1242 -> (I1F2) 125
+45 (*) [I:2:43] -> (I2F1) 125
+46 (*) [I:2:44] -> (I2F2) 125
+125 -> (O1F1) 1251 (ADD)
+125 -> (O1F2) 1252 (ADD)
+
+1251 -> (I1F1) 126 (xtea_enc)
+1252 -> (I1F2) 126
+47 (*) [I:2:45] -> (I2F1) 126
+48 (*) [I:2:46] -> (I2F2) 126
+126 -> (O1F1) 1261 (ADD)
+126 -> (O1F2) 1262 (ADD)
+
+1261 -> (I1F1) 127 (xtea_enc)
+1262 -> (I1F2) 127
+49 (*) [I:2:47] -> (I2F1) 127
+50 (*) [I:2:48] -> (I2F2) 127
+127 -> (O1F1) 1271 (ADD)
+127 -> (O1F2) 1272 (ADD)
+
+1271 -> (I1F1) 128 (xtea_enc)
+1272 -> (I1F2) 128
+51 (*) [I:2:49] -> (I2F1) 128
+52 (*) [I:2:50] -> (I2F2) 128
+128 -> (O1F1) 1281 (ADD)
+128 -> (O1F2) 1282 (ADD)
+
+1281 -> (I1F1) 129 (xtea_enc)
+1282 -> (I1F2) 129
+53 (*) [I:2:51] -> (I2F1) 129
+54 (*) [I:2:52] -> (I2F2) 129
+129 -> (O1F1) 1291 (ADD)
+129 -> (O1F2) 1292 (ADD)
+
+1291 -> (I1F1) 130 (xtea_enc)
+1292 -> (I1F2) 130
+54 -> (I2F1) 130
+55 (*) [I:2:53] -> (I2F2) 130
+130 -> (O1F1) 1301 (ADD)
+130 -> (O1F2) 1302 (ADD)
+
+1301 -> (I1F1) 131 (xtea_enc)
+1302 -> (I1F2) 131
+56 (*) [I:2:54] -> (I2F1) 131
+57 (*) [I:2:55] -> (I2F2) 131
+131 -> (O1F1) 1311 (ADD)
+131 -> (O1F2) 1312 (ADD)
+
+1311 -> (I1F1) 132 (xtea_enc)
+1312 -> (I1F2) 132
+57 -> (I2F1) 132
+58 (*) [I:2:56] -> (I2F2) 132
 132 -> (O1F1) 1321 (ADD) [O:1:1]
 132 -> (O1F2) 1322 (ADD) [O:1:2]
 

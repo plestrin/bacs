@@ -164,11 +164,9 @@ int32_t synthesisGraph_compare_II_path(const void* data1, const void* data2){
 	struct edge* 			edge_cursor2;
 
 	for (edge_cursor1 = node_get_head_edge_dst(node1), edge_cursor2 = node_get_head_edge_dst(node2); edge_cursor1 != NULL && edge_cursor2 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1), edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-		if (*(uint32_t*)&(edge_cursor1->data) < *(uint32_t*)&(edge_cursor2->data)){
-			return -1;
-		}
-		else if (*(uint32_t*)&(edge_cursor1->data) > *(uint32_t*)&(edge_cursor2->data)){
-			return 1;
+		int32_t r = memcmp(edge_cursor1->data, edge_cursor2->data, sizeof(uint32_t));
+		if (r != 0){
+			return r;
 		}
 		else if (edge_get_src(edge_cursor1) < edge_get_src(edge_cursor2)){
 			return -1;
@@ -212,20 +210,14 @@ int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
 	struct edge* edge1 = *(struct edge**)data1;
 	struct edge* edge2 = *(struct edge**)data2;
 
-	if (*(uint32_t*)&(edge1->data) < *(uint32_t*)&(edge2->data)){
-		return -1;
-	}
-	else if (*(uint32_t*)&(edge1->data) > *(uint32_t*)&(edge2->data)){
-		return 1;
-	}
-	else if (edge_get_src(edge1) < edge_get_src(edge2)){
+	if (edge_get_src(edge1) < edge_get_src(edge2)){
 		return -1;
 	}
 	else if (edge_get_src(edge1) > edge_get_src(edge2)){
 		return 1;
 	}
 	else{
-		return 0;
+		return memcmp(edge1->data, edge2->data, sizeof(uint32_t));
 	}
 }
 

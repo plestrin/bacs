@@ -20,9 +20,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -48,9 +48,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -76,9 +76,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -104,9 +104,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -132,9 +132,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -160,9 +160,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -188,9 +188,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -216,9 +216,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -244,9 +244,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -272,9 +272,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -300,9 +300,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -328,9 +328,9 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
-			<algo name="xtea_dec" number="63"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
+			<algo name="xtea_dec" number="55"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
 	</recipe>
@@ -351,7 +351,7 @@
 		</search>
 		<result type="sig">
 			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
+			<algo name="xtea_enc_32_v1" number="1"/>
 			<algo name="xtea_dec" number="63"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
@@ -378,8 +378,8 @@
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
-			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
+			<algo name="xtea_enc" number="55"/>
+			<algo name="xtea_enc_32_v2" number="1"/>
 			<algo name="xtea_dec" number="63"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
@@ -407,7 +407,7 @@
 			<algo name="tea_dec" number="63"/>
 			<algo name="tea_dec_32" number="1"/>
 			<algo name="xtea_enc" number="63"/>
-			<algo name="xtea_enc_32" number="1"/>
+			<algo name="xtea_enc_32_v1" number="1"/>
 			<algo name="xtea_dec" number="63"/>
 			<algo name="xtea_dec_32" number="1"/>
 		</result>
