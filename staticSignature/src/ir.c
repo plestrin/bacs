@@ -558,6 +558,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_MOV 		: {return "mov";}
 		case IR_MOVZX 		: {return "movzx";}
 		case IR_MUL 		: {return "mul";}
+		case IR_NEG 		: {return "neg";}
 		case IR_NOT 		: {return "not";}
 		case IR_OR 			: {return "or";}
 		case IR_PART1_8 	: {return "part(1/8)";}
