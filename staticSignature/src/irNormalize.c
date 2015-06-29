@@ -254,15 +254,16 @@ void ir_normalize(struct ir* ir){
 
 void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 	struct node* 			node_cursor;
-	struct node* 			prev_node_cursor;
+	struct node* 			next_cursor;
 	struct irOperation* 	operation_cursor;
 	uint8_t 				local_modification = 0;
 
-	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
+	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		printf("ERROR: in %s, unable to sort DAG\n", __func__);
 	}
 
-	for (node_cursor = graph_get_head_node(&(ir->graph)), prev_node_cursor = NULL; node_cursor != NULL;){
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = next_cursor){
+		next_cursor = node_get_next(node_cursor);
 		operation_cursor = ir_node_get_operation(node_cursor);
 
 		switch (operation_cursor->type){
@@ -301,30 +302,13 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 				break;
 			}
 		}
-
-		if (prev_node_cursor != NULL){
-			if (node_get_next(prev_node_cursor) != node_cursor){
-				node_cursor = node_get_next(prev_node_cursor);
-			}
-			else{
-				prev_node_cursor = node_cursor;
-				node_cursor = node_get_next(node_cursor);
-			}
-		}
-		else{
-			if (graph_get_head_node(&(ir->graph)) != node_cursor){
-				node_cursor = graph_get_head_node(&(ir->graph));
-			}
-			else{
-				prev_node_cursor = node_cursor;
-				node_cursor = node_get_next(node_cursor);
-			}
-		}
 	}
 
 	if (modification != NULL){
 		*modification = local_modification;
 	}
+
+	ir_check_order(ir);
 }
 
 static void ir_normalize_simplify_instruction_numeric_add(struct ir* ir, struct node* node, uint8_t* modification);

@@ -307,6 +307,11 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		}
 	}
 
+	if (nb_exported_result == 0){
+		printf("WARNING: in %s, no exported result\n", __func__);
+		goto exit;
+	}
+
 	node_set = set_create(sizeof(struct node*), 512);
 	if (node_set == NULL){
 		printf("ERROR: in %s, unable to create set\n", __func__);
