@@ -9,6 +9,7 @@
 
 #include "irMemory.h"
 #include "irVariableSize.h"
+#include "irExpression.h"
 #include "dagPartialOrder.h"
 
 #ifdef VERBOSE
@@ -24,6 +25,7 @@
 #define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
 #define IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR 			1
 #define IR_NORMALIZE_ALIASING_SENSITIVITY 			1 /* 0=WEAK, 1=CHECK, 2+=STRICT */
+#define IR_NORMALIZE_AFFINE_EXPRESSION 				1
 
 struct irOperand{
 	struct node*	node;
@@ -89,6 +91,7 @@ void ir_normalize(struct ir* ir){
 	double 		timer_4_elapsed_time = 0.0;
 	double 		timer_5_elapsed_time = 0.0;
 	double 		timer_6_elapsed_time = 0.0;
+	double 		timer_7_elapsed_time = 0.0;
 	#endif
 	uint8_t 	modification = 0;
 
@@ -205,6 +208,21 @@ void ir_normalize(struct ir* ir){
 
 		if (modification){
 			printf("INFO: in %s, modification expand variable @ %u\n", __func__, round_counter);
+			modification = 0;
+			modification_copy = 1;
+		}
+		#endif
+		#endif
+
+		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
+		START_TIMER
+		ir_normalize_affine_expression(ir, &modification);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_7_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			printf("INFO: in %s, modification affine expression @ %u\n", __func__, round_counter);
 			modification_copy = 1;
 		}
 		#endif
@@ -238,6 +256,7 @@ void ir_normalize(struct ir* ir){
 	multiColumnPrinter_print(printer, "Factor instruction", timer_4_elapsed_time, NULL);
 	multiColumnPrinter_print(printer, "Distribute immediate", timer_5_elapsed_time, NULL);
 	multiColumnPrinter_print(printer, "Expand variable", timer_6_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Affine expression", timer_7_elapsed_time, NULL);
 	#endif
 	
 	#if IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR == 1
@@ -741,8 +760,20 @@ static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct
 				ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
 
 				*modification = 1;
-				break;
+				return;
 			}
+		}
+		if (node->nb_edge_dst == 2){
+			for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+
+			if (operation_cursor->type == IR_OPERATION_TYPE_IMM && ((ir_imm_operation_get_unsigned_value(operation_cursor) >> (operation_cursor->size - 1) & 0x0000000000000001ULL) == 0)){
+				ir_node_get_operation(node)->operation_type.inst.opcode = IR_MUL;
+
+				*modification = 1;
+				return;
+			}
+		}
 		}
 	}
 }
@@ -1825,7 +1856,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 		operation_cursor1 = ir_node_get_operation(node_cursor1);
 
 		if (operation_cursor1->type == IR_OPERATION_TYPE_INST && node_cursor1->nb_edge_dst > 1){
-			memset(opcode_counter, 0, sizeof(uint32_t) * NB_IR_OPCODE);
+			memset(opcode_counter, 0, sizeof(opcode_counter));
 			for (edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
 				node_cursor2 = edge_get_src(edge_cursor2);
 				operation_cursor2 = ir_node_get_operation(node_cursor2);
@@ -1852,7 +1883,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 			}
 
 			if (opcode != IR_INVALID){
-				if (opcode_counter[opcode] > IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
+				if (opcode_counter[opcode] >= IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
 					printf("WARNING: in %s, IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached\n", __func__);
 					goto next;
 				}
@@ -1872,6 +1903,10 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 								}
 							}
 							if (i == nb_operand){
+								if (nb_operand == IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
+									printf("WARNING: in %s, IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached\n", __func__);
+									goto next;
+								}
 								operand[i] = node_cursor3;
 								operand_count[i] = 1;
 								nb_operand ++;

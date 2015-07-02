@@ -26,6 +26,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irCheck.o 				\
 					$(BUILD_DIR)irVariableSize.o 		\
 					$(BUILD_DIR)irVariableRange.o 		\
+					$(BUILD_DIR)irExpression.o 			\
 					$(BUILD_DIR)traceMine.o 			\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)signatureReader.o 		\
