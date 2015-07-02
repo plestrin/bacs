@@ -15,6 +15,10 @@ int32_t dagPartialOrder_sort_src_dst(struct graph* graph){
 	struct node* 	node_cursor;
 	uint32_t 		generator = 0;
 
+	if (graph->nb_node == 0){
+		return 0;
+	}
+
 	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
 	if (node_buffer == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -60,6 +64,10 @@ int32_t dagPartialOrder_sort_dst_src(struct graph* graph){
 	uint32_t 		i;
 	struct node* 	node_cursor;
 	uint32_t 		generator = 0;
+
+	if (graph->nb_node == 0){
+		return 0;
+	}
 
 	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
 	if (node_buffer == NULL){

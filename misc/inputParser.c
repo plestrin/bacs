@@ -161,6 +161,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 
 			#ifdef VERBOSE
 			printf(ANSI_COLOR_RESET);
+			fflush(stdout);
 			#endif
 		}
 
