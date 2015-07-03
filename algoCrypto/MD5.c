@@ -1,7 +1,12 @@
 #include "MD5.h"
 
-#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
-#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
+#ifdef MD5_FAST
+	#define F(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
+	#define G(x, y, z) ((y) ^ ((z) & ((y) ^ (x))))
+#else
+	#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
+	#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
+#endif
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define I(x, y, z) ((y) ^ ((x) | (~z)))
 

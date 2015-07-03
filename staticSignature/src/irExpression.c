@@ -6,6 +6,8 @@
 #include "dagPartialOrder.h"
 #include "set.h"
 
+#define IREXPRESSION_AFFINE_FORM_MAX_LEVEL 6
+
 struct irAffineTerm{
 	uint64_t 		coef;
 	uint32_t 		sign;
@@ -149,19 +151,24 @@ static int32_t irAffineForm_is_affine_root(struct node* node){
 
 static inline void irAffineForm_import_imm(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
 static inline void irAffineForm_import_var(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
-static inline void irAffineForm_import_add(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
-static inline void irAffineForm_import_imul(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
-static inline void irAffineForm_import_mul(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
-static inline void irAffineForm_import_neg(struct node* node, struct irAffineForm** affine_form, uint64_t coef);
-static inline void irAffineForm_import_shl(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign);
+static inline void irAffineForm_import_add(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign);
+static inline void irAffineForm_import_imul(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign);
+static inline void irAffineForm_import_mul(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign);
+static inline void irAffineForm_import_neg(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef);
+static inline void irAffineForm_import_shl(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign);
 
-static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign){
+static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign){
 	if (*affine_form == NULL){
 		*affine_form = irAffineForm_create(node);
 		if (*affine_form == NULL){
 			printf("ERROR: in %s, unable to create affineForm\n", __func__);
 			return -1;
 		}
+	}
+
+	if (level == IREXPRESSION_AFFINE_FORM_MAX_LEVEL){
+		irAffineForm_import_var(node, affine_form, coef, sign);
+		return 0;
 	}
 
 	switch(ir_node_get_operation(node)->type){
@@ -178,23 +185,23 @@ static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affi
 		case IR_OPERATION_TYPE_INST 	: {
 			switch(ir_node_get_operation(node)->operation_type.inst.opcode){
 				case IR_ADD : {
-					irAffineForm_import_add(node, affine_form, coef, sign);
+					irAffineForm_import_add(node, affine_form, level, coef, sign);
 					break;
 				}
 				case IR_IMUL : {
-					irAffineForm_import_imul(node, affine_form, coef, sign);
+					irAffineForm_import_imul(node, affine_form, level, coef, sign);
 					break;
 				}
 				case IR_MUL : {
-					irAffineForm_import_mul(node, affine_form, coef, sign);
+					irAffineForm_import_mul(node, affine_form, level, coef, sign);
 					break;
 				}
 				case IR_NEG : {
-					irAffineForm_import_neg(node, affine_form, coef);
+					irAffineForm_import_neg(node, affine_form, level, coef);
 					break;
 				}
 				case IR_SHL : {
-					irAffineForm_import_shl(node, affine_form, coef, sign);
+					irAffineForm_import_shl(node, affine_form, level, coef, sign);
 					break;
 				}
 				default : {
@@ -242,15 +249,15 @@ static inline void irAffineForm_import_var(struct node* node, struct irAffineFor
 	}
 }
 
-static inline void irAffineForm_import_add(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign){
+static inline void irAffineForm_import_add(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign){
 	struct edge* edge_cursor;
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		irAffineForm_import(edge_get_src(edge_cursor), affine_form, coef, sign);
+		irAffineForm_import(edge_get_src(edge_cursor), affine_form, level + 1, coef, sign);
 	}
 }
 
-static inline void irAffineForm_import_imul(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign){
+static inline void irAffineForm_import_imul(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign){
 	int64_t 				local_coef 		= 1;
 	struct node*			var 			= NULL;
 	struct edge* 			edge_cursor;
@@ -282,11 +289,11 @@ static inline void irAffineForm_import_imul(struct node* node, struct irAffineFo
 		}
 	}
 	else{
-		irAffineForm_import(var, affine_form, coef * local_coef, sign);
+		irAffineForm_import(var, affine_form, level + 1, coef * local_coef, sign);
 	}
 }
 
-static inline void irAffineForm_import_mul(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign){
+static inline void irAffineForm_import_mul(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign){
 	uint64_t 				local_coef 		= 1;
 	struct node*			var 			= NULL;
 	struct edge* 			edge_cursor;
@@ -322,20 +329,20 @@ static inline void irAffineForm_import_mul(struct node* node, struct irAffineFor
 		}
 	}
 	else{
-		irAffineForm_import(var, affine_form, coef * local_coef, sign);
+		irAffineForm_import(var, affine_form, level + 1, coef * local_coef, sign);
 	}
 }
 
-static inline void irAffineForm_import_neg(struct node* node, struct irAffineForm** affine_form, uint64_t coef){
+static inline void irAffineForm_import_neg(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef){
 	struct edge* edge_cursor;
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		irAffineForm_import(edge_get_src(edge_cursor), affine_form, -coef, 1);
+		irAffineForm_import(edge_get_src(edge_cursor), affine_form, level + 1, -coef, 1);
 	}
 
 }
 
-static inline void irAffineForm_import_shl(struct node* node, struct irAffineForm** affine_form, uint64_t coef, uint8_t sign){
+static inline void irAffineForm_import_shl(struct node* node, struct irAffineForm** affine_form, uint32_t level, uint64_t coef, uint8_t sign){
 	struct node* arg_dirc = NULL;
 	struct node* arg_disp = NULL;
 	struct edge* edge_cursor;
@@ -354,7 +361,7 @@ static inline void irAffineForm_import_shl(struct node* node, struct irAffineFor
 	}
 
 	if (arg_dirc != NULL && arg_disp != NULL){
-		irAffineForm_import(arg_dirc, affine_form, coef << ir_imm_operation_get_unsigned_value(ir_node_get_operation(arg_disp)), sign);
+		irAffineForm_import(arg_dirc, affine_form, level + 1, coef << ir_imm_operation_get_unsigned_value(ir_node_get_operation(arg_disp)), sign);
 	}
 	else{
 		irAffineForm_import_var(node, affine_form, coef, sign);
@@ -375,7 +382,9 @@ static int32_t irAffineForm_simplify(struct irAffineForm* affine_form){
 			if (term_1->variable == term_2->variable){
 				term_1->coef += term_2->coef;
 				setIterator_pop(&iterator_2);
-				result = 1;
+				if (term_1->variable != NULL){
+					result = 1;
+				}
 			}
 		}
 	}
@@ -446,7 +455,7 @@ void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification){
 		if (!irAffineForm_is_affine_root(node_cursor)){
 			struct irAffineForm* affine_form = NULL;
 
-			if (!irAffineForm_import(node_cursor, &affine_form, 1, 0)){
+			if (!irAffineForm_import(node_cursor, &affine_form, 0, 1, 0)){
 				if (irAffineForm_simplify(affine_form)){
 					irAffineForm_export(affine_form, ir);
 					*modification = 1;

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MD5_FAST
+
 #define MD5_BLOCK_NB_BIT 	512
 #define MD5_BLOCK_NB_BYTE 	64
 #define MD5_BLOCK_NB_WORD 	16
