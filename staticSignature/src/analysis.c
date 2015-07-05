@@ -11,11 +11,12 @@
 #include "signatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
+#include "base.h"
 
 #define ADD_CMD_TO_INPUT_PARSER(parser, cmd, cmd_desc, arg_desc, type, arg, func)										\
 	{																													\
 		if (inputParser_add_cmd((parser), (cmd), (cmd_desc), (arg_desc), (type), (arg), (void(*)(void))(func))){		\
-			printf("ERROR: in %s, unable to add cmd: \"%s\" to inputParser\n", __func__, (cmd));						\
+			log_err_m("unable to add cmd: \"%s\" to inputParser", (cmd));												\
 		}																												\
 	}
 
@@ -25,13 +26,13 @@ int main(int argc, char** argv){
 
 	parser = inputParser_create();
 	if (parser == NULL){
-		printf("ERROR: in %s, unable to create inputParser\n", __func__);
+		log_err("unable to create inputParser");
 		goto exit;
 	}
 	
 	analysis = analysis_create();
 	if (analysis == NULL){
-		printf("ERROR: in %s, unable to create the analysis structure\n", __func__);
+		log_err("unable to create the analysis structure");
 		goto exit;
 	}
 
@@ -96,14 +97,14 @@ struct analysis* analysis_create(){
 
 	analysis = (struct analysis*)malloc(sizeof(struct analysis));
 	if (analysis == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
 	codeSignatureCollection_init(&(analysis->code_signature_collection));
 
 	if (array_init(&(analysis->frag_array), sizeof(struct trace))){
-		printf("ERROR: in %s, unable to init traceFragment array\n", __func__);
+		log_err("unable to init traceFragment array");
 		codeSignatureCollection_clean(&(analysis->code_signature_collection));
 		free(analysis);
 		return NULL;
@@ -146,7 +147,7 @@ void analysis_delete(struct analysis* analysis){
 
 void analysis_trace_load(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
-		printf("WARNING: in %s, deleting previous trace\n", __func__);
+		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
 
 		if (analysis->call_graph != NULL){
@@ -156,18 +157,18 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	}
 
 	if (analysis->code_map != NULL){
-		printf("WARNING: in %s, deleting previous codeMap\n", __func__);
+		log_warn("deleting previous codeMap");
 		codeMap_delete(analysis->code_map);
 	}
 
 	analysis->trace = trace_load(arg);
 	if (analysis->trace == NULL){
-		printf("ERROR: in %s, unable to create trace\n", __func__);
+		log_err("unable to create trace");
 	}
 
 	analysis->code_map = cmReaderJSON_parse(arg);
 	if (analysis->code_map == NULL){
-		printf("ERROR: in %s, unable to create codeMap\n", __func__);
+		log_err("unable to create codeMap");
 	}
 }
 
@@ -176,13 +177,13 @@ void analysis_trace_change_thread(struct analysis* analysis, char* arg){
 		trace_change_thread(analysis->trace, atoi(arg));
 	}
 	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 }
 
 void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
-		printf("WARNING: in %s, deleting previous trace\n", __func__);
+		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
 
 		if (analysis->call_graph != NULL){
@@ -192,14 +193,14 @@ void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	}
 
 	if (analysis->code_map != NULL){
-		printf("WARNING: in %s, deleting previous codeMap\n", __func__);
+		log_warn("deleting previous codeMap");
 		codeMap_delete(analysis->code_map);
 		analysis->code_map = NULL;
 	}
 
 	analysis->trace = trace_load_elf(arg);
 	if (analysis->trace == NULL){
-		printf("ERROR: in %s, unable to create trace\n", __func__);
+		log_err("unable to create trace");
 	}
 }
 
@@ -217,7 +218,7 @@ void analysis_trace_print(struct analysis* analysis, char* arg){
 		trace_print(analysis->trace, start, stop);
 	}
 	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 }
 
@@ -226,7 +227,7 @@ void analysis_trace_check(struct analysis* analysis){
 		trace_check(analysis->trace);
 	}
 	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 }
 
@@ -235,7 +236,7 @@ void analysis_trace_check_codeMap(struct analysis* analysis){
 		codeMap_check_address(analysis->code_map);
 	}
 	else{
-		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+		log_err("codeMap is NULL");
 	}
 }
 
@@ -244,7 +245,7 @@ void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 		codeMap_print(analysis->code_map, arg);
 	}
 	else{
-		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+		log_err("codeMap is NULL");
 	}
 }
 
@@ -255,25 +256,25 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 
 	if (analysis->trace != NULL){
 		if (trace_init(&fragment, FRAGMENT_TRACE)){
-			printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+			log_err("unable to init traceFragment");
 			return;
 		}
 
 		inputParser_extract_index(arg, &start, &stop);
 		if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
-			printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
+			log_err("unable to extract traceFragment");
 			return;
 		}
 
 		snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
 
 		if (array_add(&(analysis->frag_array), &fragment) < 0){
-			printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+			log_err("unable to add traceFragment to array");
 			trace_clean(&fragment);
 		}
 	}
 	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 }
 
@@ -299,7 +300,7 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 		if (dynBlock_is_valid(analysis->trace->assembly.dyn_blocks + i)){
 			if (pc >= analysis->trace->assembly.dyn_blocks[i].block->header.address && analysis->trace->assembly.dyn_blocks[i].block->header.address + analysis->trace->assembly.dyn_blocks[i].block->header.size > pc){
 				if (assembly_get_instruction(&(analysis->trace->assembly), &it, analysis->trace->assembly.dyn_blocks[i].instruction_count)){
-					printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+					log_err("unable to fetch first instruction from the assembly");
 					continue;
 				}
 
@@ -314,7 +315,7 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 					}
 
 					if (assembly_get_next_instruction(&(analysis->trace->assembly), &it)){
-						printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+						log_err("unable to fetch next instruction from the assembly");
 						break;
 					}
 				}
@@ -329,7 +330,7 @@ void analysis_trace_delete(struct analysis* analysis){
 		analysis->trace = NULL;
 	}
 	else{
-		printf("ERROR: in %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 
 	if (analysis->code_map != NULL){
@@ -337,7 +338,7 @@ void analysis_trace_delete(struct analysis* analysis){
 		analysis->code_map = NULL;
 	}
 	else{
-		printf("ERROR: in %s, codeMap is NULL\n", __func__);
+		log_err("codeMap is NULL");
 	}
 }
 
@@ -367,7 +368,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 			return;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 		}
 	}
 
@@ -427,7 +428,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		multiColumnPrinter_delete(printer);
 	}
 	else{
-		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+		log_err("unable to create multiColumnPrinter");
 	}
 	#undef IRDESCRIPTOR_MAX_LENGTH
 }
@@ -451,17 +452,17 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
 
 			#ifdef VERBOSE
-			printf("Setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"\n", index, fragment->tag, arg + i + 1);
+			log_info_m("setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"", index, fragment->tag, arg + i + 1);
 			#endif
 
 			strncpy(fragment->tag, arg + i + 1, TRACE_TAG_LENGTH);
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 		}
 	}
 	else{
-		printf("ERROR: in %s, the index and the tag must separated by a space char\n", __func__);
+		log_err("the index and the tag must separated by a space char");
 	}
 }
 
@@ -479,7 +480,7 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -500,7 +501,7 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 		}
 	}
 	else{
-		printf("ERROR: in %s, codeMap is NULL, unable to locate\n", __func__);
+		log_err("codeMap is NULL, unable to locate");
 	}
 }
 
@@ -526,13 +527,13 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	if (nb_index < 2){
-		printf("ERROR: in %s, at last two indexes must be specified (but get %u)\n", __func__, nb_index);
+		log_err_m("at last two indexes must be specified (but get %u)", nb_index);
 		return;
 	}
 
 	trace_src_buffer = (struct trace**)alloca(sizeof(struct trace*) * nb_index);
 	if (trace_init(&new_fragment, FRAGMENT_TRACE)){
-		printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+		log_err("unable to init traceFragment");
 		return;
 	}
 
@@ -549,7 +550,7 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 					}
 				}
 				else{
-					printf("ERROR: in %s, the index specified @ %u is incorrect (array size: %u)\n", __func__, nb_index, array_get_length(&(analysis->frag_array)));
+					log_err_m("the index specified @ %u is incorrect (array size: %u)", nb_index, array_get_length(&(analysis->frag_array)));
 				}
 
 				start_index = 1;
@@ -561,16 +562,16 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	if (nb_index < 2){
-		printf("ERROR: in %s, at last two valid indexes must be specified (but get %u)\n", __func__, nb_index);
+		log_err_m("at last two valid indexes must be specified (but get %u)", nb_index);
 		return;
 	}
 
 	if (trace_concat(trace_src_buffer, nb_index, &new_fragment)){
-		printf("ERROR: in %s, unable to concat the given frags\n", __func__);
+		log_err("unable to concat the given frags");
 	}
 	else{
 		if (array_add(&(analysis->frag_array), &new_fragment) < 0){
-			printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+			log_err("unable to add traceFragment to array");
 			trace_clean(&new_fragment);
 		}
 	}
@@ -591,7 +592,7 @@ void analysis_frag_print_result(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -621,7 +622,7 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 
 	signature_buffer = (void**)malloc(sizeof(void*) * codeSignaturecollection_get_nb_signature(&(analysis->code_signature_collection)));
 	if (signature_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return;
 	}
 
@@ -632,7 +633,7 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			goto exit;
 		}
 	}
@@ -679,7 +680,7 @@ void analysis_frag_mine(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -719,7 +720,7 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -752,12 +753,12 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 				index = atoi(str_ptr);
 			}
 			else{
-				printf("ERROR: in %s, unable to locate frag index in the cmd arg\n", __func__);
+				log_err("unable to locate frag index in the cmd arg");
 				return;
 			}
 		}
 		else{
-			printf("ERROR: in %s, incorrect filter. List of available filter(s):\n\t-FLT_MACRO: prints only macro node\n", __func__);
+			log_err("incorrect filter. List of available filter(s):\n\t-FLT_MACRO: prints only macro node");
 			return;
 		}
 	}
@@ -769,7 +770,7 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index), filters_ptr);
 	}
 	else{
-		printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+		log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 	}
 }
 
@@ -786,7 +787,7 @@ void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -814,7 +815,7 @@ void analysis_frag_check_ir(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -829,7 +830,7 @@ void analysis_frag_check_ir(struct analysis* analysis, char* arg){
 			ir_check(fragment->ir);
 		}
 		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+			log_err("the IR is NULL for the current fragment");
 		}
 	}
 }
@@ -848,7 +849,7 @@ void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -863,7 +864,7 @@ void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
 			ir_print_aliasing(fragment->ir);
 		}
 		else{
-			printf("ERROR: in %s, the IR is NULL for the current fragment\n", __func__);
+			log_err("the IR is NULL for the current fragment");
 		}
 	}
 }
@@ -888,7 +889,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 			stop = index + 1;
 		}
 		else{
-			printf("ERROR: in %s, incorrect index value %u (array size :%u)\n", __func__, index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
 			return;
 		}
 	}
@@ -899,7 +900,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 
 	trace_buffer = (struct trace**)malloc(sizeof(struct trace*) * (stop - start));
 	if (trace_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return;
 	}
 
@@ -909,7 +910,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 			trace_buffer[nb_trace ++] = fragment;
 		}
 		else{
-			printf("ERROR: in %s, the IR is NULL for fragment %u\n", __func__, i);
+			log_err_m("the IR is NULL for fragment %u", i);
 		}
 	}
 
@@ -951,13 +952,13 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 	uint32_t stop;
 
 	if (analysis->call_graph != NULL){
-		printf("WARNING: in %s, deleting previous callGraph\n", __func__);
+		log_warn("deleting previous callGraph");
 		callGraph_delete(analysis->call_graph);
 		analysis->call_graph = NULL;
 	}
 
 	if (analysis->trace == NULL){
-		printf("ERROR: %s, trace is NULL\n", __func__);
+		log_err("trace is NULL");
 	}
 	else{
 		stop = trace_get_nb_instruction(analysis->trace);
@@ -965,7 +966,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 
 		analysis->call_graph = callGraph_create(analysis->trace, start, stop);
 		if (analysis->call_graph == NULL){
-			printf("ERROR: in %s, unable to create callGraph\n", __func__);
+			log_err("unable to create callGraph");
 		}
 		else if (analysis->code_map != NULL){
 			if (strstr(arg, "LINUX")){
@@ -975,7 +976,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 				callGraph_locate_in_codeMap_windows(analysis->call_graph, analysis->trace, analysis->code_map);
 			}
 			else{
-				printf("Expected os specifier: {LINUX, WINDOWS}\n");
+				log_err("expected os specifier: {LINUX, WINDOWS}");
 			}
 		}
 	}
@@ -983,7 +984,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 
 void analysis_call_printDot(struct analysis* analysis){
 	if (analysis->call_graph == NULL){
-		printf("ERROR: in %s, callGraph is NULL cannot print\n", __func__);
+		log_err("callGraph is NULL cannot print");
 	}
 	else{
 		callGraph_printDot(analysis->call_graph);
@@ -992,7 +993,7 @@ void analysis_call_printDot(struct analysis* analysis){
 
 void analysis_call_check(struct analysis* analysis){
 	if (analysis->call_graph == NULL){
-		printf("ERROR: in %s, callGraph is NULL cannot check\n", __func__);
+		log_err("callGraph is NULL cannot check");
 	}
 	else{
 		callGraph_check(analysis->call_graph, analysis->code_map);
@@ -1001,18 +1002,18 @@ void analysis_call_check(struct analysis* analysis){
 
 void analysis_call_export(struct analysis* analysis, char* arg){
 	if (analysis->call_graph == NULL){
-		printf("ERROR: in %s, callGraph is NULL cannot export\n", __func__);
+		log_err("callGraph is NULL cannot export");
 	}
 	else{
 		if (callGraph_export_inclusive(analysis->call_graph, analysis->trace, &(analysis->frag_array), arg)){
-			printf("ERROR: in %s, unable to export callGraph\n", __func__);
+			log_err("unable to export callGraph");
 		}
 	}
 }
 
 void analysis_call_print_stack(struct analysis* analysis, char* arg){
 	if (analysis->call_graph == NULL){
-		printf("ERROR: in %s, callGraph is NULL cannot print stack\n", __func__);
+		log_err("callGraph is NULL cannot print stack");
 	}
 	else{
 		callGraph_print_stack(analysis->call_graph, atoi(arg));

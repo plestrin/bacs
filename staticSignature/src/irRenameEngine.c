@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "irRenameEngine.h"
+#include "base.h"
 
 #define MAX_NB_INNER_REGISTER 3
 
@@ -412,7 +413,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 					engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
 					if (engine->register_alias[reg].ir_node == NULL){
-						printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+						log_err("unable to add operation to IR");
 					}
 					else{
 						ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, engine->register_alias[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
@@ -420,14 +421,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to choose correct instruction, INVALID\n", __func__);
+					log_err("unable to choose correct instruction, INVALID");
 				}
 			}
 			else{
 				if (list.nb_register){
 					reg2 = irRenameEngine_pop_list(engine, &list);
 					if (list.nb_register){
-						printf("ERROR: in %s, this case is not implemented yet, more than two element in the dependence list\n", __func__);
+						log_err("this case is not implemented yet, more than two element in the dependence list");
 					}
 					else if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
 						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, instruction_index, reg);
@@ -449,11 +450,11 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 							node = engine->register_alias[reg].ir_node;
 						}
 						else{
-							printf("ERROR: in %s, unable to add input to IR\n", __func__);
+							log_err("unable to add input to IR");
 						}
 					}
 					else{
-						printf("ERROR: in %s, this case is not implemented yet, %s and %s in the dependence list of %s\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
+						log_err_m("this case is not implemented yet, %s and %s in the dependence list of %s", irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
 					}
 				}
 				else{
@@ -474,11 +475,11 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 								node = engine->register_alias[reg].ir_node;
 							}
 							else{
-								printf("ERROR: in %s, unable to add input to IR\n", __func__);
+								log_err("unable to add input to IR");
 							}
 						}
 						else{
-							printf("ERROR: in %s, unable to choose correct instruction, INVALID\n", __func__);
+							log_err("unable to choose correct instruction, INVALID");
 						}
 					}
 					else{
@@ -498,7 +499,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 							ins_movzx 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_MOVZX);
 
 							if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
-								printf("ERROR: in %s, unable to add node to IR\n", __func__);
+								log_err("unable to add node to IR");
 							}
 							else{
 								ir_add_dependence(engine->ir, imm_mask, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
@@ -513,14 +514,14 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 							}
 						}
 						else{
-							printf("ERROR: in %s, this case is not implemented yet, smaller write dependence (%s - %s = NULL)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+							log_err_m("this case is not implemented yet, smaller write dependence (%s - %s = NULL)", irRegister_2_string(reg1), irRegister_2_string(reg));
 						}
 					}
 				}
 			}
 		}
 		else{
-			printf("ERROR: in %s, register is in dependence list but not in the same family (%s - %s)\n", __func__, irRegister_2_string(reg1), irRegister_2_string(reg));
+			log_err_m("register is in dependence list but not in the same family (%s - %s)", irRegister_2_string(reg1), irRegister_2_string(reg));
 		}
 	}
 	else{
@@ -533,7 +534,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
 			}
 			else{
-				printf("ERROR: in %s, unable to add input to IR\n", __func__);
+				log_err("unable to add input to IR");
 			}
 		}
 	}

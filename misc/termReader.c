@@ -4,11 +4,12 @@
 #include <string.h>
 
 #include "termReader.h"
+#include "base.h"
 
 #define TERMREADER_SPECIAL_CHAR_DEL 0x7F
 #define TERMREADER_SPECIAL_CHAR_TAB 0x09
 
-static void termReader_remove_last_blanck(char* buffer, uint32_t length);
+static void termReader_remove_last_blank(char* buffer, uint32_t length);
 
 uint8_t valid_char[128] = {
 	0, /* 0x00	Null char */
@@ -148,7 +149,7 @@ int32_t termReader_set_raw_mode(struct termReader* term){
 	if (isatty(STDIN_FILENO)){
 		term->is_tty = 1;
 		if (tcgetattr(STDIN_FILENO, &settings)){
-			printf("ERROR: in %s, tcgetattr fails\n", __func__);
+			log_err("tcgetattr fails");
 			return -1;
 		}
 		memcpy(&(term->saved_settings), &settings, sizeof(struct termios));
@@ -156,14 +157,14 @@ int32_t termReader_set_raw_mode(struct termReader* term){
 		settings.c_lflag &= ~(ICANON | ECHO);
 
 		if (tcsetattr(STDIN_FILENO, TCSANOW, &settings)){
-			printf("ERROR: in %s, tcsetattr fails\n", __func__);
+			log_err("tcsetattr fails");
 			return -1;
 		}
 	}
 	else{
 		term->is_tty = 0;
 		#ifdef VERBOSE
-		printf("WARNING: in %s, stdin is not a terminal - skipping\n", __func__);
+		log_warn("stdin is not a terminal - skipping");
 		#endif
 	}
 
@@ -208,7 +209,7 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 				break;
 			}
 			case EOF	: {
-				printf("ERROR: in %s, fgetc returns EOF on stdin\n", __func__);
+				log_err("fgetc returns EOF on stdin");
 				return - 1;
 			}
 			default 	: {
@@ -225,23 +226,21 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 	} while(character != '\n' && i < buffer_length - 1);
 	buffer[i] = '\0';
 
-	termReader_remove_last_blanck(buffer, i);
+	termReader_remove_last_blank(buffer, i);
 
 	return 0;
 }
 
 int32_t termReader_reset_mode(struct termReader* term){
-	if (term->is_tty){
-		if (tcsetattr(STDIN_FILENO, TCSANOW, &(term->saved_settings))){
-			printf("ERROR: in %s, tcsetattr fails\n", __func__);
-			return -1;
-		}
+	if (term->is_tty && tcsetattr(STDIN_FILENO, TCSANOW, &(term->saved_settings))){
+		log_err("tcsetattr fails");
+		return -1;
 	}
 
 	return 0;
 }
 
-static void termReader_remove_last_blanck(char* buffer, uint32_t length){
+static void termReader_remove_last_blank(char* buffer, uint32_t length){
 	while(length > 0 && buffer[length - 1] == ' '){
 		buffer[length - 1] = '\0';
 		length--;

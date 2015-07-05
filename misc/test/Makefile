@@ -16,7 +16,7 @@ TEST_SET 				:= test_set
 TEST_UGRAPH 			:= test_ugraph
 
 CC						:= gcc
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DVERBOSE
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE
 LDFLAGS					:=
 
 all: 										\
@@ -94,24 +94,24 @@ $(TEST_UGRAPH): test_ugraph.o ugraph.o set.o
 
 test_array.o: ../array.h
 test_workPercent.o: ../workPercent.h
-test_multiColumn.o: ../multiColumn.h
-test_inputParser.o: ../inputParser.h
-test_readBuffer.o: ../readBuffer.h ../printBuffer.h
-test_permutation.o: ../permutation.h
-test_workQueue.o: ../workQueue.h
-test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h
-test_mapFile.o: ../mapFile.h
-test_pageTable.o: ../pageTable.h
-test_graph.o: ../graph.h ../graphPrintDot.h
-test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h
-test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h
-test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h
-test_set.o: ../set.h
-test_ugraph.o: ../ugraph.h ../set.h
-array.o: ../array.h
+test_multiColumn.o: ../multiColumn.h ../base.h
+test_inputParser.o: ../inputParser.h ../base.h
+test_readBuffer.o: ../readBuffer.h ../printBuffer.h ../base.h
+test_permutation.o: ../permutation.h ../base.h
+test_workQueue.o: ../workQueue.h ../base.h
+test_multiWorkPercent.o: ../multiWorkPercent.h ../workQueue.h ../base.h
+test_mapFile.o: ../mapFile.h ../base.h
+test_pageTable.o: ../pageTable.h ../base.h
+test_graph.o: ../graph.h ../graphPrintDot.h ../base.h
+test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
+test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
+test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
+test_set.o: ../set.h ../base.h
+test_ugraph.o: ../ugraph.h ../set.h ../base.h
+array.o: ../array.h ../base.h
 workPercent.o: ../workPercent.h
 multiColumn.o: ../multiColumn.h
-inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h
+inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h  ../base.h
 readBuffer.o: ../readBuffer.h
 printBuffer.o: ../printBuffer.h
 workQueue.o: ../workQueue.h
@@ -119,11 +119,11 @@ multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
 pageTable.o: ../pageTable.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h
-subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h
-dijkstra.o: ../graph.h ../dijkstra.h ../array.h
-dagPartialOrder.o: ../graph.h ../dagPartialOrder.h
-set.o: ../set.h
-ugraph.o: ../ugraph.h ../set.h
+subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
+dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
+dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
+set.o: ../set.h ../base.h
+ugraph.o: ../ugraph.h ../set.h ../base.h
 
 clean:
 	@ rm -f *.o

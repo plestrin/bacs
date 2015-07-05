@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 
 #include "callGraph.h"
+#include "base.h"
 
 enum blockLabel{
 	BLOCK_LABEL_CALL,
@@ -75,20 +76,20 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 
 	call_graph_stack = (struct node**)calloc(sizeof(struct node*), CALLGRAPH_MAX_DEPTH);
 	if (call_graph_stack == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		result = -1;
 		goto exit;
 	}
 
 	label_buffer = callGraph_label_blocks(&(trace->assembly));
 	if (label_buffer == NULL){
-		printf("ERROR: in %s, unable to label assembly blocks\n", __func__);
+		log_err("unable to label assembly blocks");
 		result = -1;
 		goto exit;
 	}
 
 	if (array_init(&(call_graph->snippet_array), sizeof(struct assemblySnippet))){
-		printf("ERROR: in %s, unable to init array\n", __func__);
+		log_err("unable to init array");
 		result = -1;
 		goto exit;
 	}
@@ -101,7 +102,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
 		if (trace->assembly.dyn_blocks[i].instruction_count < start){
 			if (dynBlock_is_valid(trace->assembly.dyn_blocks + i) && trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins > start){
-				printf("WARNING: in %s, index %u is not at a the begining of a basic block, rounding\n", __func__, start);
+				log_warn_m("index %u is not at a the begining of a basic block, rounding", start);
 			}
 			else{
 				continue;
@@ -122,7 +123,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 			else{
 				call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 				if (call_graph_stack[stack_index] == NULL){
-					printf("ERROR: in %s, unable to create node\n", __func__);
+					log_err("unable to create node");
 				}
 				else{
 					current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
@@ -146,7 +147,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 								call_graph_edge.type = CALLGRAPH_EDGE_RET;
 
 								if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index + 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-									printf("ERROR: in %s, unable to add edge to callGraph\n", __func__);
+									log_err("unable to add edge to callGraph");
 								}
 							}
 							else{
@@ -155,7 +156,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 
 								call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 								if (call_graph_stack[stack_index] == NULL){
-									printf("ERROR: in %s, unable to create node\n", __func__);
+									log_err("unable to create node");
 								}
 								else{
 									current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
@@ -164,24 +165,24 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 									call_graph_edge.type = CALLGRAPH_EDGE_CALL;
 
 									if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-										printf("ERROR: in %s, unable to add edge to callGraph\n", __func__);
+										log_err("unable to add edge to callGraph");
 									}
 								}
 							}
 						}
 						else{
-							printf("ERROR: in %s, the previous function call on the stack is empty\n", __func__);
+							log_err("the previous function call on the stack is empty");
 						}
 					}
 					else{
-						printf("WARNING: in %s, unable to classify current basic block %u as a RET or a CALL\n", __func__, i);
+						log_warn_m("unable to classify current basic block %u as a RET or a CALL", i);
 
 						snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
 						stack_index ++;
 
 						call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 						if (call_graph_stack[stack_index] == NULL){
-							printf("ERROR: in %s, unable to create node\n", __func__);
+							log_err("unable to create node");
 						}
 						else{
 							current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
@@ -190,7 +191,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 							call_graph_edge.type = CALLGRAPH_EDGE_CALL;
 
 							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								printf("ERROR: in %s, unable to add edge to callGraph\n", __func__);
+								log_err("unable to add edge to callGraph");
 							}
 						}
 					}
@@ -199,7 +200,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 			else{
 				call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 				if (call_graph_stack[stack_index] == NULL){
-					printf("ERROR: in %s, unable to create node\n", __func__);
+					log_err("unable to create node");
 					continue;
 				}
 				else{
@@ -218,14 +219,14 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 						stack_index ++;
 
 						if (stack_index == CALLGRAPH_MAX_DEPTH){
-							printf("ERROR: in %s, the top of the stack has been reached\n", __func__);
+							log_err("the top of the stack has been reached");
 							result = -1;
 							goto exit;
 						}
 
 						call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 						if (call_graph_stack[stack_index] == NULL){
-							printf("ERROR: in %s, unable to create node\n", __func__);
+							log_err("unable to create node");
 						}
 						else{
 							current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
@@ -235,7 +236,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 							call_graph_edge.type = CALLGRAPH_EDGE_CALL;
 
 							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								printf("ERROR: in %s, unable to add edge to callGraph\n", __func__);
+								log_err("unable to add edge to callGraph");
 							}
 						}
 					}
@@ -246,7 +247,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 
 					if (trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins < stop){
 						if (stack_index == 0){
-							printf("ERROR: in %s, the bottom of the stack has been reached\n", __func__);
+							log_err("the bottom of the stack has been reached");
 							result = -1;
 							goto exit;
 						}
@@ -256,7 +257,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 						if (call_graph_stack[stack_index] == NULL){
 							call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 							if (call_graph_stack[stack_index] == NULL){
-								printf("ERROR: in %s, unable to create node\n", __func__);
+								log_err("unable to create node");
 							}
 							else{
 								current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
@@ -270,7 +271,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 							call_graph_edge.type = CALLGRAPH_EDGE_RET;
 
 							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index + 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								printf("ERROR: in %s, unable to add edge to callGraph\n", __func__);
+								log_err("unable to add edge to callGraph");
 							}
 						}
 					}
@@ -308,7 +309,7 @@ static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; ){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
-			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
+			log_err("the last asmBlock is incomplete");
 			break;
 		}
 
@@ -318,23 +319,23 @@ static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 
 	result = (enum blockLabel*)malloc(sizeof(enum blockLabel) * nb_block);
 	if (result == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
 	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; ){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
-			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
+			log_err("the last asmBlock is incomplete");
 			break;
 		}
 
 		result[nb_block] = BLOCK_LABEL_NONE;
 		if (block->header.id != nb_block + 1){
-			printf("WARNING: in %s, resetting block id %u -> %u\n", __func__, block->header.id, nb_block + 1);
+			log_warn_m("resetting block id %u -> %u", block->header.id, nb_block + 1);
 			if (assembly->allocation_type == ASSEMBLYALLOCATION_MMAP && !request_write_permission){
 				if (mprotect(assembly->mapping_block, assembly->mapping_size_block, PROT_READ | PROT_WRITE)){
-					printf("ERROR: in %s, unable to change memory protection\n", __func__);
+					log_err("unable to change memory protection");
 				}
 				else{
 					request_write_permission = 1;
@@ -345,7 +346,7 @@ static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 
 
 		if (assembly_get_last_instruction(block, &xedd)){
-			printf("ERROR: in %s, unable to get last instruction of block %u\n", __func__, nb_block);
+			log_err_m("unable to get last instruction of block %u", nb_block);
 		}
 		else{
 			switch(xed_decoded_inst_get_iclass(&xedd)){
@@ -403,7 +404,7 @@ static int32_t function_add_snippet(struct callGraph* call_graph, struct functio
 	if (new_snippet.length){
 		new_snippet_index = array_add(&(call_graph->snippet_array), &new_snippet);
 		if (new_snippet_index < 0){
-			printf("ERROR: in %s, unable to add snippet to array\n", __func__);
+			log_err("unable to add snippet to array");
 			return -1;
 		}
 
@@ -453,7 +454,7 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trac
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), snippet_index);
 
 			if (assembly_get_instruction(&(trace->assembly), &it, snippet->offset)){
-				printf("ERROR: in %s, unable to fetch first instruction of snippet: start @ %u, stop @ %u\n", __func__, snippet->offset, snippet->offset + snippet->length);
+				log_err_m("unable to fetch first instruction of snippet: start @ %u, stop @ %u", snippet->offset, snippet->offset + snippet->length);
 				break;
 			}
 
@@ -462,7 +463,7 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trac
 
 				if (instructionIterator_get_instruction_index(&it) <  snippet->offset + snippet->length){
 					if (assembly_get_next_instruction(&(trace->assembly), &it)){
-						printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+						log_err("unable to fetch next instruction from the assembly");
 						break;
 					}
 				}
@@ -496,14 +497,14 @@ void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct tr
 
 		snippet_index = function_get_first_snippet(call_graph, func);
 		if (snippet_index < 0){
-			printf("ERROR: in %s, unable to get first snippet for a callGraph node\n", __func__);
+			log_err("unable to get first snippet for a callGraph node");
 			continue;
 		}
 
 		/* same question as above + why here it is not mandatory to iterate over the code snippets? */
 		snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), snippet_index);
 		if (assembly_get_instruction(&(trace->assembly), &it, snippet->offset)){
-			printf("ERROR: in %s, unable to fetch first instruction of snippet: start @ %u, stop @ %u\n", __func__, snippet->offset, snippet->offset + snippet->length);
+			log_err_m("unable to fetch first instruction of snippet: start @ %u, stop @ %u", snippet->offset, snippet->offset + snippet->length);
 			continue;
 		}
 
@@ -512,7 +513,7 @@ void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct tr
 
 			if (instructionIterator_get_instruction_index(&it) <  snippet->offset + snippet->length){
 				if (assembly_get_next_instruction(&(trace->assembly), &it)){
-					printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+					log_err("unable to fetch next instruction from the assembly");
 					break;
 				}
 			}
@@ -547,23 +548,23 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 
 			if (prev_snippet != NULL){
 				if (assembly_get_instruction(call_graph->assembly_ref, &it, prev_snippet->offset)){
-					printf("ERROR: in %s, unable to fetch instruction @ %u\n", __func__, prev_snippet->offset);
+					log_err_m("unable to fetch instruction @ %u", prev_snippet->offset);
 				}
 				else{
 					if (it.instruction_address != snippet->expected_next_address){
 						#if defined ARCH_32
 						if (function_cursor->routine){
-							printf("ERROR: in %s, address mismatch for func %s, snippet %u: 0x%08x vs 0x%08x\n", __func__, function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %s, snippet %u: 0x%08x vs 0x%08x", function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
 						}
 						else{
-							printf("ERROR: in %s, address mismatch for func %p, snippet %u: 0x%08x vs 0x%08x\n", __func__, (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %p, snippet %u: 0x%08x vs 0x%08x", (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
 						}
 						#elif defined ARCH_64
 						if (function_cursor->routine){
-							printf("ERROR: in %s, address mismatch for func %s, snippet %u: 0x%llx vs 0x%llx\n", __func__, function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %s, snippet %u: 0x%llx vs 0x%llx", function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
 						}
 						else{
-							printf("ERROR: in %s, address mismatch for func %p, snippet %u: 0x%llx vs 0x%llx\n", __func__, (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %p, snippet %u: 0x%llx vs 0x%llx", (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
 						}
 						#else
 						#error Please specify an architecture {ARCH_32 or ARCH_64}
@@ -586,10 +587,10 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 
 		if (nb_edge > 1){
 			if (function_cursor->routine){
-				printf("ERROR: in %s, function %s is called %u times\n", __func__, function_cursor->routine->name, nb_edge);
+				log_err_m("function %s is called %u times", function_cursor->routine->name, nb_edge);
 			}
 			else{
-				printf("ERROR: in %s, function %p is called %u times\n", __func__, (void*)function_cursor, nb_edge);
+				log_err_m("function %p is called %u times", (void*)function_cursor, nb_edge);
 			}
 		}
 
@@ -601,10 +602,10 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 
 		if (nb_edge > 1){
 			if (function_cursor->routine){
-				printf("ERROR: in %s, function %s returns %u times\n", __func__, function_cursor->routine->name, nb_edge);
+				log_err_m("function %s returns %u times", function_cursor->routine->name, nb_edge);
 			}
 			else{
-				printf("ERROR: in %s, function %p returns %u times\n", __func__, (void*)function_cursor, nb_edge);
+				log_err_m("function %p returns %u times", (void*)function_cursor, nb_edge);
 			}
 		}
 	}
@@ -623,7 +624,7 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 				snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), index);
 
 				if (assembly_get_instruction(call_graph->assembly_ref, &it, snippet->offset)){
-					printf("ERROR: in %s, unable to fetch instruction @ %u\n", __func__, snippet->offset);
+					log_err_m("unable to fetch instruction @ %u", snippet->offset);
 				}
 				else{
 					routine = codeMap_search_routine(code_map, it.instruction_address);
@@ -633,11 +634,11 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 
 					if (routine != NULL && function_cursor->routine != NULL){
 						if (strncmp(routine->name, function_cursor->routine->name, CODEMAP_DEFAULT_NAME_SIZE)){
-							printf("WARNING: in %s, snippet of function %s, appars to be in %s\n", __func__, function_cursor->routine->name, routine->name);
+							log_warn_m("snippet of function %s, appars to be in %s", function_cursor->routine->name, routine->name);
 						}
 					}
 					else if (routine != NULL && function_cursor->routine == NULL){
-						printf("WARNING: in %s, snippet of function NULL, appars to be in %s\n", __func__, routine->name);
+						log_warn_m("snippet of function NULL, appars to be in %s", routine->name);
 					}
 				}
 			}
@@ -663,10 +664,10 @@ void callGraph_print_stack(struct callGraph* call_graph, uint32_t index){
 
 			if (snippet->offset <= index && snippet->offset + snippet->length > index){
 				if (function_cursor->routine != NULL){
-					printf("INFO: in %s, found index in %s\n", __func__, function_cursor->routine->name);
+					log_info_m("found index in %s", function_cursor->routine->name);
 				}
 				else{
-					printf("INFO: in %s, found index in %p\n", __func__, (void*)function_cursor);
+					log_info_m("found index in %p", (void*)function_cursor);
 				}
 
 				for (caller_node = node_cursor; ; ){
@@ -714,7 +715,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 		func = callGraph_node_get_function(node);
 		if (name_filter == NULL || (name_filter != NULL && func->routine != NULL && !strncmp(name_filter, func->routine->name, CODEMAP_DEFAULT_NAME_SIZE))){
 			if (func->last_snippet_offset < 0){
-				printf("ERROR: in %s, no code snippet for the current callGraph node\n", __func__);
+				log_err("no code snippet for the current callGraph node");
 				continue;
 			}
 
@@ -723,7 +724,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 
 			first_snippet_index = function_get_first_snippet(call_graph, func);
 			if (first_snippet_index < 0){
-				printf("ERROR: in %s, unable to get first snippet for a callGraph node\n", __func__);
+				log_err("unable to get first snippet for a callGraph node");
 				continue;
 			}
 
@@ -731,21 +732,21 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			start_index = snippet->offset;
 
 			if (trace_init(&fragment, FRAGMENT_TRACE)){
-				printf("ERROR: in %s, unable to init traceFragment\n", __func__);
+				log_err("unable to init traceFragment");
 				return -1;
 			}
 			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
-				printf("ERROR: in %s, unable to extract traceFragment\n", __func__);
+				log_err("unable to extract traceFragment");
 				return -1;
 			}
 			
-			printf("INFO: in %s, export trace fragment [%u:%u]\n", __func__, start_index, stop_index);
+			log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
 			if (func->routine != NULL){
 				snprintf(fragment.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
 			}
 
 			if (array_add(frag_array, &fragment) < 0){
-				printf("ERROR: in %s, unable to add traceFragment to array\n", __func__);
+				log_err("unable to add traceFragment to array");
 				trace_clean(&fragment);
 				return -1;
 			}

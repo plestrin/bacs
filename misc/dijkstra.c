@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "dijkstra.h"
+#include "base.h"
 
 int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_buffer){
 	struct dijkstraInternal{
@@ -20,7 +21,7 @@ int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_bu
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
 	if (internals == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -42,7 +43,7 @@ int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_bu
 	}
 
 	if (curr_orbital == NULL){
-		printf("ERROR: in %s, unable to find the given node\n", __func__);
+		log_err("unable to find the given node");
 		free(internals);
 		return -1;
 	}
@@ -89,7 +90,7 @@ int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
 	if (internals == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -111,7 +112,7 @@ int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_
 	}
 
 	if (curr_orbital == NULL){
-		printf("ERROR: in %s, unable to find the given node\n", __func__);
+		log_err("unable to find the given node");
 		free(internals);
 		return -1;
 	}
@@ -158,7 +159,7 @@ int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffe
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
 	if (internals == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -180,7 +181,7 @@ int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffe
 	}
 
 	if (curr_orbital == NULL){
-		printf("ERROR: in %s, unable to find the given node\n", __func__);
+		log_err("unable to find the given node");
 		free(internals);
 		return -1;
 	}
@@ -226,7 +227,7 @@ static int32_t dijkstra_reset_path(struct array** path){
 	if (*path == NULL){
 		*path = array_create(sizeof(struct edge*));
 		if (*path == NULL){
-			printf("ERROR: in %s, unable to create array\n", __func__);
+			log_err("unable to create array");
 			return -1;
 		}
 	}
@@ -253,13 +254,13 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t 
 	struct dijkstraInternal* 	internal_cursor;
 
 	if (dijkstra_reset_path(path)){
-		printf("ERROR: in %s, unable to reset path\n", __func__);
+		log_err("unable to reset path");
 		return -1;
 	}
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
 	if (internals == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -283,7 +284,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t 
 	}
 
 	if (curr_orbital == NULL){
-		printf("ERROR: in %s, unable to find the any of the src node(s)\n", __func__);
+		log_err("unable to find the any of the src node(s)");
 		free(internals);
 		return -1;
 	}
@@ -318,7 +319,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t 
 	return_path:
 	for ( ; curr_orbital->path != NULL; curr_orbital = (struct dijkstraInternal*)(edge_get_src(curr_orbital->path)->ptr)){
 		if (array_add(*path, &(curr_orbital->path)) < 0){
-			printf("ERROR: in %s, unable to add element to array\n", __func__);
+			log_err("unable to add element to array");
 		}
 	}
 
@@ -347,17 +348,17 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 	uint32_t 					dst = 0;
 
 	if (dijkstra_reset_path(path1)){
-		printf("ERROR: in %s, unable to reset path\n", __func__);
+		log_err("unable to reset path");
 		return NULL;
 	}
 	if (dijkstra_reset_path(path2)){
-		printf("ERROR: in %s, unable to reset path\n", __func__);
+		log_err("unable to reset path");
 		return NULL;
 	}
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
 	if (internals == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
@@ -392,7 +393,7 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 	}
 
 	if (curr_orbital1 == NULL || curr_orbital2 == NULL){
-		printf("ERROR: in %s, unable to find the any of the specified node(s)\n", __func__);
+		log_err("unable to find the any of the specified node(s)");
 		free(internals);
 		return NULL;
 	}
@@ -455,14 +456,14 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 	return_path:
 	for ( ; internal_cursor->path != NULL; internal_cursor = (struct dijkstraInternal*)(edge_get_dst(internal_cursor->path)->ptr)){
 		if (array_add(*path1, &(internal_cursor->path)) < 0){
-			printf("ERROR: in %s, unable to add element to array\n", __func__);
+			log_err("unable to add element to array");
 		}
 	}
 
 	if (curr_orbital1 == NULL){
 		for ( ; edge_cursor != NULL; edge_cursor = ((struct dijkstraInternal*)(edge_get_dst(edge_cursor)->ptr))->path){
 			if (array_add(*path2, &(edge_cursor)) < 0){
-				printf("ERROR: in %s, unable to add element to array\n", __func__);
+				log_err("unable to add element to array");
 			}
 		}
 	}

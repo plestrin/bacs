@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "../inputParser.h"
+#include "../base.h"
 
 void print(uint32_t* ctx, char* string);
 void print_hello(uint32_t* ctx);
@@ -11,15 +12,15 @@ int main(int argc, char** argv){
 	uint32_t 			print_context = 0;
 
 	if (inputParser_init(&parser)){
-		printf("ERROR: in %s, unable to init inputTracer\n", __func__);
+		log_err("unable to init inputTracer");
 		return 0;
 	}
 
 	if (inputParser_add_cmd(&parser, "print", "Print a message", "Message to be printed", INPUTPARSER_CMD_TYPE_ARG, &print_context, (void(*)(void))print)){
-		printf("ERROR: in %s, unable to add cmd to inputParser\n", __func__);
+		log_err("unable to add cmd to inputParser");
 	}
 	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, &print_context, (void(*)(void))print_hello)){
-		printf("WARNING: in %s, we add two times the same cmd, the second'll not be reachable\n", __func__);
+		log_warn("we add two times the same cmd, the second'll not be reachable");
 	}
 	
 	inputParser_exe(&parser, argc - 1, argv + 1);

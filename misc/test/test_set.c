@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../set.h"
+#include "../base.h"
 
 #define ELEMENT_SIZE 		15
 #define NB_ELEMENT_BLOCK 	13
@@ -20,13 +21,13 @@ int main(){
 
 	set = set_create(ELEMENT_SIZE, NB_ELEMENT_BLOCK);
 	if (set == NULL){
-		printf("ERROR: in %s, create set\n", __func__);
+		log_err("unable to create set");
 	}
 
 	for (i = 0; i < NB_ELEMENT_TOT; i++){
 		memset(data, i, ELEMENT_SIZE);
 		if (set_add(set, data)){
-			printf("ERROR: in %s, unable to add element i\n", __func__);
+			log_err_m("unable to add element %u", i);
 		}
 		s[i] = i;
 	}
@@ -35,7 +36,7 @@ int main(){
 		for (data_ptr = setIterator_get_first(set, &iterator), i = 0, offset = 0; data_ptr != NULL; data_ptr = setIterator_get_next(&iterator), i++){
 			memset(data, s[i], ELEMENT_SIZE);
 			if (memcmp(data, data_ptr, ELEMENT_SIZE)){
-				printf("ERROR: in %s, element %u seems to be different\n", __func__, i);
+				log_err_m("element %u seems to be different", i);
 			}
 
 			if ((rand() & 0x03) != 0x03){

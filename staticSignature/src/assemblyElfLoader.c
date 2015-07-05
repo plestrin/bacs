@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "assemblyElfLoader.h"
+#include "base.h"
 
 int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 	int 		file;
@@ -19,40 +20,40 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 	int32_t 	result 				= -1;
 
 	if (elf_version(EV_CURRENT) == EV_NONE){
-		printf("ERROR: in %s, ELF library initialization failed\n", __func__);
+		log_err("ELF library initialization failed");
 		return result;
 	}
 
 	file = open(file_path, O_RDONLY);
 	if (file < 0){
-		printf("ERROR: in %s, unable to open file: %s\n", __func__, file_path);
+		log_err_m("unable to open file: %s", file_path);
 		return result;
 	}
 
 	elf = elf_begin(file, ELF_C_READ, NULL);
 	if (elf == NULL){
-		printf("ERROR: in %s, elf begin failed\n", __func__);
+		log_err("elf begin failed");
 		goto exit;
 	}
 
 	if (elf_kind(elf) != ELF_K_ELF){
-		printf("ERROR: in %s, %s is not an ELF object\n", __func__, file_path);
+		log_err_m("%s is not an ELF object", file_path);
 		goto exit;
 	}
 
 	if (elf_getshdrstrndx(elf, &shstrndx)){
-		printf("ERROR: in %s, unable to section name offset\n", __func__);
+		log_err("unable to section name offset");
 		goto exit;
 	}
 
 	while ((section = elf_nextscn(elf, section)) != NULL){
 		if (gelf_getshdr(section, &section_header) != &section_header){
-			printf("ERROR: in %s, unable to retrieve section header\n", __func__);
+			log_err("unable to retrieve section header");
 			continue;
 		}
 
 		if ((name = elf_strptr(elf, shstrndx , section_header.sh_name)) == NULL){
-			printf("ERROR: in %s, unable to retrieve section name\n", __func__);
+			log_err("unable to retrieve section name");
 			continue;
 		}
 		
@@ -64,7 +65,7 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 
 			buffer_block = (struct asmBlock*)malloc(buffer_size_block);
 			if (buffer_block == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				log_err("unable to allocate memory");
 				goto exit;
 			}
 

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "result.h"
+#include "base.h"
 
 /* ===================================================================== */
 /* result routines														 */
@@ -27,7 +28,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurrence, sizeof(struct node*));
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->symbol_node_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	
 		if (result->in_mapping_buffer != NULL){
 			free(result->in_mapping_buffer);
@@ -115,7 +116,7 @@ void result_push(struct result* result, struct ir* ir){
 	for (i = 0; i < result->nb_occurrence; i++){
 		result->symbol_node_buffer[i] = ir_add_symbol(ir, result, i);
 		if (result->symbol_node_buffer[i] == NULL){
-			printf("ERROR: in %s, unable to add symbolic node to IR\n", __func__);
+			log_err("unable to add symbolic node to IR");
 			continue;
 		}
 
@@ -125,12 +126,12 @@ void result_push(struct result* result, struct ir* ir){
 			}
 
 			if (result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node == NULL){
-				printf("ERROR: in %s, unsatisfied input dependence\n", __func__);
+				log_err("unsatisfied input dependence");
 				continue;
 			}
 
 			if (ir_add_macro_dependence(ir, result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].virtual_node.node, result->symbol_node_buffer[i], result->in_mapping_buffer[i * result->signature->nb_frag_tot_in + j].edge_desc) == NULL){
-				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+				log_err("unable to add dependence to IR");
 			}
 		}
 
@@ -140,12 +141,12 @@ void result_push(struct result* result, struct ir* ir){
 			}
 
 			if (result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node == NULL){
-				printf("ERROR: in %s, unsatisfied input dependence\n", __func__);
+				log_err("unsatisfied input dependence");
 				continue;
 			}
 
 			if (ir_add_macro_dependence(ir, result->symbol_node_buffer[i], result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].virtual_node.node, result->ou_mapping_buffer[i * result->signature->nb_frag_tot_out + j].edge_desc) == NULL){
-				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+				log_err("unable to add dependence to IR");
 			}
 		}
 	}
@@ -181,7 +182,7 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 	uint32_t i;
 
 	if (index >= result->nb_occurrence){
-		printf("ERROR: in %s, incorrect index %u (max is %u)\n", __func__, index, result->nb_occurrence);
+		log_err_m("incorrect index %u (max is %u)", index, result->nb_occurrence);
 		return;
 	}
 
@@ -191,7 +192,7 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 		}
 		else{
 			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node))){
-				printf("ERROR: in %s, unable to add element to set\n", __func__);
+				log_err("unable to add element to set");
 			}
 		}
 	}
@@ -359,19 +360,19 @@ void result_print(struct result* result){
 
 	parameter_mapping = parameterMapping_create(code_signature);
 	if (parameter_mapping == NULL){
-		printf("ERROR: in %s, unable to create parameterMapping\n", __func__);
+		log_err("unable to create parameterMapping");
 		return;
 	}
 
 	class_array = array_create(parameterMapping_get_size(code_signature));
 	if (class_array == NULL){
-		printf("ERROR: in %s, unable to create array\n", __func__);
+		log_err("unable to create array");
 		goto exit;
 	}
 
 	for (i = 0; i < result->nb_occurrence; i++){
 		if (parameterMapping_fill(parameter_mapping, result, i)){
-			printf("ERROR: in %s, unable to fetch occurrence %u\n", __func__, i);
+			log_err_m("unable to fetch occurrence %u", i);
 			continue;
 		}
 
@@ -383,13 +384,13 @@ void result_print(struct result* result){
 		}
 		if (j == array_get_length(class_array)){
 			if (array_add(class_array, parameter_mapping) < 0){
-				printf("ERROR: in %s, unable to add new element to array\n", __func__);
+				log_err("unable to add new element to array");
 			}
 		}
 	}
 
 	if (array_get_length(class_array) > MAX_CLASS_THRESHOLD){
-		printf("WARNING: in %s, too many result clusters to be printed (%d)\n", __func__, array_get_length(class_array));
+		log_warn_m("too many result clusters to be printed (%d)", array_get_length(class_array));
 		goto exit;
 	}
 
@@ -441,13 +442,13 @@ struct parameterMapping* parameterMapping_create(struct codeSignature* signature
 	mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(signature));
 	if (mapping != NULL){
 		if (parameterMapping_init(mapping, signature)){
-			printf("ERROR: in %s, unable to init parameterMapping\n", __func__);
+			log_err("unable to init parameterMapping");
 			free(mapping);
 			mapping = NULL;
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return mapping;
@@ -476,13 +477,13 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 
 		if (sig_node->input_number > 0){
 			if (sig_node->input_frag_order > mapping[sig_node->input_number - 1].nb_fragment){
-				printf("ERROR: in %s, input frag number %u is out of range %u\n", __func__, sig_node->input_frag_order, mapping[sig_node->input_number - 1].nb_fragment);
+				log_err_m("input frag number %u is out of range %u", sig_node->input_frag_order, mapping[sig_node->input_number - 1].nb_fragment);
 				return -1;
 			}
 		}
 		if (sig_node->output_number > 0){
 			if (sig_node->output_frag_order > mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment){
-				printf("ERROR: in %s, output frag number %u is out of range %u\n", __func__, sig_node->output_frag_order, mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment);
+				log_err_m("output frag number %u is out of range %u", sig_node->output_frag_order, mapping[signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment);
 				return -1;
 			}
 		}
@@ -510,7 +511,7 @@ int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* r
 	for (i = 0; i < result->signature->nb_frag_tot_in; i++){
 		link = result->in_mapping_buffer + (index * result->signature->nb_frag_tot_in) + i;
 		if (link->virtual_node.node == NULL){
-			printf("ERROR: in %s, input node is virtual, I don't kown how to handle that case\n", __func__);
+			log_err("input node is virtual, I don't kown how to handle that case");
 			return -1;
 		}
 
@@ -520,7 +521,7 @@ int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* r
 	for (i = 0; i < result->signature->nb_frag_tot_out; i++){
 		link = result->ou_mapping_buffer + (index * result->signature->nb_frag_tot_out) + i;
 		if (link->virtual_node.node == NULL){
-			printf("ERROR: in %s, output node is virtual, I don't kown how to handle that case\n", __func__);
+			log_err("output node is virtual, I don't kown how to handle that case");
 			return -1;
 		}
 

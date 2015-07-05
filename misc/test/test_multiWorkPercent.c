@@ -4,6 +4,7 @@
 
 #include "../workQueue.h"
 #include "../multiWorkPercent.h"
+#include "../base.h"
 
 #define NB_THREAD 5
 #define NB_SUBMIT 14
@@ -23,12 +24,12 @@ int main(){
 
 
 	if (workQueue_init(&queue, NB_THREAD)){
-		printf("ERROR: in %s, unable to init workQueue\n", __func__);
+		log_err("unable to init workQueue");
 		return 0;
 	}
 
 	if (multiWorkPercent_init(&multi_percent, NB_THREAD, WORKPERCENT_ACCURACY_1)){
-		printf("ERROR: in %s, unable to init multiWorkPercent\n", __func__);
+		log_err("unable to init multiWorkPercent");
 		return 0;
 	}
 
@@ -38,7 +39,7 @@ int main(){
 		args[i].value = rand() & 0x0fffffff;
 		args[i].multi_percent = &multi_percent;
 		if (workQueue_submit(&queue, counter, args + i)){
-			printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
+			log_err("unable to submit job to workQueue");
 		}
 	}
 

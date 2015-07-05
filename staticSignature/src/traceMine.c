@@ -6,6 +6,7 @@
 #include "traceMine.h"
 #include "result.h"
 #include "dijkstra.h"
+#include "base.h"
 
 /* 	DIRECT, 				ADDRESS, 				SHIFT_DISP, 			DIVISOR, 				ROUND_OFF, 				SUBSTITUTE, 			MACRO*/
 static const uint32_t irEdge_distance_array_OI[NB_DEPENDENCE_TYPE] = {
@@ -54,7 +55,7 @@ static int32_t signatureCluster_init(struct signatureCluster* cluster, struct pa
 	cluster->parameter_mapping = mapping;
 
 	if (array_init(&(cluster->instance_array), sizeof(struct signatureInstance))){
-		printf("ERROR: in %s, unable to init array\n", __func__);
+		log_err("unable to init array");
 		return -1;
 	}
 
@@ -62,7 +63,7 @@ static int32_t signatureCluster_init(struct signatureCluster* cluster, struct pa
 	instance.index = index;
 
 	if (array_add(&(cluster->instance_array), &instance) < 0){
-		printf("ERROR: in %s, unable to add element to array\n", __func__);
+		log_err("unable to add element to array");
 		array_clean(&(cluster->instance_array));
 		return -1;
 	}
@@ -235,7 +236,7 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 	node_buffer = (struct node**)malloc(sizeof(struct node*) * synthesis_graph->nb_node);
 	edge_buffer = (struct edge**)node_buffer;
 	if (node_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return;
 	}
 
@@ -317,7 +318,7 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 
 	cluster_array = array_create(sizeof(struct signatureCluster));
 	if (cluster_array == NULL){
-		printf("ERROR: in %s, unable to create array\n", __func__);
+		log_err("unable to create array");
 		return NULL;
 	}		
 
@@ -328,13 +329,13 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 				if (mapping == NULL){
 					mapping = parameterMapping_create(result->signature);
 					if (mapping == NULL){
-						printf("ERROR: in %s, unable to create parameterMapping\n", __func__);
+						log_err("unable to create parameterMapping");
 						continue;
 					}
 				}
 
 				if (parameterMapping_fill(mapping, result, j)){
-					printf("ERROR: in %s, unable to fill mapping for occurrence %u\n", __func__, j);
+					log_err_m("unable to fill mapping for occurrence %u", j);
 					continue;
 				}
 
@@ -342,7 +343,7 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 					cluster_cursor = (struct signatureCluster*)array_get(cluster_array, k);
 					if (!signatureCluster_may_append(cluster_cursor, mapping, result->signature->nb_parameter_in, result->signature->nb_parameter_out)){
 						if (signatureCluster_append(cluster_cursor, result, j)){
-							printf("ERROR: in %s, unable to add element to signatureCluster\n", __func__);
+							log_err("unable to add element to signatureCluster");
 						}
 						break;
 					}
@@ -350,11 +351,11 @@ static struct array* traceMine_cluster_results(struct array* result_array){
 
 				if (k == array_get_length(cluster_array)){
 					if (signatureCluster_init(&new_cluster, mapping, result, j)){
-						printf("ERROR: in %s, unable to init signatureCluster\n", __func__);
+						log_err("unable to init signatureCluster");
 					}
 
 					if (array_add(cluster_array, &new_cluster) < 0){
-						printf("ERROR: in %s, unable to add element to array\n", __func__);
+						log_err("unable to add element to array");
 						signatureCluster_clean(&new_cluster);
 					}
 					else{
@@ -384,23 +385,23 @@ static void traceMine_search_OI_path(struct signatureCluster* cluster_in, uint32
 
 	return_code = dijkstra_min_path(&(ir->graph), signatureCluster_get_ou_parameter(cluster_ou, parameter_ou), signatureCluster_get_nb_frag_ou(cluster_ou, parameter_ou), signatureCluster_get_in_parameter(cluster_in, parameter_in), signatureCluster_get_nb_frag_in(cluster_in, parameter_in), &path, irEdge_get_distance_OI);
 	if (return_code < 0){
-		printf("ERROR: in %s, unable to compute min path\n", __func__);
+		log_err("unable to compute min path");
 	}
 	else if(return_code == 0){
 		synthesis_path.type 			= SYNTHESISNODETYPE_OI_PATH;
 		synthesis_path.node_type.path 	= path;
 
 		if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
-			printf("ERROR: in %s, unable to add node to graph\n", __func__);
+			log_err("unable to add node to graph");
 		}
 		else{
 			edge_tag = synthesisGraph_get_edge_tag_output(parameter_ou);
 			if (graph_add_edge(synthesis_graph, cluster_ou->synthesis_graph_node, node_path, &edge_tag) == NULL){
-				printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+				log_err("unable to add edge to synthesisGraph");
 			}
 			edge_tag = synthesisGraph_get_edge_tag_input(parameter_in);
 			if (graph_add_edge(synthesis_graph, node_path, cluster_in->synthesis_graph_node, &edge_tag) == NULL){
-				printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+				log_err("unable to add edge to synthesisGraph");
 			}
 
 			path = NULL;
@@ -428,7 +429,7 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 		synthesis_ancestor.node_type.ir_node 	= ancestor;
 
 		if ((node_ancestor = graph_add_node(synthesis_graph, &synthesis_ancestor)) == NULL){
-			printf("ERROR: in %s, unable to add node to graph\n", __func__);
+			log_err("unable to add node to graph");
 		}
 		else{
 			if (array_get_length(path1) > 0){
@@ -436,16 +437,16 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 				synthesis_path.node_type.path 	= path1;
 
 				if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
-					printf("ERROR: in %s, unable to add node to graph\n", __func__);
+					log_err("unable to add node to graph");
 				}
 				else{
 					edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
 					if (graph_add_edge(synthesis_graph, node_ancestor, node_path, &edge_tag) == NULL){
-						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+						log_err("unable to add edge to synthesisGraph");
 					}
 					edge_tag = synthesisGraph_get_edge_tag_input(parameter1);
 					if (graph_add_edge(synthesis_graph, node_path, cluster1->synthesis_graph_node, &edge_tag) == NULL){
-						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+						log_err("unable to add edge to synthesisGraph");
 					}
 
 					path1 = NULL;
@@ -454,7 +455,7 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 			else{
 				edge_tag = synthesisGraph_get_edge_tag_input(parameter1);
 				if (graph_add_edge(synthesis_graph, node_ancestor, cluster1->synthesis_graph_node, &edge_tag) == NULL){
-					printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					log_err("unable to add edge to synthesisGraph");
 				}
 			}
 
@@ -463,16 +464,16 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 				synthesis_path.node_type.path 	= path2;
 
 				if ((node_path = graph_add_node(synthesis_graph, &synthesis_path)) == NULL){
-					printf("ERROR: in %s, unable to add node to graph\n", __func__);
+					log_err("unable to add node to graph");
 				}
 				else{
 					edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
 					if (graph_add_edge(synthesis_graph, node_ancestor, node_path, &edge_tag) == NULL){
-						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+						log_err("unable to add edge to synthesisGraph");
 					}
 					edge_tag = synthesisGraph_get_edge_tag_input(parameter2);
 					if (graph_add_edge(synthesis_graph, node_path, cluster2->synthesis_graph_node, &edge_tag) == NULL){
-						printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+						log_err("unable to add edge to synthesisGraph");
 					}
 
 					path2 = NULL;
@@ -481,7 +482,7 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 			else{
 				edge_tag = synthesisGraph_get_edge_tag_input(parameter2);
 				if (graph_add_edge(synthesis_graph, node_ancestor, cluster2->synthesis_graph_node, &edge_tag) == NULL){
-					printf("ERROR: in %s, unable to add edge to synthesisGraph\n", __func__);
+					log_err("unable to add edge to synthesisGraph");
 				}
 			}
 		}
@@ -511,7 +512,7 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 		synthesis_node.node_type.cluster 	= cluster;
 
 		if ((cluster->synthesis_graph_node = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
-			printf("ERROR: in %s, unable to add node to graph\n", __func__);
+			log_err("unable to add node to graph");
 			continue;
 		}
 
@@ -560,7 +561,7 @@ void traceMine_mine(struct trace* trace){
 	uint32_t 		i;
 
 	if (trace->ir == NULL){
-		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
 		return;
 	}
 
@@ -569,12 +570,12 @@ void traceMine_mine(struct trace* trace){
 	graph_register_node_clean_call_back(&synthesis_graph, synthesisGraph_clean_node);
 
 	if ((cluster_array = traceMine_cluster_results(&trace->result_array)) == NULL){
-		printf("ERROR: in %s, unable to cluster results\n", __func__);
+		log_err("unable to cluster results");
 		return;
 	}
 
 	if (traceMine_find_cluster_relation(cluster_array, trace->ir, &synthesis_graph)){
-		printf("ERROR: in %s, unable to find relation between clusters\n", __func__);
+		log_err("unable to find relation between clusters");
 	}
 
 	synthesisGraph_pack(&synthesis_graph);
@@ -590,7 +591,7 @@ void traceMine_mine(struct trace* trace){
 		}
 	}
 
-	printf("INFO: in %s, writing result(s) to: \"%s\"\n", __func__, synthesis_graph_name);
+	log_info_m("writing result(s) to: \"%s\"", synthesis_graph_name);
 
 	graphPrintDot_print(&synthesis_graph, synthesis_graph_name, NULL, NULL);
 	graph_clean(&synthesis_graph);
@@ -646,7 +647,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 							break;
 						}
 						default 						: {
-							printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+							log_err("this case is not supposed to happen");
 						}
 					}
 				}
@@ -677,7 +678,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 							break;
 						}
 						default 						: {
-							printf("ERROR: in %s, this case is not supposed to happen: incorrect operation on path\n", __func__);
+							log_err("this case is not supposed to happen: incorrect operation on path");
 							break;
 						}
 					}
@@ -685,7 +686,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				fprintf(file, ">]");
 			}
 			else{
-				printf("ERROR: in %s, this case is not supposed to happen: empty II path\n", __func__);
+				log_err("this case is not supposed to happen: empty II path");
 			}
 			break;
 		}

@@ -3,6 +3,7 @@
 
 #include "../dijkstra.h"
 #include "../graphPrintDot.h"
+#include "../base.h"
 
 #define INDEX_OF_NODE 3
 
@@ -132,7 +133,7 @@ struct graph* create_graph(){
 
 	/* print graph */
 	if (graphPrintDot_print(graph, "dijkstra.dot", NULL, graph)){
-		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+		log_err("unable to print graph to dot format");
 	}
 
 	return graph;
@@ -153,7 +154,7 @@ int main(){
 				if (i == INDEX_OF_NODE){
 					printf("Dijkstra dst to INDEX:\n");
 					if (dijkstra_dst_to(graph, node_cursor1, dst_buffer)){
-						printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+						log_err("unable to compute graph dst (Dijkstra)");
 					}
 					else{
 						for (node_cursor2 = graph_get_head_node(graph), i = 0; node_cursor2 != NULL && i < graph->nb_node; node_cursor2 = node_get_next(node_cursor2), i++){
@@ -165,7 +166,7 @@ int main(){
 
 					printf("Dijkstra dst from INDEX:\n");
 					if (dijkstra_dst_from(graph, node_cursor1, dst_buffer)){
-						printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+						log_err("unable to compute graph dst (Dijkstra)");
 					}
 					else{
 						for (node_cursor2 = graph_get_head_node(graph), i = 0; node_cursor2 != NULL && i < graph->nb_node; node_cursor2 = node_get_next(node_cursor2), i++){
@@ -180,13 +181,13 @@ int main(){
 			free(dst_buffer);
 		}
 		else{
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			log_err("unable to allocate memory");
 		}
 
 		graph_delete(graph);
 	}
 	else{
-		printf("ERROR: in %s, unable to create graph\n", __func__);
+		log_err("unable to create graph");
 	}
 
 	return 0;

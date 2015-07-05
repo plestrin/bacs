@@ -3,6 +3,7 @@
 
 #include "../graph.h"
 #include "../graphPrintDot.h"
+#include "../base.h"
 
 #define NODE_DESCRIPTION_LENGTH 32
 #define EDGE_DESCRIPTION_LENGTH 16
@@ -33,51 +34,51 @@ int main(){
 	snprintf(node_desc, NODE_DESCRIPTION_LENGTH, "asterix");
 	node_asterix = graph_add_node(graph, &node_desc);
 	if (node_asterix == NULL){
-		printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		log_err("unable to add node to graph");
 	}
 
 	snprintf(node_desc, NODE_DESCRIPTION_LENGTH, "obelix");
 	node_obelix = graph_add_node(graph, &node_desc);
 	if (node_obelix == NULL){
-		printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		log_err("unable to add node to graph");
 	}
 
 	snprintf(node_desc, NODE_DESCRIPTION_LENGTH, "idefix");
 	node_idefix = graph_add_node(graph, &node_desc);
 	if (node_idefix == NULL){
-		printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		log_err("unable to add node to graph");
 	}
 
 	snprintf(node_desc, NODE_DESCRIPTION_LENGTH, "abraracourcix");
 	node_abraracourcix = graph_add_node(graph, &node_desc);
 	if (node_abraracourcix == NULL){
-		printf("ERROR: in %s, unable to add node to graph\n", __func__);
+		log_err("unable to add node to graph");
 	}
 
 	/* add edges */
 	snprintf(edge_desc, EDGE_DESCRIPTION_LENGTH, "friend");
 	if (graph_add_edge(graph, node_obelix, node_asterix, &edge_desc) == NULL){
-		printf("ERROR: in %s, unable to add edge to graph\n", __func__);
+		log_err("unable to add edge to graph");
 	}
 
 	snprintf(edge_desc, EDGE_DESCRIPTION_LENGTH, "obey");
 	if (graph_add_edge(graph, node_idefix, node_obelix, &edge_desc) == NULL){
-		printf("ERROR: in %s, unable to add edge to graph\n", __func__);
+		log_err("unable to add edge to graph");
 	}
 
 	snprintf(edge_desc, EDGE_DESCRIPTION_LENGTH, "rule");
 	if (graph_add_edge(graph, node_abraracourcix, node_obelix, &edge_desc) == NULL){
-		printf("ERROR: in %s, unable to add edge to graph\n", __func__);
+		log_err("unable to add edge to graph");
 	}
 
 	snprintf(edge_desc, EDGE_DESCRIPTION_LENGTH, "rule");
 	if (graph_add_edge(graph, node_abraracourcix, node_asterix, &edge_desc) == NULL){
-		printf("ERROR: in %s, unable to add edge to graph\n", __func__);
+		log_err("unable to add edge to graph");
 	}
 
 	/* print graph */
 	if (graphPrintDot_print(graph, "asterix.dot", NULL, NULL)){
-		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+		log_err("unable to print graph to dot format");
 	}
 
 	graph_delete(graph);

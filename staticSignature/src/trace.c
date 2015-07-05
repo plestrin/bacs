@@ -6,6 +6,7 @@
 #include "trace.h"
 #include "assemblyElfLoader.h"
 #include "result.h"
+#include "base.h"
 
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
 #define TRACE_NB_MAX_THREAD 	64
@@ -37,7 +38,7 @@ struct trace* trace_load(const char* directory_path){
 			while ((entry = readdir(directory)) != NULL){
 				if (!memcmp(entry->d_name, "blockId", 7) && !strcmp(entry->d_name + 7 + strspn(entry->d_name + 7, "0123456789"), ".bin")){
 					if (thread_counter == TRACE_NB_MAX_THREAD){
-						printf("WARNING: in %s, the max number of thread has been reached, increment TRACE_NB_MAX_THREAD\n", __func__);
+						log_warn("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
 						break;
 					}
 					else{
@@ -48,7 +49,7 @@ struct trace* trace_load(const char* directory_path){
 			closedir(directory);
 
 			if (thread_counter > 1){
-				printf("INFO: in %s, several thread traces have been found, loading the first (%u):\n", __func__, thread_id[0]);
+				log_info_m("several thread traces have been found, loading the first (%u):", thread_id[0]);
 				for (i = 0; i < thread_counter; i++){
 					if (i == 0){
 						printf("\t- Thread: %u (loaded)\n", thread_id[i]);
@@ -64,13 +65,13 @@ struct trace* trace_load(const char* directory_path){
 			snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
 			
 			if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
-				printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+				log_err("unable to init assembly structure");
 				free(trace);
 				trace = NULL;
 			}
 			else{
 				if (trace_init(trace, EXECUTION_TRACE)){
-					printf("ERROR: in %s, unable to init executionTrace\n", __func__);
+					log_err("unable to init executionTrace");
 					assembly_clean(&(trace->assembly));
 					free(trace);
 					trace = NULL;
@@ -78,7 +79,7 @@ struct trace* trace_load(const char* directory_path){
 			}
 		}
 		else{
-			printf("ERROR: in %s, unable to open directory: \"%s\"\n", __func__, directory_path);
+			log_err_m("unable to open directory: \"%s\"", directory_path);
 			free(trace);
 			trace = NULL;
 		}
@@ -103,11 +104,11 @@ void trace_change_thread(struct trace* trace, uint32_t thread_id){
 		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", trace->directory_path, TRACE_BLOCK_FILE_NAME);
 			
 		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
-			printf("ERROR: in %s, unable to init assembly structure\n", __func__);
+			log_err("unable to init assembly structure");
 		}
 	}
 	else{
-		printf("ERROR: in %s, the trace was made from and ELF file there is no thread\n", __func__);
+		log_err("the trace was made from and ELF file there is no thread");
 	}
 }
 
@@ -117,13 +118,13 @@ struct trace* trace_load_elf(const char* file_path){
 	trace = (struct trace*)malloc(sizeof(struct trace));
 	if (trace != NULL){
 		if (assembly_load_elf(&(trace->assembly), file_path)){
-			printf("ERROR: in %s, unable to init assembly structure from ELF file\n", __func__);
+			log_err("unable to init assembly structure from ELF file");
 			free(trace);
 			trace = NULL;
 		}
 		else{
 			if (trace_init(trace, ELF_TRACE)){
-				printf("ERROR: in %s, unabvle to init elfTrace\n", __func__);
+				log_err("unabvle to init elfTrace");
 				assembly_clean(&(trace->assembly));
 				free(trace);
 				trace = NULL;
@@ -139,11 +140,11 @@ void trace_create_ir(struct trace* trace){
 	struct result* 	result;
 
 	if (trace->ir != NULL){
-		printf("WARNING: in %s, an IR has already been built for fragment \"%s\" - deleting\n", __func__, trace->tag);
+		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->tag);
 		ir_delete(trace->ir);
 
 		if(array_get_length(&(trace->result_array))){
-			printf("WARNING: in %s, discarding outdated result(s) for fragment \"%s\"\n", __func__, trace->tag);
+			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->tag);
 			for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 				result = (struct result*)array_get(&(trace->result_array), i);
 				result_clean(result)
@@ -153,7 +154,7 @@ void trace_create_ir(struct trace* trace){
 	}
 	trace->ir = ir_create(&(trace->assembly));
 	if (trace->ir == NULL){
-		printf("ERROR: in %s, unable to create IR for fragment \"%s\"\n", __func__, trace->tag);
+		log_err_m("unable to create IR for fragment \"%s\"", trace->tag);
 	}
 }
 
@@ -162,20 +163,20 @@ void trace_normalize_ir(struct trace* trace){
 	struct result* 	result;
 
 	if (trace->ir == NULL){
-		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
 		return;
 	}
 
 	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
-			printf("ERROR: in %s, cannot normalize IR of fragment \"%s\" resulls have been exported\n", __func__, trace->tag);
+			log_err_m("cannot normalize IR of fragment \"%s\" resulls have been exported", trace->tag);
 			return;
 		}
 	}
 
 	if(array_get_length(&(trace->result_array))){
-		printf("WARNING: in %s, discarding outdated result(s) for fragment \"%s\"\n", __func__, trace->tag);
+		log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->tag);
 		for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 			result = (struct result*)array_get(&(trace->result_array), i);
 			result_clean(result)
@@ -227,7 +228,7 @@ double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* o
 	struct instructionIterator 	it;
 
 	if (assembly_get_instruction(&(trace->assembly), &it, 0)){
-		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+		log_err("unable to fetch first instruction from the assembly");
 		return 0.0;
 	}
 
@@ -259,7 +260,7 @@ double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* o
 		}
 		else{
 			if (assembly_get_next_instruction(&(trace->assembly), &it)){
-				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+				log_err("unable to fetch next instruction from the assembly");
 				break;
 			}
 		}
@@ -279,27 +280,27 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	uint32_t 		nb_node_footprint;
 
 	if (trace->ir == NULL){
-		printf("ERROR: in %s, the IR is NULL for fragment \"%s\"\n", __func__, trace->tag);
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
 		goto exit;
 	}
 
 	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->result_array)));
 	if (exported_result == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		goto exit;
 	}
 
 	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
-			printf("ERROR: in %s, results have already been exported (%s), unable to export twice - rebuild IR\n", __func__, result->signature->name);
+			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->signature->name);
 			goto exit;
 		}
 		else{
 			for (j = 0; j < nb_signature; j++){
 				if (signature_buffer[j] == result->signature){
 					#ifdef VERBOSE
-					printf("Export %u occurrence(s) of %s in fragment %s\n", result->nb_occurrence, result->signature->name, trace->tag);
+					log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->signature->name, trace->tag);
 					#endif
 					exported_result[nb_exported_result ++] = i;
 				}
@@ -308,13 +309,13 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	}
 
 	if (nb_exported_result == 0){
-		printf("WARNING: in %s, no exported result\n", __func__);
+		log_warn("no exported result");
 		goto exit;
 	}
 
 	node_set = set_create(sizeof(struct node*), 512);
 	if (node_set == NULL){
-		printf("ERROR: in %s, unable to create set\n", __func__);
+		log_err("unable to create set");
 		goto exit;
 	}
 
@@ -329,7 +330,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 
 	footprint = (struct node**)set_export_buffer_unique(node_set, &nb_node_footprint);
 	if (footprint == NULL){
-		printf("ERROR: in %s, unable to export set\n", __func__);
+		log_err("unable to export set");
 		goto exit;
 	}
 

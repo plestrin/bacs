@@ -6,6 +6,7 @@
 #include "signatureReader.h"
 #include "mapFile.h"
 #include "array.h"
+#include "base.h"
 
 enum readerToken{
 	READER_TOKEN_NONE,
@@ -83,12 +84,12 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 
 	buffer = mapFile_map(file_name, &buffer_size);
 	if (buffer == NULL){
-		printf("ERROR: in %s, unable to map file: %s\n", __func__, file_name);
+		log_err_m("unable to map file: %s", file_name);
 		return;
 	}
 
 	if (array_init(&local_edge_array, sizeof(struct localCodeEdge)) != 0 || array_init(&symbol_array, CODESIGNATURE_NAME_MAX_SIZE) != 0){
-		printf("ERROR: in %s, unable to init array\n", __func__);
+		log_err("unable to init array");
 		munmap(buffer, buffer_size);
 		return;
 	}
@@ -114,7 +115,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is START\n", __func__);
+						log_err("syntaxe error: state is START");
 					}
 				}
 				break;
@@ -122,7 +123,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 			case READER_STATE_GRAPH 		: {
 				switch(reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 	: {
-						printf("WARNING: in %s, empty signature -> skip\n", __func__);
+						log_warn("empty signature -> skip");
 						signatureReader_get_graph_name(&reader_cursor, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 						strncpy(graph_symbol, graph_name, CODESIGNATURE_NAME_MAX_SIZE);
 
@@ -147,7 +148,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is GRAPH\n", __func__);
+						log_err("syntaxe error: state is GRAPH");
 					}
 				}
 				break;
@@ -174,7 +175,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is SRC\n", __func__);
+						log_err("syntaxe error: state is SRC");
 					}
 				}
 				break;
@@ -199,7 +200,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is SRC_DESC\n", __func__);
+						log_err("syntaxe error: state is SRC_DESC");
 					}
 				}
 				break;
@@ -226,7 +227,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is EDGE\n", __func__);
+						log_err("syntaxe error: state is EDGE");
 					}
 				}
 				break;
@@ -246,7 +247,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is EDGE\n", __func__);
+						log_err("syntaxe error: state is EDGE");
 					}
 				}
 				break;
@@ -255,7 +256,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				switch(reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 		: {
 						if (array_add(&local_edge_array, &local_edge) < 0){
-							printf("ERROR: in %s, unable to add element to array\n", __func__);
+							log_err("unable to add element to array");
 						}
 						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
 						array_empty(&local_edge_array);
@@ -268,7 +269,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					}
 					case READER_TOKEN_NODE_ID 			: {
 						if (array_add(&local_edge_array, &local_edge) < 0){
-							printf("ERROR: in %s, unable to add element to array\n", __func__);
+							log_err("unable to add element to array");
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_label_set = 0;
@@ -292,7 +293,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is DST\n", __func__);
+						log_err("syntaxe error: state is DST");
 					}
 				}
 				break;
@@ -301,7 +302,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 				switch(reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 		: {
 						if (array_add(&local_edge_array, &local_edge) < 0){
-							printf("ERROR: in %s, unable to add element to array\n", __func__);
+							log_err("unable to add element to array");
 						}
 						codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
 						array_empty(&local_edge_array);
@@ -314,7 +315,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 					}
 					case READER_TOKEN_NODE_ID 			: {
 						if (array_add(&local_edge_array, &local_edge) < 0){
-							printf("ERROR: in %s, unable to add element to array\n", __func__);
+							log_err("unable to add element to array");
 						}
 						local_edge.src_id = atoi(reader_cursor.cursor);
 						local_edge.src_label_set = 0;
@@ -336,7 +337,7 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 						break;
 					}
 					default 						: {
-						printf("ERROR: in %s, syntaxe error: state is DST_DESC\n", __func__);
+						log_err("syntaxe error: state is DST_DESC");
 					}
 				}
 				break;
@@ -347,11 +348,11 @@ void codeSignatureReader_parse(struct codeSignatureCollection* collection, const
 
 	if (reader_state == READER_STATE_DST || reader_state == READER_STATE_DST_DESC){
 		if (array_add(&local_edge_array, &local_edge) < 0){
-			printf("ERROR: in %s, unable to add element to array\n", __func__);
+			log_err("unable to add element to array");
 		}
 	}
 	else{
-		printf("ERROR: in %s, syntaxe error: incorrect state at the end of the file\n", __func__);
+		log_err("syntaxe error: incorrect state at the end of the file");
 	}
 
 	codeSignatureReader_push_signature(collection, &local_edge_array, &symbol_array, graph_name, graph_symbol);
@@ -522,7 +523,7 @@ static void readerCursor_get_next(struct readerCursor* reader_cursor){
 				break;
 			}
 			default  : {
-				printf("ERROR: in %s, incorrect character: %c\n", __func__, *reader_cursor->cursor);
+				log_err_m("incorrect character: %c", *reader_cursor->cursor);
 				break;
 			}
 		}
@@ -625,7 +626,7 @@ static enum signatureNodeType codeSignatureReader_get_node_label(struct readerCu
 	memset(symbol, '\0', CODESIGNATURE_NAME_MAX_SIZE);
 	memcpy(symbol, reader_cursor->cursor + 1, (length > CODESIGNATURE_NAME_MAX_SIZE - 1) ? (CODESIGNATURE_NAME_MAX_SIZE - 1) : length);
 	if (array_add(symbol_array, &symbol) < 0){
-		printf("ERROR: in %s, unable to add element to array\n", __func__);
+		log_err("unable to add element to array");
 	}
 
 	return SIGNATURE_NODE_TYPE_SYMBOL;
@@ -676,10 +677,10 @@ static enum irDependenceType codeSignatureReader_get_irDependenceType(struct rea
 	}
 
 	if (length >= 3){
-		printf("ERROR: in %s, unable to convert string to irDependenceType %.3s, by default return DIRECT\n", __func__, reader_cursor->cursor + 1);
+		log_err_m("unable to convert string to irDependenceType %.3s, by default return DIRECT", reader_cursor->cursor + 1);
 	}
 	else{
-		printf("ERROR: in %s, unable to convert string to irDependenceType, by default return DIRECT\n", __func__);
+		log_err("unable to convert string to irDependenceType, by default return DIRECT");
 	}
 
 	*edge_macro_desc = 0;
@@ -691,7 +692,7 @@ static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, c
 	uint64_t 	i;
 
 	if (reader_cursor->remaining_size < 6){
-		printf("ERROR: in %s, incomplete IO tag\n", __func__);
+		log_err("incomplete IO tag");
 	}
 	else{
 		if (reader_cursor->cursor[1] == first_char && reader_cursor->cursor[2] == ':'){
@@ -703,7 +704,7 @@ static uint32_t codeSignatureReader_get_IO(struct readerCursor* reader_cursor, c
 			}
 		}
 		else{
-			printf("ERROR: in %s, incorrect IO tag\n", __func__);
+			log_err("incorrect IO tag");
 		}
 	}
 
@@ -741,7 +742,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			nb_raw_symbol = array_get_length(symbol_array);
 			symbol_table = (struct signatureSymbolTable*)malloc(signatureSymbolTable_get_size(nb_raw_symbol));
 			if (symbol_table == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				log_err("unable to allocate memory");
 				return;
 			}
 
@@ -764,7 +765,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 
 			realloc_symbol_table = (struct signatureSymbolTable*)realloc(symbol_table, signatureSymbolTable_get_size(symbol_table->nb_symbol));
 			if (realloc_symbol_table == NULL){
-				printf("ERROR: in %s, unable to realloc memory buffer\n", __func__);
+				log_err("unable to realloc memory buffer");
 			}
 			else{
 				symbol_table = realloc_symbol_table;
@@ -772,7 +773,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 
 			raw_symbol_index = (struct signatureSymbol**)malloc(sizeof(struct signatureSymbol*) * nb_raw_symbol);
 			if (raw_symbol_index == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				log_err("unable to allocate memory");
 				free(symbol_table);
 				return;
 			}
@@ -795,7 +796,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		nb_node = 2 * array_get_length(local_edge_array);
 		node_buffer = (struct localCodeNode*)malloc(sizeof(struct localCodeNode) * nb_node);
 		if (node_buffer == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			log_err("unable to allocate memory");
 			if (raw_symbol_index != NULL){
 				free(raw_symbol_index);
 			}
@@ -884,19 +885,19 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 				}
 				else{
 					if (node_buffer[node_offset].signature_node.type != node_buffer[i].signature_node.type){
-						printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+						log_err_m("multiple opcode defined for node %u", node_buffer[node_offset].id);
 					}
 					else{
 						switch (node_buffer[node_offset].signature_node.type){
 							case SIGNATURE_NODE_TYPE_OPCODE  :{
 								if (node_buffer[node_offset].signature_node.node_type.opcode != node_buffer[i].signature_node.node_type.opcode){
-									printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+									log_err_m("multiple opcode defined for node %u", node_buffer[node_offset].id);
 								}
 								break;
 							}
 							case SIGNATURE_NODE_TYPE_SYMBOL : {
 								if (node_buffer[node_offset].signature_node.node_type.symbol != node_buffer[i].signature_node.node_type.symbol){
-									printf("ERROR: in %s, multiple opcode defined for node %u\n", __func__, node_buffer[node_offset].id);
+									log_err_m("multiple opcode defined for node %u", node_buffer[node_offset].id);
 								}
 								break;
 							}
@@ -912,14 +913,14 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			node_buffer = node_buffer_realloc;
 		}
 		else{
-			printf("ERROR: in %s, unable to realloc memory buffer\n", __func__);
+			log_err("unable to realloc memory buffer");
 		}
 
 		graph_init(&(code_signature.graph), sizeof(struct signatureNode), sizeof(struct signatureEdge));
 
 		for (i = 0; i < nb_node; i++){
 			if (!node_buffer[i].label_set){
-				printf("ERROR: in %s, opcode has not been set for node %u\n", __func__, node_buffer[i].id);
+				log_err_m("opcode has not been set for node %u", node_buffer[i].id);
 			}
 			else{
 				node_buffer[i].graph_node = graph_add_node(&(code_signature.graph), &(node_buffer[i].signature_node));
@@ -937,22 +938,22 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 			cmp_node.id = edge->src_id;
 			src_node = (struct localCodeNode*)bsearch (&cmp_node, node_buffer, nb_node, sizeof(struct localCodeNode), compare_localCodeNode);
 			if (src_node == NULL){
-				printf("ERROR: in %s, edge %u unable to fetch src node\n", __func__, i);
+				log_err_m("edge %u unable to fetch src node", i);
 				continue;
 			}
 			if (src_node->graph_node == NULL){
-				printf("ERROR: in %s, src node is NULL\n", __func__);
+				log_err("src node is NULL");
 				continue;
 			}
 
 			cmp_node.id = edge->dst_id;
 			dst_node = (struct localCodeNode*)bsearch(&cmp_node, node_buffer, nb_node, sizeof(struct localCodeNode), compare_localCodeNode);
 			if (dst_node == NULL){
-				printf("ERROR: in %s, edge %u unable to fetch dst node\n", __func__, i);
+				log_err_m("edge %u unable to fetch dst node", i);
 				continue;
 			}
 			if (dst_node->graph_node == NULL){
-				printf("ERROR: in %s, dst node is NULL\n", __func__);
+				log_err("dst node is NULL");
 				continue;
 			}
 
@@ -965,7 +966,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 				signature_edge.macro_desc 	= 0;
 			}
 			if (graph_add_edge(&(code_signature.graph), src_node->graph_node, dst_node->graph_node, &signature_edge) == NULL){
-				printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+				log_err("unable to add edge to the graph");
 			}
 		}
 
@@ -975,7 +976,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 		code_signature.symbol_table 		= symbol_table;
 
 		if (codeSignatureCollection_add_codeSignature(collection, &code_signature)){
-			printf("ERROR: in %s, unable to add signature to collection\n", __func__);
+			log_err("unable to add signature to collection");
 		}
 
 		free(node_buffer);

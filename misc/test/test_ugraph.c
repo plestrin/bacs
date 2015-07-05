@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "../ugraph.h"
+#include "../base.h"
 
 #define NODE_SIZE 23
 #define NB_NODE 16
@@ -19,7 +20,7 @@ int32_t main(){
 
 	adj = (uint8_t*)calloc(NB_NODE * NB_NODE, sizeof(uint8_t));
 	if (adj == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return 0;
 	}
 
@@ -28,7 +29,7 @@ int32_t main(){
 	for (i = 0; i < NB_NODE; i++){
 		node_buffer[i] = ugraph_add_node(&ugraph, data);
 		if (node_buffer[i] == NULL){
-			printf("ERROR: in %s, unable to add unode %u\n", __func__, i);
+			log_err_m("unable to add unode %u", i);
 		}
 	}
 
@@ -38,7 +39,7 @@ int32_t main(){
 				if (rand() & 0x1){
 					node_buffer[j] = ugraph_add_node(&ugraph, data);
 					if (node_buffer[j] == NULL){
-						printf("ERROR: in %s, unable to add unode %u @ %u\n", __func__, j, i);
+						log_err_m("unable to add unode %u @ %u", j, i);
 						continue;
 					}
 				}

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "set.h"
+#include "base.h"
 
 struct set* set_create(uint32_t element_size, uint32_t nb_element_block){
 	struct set* set;
@@ -14,7 +15,7 @@ struct set* set_create(uint32_t element_size, uint32_t nb_element_block){
 		set_init(set, element_size, nb_element_block)
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return set;
@@ -34,7 +35,7 @@ int32_t set_add(struct set* set, void* element){
 		if (block_cursor->next == NULL){
 			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(set->element_size, set->nb_element_block));
 			if (block_cursor->next == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
+				log_err("unable to allocate memory");
 			}
 			else{
 				block_cursor->next->nb_element 	= 0;
@@ -106,7 +107,7 @@ void set_remove(struct set* set, void* element){
 		}
 	}
 
-	printf("ERROR: in %s, unable to find element %p in set\n", __func__, element);
+	log_err_m("unable to find element %p in set", element);
 }
 
 int32_t set_are_disjoint(struct set* set1, struct set* set2){
@@ -116,7 +117,7 @@ int32_t set_are_disjoint(struct set* set1, struct set* set2){
 	void* 				data2;
 
 	if (set1->element_size != set2->element_size){
-		printf("ERROR: in %s, unable to compare sets since their element differ (%u vs %u)\n", __func__, set1->element_size, set2->element_size);
+		log_err_m("unable to compare sets since their element differ (%u vs %u)", set1->element_size, set2->element_size);
 		return 0;
 	}
 
@@ -144,7 +145,7 @@ void* set_export_buffer(struct set* set){
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return buffer;
@@ -168,12 +169,12 @@ void* set_export_buffer_unique(struct set* set, uint32_t* nb_element){
 		}
 		buffer = realloc(buffer, offset * set->element_size);
 		if (buffer == NULL){
-			printf("ERROR: in %s, unable to realloc\n", __func__);
+			log_err("unable to realloc");
 		}
 		*nb_element = offset;
 	}
 	else{
-		printf("ERROR: in %s, unable to export set\n", __func__);
+		log_err("unable to export set");
 	}
 
 	return buffer;

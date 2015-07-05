@@ -4,6 +4,7 @@
 
 #include "../readBuffer.h"
 #include "../printBuffer.h"
+#include "../base.h"
 
 #define BUFFER_SIZE 256
 
@@ -17,7 +18,7 @@ int main(){
 	fflush(stdout);
 
 	if (fgets(input, BUFFER_SIZE, stdin) == NULL){
-		printf("ERROR: in %s, gets return NULL\n", __func__);
+		log_err("gets return NULL");
 		return 0;
 	}
 	input_size = strlen(input);
@@ -27,7 +28,7 @@ int main(){
 	buffer = readBuffer_raw(input, input_size, NULL);
 	buffer_size = READBUFFER_RAW_GET_LENGTH(input_size);
 	if (buffer == NULL){
-		printf("ERROR: in %s, readBuffer return NULL\n", __func__);
+		log_err("readBuffer return NULL");
 	}
 	else{
 		printBuffer_raw(stdout, buffer, buffer_size);

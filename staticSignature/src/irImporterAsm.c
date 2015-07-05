@@ -5,6 +5,7 @@
 #include "irImporterAsm.h"
 #include "graph.h"
 #include "irRenameEngine.h"
+#include "base.h"
 
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
 static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg);
@@ -158,7 +159,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 	irRenameEngine_init(engine, ir)
 
 	if (assembly_get_instruction(assembly, &it, 0)){
-		printf("ERROR: in %s, unable to fetch first instruction from the assembly\n", __func__);
+		log_err("unable to fetch first instruction from the assembly");
 		return -1;
 	}
 
@@ -250,7 +251,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 		}
 		else{
 			if (assembly_get_next_instruction(assembly, &it)){
-				printf("ERROR: in %s, unable to fetch next instruction from the assembly\n", __func__);
+				log_err("unable to fetch next instruction from the assembly");
 				return -1;
 			}
 		}
@@ -283,7 +284,7 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 					uint64_t disp;
 
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
+						log_err_m("the max number of operand has been reached: %u for instruction %s", max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 						goto exit;
 					}
 
@@ -315,7 +316,7 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 				}
 				case XED_OPERAND_IMM0 	: {
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
+						log_err_m("the max number of operand has been reached: %u for instruction %s", max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 						goto exit;
 					}
 
@@ -345,7 +346,7 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 					}
 
 					if (max_nb_operand == nb_operand){
-						printf("ERROR: in %s, the max number of operand has been reached: %u for instruction %s\n", __func__, max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
+						log_err_m("the max number of operand has been reached: %u for instruction %s", max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 						goto exit;
 					}
 					
@@ -367,7 +368,7 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, operand type not supported: %s for instruction %s\n", __func__, xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
+					log_err_m("operand type not supported: %s for instruction %s", xed_operand_enum_t2str(op_name), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 					break;
 				}
 			}
@@ -395,14 +396,14 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 		case ASM_OPERAND_IMM : {
 			operand->variable = ir_add_immediate(engine->ir, operand->size, operand->operand_type.imm);
 			if (operand->variable == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+				log_err("unable to add immediate to IR");
 			}
 			break;
 		}
 		case ASM_OPERAND_REG : {
 			operand->variable = irRenameEngine_get_register_ref(engine, operand->operand_type.reg, operand->instruction_index);
 			if (operand->variable == NULL){
-				printf("ERROR: in %s, unable to register reference from the renaming engine\n", __func__);
+				log_err("unable to register reference from the renaming engine");
 			}
 			break;
 		}
@@ -413,14 +414,14 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 			if (address != NULL){
 				operand->variable = ir_add_in_mem(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine));
 				if (operand->variable == NULL){
-					printf("ERROR: in %s, unable to add memory load to IR\n", __func__);
+					log_err("unable to add memory load to IR");
 				}
 				else{
 					irRenameEngine_set_mem_order(engine, operand->variable);
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to build memory address\n", __func__);
+				log_err("unable to build memory address");
 			}
 			break;
 		}
@@ -432,7 +433,7 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 		case ASM_OPERAND_REG 	: {
 			operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode);
 			if (operand->variable == NULL){
-				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				log_err("unable to add operation to IR");
 			}
 			else{
 				irRenameEngine_set_register_ref(engine, operand->operand_type.reg, operand->variable);
@@ -451,24 +452,24 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, operand->variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+							log_err("unable to add output to add dependence to IR");
 						}
 					}
 					else{
-						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+						log_err("unable to add memory write to IR");
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+					log_err("unable to add operation to IR");
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to build memory address\n", __func__);
+				log_err("unable to build memory address");
 			}
 			break;
 		}
 		default 				: {
-			printf("ERROR: in %s, this case is not supposed to happen (IMM read operand)\n", __func__);
+			log_err("this case is not supposed to happen (IMM read operand)");
 		}
 	}
 }
@@ -501,7 +502,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	if (mem->base != XED_REG_INVALID){
 		base = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->base), instruction_index);
 		if (base == NULL){
-			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
+			log_err("unable to get register reference from the renaming engine");
 		}
 		else{
 			operands[nb_operand] = base;
@@ -512,14 +513,14 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	if (mem->scale > 1){
 		scale = ir_add_immediate(engine->ir, 8, __builtin_ffs(mem->scale) - 1);
 		if (scale == NULL){
-			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+			log_err("unable to add immediate to IR");
 		}
 	}
 
 	if (mem->index != XED_REG_INVALID){
 		index = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->index), instruction_index);
 		if (index == NULL){
-			printf("ERROR: in %s, unable to get register reference from the renaming engine\n", __func__);
+			log_err("unable to get register reference from the renaming engine");
 		}
 		else{
 			if (scale == NULL){
@@ -532,17 +533,17 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 				shl = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_SHL);
 				if (shl != NULL){
 					if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+						log_err("unable to add dependence between IR nodes");
 					}
 					if (ir_add_dependence(engine->ir, scale, shl, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-						printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+						log_err("unable to add dependence between IR nodes");
 					}
 
 					operands[nb_operand] = shl;
 					nb_operand ++;
 				}
 				else{
-					printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+					log_err("unable to add operation to IR");
 				}
 			}
 		}
@@ -551,7 +552,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	if (mem->disp){
 		disp = ir_add_immediate(engine->ir, 32, mem->disp);
 		if (disp == NULL){
-			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+			log_err("unable to add immediate to IR");
 		}
 		else{
 			operands[nb_operand] = disp;
@@ -568,14 +569,14 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					log_err("unable to add dependence between IR nodes");
 				}
 				if (ir_add_dependence(engine->ir, operands[1], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					log_err("unable to add dependence between IR nodes");
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				log_err("unable to add operation to IR");
 			}
 			break;
 		}
@@ -583,22 +584,22 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					log_err("unable to add dependence between IR nodes");
 				}
 				if (ir_add_dependence(engine->ir, operands[1], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					log_err("unable to add dependence between IR nodes");
 				}
 				if (ir_add_dependence(engine->ir, operands[2], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependence between IR nodes\n", __func__);
+					log_err("unable to add dependence between IR nodes");
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				log_err("unable to add operation to IR");
 			}
 			break;
 		}
 		default : {
-			printf("ERROR: in %s, incorrect number of operand(s): %u\n", __func__, nb_operand);
+			log_err_m("incorrect number of operand(s): %u", nb_operand);
 		}
 	}
 
@@ -623,7 +624,7 @@ static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* ri
 		for (i = 0; i < risc->nb_input_operand; i++){
 			if (risc->input_operand[i].variable != NULL){
 				if (ir_add_dependence(engine->ir, risc->input_operand[i].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][i]) == NULL){
-					printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+					log_err("unable to add output to add dependence to IR");
 				}
 			}
 		}
@@ -631,10 +632,10 @@ static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* ri
 }
 
 static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc){
-	printf("WARNING: in %s, translating CMOVxx instruction into glue operation\n", __func__);
+	log_warn("translating CMOVxx instruction into glue operation");
 
 	if (risc->nb_input_operand != 1){
-		printf("ERROR: in %s, incorrect number of input operand\n", __func__);
+		log_err("incorrect number of input operand");
 		return;
 	}
 
@@ -649,24 +650,24 @@ static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct a
 	if (risc->output_operand.variable != NULL){
 		if (risc->input_operand[0].variable != NULL){
 			if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
-				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+				log_err("unable to add output to add dependence to IR");
 			}
 		}
 		else{
-			printf("ERROR: in %s, unable to fetch first input operand\n", __func__);
+			log_err("unable to fetch first input operand");
 		}
 
 		if (risc->input_operand[1].variable != NULL){
 			if (ir_add_dependence(engine->ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
-				printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+				log_err("unable to add output to add dependence to IR");
 			}
 		}
 		else{
-			printf("ERROR: in %s, unable to fetch second input operand\n", __func__);
+			log_err("unable to fetch second input operand");
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to fetch output operand\n", __func__);
+		log_err("unable to fetch output operand");
 	}
 }
 
@@ -675,7 +676,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 	struct node* mem_write;
 
 	if (risc->nb_input_operand != 1 || risc->input_operand[0].type != ASM_OPERAND_MEM){
-		printf("ERROR: in %s, incorrect type or number of input operand\n", __func__);
+		log_err("incorrect type or number of input operand");
 		return;
 	}
 
@@ -693,25 +694,25 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+							log_err("unable to add output to add dependence to IR");
 						}
 					}
 					else{
-						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+						log_err("unable to add memory write to IR");
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to build memory address\n", __func__);
+					log_err("unable to build memory address");
 				}
 				break;
 			}
 			default 				: {
-				printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+				log_err("this case is not supposed to happen");
 			}
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to build memory address\n", __func__);
+		log_err("unable to build memory address");
 	}
 }
 
@@ -720,7 +721,7 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 	struct node* mem_write;
 
 	if (risc->nb_input_operand != 1){
-		printf("ERROR: in %s, incorrect number of input operand\n", __func__);
+		log_err("incorrect number of input operand");
 		return;
 	}
 
@@ -738,25 +739,25 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add output to add dependence to IR\n", __func__);
+							log_err("unable to add output to add dependence to IR");
 						}
 					}
 					else{
-						printf("ERROR: in %s, unable to add memory write to IR\n", __func__);
+						log_err("unable to add memory write to IR");
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to build memory address\n", __func__);
+					log_err("unable to build memory address");
 				}
 				break;
 			}
 			default 				: {
-				printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+				log_err("this case is not supposed to happen");
 			}
 		}
 	}
 	else{
-		printf("ERROR: in %s, input variable is NULL\n", __func__);
+		log_err("input variable is NULL");
 	}
 }
 
@@ -799,7 +800,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SUB 		: {return IR_SUB;}
 		case XED_ICLASS_XOR 		: {return IR_XOR;}
 		default : {
-			printf("ERROR: in %s, this instruction (%s) cannot be translated into IR Opcode\n", __func__, xed_iclass_enum_t2str(xed_opcode));
+			log_err_m("this instruction (%s) cannot be translated into IR Opcode", xed_iclass_enum_t2str(xed_opcode));
 			return IR_INVALID;
 		}
 	}
@@ -832,7 +833,7 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 		case XED_REG_ESI 	: {return IR_REG_ESI;}
 		case XED_REG_EDI 	: {return IR_REG_EDI;}
 		default : {
-			printf("ERROR: in %s, this register (%s) cannot be translated into IR register\n", __func__, xed_reg_enum_t2str(xed_reg));
+			log_err_m("this register (%s) cannot be translated into IR register", xed_reg_enum_t2str(xed_reg));
 			return IR_REG_EAX;
 		}
 	}

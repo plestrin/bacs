@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "subGraphIsomorphism.h"
+#include "base.h"
 
 #if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 #include "dijkstra.h"
@@ -82,7 +83,7 @@ static struct nodeTab* graphIso_create_node_tab(struct graph* graph, uint32_t(*n
 
 	node_tab = (struct nodeTab*)malloc(sizeof(struct nodeTab) * graph->nb_node);
 	if (node_tab == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 	else{
 		for(node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
@@ -105,7 +106,7 @@ static struct labelTab* graphIso_create_label_tab(struct graph* graph, uint32_t(
 
 	label_tab = (struct labelTab*)malloc(sizeof(struct labelTab) * graph->nb_node);
 	if (label_tab == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 	else{
 		for(node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
@@ -130,7 +131,7 @@ static struct labelTab** graphIso_create_connectivity_mapping(struct labelTab* l
 
 	connectivity_mapping = (struct labelTab**)malloc(sizeof(struct labelTab*) * nb_node);
 	if (connectivity_mapping == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
@@ -160,7 +161,7 @@ static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, s
 
 	label_fast = (struct labelFastAccess*)malloc(sizeof(struct labelFastAccess) * (*nb_label));
 	if (label_fast == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 	else{
 		for (i = 0; i < graph->nb_node; i++){
@@ -199,7 +200,7 @@ static struct edgeTab* graphIso_create_edge_tab(struct graph* graph, uint32_t(*e
 
 	edge_tab = (struct edgeTab*)malloc(sizeof(struct edgeTab) * graph->nb_edge);
 	if (edge_tab == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 	else{
 		for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -221,14 +222,14 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 
 	handle = (struct graphIsoHandle*)malloc(sizeof(struct graphIsoHandle));
 	if (handle == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	handle->dst = (uint32_t**)calloc(graph->nb_node, sizeof(uint32_t*));
 	if (handle->dst == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		free(handle);
 		return NULL;
 	}
@@ -236,7 +237,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 
 	handle->label_tab = graphIso_create_label_tab(graph, node_get_label);
 	if (handle->label_tab == NULL){
-		printf("ERROR: in %s, unable to create labelTab\n", __func__);
+		log_err("unable to create labelTab");
 		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 		free(handle->dst);
 		#endif
@@ -246,7 +247,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 
 	handle->label_fast = graphIso_create_label_fast(graph, handle->label_tab, &nb_label);
 	if (handle->label_fast == NULL){
-		printf("ERROR: in %s, unable to create labelFastAccess\n", __func__);
+		log_err("unable to create labelFastAccess");
 		free(handle->label_tab);
 		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 		free(handle->dst);
@@ -262,7 +263,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 	handle->connectivity_mapping = graphIso_create_connectivity_mapping(handle->label_tab, graph->nb_node);
 	if (handle->connectivity_mapping == NULL){
-		printf("ERROR: in %s, unable to create connectivity mapping\n", __func__);
+		log_err("unable to create connectivity mapping");
 		free(handle->label_fast);
 		free(handle->label_tab);
 		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
@@ -288,13 +289,13 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 	if (sub_graph_handle->graph->nb_node > 0){
 		assignment_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
 		if (assignment_array == NULL){
-			printf("ERROR: in %s, unable to create array\n", __func__);
+			log_err("unable to create array");
 		}
 		else{
 			possible_assignment = possibleAssignment_create_init_first(graph_handle, sub_graph_handle, &error);
 			if (possible_assignment == NULL){
 				if (error){
-					printf("ERROR: in %s, unable to create first possible assignment\n", __func__);
+					log_err("unable to create first possible assignment");
 				}
 			}
 			else{
@@ -373,7 +374,7 @@ static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, s
 		for (i = 0; i < possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].nb_possible_assignment; i++){
 			assignment[get_node_order(sub_graph_handle, nb_assignment)] = graph_handle->label_tab[possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].node_offset + i]].node;
 			if (array_add(assignment_array, assignment) < 0){
-				printf("ERROR: in %s, unable to add assignment to array\n", __func__);
+				log_err("unable to add assignment to array");
 			}
 			result ++;
 		}
@@ -425,28 +426,28 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 
 	handle = (struct subGraphIsoHandle*)malloc(sizeof(struct subGraphIsoHandle));
 	if (handle == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 		
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node);
 	if (handle->dst == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		free(handle);
 		return NULL;
 	}
 
 	for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL && i < graph->nb_node; node_cursor = node_get_next(node_cursor), i++){
 		if (dijkstra_dst(graph, node_cursor, handle->dst + (i * graph->nb_node))){
-			printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+			log_err("unable to compute graph dst (Dijkstra)");
 		}
 	}
 	#endif
 
 	handle->node_tab = graphIso_create_node_tab(graph, node_get_label);
 	if (handle->node_tab == NULL){
-		printf("ERROR: in %s, unable to create labelTab\n", __func__);
+		log_err("unable to create labelTab");
 		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 		free(handle->dst);
 		#endif
@@ -457,7 +458,7 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	handle->node_order = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node);
 	if (handle->node_order == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		free(handle->node_tab);
 		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 		free(handle->dst);
@@ -469,7 +470,7 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 
 	handle->edge_tab = graphIso_create_edge_tab(graph, edge_get_label, handle->node_tab);
 	if (handle->edge_tab == NULL){
-		printf("ERROR: in %s, unable to create edgeTab\n", __func__);
+		log_err("unable to create edgeTab");
 		#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 		free(handle->node_order);
 		#endif
@@ -532,7 +533,7 @@ static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, ui
 		possible_assignment->stacked_size 	= (uint32_t*)((char*)possible_assignment->nodes + nb_assignment * sizeof(uint32_t));
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return possible_assignment;
@@ -557,7 +558,7 @@ static struct possibleAssignment* possibleAssignment_create_init_first(struct gr
 
 	graph_node_list = (struct graphNodeList*)malloc(sizeof(struct graphNodeList) * sub_graph_handle->graph->nb_node);
 	if (graph_node_list == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return NULL;
 	}
 
@@ -630,7 +631,7 @@ static struct possibleAssignment* possibleAssignment_create_init_first(struct gr
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to create possibleAssignment structure\n", __func__);
+		log_err("unable to create possibleAssignment structure");
 		if (error != NULL){
 			*error = 1;
 		}
@@ -668,11 +669,11 @@ static int32_t possibleAssignment_duplicate(struct graphIsoHandle* graph_handle,
 					if (graph_handle->dst[index_k] == NULL){
 						graph_handle->dst[index_k] = (uint32_t*)malloc(sizeof(uint32_t) * graph_handle->graph->nb_node);
 						if (graph_handle->dst[index_k] == NULL){
-							printf("ERROR: in %s, unable to allocate memory\n", __func__);
+							log_err("unable to allocate memory");
 							return -1;
 						}
 						if (dijkstra_dst(graph_handle->graph, graph_handle->label_tab[new_assignment_value].node, graph_handle->dst[index_k])){
-							printf("ERROR: in %s, unable to compute graph dst (Dijkstra)\n", __func__);
+							log_err("unable to compute graph dst (Dijkstra)");
 							return -1;
 						}
 					}
@@ -700,7 +701,7 @@ static int32_t possibleAssignment_duplicate(struct graphIsoHandle* graph_handle,
 			}
 		}
 		else{
-			printf("ERROR: in %s, this case is not supposed to happen, subgrah is not connected\n", __func__);
+			log_err("this case is not supposed to happen, subgrah is not connected");
 		}
 	}
 

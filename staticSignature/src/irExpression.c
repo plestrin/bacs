@@ -5,6 +5,7 @@
 #include "irExpression.h"
 #include "dagPartialOrder.h"
 #include "set.h"
+#include "base.h"
 
 #define IREXPRESSION_AFFINE_FORM_MAX_LEVEL 6
 
@@ -34,11 +35,11 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 	else if ((coef & (0xffffffffffffffffULL >> (64 - size))) == (0xffffffffffffffffULL >> (64 - size)) && irAffineTerm_is_signed(term)){
 		if ((new_op = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, size, IR_NEG)) != NULL){
 			if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-				printf("ERROR: in %s, unable to add depedence to IR\n", __func__);
+				log_err("unable to add depedence to IR");
 			}
 		}
 		else{
-			printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+			log_err("unable to add operation to IR");
 		}
 		return new_op;
 	}
@@ -52,18 +53,18 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 			}
 			if (new_op != NULL){
 				if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add depedence to IR\n", __func__);
+					log_err("unable to add depedence to IR");
 				}
 				if (ir_add_dependence(ir, new_im, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add depedence to IR\n", __func__);
+					log_err("unable to add depedence to IR");
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+				log_err("unable to add operation to IR");
 			}
 		}
 		else{
-			printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+			log_err("unable to add immediate to IR");
 		}
 		return new_op;
 	}
@@ -89,7 +90,7 @@ static struct irAffineForm* irAffineForm_create(struct node* root){
 		set_init(&(affine_form->term_set), sizeof(struct irAffineTerm), IR_AFFINE_FORM_NB_TERM);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return affine_form;
@@ -161,7 +162,7 @@ static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affi
 	if (*affine_form == NULL){
 		*affine_form = irAffineForm_create(node);
 		if (*affine_form == NULL){
-			printf("ERROR: in %s, unable to create affineForm\n", __func__);
+			log_err("unable to create affineForm");
 			return -1;
 		}
 	}
@@ -233,7 +234,7 @@ static inline void irAffineForm_import_imm(struct node* node, struct irAffineFor
 	term.variable 	= NULL;
 
 	if (irAffineForm_add_term(*affine_form, &term)){
-		printf("ERROR: in %s, unable to add affineTerm to affineForm\n", __func__);
+		log_err("unable to add affineTerm to affineForm");
 	}
 }
 
@@ -245,7 +246,7 @@ static inline void irAffineForm_import_var(struct node* node, struct irAffineFor
 	term.variable 	= node;
 
 	if (irAffineForm_add_term(*affine_form, &term)){
-		printf("ERROR: in %s, unable to add affineTerm to affineForm\n", __func__);
+		log_err("unable to add affineTerm to affineForm");
 	}
 }
 
@@ -285,7 +286,7 @@ static inline void irAffineForm_import_imul(struct node* node, struct irAffineFo
 		term.variable 	= NULL;
 
 		if (irAffineForm_add_term(*affine_form, &term)){
-			printf("ERROR: in %s, unable to add affineTerm to affineForm\n", __func__);
+			log_err("unable to add affineTerm to affineForm");
 		}
 	}
 	else{
@@ -301,7 +302,7 @@ static inline void irAffineForm_import_mul(struct node* node, struct irAffineFor
 	struct irAffineTerm 	term;
 
 	if (sign){
-		printf("WARNING: in %s, multiplication applied on signed value\n", __func__);
+		log_warn("multiplication applied on signed value");
 	}
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
@@ -325,7 +326,7 @@ static inline void irAffineForm_import_mul(struct node* node, struct irAffineFor
 		term.variable 	= NULL;
 
 		if (irAffineForm_add_term(*affine_form, &term)){
-			printf("ERROR: in %s, unable to add affineTerm to affineForm\n", __func__);
+			log_err("unable to add affineTerm to affineForm");
 		}
 	}
 	else{
@@ -348,7 +349,7 @@ static inline void irAffineForm_import_shl(struct node* node, struct irAffineFor
 	struct edge* edge_cursor;
 
 	if (sign){
-		printf("WARNING: in %s, multiplication applied on signed value\n", __func__);
+		log_warn("multiplication applied on signed value");
 	}
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
@@ -415,7 +416,7 @@ static void irAffineForm_export(struct irAffineForm* affine_form, struct ir* ir)
 		term_node = irAffineTerm_export(term, ir, affine_form->size);
 		if (term_node != NULL){
 			if (ir_add_dependence(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-				printf("ERROR: in %s, unable to add dependence to IR\n", __func__);
+				log_err("unable to add dependence to IR");
 			}
 		}
 	}
@@ -448,7 +449,7 @@ void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification){
 	struct node* node_cursor;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+		log_err("unable to sort DAG");
 	}
 
 	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -463,7 +464,7 @@ void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification){
 				irAffineForm_delete(affine_form)
 			}
 			else{
-				printf("ERROR: in %s, unable to import affineForm\n", __func__);
+				log_err("unable to import affineForm");
 			}
 		}
 	}

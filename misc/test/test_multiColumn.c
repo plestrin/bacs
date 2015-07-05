@@ -2,13 +2,14 @@
 #include <stdio.h>
 
 #include "../multiColumn.h"
+#include "../base.h"
 
 int main(){
 	struct multiColumnPrinter* printer;
 
 	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
 	if (printer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return 0;
 	}
 

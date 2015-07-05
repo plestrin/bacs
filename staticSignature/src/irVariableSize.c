@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #include "irVariableSize.h"
-
 #include "dagPartialOrder.h"
+#include "base.h"
 
 const uint8_t irRegisterSize[NB_IR_REGISTER] = {
 	32, 	/* IR_REG_EAX 	*/
@@ -61,15 +61,15 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 								operation_cursor->operation_type.inst.opcode = IR_AND;
 							}
 							else{
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								log_err("unable to add dependency to IR");
 							}
 						}
 						else{
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+							log_err("unable to add immediate to IR");
 						}
 					}
 					else{
-						printf("ERROR: in %s, trying to remove unnecessary MOVZX instruction but operand size was incorrect %p\n", __func__, (void*)ir_node_get_operation(operand));
+						log_err_m("trying to remove unnecessary MOVZX instruction but operand size was incorrect %p", (void*)ir_node_get_operation(operand));
 					}
 				}
 
@@ -89,7 +89,7 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 
 					if (child->size == ir_node_get_operation(operand)->size && !(child->type == IR_OPERATION_TYPE_INST && child->operation_type.inst.opcode == IR_MOVZX)){
 						if (ir_add_dependence(ir, operand, edge_get_dst(edge_cursor), ir_edge_get_dependence(edge_cursor)->type) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 
 						tmp = edge_cursor;
@@ -124,25 +124,25 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 								disp = ir_add_immediate(ir, child->size, 8);
 								if (disp){
 									if (ir_add_dependence(ir, disp, shift, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+										log_err("unable to add dependency to IR");
 									}
 								}
 								else{
-									printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+									log_err("unable to add immediate to IR");
 								}
 							}
 							else{
-								printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+								log_err("unable to add instruction to IR");
 								break;
 							}
 						}
 
 						if (ir_add_dependence(ir, operand, shift, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 
 						if (ir_add_dependence(ir, shift, edge_get_dst(edge_cursor), ir_edge_get_dependence(edge_cursor)->type) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 
 						tmp = edge_cursor;
@@ -244,20 +244,20 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 					new_ins = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, 16, IR_MOVZX);
 				}
 				else{
-					printf("ERROR: in %s, this case is not implemented, size mismatch %u -> %u\n", __func__, operand_operation->size, operation_cursor->size);
+					log_err_m("this case is not implemented, size mismatch %u -> %u", operand_operation->size, operation_cursor->size);
 					continue;
 				}
 
 				if (new_ins == NULL){
-					printf("ERROR: in %s, unable to add operation to IR\n", __func__);
+					log_err("unable to add operation to IR");
 				}
 				else{
 					if (ir_add_dependence(ir, operand_node, new_ins, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 
 					if (ir_add_dependence(ir, new_ins, node_cursor, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 
 					ir_remove_dependence(ir, edge_current);
@@ -311,7 +311,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 	uint8_t 				local_modification = 0;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+		log_err("unable to sort DAG");
 	}
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -321,7 +321,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 		if (operation_cursor->size < 32){
 			switch (operation_cursor->type){
 				case IR_OPERATION_TYPE_IN_REG 	: {
-					printf("WARNING: in %s, register of size: %u, this case is not implemented\n", __func__, operation_cursor->size);
+					log_warn_m("register of size: %u, this case is not implemented", operation_cursor->size);
 					break;
 				}
 				case IR_OPERATION_TYPE_IN_MEM 	: {
@@ -353,7 +353,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 							break;
 						}
 						case PADDING_COMPLAIN 	: {
-							printf("WARNING: in %s, %s of size: %u, this case is not implemented\n", __func__, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
+							log_warn_m("%s of size: %u, this case is not implemented", irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 							break;
 						}
 						case PADDING_SECURE 	: {
@@ -367,7 +367,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 							uint32_t 		nb_edge_dst;
 
 							if (node_cursor->nb_edge_dst > IRVARIABLESIZE_NB_OPERAND_MAX){
-								printf("ERROR: in %s, number of operand exceed a static array upper bound\n", __func__);
+								log_err("number of operand exceed a static array upper bound");
 							}
 							else{
 								for (edge_cursor = node_get_head_edge_dst(node_cursor), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor), i++){
@@ -380,18 +380,18 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 										and_tab[i] = ir_insert_inst(ir, node_cursor, IR_INSTRUCTION_INDEX_UNKOWN, 32, IR_AND);
 										if (and_tab[i]){
 											if (ir_add_dependence(ir, mask, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-												printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+												log_err("unable to add dependency to IR");
 											}
 											if (ir_add_dependence(ir, operand, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-												printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+												log_err("unable to add dependency to IR");
 											}
 										}
 										else{
-											printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+											log_err("unable to add instruction to IR");
 										}
 									}
 									else{
-										printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+										log_err("unable to add immediate to IR");
 									}
 								}
 
@@ -399,7 +399,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 
 								for (i = 0; i < nb_edge_dst; i++){
 									if (ir_add_dependence(ir, and_tab[i], node_cursor,ir_edge_get_dependence(edge_tab[i])->type) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+										log_err("unable to add dependency to IR");
 									}
 									ir_remove_dependence(ir, edge_tab[i]);
 								}

@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "../workQueue.h"
+#include "../base.h"
 
 #define NB_THREAD 5
 #define NB_SUBMIT 14
@@ -15,7 +16,7 @@ int main(){
 	uint32_t* 			values;
 
 	if (workQueue_init(&queue, NB_THREAD)){
-		printf("ERROR: in %s, unable to init workQueue\n", __func__);
+		log_err("unable to init workQueue");
 		return 0;
 	}
 
@@ -26,12 +27,12 @@ int main(){
 		for (i = 0; i  < NB_SUBMIT; i++){
 			values[i] = rand() & 0x1fffffff;
 			if (workQueue_submit(&queue, counter, values + i)){
-				printf("ERROR: in %s, unable to submit job to workQueue\n", __func__);
+				log_err("unable to submit job to workQueue");
 			}
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	workQueue_wait(&queue);
@@ -56,5 +57,5 @@ void counter(void* arg){
 		}
 	}
 
-	printf("Counter has reached value: %u\n", val);
+	log_info_m("counter has reached value: %u", val);
 }

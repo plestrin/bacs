@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "dagPartialOrder.h"
+#include "base.h"
 
 #define DAGPARTIALORDER_NODE_STATE_UNSET 	(void*)0x00
 #define DAGPARTIALORDER_NODE_STATE_SETTING 	(void*)0x01
@@ -21,7 +22,7 @@ int32_t dagPartialOrder_sort_src_dst(struct graph* graph){
 
 	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
 	if (node_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -71,7 +72,7 @@ int32_t dagPartialOrder_sort_dst_src(struct graph* graph){
 
 	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
 	if (node_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return -1;
 	}
 
@@ -121,7 +122,7 @@ static void dagPartialOrder_recursive_sort(struct node** node_buffer, struct nod
 			dagPartialOrder_recursive_sort(node_buffer, parent_node, generator);
 		}
 		else if (parent_node->ptr == DAGPARTIALORDER_NODE_STATE_SETTING){
-			printf("ERROR: in %s, cycle detected in graph\n", __func__);
+			log_err("cycle detected in graph");
 		}
 	}
 

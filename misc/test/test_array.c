@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "../array.h"
+#include "../base.h"
 
 #define OBJECT_SIZE 		88
 #define NB_OBJECT 			36523
@@ -25,12 +26,12 @@ int main(){
 	double 			duration;
 
 	if (array_init(&array1, OBJECT_SIZE)){
-		printf("ERROR: in %s, unable to init array1\n", __func__);
+		log_err("unable to init array1");
 		return 0;
 	}
 
 	if (array_init(&array2, OBJECT_SIZE)){
-		printf("ERROR: in %s, unable to init array2\n", __func__);
+		log_err("unable to init array2");
 		return 0;
 	}
 
@@ -47,7 +48,7 @@ int main(){
 		memset(obj, i, OBJECT_SIZE);
 
 		if (array_add(&array1, obj) != (int32_t)i){
-			printf("ERROR: in %s, unable to add obj %u\n", __func__, i);
+			log_err_m("unable to add obj %u", i);
 			break;
 		}
 	}
@@ -57,7 +58,7 @@ int main(){
 
 		memset(obj, i - 1, OBJECT_SIZE);
 		if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
-			printf("ERROR: in %s, fetched object differs from original object %u\n", __func__, i);
+			log_err_m("fetched object differs from original object %u", i);
 		}
 	}
 
@@ -71,20 +72,20 @@ int main(){
 		memset(obj, i, OBJECT_SIZE);
 
 		if (array_add(&array2, obj) != (int32_t)i){
-			printf("ERROR: in %s, unable to add obj %u\n", __func__, i);
+			log_err_m("unable to add obj %u", i);
 			break;
 		}
 	}
 
 	if (array_copy(&array1, &array2, COPY_OFFSET, COPY_LENGTH) != COPY_LENGTH){
-		printf("ERROR: in %s, unable to copy arrays\n", __func__);
+		log_err("unable to copy arrays");
 	}
 
 	for (i = 0; i < ARRAY2_FINAL_FILL; i++){
 		memset(obj, i, OBJECT_SIZE);
 
 		if (array_add(&array2, obj) != (int32_t)i + COPY_LENGTH + ARRAY2_INITAL_FILL){
-			printf("ERROR: in %s, unable to add obj %u\n", __func__, i);
+			log_err_m("unable to add obj %u", i);
 			break;
 		}
 	}
@@ -95,19 +96,19 @@ int main(){
 		if (i < ARRAY2_INITAL_FILL){
 			memset(obj, i, OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
-				printf("ERROR: in %s, fetched object differs from original object %u\n", __func__, i);
+				log_err_m("fetched object differs from original object %u", i);
 			}
 		}
 		else if (i < ARRAY2_INITAL_FILL + COPY_LENGTH){
 			memset(obj, i + COPY_OFFSET - ARRAY2_INITAL_FILL, OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
-				printf("ERROR: in %s, fetched object differs from original object %u\n", __func__, i);
+				log_err_m("fetched object differs from original object %u", i);
 			}
 		}
 		else{
 			memset(obj, i - (ARRAY2_INITAL_FILL + COPY_LENGTH), OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
-				printf("ERROR: in %s, fetched object differs from original object %u\n", __func__, i);
+				log_err_m("fetched object differs from original object %u", i);
 			}
 		}
 	}
@@ -116,7 +117,7 @@ int main(){
 	printf("Nb query: %u\n", NB_QUERY);
 
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+		log_err("clock_gettime fails");
 	}
 
 	for (i = 0, fetch = 0; i < NB_QUERY; i++){
@@ -124,12 +125,12 @@ int main(){
 	}
 
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+		log_err("clock_gettime fails");
 	}
 
 	duration = (stop_time.tv_sec - start_time.tv_sec) + (stop_time.tv_nsec - start_time.tv_nsec) / 1000000000.;
 
-	printf("Execution time: %.3f s\n", duration);
+	log_info_m("execution time: %.3f s", duration);
 
 	array_clean(&array1);
 	array_clean(&array2);

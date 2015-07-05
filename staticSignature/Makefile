@@ -52,7 +52,7 @@ CFLAGS			:= $(CFLAGS) -O2
 endif
 
 ifeq ($(VERBOSE),1)
-CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE
+CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE -DCOLOR
 OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o
 endif
 

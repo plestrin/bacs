@@ -3,6 +3,7 @@
 
 #include "../dagPartialOrder.h"
 #include "../graphPrintDot.h"
+#include "../base.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void dotPrint_node(void* data, FILE* file, void* arg){
@@ -45,7 +46,7 @@ struct graph* create_graph(){
 		graph_add_edge_(graph, node_10, node_21);
 
 		if (graphPrintDot_print(graph, "dag.dot", NULL, graph)){
-			printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+			log_err("unable to print graph to dot format");
 		}
 	}
 
@@ -64,7 +65,7 @@ int main(){
 		}
 
 		if (dagPartialOrder_sort_dst_src(graph)){
-			printf("ERROR: in %s, unable to sort DAG\n", __func__);
+			log_err("unable to sort DAG");
 		}
 
 		printf("Printing node in partial order:\n");
@@ -75,7 +76,7 @@ int main(){
 		graph_delete(graph);
 	}
 	else{
-		printf("ERROR: in %s, unable to create graph\n", __func__);
+		log_err("unable to create graph");
 	}
 
 	return 0;

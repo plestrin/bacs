@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "../pageTable.h"
+#include "../base.h"
 
 #define NB_ELEMENT 		12
 #define INDEX_TO_REMOVE 5
@@ -17,35 +18,35 @@ int main(){
 
 	pt = pageTable_create(sizeof(uint32_t));
 	if (pt == NULL){
-		printf("ERROR: in %s, unable to create pageTable\n", __func__);
+		log_err("unable to create pageTable");
 	}
 
-	printf("Trying to add %u element(s) to the page table\n", NB_ELEMENT);
+	log_info_m("trying to add %u element(s) to the page table", NB_ELEMENT);
 
 	for (i = 0; i < NB_ELEMENT; i++){
 		if (pageTable_add_element(pt, elements_address[i], elements_value + i)){
-			printf("ERROR: in %s, unable to add element in pageTable\n", __func__);
+			log_err("unable to add element in pageTable");
 			break;
 		}
 	}
 
 	read_value = (uint32_t*)pageTable_get_first(pt, &read_address);
 	while(read_value != NULL){
-		printf("Read value: %u \t@ 0x%08x\n", *read_value, read_address);
+		log_info_m("read value: %u \t@ 0x%08x", *read_value, read_address);
 		read_value = (uint32_t*)pageTable_get_next(pt, &read_address);
 	}
 	
-	printf("Trying to remove element %u\n", elements_value[INDEX_TO_REMOVE]);
+	log_info_m("trying to remove element %u", elements_value[INDEX_TO_REMOVE]);
 
 	pageTable_remove_element(pt, elements_address[INDEX_TO_REMOVE]);
 
 	read_value = (uint32_t*)pageTable_get_last(pt, &read_address);
 	while(read_value != NULL){
-		printf("Read value: %u \t@ 0x%08x\n", *read_value, read_address);
+		log_info_m("read value: %u \t@ 0x%08x", *read_value, read_address);
 		read_value = (uint32_t*)pageTable_get_prev(pt, &read_address);
 	}
 
-	printf("Memory consumption: %u byte(s)\n", pageTable_get_memory_consumption(pt));
+	log_info_m("memory consumption: %u byte(s)", pageTable_get_memory_consumption(pt));
 
 	pageTable_delete(pt);
 

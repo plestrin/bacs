@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../permutation.h"
+#include "../base.h"
 
 #define NUMBER_OF_ELEMENT_TO_PERMUTE 5
 
@@ -23,7 +24,7 @@ int main(){
 
 	value = (uint32_t*)malloc(sizeof(uint32_t) * nb_perm * NUMBER_OF_ELEMENT_TO_PERMUTE);
 	if (value == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return 0;
 	}
 
@@ -47,13 +48,13 @@ int main(){
 	}
 
 	if (counter != nb_perm){
-		printf("ERROR: in %s, incorrect number of permutation: expected %u but get %u\n", __func__, nb_perm, counter);
+		log_err_m("incorrect number of permutation: expected %u but get %u", nb_perm, counter);
 	}
 	else{
 		for (i = 0; i < counter; i++){
 			for (j = 0; j < counter; j++){
 				if (i != j && !memcmp(value + i*NUMBER_OF_ELEMENT_TO_PERMUTE, value + j*NUMBER_OF_ELEMENT_TO_PERMUTE, NUMBER_OF_ELEMENT_TO_PERMUTE * sizeof(uint32_t))){
-					printf("ERROR: in %s, collision detected between %u and %u\n", __func__, i, j);
+					log_err_m("collision detected between %u and %u", i, j);
 				}
 			}
 		}

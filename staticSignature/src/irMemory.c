@@ -3,10 +3,9 @@
 #include <string.h>
 
 #include "irMemory.h"
-
 #include "irVariableRange.h"
 #include "dagPartialOrder.h"
-#include "set.h"
+#include "base.h"
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 1
 
@@ -39,7 +38,7 @@ static void ir_normalize_print_alias_conflict(struct node* node1, struct node* n
 		printf("\n");
 	}
 	else{
-		printf("ERROR: in %s, unable to get memory access address\n", __func__);
+		log_err("unable to get memory access address");
 	}
 }
 
@@ -51,7 +50,7 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 		return IR_PART1_16;
 	}
 	else{
-		printf("ERROR: in %s, this case is not implemented (src=%u, dst=%u)\n", __func__, size_src, size_dst);
+		log_err_m("this case is not implemented (src=%u, dst=%u)", size_src, size_dst);
 		return IR_PART1_8;
 	}
 }
@@ -97,7 +96,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 		nb_dependence = ++ addr_fgp->nb_dependence;
 	}
 	else{
-		printf("ERROR: in %s, the max number of dependence has been reached\n", __func__);
+		log_err("the max number of dependence has been reached");
 		return;
 	}
 
@@ -232,7 +231,7 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 
 	node_cursor = ir_node_get_operation(node1)->operation_type.mem.access.next;
 	if (node_cursor == NULL){
-		printf("ERROR: in %s, found NULL pointer instead of the expected element\n", __func__);
+		log_err("found NULL pointer instead of the expected element");
 		return NULL;
 	}
 
@@ -266,13 +265,13 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 					}
 				}
 				else{
-					printf("ERROR: in %s, memory access with no address operand\n", __func__);
+					log_err("memory access with no address operand");
 				}
 			}
 		}
 		node_cursor = operation_cursor->operation_type.mem.access.next;
 		if (node_cursor == NULL){
-			printf("ERROR: in %s, found NULL pointer instead of the expected element\n", __func__);
+			log_err("found NULL pointer instead of the expected element");
 			break;
 		}
 	}
@@ -292,13 +291,13 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	struct node*			alias;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+		log_err("unable to sort DAG");
 		goto exit;
 	}
 
 	range_buffer = (struct irVariableRange*)malloc(sizeof(struct irVariableRange) * ir->graph.nb_node);
 	if (range_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		goto exit;
 	}
 
@@ -322,7 +321,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					access_list = (struct node**)malloc(sizeof(struct node*) * nb_mem_access);
 					access_list_alloc_size = sizeof(struct node*) * nb_mem_access;
 					if (access_list == NULL){
-						printf("ERROR: in %s, unable to allocate memory\n", __func__);
+						log_err("unable to allocate memory");
 						continue;
 					}
 				}
@@ -364,7 +363,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
 								}
 								else{
-									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+									log_warn("possible memory simplification, but strategy is print");
 								}
 								continue;
 							}
@@ -382,13 +381,13 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 								graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
 
 								if (ir_add_dependence(ir, stored_value, access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add new dependency to IR\n", __func__);
+									log_err("unable to add new dependency to IR");
 								}
 
 								access_list[i] = access_list[i - 1];
 							}
 							else if (operation_prev->size < operation_next->size){
-								printf("WARNING: in %s, simplification of memory access of different size (case STORE -> LOAD)\n", __func__);
+								log_warn("simplification of memory access of different size (case STORE -> LOAD)");
 								continue;
 							}
 							else{
@@ -401,7 +400,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							continue;
 						}
 						else{
-							printf("ERROR: in %s, incorrect memory access pattern in STORE -> LOAD\n", __func__);
+							log_err("incorrect memory access pattern in STORE -> LOAD");
 						}
 					}
 
@@ -426,7 +425,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
 								}
 								else{
-									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+									log_warn("possible memory simplification, but strategy is print");
 								}
 								continue;
 							}
@@ -437,7 +436,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
 
 							if (ir_add_dependence(ir, access_list[i - 1], access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								printf("ERROR: in %s, unable to add new dependency to IR\n", __func__);
+								log_err("unable to add new dependency to IR");
 							}
 
 							access_list[i] = access_list[i - 1];
@@ -447,7 +446,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i - 1]));
 
 							if (ir_add_dependence(ir, access_list[i], access_list[i - 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								printf("ERROR: in %s, unable to add new dependency to IR\n", __func__);
+								log_err("unable to add new dependency to IR");
 							}
 						}
 						else{
@@ -481,14 +480,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
 								}
 								else{
-									printf("WARNING: in %s, possible memory simplification, but strategy is print\n", __func__);
+									log_warn("possible memory simplification, but strategy is print");
 								}
 								continue;
 							}
 						}
 
 						if (operation_prev->size > operation_next->size){
-							printf("WARNING: in %s, simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))\n", __func__, operation_prev->size, operation_next->size);
+							log_warn_m("simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))", operation_prev->size, operation_next->size);
 							continue;
 						}
 

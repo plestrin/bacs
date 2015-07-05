@@ -4,14 +4,7 @@
 
 #include "inputParser.h"
 #include "multiColumn.h"
-
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#include "base.h"
 
 int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
 #ifdef INTERACTIVE
@@ -34,7 +27,7 @@ struct inputParser* inputParser_create(){
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 	
 	return parser;	
@@ -42,20 +35,20 @@ struct inputParser* inputParser_create(){
 
 int inputParser_init(struct inputParser* parser){
 	if (array_init(&(parser->cmd_array), sizeof(struct cmdEntry))){
-		printf("ERROR: in %s, unable to init array\n", __func__);
+		log_err("unable to init array");
 		return -1;
 	}
 	else{
 		if (inputParser_add_cmd(parser, "help", "Display this help", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser,  (void(*)(void))inputParser_print_help)){
-			printf("WARNING: in %s, unable to add help entry in the input parser\n", __func__);
+			log_warn("unable to add help entry in the input parser");
 		}
 		if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit)){
-			printf("WARNING: in %s, unable to add exit entry in the input parser\n", __func__);
+			log_warn("unable to add exit entry in the input parser");
 		}
 
 		#ifdef INTERACTIVE
 		if(termReader_set_raw_mode(&(parser->term))){
-			printf("ERROR: in %s, unable to set terminal raw mode\n", __func__);
+			log_err("unable to set terminal raw mode");
 		}
 		termReader_set_tab_handler(&(parser->term), inputParser_complete_cmd, parser);
 		#endif
@@ -72,20 +65,20 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 	if (name != NULL && cmd_desc != NULL  && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
 		duplicate = inputParser_search_cmd(parser, name);
 		if (duplicate >= 0){
-			printf("ERROR: in %s, \"%s\" is already registered as a command\n", __func__, name);
+			log_err_m("\"%s\" is already registered as a command", name);
 			return result;
 		}
 
 		if (strlen(name) > INPUTPARSER_NAME_SIZE){
-			printf("WARNING: in %s, name length is larger than INPUTPARSER_NAME_SIZE\n", __func__);
+			log_warn("name length is larger than INPUTPARSER_NAME_SIZE");
 		}
 
 		if (strlen(cmd_desc) > INPUTPARSER_DESC_SIZE){
-			printf("WARNING: in %s, cmd_desc length is larger than INPUTPARSER_DESC_SIZE\n", __func__);
+			log_warn("cmd_desc length is larger than INPUTPARSER_DESC_SIZE");
 		}
 
 		if (arg_desc != NULL && strlen(arg_desc) > INPUTPARSER_DESC_SIZE){
-			printf("WARNING: in %s, arg_desc length is larger than INPUTPARSER_DESC_SIZE\n", __func__);
+			log_warn("arg_desc length is larger than INPUTPARSER_DESC_SIZE");
 		}
 
 		strncpy(entry.name, name, INPUTPARSER_NAME_SIZE);
@@ -98,7 +91,7 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 		}
 
 		if (type != INPUTPARSER_CMD_TYPE_NO_ARG && type != INPUTPARSER_CMD_TYPE_OPT_ARG && type != INPUTPARSER_CMD_TYPE_ARG){
-			printf("WARNING: in %s, interactive mode is incorrect, setting to default not interactive mode\n", __func__);
+			log_warn("interactive mode is incorrect, setting to default not interactive mode");
 			type = INPUTPARSER_CMD_TYPE_NO_ARG;
 		}
 
@@ -108,11 +101,11 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 
 		result = (array_add(&(parser->cmd_array), &entry) < 0);
 		if (result){
-			printf("ERROR: in %s, unable to add element to array\n", __func__);
+			log_err("unable to add element to array");
 		}
 	}
 	else{
-		printf("ERROR: in %s, some mandatory argument(s) are NULL\n", __func__);
+		log_err("some mandatory argument(s) are NULL");
 	}
 
 	return result;
@@ -130,14 +123,14 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 		if (cmd_counter < argc){
 			strncpy(line, argv[cmd_counter], INPUTPARSER_LINE_SIZE);
 			cmd_counter ++;
-			#ifdef VERBOSE
+			#ifdef COLOR
 			printf(ANSI_COLOR_CYAN ">>> %s" ANSI_COLOR_RESET "\n", line);
 			#else
 			printf(">>> %s\n", line);
 			#endif
 		}
 		else{
-			#ifdef VERBOSE
+			#ifdef COLOR
 			printf(ANSI_COLOR_CYAN ">>> ");
 			#else
 			printf(">>> ");
@@ -146,12 +139,12 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 
 			#ifdef INTERACTIVE
 			if (termReader_get_line(&(parser->term), line, INPUTPARSER_LINE_SIZE)){
-				printf("ERROR: in %s, EOF\n", __func__);
+				log_err("EOF");
 				return;
 			}
 			#else
 			if (fgets(line, INPUTPARSER_LINE_SIZE, stdin) == NULL){
-				printf("ERROR: in %s, EOF\n", __func__);
+				log_err("EOF");
 				return;
 			}
 			else{
@@ -159,22 +152,20 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 			}
 			#endif
 
-			#ifdef VERBOSE
+			#ifdef COLOR
 			printf(ANSI_COLOR_RESET);
 			fflush(stdout);
 			#endif
 		}
 
-		entry_index = inputParser_search_cmd(parser, line);
-		if (entry_index >= 0){
+		if ((entry_index = inputParser_search_cmd(parser, line)) >= 0){
 			entry = (struct cmdEntry*)array_get(&(parser->cmd_array), entry_index);
 			if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
 				((void(*)(void*,char*))(entry->function))(entry->context, inputParser_get_argument(entry->name, line));
 			}
 			else if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
-				cmd_arg = inputParser_get_argument(entry->name, line);
-				if (cmd_arg == NULL){
-					printf("ERROR: in %s, this command requires at least one additionnal argument: %s\n", __func__, entry->arg_desc);
+				if ((cmd_arg = inputParser_get_argument(entry->name, line)) == NULL){
+					log_err_m("this command requires at least one additionnal argument: %s", entry->arg_desc);
 				}
 				else{
 					((void(*)(void*,char*))(entry->function))(entry->context, cmd_arg);
@@ -196,7 +187,7 @@ void inputParser_clean(struct inputParser* parser){
 
 	#ifdef INTERACTIVE
 	if(termReader_reset_mode(&(parser->term))){
-		printf("ERROR: in %s, unable to reset terminal mode\n", __func__);
+		log_err("unable to reset terminal mode");
 	}
 	#endif
 }
@@ -261,7 +252,7 @@ static void inputParser_print_help(struct inputParser* parser){
 
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer == NULL){
-		printf("ERROR: in %s, unable to create multiColumnPrinter\n", __func__);
+		log_err("unable to create multiColumnPrinter");
 		return;
 	}
 

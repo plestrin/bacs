@@ -7,6 +7,7 @@
 #include "ir.h"
 #include "codeMap.h"
 #include "array.h"
+#include "base.h"
 
 #define TRACE_TAG_LENGTH 32
 #define TRACE_PATH_MAX_LENGTH 	256
@@ -36,7 +37,7 @@ int32_t trace_init(struct trace* trace, enum traceType type);
 
 #define trace_check(trace) 																								\
 	if (assembly_check(&((trace)->assembly))){ 																			\
-		printf("ERROR: in %s, assembly check failed\n", __func__); 														\
+		log_err("assembly check failed"); 																				\
 	}
 
 #define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop)
@@ -55,7 +56,7 @@ static inline void trace_printDot_ir(struct trace* trace, struct graphPrintDotFi
 		ir_printDot(trace->ir, filters);
 	}
 	else{
-		printf("ERROR: in %s, the IR is NULL for the current trace\n", __func__);
+		log_err("IR is NULL for the current trace");
 	}
 }
 

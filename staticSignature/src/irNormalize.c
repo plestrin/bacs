@@ -6,11 +6,11 @@
 #endif
 
 #include "irNormalize.h"
-
 #include "irMemory.h"
 #include "irVariableSize.h"
 #include "irExpression.h"
 #include "dagPartialOrder.h"
+#include "base.h"
 
 #ifdef VERBOSE
 #include "multiColumn.h"
@@ -50,18 +50,18 @@ int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
 		multiColumnPrinter_set_title(printer, 1, "TIME"); 																									\
 	} 																																						\
 	else{ 																																					\
-		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__); 																				\
+		log_err("unable to init multiColumnPrinter"); 																										\
 		return; 																																			\
 	}
 
 #define START_TIMER 																																		\
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){ 																						\
-		printf("ERROR: in %s, clock_gettime fails\n", __func__); 																							\
+		log_err("clock_gettime fails"); 																													\
 	}
 
 #define STOP_TIMER 																																			\
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){ 																						\
-		printf("ERROR: in %s, clock_gettime fails\n", __func__); 																							\
+		log_err("clock_gettime fails"); 																													\
 	}
 
 #define PRINT_TIMER(ctx_string) 																															\
@@ -101,7 +101,7 @@ void ir_normalize(struct ir* ir){
 	ir_normalize_remove_dead_code(ir, &modification);
 	#ifdef VERBOSE
 	if (modification){
-		printf("INFO: in %s, modification remove dead code @ START\n", __func__);
+		log_info("modification remove dead code @ START");
 	}
 	#endif
 	modification = 1;
@@ -126,7 +126,7 @@ void ir_normalize(struct ir* ir){
 		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification simplify instruction @ %u\n", __func__, round_counter);
+			log_info_m("modification simplify instruction @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -141,7 +141,7 @@ void ir_normalize(struct ir* ir){
 		timer_2_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification remove subexpression @ %u\n", __func__, round_counter);
+			log_info_m("modification remove subexpression @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -162,7 +162,7 @@ void ir_normalize(struct ir* ir){
 		timer_3_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification simplify memory @ %u\n", __func__, round_counter);
+			log_info_m("modification simplify memory @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -177,7 +177,7 @@ void ir_normalize(struct ir* ir){
 		timer_4_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification factor instruction @ %u\n", __func__, round_counter);
+			log_info_m("modification factor instruction @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -192,7 +192,7 @@ void ir_normalize(struct ir* ir){
 		timer_5_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification distribute immediate @ %u\n", __func__, round_counter);
+			log_info_m("modification distribute immediate @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -207,7 +207,7 @@ void ir_normalize(struct ir* ir){
 		timer_6_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification expand variable @ %u\n", __func__, round_counter);
+			log_info_m("modification expand variable @ %u", round_counter);
 			modification = 0;
 			modification_copy = 1;
 		}
@@ -222,7 +222,7 @@ void ir_normalize(struct ir* ir){
 		timer_7_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 		if (modification){
-			printf("INFO: in %s, modification affine expression @ %u\n", __func__, round_counter);
+			log_info_m("modification affine expression @ %u", round_counter);
 			modification_copy = 1;
 		}
 		#endif
@@ -242,7 +242,7 @@ void ir_normalize(struct ir* ir){
 	timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
 
 	if (modification){
-		printf("INFO: in %s, modification simplify instruction @ FINAL\n", __func__);
+		log_info("modification simplify instruction @ FINAL");
 	}
 	#endif
 	#endif
@@ -278,7 +278,7 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 	uint8_t 				local_modification = 0;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort DAG\n", __func__);
+		log_err("unable to sort DAG");
 	}
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = next_cursor){
@@ -454,7 +454,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	struct irOperation* 	operation;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort ir node(s)\n", __func__);
+		log_err("unable to sort ir node(s)");
 		return;
 	}
 
@@ -531,12 +531,12 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 					if (possible_rewrite == NULL){ 																											\
 						possible_rewrite = ir_add_immediate(ir, ir_node_get_operation(node)->size, value); 													\
 						if (possible_rewrite == NULL){ 																										\
-							printf("ERROR: in %s, unable to add immediate to IR\n", __func__); 																\
+							log_err("unable to add immediate to IR"); 																						\
 							return; 																														\
 						} 																																	\
 						else{ 																																\
 							if (ir_add_dependence(ir, possible_rewrite, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){ 											\
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__); 														\
+								log_err("unable to add dependency to IR"); 																					\
 							} 																																\
 						} 																																	\
 					} 																																		\
@@ -611,7 +611,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 				}
 				if (edge_cursor2 == NULL){
 					if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
-						printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+						log_err("unable to copy dst edge");
 					}
 					ir_remove_dependence(ir, current_edge);
 
@@ -624,7 +624,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 				for (edge_cursor2 = node_get_head_edge_dst(edge_get_src(current_edge)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
 					if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
 						if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
-							printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+							log_err("unable to copy dst edge");
 						}
 						ir_remove_dependence(ir, current_edge);
 
@@ -667,7 +667,7 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 		else if (operand_operation->type == IR_OPERATION_TYPE_INST){
 			if (operand_operation->operation_type.inst.opcode == IR_AND){
 				if (and_operand != NULL){
-					printf("WARNING: in %s, multiple AND operands, can't decide how to associate IMM\n", __func__);
+					log_warn("multiple AND operands, can't decide how to associate IMM");
 					return;
 				}
 				else{
@@ -695,13 +695,13 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 			}
 		}
 		else{
-			printf("ERROR: in %s, MOVZX has a wrong number of dst edge: %u\n", __func__, movzx_operand->nb_edge_dst);
+			log_err_m("MOVZX has a wrong number of dst edge: %u", movzx_operand->nb_edge_dst);
 		}
 	}
 
 	if (imm_operand != NULL && and_operand != NULL){
 		if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(and_operand))){
-			printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+			log_err("unable to copy dst edge");
 		}
 		ir_remove_dependence(ir, and_operand);
 
@@ -747,12 +747,12 @@ static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct
 		if (possible_rewrite == NULL){
 			possible_rewrite = ir_add_immediate(ir, size, value);
 			if (possible_rewrite == NULL){
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+				log_err("unable to add immediate to IR");
 				return;
 			}
 			else{
 				if (ir_add_dependence(ir, possible_rewrite, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+					log_err("unable to add dependency to IR");
 				}
 			}
 		}
@@ -842,7 +842,7 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 			node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0x000000ff);
 			if (node_imm_new != NULL){
 				if (ir_add_dependence(ir, node_imm_new, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+					log_err("unable to add dependency to IR");
 				}
 				else{
 					ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
@@ -859,7 +859,7 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				}
 			}
 			else{
-				printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+				log_err("unable to add immediate to IR");
 			}
 		}
 		else if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_PART2_8){
@@ -875,11 +875,11 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0x000000ff);
 				if (node_imm_new != NULL){
 					if (ir_add_dependence(ir, node_imm_new, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					log_err("unable to add immediate to IR");
 				}
 
 				operand_operation->operation_type.inst.opcode = IR_SHR;
@@ -888,19 +888,19 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 				node_imm_new = ir_add_immediate(ir, 8, 8);
 				if (node_imm_new != NULL){
 					if (ir_add_dependence(ir, node_imm_new, operand, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 					else{
 						*modification = 1;
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					log_err("unable to add immediate to IR");
 				}
 
 			}
 			else{
-				printf("WARNING: in %s, PART2_8 instruction is shared, this case is not implemented yet -> skip\n", __func__);
+				log_warn("PART2_8 instruction is shared, this case is not implemented yet -> skip");
 			}
 		}
 	}
@@ -1008,7 +1008,7 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 					}
 				}
 				else{
-					printf("ERROR: in %s, MOVZX instruction has %u operand(s)\n", __func__, operand->nb_edge_dst);
+					log_err_m("MOVZX instruction has %u operand(s)", operand->nb_edge_dst);
 				}
 			}
 		}
@@ -1040,11 +1040,11 @@ static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct 
 				else{
 					new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, ir_node_get_operation(node)->size - ir_imm_operation_get_unsigned_value(operand_operation));
 					if (new_imm == NULL){
-						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+						log_err("unable to add immediate to IR");
 					}
 					else{
 						if (ir_add_dependence(ir, new_imm, node, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 						else{
 							ir_remove_dependence(ir, edge_cursor);
@@ -1100,12 +1100,12 @@ static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct 
 			if (possible_rewrite_edge == NULL){
 				possible_rewrite_node = ir_add_immediate(ir, ir_node_get_operation(node)->size, value);
 				if (possible_rewrite_node == NULL){
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					log_err("unable to add immediate to IR");
 					return;
 				}
 				else{
 					if (ir_add_dependence(ir, possible_rewrite_node, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 				}
 			}
@@ -1133,7 +1133,7 @@ static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct 
 		}
 	}
 	else if (node->nb_edge_dst > 2){
-		printf("WARNING: in %s, incorrect format SHL: %u operand(s)\n", __func__, node->nb_edge_dst);
+		log_warn_m("incorrect format SHL: %u operand(s)", node->nb_edge_dst);
 	}
 }
 
@@ -1180,19 +1180,19 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 
 			node_temp = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode);
 			if (node_temp == NULL){
-				printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+				log_err("unable to add instruction to IR");
 				return;
 			}
 				
 			ir_remove_dependence(ir, edge1);
 			edge1 = ir_add_dependence(ir, node_temp, node, IR_DEPENDENCE_TYPE_DIRECT);
 			if (edge1 == NULL){
-				printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+				log_err("unable to add dependency to IR");
 				return;
 			}
 
 			if (graph_copy_dst_edge(&(ir->graph), node_temp, node1)){
-				printf("ERROR: in %s, unable to copy dst edge\n", __func__);
+				log_err("unable to copy dst edge");
 			}
 
 			node1 = node_temp;
@@ -1224,24 +1224,24 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 				else if (value3 > value2){
 					node3 = ir_add_immediate(ir, 8, value3 - value2);
 					if (node3 == NULL){
-						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+						log_err("unable to add immediate to IR");
 					}
 					else{
 						ir_remove_dependence(ir, edge3);
 						if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 					}
 				}
 				else if (value2 > value3){
 					node3 = ir_add_immediate(ir, 8, value2 - value3);
 					if (node3 == NULL){
-						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+						log_err("unable to add immediate to IR");
 					}
 					else{
 						ir_remove_dependence(ir, edge3);
 						if (ir_add_dependence(ir, node3, node1, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 					}
 				}
@@ -1287,12 +1287,12 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 				if (node2->nb_edge_src > 1){
 					node2 = ir_add_immediate(ir, ir_node_get_operation(node)->size, (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size + value3)) << value2);
 					if (node2 == NULL){
-						printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+						log_err("unable to add immediate to IR");
 					}
 					else{
 						ir_remove_dependence(ir, edge2);
 						if (ir_add_dependence(ir, node2, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 					}
 				}
@@ -1349,12 +1349,12 @@ static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct 
 			if (possible_rewrite_edge == NULL){
 				possible_rewrite_node = ir_add_immediate(ir, ir_node_get_operation(node)->size, value);
 				if (possible_rewrite_node == NULL){
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					log_err("unable to add immediate to IR");
 					return;
 				}
 				else{
 					if (ir_add_dependence(ir, possible_rewrite_node, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 				}
 			}
@@ -1382,7 +1382,7 @@ static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct 
 		}
 	}
 	else if (node->nb_edge_dst > 2){
-		printf("WARNING: in %s, incorrect format SHR: %u operand(s)\n", __func__, node->nb_edge_dst);
+		log_warn_m("incorrect format SHR: %u operand(s)", node->nb_edge_dst);
 	}
 }
 
@@ -1430,13 +1430,13 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 							for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
 									if (ir_add_dependence(ir, edge_get_src(edge_cursor), add_node, ir_edge_get_dependence(edge_cursor)->type) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+										log_err("unable to add dependency to IR");
 									}
 								}
 							}
 						}
 						else{
-							printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+							log_err("unable to add instruction to IR");
 							return;
 						}
 					}
@@ -1458,7 +1458,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_ADD && edge_get_src(operand1)->nb_edge_src > 1){
 			for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand2)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if (edge_get_src(edge_cursor) == edge_get_src(operand1)){
-					printf("WARNING: in %s, this case is not implemented yet (sub by a sum)\n", __func__);
+					log_warn("this case is not implemented yet (sub by a sum)");
 					break;
 				}
 			}
@@ -1474,12 +1474,12 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 				return;
 			}
 			else{
-				printf("WARNING: in %s, this case is not implemented yet (shared imm)\n", __func__);
+				log_warn("this case is not implemented yet (shared imm)");
 			}
 		}
 	}
 	else{
-		printf("ERROR: in %s, the connectivity is wrong. Run the check procedure for more details\n", __func__);
+		log_err("the connectivity is wrong. Run the check procedure for more details");
 	}
 }
 
@@ -1511,11 +1511,11 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 				imm_zero = ir_add_immediate(ir, size, 0);
 				if (imm_zero != NULL){
 					if (ir_add_dependence(ir, imm_zero, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 				}
 				else{
-					printf("ERROR: in %s, unable to add immediate to IR\n", __func__);
+					log_err("unable to add immediate to IR");
 				}
 
 				i++;
@@ -1547,7 +1547,7 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 					}
 				}
 				else{
-					printf("WARNING: in %s, found IMM operand but it is shared -> skip\n", __func__);
+					log_warn("found IMM operand but it is shared -> skip");
 				}
 			}
 		}
@@ -1580,7 +1580,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 	struct edge* 			prev_edge_cursor2;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
-		printf("ERROR: in %s, unable to sort IR node(s)\n", __func__);
+		log_err("unable to sort IR node(s)");
 		return;
 	}
 
@@ -1606,7 +1606,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				}
 					
 				if (node1->nb_edge_dst > IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND){
-					printf("WARNING: in %s, IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND has been reached: %u for %s\n", __func__, node1->nb_edge_dst, irOpcode_2_string(operation1->operation_type.inst.opcode));
+					log_warn_m("IR_NORMALIZE_REMOVE_SUBEXPRESSION_MAX_NB_OPERAND has been reached: %u for %s", node1->nb_edge_dst, irOpcode_2_string(operation1->operation_type.inst.opcode));
 					goto next_cursor2;
 				}
 
@@ -1681,7 +1681,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 					}
 
 					if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 
 					*modification = 1;
@@ -1697,7 +1697,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 					}
 
 					if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 
 					*modification = 1;
@@ -1708,13 +1708,13 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				else if (nb_match > 1 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
 					new_intermediate_inst = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode);
 					if (new_intermediate_inst == NULL){
-						printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+						log_err("unable to add instruction to IR");
 					}
 					else{
 						for (i = 0, nb_edge_dst = node1->nb_edge_dst; i < nb_edge_dst; i++){
 							if (operand_buffer[i].edge2 != NULL){
 								if (ir_add_dependence(ir, edge_get_src(operand_buffer[i].edge1), new_intermediate_inst, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 
 								ir_remove_dependence(ir, operand_buffer[i].edge2);
@@ -1723,11 +1723,11 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 						}
 
 						if (ir_add_dependence(ir, new_intermediate_inst, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 
 						if (ir_add_dependence(ir, new_intermediate_inst, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+							log_err("unable to add dependency to IR");
 						}
 
 						*modification = 1;
@@ -1829,19 +1829,19 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 
 							new_node = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
 							if (new_node == NULL){
-								printf("ERROR: in %s, unable to add inst node to IR\n", __func__);
+								log_err("unable to add inst node to IR");
 							}
 							else{
 								if (ir_add_dependence(ir, edge_get_src(node1_imm_operand), new_node, ir_edge_get_dependence(node1_imm_operand)->type) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 
 								if (ir_add_dependence(ir, node_cursor3, new_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 
 								if (ir_add_dependence(ir, new_node, node_cursor1, ir_edge_get_dependence(edge_cursor)->type) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 							}
 						}
@@ -1903,7 +1903,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 							opcode = (enum irOpcode)i;
 						}
 						else{
-							printf("WARNING: in %s, multiple scenario for factoring instruction (1/2)\n", __func__);
+							log_warn("multiple scenario for factoring instruction (1/2)");
 							goto next;
 						}
 					}
@@ -1912,7 +1912,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 
 			if (opcode != IR_INVALID){
 				if (opcode_counter[opcode] >= IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
-					printf("WARNING: in %s, IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached\n", __func__);
+					log_warn("IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached");
 					goto next;
 				}
 
@@ -1932,7 +1932,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 							}
 							if (i == nb_operand){
 								if (nb_operand == IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
-									printf("WARNING: in %s, IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached\n", __func__);
+									log_warn("IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached");
 									goto next;
 								}
 								operand[i] = node_cursor3;
@@ -1949,7 +1949,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 							common_operand = operand[i];
 						}
 						else{
-							printf("WARNING: in %s, multiple scenario for factoring instruction (2/2)\n", __func__);
+							log_warn("multiple scenario for factoring instruction (2/2)");
 							goto next;
 						}
 					}
@@ -1964,7 +1964,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 
 					new_node1 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
 					if (new_node1 == NULL){
-						printf("ERROR: in %s, unable to add inst to IR\n", __func__);
+						log_err("unable to add inst to IR");
 						goto next;
 					}
 
@@ -1983,14 +1983,14 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 							if (edge_get_src(op1) == common_operand){
 								common_operand_dependence_type = ir_edge_get_dependence(op1)->type;
 								if (ir_add_dependence(ir, edge_get_src(op2), new_node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 								ir_remove_dependence(ir, op2);
 							}
 							else if (edge_get_src(op2) == common_operand){
 								common_operand_dependence_type = ir_edge_get_dependence(op1)->type;
 								if (ir_add_dependence(ir, edge_get_src(op1), new_node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 								ir_remove_dependence(ir, op1);
 							}
@@ -2000,21 +2000,21 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					if (new_node2 == NULL){
 						new_node2 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, opcode);
 						if (new_node2 == NULL){
-							printf("ERROR: in %s, unable to add instruction to IR\n", __func__);
+							log_err("unable to add instruction to IR");
 							goto next;
 						}
 						else{
 							if (ir_add_dependence(ir, new_node2, node_cursor1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								log_err("unable to add dependency to IR");
 							}
 							if (ir_add_dependence(ir, common_operand, new_node2, common_operand_dependence_type) == NULL){
-								printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+								log_err("unable to add dependency to IR");
 							}
 						}
 					}
 
 					if (ir_add_dependence(ir, new_node1, new_node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+						log_err("unable to add dependency to IR");
 					}
 
 					for (edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL;){
@@ -2061,13 +2061,13 @@ void ir_normalize_merge_associative_operation(struct ir* ir, enum irOpcode opcod
 					/* Here starts the swamp of doom and death */
 					else if (opcode == IR_XOR){
 						if (merge_node->nb_edge_dst > 100){
-							printf("WARNING: in %s, uncommon number of dst edge (%u), do not develop\n", __func__, merge_node->nb_edge_dst);
+							log_warn_m("uncommon number of dst edge (%u), do not develop", merge_node->nb_edge_dst);
 						}
 						else{
 							graph_remove_edge(&(ir->graph), edge_cursor);
 							for(edge_cursor = node_get_head_edge_dst(merge_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								if (graph_add_edge(&(ir->graph), edge_get_src(edge_cursor), node_cursor, &(edge_cursor->data)) == NULL){
-									printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+									log_err("unable to add dependency to IR");
 								}
 							}
 							goto start;
@@ -2084,7 +2084,7 @@ void ir_normalize_merge_associative_operation(struct ir* ir, enum irOpcode opcod
 								graph_remove_edge(&(ir->graph), edge_cursor);
 								for(edge_cursor = node_get_head_edge_dst(merge_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 									if (graph_add_edge(&(ir->graph), edge_get_src(edge_cursor), node_cursor, &(edge_cursor->data)) == NULL){
-										printf("ERROR: in %s, unable to add dependency to IR\n", __func__);
+										log_err("unable to add dependency to IR");
 									}
 								}
 								goto start;

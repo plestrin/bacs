@@ -6,6 +6,7 @@
 #include "irImporterAsm.h"
 #include "result.h"
 #include "multiColumn.h"
+#include "base.h"
 
 struct ir* ir_create(struct assembly* assembly){
 	struct ir* ir;
@@ -13,13 +14,13 @@ struct ir* ir_create(struct assembly* assembly){
 	ir =(struct ir*)malloc(sizeof(struct ir));
 	if (ir != NULL){
 		if(ir_init(ir, assembly)){
-			printf("ERROR: in %s, unable to init ir\n", __func__);
+			log_err("unable to init ir");
 			free(ir);
 			ir = NULL;
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return ir;
@@ -31,7 +32,7 @@ int32_t ir_init(struct ir* ir, struct assembly* assembly){
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
 	
 	if (irImporterAsm_import(ir, assembly)){
-		printf("ERROR: in %s, trace asm import has failed\n", __func__);
+		log_err("trace asm import has failed");
 		return -1;
 	}
 
@@ -44,7 +45,7 @@ struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -64,7 +65,7 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -83,7 +84,7 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
-			printf("ERROR: in %s, unable to add address dependence\n", __func__);
+			log_err("unable to add address dependence");
 		}
 	}
 
@@ -96,7 +97,7 @@ struct node* ir_add_out_mem(struct ir* ir, uint32_t index, uint8_t size, struct 
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -115,7 +116,7 @@ struct node* ir_add_out_mem(struct ir* ir, uint32_t index, uint8_t size, struct 
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_FINAL;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
-			printf("ERROR: in %s, unable to add address dependence\n", __func__);
+			log_err("unable to add address dependence");
 		}
 	}
 
@@ -128,7 +129,7 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -148,7 +149,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -168,7 +169,7 @@ struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
 
 	node = graph_add_node_(&(ir->graph));
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -189,7 +190,7 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 
 	node = graph_insert_node_(&(ir->graph), root);
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -209,7 +210,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 
 	node = graph_insert_node_(&(ir->graph), root);
 	if (node == NULL){
-		printf("ERROR: in %s, unable to add node to the graph\n", __func__);
+		log_err("unable to add node to the graph");
 	}
 	else{
 		operation = ir_node_get_operation(node);
@@ -229,7 +230,7 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 
 	edge = graph_add_edge_(&(ir->graph), operation_src, operation_dst);
 	if (edge == NULL){
-		printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+		log_err("unable to add edge to the graph");
 	}
 	else{
 		dependence = ir_edge_get_dependence(edge);
@@ -245,7 +246,7 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 
 	edge = graph_add_edge_(&(ir->graph), operation_src, operation_dst);
 	if (edge == NULL){
-		printf("ERROR: in %s, unable to add edge to the graph\n", __func__);
+		log_err("unable to add edge to the graph");
 	}
 	else{
 		dependence = ir_edge_get_dependence(edge);
@@ -275,7 +276,7 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	if (nb_parent != 0){
 		parent = (struct node**)malloc(sizeof(struct node*) * nb_parent);
 		if (parent == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			log_err("unable to allocate memory");
 			graph_remove_node(&(ir->graph), node);
 		}
 		else{

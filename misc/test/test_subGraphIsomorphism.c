@@ -4,6 +4,7 @@
 #include "../graph.h"
 #include "../subGraphIsomorphism.h"
 #include "../graphPrintDot.h"
+#include "../base.h"
 
 struct standaloneAssignement{
 	uint32_t 		nb_node;
@@ -43,7 +44,7 @@ uint32_t node_get_label(struct node* node){
 		case 'o' : {return 111;}
 		case 'r' : {return 114;}
 		default : {
-			printf("ERROR: in %s, unknown label: %c\n", __func__, *(char*)node->data);
+			log_err_m("unknown label: %c", *(char*)node->data);
 			return 0;
 		}
 	}
@@ -157,7 +158,7 @@ struct graph* create_graph(){
 
 	/* print graph */
 	if (graphPrintDot_print(graph, "graph.dot", NULL, NULL)){
-		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+		log_err("unable to print graph to dot format");
 	}
 
 	return graph;
@@ -199,7 +200,7 @@ struct graph* create_subGraph(){
 
 	/* print graph */
 	if (graphPrintDot_print(sub_graph, "subGraph.dot", NULL, NULL)){
-		printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+		log_err("unable to print graph to dot format");
 	}
 
 	return sub_graph;
@@ -222,22 +223,22 @@ int main(){
 
 	graph_handle = graphIso_create_graph_handle(graph, node_get_label, edge_get_label);
 	if (graph_handle == NULL){
-		printf("ERROR: in %s, unable to create graphHandle\n", __func__);
+		log_err("unable to create graphHandle");
 		return -1;
 	}
 
 	sub_graph_handle = graphIso_create_sub_graph_handle(sub_graph, node_get_label, edge_get_label);
 	if (sub_graph_handle == NULL){
-		printf("ERROR: in %s, unable to create subGraphHandle\n", __func__);
+		log_err("unable to create subGraphHandle");
 		return -1;
 	}
 	
 	assignement_array = graphIso_search(graph_handle, sub_graph_handle);
 	if (assignement_array == NULL){
-		printf("ERROR: in %s, the subgraph isomorphism routine\n", __func__);
+		log_err("the subgraph isomorphism routine");
 	}
 	else{
-		printf("Found %u subgraph instance -> printing\n", array_get_length(assignement_array));
+		log_info_m("found %u subgraph instance -> printing", array_get_length(assignement_array));
 	
 		for (i = 0; i < array_get_length(assignement_array); i++){
 			assignement = (struct node**)array_get(assignement_array, i);
@@ -252,7 +253,7 @@ int main(){
 
 			snprintf(iso_file_name, 32, "iso_%u.dot", i + 1);
 			if (graphPrintDot_print(graph, iso_file_name, NULL, &sta_assignement)){
-				printf("ERROR: in %s, unable to print graph to dot format\n", __func__);
+				log_err("unable to print graph to dot format");
 			}
 		}
 

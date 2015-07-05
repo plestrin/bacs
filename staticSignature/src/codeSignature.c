@@ -6,6 +6,7 @@
 #include "codeSignature.h"
 #include "multiColumn.h"
 #include "result.h"
+#include "base.h"
 
 /* ===================================================================== */
 /* codeSignatureCollection routines										 */
@@ -24,7 +25,7 @@ struct codeSignatureCollection* codeSignatureCollection_create(){
 		codeSignatureCollection_init(collection);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return collection;
@@ -42,7 +43,7 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 
 	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
 	if (syntax_node == NULL){
-		printf("ERROR: in %s, unable to add code signature to the collection's syntax graph\n", __func__);
+		log_err("unable to add code signature to the collection's syntax graph");
 		return -1;
 	}
 
@@ -72,7 +73,7 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 					symbolTableEntry_set_resolved(new_signature->symbol_table->symbols + i);
 
 					if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
-						printf("ERROR: in %s, unable to add edge to the syntax tree\n", __func__);
+						log_err("unable to add edge to the syntax tree");
 					}
 				}
 			}
@@ -91,7 +92,7 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 		}
 	}
 	else{
-		printf("WARNING: in %s, sub graph handle is already built, symbols are ignored\n", __func__);
+		log_warn("subgraph handle is already built, symbols are ignored");
 		new_signature->sub_graph_handle->graph = &(new_signature->graph);
 	}
 
@@ -105,7 +106,7 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 					symbolTableEntry_set_resolved(signature_cursor->symbol_table->symbols + i);
 
 					if (graph_add_edge(&(collection->syntax_graph), syntax_node, node_cursor, &i) == NULL){
-						printf("ERROR: in %s, unable to add edge to the syntax tree\n", __func__);
+						log_err("unable to add edge to the syntax tree");
 					}
 				}
 				else if (!symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols + i)){
@@ -143,7 +144,7 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 	}
 
 	if (new_signature->nb_parameter_in == 0 || new_signature->nb_parameter_out == 0){
-		printf("WARNING: in %s, signature \"%s\" has an incorrect number of parameter\n", __func__, new_signature->name);
+		log_warn_m("signature \"%s\" has an incorrect number of parameter", new_signature->name);
 	}
 	
 	return 0;
@@ -171,7 +172,7 @@ void codeSignatureCollection_search(struct codeSignatureCollection* collection, 
 
 	signature_buffer = (struct codeSignature**)malloc(sizeof(struct signature*) * collection->syntax_graph.nb_node);
 	if (signature_buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return;
 	}
 
@@ -187,13 +188,13 @@ void codeSignatureCollection_search(struct codeSignatureCollection* collection, 
 		multiColumnPrinter_print_header(printer);
 	}
 	else{
-		printf("ERROR: in %s, unable to init multiColumnPrinter\n", __func__);
+		log_err("unable to init multiColumnPrinter");
 		free(signature_buffer);
 		return;
 	}
 
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_start_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+		log_err("clock_gettime fails");
 	}
 
 	for (i = 0; i < nb_trace; i++){
@@ -228,7 +229,7 @@ void codeSignatureCollection_search(struct codeSignatureCollection* collection, 
 				}
 
 				if (signature_cursor->sub_graph_handle == NULL){
-					printf("WARNING: in %s, sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)\n", __func__, signature_cursor->name);
+					log_warn_m("sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)", signature_cursor->name);
 					goto next1;
 				}
 
@@ -249,33 +250,33 @@ void codeSignatureCollection_search(struct codeSignatureCollection* collection, 
 
 			graph_handle = graphIso_create_graph_handle(&(trace_buffer[i]->ir->graph), irNode_get_label, irEdge_get_label);
 			if (graph_handle == NULL){
-				printf("ERROR: in %s, unable to create graphHandle\n", __func__);
+				log_err("unable to create graphHandle");
 				break;
 			}
 
 			for (j = 0; j < nb_signature; j++){
 				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
-					printf("ERROR: in %s, clock_gettime fails\n", __func__);
+					log_err("clock_gettime fails");
 				}
 
 				assignement_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
 
 				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
-					printf("ERROR: in %s, clock_gettime fails\n", __func__);
+					log_err("clock_gettime fails");
 				}
 				timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
 
 				codeSignature_state_set_search(signature_buffer[j]);
 				if (assignement_array == NULL){
-					printf("ERROR: in %s, the subgraph isomorphism routine fails\n", __func__);
+					log_err("the subgraph isomorphism routine fails");
 				}
 				else if (array_get_length(assignement_array) > 0){
 					if (result_init(&result, signature_buffer[j], assignement_array)){
-						printf("ERROR: in %s, unable to init result\n", __func__);
+						log_err("unable to init result");
 					}
 					else{
 						if ((signature_buffer[j]->result_index = array_add(&(trace_buffer[i]->result_array), &result)) < 0){
-							printf("ERROR: in %s, unable to add element to array\n", __func__);
+							log_err("unable to add element to array");
 						}
 						else{
 							codeSignature_state_set_found(signature_buffer[j]);
@@ -315,11 +316,11 @@ void codeSignatureCollection_search(struct codeSignatureCollection* collection, 
 	}
 
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_stop_time)){
-		printf("ERROR: in %s, clock_gettime fails\n", __func__);
+		log_err("clock_gettime fails");
 	}
 
 	multiColumnPrinter_delete(printer);
-	printf("Total elapsed time: %f\n", (timer1_stop_time.tv_sec - timer1_start_time.tv_sec) + (timer1_stop_time.tv_nsec - timer1_start_time.tv_nsec) / 1000000000.);
+	log_info_m("total elapsed time: %f", (timer1_stop_time.tv_sec - timer1_start_time.tv_sec) + (timer1_stop_time.tv_nsec - timer1_start_time.tv_nsec) / 1000000000.);
 
 	free(signature_buffer);
 }
@@ -332,9 +333,9 @@ void codeSignatureCollection_printDot(struct codeSignatureCollection* collection
 	char 						symbol_str[10];
 
 	graph_register_dotPrint_callback(&(collection->syntax_graph), NULL, syntaxGraph_dotPrint_node, NULL, NULL);
-	printf("Print symbol dependency (syntax graph) in file: \"collection.dot\"\n");
+	log_info("print symbol dependency (syntax graph) in file: \"collection.dot\"");
 	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL, NULL)){
-		printf("ERROR: in %s, graph printDot returned error code\n", __func__);
+		log_err("graph printDot returned error code");
 	}
 
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
@@ -374,7 +375,7 @@ void codeSignatureCollection_printDot(struct codeSignatureCollection* collection
 		}
 
 		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL, NULL)){
-			printf("ERROR: in %s, graph printDot returned error code\n", __func__);
+			log_err("graph printDot returned error code");
 		}
 
 		if (printer != NULL){
@@ -503,7 +504,7 @@ uint32_t irNode_get_label(struct node* node){
 		}
 	}
 
-	printf("ERROR: in %s, this case is not supposed to happen\n", __func__);
+	log_err("this case is not supposed to happen");
 	return 0;
 }
 
@@ -521,7 +522,7 @@ uint32_t signatureNode_get_label(struct node* node){
 		}
 		case SIGNATURE_NODE_TYPE_SYMBOL : {
 			if (!symbolTableEntry_is_resolved(signature_node->node_type.symbol)){
-				printf("WARNING: in %s, the current node is an unresolved symbol (%s) setting its label to joker\n", __func__, signature_node->node_type.symbol->name);
+				log_warn_m("the current node is an unresolved symbol (%s) setting its label to joker", signature_node->node_type.symbol->name);
 				return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 			}
 			else{
@@ -530,7 +531,7 @@ uint32_t signatureNode_get_label(struct node* node){
 		}
 	}
 
-	printf("ERROR: in %s, this case is not supposed to happen (incorrect signature node type)\n", __func__);
+	log_err("this case is not supposed to happen (incorrect signature node type)");
 	return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 }
 

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "ugraph.h"
+#include "base.h"
 
 struct ugraph* ugraph_create(uint32_t node_size){
 	struct ugraph* ugraph;
@@ -12,7 +13,7 @@ struct ugraph* ugraph_create(uint32_t node_size){
 		ugraph_init(ugraph, node_size);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return ugraph;
@@ -35,7 +36,7 @@ struct unode* ugraph_add_node_(struct ugraph* ugraph){
 		ugraph->head = unode;
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return unode;
@@ -49,7 +50,7 @@ struct unode* ugraph_add_node(struct ugraph* ugraph, void* data){
 		memcpy(unode->data, data, ugraph->node_size);
 	}
 	else{
-		printf("ERROR: in %s, unable to create unode\n", __func__);
+		log_err("unable to create unode");
 	}
 
 	return unode;
@@ -57,12 +58,12 @@ struct unode* ugraph_add_node(struct ugraph* ugraph, void* data){
 
 int32_t ugraph_add_edge(struct unode* unode1, struct unode* unode2){
 	if (set_add(&(unode1->edge_set), &unode2)){
-		printf("ERROR: in %s, unable to add element to set\n", __func__);
+		log_err("unable to add element to set");
 		return -1;
 	}
 
 	if (set_add(&(unode2->edge_set), &unode1)){
-		printf("ERROR: in %s, unable to add element to set\n", __func__);
+		log_err("unable to add element to set");
 		set_remove(&(unode1->edge_set), &unode2);
 		return -1;
 	}

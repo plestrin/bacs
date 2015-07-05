@@ -72,20 +72,4 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 
 int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* result, uint32_t index);
 
-/*
-   TODO list3:
-   	- try to some clustering not to push to many symbols (can be done in TODO list 2)
-   	- find lowest common ancestor
-
-   TODO list4:
-   	- list occurrence of a fragment in trace just to know which larger fragment can we create
-   	- while building new IR try to import previously create IR
-   	- normalize IR with pushed results
-
-
-   TDOD list5:
-	- (OPT) add description for parameters in the signature definition file (for a better printing at the end to tag edges)
-	- (OPT) try to give advice on the fragment size in terms of bbl (just a useful feature)
-*/
-
 #endif
