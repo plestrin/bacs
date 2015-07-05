@@ -118,7 +118,7 @@ workQueue.o: ../workQueue.h
 multiWorkPercent.o: ../multiWorkPercent.h ../workPercent.h
 pageTable.o: ../pageTable.h
 graph.o: ../graph.h
-graphPrintDot.o: ../graph.h ../graphPrintDot.h
+graphPrintDot.o: ../graph.h ../graphPrintDot.h ../base.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
 dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h

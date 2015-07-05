@@ -3,15 +3,10 @@
 
 #include <stdint.h>
 
-#define GRAPHPRINTDOT_DEFAULT_FILE_NAME "graph.dot"
-
 #include "graph.h"
 
-struct graphPrintDotFilter{
-	int32_t(*node_filter)(struct node*,void*);
-	int32_t(*edge_filter)(struct edge*,void*);
-};
+#define GRAPHPRINTDOT_DEFAULT_FILE_NAME "graph.dot"
 
-int32_t graphPrintDot_print(struct graph* graph, const char* name, struct graphPrintDotFilter* filters, void* arg);
+int32_t graphPrintDot_print(struct graph* graph, const char* name, void* arg);
 
 #endif

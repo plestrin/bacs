@@ -231,7 +231,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge);
 
 void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_node);
 
-#define ir_printDot(ir, filters) graphPrintDot_print(&((ir)->graph), NULL, filters, NULL)
+#define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
 void ir_print_location_node(struct node* node, struct assembly* assembly);
 

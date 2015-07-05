@@ -64,7 +64,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map);
 void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map);
 
-#define callGraph_printDot(call_graph) graphPrintDot_print(&(call_graph->graph), "callGraph.dot", NULL, call_graph)
+#define callGraph_printDot(call_graph) graphPrintDot_print(&(call_graph->graph), "callGraph.dot", call_graph)
 
 void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map);
 

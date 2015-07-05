@@ -37,46 +37,46 @@ int main(int argc, char** argv){
 	}
 
 	/* trace specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
-	ADD_CMD_TO_INPUT_PARSER(parser, "change thread", 			"Switch the current thread", 					"Thread Index", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change_thread)
-	ADD_CMD_TO_INPUT_PARSER(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
+	ADD_CMD_TO_INPUT_PARSER(parser, "change thread", 			"Switch the current thread", 					"Thread Index", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change_thread)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
-	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
-	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
-	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print result", 			"Print code signature result in details", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 		INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
-	ADD_CMD_TO_INPUT_PARSER(parser, "mine frag", 				"Search for relation between results in IR", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_mine)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
+	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
+	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print result", 			"Print code signature result in details", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
+	ADD_CMD_TO_INPUT_PARSER(parser, "mine frag", 				"Search for relation between results in IR", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_mine)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Filter [opt] & frag index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check ir", 				"Perform a set of tests on the IR", 			"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check_ir)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_printDot_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check ir", 				"Perform a set of tests on the IR", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check_ir)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 
 	/* code signature specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 					INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
-	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_printDot)
-	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
 
 	/* callGraph specific commands */
-	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot callGraph", 		"Write the call graph in the dot format", 		NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_printDot)
-	ADD_CMD_TO_INPUT_PARSER(parser, "check callGraph", 			"Perform some check on the callGraph", 			NULL, 							INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_check)
-	ADD_CMD_TO_INPUT_PARSER(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
-	ADD_CMD_TO_INPUT_PARSER(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 						INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
+	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 		INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot callGraph", 		"Write the call graph in the dot format", 		NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check callGraph", 			"Perform some check on the callGraph", 			NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_check)
+	ADD_CMD_TO_INPUT_PARSER(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
+	ADD_CMD_TO_INPUT_PARSER(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -737,37 +737,11 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
-	uint32_t 					index;
-	struct graphPrintDotFilter 	filters;
-	struct graphPrintDotFilter* filters_ptr = NULL;
-	char*						str_ptr;
+	uint32_t index;
 
-	if (arg[0] < 48 || arg[0] > 57){
-		if (!strncmp(arg, "FLT_MACRO", 9)){
-			filters.node_filter = ir_printDot_filter_macro_node;
-			filters.edge_filter = ir_printDot_filter_macro_edge;
-			filters_ptr = &filters;
-
-			str_ptr = strchr(arg, ' ');
-			if (str_ptr != NULL){
-				index = atoi(str_ptr);
-			}
-			else{
-				log_err("unable to locate frag index in the cmd arg");
-				return;
-			}
-		}
-		else{
-			log_err("incorrect filter. List of available filter(s):\n\t-FLT_MACRO: prints only macro node");
-			return;
-		}
-	}
-	else{
-		index = (uint32_t)atoi(arg);
-	}
-
+	index = (uint32_t)atoi(arg);
 	if (index < array_get_length(&(analysis->frag_array))){
-		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index), filters_ptr);
+		trace_printDot_ir((struct trace*)array_get(&(analysis->frag_array), index));
 	}
 	else{
 		log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));

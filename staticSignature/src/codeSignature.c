@@ -334,7 +334,7 @@ void codeSignatureCollection_printDot(struct codeSignatureCollection* collection
 
 	graph_register_dotPrint_callback(&(collection->syntax_graph), NULL, syntaxGraph_dotPrint_node, NULL, NULL);
 	log_info("print symbol dependency (syntax graph) in file: \"collection.dot\"");
-	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL, NULL)){
+	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL)){
 		log_err("graph printDot returned error code");
 	}
 
@@ -374,7 +374,7 @@ void codeSignatureCollection_printDot(struct codeSignatureCollection* collection
 			snprintf(symbol_str, 10, "%u/%u", nb_resolved, signature_cursor->symbol_table->nb_symbol);
 		}
 
-		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL, NULL)){
+		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL)){
 			log_err("graph printDot returned error code");
 		}
 

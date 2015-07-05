@@ -593,7 +593,7 @@ void traceMine_mine(struct trace* trace){
 
 	log_info_m("writing result(s) to: \"%s\"", synthesis_graph_name);
 
-	graphPrintDot_print(&synthesis_graph, synthesis_graph_name, NULL, NULL);
+	graphPrintDot_print(&synthesis_graph, synthesis_graph_name, NULL);
 	graph_clean(&synthesis_graph);
 
 	for (i = 0; i < array_get_length(cluster_array); i++){
