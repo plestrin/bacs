@@ -326,10 +326,31 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t4" number="1656"/> <!-- 1656 = (9 + 11 + 13 + 10 + 12 + 14) * 24-->
+			<algo name="aes_t4" number="1656"/> <!-- 1656 = (9 + 11 + 13 + 10 + 12 + 14) * 24 -->
 			<algo name="aes_r9" number="504"/> <!-- 504 = 24 * (3 + 7 + 11) -->
 			<algo name="aes_r11" number="240"/> <!-- 240 = 24 * (3 + 7) -->
 			<algo name="aes_r13" number="72"/> <!-- 72 = 24 * 3 -->
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES" active="yes"> <!-- decryption only, encryption is done using SSE -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes"/>
+		<search>
+			<arg value="load trace tracePP_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZThn4_NK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result type="sig">
+			<algo name="aes_t4" number="792"/>
+			<algo name="aes_r9" number="216"/>
+			<algo name="aes_r11" number="96"/>
+			<algo name="aes_r13" number="24"/>
 		</result>
 	</recipe>
 
@@ -352,7 +373,7 @@
 			<arg value="exit"/>
 		</search>
 		<result type="sig">
-			<algo name="aes_t4" number="1440"/> <!-- 1440 = (8 + 10 + 12 + 8 + 10 + 12) * 24-->
+			<algo name="aes_t4" number="1440"/> <!-- 1440 = (8 + 10 + 12 + 8 + 10 + 12) * 24 -->
 			<algo name="aes_t1_v2" number="24"/> <!-- 24 = (1 + 1 + 1 + 1 + 1 + 1) * 4-->
 			<algo name="aes_r9" number="312"/> <!-- 312 = 24 * (4 + 2 + 4 + 2) + 4 * (1 + 1 + 1 + 1 + 1 + 1) -->
 			<algo name="aes_r11" number="112"/> <!-- 112 = 24 * (2 + 2) + 4 * (1 + 1 + 1 + 1) -->
