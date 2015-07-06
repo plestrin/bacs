@@ -13,7 +13,7 @@
 #define NODE_MAX_LABEL_SIZE 32
 #define GRAPH_NAME_SIZE		64
 
-char graph_name[GRAPH_NAME_SIZE] = "default";
+static char graph_name[GRAPH_NAME_SIZE] = "default";
 
 /* Example file: tintinGraph.txt */
 

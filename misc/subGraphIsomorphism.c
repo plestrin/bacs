@@ -855,8 +855,8 @@ static void possibleAssignment_save_state(struct possibleAssignment* possible_as
 /* ===================================================================== */
 
 int32_t compare_labelTabItem_label(const void* arg1, const void* arg2){
-	struct labelTab* label_item1 = (struct labelTab*)arg1;
-	struct labelTab* label_item2 = (struct labelTab*)arg2;
+	const struct labelTab* label_item1 = (const struct labelTab*)arg1;
+	const struct labelTab* label_item2 = (const struct labelTab*)arg2;
 
 	if (label_item1->label < label_item2->label){
 		return -1;
@@ -870,8 +870,8 @@ int32_t compare_labelTabItem_label(const void* arg1, const void* arg2){
 }
 
 int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
-	uint32_t 				key = *(uint32_t*)arg1;
-	struct labelFastAccess* fast_access = (struct labelFastAccess*)arg2;
+	uint32_t 				key = *(const uint32_t*)arg1;
+	const struct labelFastAccess* fast_access = (const struct labelFastAccess*)arg2;
 
 	if (key < fast_access->label){
 		return -1;
@@ -886,8 +886,8 @@ int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
 
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2){
-	struct labelTab* label_item1 = (struct labelTab*)arg1;
-	struct labelTab* label_item2 = (struct labelTab*)arg2;
+	const struct labelTab* label_item1 = (const struct labelTab*)arg1;
+	const struct labelTab* label_item2 = (const struct labelTab*)arg2;
 
 	if (label_item1->connectivity > label_item2->connectivity){
 		return -1;

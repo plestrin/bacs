@@ -5,7 +5,7 @@
 #include <termios.h>
 
 struct termReader{
-	uint8_t 		is_tty;
+	uint32_t 		is_tty;
 	struct termios 	saved_settings;
 	uint32_t(*tab_handler)(char* buffer, uint32_t buffer_length, uint32_t offset, void* arg);
 	void* 			arg;

@@ -11,7 +11,7 @@
 
 static void multiColumnPrinter_constrain_string(char* src, char* dst, uint32_t size);
 
-struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator){
+struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, enum multiColumnType* types, char* separator){
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					i;
 
@@ -89,7 +89,7 @@ void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint
 	}
 }
 
-void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, uint8_t type){
+void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, enum multiColumnType type){
 	if (printer != NULL){
 		if (printer->nb_column > column){
 			if (MULTICOLUMN_TYPE_IS_VALID(type)){
@@ -175,59 +175,53 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 
 		for (i = 0; i < printer->nb_column; i++){
 			switch(printer->columns[i].type){
-			case MULTICOLUMN_TYPE_STRING 	: {
-				value_str = (char*)va_arg(vl, char*);
-				break;
-			}
-			case MULTICOLUMN_TYPE_INT8 	: {
-				value_str = raw_value;
-				value_int8 = (int8_t)va_arg(vl, int32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int8);
-				break;
-			}
-			case MULTICOLUMN_TYPE_INT32 	: {
-				value_str = raw_value;
-				value_int32 = (int32_t)va_arg(vl, int32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int32);
-				break;
-			}
-			case MULTICOLUMN_TYPE_UINT32 	: {
-				value_str = raw_value;
-				value_uint32 = (uint32_t)va_arg(vl, uint32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%u", value_uint32);
-				break;
-			}
-			case MULTICOLUMN_TYPE_DOUBLE 	: {
-				value_str = raw_value;
-				value_dbl = (double)va_arg(vl, double);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%f", value_dbl);
-				break;
-			}
-			case MULTICOLUMN_TYPE_HEX_32	: {
-				value_str = raw_value;
-				value_uint32 = (uint32_t)va_arg(vl, uint32_t);
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%08x", value_uint32);
-				break;
-			}
-			case MULTICOLUMN_TYPE_HEX_64	: {
-				value_str = raw_value;
-				value_uint64 = (uint64_t)va_arg(vl, uint64_t);
-				#ifdef __linux__
-				#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-				snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
-				#endif
-				break;
-			}
-			case MULTICOLUMN_TYPE_UNBOUND_STRING 	: {
-				value_str = (char*)va_arg(vl, char*);
-				break;
-			}
-			default 						: {
-				printf("ERROR: in %s, this case is not suppose to happen\n", __func__);
-				value_str = print_value;
-				multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
-				break;
-			}
+				case MULTICOLUMN_TYPE_STRING 	: {
+					value_str = (char*)va_arg(vl, char*);
+					break;
+				}
+				case MULTICOLUMN_TYPE_INT8 	: {
+					value_str = raw_value;
+					value_int8 = (int8_t)va_arg(vl, int32_t);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int8);
+					break;
+				}
+				case MULTICOLUMN_TYPE_INT32 	: {
+					value_str = raw_value;
+					value_int32 = (int32_t)va_arg(vl, int32_t);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%d", value_int32);
+					break;
+				}
+				case MULTICOLUMN_TYPE_UINT32 	: {
+					value_str = raw_value;
+					value_uint32 = (uint32_t)va_arg(vl, uint32_t);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%u", value_uint32);
+					break;
+				}
+				case MULTICOLUMN_TYPE_DOUBLE 	: {
+					value_str = raw_value;
+					value_dbl = (double)va_arg(vl, double);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "%f", value_dbl);
+					break;
+				}
+				case MULTICOLUMN_TYPE_HEX_32	: {
+					value_str = raw_value;
+					value_uint32 = (uint32_t)va_arg(vl, uint32_t);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%08x", value_uint32);
+					break;
+				}
+				case MULTICOLUMN_TYPE_HEX_64	: {
+					value_str = raw_value;
+					value_uint64 = (uint64_t)va_arg(vl, uint64_t);
+					#ifdef __linux__
+					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
+					#endif
+					break;
+				}
+				case MULTICOLUMN_TYPE_UNBOUND_STRING 	: {
+					value_str = (char*)va_arg(vl, char*);
+					break;
+				}
 			}
 
 			if (printer->columns[i].type != MULTICOLUMN_TYPE_UNBOUND_STRING){

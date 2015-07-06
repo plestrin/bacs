@@ -3,9 +3,9 @@
 
 #include "readBuffer.h"
 
-char* readBuffer_raw(const char* txt, uint64_t txt_length, char* buffer){
-	char* 		result;
-	uint64_t	i;
+char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer){
+	char* 	result;
+	size_t	i;
 
 	result = buffer;
 	if (result == NULL){
@@ -47,7 +47,7 @@ char* readBuffer_raw(const char* txt, uint64_t txt_length, char* buffer){
 	return result;
 }
 
-void readBuffer_reverse_endianness(char* buffer, uint64_t buffer_length){
+void readBuffer_reverse_endianness(char* buffer, size_t buffer_length){
 	uint64_t i;
 
 	if (buffer_length % 4){

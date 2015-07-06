@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 		log_warn("we add two times the same cmd, the second'll not be reachable");
 	}
 	
-	inputParser_exe(&parser, argc - 1, argv + 1);
+	inputParser_exe(&parser, (uint32_t)(argc - 1), argv + 1);
 
 	inputParser_clean(&parser);
 

@@ -16,7 +16,7 @@ static void inputParser_exit(struct inputParser* parser);
 
 static char* inputParser_get_argument(char* cmd, char* line);
 
-struct inputParser* inputParser_create(){
+struct inputParser* inputParser_create(void){
 	struct inputParser* parser;
 
 	parser = (struct inputParser*)malloc(sizeof(struct inputParser));
@@ -57,7 +57,7 @@ int inputParser_init(struct inputParser* parser){
 	return 0;
 }
 
-int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, char type, void* ctx, void(*func)(void)){
+int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, enum cmdEntryType type, void* ctx, void(*func)(void)){
 	struct cmdEntry entry;
 	int 			result = -1;
 	int32_t 		duplicate;
@@ -159,7 +159,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 		}
 
 		if ((entry_index = inputParser_search_cmd(parser, line)) >= 0){
-			entry = (struct cmdEntry*)array_get(&(parser->cmd_array), entry_index);
+			entry = (struct cmdEntry*)array_get(&(parser->cmd_array), (uint32_t)entry_index);
 			if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
 				((void(*)(void*,char*))(entry->function))(entry->context, inputParser_get_argument(entry->name, line));
 			}
@@ -207,7 +207,7 @@ int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
 		}
 
 		if (compare_result == 0){
-			return i;
+			return (int32_t)i;
 		}
 	}
 
@@ -318,16 +318,16 @@ void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop){
 			if (length >= 4 && offset1[0] == '['){
 				offset2 = strchr(offset1, ':');
 				if (offset2 != NULL){
-					*start = atoi(offset1 + 1);
-					*stop  = atoi(offset2 + 1);
+					*start = (uint32_t)atoi(offset1 + 1);
+					*stop  = (uint32_t)atoi(offset2 + 1);
 				}
 				else{
-					*start = atoi(offset1 + 1);
+					*start = (uint32_t)atoi(offset1 + 1);
 					*stop  = *start + 1;
 				}
 			}
 			else{
-				*start = atoi(offset1);
+				*start = (uint32_t)atoi(offset1);
 				*stop  = *start + 1;
 			}
 		}

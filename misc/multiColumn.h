@@ -6,17 +6,19 @@
 
 #define MULTICOLUMN_DEFAULT_SIZE 		12
 #define MULTICOLUMN_DEFAULT_SEPARATOR 	" | "
-#define MULTICOLUMN_DEFAULT_TYPE		1
+#define MULTICOLUMN_DEFAULT_TYPE		0
 #define MULTICOLUMN_STRING_MAX_SIZE		256
 
-#define MULTICOLUMN_TYPE_STRING			1
-#define MULTICOLUMN_TYPE_INT8 			2
-#define MULTICOLUMN_TYPE_INT32 			3
-#define MULTICOLUMN_TYPE_UINT32 		4
-#define MULTICOLUMN_TYPE_DOUBLE 		5
-#define MULTICOLUMN_TYPE_HEX_32			6
-#define MULTICOLUMN_TYPE_HEX_64 		7
-#define MULTICOLUMN_TYPE_UNBOUND_STRING 8
+enum multiColumnType{
+	MULTICOLUMN_TYPE_STRING			 = 0,
+	MULTICOLUMN_TYPE_INT8 			 = 1,
+	MULTICOLUMN_TYPE_INT32 			 = 2,
+	MULTICOLUMN_TYPE_UINT32 		 = 3,
+	MULTICOLUMN_TYPE_DOUBLE 		 = 4,
+	MULTICOLUMN_TYPE_HEX_32			 = 5,
+	MULTICOLUMN_TYPE_HEX_64 		 = 6,
+	MULTICOLUMN_TYPE_UNBOUND_STRING  = 7
+};
 
 #define MULTICOLUMN_TYPE_IS_VALID(type) 		\
 	((type) == MULTICOLUMN_TYPE_STRING 	||		\
@@ -30,7 +32,7 @@
 struct multiColumnColumn{
 	uint32_t 					size;
 	char 						title[MULTICOLUMN_STRING_MAX_SIZE];
-	char 						type;
+	enum multiColumnType 		type;
 };
 
 struct multiColumnPrinter{
@@ -40,9 +42,9 @@ struct multiColumnPrinter{
 	struct multiColumnColumn 	columns[1];
 };
 
-struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, uint8_t* types, char* separator);
+struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, enum multiColumnType* types, char* separator);
 void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, uint32_t size);
-void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, uint8_t type);
+void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, enum multiColumnType);
 void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, const char* title);
 void multiColumnPrinter_print_header(struct multiColumnPrinter* printer);
 void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* printer);

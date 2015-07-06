@@ -6,15 +6,11 @@
 #include "../base.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void dotPrint_node(void* data, FILE* file, void* arg){
+static void dotPrint_node(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%u\"]", *(uint32_t*)data);
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void dotPrint_edge(void* data, FILE* file, void* arg){
-}
-
-struct graph* create_graph(){
+static struct graph* create_graph(){
 	struct graph* 	graph;
 	struct node* 	node_10;
 	struct node* 	node_21;
@@ -30,7 +26,7 @@ struct graph* create_graph(){
 
 	graph = graph_create(sizeof(uint32_t), 0);
 	if (graph != NULL){
-		graph_register_dotPrint_callback(graph, NULL, dotPrint_node, dotPrint_edge, NULL)
+		graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
 
 		node_21 = graph_add_node(graph, &value_21);
 		node_10 = graph_add_node(graph, &value_10);

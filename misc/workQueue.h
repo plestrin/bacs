@@ -17,7 +17,7 @@ struct workQueue{
 	pthread_t*			threads;
 	struct job* 		job_head;
 	struct job* 		job_tail;
-	uint8_t 			exit_flag;
+	uint32_t 			exit_flag;
 	sem_t 				thread_waiter;
 	pthread_mutex_t 	queue_protector;
 };

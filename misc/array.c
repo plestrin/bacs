@@ -9,7 +9,7 @@
 int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg);
 
 
-struct _array* _array_create(){
+struct _array* _array_create(void){
 	struct _array* _array;
 
 	_array = (struct _array*)malloc(sizeof(struct _array));
@@ -39,7 +39,7 @@ int32_t _array_add(struct _array* _array, void* element){
 	}
 
 	memcpy(_array->buffer + _array->nb_filled_page, element, sizeof(struct arrayPage));
-	result = _array->nb_filled_page;
+	result = (int32_t)_array->nb_filled_page;
 	_array->nb_filled_page ++;		
 
 	return result;
@@ -160,7 +160,7 @@ int32_t array_add(struct array* array, void* element){
 	}
 
 	memcpy(array->buffer + array->nb_filled_byte, element, array->element_size);
-	result = array->nb_element;
+	result = (int32_t)array->nb_element;
 	array->nb_filled_byte += array->element_size;
 	array->nb_element ++;
 
@@ -320,7 +320,7 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 		nb_remaining_element -= nb_copied_element;
 	}
 
-	result = nb_element - nb_remaining_element;
+	result = (int32_t)(nb_element - nb_remaining_element);
 
 	return result;
 }

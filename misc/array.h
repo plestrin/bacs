@@ -19,7 +19,7 @@ struct _array{
 	uint32_t 			nb_filled_page;
 };
 
-struct _array* _array_create();
+struct _array* _array_create(void);
 
 #define _array_init(_array) 					\
 	(_array)->buffer 				= NULL; 	\

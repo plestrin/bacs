@@ -66,19 +66,19 @@ void* set_get(struct set* set, uint32_t index){
 
 int32_t set_search(struct set* set, void* element){
 	struct setBlock* 	block_cursor;
-	int32_t 			index;
+	uint32_t 			index;
 	uint32_t 			i;
 
 	for (block_cursor = &(set->block), index = 0; block_cursor != NULL; block_cursor = block_cursor->next){
 		for (i = 0; i < block_cursor->nb_element; i++){
 			if (!memcmp(block_cursor->data + i * set->element_size, element, set->element_size)){
-				return index + i;
+				return (int32_t)(index + i);
 			}
 		}
 		index += set->nb_element_block;
 	}
 
-	return index - (set->nb_element_tot + 1);
+	return -1;
 }
 
 void set_remove(struct set* set, void* element){

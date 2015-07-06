@@ -7,7 +7,7 @@
 
 #define INDEX_OF_NODE 3
 
-void dotPrint_node(void* data, FILE* file, void* arg){
+static void dotPrint_node(void* data, FILE* file, void* arg){
 	struct graph* 	graph = (struct graph*)arg;
 	struct node* 	node_cursor;
 	uint32_t 		i;
@@ -26,11 +26,7 @@ void dotPrint_node(void* data, FILE* file, void* arg){
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void dotPrint_edge(void* data, FILE* file, void* arg){
-}
-
-struct graph* create_graph(){
+static struct graph* create_graph(){
 	struct graph* 	graph;
 	struct node* 	node_a1;
 	struct node* 	node_a2;
@@ -64,7 +60,7 @@ struct graph* create_graph(){
 	struct node* 	node_r3;
 
 	graph = graph_create(1, 0);
-	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, dotPrint_edge, NULL)
+	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
 
 	/* add nodes */
 	node_a1 = graph_add_node(graph, "a");

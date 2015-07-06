@@ -11,7 +11,7 @@
 
 static void termReader_remove_last_blank(char* buffer, uint32_t length);
 
-uint8_t valid_char[128] = {
+static const uint8_t valid_char[128] = {
 	0, /* 0x00	Null char */
 	0, /* 0x01	Start of Heading */
 	0, /* 0x02	Start of Text */
@@ -153,7 +153,7 @@ int32_t termReader_set_raw_mode(struct termReader* term){
 		}
 		memcpy(&(term->saved_settings), &settings, sizeof(struct termios));
 
-		settings.c_lflag &= ~(ICANON | ECHO);
+		settings.c_lflag &= (uint32_t)(~(ICANON | ECHO));
 
 		if (tcsetattr(STDIN_FILENO, TCSANOW, &settings)){
 			log_err("tcsetattr fails");
@@ -173,7 +173,7 @@ int32_t termReader_set_raw_mode(struct termReader* term){
 int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buffer_length){
 	uint32_t 	i = 0;
 	uint32_t 	j = 0;
-	char 		character;
+	int 		character;
 
 	do{
 		character = fgetc(stdin);
@@ -217,7 +217,7 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 						#pragma GCC diagnostic ignored "-Wunused-result"
 						write(STDIN_FILENO, &character, 1);
 					}
-					buffer[i++] = character;
+					buffer[i ++] = (char)character;
 				}
 				break;
 			}

@@ -45,7 +45,7 @@ int main(){
 	printf("Buffer used: %u\n", (OBJECT_SIZE * NB_OBJECT) % ARRAY_DEFAULT_PAGE_SIZE);
 
 	for (i = 0; i < NB_OBJECT; i++){
-		memset(obj, i, OBJECT_SIZE);
+		memset(obj, (int)i, OBJECT_SIZE);
 
 		if (array_add(&array1, obj) != (int32_t)i){
 			log_err_m("unable to add obj %u", i);
@@ -56,7 +56,7 @@ int main(){
 	for (i = NB_OBJECT; i > 0; i--){
 		fetch = (char*)array_get(&array1, i-1);
 
-		memset(obj, i - 1, OBJECT_SIZE);
+		memset(obj, (int)(i - 1), OBJECT_SIZE);
 		if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
 			log_err_m("fetched object differs from original object %u", i);
 		}
@@ -69,7 +69,7 @@ int main(){
 	printf("Final fill:  %u\n", ARRAY2_FINAL_FILL);
 
 	for (i = 0; i < ARRAY2_INITAL_FILL; i++){
-		memset(obj, i, OBJECT_SIZE);
+		memset(obj, (int)i, OBJECT_SIZE);
 
 		if (array_add(&array2, obj) != (int32_t)i){
 			log_err_m("unable to add obj %u", i);
@@ -82,7 +82,7 @@ int main(){
 	}
 
 	for (i = 0; i < ARRAY2_FINAL_FILL; i++){
-		memset(obj, i, OBJECT_SIZE);
+		memset(obj, (int)i, OBJECT_SIZE);
 
 		if (array_add(&array2, obj) != (int32_t)i + COPY_LENGTH + ARRAY2_INITAL_FILL){
 			log_err_m("unable to add obj %u", i);
@@ -94,19 +94,19 @@ int main(){
 		fetch = (char*)array_get(&array2, i);
 
 		if (i < ARRAY2_INITAL_FILL){
-			memset(obj, i, OBJECT_SIZE);
+			memset(obj, (int)i, OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
 				log_err_m("fetched object differs from original object %u", i);
 			}
 		}
 		else if (i < ARRAY2_INITAL_FILL + COPY_LENGTH){
-			memset(obj, i + COPY_OFFSET - ARRAY2_INITAL_FILL, OBJECT_SIZE);
+			memset(obj, (int)(i + COPY_OFFSET - ARRAY2_INITAL_FILL), OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
 				log_err_m("fetched object differs from original object %u", i);
 			}
 		}
 		else{
-			memset(obj, i - (ARRAY2_INITAL_FILL + COPY_LENGTH), OBJECT_SIZE);
+			memset(obj, (int)(i - (ARRAY2_INITAL_FILL + COPY_LENGTH)), OBJECT_SIZE);
 			if (memcmp(obj, fetch, OBJECT_SIZE) != 0){
 				log_err_m("fetched object differs from original object %u", i);
 			}

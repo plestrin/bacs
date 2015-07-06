@@ -11,7 +11,7 @@ struct standaloneAssignement{
 	struct node** 	assignement;
 };
 
-void dotPrint_node(void* data, FILE* file, void* arg){
+static void dotPrint_node(void* data, FILE* file, void* arg){
 	struct standaloneAssignement* 	sta_assignement;
 	uint32_t 		i;
 	char* 			color = "black";
@@ -31,11 +31,7 @@ void dotPrint_node(void* data, FILE* file, void* arg){
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void dotPrint_edge(void* data, FILE* file, void* arg){
-}
-
-uint32_t node_get_label(struct node* node){
+static uint32_t node_get_label(struct node* node){
 	switch(*(char*)node->data){
 		case 'a' : {return 97 ;}
 		case 'b' : {return 98 ;}
@@ -51,11 +47,11 @@ uint32_t node_get_label(struct node* node){
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-uint32_t edge_get_label(struct edge* edge){
+static uint32_t edge_get_label(struct edge* edge){
 	return 0;
 }
 
-struct graph* create_graph(){
+static struct graph* create_graph(){
 	struct graph* 	graph;
 	struct node* 	node_a1;
 	struct node* 	node_a2;
@@ -89,7 +85,7 @@ struct graph* create_graph(){
 	struct node* 	node_r3;
 
 	graph = graph_create(1, 0);
-	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, dotPrint_edge, NULL)
+	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
 
 	/* add nodes */
 	node_a1 = graph_add_node(graph, "a");
@@ -164,7 +160,7 @@ struct graph* create_graph(){
 	return graph;
 }
 
-struct graph* create_subGraph(){
+static struct graph* create_subGraph(){
 	struct graph* 	sub_graph;
 	struct node* 	node_a1;
 	struct node* 	node_a2;
@@ -179,7 +175,7 @@ struct graph* create_subGraph(){
 	struct node* 	node_r1;
 
 	sub_graph = graph_create(1, 0);
-	graph_register_dotPrint_callback(sub_graph, NULL, dotPrint_node, dotPrint_edge, NULL)
+	graph_register_dotPrint_callback(sub_graph, NULL, dotPrint_node, NULL, NULL)
 
 	/* add nodes */
 	node_a1 = graph_add_node(sub_graph, "a");

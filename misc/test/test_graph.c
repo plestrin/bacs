@@ -9,12 +9,12 @@
 #define EDGE_DESCRIPTION_LENGTH 16
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void asterix_dotPrint_node(void* data, FILE* file, void* arg){
+static void asterix_dotPrint_node(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void asterix_dotPrint_edge(void* data, FILE* file, void* arg){
+static void asterix_dotPrint_edge(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 

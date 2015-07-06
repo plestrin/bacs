@@ -210,8 +210,8 @@ struct graphReaderNode{
 };
 
 static int32_t graphReaderNode_compare_id(const void* data1, const void* data2){
-	struct graphReaderNode* node1 = (struct graphReaderNode*)data1;
-	struct graphReaderNode* node2 = (struct graphReaderNode*)data2;
+	const struct graphReaderNode* node1 = (const struct graphReaderNode*)data1;
+	const struct graphReaderNode* node2 = (const struct graphReaderNode*)data2;
 
 	if (node1->id < node2->id){
 		return -1;
@@ -242,11 +242,11 @@ static void graphReader_set_edge(struct graphReaderEdge* edge, struct graphReade
 void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReaderCallback* callback){
 	struct graphReaderCursor 	reader_cursor;
 	enum graphReaderState 		reader_state;
-	struct graphReaderNode*	 	node;
+	struct graphReaderNode*	 	node 				= NULL;
 	struct graphReaderEdge		edge;
-	void* 						binary_tree_root = NULL;
+	void* 						binary_tree_root 	= NULL;
 
-	reader_cursor.cursor = (char*)buffer;
+	reader_cursor.cursor = (const char*)buffer;
 	reader_cursor.remaining_size = buffer_size;
 	reader_cursor.token = READER_TOKEN_NONE;
 	reader_state = READER_STATE_START;
@@ -498,7 +498,7 @@ static void graphReader_get_graph_name(struct graphReaderCursor* reader_cursor, 
 			callback->callback_graph_name(reader_cursor->cursor + 1, reader_cursor->remaining_size - 1, callback->arg);
 		}
 		else{
-			callback->callback_graph_name(reader_cursor->cursor + 1, end - (reader_cursor->cursor + 1), callback->arg);
+			callback->callback_graph_name(reader_cursor->cursor + 1, (size_t)(end - (reader_cursor->cursor + 1)), callback->arg);
 		}
 	}
 }
@@ -515,7 +515,7 @@ static void graphReader_get_graph_label(struct graphReaderCursor* reader_cursor,
 			callback->callback_graph_label(reader_cursor->cursor + 1, reader_cursor->remaining_size - 1, callback->arg);
 		}
 		else{
-			callback->callback_graph_label(reader_cursor->cursor + 1, end - (reader_cursor->cursor + 1), callback->arg);
+			callback->callback_graph_label(reader_cursor->cursor + 1, (size_t)(end - (reader_cursor->cursor + 1)), callback->arg);
 		}
 	}
 }
@@ -528,7 +528,7 @@ static struct graphReaderNode* graphReader_get_node(struct graphReaderCursor* re
 		log_err("unable to allocate memory");
 	}
 	else{
-		new_node->id = atoi(reader_cursor->cursor);
+		new_node->id = (uint32_t)atoi(reader_cursor->cursor);
 
 		existing_node = (struct graphReaderNode**)tsearch((void*)new_node, binary_tree_root, graphReaderNode_compare_id);
 		if (existing_node == NULL){
@@ -561,7 +561,7 @@ static void graphReader_get_node_label(struct graphReaderCursor* reader_cursor, 
 			callback->callback_node_label(reader_cursor->cursor + 1, reader_cursor->remaining_size - 1, node->ptr, callback->arg);
 		}
 		else{
-			callback->callback_node_label(reader_cursor->cursor + 1, end - (reader_cursor->cursor + 1), node->ptr, callback->arg);
+			callback->callback_node_label(reader_cursor->cursor + 1, (size_t)(end - (reader_cursor->cursor + 1)), node->ptr, callback->arg);
 		}
 	}
 }
@@ -578,7 +578,7 @@ static void graphReader_get_node_io(struct graphReaderCursor* reader_cursor, str
 			callback->callback_node_io(reader_cursor->cursor + 1, reader_cursor->remaining_size - 1, node->ptr, callback->arg);
 		}
 		else{
-			callback->callback_node_io(reader_cursor->cursor + 1, end - (reader_cursor->cursor + 1), node->ptr, callback->arg);
+			callback->callback_node_io(reader_cursor->cursor + 1, (size_t)(end - (reader_cursor->cursor + 1)), node->ptr, callback->arg);
 		}
 	}
 }
@@ -595,7 +595,7 @@ static void graphReader_get_edge_label(struct graphReaderCursor* reader_cursor, 
 		edge->label_size = reader_cursor->remaining_size - 1;
 	}
 	else{
-		edge->label_size = end - (reader_cursor->cursor + 1);
+		edge->label_size = (size_t)(end - (reader_cursor->cursor + 1));
 	}
 }
 

@@ -25,11 +25,11 @@ int main(){
 	}
 
 	for (i = 0; i < NB_ELEMENT_TOT; i++){
-		memset(data, i, ELEMENT_SIZE);
+		memset(data, (int)i, ELEMENT_SIZE);
 		if (set_add(set, data)){
 			log_err_m("unable to add element %u", i);
 		}
-		s[i] = i;
+		s[i] = (uint8_t)i;
 	}
 
 	while(set->nb_element_tot > NB_ELEMENT_STOP){

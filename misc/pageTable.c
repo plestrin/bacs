@@ -267,26 +267,26 @@ void* pageTable_get_first(struct pageTable* pt, uint32_t* index){
 							sub_page3 = sub_page2->pages[index3];
 							for (index4 = 0; ; index4++){
 								if (PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
-									*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+									*index = ((uint32_t)index1 << 24) | ((uint32_t)index2 << 16) | ((uint32_t)index3 << 8) | (uint32_t)index4;
 
 									return sub_page3->data + pt->data_size * index4;
 								}
-								if (index4 == 255){
+								if (index4 == 0xff){
 									break;
 								}
 							}
 						}
-						if (index3 == 255){
+						if (index3 == 0xff){
 							break;
 						}
 					}
 				}
-				if (index2 == 255){
+				if (index2 == 0xff){
 					break;
 				}
 			}
 		}
-		if (index1 == 255){
+		if (index1 == 0xff){
 			break;
 		}
 	}
@@ -373,7 +373,7 @@ void* pageTable_get_next(struct pageTable* pt, uint32_t* index){
 		goto search_index3;
 	}
 	
-	*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+	*index = ((uint32_t)index1 << 24) | ((uint32_t)index2 << 16) | ((uint32_t)index3 << 8) | (uint32_t)index4;
 
 	return sub_page3->data + pt->data_size * index4;
 }
@@ -399,7 +399,7 @@ void* pageTable_get_last(struct pageTable* pt, uint32_t* index){
 							sub_page3 = sub_page2->pages[index3];
 							for (index4 = 255; ; index4--){
 								if (PAGETABLE_IS_VALUE_SET(index4, sub_page3->set_vector)){
-									*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+									*index = ((uint32_t)index1 << 24) | ((uint32_t)index2 << 16) | ((uint32_t)index3 << 8) | (uint32_t)index4;
 
 									return sub_page3->data + pt->data_size * index4;
 								}
@@ -505,7 +505,7 @@ void* pageTable_get_prev(struct pageTable* pt, uint32_t* index){
 		goto search_index3;
 	}
 	
-	*index = (index1 << 24) | (index2 << 16) | (index3 << 8) | index4;
+	*index = ((uint32_t)index1 << 24) | ((uint32_t)index2 << 16) | ((uint32_t)index3 << 8) | (uint32_t)index4;
 
 	return sub_page3->data + pt->data_size * index4;
 }
