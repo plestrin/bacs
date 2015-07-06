@@ -9,7 +9,7 @@
 
 #include "mapFile.h"
 
-void* mapFile_map(const char* file_name, uint64_t* size){
+void* mapFile_map(const char* file_name, size_t* size){
 	int 				file;
 	struct stat 		sb;
 	void*				buffer;

@@ -73,7 +73,7 @@ static void codeSignatureReader_push_signature(struct codeSignatureCollection* c
 
 void codeSignatureReader_parse(struct codeSignatureCollection* collection, const char* file_name){
 	void* 						buffer;
-	uint64_t 					buffer_size;
+	size_t 						buffer_size;
 	struct readerCursor 		reader_cursor;
 	enum readerState 			reader_state;
 	struct localCodeEdge 		local_edge;

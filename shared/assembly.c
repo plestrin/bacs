@@ -73,8 +73,8 @@ uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 }
 
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block){
-	uint64_t 	mapping_size_id;
-	uint64_t	mapping_size_block;
+	size_t 		mapping_size_id;
+	size_t 		mapping_size_block;
 	uint32_t* 	mapping_id;
 	void* 		mapping_block;
 	int32_t 	result;
@@ -100,12 +100,12 @@ int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id,
 	return result;
 }
 
-int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, uint64_t buffer_size_id, uint32_t* buffer_block, uint64_t buffer_size_block, enum assemblyAllocation buffer_alloc_block){
+int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size_t buffer_size_id, uint32_t* buffer_block, size_t buffer_size_block, enum assemblyAllocation buffer_alloc_block){
 	uint32_t 			i;
 	uint32_t 			j;
 	struct array 		asmBlock_array;
 	struct asmBlock* 	current_ptr;
-	uint32_t 			current_offset;
+	size_t 				current_offset;
 	struct dynBlock* 	dyn_blocks_realloc;
 
 	if (disas.xed_init == 0){

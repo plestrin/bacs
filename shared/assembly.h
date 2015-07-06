@@ -49,7 +49,7 @@ struct assembly{
 
 	enum assemblyAllocation allocation_type;
 	void* 					mapping_block;
-	uint64_t 				mapping_size_block;
+	size_t 					mapping_size_block;
 };
 
 struct instructionIterator{
@@ -65,7 +65,7 @@ struct instructionIterator{
 
 #define instructionIterator_get_instruction_index(it) ((it)->instruction_index)
 
-int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, uint64_t buffer_size_id, uint32_t* buffer_block, uint64_t buffer_size_block, enum assemblyAllocation buffer_alloc_block);
+int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size_t buffer_size_id, uint32_t* buffer_block, size_t buffer_size_block, enum assemblyAllocation buffer_alloc_block);
 
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block);
 

@@ -7,8 +7,8 @@
 #include "../base.h"
 
 int main(int argc, char** argv){
-	void* 		file_map;
-	uint64_t 	file_size;
+	void* 	file_map;
+	size_t 	file_size;
 
 	if (argc != 2){
 		log_err("please specify one argument");

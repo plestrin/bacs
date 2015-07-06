@@ -142,7 +142,6 @@ uint8_t valid_char[128] = {
 	0, /* 0x7F	Delete */
 };
 
-
 int32_t termReader_set_raw_mode(struct termReader* term){
 	struct termios settings;
 
