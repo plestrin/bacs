@@ -40,7 +40,6 @@ int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection
 	struct signatureNode* 	sig_node_cursor;
 	uint32_t 				nb_unresolved_symbol;
 
-
 	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
 	if (syntax_node == NULL){
 		log_err("unable to add code signature to the collection's syntax graph");
@@ -417,6 +416,10 @@ void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 			}
 			break;
 		}
+		case SIGNATURE_NODE_TYPE_INVALID : {
+			log_err("this case is not supposed to happen");
+			break;
+		}
 	}
 }
 
@@ -528,6 +531,10 @@ uint32_t signatureNode_get_label(struct node* node){
 			else{
 				return signature_node->node_type.symbol->id;
 			}
+		}
+		case SIGNATURE_NODE_TYPE_INVALID : {
+			log_err("this case is not supposed to happen");
+			return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 		}
 	}
 

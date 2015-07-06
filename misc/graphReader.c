@@ -401,6 +401,11 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 							callback->callback_graph_end(callback->arg);
 						}
 
+						tdestroy(binary_tree_root, free);
+						binary_tree_root = NULL;
+
+						graphReader_get_graph_name(&reader_cursor, callback);
+
 						reader_state = READER_STATE_GRAPH;
 						break;
 					}
@@ -439,6 +444,11 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						if (callback->callback_graph_end != NULL){
 							callback->callback_graph_end(callback->arg);
 						}
+
+						tdestroy(binary_tree_root, free);
+						binary_tree_root = NULL;
+
+						graphReader_get_graph_name(&reader_cursor, callback);
 
 						reader_state = READER_STATE_GRAPH;
 						break;

@@ -8,7 +8,7 @@
 #include "readBuffer.h"
 #include "result.h"
 #include "traceMine.h"
-#include "signatureReader.h"
+#include "codeSignatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
 #include "base.h"

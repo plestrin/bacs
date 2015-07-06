@@ -36,7 +36,8 @@ struct signatureSymbolTable{
 
 enum signatureNodeType{
 	SIGNATURE_NODE_TYPE_OPCODE,
-	SIGNATURE_NODE_TYPE_SYMBOL
+	SIGNATURE_NODE_TYPE_SYMBOL,
+	SIGNATURE_NODE_TYPE_INVALID
 };
 
 struct signatureNode{

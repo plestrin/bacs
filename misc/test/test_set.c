@@ -26,7 +26,7 @@ int main(){
 
 	for (i = 0; i < NB_ELEMENT_TOT; i++){
 		memset(data, (int)i, ELEMENT_SIZE);
-		if (set_add(set, data)){
+		if (set_add(set, data) < 0){
 			log_err_m("unable to add element %u", i);
 		}
 		s[i] = (uint8_t)i;

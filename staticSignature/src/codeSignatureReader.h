@@ -1,5 +1,5 @@
-#ifndef SIGNATUREREADER_H
-#define SIGNATUREREADER_H
+#ifndef CODESIGNATUREREADER_H
+#define CODESIGNATUREREADER_H
 
 #include <stdint.h>
 

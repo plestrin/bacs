@@ -29,7 +29,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irExpression.o 			\
 					$(BUILD_DIR)traceMine.o 			\
 					$(BUILD_DIR)codeSignature.o 		\
-					$(BUILD_DIR)signatureReader.o 		\
+					$(BUILD_DIR)codeSignatureReader.o 	\
 					$(BUILD_DIR)result.o 				\
 					$(BUILD_DIR)assemblyElfLoader.o 	\
 					$(BUILD_DIR)callGraph.o 			\
@@ -41,6 +41,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)graph.o 				\
 					$(BUILD_DIR)graphPrintDot.o 		\
 					$(BUILD_DIR)subGraphIsomorphism.o 	\
+					$(BUILD_DIR)graphReader.o 			\
 					$(BUILD_DIR)dagPartialOrder.o 		\
 					$(BUILD_DIR)dijkstra.o 				\
 					$(BUILD_DIR)set.o
