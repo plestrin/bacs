@@ -731,10 +731,6 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
 			start_index = snippet->offset;
 
-			if (trace_init(&fragment, FRAGMENT_TRACE)){
-				log_err("unable to init traceFragment");
-				return -1;
-			}
 			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
 				log_err("unable to extract traceFragment");
 				return -1;

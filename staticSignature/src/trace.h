@@ -33,7 +33,7 @@ void trace_change_thread(struct trace* trace, uint32_t thread_id);
 
 struct trace* trace_load_elf(const char* file_path);
 
-int32_t trace_init(struct trace* trace, enum traceType type);
+int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
 
 #define trace_check(trace) 																								\
 	if (assembly_check(&((trace)->assembly))){ 																			\
@@ -41,8 +41,6 @@ int32_t trace_init(struct trace* trace, enum traceType type);
 	}
 
 #define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop)
-
-#define trace_extract_segment(trace_src, trace_dst, offset, length) assembly_extract_segment(&((trace_src)->assembly), &((trace_dst)->assembly), offset, length)
 
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst);
 
@@ -65,6 +63,7 @@ double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* o
 
 void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature);
 
+void trace_reset(struct trace* trace);
 void trace_clean(struct trace* trace);
 
 #define trace_delete(trace) 																							\

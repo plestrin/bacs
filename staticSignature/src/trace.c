@@ -11,7 +11,7 @@
 #define TRACE_BLOCK_FILE_NAME 	"block.bin"
 #define TRACE_NB_MAX_THREAD 	64
 
-int32_t trace_init(struct trace* trace, enum traceType type){
+static inline int32_t trace_init(struct trace* trace, enum traceType type){
 	trace->tag[0]	= '\0';
 	trace->ir 		= NULL;
 	trace->type 	= type;
@@ -93,12 +93,7 @@ void trace_change_thread(struct trace* trace, uint32_t thread_id){
 	char file2_path[TRACE_PATH_MAX_LENGTH];
 
 	if (trace->type == EXECUTION_TRACE){
-		if (trace->ir != NULL){
-			ir_delete(trace->ir)
-			trace->ir = NULL;
-		}
-
-		assembly_clean(&(trace->assembly));
+		trace_reset(trace);
 
 		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", trace->directory_path, thread_id);
 		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", trace->directory_path, TRACE_BLOCK_FILE_NAME);
@@ -120,19 +115,33 @@ struct trace* trace_load_elf(const char* file_path){
 		if (assembly_load_elf(&(trace->assembly), file_path)){
 			log_err("unable to init assembly structure from ELF file");
 			free(trace);
-			trace = NULL;
+			return NULL;
 		}
-		else{
-			if (trace_init(trace, ELF_TRACE)){
-				log_err("unabvle to init elfTrace");
-				assembly_clean(&(trace->assembly));
-				free(trace);
-				trace = NULL;
-			}
+		
+		if (trace_init(trace, ELF_TRACE)){
+			log_err("unable to init elfTrace");
+			assembly_clean(&(trace->assembly));
+			free(trace);
+			return NULL;
 		}
 	}
 
 	return trace;
+}
+
+int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
+	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length)){
+		log_err("unable to extract assembly fragment");
+		return -1;
+	}
+
+	if (trace_init(trace_dst, FRAGMENT_TRACE)){
+		log_err("unable to init traceFragment");
+		assembly_clean(&(trace_dst->assembly));
+		return - 1;
+	}
+
+	return 0;
 }
 
 void trace_create_ir(struct trace* trace){
@@ -196,7 +205,18 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 		assembly_src_buffer[i] = &(trace_src_buffer[i]->assembly);
 	}
 
-	return assembly_concat(assembly_src_buffer, nb_trace_src, &(trace_dst->assembly));
+	if (assembly_concat(assembly_src_buffer, nb_trace_src, &(trace_dst->assembly))){
+		log_err("unable to concat assembly");
+		return -1;
+	}
+	
+	if (trace_init(trace_dst, FRAGMENT_TRACE)){
+		log_err("unable to init traceFragment");
+		assembly_clean(&(trace_dst->assembly));
+		return -1;
+	}
+
+	return 0;
 }
 
 void trace_print_location(struct trace* trace, struct codeMap* cm){
@@ -350,6 +370,24 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	if (footprint != NULL){
 		free(footprint);
 	}
+}
+
+void trace_reset(struct trace* trace){
+	struct result* 	result;
+	uint32_t 		i; 
+
+	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
+		result = (struct result*)array_get(&(trace->result_array), i);
+		result_clean(result)
+	}
+	array_empty(&(trace->result_array));
+
+	if (trace->ir != NULL){
+		ir_delete(trace->ir)
+		trace->ir = NULL;
+	}
+
+	assembly_clean(&(trace->assembly));
 }
 
 void trace_clean(struct trace* trace){

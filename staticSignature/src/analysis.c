@@ -255,26 +255,21 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	struct trace 	fragment;
 
 	if (analysis->trace != NULL){
-		if (trace_init(&fragment, FRAGMENT_TRACE)){
-			log_err("unable to init traceFragment");
-			return;
-		}
-
-		inputParser_extract_index(arg, &start, &stop);
-		if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
-			log_err("unable to extract traceFragment");
-			return;
-		}
-
-		snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
-
-		if (array_add(&(analysis->frag_array), &fragment) < 0){
-			log_err("unable to add traceFragment to array");
-			trace_clean(&fragment);
-		}
-	}
-	else{
 		log_err("trace is NULL");
+		return;
+	}
+
+	inputParser_extract_index(arg, &start, &stop);
+	if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
+		log_err("unable to extract traceFragment");
+		return;
+	}
+
+	snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
+
+	if (array_add(&(analysis->frag_array), &fragment) < 0){
+		log_err("unable to add traceFragment to array");
+		trace_clean(&fragment);
 	}
 }
 
@@ -512,7 +507,6 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	uint32_t 		index;
 	struct trace** 	trace_src_buffer;
 	struct trace 	new_fragment;
-	int32_t 		tag_offset;
 
 	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
 		if (arg[i] >= 48 && arg[i] <= 57){
@@ -532,22 +526,12 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	trace_src_buffer = (struct trace**)alloca(sizeof(struct trace*) * nb_index);
-	if (trace_init(&new_fragment, FRAGMENT_TRACE)){
-		log_err("unable to init traceFragment");
-		return;
-	}
-
-	tag_offset = snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat ");
-
 	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
 		if (arg[i] >= 48 && arg[i] <= 57){
 			if (start_index == 0){
 				index = atoi(arg + i);
 				if (index < array_get_length(&(analysis->frag_array))){
 					trace_src_buffer[nb_index ++] = (struct trace*)array_get(&(analysis->frag_array), index);
-					if (tag_offset < TRACE_TAG_LENGTH){
-						tag_offset += snprintf(new_fragment.tag + tag_offset, TRACE_TAG_LENGTH - tag_offset, "%u ", index);
-					}
 				}
 				else{
 					log_err_m("the index specified @ %u is incorrect (array size: %u)", nb_index, array_get_length(&(analysis->frag_array)));
@@ -567,13 +551,15 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 
 	if (trace_concat(trace_src_buffer, nb_index, &new_fragment)){
-		log_err("unable to concat the given frags");
+		log_err("unable to concat the given traceFragment(s)");
+		return;
 	}
-	else{
-		if (array_add(&(analysis->frag_array), &new_fragment) < 0){
-			log_err("unable to add traceFragment to array");
-			trace_clean(&new_fragment);
-		}
+
+	snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat %s", arg);
+
+	if (array_add(&(analysis->frag_array), &new_fragment) < 0){
+		log_err("unable to add traceFragment to array");
+		trace_clean(&new_fragment);
 	}
 }
 
