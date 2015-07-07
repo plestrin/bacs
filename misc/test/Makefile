@@ -86,6 +86,7 @@ array.o: ../array.h ../base.h
 multiColumn.o: ../multiColumn.h
 inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h  ../base.h
 printBuffer.o: ../printBuffer.h
+mapFile.o: ../mapFile.h ../base.h
 graph.o: ../graph.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h ../base.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
