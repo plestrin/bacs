@@ -19,14 +19,10 @@
 	{
 		"name":"TEA encrypt",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
-		"func":"wrapper_tea_encipher",
+		"func":"wrapper_tea_encrypt",
 		"arg":[{
 				"type":"input",
-				"multiple_size":8
-			},
-			{
-				"type":"input",
-				"implicit_size":0
+				"exact_size":8
 			},
 			{
 				"type":"input",
@@ -34,20 +30,16 @@
 			},
 			{
 				"type":"output",
-				"input_size":0
+				"exact_size":8
 			}]
 	},
 	{
 		"name":"TEA decrypt",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
-		"func":"wrapper_tea_decipher",
+		"func":"wrapper_tea_decrypt",
 		"arg":[{
 				"type":"input",
-				"multiple_size":8
-			},
-			{
-				"type":"input",
-				"implicit_size":0
+				"exact_size":8
 			},
 			{
 				"type":"input",
@@ -55,20 +47,16 @@
 			},
 			{
 				"type":"output",
-				"input_size":0
+				"exact_size":8
 			}]
 	},
 	{
 		"name":"XTEA encrypt",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
-		"func":"wrapper_xtea_encipher",
+		"func":"wrapper_xtea_encrypt",
 		"arg":[{
 				"type":"input",
-				"multiple_size":8
-			},
-			{
-				"type":"input",
-				"implicit_size":0
+				"exact_size":8
 			},
 			{
 				"type":"input",
@@ -76,20 +64,16 @@
 			},
 			{
 				"type":"output",
-				"input_size":0
+				"exact_size":8
 			}]
 	},
 	{
 		"name":"XTEA decrypt",
 		"lib":"/home/pierre/Documents/bacs/reference/lib/ref_tea.so",
-		"func":"wrapper_xtea_decipher",
+		"func":"wrapper_xtea_decrypt",
 		"arg":[{
 				"type":"input",
-				"multiple_size":8
-			},
-			{
-				"type":"input",
-				"implicit_size":0
+				"exact_size":8
 			},
 			{
 				"type":"input",
@@ -97,7 +81,7 @@
 			},
 			{
 				"type":"output",
-				"input_size":0
+				"exact_size":8
 			}]
 	},
 	{

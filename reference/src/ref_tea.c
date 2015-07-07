@@ -4,30 +4,18 @@
 
 #include "TEA.h"
 
-void wrapper_tea_encipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	tea_encipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
+void wrapper_tea_encrypt(void** input, void** output){
+	tea_encrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
 
-void wrapper_tea_decipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	tea_decipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
+void wrapper_tea_decrypt(void** input, void** output){
+	tea_decrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
 
-void wrapper_xtea_encipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	xtea_encipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
+void wrapper_xtea_encrypt(void** input, void** output){
+	xtea_encrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
 
-void wrapper_xtea_decipher(void** input, void** output){
-	uint64_t size;
-
-	size = *(uint32_t*)input[1];
-	xtea_decipher((uint32_t*)input[0], size, (uint32_t*)input[2], (uint32_t*)output[0]);
+void wrapper_xtea_decrypt(void** input, void** output){
+	xtea_decrypt((uint32_t*)input[0], (uint32_t*)input[1], (uint32_t*)output[0]);
 }
