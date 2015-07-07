@@ -1,4 +1,4 @@
-SUB_DIRECTORY := asm algoCrypto reference tracer staticSignature traceAnalysis lightTracer_pin misc/test
+SUB_DIRECTORY := asm algoCrypto staticSignature lightTracer_pin misc/test
 
 define BUILD_template
 build_$(1):

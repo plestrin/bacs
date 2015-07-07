@@ -12,7 +12,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -35,7 +35,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -58,7 +58,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -81,7 +81,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -104,7 +104,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -127,7 +127,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v2" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="128"/>
@@ -150,7 +150,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -173,7 +173,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -196,7 +196,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -219,7 +219,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -242,7 +242,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v2" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="128"/>
@@ -265,7 +265,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v2" number="56"/> <!-- 56 = 32 + (32 - 2 - 2 - 2 - 2) -->
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="120"/>
@@ -290,7 +290,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="192"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -313,7 +313,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="192"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -336,7 +336,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="192"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
@@ -359,7 +359,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="md5_p1_v1" number="192"/>
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>

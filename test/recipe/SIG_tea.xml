@@ -15,7 +15,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -43,7 +43,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -71,7 +71,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -99,7 +99,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -127,7 +127,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -155,7 +155,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -183,7 +183,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -211,7 +211,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -239,7 +239,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -267,7 +267,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -295,7 +295,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -323,7 +323,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -349,7 +349,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="xtea_enc" number="63"/>
 			<algo name="xtea_enc_32_v1" number="1"/>
 			<algo name="xtea_dec" number="63"/>
@@ -373,7 +373,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>
@@ -401,7 +401,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="tea_enc" number="63"/>
 			<algo name="tea_enc_32" number="1"/>
 			<algo name="tea_dec" number="63"/>

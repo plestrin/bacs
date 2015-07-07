@@ -1,0 +1,231 @@
+<xml>
+	<recipe name="TEST_CBC_TEA_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_CO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz"/>
+		<search>
+			<arg value="load trace traceTEST_CBC_TEA_COz"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32" number="8"/>
+		</result>
+	</recipe>
+</xml>

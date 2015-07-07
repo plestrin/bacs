@@ -17,7 +17,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -43,7 +43,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -69,7 +69,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -95,7 +95,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -121,7 +121,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -147,7 +147,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -173,7 +173,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -199,7 +199,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -225,7 +225,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -251,7 +251,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -277,7 +277,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -303,7 +303,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -325,7 +325,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1656"/> <!-- 1656 = (9 + 11 + 13 + 10 + 12 + 14) * 24 -->
 			<algo name="aes_r9" number="504"/> <!-- 504 = 24 * (3 + 7 + 11) -->
 			<algo name="aes_r11" number="240"/> <!-- 240 = 24 * (3 + 7) -->
@@ -346,7 +346,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="792"/>
 			<algo name="aes_r9" number="216"/>
 			<algo name="aes_r11" number="96"/>
@@ -372,7 +372,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1440"/> <!-- 1440 = (8 + 10 + 12 + 8 + 10 + 12) * 24 -->
 			<algo name="aes_t1_v2" number="24"/> <!-- 24 = (1 + 1 + 1 + 1 + 1 + 1) * 4-->
 			<algo name="aes_r9" number="312"/> <!-- 312 = 24 * (4 + 2 + 4 + 2) + 4 * (1 + 1 + 1 + 1 + 1 + 1) -->
@@ -395,7 +395,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -417,7 +417,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -439,7 +439,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -461,7 +461,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -483,7 +483,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -505,7 +505,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -527,7 +527,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -549,7 +549,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -571,7 +571,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -593,7 +593,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -615,7 +615,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -637,7 +637,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -659,7 +659,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -681,7 +681,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -703,7 +703,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -725,7 +725,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -747,7 +747,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -769,7 +769,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -791,7 +791,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -813,7 +813,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -835,7 +835,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -857,7 +857,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -879,7 +879,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -901,7 +901,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -923,7 +923,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -945,7 +945,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -967,7 +967,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -989,7 +989,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1011,7 +1011,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1033,7 +1033,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1055,7 +1055,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1077,7 +1077,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1099,7 +1099,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1121,7 +1121,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1143,7 +1143,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1165,7 +1165,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="576"/>
 			<algo name="aes_r11" number="288"/>
@@ -1187,7 +1187,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1209,7 +1209,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1231,7 +1231,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1253,7 +1253,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1275,7 +1275,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1297,7 +1297,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1319,7 +1319,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1341,7 +1341,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1363,7 +1363,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1385,7 +1385,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1407,7 +1407,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
@@ -1429,7 +1429,7 @@
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
-		<result type="sig">
+		<result>
 			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
 			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
 			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->

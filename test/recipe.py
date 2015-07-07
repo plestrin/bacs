@@ -6,6 +6,10 @@ import subprocess
 import re
 
 class recipe(object):
+	TOOL = "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
+	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/lightTracer_pin/"
+
+	is_tool_built = False
 
 	def __init__(self, name, build, trace, arg, algo):
 		self.name 	= name
@@ -44,129 +48,6 @@ class recipe(object):
 				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 		else:
 			sys.stdout.write("no rule\n")
-
-	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
-		return
-
-	def search(self, log_path):
-		return
-
-	def __del__(self):
-		if self.log != None:
-			self.log.close()
-			self.log = None
-
-
-class ioRecipe(recipe):
-	TOOL = "/home/pierre/Documents/bacs/tracer/obj-ia32/tracer.so"
-	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/tracer/"
-
-	is_tool_built = False
-
-	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
-		if not ioRecipe.is_tool_built:
-			sys.stdout.write("Building Trace program: ... ")
-			sys.stdout.flush()
-			return_value = subprocess.call(["make", "-C", ioRecipe.TOOL_SRC_DIR])
-			if return_value != 0:
-				print("ERROR: unable to build Trace program")
-				exit()
-			else:
-				ioRecipe.is_tool_built = True
-
-		sys.stdout.write("Tracing " + self.name + " ... ")
-		sys.stdout.flush()
-
-		if self.trace != "":
-			if self.log == None:
-				self.log = open(log_path + self.name + ".log", "w")
-
-			self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
-			self.log.flush()
-
-			time_start = time.time()
-			process = subprocess.Popen([pin_path, "-t", TOOL, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-			process.wait()
-			time_stop = time.time()
-
-			output_val = process.communicate()
-			self.log.write(output_val[0])
-			self.log.write(output_val[1])
-
-			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
-			else:
-				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
-
-			regex = re.compile("ERROR: [a-zA-Z0-9 _,():]*")
-			for j in regex.findall(output_val[0]):
-				print j.replace("ERROR", "\x1b[35mERROR\x1b[0m")
-		else:
-			sys.stdout.write("no rule\n")
-
-	def search(self, log_path):
-		sys.stdout.write("Searching " + self.name + " ... ")
-		sys.stdout.flush()
-
-		if self.log == None:
-			self.log = open(log_path + self.name + ".log", "w")
-
-		self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
-		self.log.flush()
-
-		cmd = ["./analysis"]
-		cmd.extend(self.arg)
-
-		time_start = time.time()
-		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		output_val = process.communicate()
-		process.wait()
-		time_stop = time.time()
-			
-		self.log.write(output_val[0])
-		self.log.write(output_val[1])
-
-		if process.returncode == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
-
-			regex = re.compile("\*\*\* IO match for [a-zA-Z0-9 ]* \*\*\*")
-			detected_primitive = {}
-			for i in regex.findall(output_val[0]):
-				name = i[17:-4].strip()
-
-				if name in detected_primitive:
-					detected_primitive[name] = detected_primitive.get(name) + 1
-				else:
-					detected_primitive[name] = 1
-
-			for i in self.algo:
-				if i in detected_primitive:
-					nb_expected = self.algo.get(i)
-					nb_detected = detected_primitive.get(i)
-
-					if nb_expected < nb_detected:
-						print("\t" + i + " \x1b[33mEXTRA " + str(detected_primitive.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-					elif nb_expected > nb_detected:
-						print("\t" + i + " \x1b[31mFAIL " + str(detected_primitive.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-					else:
-						print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-				else:
-					print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
-
-			for i in detected_primitive:
-				if i not in self.algo:
-					print("\t" + i + " \x1b[33mEXTRA " + str(detected_primitive.get(i)) + "/0\x1b[0m")
-		else:
-			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-			print(output_val[1])
-
-
-class sigRecipe(recipe):
-	TOOL = "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
-	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/lightTracer_pin/"
-
-	is_tool_built = False
 
 	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
 		if not sigRecipe.is_tool_built:
@@ -272,3 +153,8 @@ class sigRecipe(recipe):
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
 			print(output_val[1])
+
+	def __del__(self):
+		if self.log != None:
+			self.log.close()
+			self.log = None

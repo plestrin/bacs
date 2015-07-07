@@ -3,7 +3,7 @@
 import sys
 import subprocess
 import xml.etree.ElementTree as ET
-from recipe import ioRecipe, sigRecipe
+from recipe import recipe
 
 # How to improve this script:
 # 	- print a report in HTML
@@ -61,12 +61,8 @@ try:
 			algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
 
 		if xml_recipe.attrib.get("active") == "yes":
-			if xml_recipe.find("result").attrib.get("type") == "sig":
-				recipes.append(sigRecipe(name, build, trace, arg, algo))
-			elif xml_recipe.find("result").attrib.get("type") == "io":
-				recipes.append(ioRecipe(name, build, trace, arg, algo))
-			else:
-				print("ERROR: incorrect result type for recipe: " + name)
+			recipes.append(recipe(name, build, trace, arg, algo))
+
 		else:
 			print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
 except IOError:
@@ -79,7 +75,6 @@ if action == "PRINT":
 	for r in recipes:
 		print r
 
-
 # BUILD step
 if action == "BUILD" or action == "ALL":
 	for r in recipes:
@@ -90,34 +85,20 @@ if action == "TRACE" or action == "ALL":
 	for r in recipes:
 		r.trace_prog(LOG_PATH, PIN_PATH, WHITE_LIST_PATH, TRACE_PATH)
 
-
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	makefile = open("makefile_anal", "w")
-	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/traceAnalysis\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_anal/g", MAKEFILE_ANAL_PATH], stdout = makefile)
-	makefile.close()
-	if return_value != 0:
-		print("ERROR: unable to create the Makefile")
-		exit()
-	sys.stdout.write("Building Analysis program: ... ")
-	sys.stdout.flush()
-	return_value = subprocess.call(["make", "--makefile=makefile_anal", "analysis"])
-	if return_value != 0:
-		print("ERROR: unable to build Analysis program")
-		exit()
-	makefile = open("makefile_sig", "w")
-	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g; s/BUILD_DIR[ \t]*:= build/BUILD_DIR := build_sig/g", MAKEFILE_SIG_PATH], stdout = makefile)
+	makefile = open("makefile", "w")
+	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g", MAKEFILE_SIG_PATH], stdout = makefile)
 	makefile.close()
 	if return_value != 0:
 		print("ERROR: unable to create the Makefile")
 		exit()
 	sys.stdout.write("Building Signature program: ... ")
 	sys.stdout.flush()
-	return_value = subprocess.call(["make", "--makefile=makefile_sig", "signature"])
+	return_value = subprocess.call(["make", "signature"])
 	if return_value != 0:
 		print("ERROR: unable to build Signature program")
 		exit()
-
 
 # SEARCH step
 if action == "SEARCH" or action == "ALL":
