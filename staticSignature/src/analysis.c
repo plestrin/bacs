@@ -5,7 +5,6 @@
 #include "analysis.h"
 #include "inputParser.h"
 #include "printBuffer.h"
-#include "readBuffer.h"
 #include "result.h"
 #include "traceMine.h"
 #include "codeSignatureReader.h"
@@ -174,7 +173,11 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 
 void analysis_trace_change_thread(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
-		trace_change_thread(analysis->trace, atoi(arg));
+		if (trace_change_thread(analysis->trace, atoi(arg))){
+			log_err_m("unable to load trace for thread %u", (uint32_t)atoi(arg));
+			trace_delete(analysis->trace);
+			analysis->trace = NULL;
+		}
 	}
 	else{
 		log_err("trace is NULL");
