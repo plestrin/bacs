@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "include/xed-iclass-enum.h"
 #include "address.h"
 
 /* Operand type value:
