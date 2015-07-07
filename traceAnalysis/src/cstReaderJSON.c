@@ -68,7 +68,7 @@ static yajl_callbacks json_parser_callback = {
 
 int32_t cstReaderJSON_parse(const char* file_name, struct array* array){
 	void*					buffer;
-	uint64_t 				size;
+	size_t 					size;
 	yajl_handle 			json_parser_handle;
 	yajl_status 			status;
 	struct cstReaderJSON 	cst_reader;

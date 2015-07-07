@@ -30,9 +30,9 @@ struct trace* trace_create(const char* directory_path){
 }
 
 int32_t trace_init(struct trace* trace, const char* directory_path){
-	char 		file1_path[TRACE_PATH_MAX_LENGTH];
-	char 		file2_path[TRACE_PATH_MAX_LENGTH];
-	uint64_t 	map_size;
+	char 	file1_path[TRACE_PATH_MAX_LENGTH];
+	char 	file2_path[TRACE_PATH_MAX_LENGTH];
+	size_t 	map_size;
 
 	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_INS_FILE_NAME);
 	trace->instructions = mapFile_map(file1_path, &map_size);

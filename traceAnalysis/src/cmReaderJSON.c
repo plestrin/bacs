@@ -69,7 +69,7 @@ static yajl_callbacks json_parser_callback = {
 
 struct codeMap* cmReaderJSON_parse(const char* directory_path){
 	void*				buffer;
-	uint64_t 			size;
+	size_t 				size;
 	yajl_handle 		json_parser_handle;
 	unsigned char* 		json_parser_error;
 	yajl_status 		status;

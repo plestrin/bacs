@@ -17,9 +17,9 @@ struct trace{
 	struct operand* 		operands;
 	uint8_t* 				data;
 
-	uint32_t 				alloc_size_ins;
-	uint32_t 				alloc_size_op;
-	uint32_t 				alloc_size_data;
+	size_t 					alloc_size_ins;
+	size_t 					alloc_size_op;
+	size_t 					alloc_size_data;
 
 	uint32_t 				nb_instruction;
 
