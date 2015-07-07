@@ -1,0 +1,6 @@
+"tintinGraph"
+
+1 (TinTin) -> 2 (Milou)
+1 -> 3 (Capitaine)
+4  (Castafiore) -> 3
+5 (Allan) -> 3
