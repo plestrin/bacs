@@ -392,7 +392,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	}
 	#endif
 
-	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
 		multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
@@ -409,6 +409,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		multiColumnPrinter_set_title(printer, 2, "Ins");
 		multiColumnPrinter_set_title(printer, 3, "Percent (%)");
 		multiColumnPrinter_set_title(printer, 4, "IR");
+		multiColumnPrinter_set_title(printer, 5, "Mem Trace");
 
 		multiColumnPrinter_print_header(printer);
 
@@ -421,7 +422,12 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 			else{
 				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->ir->graph.nb_node, fragment->ir->graph.nb_edge);
 			}
-			multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, NULL);
+			if (fragment->mem_trace != NULL){
+				multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "yes", NULL);
+			}
+			else{
+				multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "no", NULL);
+			}
 		}
 
 		multiColumnPrinter_delete(printer);

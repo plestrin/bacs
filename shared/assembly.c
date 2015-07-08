@@ -72,14 +72,14 @@ int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id,
 		return -1;
 	}
 
-	result = assembly_init(assembly, mapping_id, mapping_size_id, mapping_block, mapping_size_block, ASSEMBLYALLOCATION_MMAP);
+	result = assembly_init(assembly, mapping_id, mapping_size_id, mapping_block, mapping_size_block, ALLOCATION_MMAP);
 
 	munmap(mapping_id, mapping_size_id);
 
 	return result;
 }
 
-int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size_t buffer_size_id, uint32_t* buffer_block, size_t buffer_size_block, enum assemblyAllocation buffer_alloc_block){
+int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size_t buffer_size_id, uint32_t* buffer_block, size_t buffer_size_block, enum allocationType buffer_alloc_block){
 	uint32_t 			i;
 	uint32_t 			j;
 	struct array 		asmBlock_array;
@@ -100,8 +100,8 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	if (assembly->dyn_blocks == NULL){
 		log_err("unable to allocate memory");
 		switch(buffer_alloc_block){
-			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
-			case ASSEMBLYALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+			case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
+			case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
 		}
 		return -1;
 	}
@@ -110,8 +110,8 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 		log_err("unable to init array");
 		free(assembly->dyn_blocks);
 		switch(buffer_alloc_block){
-			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
-			case ASSEMBLYALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+			case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
+			case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
 		}
 		return -1;
 	}
@@ -163,15 +163,19 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 
 			if (j == 0){
 				assembly->dyn_blocks[j].instruction_count = 0;
+				assembly->dyn_blocks[j].mem_access_count = 0;
 			}
 			else if (dynBlock_is_valid(assembly->dyn_blocks + (j - 1))){
 				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 1].instruction_count + assembly->dyn_blocks[j - 1].block->header.nb_ins;
+				assembly->dyn_blocks[j].mem_access_count = assembly->dyn_blocks[j - 1].mem_access_count + ((assembly->dyn_blocks[j - 1].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly->dyn_blocks[j - 1].block->header.nb_mem_access);
 			}
 			else if (j > 1){
 				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 2].instruction_count + assembly->dyn_blocks[j - 2].block->header.nb_ins;
+				assembly->dyn_blocks[j].mem_access_count = assembly->dyn_blocks[j - 2].mem_access_count + ((assembly->dyn_blocks[j - 2].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly->dyn_blocks[j - 2].block->header.nb_mem_access);
 			}
 			else{
 				assembly->dyn_blocks[j].instruction_count = 0;
+				assembly->dyn_blocks[j].mem_access_count = 0;
 			}
 			assembly->dyn_blocks[j].block = current_ptr;
 			j ++;
@@ -180,9 +184,11 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 			dynBlock_set_invalid(assembly->dyn_blocks + j);
 			if (j){
 				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 1].instruction_count + assembly->dyn_blocks[j - 1].block->header.nb_ins;
+				assembly->dyn_blocks[j].mem_access_count = assembly->dyn_blocks[j - 1].mem_access_count + ((assembly->dyn_blocks[j - 1].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly->dyn_blocks[j - 1].block->header.nb_mem_access);
 			}
 			else{
 				assembly->dyn_blocks[j].instruction_count = 0;
+				assembly->dyn_blocks[j].mem_access_count = 0;
 			}
 			j ++;
 		}
@@ -403,7 +409,7 @@ static int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const str
 static void assembly_clean_tree_node(void* data){
 }
 
-int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly* assembly_dst, uint32_t offset, uint32_t length){
+int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly* assembly_dst, uint32_t offset, uint32_t length, uint64_t* index_mem_access_start, uint64_t* index_mem_access_stop){
 	uint32_t 			up 					= assembly_src->nb_dyn_block;
 	uint32_t 			down 				= 0;
 	uint32_t 			idx_block_start;
@@ -529,7 +535,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	assembly_dst->nb_dyn_block 			= idx_block_stop - idx_block_start + 1 - ((idx_ins_stop == 0) ? 1 : 0);
 	assembly_dst->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
 
-	assembly_dst->allocation_type 		= ASSEMBLYALLOCATION_MALLOC;
+	assembly_dst->allocation_type 		= ALLOCATION_MALLOC;
 	assembly_dst->mapping_size_block 	= size + sizeof(struct asmBlockHeader) * assembly_dst->nb_dyn_block;
 	assembly_dst->mapping_block 		= malloc(assembly_dst->mapping_size_block);
 
@@ -561,6 +567,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		size = sizeof(struct asmBlockHeader) + new_block->header.size;
 
 		assembly_dst->dyn_blocks[0].instruction_count = 0;
+		assembly_dst->dyn_blocks[0].mem_access_count = 0;
 		assembly_dst->dyn_blocks[0].block = new_block;
 	}
 	else{
@@ -586,6 +593,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		}
 
 		assembly_dst->dyn_blocks[0].instruction_count = 0;
+		assembly_dst->dyn_blocks[0].mem_access_count = 0;
 		assembly_dst->dyn_blocks[0].block = new_block;
 
 		if (idx_ins_stop != 0){
@@ -614,9 +622,11 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		if (dynBlock_is_valid(assembly_src->dyn_blocks + i)){
 			if (dynBlock_is_valid(assembly_dst->dyn_blocks + (i - idx_block_start - 1))){
 				assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 1].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 1].block->header.nb_ins;
+				assembly_dst->dyn_blocks[i - idx_block_start].mem_access_count = assembly_dst->dyn_blocks[i - idx_block_start - 1].mem_access_count + ((assembly_dst->dyn_blocks[i - idx_block_start - 1].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[i - idx_block_start - 1].block->header.nb_mem_access);
 			}
 			else{
 				assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 2].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 2].block->header.nb_ins;
+				assembly_dst->dyn_blocks[i - idx_block_start].mem_access_count = assembly_dst->dyn_blocks[i - idx_block_start - 2].mem_access_count + ((assembly_dst->dyn_blocks[i - idx_block_start - 2].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[i - idx_block_start - 2].block->header.nb_mem_access);
 			}
 			compare_block.header.id 			= assembly_src->dyn_blocks[i].block->header.id;
 			compare_block.header.size 			= assembly_src->dyn_blocks[i].block->header.size;
@@ -647,10 +657,12 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	if ((idx_block_start != idx_block_stop) && (idx_ins_stop != 0)){
 		if (dynBlock_is_valid(assembly_dst->dyn_blocks + (assembly_dst->nb_dyn_block - 2))){
-			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.size;
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_ins;
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].mem_access_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].mem_access_count + ((assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_mem_access);
 		}
 		else{
-			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].block->header.size;
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].block->header.nb_ins;
+			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].mem_access_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].mem_access_count + ((assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 3].block->header.nb_mem_access);
 		}
 	}
 
@@ -668,6 +680,13 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		}
 		assembly_dst->mapping_size_block = size;
 		assembly_dst->mapping_block = realloc_mapping;
+	}
+
+	if (index_mem_access_start != NULL){
+		*index_mem_access_start = assembly_src->dyn_blocks[idx_block_start].mem_access_count + mem_access_start;
+	}
+	if (index_mem_access_stop != NULL){
+		*index_mem_access_stop = assembly_src->dyn_blocks[idx_block_stop].mem_access_count + mem_access_stop;
 	}
 
 	return 0;
@@ -692,7 +711,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 	assembly_dst->nb_dyn_block 			= nb_dyn_block;
 	assembly_dst->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
 
-	assembly_dst->allocation_type 		= ASSEMBLYALLOCATION_MALLOC;
+	assembly_dst->allocation_type 		= ALLOCATION_MALLOC;
 	assembly_dst->mapping_size_block 	= size;
 	assembly_dst->mapping_block 		= malloc(assembly_dst->mapping_size_block);
 
@@ -728,6 +747,19 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 			}
 			else{
 				assembly_dst->dyn_blocks[nb_dyn_block + j].block = NULL;
+			}
+
+			if (nb_dyn_block + j == 0){
+				assembly_dst->dyn_blocks[nb_dyn_block + j].mem_access_count = 0;	
+			}
+			else if (dynBlock_is_valid(assembly_dst->dyn_blocks + nb_dyn_block + j - 1)){
+				assembly_dst->dyn_blocks[nb_dyn_block + j].mem_access_count = assembly_dst->dyn_blocks[nb_dyn_block + j - 1].mem_access_count + ((assembly_dst->dyn_blocks[nb_dyn_block + j - 1].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[nb_dyn_block + j - 1].block->header.nb_mem_access);
+			}
+			else if (nb_dyn_block + j > 1){
+				assembly_dst->dyn_blocks[nb_dyn_block + j].mem_access_count = assembly_dst->dyn_blocks[nb_dyn_block + j - 2].mem_access_count + ((assembly_dst->dyn_blocks[nb_dyn_block + j - 2].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[nb_dyn_block + j - 2].block->header.nb_mem_access);
+			}
+			else{
+				assembly_dst->dyn_blocks[nb_dyn_block + j].mem_access_count = 0;
 			}
 		}
 
@@ -849,11 +881,11 @@ void assembly_clean(struct assembly* assembly){
 
 	if (assembly->mapping_block != NULL){
 		switch(assembly->allocation_type){
-			case ASSEMBLYALLOCATION_MALLOC : {
+			case ALLOCATION_MALLOC : {
 				free(assembly->mapping_block);
 				break;
 			}
-			case ASSEMBLYALLOCATION_MMAP : {
+			case ALLOCATION_MMAP : {
 				munmap(assembly->mapping_block, assembly->mapping_size_block);
 				break;
 			}

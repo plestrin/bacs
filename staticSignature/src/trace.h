@@ -8,6 +8,7 @@
 #include "codeMap.h"
 #include "array.h"
 #include "base.h"
+#include "memTrace.h"
 
 #define TRACE_TAG_LENGTH 32
 #define TRACE_PATH_MAX_LENGTH 	256
@@ -25,20 +26,16 @@ struct trace{
 	enum traceType 		type;
 	char 				directory_path[TRACE_PATH_MAX_LENGTH];
 	struct array 		result_array;
+	struct memTrace* 	mem_trace;
 };
 
 struct trace* trace_load(const char* directory_path);
 
-void trace_change_thread(struct trace* trace, uint32_t thread_id);
+int32_t trace_change_thread(struct trace* trace, uint32_t thread_id);
 
 struct trace* trace_load_elf(const char* file_path);
 
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
-
-#define trace_check(trace) 																								\
-	if (assembly_check(&((trace)->assembly))){ 																			\
-		log_err("assembly check failed"); 																				\
-	}
 
 #define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop)
 
@@ -58,6 +55,8 @@ static inline void trace_printDot_ir(struct trace* trace){
 	}
 }
 
+void trace_check(struct trace* trace);
+
 void trace_print_location(struct trace* trace, struct codeMap* cm);
 double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode);
 
@@ -66,8 +65,8 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 void trace_reset(struct trace* trace);
 void trace_clean(struct trace* trace);
 
-#define trace_delete(trace) 																							\
-	trace_clean(trace); 																								\
+#define trace_delete(trace) 	\
+	trace_clean(trace); 		\
 	free(trace)
 
 #endif

@@ -1,0 +1,41 @@
+#ifndef MEMTRACE_H
+#define MEMTRACE_H
+
+#include <stdint.h>
+
+#include "address.h"
+#include "mapFile.h"
+#include "assembly.h"
+#include "base.h"
+
+struct memAddress{
+	ADDRESS 	pc;
+	uint32_t 	descriptor;
+	ADDRESS 	address;
+};
+
+#define MEMADDRESS_DESCRIPTOR_CLEAN 0x00000000
+#define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
+#define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
+
+struct memTrace{
+	int 				file;
+	struct mappingDesc 	mapping;
+	struct memAddress* 	mem_addr_buffer;
+	uint32_t 			nb_mem_addr;
+	enum allocationType allocation_type;
+};
+
+int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t thread_id);
+
+struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t thread_id, struct assembly* assembly);
+struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop);
+struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, uint32_t nb_mem_trace_src);
+
+void memTrace_clean(struct memTrace* mem_trace);
+
+#define memTrace_delete(mem_trace) 					\
+	memTrace_clean(mem_trace); 						\
+	free(mem_trace);
+
+#endif

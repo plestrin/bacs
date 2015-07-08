@@ -11,6 +11,7 @@
 #include "codeMap.h"
 #include "whiteList.h"
 #include "traceFile.h"
+#include "memTrace.h"
 
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
@@ -29,16 +30,6 @@ struct lightTracer{
 	struct traceFile* 	trace_file;
 	bool 				trace_memory;
 };
-
-struct memAddress{
-	ADDRINT 		pc;
-	uint32_t 		descriptor;
-	ADDRINT 		address;
-};
-
-#define MEMADDRESS_DESCRIPTOR_CLEAN 0x00000000
-#define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
-#define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
 
 struct lightTracer	light_tracer;
 

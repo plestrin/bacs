@@ -333,7 +333,7 @@ static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 		result[nb_block] = BLOCK_LABEL_NONE;
 		if (block->header.id != nb_block + 1){
 			log_warn_m("resetting block id %u -> %u", block->header.id, nb_block + 1);
-			if (assembly->allocation_type == ASSEMBLYALLOCATION_MMAP && !request_write_permission){
+			if (assembly->allocation_type == ALLOCATION_MMAP && !request_write_permission){
 				if (mprotect(assembly->mapping_block, assembly->mapping_size_block, PROT_READ | PROT_WRITE)){
 					log_err("unable to change memory protection");
 				}

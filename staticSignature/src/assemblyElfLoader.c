@@ -79,7 +79,7 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 			buffer_block->header.nb_ins 	= asmBlock_count_nb_ins(buffer_block);
 			buffer_block->header.address 	= section_header.sh_addr;
 
-			result = assembly_init(assembly, &buffer_id, sizeof(uint32_t), (uint32_t*)buffer_block, buffer_size_block, ASSEMBLYALLOCATION_MALLOC);
+			result = assembly_init(assembly, &buffer_id, sizeof(uint32_t), (uint32_t*)buffer_block, buffer_size_block, ALLOCATION_MALLOC);
 			break;
 		}
 	}

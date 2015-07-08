@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <dirent.h> 
+#include <dirent.h>
 #include <string.h>
 
 #include "trace.h"
@@ -12,9 +12,10 @@
 #define TRACE_NB_MAX_THREAD 	64
 
 static inline int32_t trace_init(struct trace* trace, enum traceType type){
-	trace->tag[0]	= '\0';
-	trace->ir 		= NULL;
-	trace->type 	= type;
+	trace->tag[0]		= '\0';
+	trace->ir 			= NULL;
+	trace->type 		= type;
+	trace->mem_trace 	= NULL;
 
 	return array_init(&(trace->result_array), sizeof(struct result));
 }
@@ -29,66 +30,70 @@ struct trace* trace_load(const char* directory_path){
 	uint32_t 		thread_counter = 0;
 	uint32_t 		i;
 
-	trace = (struct trace*)malloc(sizeof(struct trace));
-	if (trace != NULL){
-		strncpy(trace->directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
+	if ((directory = opendir(directory_path)) == NULL){
+		log_err_m("unable to open directory: \"%s\"", directory_path);
+		return NULL;
+	}
 
-		directory = opendir(directory_path);
-		if (directory != NULL){
-			while ((entry = readdir(directory)) != NULL){
-				if (!memcmp(entry->d_name, "blockId", 7) && !strcmp(entry->d_name + 7 + strspn(entry->d_name + 7, "0123456789"), ".bin")){
-					if (thread_counter == TRACE_NB_MAX_THREAD){
-						log_warn("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
-						break;
-					}
-					else{
-						thread_id[thread_counter ++] = atoi(entry->d_name + 7);
-					}
-				}
-			}
-			closedir(directory);
-
-			if (thread_counter > 1){
-				log_info_m("several thread traces have been found, loading the first (%u):", thread_id[0]);
-				for (i = 0; i < thread_counter; i++){
-					if (i == 0){
-						printf("\t- Thread: %u (loaded)\n", thread_id[i]);
-					}
-					else{
-						printf("\t- Thread: %u\n", thread_id[i]);
-					}
-				}
-				printf("Use: \"change thread\" command to load a different thread\n");
-			}
-
-			snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);
-			snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
-			
-			if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
-				log_err("unable to init assembly structure");
-				free(trace);
-				trace = NULL;
+	while ((entry = readdir(directory)) != NULL){
+		if (!memcmp(entry->d_name, "blockId", 7) && !strcmp(entry->d_name + 7 + strspn(entry->d_name + 7, "0123456789"), ".bin")){
+			if (thread_counter == TRACE_NB_MAX_THREAD){
+				log_warn("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
+				break;
 			}
 			else{
-				if (trace_init(trace, EXECUTION_TRACE)){
-					log_err("unable to init executionTrace");
-					assembly_clean(&(trace->assembly));
-					free(trace);
-					trace = NULL;
-				}
+				thread_id[thread_counter ++] = atoi(entry->d_name + 7);
 			}
 		}
-		else{
-			log_err_m("unable to open directory: \"%s\"", directory_path);
-			free(trace);
-			trace = NULL;
+	}
+	closedir(directory);
+
+	if (thread_counter > 1){
+		log_info_m("several thread traces have been found, loading the first (%u):", thread_id[0]);
+		for (i = 0; i < thread_counter; i++){
+			if (i == 0){
+				printf("\t- Thread: %u (loaded)\n", thread_id[i]);
+			}
+			else{
+				printf("\t- Thread: %u\n", thread_id[i]);
+			}
+		}
+		printf("Use: \"change thread\" command to load a different thread\n");
+	}
+
+	if ((trace = (struct trace*)malloc(sizeof(struct trace))) == NULL){
+		log_err("unable to allocate memory");
+		return NULL;
+	}
+		
+	strncpy(trace->directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
+
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);
+	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
+			
+	if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
+		log_err("unable to init assembly structure");
+		free(trace);
+		return NULL;
+	}
+
+	if (trace_init(trace, EXECUTION_TRACE)){
+		log_err("unable to init executionTrace");
+		assembly_clean(&(trace->assembly));
+		free(trace);
+		return NULL;
+	}
+
+	if (memTrace_is_trace_exist(trace->directory_path, thread_id[0])){
+		if ((trace->mem_trace = memTrace_create_trace(trace->directory_path, thread_id[0], &(trace->assembly))) == NULL){
+			log_err("unable to load associated memory addresses");
 		}
 	}
 
 	return trace;
 }
 
-void trace_change_thread(struct trace* trace, uint32_t thread_id){
+int32_t trace_change_thread(struct trace* trace, uint32_t thread_id){
 	char file1_path[TRACE_PATH_MAX_LENGTH];
 	char file2_path[TRACE_PATH_MAX_LENGTH];
 
@@ -100,11 +105,20 @@ void trace_change_thread(struct trace* trace, uint32_t thread_id){
 			
 		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 			log_err("unable to init assembly structure");
+			return -1;
+		}
+
+		if (memTrace_is_trace_exist(trace->directory_path, thread_id)){
+			if ((trace->mem_trace = memTrace_create_trace(trace->directory_path, thread_id, &(trace->assembly))) == NULL){
+				log_err("unable to load associated memory addresses");
+			}
 		}
 	}
 	else{
 		log_err("the trace was made from and ELF file there is no thread");
 	}
+
+	return 0;
 }
 
 struct trace* trace_load_elf(const char* file_path){
@@ -130,7 +144,10 @@ struct trace* trace_load_elf(const char* file_path){
 }
 
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
-	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length)){
+	uint64_t index_mem_start;
+	uint64_t index_mem_stop;
+
+	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length, &index_mem_start, &index_mem_stop)){
 		log_err("unable to extract assembly fragment");
 		return -1;
 	}
@@ -139,6 +156,10 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 		log_err("unable to init traceFragment");
 		assembly_clean(&(trace_dst->assembly));
 		return - 1;
+	}
+
+	if (trace_src->mem_trace != NULL && (trace_dst->mem_trace = memTrace_create_frag(trace_src->mem_trace, index_mem_start, index_mem_stop)) == NULL){
+		log_err("unable to extract memory trace");
 	}
 
 	return 0;
@@ -197,15 +218,15 @@ void trace_normalize_ir(struct trace* trace){
 }
 
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst){
-	struct assembly** 	assembly_src_buffer;
+	void** 				src_buffer;
 	uint32_t 			i;
 
-	assembly_src_buffer = (struct assembly**)alloca((sizeof(struct assembly*) * nb_trace_src));
+	src_buffer = (void**)alloca((sizeof(void*) * nb_trace_src));
 	for (i = 0; i < nb_trace_src; i++){
-		assembly_src_buffer[i] = &(trace_src_buffer[i]->assembly);
+		src_buffer[i] = &(trace_src_buffer[i]->assembly);
 	}
 
-	if (assembly_concat(assembly_src_buffer, nb_trace_src, &(trace_dst->assembly))){
+	if (assembly_concat((struct assembly**)src_buffer, nb_trace_src, &(trace_dst->assembly))){
 		log_err("unable to concat assembly");
 		return -1;
 	}
@@ -216,7 +237,28 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 		return -1;
 	}
 
+	for (i = 0; i < nb_trace_src; i++){
+		if (trace_src_buffer[i]->mem_trace == NULL){
+			break;
+		}
+		src_buffer[i] = trace_src_buffer[i]->mem_trace;
+	}
+	if (i == nb_trace_src){
+		if ((trace_dst->mem_trace = memTrace_create_concat((struct memTrace**)src_buffer, nb_trace_src)) == NULL){
+			log_err("unable to concat memory trace");
+		}
+	}
+
 	return 0;
+}
+
+void trace_check(struct trace* trace){
+	if (assembly_check(&(trace->assembly))){
+		log_err("assembly check failed");
+	}
+	if (trace->ir != NULL){
+		ir_check(trace->ir);
+	}
 }
 
 void trace_print_location(struct trace* trace, struct codeMap* cm){
@@ -388,6 +430,10 @@ void trace_reset(struct trace* trace){
 	}
 
 	assembly_clean(&(trace->assembly));
+	if (trace->mem_trace != NULL){
+		memTrace_delete(trace->mem_trace);
+		trace->mem_trace = NULL;
+	}
 }
 
 void trace_clean(struct trace* trace){
@@ -405,4 +451,8 @@ void trace_clean(struct trace* trace){
 	}
 
 	assembly_clean(&(trace->assembly));
+
+	if (trace->mem_trace != NULL){
+		memTrace_delete(trace->mem_trace);
+	}
 }
