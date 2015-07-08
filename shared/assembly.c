@@ -10,6 +10,7 @@
 #include "mapFile.h"
 #include "array.h"
 #include "printBuffer.h"
+#include "base.h"
 
 struct disassembler{
 	uint8_t 					xed_init;
@@ -17,10 +18,10 @@ struct disassembler{
     xed_address_width_enum_t 	stack_addr_width;
 };
 
-int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2);
+static int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2);
 static void assembly_clean_tree_node(void* data);
+static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd);
 
-#pragma GCC diagnostic ignored "-Wpedantic" /* ISO C90 forbids specifying subobject to initialize */
 struct disassembler disas = {
 	.xed_init 			= 0,
 	.mmode 				= XED_MACHINE_MODE_LEGACY_32,
@@ -38,35 +39,13 @@ uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 		disas.xed_init = 1;
 	}
 
-	for (offset = 0, result = 0; offset < block->header.size;){
+	for (offset = 0, result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(&xedd), result ++){
 		xed_decoded_inst_zero(&xedd);
 		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
-		xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + offset), (block->header.size - offset > 15) ? 15 : (block->header.size - offset));
-		
-		switch(xed_error){
-			case XED_ERROR_NONE : {
-				break;
-			}
-			case XED_ERROR_BUFFER_TOO_SHORT : {
-				printf("ERROR: in %s, not enough bytes provided\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_INVALID_FOR_CHIP : {
-				printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_GENERAL_ERROR : {
-				printf("ERROR: in %s, could not decode given input\n", __func__);
-				return -1;
-			}
-			default : {
-				printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
-				return -1;
-			}
+		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + offset), min(block->header.size - offset, 15))) != XED_ERROR_NONE){
+			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+			return -1;
 		}
-
-		offset += xed_decoded_inst_get_length(&xedd);
-		result ++;
 	}
 
 	return result;
@@ -83,7 +62,7 @@ int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id,
 	mapping_block = mapFile_map(file_name_block, &mapping_size_block);
 
 	if (mapping_id == NULL || mapping_block == NULL){
-		printf("ERROR: in %s, unable to map files\n", __func__);
+		log_err("unable to map files");
 		if (mapping_id != NULL){
 			munmap(mapping_id, mapping_size_id);
 		}
@@ -119,7 +98,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	assembly->nb_dyn_block 			= buffer_size_id / sizeof(uint32_t);
 	assembly->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
 	if (assembly->dyn_blocks == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		switch(buffer_alloc_block){
 			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
 			case ASSEMBLYALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
@@ -128,7 +107,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	}
 
 	if (array_init(&asmBlock_array, sizeof(struct asmBlock*))){
-		printf("ERROR: in %s, unable to init array\n", __func__);
+		log_err("unable to init array");
 		free(assembly->dyn_blocks);
 		switch(buffer_alloc_block){
 			case ASSEMBLYALLOCATION_MALLOC 	: {free(buffer_block); break;}
@@ -141,12 +120,12 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset);
 	while (current_offset != buffer_size_block){
 		if (current_offset + current_ptr->header.size + sizeof(struct asmBlockHeader) > buffer_size_block){
-			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
+			log_err("the last asmBlock is incomplete");
 			break;
 		}
 		else{
 			if (array_add(&asmBlock_array, &current_ptr) < 0){
-				printf("ERROR: in %s, unable to add asmBlock pointer to array\n", __func__);
+				log_err("unable to add asmBlock pointer to array");
 			}
 
 			current_offset += sizeof(struct asmBlockHeader) + current_ptr->header.size;
@@ -178,7 +157,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 			}
 
 			if (current_ptr == NULL){
-				printf("ERROR: in %s, unable to locate asmBlock %u\n", __func__, buffer_id[i]);
+				log_err_m("unable to locate asmBlock %u", buffer_id[i]);
 				break;
 			}
 
@@ -211,7 +190,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 
 	dyn_blocks_realloc = (struct dynBlock*)realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * j);
 	if (dyn_blocks_realloc == NULL){
-		printf("ERROR: in %s, unable to realloc memory\n", __func__);
+		log_err("unable to realloc memory");
 	}
 	else{
 		assembly->dyn_blocks = dyn_blocks_realloc;
@@ -227,7 +206,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	else{
 		assembly->nb_dyn_instruction = 0;
 	}
-	
+
 	array_clean(&asmBlock_array);
 
 	return 0;
@@ -274,35 +253,16 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 	}
 
 	if (!found){
-		printf("ERROR: in %s, unable to locate the dyn block containing the index %u (tot nb instruction: %u)\n", __func__, index, assembly->nb_dyn_instruction);
+		log_err_m("unable to locate the dyn block containing the index %u (tot nb instruction: %u)", index, assembly->nb_dyn_instruction);
 		return -1;
 	}
 
 	for (i = 0; i <= it->instruction_sub_index; i++){
 		xed_decoded_inst_zero(&(it->xedd));
 		xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
-		xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset > 15) ? 15 : (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset));
-		
-		switch(xed_error){
-			case XED_ERROR_NONE : {
-				break;
-			}
-			case XED_ERROR_BUFFER_TOO_SHORT : {
-				printf("ERROR: in %s, not enough bytes provided\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_INVALID_FOR_CHIP : {
-				printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_GENERAL_ERROR : {
-				printf("ERROR: in %s, could not decode given input\n", __func__);
-				return -1;
-			}
-			default : {
-				printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
-				return -1;
-			}
+		if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset, 15))) != XED_ERROR_NONE){
+			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+			return -1;
 		}
 
 		if (i == it->instruction_sub_index){
@@ -337,12 +297,12 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 				it->prev_black_listed 		= 1;
 			}
 			else{
-				printf("ERROR: in %s, the last instruction has been reached\n", __func__);
+				log_err("the last instruction has been reached");
 				return -1;
 			}
 		}
 		else{
-			printf("ERROR: in %s, the last instruction has been reached\n", __func__);
+			log_err("the last instruction has been reached");
 			return -1;
 		}
 	}
@@ -355,28 +315,9 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 
 	xed_decoded_inst_zero(&(it->xedd));
 	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
-	xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset > 15) ? 15 : (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset));
-		
-	switch(xed_error){
-		case XED_ERROR_NONE : {
-			break;
-		}
-		case XED_ERROR_BUFFER_TOO_SHORT : {
-			printf("ERROR: in %s, not enough bytes provided: %u\n", __func__, (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset > 15) ? 15 : (assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset));
-			return -1;
-		}
-		case XED_ERROR_INVALID_FOR_CHIP : {
-			printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-			return -1;
-		}
-		case XED_ERROR_GENERAL_ERROR : {
-			printf("ERROR: in %s, could not decode given input\n", __func__);
-			return -1;
-		}
-		default : {
-			printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
-			return -1;
-		}
+	if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset, 15))) != XED_ERROR_NONE){
+		log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+		return -1;
 	}
 
 	it->instruction_size = xed_decoded_inst_get_length(&(it->xedd));
@@ -391,13 +332,13 @@ int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t
 	for (instruction_offset = 0; instruction_offset != block->header.size; ){
 		xed_decoded_inst_zero(xedd);
 		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
-		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), (block->header.size - instruction_offset > 15) ? 15 : (block->header.size - instruction_offset)) == XED_ERROR_NONE){
+		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) != XED_ERROR_NONE){
 			instruction_offset += xed_decoded_inst_get_length(xedd);
 		}
 		else{
-			printf("ERROR: in %s, unable to decode instruction in block %u. Run \"Check trace\" for more information\n", __func__, block->header.id);
+			log_err_m("unable to decode instruction in block %u. Run \"Check trace\" for more information", block->header.id);
 			return -1;
-		}		
+		}
 	}
 
 	return 0;
@@ -410,95 +351,43 @@ int32_t assembly_check(struct assembly* assembly){
 	uint32_t 			instruction_offset;
 	xed_error_enum_t 	xed_error;
 	xed_decoded_inst_t 	xedd;
+	uint32_t 			nb_mem_access;
 	int32_t 			result = 0;
 
-	block_offset = 0;
-	while (block_offset != assembly->mapping_size_block){
+	for (block_offset = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
-			printf("ERROR: in %s, the last asmBlock is incomplete\n", __func__);
+			log_err("the last asmBlock is incomplete");
 			break;
 		}
-		else{
-			nb_instruction 		= 0;
-			instruction_offset 	= 0;
 
-			while(instruction_offset != block->header.size){
-				xed_decoded_inst_zero(&xedd);
-				xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
-				xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), (block->header.size - instruction_offset > 15) ? 15 : (block->header.size - instruction_offset));
-				
-				switch(xed_error){
-					case XED_ERROR_NONE : {
-						nb_instruction ++;
-						switch(xed_decoded_inst_get_iclass(&xedd)){
-							case XED_ICLASS_CALL_FAR 	:
-							case XED_ICLASS_CALL_NEAR 	: {
-								if (nb_instruction !=  block->header.nb_ins){
-									printf("WARNING: in %s, found CALL instruction that is not at the end of a block\n", __func__);
-								}
-								break;
-							}
-							case XED_ICLASS_RET_FAR 	:
-							case XED_ICLASS_RET_NEAR 	: {
-								if (nb_instruction !=  block->header.nb_ins){
-									printf("WARNING: in %s, found RET instruction that is not at the end of a block\n", __func__);
-								}
-								break;
-							}
-							default 					: {
-								break;
-							}
-						}
-						break;
-					}
-					case XED_ERROR_BUFFER_TOO_SHORT : {
-						printf("ERROR: in %s, not enough bytes provided\n", __func__);
-						result = -1;
-						goto next_block;
-					}
-					case XED_ERROR_INVALID_FOR_CHIP : {
-						printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-						result = -1;
-						goto next_block;
-					}
-					case XED_ERROR_GENERAL_ERROR : {
-						printf("ERROR: in %s, could not decode given input\n", __func__);
-						result = -1;
-						goto next_block;
-					}
-					default : {
-						#if defined ARCH_32
-						printf("ERROR: in %s, unhandled error code: %s - block id: %u - address: 0x%08x ", __func__, xed_error_enum_t2str(xed_error), block->header.id, block->header.address + instruction_offset);
-						#elif defined ARCH_64
-						#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
-						printf("ERROR: in %s, unhandled error code: %s - block id: %u - address: 0x%llx ", __func__, xed_error_enum_t2str(xed_error), block->header.id, block->header.address + instruction_offset);
-						#else
-						#error Please specify an architecture {ARCH_32 or ARCH_64}
-						#endif
-						printBuffer_raw(stdout, block->data + instruction_offset, (block->header.size - instruction_offset > 15) ? 15 : (block->header.size - instruction_offset));
-						printf("\n");
-
-						result = -1;
-						goto next_block;
-					}
-				}
-				instruction_offset += xed_decoded_inst_get_length(&xedd);
+		for (nb_instruction = 0, nb_mem_access = 0, instruction_offset = 0; instruction_offset != block->header.size; nb_instruction ++, instruction_offset += xed_decoded_inst_get_length(&xedd)){
+			xed_decoded_inst_zero(&xedd);
+			xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+			if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
+				log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+				result = -1;
+				break;
 			}
 
-			if (nb_instruction != block->header.nb_ins){
-				printf("ERROR: in %s, basic block contains %u instruction(s), expecting: %u\n", __func__, nb_instruction, block->header.nb_ins);
+			if (block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+				nb_mem_access += assembly_get_instruction_nb_mem_access(&xedd);
 			}
+		}
 
-			next_block:
-			block_offset += sizeof(struct asmBlockHeader) + block->header.size;
+		if (nb_instruction != block->header.nb_ins){
+			log_err_m("basic block contains %u instruction(s), expecting: %u", nb_instruction, block->header.nb_ins);
+		}
+
+		if (block->header.nb_mem_access != UNTRACK_MEM_ACCESS && nb_mem_access != block->header.nb_mem_access){
+			log_err_m("basic block contains %u memory access(es), expecting: %u", nb_mem_access, block->header.nb_mem_access);
 		}
 	}
 
 	return result;
 }
 
-int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2){
+static int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2){
 	if (b1->header.id > b2->header.id){
 		return 1;
 	}
@@ -521,6 +410,8 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	uint32_t 			idx_block_stop;
 	uint32_t 			idx_ins_start;
 	uint32_t 			idx_ins_stop;
+	uint32_t 			mem_access_start;
+	uint32_t 			mem_access_stop;
 	uint8_t 			found 				= 0;
 	uint32_t 			i;
 	uint32_t 			size;
@@ -554,92 +445,74 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 
 	if (!found){
-		printf("ERROR: in %s, unable to locate the dyn block containing the index %u\n", __func__, offset);
+		log_err_m("unable to locate the dyn block containing the index %u", offset);
 		return -1;
 	}
 
-	if (offset + length > assembly_src->nb_dyn_instruction){
-		printf("WARNING: in %s, length is too big (%u) -> cropping\n", __func__, offset + length);
-		length = assembly_src->nb_dyn_instruction - offset;
+	if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+		mem_access_start = 0;
+	}
+	else{
+		mem_access_start = UNTRACK_MEM_ACCESS;
 	}
 
 	for (i = 0, idx_ins_start = 0, size = assembly_src->dyn_blocks[idx_block_start].block->header.size; i < offset - assembly_src->dyn_blocks[idx_block_start].instruction_count; i++){
 		xed_decoded_inst_zero(&xedd);
 		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
-		xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_start].block->data + idx_ins_start), (assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start > 15) ? 15 :  (assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start));
-		
-		switch(xed_error){
-			case XED_ERROR_NONE : {
-				break;
-			}
-			case XED_ERROR_BUFFER_TOO_SHORT : {
-				printf("ERROR: in %s, not enough bytes provided\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_INVALID_FOR_CHIP : {
-				printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_GENERAL_ERROR : {
-				printf("ERROR: in %s, could not decode given input\n", __func__);
-				return -1;
-			}
-			default : {
-				printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
-				return -1;
-			}
+		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_start].block->data + idx_ins_start), min(assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start, 15))) != XED_ERROR_NONE){
+			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+			return -1;
 		}
 
 		idx_ins_start += xed_decoded_inst_get_length(&xedd);
 
-		if (i != offset - assembly_src->dyn_blocks[idx_block_start].instruction_count - 1){
-			size = assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start;
-			possible_new_id = (assembly_src->dyn_blocks[idx_block_start].block->header.id >= possible_new_id) ? (assembly_src->dyn_blocks[idx_block_start].block->header.id + 1) : possible_new_id;
+		if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+			mem_access_start = assembly_get_instruction_nb_mem_access(&xedd);
 		}
 	}
 
-	idx_block_stop = idx_block_start;
-	while(idx_block_stop < assembly_src->nb_dyn_block && offset + length > assembly_src->dyn_blocks[idx_block_stop].instruction_count + assembly_src->dyn_blocks[idx_block_stop].block->header.nb_ins){
+	size = assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start;
+
+	if (offset + length > assembly_src->nb_dyn_instruction){
+		log_warn_m("length is too big (%u) -> cropping", offset + length);
+		length = assembly_src->nb_dyn_instruction - offset;
+	}
+
+
+	for (idx_block_stop = idx_block_start; idx_block_stop < assembly_src->nb_dyn_block && offset + length > assembly_src->dyn_blocks[idx_block_stop].instruction_count + assembly_src->dyn_blocks[idx_block_stop].block->header.nb_ins; ){
+		possible_new_id = max(assembly_src->dyn_blocks[idx_block_stop].block->header.id + 1, possible_new_id);
 		size += assembly_src->dyn_blocks[idx_block_stop].block->header.size;
 		idx_block_stop ++;
+
 		while (idx_block_stop < assembly_src->nb_dyn_block && !dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_stop)){
 			idx_block_stop ++;
 		}
 	}
 
-	if (idx_block_stop >= assembly_src->nb_dyn_block){
-		printf("ERROR: in %s, unable to locate the dyn block containing the index %u\n", __func__, offset + length);
+	if (idx_block_stop == assembly_src->nb_dyn_block){
+		log_err_m("unable to locate the dyn block containing the index %u", offset + length);
 		return -1;
 	}
+
+	possible_new_id = max(assembly_src->dyn_blocks[idx_block_stop].block->header.id + 1, possible_new_id);
+
+	if (assembly_src->dyn_blocks[idx_block_stop].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+		mem_access_stop = 0;
+	}
 	else{
-		possible_new_id = (assembly_src->dyn_blocks[idx_block_stop].block->header.id >= possible_new_id) ? (assembly_src->dyn_blocks[idx_block_stop].block->header.id + 1) : possible_new_id;
+		mem_access_stop = UNTRACK_MEM_ACCESS;
 	}
 
 	for (i = 0, idx_ins_stop = 0; i < offset + length - assembly_src->dyn_blocks[idx_block_stop].instruction_count; i++){
 		xed_decoded_inst_zero(&xedd);
 		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
-		xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_stop].block->data + idx_ins_stop), (assembly_src->dyn_blocks[idx_block_stop].block->header.size - idx_ins_stop > 15) ? 15 :  (assembly_src->dyn_blocks[idx_block_stop].block->header.size - idx_ins_stop));
-		
-		switch(xed_error){
-			case XED_ERROR_NONE : {
-				break;
-			}
-			case XED_ERROR_BUFFER_TOO_SHORT : {
-				printf("ERROR: in %s, not enough bytes provided\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_INVALID_FOR_CHIP : {
-				printf("ERROR: in %s, the instruction was not valid for the specified chip\n", __func__);
-				return -1;
-			}
-			case XED_ERROR_GENERAL_ERROR : {
-				printf("ERROR: in %s, could not decode given input\n", __func__);
-				return -1;
-			}
-			default : {
-				printf("ERROR: in %s, unhandled error code: %s\n", __func__, xed_error_enum_t2str(xed_error));
-				return -1;
-			}
+		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_stop].block->data + idx_ins_stop), min(assembly_src->dyn_blocks[idx_block_stop].block->header.size - idx_ins_stop, 15))) != XED_ERROR_NONE){
+			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+			return -1;
+		}
+
+		if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+			mem_access_stop = assembly_get_instruction_nb_mem_access(&xedd);
 		}
 
 		idx_ins_stop += xed_decoded_inst_get_length(&xedd);
@@ -661,7 +534,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	assembly_dst->mapping_block 		= malloc(assembly_dst->mapping_size_block);
 
 	if (assembly_dst->dyn_blocks == NULL || assembly_dst->mapping_block == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		if (assembly_dst->dyn_blocks != NULL){
 			free(assembly_dst->dyn_blocks);
 		}
@@ -674,10 +547,16 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	new_block = (struct asmBlock*)assembly_dst->mapping_block;
 	if (idx_block_start == idx_block_stop){
-		new_block->header.id 		= possible_new_id ++;
-		new_block->header.size 		= size;
-		new_block->header.nb_ins 	= length;
-		new_block->header.address 	= assembly_src->dyn_blocks[idx_block_start].block->header.address + idx_ins_start;
+		new_block->header.id 				= possible_new_id ++;
+		new_block->header.size 				= size;
+		new_block->header.nb_ins 			= length;
+		if (assembly_src->dyn_blocks[idx_block_stop].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+			new_block->header.nb_mem_access = UNTRACK_MEM_ACCESS;
+		}
+		else{
+			new_block->header.nb_mem_access = mem_access_stop - mem_access_start;
+		}
+		new_block->header.address 			= assembly_src->dyn_blocks[idx_block_start].block->header.address + idx_ins_start;
 		memcpy(&(new_block->data), (char*)&(assembly_src->dyn_blocks[idx_block_start].block->data) + idx_ins_start, new_block->header.size);
 		size = sizeof(struct asmBlockHeader) + new_block->header.size;
 
@@ -688,14 +567,20 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		if (idx_ins_start == 0){
 			memcpy(new_block, assembly_src->dyn_blocks[idx_block_start].block, sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size);
 			size = sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size;
-			
+
 			tsearch(new_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
 		}
 		else{
-			new_block->header.id 		= possible_new_id ++;
-			new_block->header.size 		= assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start;
-			new_block->header.nb_ins 	= assembly_src->dyn_blocks[idx_block_start].instruction_count +  assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins - offset;
-			new_block->header.address 	= assembly_src->dyn_blocks[idx_block_start].block->header.address + idx_ins_start;
+			new_block->header.id 				= possible_new_id ++;
+			new_block->header.size 				= assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start;
+			new_block->header.nb_ins 			= assembly_src->dyn_blocks[idx_block_start].instruction_count +  assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins - offset;
+			if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+				new_block->header.nb_mem_access = UNTRACK_MEM_ACCESS;
+			}
+			else{
+				new_block->header.nb_mem_access = assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access - mem_access_start;
+			}
+			new_block->header.address 			= assembly_src->dyn_blocks[idx_block_start].block->header.address + idx_ins_start;
 			memcpy(&(new_block->data), (char*)&(assembly_src->dyn_blocks[idx_block_start].block->data) + idx_ins_start, new_block->header.size);
 			size = sizeof(struct asmBlockHeader) + new_block->header.size;
 		}
@@ -705,10 +590,16 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 		if (idx_ins_stop != 0){
 			new_block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size);
-			new_block->header.id 		= possible_new_id ++;
-			new_block->header.size 		= idx_ins_stop;
-			new_block->header.nb_ins 	= (((offset + length) > assembly_src->nb_dyn_instruction) ? assembly_src->nb_dyn_instruction : (offset + length)) - assembly_src->dyn_blocks[idx_block_stop].instruction_count;
-			new_block->header.address 	= assembly_src->dyn_blocks[idx_block_stop].block->header.address;
+			new_block->header.id 				= possible_new_id ++;
+			new_block->header.size 				= idx_ins_stop;
+			new_block->header.nb_ins 			= (((offset + length) > assembly_src->nb_dyn_instruction) ? assembly_src->nb_dyn_instruction : (offset + length)) - assembly_src->dyn_blocks[idx_block_stop].instruction_count;
+			if (assembly_src->dyn_blocks[idx_block_stop].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+				new_block->header.nb_mem_access = UNTRACK_MEM_ACCESS;
+			}
+			else{
+				new_block->header.nb_mem_access = mem_access_stop;
+			}
+			new_block->header.address 			= assembly_src->dyn_blocks[idx_block_stop].block->header.address;
 			memcpy(&(new_block->data), &(assembly_src->dyn_blocks[idx_block_stop].block->data), idx_ins_stop);
 			size += sizeof(struct asmBlockHeader) + new_block->header.size;
 
@@ -727,14 +618,15 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 			else{
 				assembly_dst->dyn_blocks[i - idx_block_start].instruction_count = assembly_dst->dyn_blocks[i - idx_block_start - 2].instruction_count + assembly_dst->dyn_blocks[i - idx_block_start - 2].block->header.nb_ins;
 			}
-			compare_block.header.id 		= assembly_src->dyn_blocks[i].block->header.id;
-			compare_block.header.size 		= assembly_src->dyn_blocks[i].block->header.size;
-			compare_block.header.nb_ins 	= assembly_src->dyn_blocks[i].block->header.nb_ins;
-			compare_block.header.address 	= assembly_src->dyn_blocks[i].block->header.address;
+			compare_block.header.id 			= assembly_src->dyn_blocks[i].block->header.id;
+			compare_block.header.size 			= assembly_src->dyn_blocks[i].block->header.size;
+			compare_block.header.nb_ins 		= assembly_src->dyn_blocks[i].block->header.nb_ins;
+			compare_block.header.nb_mem_access 	= assembly_src->dyn_blocks[i].block->header.nb_mem_access;
+			compare_block.header.address 		= assembly_src->dyn_blocks[i].block->header.address;
 
 			result_block = (struct asmBlock**)tsearch(&compare_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
 			if (result_block == NULL){
-				printf("ERROR: in %s, unable to search the bin tree\n", __func__);
+				log_err("unable to search the bin tree");
 				return -1;
 			}
 			else if (*result_block == &compare_block){
@@ -766,7 +658,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	realloc_mapping = realloc(assembly_dst->mapping_block, size);
 	if (realloc_mapping == NULL){
-		printf("ERROR: in %s, unable to realloc memory\n", __func__);
+		log_err("unable to realloc memory");
 	}
 	else if (realloc_mapping != assembly_dst->mapping_block){
 		for (i = 0; i < assembly_dst->nb_dyn_block; i++){
@@ -805,7 +697,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 	assembly_dst->mapping_block 		= malloc(assembly_dst->mapping_size_block);
 
 	if (assembly_dst->dyn_blocks == NULL || assembly_dst->mapping_block == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		if (assembly_dst->dyn_blocks != NULL){
 			free(assembly_dst->dyn_blocks);
 		}
@@ -847,6 +739,47 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 	return 0;
 }
 
+static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd){
+	uint32_t 				nb_mem_access;
+	uint32_t 				i;
+	const xed_inst_t* 		xi;
+	const xed_operand_t* 	xed_op;
+
+	xi = xed_decoded_inst_inst(xedd);
+	for (i = 0, nb_mem_access = 0; i < xed_inst_noperands(xi); i++){
+		xed_op = xed_inst_operand(xi, i);
+		switch (xed_operand_name(xed_op)){
+			case XED_OPERAND_MEM0 	:
+			case XED_OPERAND_MEM1 	: {
+				nb_mem_access ++;
+				break;
+			}
+			case XED_OPERAND_AGEN 	:
+			case XED_OPERAND_IMM0 	:
+			case XED_OPERAND_REG0 	:
+			case XED_OPERAND_REG1 	:
+			case XED_OPERAND_REG2 	:
+			case XED_OPERAND_REG3 	:
+			case XED_OPERAND_REG4 	:
+			case XED_OPERAND_REG5 	:
+			case XED_OPERAND_REG6 	:
+			case XED_OPERAND_REG7 	:
+			case XED_OPERAND_REG8 	:
+			case XED_OPERAND_RELBR 	:
+			case XED_OPERAND_BASE0 	:
+			case XED_OPERAND_BASE1 	: {
+				break;
+			}
+			default 				: {
+				log_err_m("operand type not supported: %s for instruction %s", xed_operand_enum_t2str(xed_operand_name(xed_op)), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(xedd)));
+				break;
+			}
+		}
+	}
+
+	return nb_mem_access;
+}
+
 void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
@@ -854,7 +787,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	xed_print_info_t 			print_info;
 
 	if (assembly_get_instruction(assembly, &it, start)){
-		printf("ERROR: in %s, unable to fetch instruction %u from the assembly\n", __func__, start);
+		log_err_m("unable to fetch instruction %u from the assembly", start);
 		return;
 	}
 
@@ -871,17 +804,17 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	print_info.p 						= &(it.xedd);
 	print_info.runtime_address 			= it.instruction_address;
 	print_info.syntax 					= XED_SYNTAX_INTEL;
-	
+
 	if (xed_format_generic(&print_info)){
 		printf("0x%08x  %s\n", it.instruction_address, buffer);
 	}
 	else{
-		printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+		log_err("xed_format_generic returns an error code");
 	}
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(assembly); i++){
 		if (assembly_get_next_instruction(assembly, &it)){
-			printf("ERROR: in %s, unable to fetch next instruction %u from the assembly\n", __func__, i);
+			log_err_m("unable to fetch next instruction %u from the assembly", i);
 			break;
 		}
 
@@ -903,7 +836,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 			printf("0x%08x  %s\n", it.instruction_address, buffer);
 		}
 		else{
-			printf("ERROR: in %s, xed_format_generic returns an error code\n", __func__);
+			log_err("xed_format_generic returns an error code");
 		}
 	}
 }

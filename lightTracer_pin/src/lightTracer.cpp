@@ -62,23 +62,20 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 	INS 					instruction;
 	uint32_t 				i;
 	uint32_t 				nb_read;
+	uint32_t 				nb_mem_access;
 	uint32_t 				descriptor;
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
 		if (codeMap_is_instruction_whiteListed(light_tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
-			block_header.size 		= BBL_Size(basic_block);
-			block_header.nb_ins 	= BBL_NumIns(basic_block);
-			block_header.address 	= BBL_Address(basic_block);
-
-			traceFile_write_block(light_tracer.trace_file, block_header)
-
-			BBL_InsertFillBuffer(basic_block, IPOINT_BEFORE, light_tracer.block_buffer_id, IARG_UINT32, block_header.id, 0, IARG_END);
-
+			
+			nb_mem_access = UNTRACK_MEM_ACCESS;
 			if (light_tracer.trace_memory){
+				nb_mem_access = 0;
 				for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
 					for (i = 0, nb_read = 0; i < INS_OperandCount(instruction); i++){
 						if (INS_OperandIsMemory(instruction, i)){
 							descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
+							nb_mem_access ++;
 
 							if (INS_OperandRead(instruction, i)){
 								memAddress_descriptor_set_read(descriptor, i);
@@ -103,6 +100,15 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 					}
 				}
 			}
+
+			block_header.size 			= BBL_Size(basic_block);
+			block_header.nb_ins 		= BBL_NumIns(basic_block);
+			block_header.nb_mem_access 	= nb_mem_access;
+			block_header.address 		= BBL_Address(basic_block);
+
+			traceFile_write_block(light_tracer.trace_file, block_header)
+
+			BBL_InsertFillBuffer(basic_block, IPOINT_BEFORE, light_tracer.block_buffer_id, IARG_UINT32, block_header.id, 0, IARG_END);
 		}
 		else{
 			BBL_InsertFillBuffer(basic_block, IPOINT_BEFORE, light_tracer.block_buffer_id, IARG_UINT32, BLACK_LISTED_ID, 0, IARG_END);

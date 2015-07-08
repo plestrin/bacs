@@ -12,12 +12,14 @@ struct asmWriter{
 
 #define asmWriter_init(writer) 			(writer)->blockId_generator = 1
 #define asmWrite_get_BlockId(writer) 	(writer)->blockId_generator++
-#define BLACK_LISTED_ID 				0
+#define BLACK_LISTED_ID 				0x00000000
+#define UNTRACK_MEM_ACCESS 				0xffffffff
 
 struct asmBlockHeader{
 	uint32_t 				id;
 	uint32_t 				size;
 	uint32_t 				nb_ins;
+	uint32_t 				nb_mem_access;
 	ADDRESS 				address;
 };
 

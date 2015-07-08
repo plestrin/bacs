@@ -52,6 +52,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
 	ADD_CMD_TO_INPUT_PARSER(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	ADD_CMD_TO_INPUT_PARSER(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
+	ADD_CMD_TO_INPUT_PARSER(parser, "check frag", 				"Check traceFragment: assembly and IR", 		"Frag indexes", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check)
 	ADD_CMD_TO_INPUT_PARSER(parser, "print result", 			"Print code signature result in details", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
 	ADD_CMD_TO_INPUT_PARSER(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
 	ADD_CMD_TO_INPUT_PARSER(parser, "mine frag", 				"Search for relation between results in IR", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_mine)
@@ -257,7 +258,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	uint32_t 		stop = 0;
 	struct trace 	fragment;
 
-	if (analysis->trace != NULL){
+	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 		return;
 	}
@@ -563,6 +564,33 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	if (array_add(&(analysis->frag_array), &new_fragment) < 0){
 		log_err("unable to add traceFragment to array");
 		trace_clean(&new_fragment);
+	}
+}
+
+void analysis_frag_check(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		trace_check((struct trace*)array_get(&(analysis->frag_array), i));
 	}
 }
 

@@ -32,6 +32,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg);
 void analysis_frag_set_tag(struct analysis* analysis, char* arg);
 void analysis_frag_locate(struct analysis* analysis, char* arg);
 void analysis_frag_concat(struct analysis* analysis, char* arg);
+void analysis_frag_check(struct analysis* analysis, char* arg);
 void analysis_frag_print_result(struct analysis* analysis, char* arg);
 void analysis_frag_export_result(struct analysis* analysis, char* arg);
 void analysis_frag_mine(struct analysis* analysis, char* arg);
