@@ -6,10 +6,6 @@ import subprocess
 import re
 
 class recipe(object):
-	TOOL = "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
-	TOOL_SRC_DIR = "/home/pierre/Documents/bacs/lightTracer_pin/"
-
-	is_tool_built = False
 
 	def __init__(self, name, build, trace, arg, algo):
 		self.name 	= name
@@ -49,20 +45,9 @@ class recipe(object):
 		else:
 			sys.stdout.write("no rule\n")
 
-	def trace_prog(self, log_path, pin_path, white_list_path, trace_path):
-		if not sigRecipe.is_tool_built:
-			sys.stdout.write("Building Trace program: ... ")
-			sys.stdout.flush()
-			return_value = subprocess.call(["make", "-C", sigRecipe.TOOL_SRC_DIR])
-			if return_value != 0:
-				print("ERROR: unable to build Trace program")
-				exit()
-			else:
-				sigRecipe.is_tool_built = True
-
+	def trace_prog(self, log_path, pin_path, white_list_path, tool_path, trace_path):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
-
 		if self.trace != "":
 			if self.log == None:
 				self.log = open(log_path + self.name + ".log", "w")
@@ -71,7 +56,7 @@ class recipe(object):
 			self.log.flush()
 
 			time_start = time.time()
-			process = subprocess.Popen([pin_path, "-t", sigRecipe.TOOL, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 			process.wait()
 			time_stop = time.time()
 

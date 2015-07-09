@@ -10,7 +10,9 @@ from recipe import recipe
 #	- archive previous reports
 
 PIN_PATH 				= "/home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/pin"
-WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/tracer/linux_lib.lst"
+TOOL_PATH 				= "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
+TOOL_SRC_PATH 			= "/home/pierre/Documents/bacs/lightTracer_pin/"
+WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/lightTracer_pin/linux_lib.lst"
 MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
 MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
@@ -75,6 +77,15 @@ if action == "PRINT":
 	for r in recipes:
 		print r
 
+# COMPILE TOOL step
+if action == "BUILD" or action == "ALL":
+	sys.stdout.write("Building Trace program: ... ")
+	sys.stdout.flush()
+	return_value = subprocess.call(["make", "-C", TOOL_SRC_PATH])
+	if return_value != 0:
+		print("ERROR: unable to build Trace program")
+		exit()
+
 # BUILD step
 if action == "BUILD" or action == "ALL":
 	for r in recipes:
@@ -83,16 +94,10 @@ if action == "BUILD" or action == "ALL":
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for r in recipes:
-		r.trace_prog(LOG_PATH, PIN_PATH, WHITE_LIST_PATH, TRACE_PATH)
+		r.trace_prog(LOG_PATH, PIN_PATH, WHITE_LIST_PATH, TOOL_PATH, TRACE_PATH)
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	makefile = open("makefile", "w")
-	return_value = subprocess.call(["sed", "s/^DEBUG[ \t]*:= 1/DEBUG := 0/g; s/^VERBOSE[ \t]*:= 1/VERBOSE := 0/g; s/SRC_DIR[ \t]*:= src/SRC_DIR := ..\/staticSignature\/src/g", MAKEFILE_SIG_PATH], stdout = makefile)
-	makefile.close()
-	if return_value != 0:
-		print("ERROR: unable to create the Makefile")
-		exit()
 	sys.stdout.write("Building Signature program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "signature"])
