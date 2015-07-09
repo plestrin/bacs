@@ -8,12 +8,12 @@
 #include "multiColumn.h"
 #include "base.h"
 
-struct ir* ir_create(struct assembly* assembly){
+struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
 	struct ir* ir;
 
 	ir =(struct ir*)malloc(sizeof(struct ir));
 	if (ir != NULL){
-		if(ir_init(ir, assembly)){
+		if(ir_init(ir, assembly, mem_trace)){
 			log_err("unable to init ir");
 			free(ir);
 			ir = NULL;
@@ -26,12 +26,18 @@ struct ir* ir_create(struct assembly* assembly){
 	return ir;
 }
 
-int32_t ir_init(struct ir* ir, struct assembly* assembly){
+int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
 	
-	if (irImporterAsm_import(ir, assembly)){
+	#ifdef VERBOSE
+	if (mem_trace != NULL){
+		log_info("found memory concrete values");
+	}
+	#endif
+
+	if (irImporterAsm_import(ir, assembly, mem_trace)){
 		log_err("trace asm import has failed");
 		return -1;
 	}
@@ -59,7 +65,7 @@ struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
 	return node;
 }
 
-struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev){
+struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev, ADDRESS concrete_address){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -79,6 +85,7 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
 			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
 		}
+		operation->operation_type.mem.access.con_addr 	= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
@@ -91,7 +98,7 @@ struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct n
 	return node;
 }
 
-struct node* ir_add_out_mem(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev){
+struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev, ADDRESS concrete_address){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -111,6 +118,7 @@ struct node* ir_add_out_mem(struct ir* ir, uint32_t index, uint8_t size, struct 
 			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
 			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
 		}
+		operation->operation_type.mem.access.con_addr 	= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_NODE_STATUS_FLAG_FINAL;

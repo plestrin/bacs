@@ -182,7 +182,15 @@ void trace_create_ir(struct trace* trace){
 			array_empty(&(trace->result_array));
 		}
 	}
-	trace->ir = ir_create(&(trace->assembly));
+	
+	if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
+		trace->ir = ir_create(&(trace->assembly), trace->mem_trace);
+	}
+	else{
+		trace->ir = ir_create(&(trace->assembly), NULL);
+	}
+
+	
 	if (trace->ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->tag);
 	}

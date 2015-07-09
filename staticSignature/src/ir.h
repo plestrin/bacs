@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "assembly.h"
+#include "memTrace.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 #include "array.h"
@@ -89,6 +90,7 @@ struct irMemAccess{
 	struct node* 	prev;
 	struct node* 	next;
 	uint32_t 		order;
+	ADDRESS 		con_addr;
 };
 
 #define IR_NODE_STATUS_FLAG_NONE 	0x00000000
@@ -182,12 +184,17 @@ struct ir{
 	struct graph graph;
 };
 
-struct ir* ir_create(struct assembly* assembly);
-int32_t ir_init(struct ir* ir, struct assembly* assembly);
+struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace);
+int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace);
 
 struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg);
-struct node* ir_add_in_mem(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev);
-struct node* ir_add_out_mem(struct ir* ir, uint32_t index,  uint8_t size, struct node* address, struct node* prev);
+
+struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev, ADDRESS concrete_address);
+#define ir_add_in_mem(ir, index, size, address, prev) ir_add_in_mem_(ir, index, size, address, prev, MEMADDRESS_INVALID)
+
+struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev, ADDRESS concrete_address);
+#define ir_add_out_mem(ir, index, size, address, prev) ir_add_out_mem_(ir, index, size, address, prev, MEMADDRESS_INVALID)
+
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode);
 struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index);

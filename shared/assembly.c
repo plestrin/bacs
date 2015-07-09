@@ -222,7 +222,7 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 	uint32_t 			up 		= assembly->nb_dyn_block;
 	uint32_t 			down 	= 0;
 	uint32_t 			idx;
-	uint8_t 			found 	= 0;
+	uint32_t 			found 	= 0;
 	uint32_t 			i;
 	xed_error_enum_t 	xed_error;
 
@@ -248,11 +248,18 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 			it->instruction_sub_index 	= index - assembly->dyn_blocks[idx].instruction_count;
 			it->instruction_offset 		= 0;
 			if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
-				it->prev_black_listed = 1;
+				it->prev_black_listed 	= 1;
 			}
 			else{
-				it->prev_black_listed = 0;
+				it->prev_black_listed 	= 0;
 			}
+			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+				it->mem_access_valid 		= 0;
+			}
+			else{
+				it->mem_access_valid 		= 1;
+			}
+			it->mem_access_index 			= assembly->dyn_blocks[idx].mem_access_count;
 			found = 1;
 			break;
 		}
@@ -277,6 +284,10 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 		}
 		else{
 			it->instruction_offset += xed_decoded_inst_get_length(&(it->xedd));
+
+			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+				it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
+			}
 		}
 	}
 
@@ -294,6 +305,13 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 				it->instruction_sub_index 	= 0;
 				it->instruction_offset 		= 0;
 				it->prev_black_listed 		= 0;
+				if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+					it->mem_access_valid 	= 0;
+				}
+				else{
+					it->mem_access_valid 	= 1;
+				}
+				it->mem_access_index 		= assembly->dyn_blocks[it->dyn_block_index].mem_access_count;
 			}
 			else if (it->dyn_block_index + 2 < assembly->nb_dyn_block){
 				it->instruction_index 		= it->instruction_index + 1;
@@ -301,6 +319,13 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 				it->instruction_sub_index 	= 0;
 				it->instruction_offset 		= 0;
 				it->prev_black_listed 		= 1;
+				if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+					it->mem_access_valid 	= 0;
+				}
+				else{
+					it->mem_access_valid 	= 1;
+				}
+				it->mem_access_index 		= assembly->dyn_blocks[it->dyn_block_index].mem_access_count;
 			}
 			else{
 				log_err("the last instruction has been reached");
@@ -329,6 +354,10 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 	it->instruction_size = xed_decoded_inst_get_length(&(it->xedd));
 	it->instruction_address = assembly->dyn_blocks[it->dyn_block_index].block->header.address + it->instruction_offset;
 
+	if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+		it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
+	}
+
 	return 0;
 }
 
@@ -353,14 +382,15 @@ int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t
 int32_t assembly_check(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
+	uint32_t 			block_count 		= 0;
 	uint32_t 			nb_instruction;
 	uint32_t 			instruction_offset;
 	xed_error_enum_t 	xed_error;
 	xed_decoded_inst_t 	xedd;
 	uint32_t 			nb_mem_access;
-	int32_t 			result = 0;
+	int32_t 			result 				= 0;
 
-	for (block_offset = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
+	for (block_offset = 0, block_count = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, block_count++){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
 			log_err("the last asmBlock is incomplete");
@@ -382,11 +412,11 @@ int32_t assembly_check(struct assembly* assembly){
 		}
 
 		if (nb_instruction != block->header.nb_ins){
-			log_err_m("basic block contains %u instruction(s), expecting: %u", nb_instruction, block->header.nb_ins);
+			log_err_m("basic block %u contains %u instruction(s), expecting: %u", block_count, nb_instruction, block->header.nb_ins);
 		}
 
 		if (block->header.nb_mem_access != UNTRACK_MEM_ACCESS && nb_mem_access != block->header.nb_mem_access){
-			log_err_m("basic block contains %u memory access(es), expecting: %u", nb_mem_access, block->header.nb_mem_access);
+			log_err_m("basic block %u contains %u memory access(es), expecting: %u", block_count, nb_mem_access, block->header.nb_mem_access);
 		}
 	}
 
@@ -473,7 +503,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		idx_ins_start += xed_decoded_inst_get_length(&xedd);
 
 		if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
-			mem_access_start = assembly_get_instruction_nb_mem_access(&xedd);
+			mem_access_start += assembly_get_instruction_nb_mem_access(&xedd);
 		}
 	}
 
@@ -518,7 +548,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		}
 
 		if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
-			mem_access_stop = assembly_get_instruction_nb_mem_access(&xedd);
+			mem_access_stop += assembly_get_instruction_nb_mem_access(&xedd);
 		}
 
 		idx_ins_stop += xed_decoded_inst_get_length(&xedd);

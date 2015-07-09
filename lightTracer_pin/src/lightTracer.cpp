@@ -52,8 +52,9 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 	struct asmBlockHeader 	block_header;
 	INS 					instruction;
 	uint32_t 				i;
-	uint32_t 				nb_read;
 	uint32_t 				nb_mem_access;
+	uint32_t 				nb_mem_read;
+	uint32_t 				nb_mem_write;
 	uint32_t 				descriptor;
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
@@ -63,22 +64,23 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 			if (light_tracer.trace_memory){
 				nb_mem_access = 0;
 				for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
-					for (i = 0, nb_read = 0; i < INS_OperandCount(instruction); i++){
+					for (i = 0, nb_mem_read = 0, nb_mem_write = 0; i < INS_OperandCount(instruction); i++){
 						if (INS_OperandIsMemory(instruction, i)){
 							descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
 							nb_mem_access ++;
 
 							if (INS_OperandRead(instruction, i)){
-								memAddress_descriptor_set_read(descriptor, i);
+								memAddress_descriptor_set_read(descriptor, nb_mem_read);
+								nb_mem_read ++;
 							}
 							if (INS_OperandWritten(instruction, i)){
-								memAddress_descriptor_set_write(descriptor, i);
+								memAddress_descriptor_set_write(descriptor, nb_mem_write);
+								nb_mem_write ++;
 							}
 
 							if (INS_OperandRead(instruction, i)){
-								if (nb_read == 0){
+								if (nb_mem_read == 1){
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD_EA, offsetof(struct memAddress, address), IARG_END);
-									nb_read = 1;
 								}
 								else{
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD2_EA, offsetof(struct memAddress, address), IARG_END);

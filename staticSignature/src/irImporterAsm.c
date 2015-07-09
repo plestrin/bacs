@@ -78,6 +78,7 @@ struct memOperand{
 	xed_reg_enum_t 	index;
 	uint8_t 		scale;
 	uint32_t 		disp;
+	ADDRESS 		con_addr;
 };
 
 static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem, uint32_t instruction_index);
@@ -112,7 +113,7 @@ struct asmOperand{
 	} 						operand_type;
 };
 
-static void asmOperand_decode(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_);
+static void asmOperand_decode(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_, struct memAddress* mem_addr);
 
 static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand);
 static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode);
@@ -142,15 +143,17 @@ struct asmCiscIns{
 #define ASMCISCINS_SET_VALID(cisc) 		((cisc).valid = 1)
 #define ASMCISCINS_SET_INVALID(cisc) 	((cisc).valid = 0)
 
-static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc);
-static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc);
-static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc);
-static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc);
-static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc);
-static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc);
+static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc);
 
-int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
+#define irImporterAsm_get_mem_trace(trace, ins_it) (((trace) != NULL && instructionIterator_is_mem_addr_valid(ins_it)) ? ((trace)->mem_addr_buffer + instructionIterator_get_mem_addr_index(ins_it)) : NULL)
+
+int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct memTrace* trace){
 	struct asmCiscIns 			cisc;
 	struct irRenameEngine 		engine;
 	struct instructionIterator 	it;
@@ -169,16 +172,16 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
 			case XED_ICLASS_BSWAP 		: {break;}
 			case XED_ICLASS_CALL_NEAR 	: {
-				cisc_decode_special_call(&it, &cisc);
+				cisc_decode_special_call(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_CMP 		: {break;}
 			case XED_ICLASS_DEC 		: {
-				cisc_decode_special_dec(&it, &cisc);
+				cisc_decode_special_dec(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_INC 		: {
-				cisc_decode_special_inc(&it, &cisc);
+				cisc_decode_special_inc(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_JB 			: {break;}
@@ -192,16 +195,16 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 			case XED_ICLASS_JNZ 		: {break;}
 			case XED_ICLASS_JZ 			: {break;}
 			case XED_ICLASS_LEAVE 		: {
-				cisc_decode_special_leave(&it, &cisc);
+				cisc_decode_special_leave(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_NOP 		: {break;}
 			case XED_ICLASS_POP 		: {
-				cisc_decode_special_pop(&it, &cisc);
+				cisc_decode_special_pop(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_PUSH 		: {
-				cisc_decode_special_push(&it, &cisc);
+				cisc_decode_special_push(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_RET_FAR 	: {
@@ -218,8 +221,8 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 				cisc.ins[0].opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it.xedd)));
 				if (cisc.ins[0].opcode != IR_INVALID){
 					ASMCISCINS_SET_VALID(cisc);
-					asmOperand_decode(&it, cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand));
-					asmOperand_decode(&it, &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL);
+					asmOperand_decode(&it, cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand), irImporterAsm_get_mem_trace(trace, &it));
+					asmOperand_decode(&it, &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, irImporterAsm_get_mem_trace(trace, &it));
 				}
 			}
 		}
@@ -262,15 +265,17 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly){
 	return 0;
 }
 
-static void asmOperand_decode(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_){
+static void asmOperand_decode(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_, struct memAddress* mem_addr){
 	uint32_t 				i;
-	uint8_t 				nb_memops 	= 0;
-	const xed_inst_t* 		xi 			= xed_decoded_inst_inst(&(it->xedd));
+	uint8_t 				nb_memops 		= 0;
+	const xed_inst_t* 		xi 				= xed_decoded_inst_inst(&(it->xedd));
 	const xed_operand_t* 	xed_op;
 	xed_operand_enum_t 		op_name;
-	uint32_t 				nb_read 	= 0;
-	uint32_t 				nb_write 	= 0;
-	uint32_t 				nb_operand 	= 0;
+	uint32_t 				nb_read 		= 0;
+	uint32_t 				nb_write 		= 0;
+	uint32_t 				nb_operand 		= 0;
+	uint32_t 				nb_read_mem 	= 0;
+	uint32_t 				nb_write_mem 	= 0;
 
 	for (i = 0; i < xed_inst_noperands(xi); i++){
 		xed_op = xed_inst_operand(xi, i);
@@ -282,20 +287,21 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 				case XED_OPERAND_MEM0 	:
 				case XED_OPERAND_MEM1 	: {
 					uint64_t disp;
+					uint32_t mem_descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
 
 					if (max_nb_operand == nb_operand){
 						log_err_m("the max number of operand has been reached: %u for instruction %s", max_nb_operand, xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it->xedd))));
 						goto exit;
 					}
 
-					operand_buffer[nb_operand].size 					= xed_decoded_inst_get_memory_operand_length(&(it->xedd), nb_memops) * 8;
-					operand_buffer[nb_operand].instruction_index 		= it->instruction_index;
-					operand_buffer[nb_operand].variable 				= NULL;
-					operand_buffer[nb_operand].type 					= ASM_OPERAND_MEM;
-					operand_buffer[nb_operand].operand_type.mem.base 	= xed_decoded_inst_get_base_reg(&(it->xedd), nb_memops);
-					operand_buffer[nb_operand].operand_type.mem.index 	= xed_decoded_inst_get_index_reg(&(it->xedd), nb_memops);
-					operand_buffer[nb_operand].operand_type.mem.scale 	= xed_decoded_inst_get_scale(&(it->xedd), nb_memops);
-
+					operand_buffer[nb_operand].size 						= xed_decoded_inst_get_memory_operand_length(&(it->xedd), nb_memops) * 8;
+					operand_buffer[nb_operand].instruction_index 			= it->instruction_index;
+					operand_buffer[nb_operand].variable 					= NULL;
+					operand_buffer[nb_operand].type 						= ASM_OPERAND_MEM;
+					operand_buffer[nb_operand].operand_type.mem.base 		= xed_decoded_inst_get_base_reg(&(it->xedd), nb_memops);
+					operand_buffer[nb_operand].operand_type.mem.index 		= xed_decoded_inst_get_index_reg(&(it->xedd), nb_memops);
+					operand_buffer[nb_operand].operand_type.mem.scale 		= xed_decoded_inst_get_scale(&(it->xedd), nb_memops);
+					
 					disp = xed_decoded_inst_get_memory_displacement(&(it->xedd), nb_memops);
 					if (disp){
 						switch(xed_decoded_inst_get_memory_displacement_width(&(it->xedd), nb_memops)){
@@ -309,7 +315,16 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 							}
 						}
 					}
-					operand_buffer[nb_operand].operand_type.mem.disp 	= disp;
+					operand_buffer[nb_operand].operand_type.mem.disp 		= disp;
+
+					if (xed_operand_read(xed_op)){
+						memAddress_descriptor_set_read(mem_descriptor, nb_read_mem);
+					}
+					else{
+						memAddress_descriptor_set_write(mem_descriptor, nb_write_mem);
+					}
+
+					operand_buffer[nb_operand].operand_type.mem.con_addr 	= (op_name != XED_OPERAND_AGEN) ? memAddress_get_and_check((mem_addr != NULL) ? mem_addr + nb_read_mem + nb_write_mem : NULL, mem_descriptor) : MEMADDRESS_INVALID;
 
 					nb_operand ++;
 					break;
@@ -376,9 +391,15 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 
 		if (xed_operand_read(xed_op)){
 			nb_read ++;
+			if (op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
+				nb_read_mem ++;
+			}
 		}
 		if (xed_operand_written(xed_op)){
 			nb_write ++;
+			if (op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
+				nb_write_mem ++;
+			}
 		}
 		if (op_name == XED_OPERAND_AGEN || op_name == XED_OPERAND_MEM0 || op_name == XED_OPERAND_MEM1){
 			nb_memops ++;
@@ -412,7 +433,7 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 
 			address = memOperand_build_address(engine, &(operand->operand_type.mem), operand->instruction_index);
 			if (address != NULL){
-				operand->variable = ir_add_in_mem(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine));
+				operand->variable = ir_add_in_mem_(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine), operand->operand_type.mem.con_addr);
 				if (operand->variable == NULL){
 					log_err("unable to add memory load to IR");
 				}
@@ -448,7 +469,7 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 			if (address != NULL){
 				operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode);
 				if (operand->variable != NULL){
-					mem_write = ir_add_out_mem(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine));
+					mem_write = ir_add_out_mem_(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine), operand->operand_type.mem.con_addr);
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, operand->variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -690,7 +711,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 			case ASM_OPERAND_MEM 	: {
 				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index);
 				if (address != NULL){
-					mem_write = ir_add_out_mem(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine));
+					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -735,7 +756,7 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 			case ASM_OPERAND_MEM 	: {
 				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index);
 				if (address != NULL){
-					mem_write = ir_add_out_mem(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine));
+					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
 					if (mem_write != NULL){
 						irRenameEngine_set_mem_order(engine, mem_write);
 						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
@@ -839,7 +860,7 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 	}
 }
 
-static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 2;
 
@@ -876,40 +897,41 @@ static void cisc_decode_special_call(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
 	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
 	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
+	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_get_and_check(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0);
 
 }
 
-static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 1;
 
 	cisc->ins[0].opcode 									= IR_SUB;
 	cisc->ins[0].nb_input_operand 							= 2;
-	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL);
+	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL, mem_addr);
 	cisc->ins[0].input_operand[1].size 						= cisc->ins[0].input_operand[0].size;
 	cisc->ins[0].input_operand[1].instruction_index 		= it->instruction_index;
 	cisc->ins[0].input_operand[1].variable 					= NULL;
 	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
 	cisc->ins[0].input_operand[1].operand_type.imm 			= 1;
-	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
+	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
-static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 1;
 
 	cisc->ins[0].opcode 									= IR_ADD;
 	cisc->ins[0].nb_input_operand 							= 2;
-	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL);
+	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL, mem_addr);
 	cisc->ins[0].input_operand[1].size 						= cisc->ins[0].input_operand[0].size;
 	cisc->ins[0].input_operand[1].instruction_index 		= it->instruction_index;
 	cisc->ins[0].input_operand[1].variable 					= NULL;
 	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
 	cisc->ins[0].input_operand[1].operand_type.imm 			= 1;
-	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
+	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
-static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 3;
 
@@ -936,6 +958,7 @@ static void cisc_decode_special_leave(struct instructionIterator* it, struct asm
 	cisc->ins[1].input_operand[0].operand_type.mem.index 	= XED_REG_INVALID;
 	cisc->ins[1].input_operand[0].operand_type.mem.scale 	= 1;
 	cisc->ins[1].input_operand[0].operand_type.mem.disp 	= 0;
+	cisc->ins[1].input_operand[0].operand_type.mem.con_addr = memAddress_get_and_check(mem_addr, MEMADDRESS_DESCRIPTOR_READ_0);
 	cisc->ins[1].output_operand.size 						= 32;
 	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
 	cisc->ins[1].output_operand.variable 					= NULL;
@@ -961,13 +984,13 @@ static void cisc_decode_special_leave(struct instructionIterator* it, struct asm
 	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 2;
 
 	cisc->ins[0].opcode 									= IR_MOV;
 	cisc->ins[0].nb_input_operand 							= 1;
-	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL);
+	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 	cisc->ins[0].input_operand[0].size 						= cisc->ins[0].output_operand.size;
 	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
 	cisc->ins[0].input_operand[0].variable 					= NULL;
@@ -976,6 +999,7 @@ static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCi
 	cisc->ins[0].input_operand[0].operand_type.mem.index 	= XED_REG_INVALID;
 	cisc->ins[0].input_operand[0].operand_type.mem.scale 	= 1;
 	cisc->ins[0].input_operand[0].operand_type.mem.disp 	= 0;
+	cisc->ins[0].input_operand[0].operand_type.mem.con_addr = memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_READ_0, 2);
 
 	cisc->ins[1].opcode 									= IR_ADD;
 	cisc->ins[1].nb_input_operand 							= 2;
@@ -996,12 +1020,12 @@ static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCi
 	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 2;
 
 	cisc->ins[1].opcode 									= IR_MOV;
-	asmOperand_decode(it, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_READ_1, &(cisc->ins[1].nb_input_operand));
+	asmOperand_decode(it, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_READ_1, &(cisc->ins[1].nb_input_operand), mem_addr);
 	asmOperand_sign_extend(cisc->ins[1].input_operand, 32);
 	cisc->ins[1].output_operand.size 						= cisc->ins[1].input_operand[0].size;
 	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
@@ -1011,6 +1035,7 @@ static void cisc_decode_special_push(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
 	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
 	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
+	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0, 2);
 
 	cisc->ins[0].opcode 									= IR_SUB;
 	cisc->ins[0].nb_input_operand 							= 2;

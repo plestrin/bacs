@@ -59,10 +59,14 @@ struct instructionIterator{
 	uint32_t 				instruction_offset;
 	uint8_t 				instruction_size;
 	uint8_t 				prev_black_listed;
+	uint8_t 				mem_access_valid;
+	uint32_t 				mem_access_index;
 	ADDRESS 				instruction_address;
 };
 
 #define instructionIterator_get_instruction_index(it) ((it)->instruction_index)
+#define instructionIterator_is_mem_addr_valid(it) ((it)->mem_access_valid)
+#define instructionIterator_get_mem_addr_index(it) ((it)->mem_access_index)
 
 int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size_t buffer_size_id, uint32_t* buffer_block, size_t buffer_size_block, enum allocationType buffer_alloc_block);
 
