@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -543,6 +541,7 @@ static struct graphReaderNode* graphReader_get_node(struct graphReaderCursor* re
 		existing_node = (struct graphReaderNode**)tsearch((void*)new_node, binary_tree_root, graphReaderNode_compare_id);
 		if (existing_node == NULL){
 			log_err("tsearch failed");
+			free(new_node);
 		}
 		else if (*existing_node != new_node){
 			free(new_node);

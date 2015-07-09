@@ -12,7 +12,7 @@ TEST_GRAPHREADER		:= test_graphReader
 
 CC						:= gcc
 # gcc FLAGS
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 # clang FLAGS
 # CFLAGS 				:= -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum
 LDFLAGS					:=

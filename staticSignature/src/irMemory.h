@@ -16,5 +16,6 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 
 #define ir_print_aliasing(ir) ir_normalize_simplify_memory_access(ir, NULL, ALIASING_STRATEGY_PRINT)
 
+void ir_simplify_concrete_memory_access(struct ir* ir);
 
 #endif

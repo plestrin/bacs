@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <search.h>
 
 #include "irMemory.h"
 #include "irVariableRange.h"
@@ -9,7 +10,7 @@
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 1
 
-int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
+static int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
 
 static void ir_normalize_print_alias_conflict(struct node* node1, struct node* node2, const char* type){
 	struct node* addr1 = NULL;
@@ -279,6 +280,16 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 	return NULL;
 }
 
+/*
+	Return value description:
+	< 0 : error
+	0   : node2 overwrites node1
+	> 0 : node1 overwrites node2
+*/
+
+static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct node* node2);
+static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2);
+static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct node* node2);
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
 	struct node* 			node_cursor;
@@ -289,6 +300,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	uint32_t 				i;
 	struct irVariableRange* range_buffer 			= NULL;
 	struct node*			alias;
+	int32_t 				return_code;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		log_err("unable to sort DAG");
@@ -343,7 +355,6 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 
 					/* STORE -> LOAD */
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
-						struct node* stored_value = NULL;
 
 						switch(strategy){
 							case ALIASING_STRATEGY_WEAK 	: {
@@ -369,39 +380,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 						}
 
-						for (edge_cursor = node_get_head_edge_dst(access_list[i - 1]); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-							if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
-								stored_value = edge_get_src(edge_cursor);
-							}
-						}
-
-						if (stored_value != NULL){
-							if (operation_prev->size > operation_next->size){
-								ir_convert_node_to_inst(access_list[i], ir_node_get_operation(access_list[i])->index, operation_next->size, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size));
-								graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
-
-								if (ir_add_dependence(ir, stored_value, access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-									log_err("unable to add new dependency to IR");
-								}
-
-								access_list[i] = access_list[i - 1];
-							}
-							else if (operation_prev->size < operation_next->size){
-								log_warn("simplification of memory access of different size (case STORE -> LOAD)");
-								continue;
-							}
-							else{
-								graph_transfert_src_edge(&(ir->graph), stored_value, access_list[i]);
-								ir_remove_node(ir, access_list[i]);
-
-								access_list[i] = access_list[i - 1];
-							}
-							*modification = 1;
-							continue;
-						}
-						else{
-							log_err("incorrect memory access pattern in STORE -> LOAD");
-						}
+						return_code = irMemory_simplify_WR(ir, access_list[i - 1], access_list[i]);
+						goto decode_return_code;
 					}
 
 					/* LOAD -> LOAD */
@@ -431,32 +411,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 						}
 
-						if (operation_prev->size > operation_next->size){
-							ir_convert_node_to_inst(access_list[i], ir_node_get_operation(access_list[i])->index, operation_next->size, ir_normalize_choose_part_opcode(operation_prev->size, operation_next->size));
-							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i]));
-
-							if (ir_add_dependence(ir, access_list[i - 1], access_list[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								log_err("unable to add new dependency to IR");
-							}
-
-							access_list[i] = access_list[i - 1];
-						}
-						else if (operation_prev->size < operation_next->size){
-							ir_convert_node_to_inst(access_list[i - 1], ir_node_get_operation(access_list[i - 1])->index, operation_prev->size, ir_normalize_choose_part_opcode(operation_next->size, operation_prev->size));
-							graph_remove_edge(&(ir->graph), graph_get_edge(node_cursor, access_list[i - 1]));
-
-							if (ir_add_dependence(ir, access_list[i], access_list[i - 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								log_err("unable to add new dependency to IR");
-							}
-						}
-						else{
-							graph_transfert_src_edge(&(ir->graph), access_list[i - 1], access_list[i]);
-							ir_remove_node(ir, access_list[i]);
-
-							access_list[i] = access_list[i - 1];
-						}
-						*modification = 1;
-						continue;
+						return_code = irMemory_simplify_RR(ir, access_list[i - 1], access_list[i]);
+						goto decode_return_code;
 					}
 
 					/* STORE -> STORE */
@@ -486,14 +442,27 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 						}
 
-						if (operation_prev->size > operation_next->size){
-							log_warn_m("simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))", operation_prev->size, operation_next->size);
-							continue;
-						}
+						return_code = irMemory_simplify_WW(ir, access_list[i - 1], access_list[i]);
+						goto decode_return_code;
+					}
 
-						ir_remove_node(ir, access_list[i - 1]);
-						*modification = 1;
-						continue;
+					continue;
+
+					decode_return_code:
+					switch(return_code){
+						case 0  : {
+							*modification = 1;
+							break;
+						}
+						case 1  : {
+							access_list[i] = access_list[i - 1];
+							*modification = 1;
+							break;
+						}
+						default : {
+							log_err_m("simplification failed, return code: %d", return_code);
+							break;
+						}
 					}
 				}
 			}
@@ -509,12 +478,218 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	}
 }
 
+static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct node* node2){
+	struct irOperation* operation1;
+	struct irOperation* operation2;
+	struct edge*		edge_cursor;
+	struct node* 		new_inst;
+	int32_t 			result = -1;
+
+	operation1 = ir_node_get_operation(node1);
+	operation2 = ir_node_get_operation(node2);
+
+	for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
+			if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size > operation2->size){
+				if ((new_inst = ir_add_inst(ir, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size))) == NULL){
+					log_err("unable to add instruction to IR");
+					continue;
+				}
+
+				if (ir_add_dependence(ir, edge_get_src(edge_cursor), new_inst, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					log_err("unable to add new dependency to IR");
+				}
+
+				if (graph_copy_src_edge(&(ir->graph), new_inst, node2)){
+					log_err("unable to add new dependency to IR");
+				}
+
+				result = 1;
+			}
+			else if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size < operation2->size){
+				log_warn("simplification of memory access of different size (case STORE -> LOAD)");
+			}
+			else{
+				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2)){
+					log_err("unable to copy src edge");
+				}
+
+				result = 1;
+			}
+		}
+	}
+
+	if (result == 1){
+		ir_remove_node(ir, node2);
+	}
+
+	return 1;
+}
+
+static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2){
+	struct irOperation* operation1;
+	struct irOperation* operation2;
+	struct edge*		edge_cursor;
+
+	operation1 = ir_node_get_operation(node1);
+	operation2 = ir_node_get_operation(node2);
+
+	if (operation1->size > operation2->size){
+		ir_convert_node_to_inst(node2, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size));
+
+		for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+				graph_remove_edge(&(ir->graph), edge_cursor);
+				break;
+			}
+		}
+
+		if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+			log_err("unable to add new dependency to IR");
+		}
+
+		return 1;
+	}
+	if (operation1->size < operation2->size){
+		ir_convert_node_to_inst(node1, operation1->index, operation1->size, ir_normalize_choose_part_opcode(operation2->size, operation1->size));
+
+		for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+				graph_remove_edge(&(ir->graph), edge_cursor);
+				break;
+			}
+		}
+
+		if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+			log_err("unable to add new dependency to IR");
+		}
+
+		return 0;
+	}
+
+	graph_transfert_src_edge(&(ir->graph), node1, node2);
+	ir_remove_node(ir, node1);
+
+	return 1;
+}
+
+static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct node* node2){
+	struct irOperation* operation1;
+	struct irOperation* operation2;
+
+	operation1 = ir_node_get_operation(node1);
+	operation2 = ir_node_get_operation(node2);
+
+	if (operation1->size > operation2->size){
+		log_warn_m("simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))", operation1->size, operation2->size);
+		return -1;
+	}
+
+	ir_remove_node(ir, node1);
+
+	return 0;
+}
+
+struct memAccessToken{
+	struct node* 	node;
+	ADDRESS 		address;
+};
+
+static int32_t compare_address_memToken(const void* arg1, const void* arg2);
+
+void ir_simplify_concrete_memory_access(struct ir* ir){
+	struct node* 			node_cursor;
+	struct node* 			next_node_cursor;
+	struct irOperation* 	operation_cursor;
+	struct irOperation* 	operation_prev;
+	void* 					binary_tree_root = NULL;
+	struct memAccessToken* 	new_token;
+	struct memAccessToken** existing_token;
+	int32_t 				return_code;
+
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+			break;
+		}
+	}
+
+	if (node_cursor == NULL){
+		return;
+	}
+
+	while (operation_cursor->operation_type.mem.access.prev != NULL){
+		node_cursor = operation_cursor->operation_type.mem.access.prev;
+		operation_cursor = ir_node_get_operation(node_cursor);
+	}
+
+	for ( ; node_cursor != NULL; node_cursor = next_node_cursor){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		next_node_cursor = operation_cursor->operation_type.mem.access.next;
+
+		if ((new_token = (struct memAccessToken*)malloc(sizeof(struct memAccessToken))) == NULL){
+			log_err("unable to allocate memory");
+			continue;
+		}
+
+		new_token->node = node_cursor;
+
+		if (operation_cursor->operation_type.mem.access.con_addr == MEMADDRESS_INVALID){
+			log_warn("a memory access has an incorrect concrete address, further simplications might be incorrect");
+			free(new_token);
+			continue;
+		}
+
+		new_token->address = operation_cursor->operation_type.mem.access.con_addr;
+
+		existing_token = (struct memAccessToken**)tsearch((void*)new_token, &binary_tree_root, compare_address_memToken);
+		if (existing_token == NULL){
+			log_err("tsearch failed");
+			free(new_token);
+		}
+		else if (*existing_token != new_token){
+			operation_prev = ir_node_get_operation((*existing_token)->node);
+			if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
+				return_code = irMemory_simplify_WR(ir, (*existing_token)->node, node_cursor);
+			}
+			else if(operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
+				return_code = irMemory_simplify_RR(ir, (*existing_token)->node, node_cursor);
+			}
+			else if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+				return_code = irMemory_simplify_WW(ir, (*existing_token)->node, node_cursor);
+			}
+			else{
+				return_code = 0;
+			}
+
+			switch(return_code){
+				case 0  : {
+					memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
+					break;
+				}
+				case 1  : {
+					break;
+				}
+				default : {
+					log_err_m("simplification failed, return code: %d", return_code);
+					break;
+				}
+			}
+
+			free(new_token);
+		}
+	}
+
+	tdestroy(binary_tree_root, free);
+}
+
 
 /* ===================================================================== */
 /* Sorting routines						                                 */
 /* ===================================================================== */
 
-int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
+static int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 	struct node* access1 = *(struct node**)arg1;
 	struct node* access2 = *(struct node**)arg2;
 	struct irOperation* op1 = ir_node_get_operation(access1);
@@ -524,6 +699,21 @@ int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 		return -1;
 	}
 	else if (op1->operation_type.mem.access.order > op2->operation_type.mem.access.order){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static int32_t compare_address_memToken(const void* arg1, const void* arg2){
+	struct memAccessToken* token1 = (struct memAccessToken*)arg1;
+	struct memAccessToken* token2 = (struct memAccessToken*)arg2;
+
+	if (token1->address < token2->address){
+		return -1;
+	}
+	else if (token1->address > token2->address){
 		return 1;
 	}
 	else{
