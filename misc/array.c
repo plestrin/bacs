@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "array.h"
+#include "base.h"
 
 int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg);
 
@@ -17,7 +18,7 @@ struct _array* _array_create(void){
 		_array_init(_array);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return _array;
@@ -26,12 +27,12 @@ struct _array* _array_create(void){
 int32_t _array_add(struct _array* _array, void* element){
 	int32_t 			result;
 	struct arrayPage* 	buffer;
-	
+
 	if (_array->nb_filled_page >= _array->nb_allocated_page){
 		_array->nb_allocated_page += _ARRAY_DEFAULT_ALLOC_PAGE;
 		buffer = (struct arrayPage*)realloc(_array->buffer, _array->nb_allocated_page * sizeof(struct arrayPage));
 		if (buffer == NULL){
-			printf("ERROR: in %s, unable to malloc/realloc memory\n", __func__);
+			log_err("unable to malloc/realloc memory");
 			return -1;
 		}
 
@@ -40,7 +41,7 @@ int32_t _array_add(struct _array* _array, void* element){
 
 	memcpy(_array->buffer + _array->nb_filled_page, element, sizeof(struct arrayPage));
 	result = (int32_t)_array->nb_filled_page;
-	_array->nb_filled_page ++;		
+	_array->nb_filled_page ++;
 
 	return result;
 }
@@ -49,7 +50,7 @@ int32_t _array_clone(struct _array* _array_src, struct _array* _array_dst){
 	if (_array_src->nb_allocated_page > 0){
 		_array_dst->buffer = (struct arrayPage*)malloc(_array_src->nb_allocated_page * sizeof(struct arrayPage));
 		if (_array_dst->buffer == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+			log_err("unable to allocate memory");
 			return -1;
 		}
 		memcpy(_array_dst->buffer, _array_src->buffer, _array_src->nb_filled_page * sizeof(struct arrayPage));
@@ -75,7 +76,7 @@ struct array* array_create(uint32_t element_size){
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return array;
@@ -85,7 +86,7 @@ int32_t array_init(struct array* array, uint32_t element_size){
 	_array_init(&(array->pages));
 
 	if (element_size == 0){
-		printf("ERROR: in %s, element size is equal to 0\n", __func__);
+		log_err("element size is equal to 0");
 		return -1;
 	}
 
@@ -98,11 +99,11 @@ int32_t array_init(struct array* array, uint32_t element_size){
 		array->nb_element_per_page 	= ARRAY_DEFAULT_PAGE_SIZE / array->element_size;
 
 		if (array->element_size > ARRAY_DEFAULT_PAGE_SIZE){
-			printf("WARNING: in %s, element size is larger than a page\n", __func__);
+			log_warn("element size is larger than a page");
 		}
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		_array_clean(&(array->pages));
 		return -1;
 	}
@@ -128,7 +129,7 @@ int32_t array_add(struct array* array, void* element){
 			page.nb_filled_byte = array->nb_filled_byte;
 
 			if (_array_add(&(array->pages), &page) < 0){
-				printf("ERROR: in %s, unable to archive page\n", __func__);
+				log_err("unable to archive page");
 				return -1;
 			}
 
@@ -141,16 +142,16 @@ int32_t array_add(struct array* array, void* element){
 
 			array->buffer = (char*)malloc(nb_allocated_byte);
 			if (array->buffer == NULL){
-				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				log_err("unable to realloc memory");
 				return -1;
 			}
-		
+
 			array->nb_allocated_byte = nb_allocated_byte;
 		}
 		else{
 			buffer = (char*)realloc(array->buffer, nb_allocated_byte);
 			if (buffer == NULL){
-				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				log_err("unable to realloc memory");
 				return -1;
 			}
 
@@ -185,7 +186,7 @@ uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* elem
 		qsort_r(mapping, array_get_length(array), sizeof(uint32_t), (__compar_d_fn_t)array_compare, arg);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return mapping;
@@ -206,7 +207,7 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 
 	array_dst->buffer = (char*)malloc(array_src->nb_allocated_byte);
 	if (array_dst->buffer == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 		return result;
 	}
 	memcpy(array_dst->buffer, array_src->buffer, array_src->nb_filled_byte);
@@ -218,7 +219,7 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 	array_dst->nb_element_per_page 	= array_src->nb_element_per_page;
 
 	if (_array_clone(&(array_src->pages), &(array_dst->pages))){
-		printf("ERROR: in %s, unable to clone _array pages\n", __func__);
+		log_err("unable to clone _array pages");
 		free(array_dst->buffer);
 		return result;
 	}
@@ -229,7 +230,7 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 
 		page_dst->buffer = (char*)malloc(page_src->nb_allocated_byte);
 		if (page_dst->buffer == NULL){
-			printf("ERROR: in %s, unable to allocate memory for page %u\n", __func__, i);
+			log_err_m("unable to allocate memory for page %u", i);
 			return result;
 		}
 		memcpy(page_dst->buffer, page_src->buffer, page_src->nb_filled_byte);
@@ -255,12 +256,12 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 
 
 	if (array_src->element_size != array_dst->element_size || array_src->nb_element_per_page != array_dst->nb_element_per_page){
-		printf("ERROR: in %s, copy between arrays of different element size is a dangerous thing -> aborting\n", __func__);
+		log_err("copy between arrays of different element size is a dangerous thing -> aborting");
 		return result;
 	}
 
 	if (array_src->nb_element < offset + nb_element){
-		printf("ERROR: in %s, source array does not contain required elements -> aborting\n", __func__);
+		log_err("source array does not contain required elements -> aborting");
 		return result;
 	}
 
@@ -273,7 +274,7 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 		if (nb_allocated_byte > array_dst->nb_allocated_byte){
 			buffer = realloc(array_dst->buffer, nb_allocated_byte);
 			if (buffer == NULL){
-				printf("ERROR: in %s, unable to realloc memory\n", __func__);
+				log_err("unable to realloc memory");
 				break;
 			}
 
@@ -308,7 +309,7 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 			page.nb_filled_byte = array_dst->nb_filled_byte;
 
 			if (_array_add(&(array_dst->pages), &page) < 0){
-				printf("ERROR: in %s, unable to archive page\n", __func__);
+				log_err("unable to archive page");
 				break;
 			}
 

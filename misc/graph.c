@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "graph.h"
+#include "base.h"
 
 /* One can implement special callback mecanisms here */
 #define graph_node_set_data(graph, node, data_) 	memcpy(&((node)->data), (data_), (graph)->node_data_size);
@@ -18,7 +19,7 @@ struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size){
 		graph_init(graph, node_data_size, edge_data_size);
 	}
 	else{
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		log_err("unable to allocate memory");
 	}
 
 	return graph;
@@ -29,7 +30,7 @@ struct node* graph_add_node_(struct graph* graph){
 
 	node = graph_allocate_node(graph);
 	if (node == NULL){
-		printf("ERROR: in %s, unable to allocate node\n", __func__);
+		log_err("unable to allocate node");
 	}
 	else{
 		node->nb_edge_src 			= 0;
@@ -50,7 +51,7 @@ struct node* graph_add_node_(struct graph* graph){
 		graph->node_linkedList_head = node;
 		graph->nb_node ++;
 	}
-	
+
 	return node;
 }
 
@@ -62,9 +63,9 @@ struct node* graph_add_node(struct graph* graph, void* data){
 		graph_node_set_data(graph, node, data)
 	}
 	else{
-		printf("ERROR: in %s, node is NULL\n", __func__);
+		log_err("node is NULL");
 	}
-	
+
 	return node;
 }
 
@@ -73,7 +74,7 @@ struct node* graph_insert_node_(struct graph* graph, struct node* root){
 
 	node = graph_allocate_node(graph);
 	if (node == NULL){
-		printf("ERROR: in %s, unable to allocate node\n", __func__);
+		log_err("unable to allocate node");
 	}
 	else{
 		node->nb_edge_src 			= 0;
@@ -94,7 +95,7 @@ struct node* graph_insert_node_(struct graph* graph, struct node* root){
 		root->next = node;
 		graph->nb_node ++;
 	}
-	
+
 	return node;
 }
 
@@ -106,9 +107,9 @@ struct node* graph_insert_node(struct graph* graph, struct node* root, void* dat
 		graph_node_set_data(graph, node, data)
 	}
 	else{
-		printf("ERROR: in %s, node is NULL\n", __func__);
+		log_err("node is NULL");
 	}
-	
+
 	return node;
 }
 
@@ -247,7 +248,7 @@ struct edge* graph_add_edge_(struct graph* graph, struct node* node_src, struct 
 
 	edge = graph_allocate_edge(graph);
 	if (edge == NULL){
-		printf("ERROR: in %s, unable to allocate edge\n", __func__);
+		log_err("unable to allocate edge");
 	}
 	else{
 		edge->src_node = node_src;
@@ -285,9 +286,9 @@ struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct n
 		graph_edge_set_data(graph, edge, data)
 	}
 	else{
-		printf("ERROR: in %s, edge is NULL\n", __func__);
+		log_err("edge is NULL");
 	}
-	
+
 	return edge;
 }
 
