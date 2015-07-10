@@ -50,7 +50,9 @@
 
 #endif
 
+#ifndef min
 #define min(a, b) (((a) > (b)) ? (b) : (a))
+#endif
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 
 enum allocationType{

@@ -233,7 +233,7 @@ static inline void irAffineForm_import_imm(struct node* node, struct irAffineFor
 	term.sign 		= sign;
 	term.variable 	= NULL;
 
-	if (irAffineForm_add_term(*affine_form, &term)){
+	if (irAffineForm_add_term(*affine_form, &term) < 0){
 		log_err("unable to add affineTerm to affineForm");
 	}
 }
@@ -245,7 +245,7 @@ static inline void irAffineForm_import_var(struct node* node, struct irAffineFor
 	term.sign 		= sign;
 	term.variable 	= node;
 
-	if (irAffineForm_add_term(*affine_form, &term)){
+	if (irAffineForm_add_term(*affine_form, &term) < 0){
 		log_err("unable to add affineTerm to affineForm");
 	}
 }
@@ -285,7 +285,7 @@ static inline void irAffineForm_import_imul(struct node* node, struct irAffineFo
 		term.sign 		= sign;
 		term.variable 	= NULL;
 
-		if (irAffineForm_add_term(*affine_form, &term)){
+		if (irAffineForm_add_term(*affine_form, &term) < 0){
 			log_err("unable to add affineTerm to affineForm");
 		}
 	}
@@ -325,7 +325,7 @@ static inline void irAffineForm_import_mul(struct node* node, struct irAffineFor
 		term.sign 		= sign;
 		term.variable 	= NULL;
 
-		if (irAffineForm_add_term(*affine_form, &term)){
+		if (irAffineForm_add_term(*affine_form, &term) < 0){
 			log_err("unable to add affineTerm to affineForm");
 		}
 	}

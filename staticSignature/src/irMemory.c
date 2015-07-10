@@ -523,7 +523,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 		ir_remove_node(ir, node2);
 	}
 
-	return 1;
+	return result;
 }
 
 static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2){
@@ -550,6 +550,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 
 		return 1;
 	}
+
 	if (operation1->size < operation2->size){
 		ir_convert_node_to_inst(node1, operation1->index, operation1->size, ir_normalize_choose_part_opcode(operation2->size, operation1->size));
 
@@ -568,7 +569,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 	}
 
 	graph_transfert_src_edge(&(ir->graph), node1, node2);
-	ir_remove_node(ir, node1);
+	ir_remove_node(ir, node2);
 
 	return 1;
 }

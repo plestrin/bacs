@@ -1023,11 +1023,13 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 
 static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	struct edge* 		edge_cursor;
+	struct edge* 		edge_next;
 	struct irOperation*	operand_operation;
 	struct node* 		new_imm;
 
 	if (node->nb_edge_dst == 2){
-		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_next){
+			edge_next = edge_get_next_dst(edge_cursor);
 			operand_operation = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand_operation->type == IR_OPERATION_TYPE_IMM && ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 				if (edge_get_src(edge_cursor)->nb_edge_src == 1){

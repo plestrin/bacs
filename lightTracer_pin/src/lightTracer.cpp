@@ -158,7 +158,7 @@ struct toolThreadData{
 void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void* buffer, UINT64 numElements, void* arg){
 	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
 	uint64_t 				i;
-	uint64_t 				rewrite_offset;
+	uint32_t 				rewrite_offset;
 	uint32_t* 				buffer_id;
 
 	if (data == NULL){
@@ -197,7 +197,7 @@ void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, vo
 }
 
 void* TOOL_mem_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void* buffer, UINT64 numElements, void* arg){
-	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
 
 	if (data == NULL){
 		std::cerr << "ERROR: in " << __func__ << ", thread data is NULL for thread " << tid << std::endl;

@@ -365,7 +365,7 @@ int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t
 	for (instruction_offset = 0; instruction_offset != block->header.size; ){
 		xed_decoded_inst_zero(xedd);
 		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
-		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) != XED_ERROR_NONE){
+		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) == XED_ERROR_NONE){
 			instruction_offset += xed_decoded_inst_get_length(xedd);
 		}
 		else{
