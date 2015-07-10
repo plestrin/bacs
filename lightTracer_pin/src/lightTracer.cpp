@@ -64,6 +64,10 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 			if (light_tracer.trace_memory){
 				nb_mem_access = 0;
 				for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
+					if (INS_IsNop(instruction)){
+						continue;
+					}
+
 					for (i = 0, nb_mem_read = 0, nb_mem_write = 0; i < INS_OperandCount(instruction); i++){
 						if (INS_OperandIsMemory(instruction, i)){
 							descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
@@ -198,6 +202,10 @@ void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, vo
 
 void* TOOL_mem_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void* buffer, UINT64 numElements, void* arg){
 	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+
+	if (numElements == 0){
+		return buffer;
+	}
 
 	if (data == NULL){
 		std::cerr << "ERROR: in " << __func__ << ", thread data is NULL for thread " << tid << std::endl;

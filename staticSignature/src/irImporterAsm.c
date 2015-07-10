@@ -324,7 +324,7 @@ static void asmOperand_decode(struct instructionIterator* it, struct asmOperand*
 						memAddress_descriptor_set_write(mem_descriptor, nb_write_mem);
 					}
 
-					operand_buffer[nb_operand].operand_type.mem.con_addr 	= (op_name != XED_OPERAND_AGEN) ? memAddress_get_and_check((mem_addr != NULL) ? mem_addr + nb_read_mem + nb_write_mem : NULL, mem_descriptor) : MEMADDRESS_INVALID;
+					operand_buffer[nb_operand].operand_type.mem.con_addr 	= (op_name != XED_OPERAND_AGEN) ? memAddress_get_and_check((mem_addr != NULL) ? (mem_addr + nb_read_mem + nb_write_mem) : NULL, mem_descriptor) : MEMADDRESS_INVALID;
 
 					nb_operand ++;
 					break;
@@ -897,7 +897,7 @@ static void cisc_decode_special_call(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
 	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
 	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
-	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_get_and_check(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0);
+	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_get_and_check(mem_addr + 1, MEMADDRESS_DESCRIPTOR_WRITE_0);
 
 }
 

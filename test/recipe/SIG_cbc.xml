@@ -1,7 +1,9 @@
 <xml>
 	<recipe name="TEST_CBC_TEA_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -24,7 +26,9 @@
 
 	<recipe name="TEST_CBC_TEA_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -47,7 +51,9 @@
 
 	<recipe name="TEST_CBC_TEA_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -70,7 +76,9 @@
 
 	<recipe name="TEST_CBC_TEA_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -93,7 +101,9 @@
 
 	<recipe name="TEST_CBC_TEA_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -116,7 +126,9 @@
 
 	<recipe name="TEST_CBC_TEA_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -139,7 +151,9 @@
 
 	<recipe name="TEST_CBC_TEA_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -162,7 +176,9 @@
 
 	<recipe name="TEST_CBC_TEA_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -185,7 +201,9 @@
 
 	<recipe name="TEST_CBC_TEA_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
@@ -208,7 +226,9 @@
 
 	<recipe name="TEST_CBC_TEA_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_COz"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>

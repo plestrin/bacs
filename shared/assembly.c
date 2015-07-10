@@ -252,12 +252,12 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 				it->prev_black_listed 	= 0;
 			}
 			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
-				it->mem_access_valid 		= 0;
+				it->mem_access_valid 	= 0;
 			}
 			else{
-				it->mem_access_valid 		= 1;
+				it->mem_access_valid 	= 1;
 			}
-			it->mem_access_index 			= assembly->dyn_blocks[idx].mem_access_count;
+			it->mem_access_index 		= assembly->dyn_blocks[idx].mem_access_count;
 			found = 1;
 			break;
 		}
@@ -340,6 +340,10 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 		it->instruction_sub_index 	= it->instruction_sub_index + 1;
 		it->instruction_offset 		= it->instruction_offset + it->instruction_size;
 		it->prev_black_listed		= 0;
+
+		if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
+			it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
+		}
 	}
 
 	xed_decoded_inst_zero(&(it->xedd));
@@ -351,10 +355,6 @@ int32_t assembly_get_next_instruction(struct assembly* assembly, struct instruct
 
 	it->instruction_size = xed_decoded_inst_get_length(&(it->xedd));
 	it->instruction_address = assembly->dyn_blocks[it->dyn_block_index].block->header.address + it->instruction_offset;
-
-	if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
-		it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
-	}
 
 	return 0;
 }
@@ -417,6 +417,10 @@ int32_t assembly_check(struct assembly* assembly){
 			log_err_m("basic block %u contains %u memory access(es), expecting: %u", block_count, nb_mem_access, block->header.nb_mem_access);
 		}
 	}
+
+	#ifdef VERBOSE
+	log_info_m("%u basic blocks have been checked", block_count);
+	#endif
 
 	return result;
 }
@@ -673,10 +677,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 				size += sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[i].block->header.size;
 				*result_block = new_block;
 			}
-			else{
-				new_block = *result_block;
-			}
-			assembly_dst->dyn_blocks[i - idx_block_start].block = new_block;
+			assembly_dst->dyn_blocks[i - idx_block_start].block = *result_block;
 		}
 		else{
 			dynBlock_set_invalid(assembly_dst->dyn_blocks + (i - idx_block_start));
@@ -706,9 +707,9 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 				assembly_dst->dyn_blocks[i].block = (struct asmBlock*)((char*)realloc_mapping + (uint32_t)((char*)assembly_dst->dyn_blocks[i].block - (char*)assembly_dst->mapping_block));
 			}
 		}
-		assembly_dst->mapping_size_block = size;
 		assembly_dst->mapping_block = realloc_mapping;
 	}
+	assembly_dst->mapping_size_block = size;
 
 	if (index_mem_access_start != NULL){
 		*index_mem_access_start = assembly_src->dyn_blocks[idx_block_start].mem_access_count + mem_access_start;
@@ -804,6 +805,10 @@ static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd)
 	uint32_t 				i;
 	const xed_inst_t* 		xi;
 	const xed_operand_t* 	xed_op;
+
+	if (xed_decoded_inst_get_iclass(xedd) == XED_ICLASS_NOP){
+		return 0;
+	}
 
 	xi = xed_decoded_inst_inst(xedd);
 	for (i = 0, nb_mem_access = 0; i < xed_inst_noperands(xi); i++){

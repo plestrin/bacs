@@ -7,16 +7,20 @@ import re
 
 class recipe(object):
 
-	def __init__(self, name, build, trace, arg, algo):
-		self.name 	= name
-		self.build 	= build
-		self.trace 	= trace
-		self.arg 	= arg
-		self.algo 	= algo
-		self.log  	= None
+	def __init__(self, name, build, trace, trace_arg, arg, algo):
+		self.name 		= name
+		self.build 		= build
+		self.trace 		= trace
+		self.trace_arg 	= trace_arg
+		self.arg 		= arg
+		self.algo 		= algo
+		self.log  		= None
 
 	def __str__(self):
-		string = self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.trace + "\n\t-ARG:\n"
+		string = self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.trace + " OPT ARG:"
+		for i in self.trace_arg:
+			string += " " + i
+		string += "\n\t-ARG:\n"
 		for i in self.arg:
 			string = string + "\t\t-" + i + "\n"
 		string += "\n\t-PRIMITIVE(S):\n"
@@ -45,7 +49,7 @@ class recipe(object):
 		else:
 			sys.stdout.write("no rule\n")
 
-	def trace_prog(self, log_path, pin_path, white_list_path, tool_path, trace_path):
+	def trace_prog(self, log_path, pin_path, tool_path, trace_path):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 		if self.trace != "":
@@ -56,7 +60,10 @@ class recipe(object):
 			self.log.flush()
 
 			time_start = time.time()
-			process = subprocess.Popen([pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", white_list_path, "--", self.trace], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			cmd_l = [pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name]
+			cmd_l.extend(self.trace_arg)
+			cmd_l.extend(["--", self.trace])
+			process = subprocess.Popen(cmd_l, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 			process.wait()
 			time_stop = time.time()
 

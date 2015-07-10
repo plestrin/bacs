@@ -191,7 +191,7 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 			result_get_footprint(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].result, result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].index, set);
 		}
 		else{
-			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node))){
+			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node)) < 0){
 				log_err("unable to add element to set");
 			}
 		}

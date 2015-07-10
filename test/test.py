@@ -46,25 +46,27 @@ try:
 	tree = ET.parse(file_name)
 	root = tree.getroot()
 	for xml_recipe in root.findall("recipe"):
-		name 	= None
-		kind 	= None
-		build 	= None
-		trace 	= None
-		arg 	= []
-		algo 	= {}
+		name 		= None
+		kind 		= None
+		build 		= None
+		trace 		= None
+		trace_arg 	= ["-w", WHITE_LIST_PATH]
+		search_arg 	= []
+		algo 		= {}
 
-		name 	= xml_recipe.attrib.get("name")
-		build 	= xml_recipe.find("build").attrib.get("cmd")
-		trace 	= xml_recipe.find("trace").attrib.get("cmd")
+		name 		= xml_recipe.attrib.get("name")
+		build 		= xml_recipe.find("build").attrib.get("cmd")
+		trace 		= xml_recipe.find("trace").attrib.get("cmd")
 
+		for xml_arg in xml_recipe.find("trace").findall("arg"):
+			trace_arg.append(xml_arg.attrib.get("value"))
 		for xml_arg in xml_recipe.find("search").findall("arg"):
-			arg.append(xml_arg.attrib.get("value"))
+			search_arg.append(xml_arg.attrib.get("value"))
 		for xml_algo in xml_recipe.find("result").findall("algo"):
 			algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
 
 		if xml_recipe.attrib.get("active") == "yes":
-			recipes.append(recipe(name, build, trace, arg, algo))
-
+			recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
 		else:
 			print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
 except IOError:
@@ -77,8 +79,13 @@ if action == "PRINT":
 	for r in recipes:
 		print r
 
-# COMPILE TOOL step
+# BUILD step
 if action == "BUILD" or action == "ALL":
+	for r in recipes:
+		r.build_prog(LOG_PATH)
+
+# COMPILE TOOL step
+if action == "TRACE" or action == "ALL":
 	sys.stdout.write("Building Trace program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "-C", TOOL_SRC_PATH])
@@ -86,15 +93,10 @@ if action == "BUILD" or action == "ALL":
 		print("ERROR: unable to build Trace program")
 		exit()
 
-# BUILD step
-if action == "BUILD" or action == "ALL":
-	for r in recipes:
-		r.build_prog(LOG_PATH)
-
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for r in recipes:
-		r.trace_prog(LOG_PATH, PIN_PATH, WHITE_LIST_PATH, TOOL_PATH, TRACE_PATH)
+		r.trace_prog(LOG_PATH, PIN_PATH, TOOL_PATH, TRACE_PATH)
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
