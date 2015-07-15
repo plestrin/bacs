@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "irCheck.h"
+#include "result.h"
 #include "base.h"
 
 void ir_check_size(struct ir* ir){
@@ -677,6 +678,48 @@ void ir_check_connectivity(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
+				struct codeSignature* code_signature = ((struct result*)operation_cursor->operation_type.symbol.result_ptr)->signature;
+
+				/* Check input edge(s) */
+				if (node_cursor->nb_edge_dst != code_signature->nb_frag_tot_in){
+					log_err_m("symbol %s has %u dst edge(s)", code_signature->name, node_cursor->nb_edge_dst);
+					operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+				}
+				else{
+					for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+						dependence = ir_edge_get_dependence(edge_cursor);
+
+						if (dependence->type != IR_DEPENDENCE_TYPE_MACRO){
+							log_err("symbol has an incorrect type of dst dependence");
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						else if (!IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro) && IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_in){
+							log_err("symbol has an incorrect macro dependence descriptor");
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+					}
+				}
+
+				/* Check output edge(s) */
+				if (node_cursor->nb_edge_src != code_signature->nb_frag_tot_out){
+					log_err_m("symbol %s has %u src edge(s)", code_signature->name, node_cursor->nb_edge_src);
+					operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+				}
+				else{
+					for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+						dependence = ir_edge_get_dependence(edge_cursor);
+
+						if (dependence->type != IR_DEPENDENCE_TYPE_MACRO){
+							log_err("symbol has an incorrect type of src dependence");
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+						else if (!IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) && IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_out){
+							log_err("symbol has an incorrect macro dependence descriptor");
+							operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
+						}
+					}
+				}
+
 				break;
 			}
 		}
