@@ -12,10 +12,11 @@
 #define TRACE_NB_MAX_THREAD 	64
 
 static inline int32_t trace_init(struct trace* trace, enum traceType type){
-	trace->tag[0]		= '\0';
-	trace->ir 			= NULL;
-	trace->type 		= type;
-	trace->mem_trace 	= NULL;
+	trace->tag[0]			= '\0';
+	trace->ir 				= NULL;
+	trace->type 			= type;
+	trace->mem_trace 		= NULL;
+	trace->synthesis_graph 	= NULL;
 
 	return array_init(&(trace->result_array), sizeof(struct result));
 }
@@ -225,6 +226,23 @@ void trace_normalize_ir(struct trace* trace){
 	ir_normalize(trace->ir);
 }
 
+void trace_create_synthesis(struct trace* trace){
+	if (trace->synthesis_graph != NULL){
+		log_warn_m("an synthesis has already been create for fragment \"%s\" - deleting", trace->tag);
+		synthesisGraph_delete(trace->synthesis_graph);
+		trace->synthesis_graph = NULL;
+	}
+
+	if (trace->ir == NULL){
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
+		return;
+	}
+
+	if((trace->synthesis_graph = synthesisGraph_create(trace->ir)) == NULL){
+		log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->tag);
+	}
+}
+
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst){
 	void** 				src_buffer;
 	uint32_t 			i;
@@ -424,7 +442,12 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 
 void trace_reset(struct trace* trace){
 	struct result* 	result;
-	uint32_t 		i; 
+	uint32_t 		i;
+
+	if (trace->synthesis_graph != NULL){
+		synthesisGraph_delete(trace->synthesis_graph);
+		trace->synthesis_graph = NULL;
+	}
 
 	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);
@@ -446,7 +469,11 @@ void trace_reset(struct trace* trace){
 
 void trace_clean(struct trace* trace){
 	struct result* 	result;
-	uint32_t 		i; 
+	uint32_t 		i;
+
+	if (trace->synthesis_graph != NULL){
+		synthesisGraph_delete(trace->synthesis_graph);
+	}
 
 	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);

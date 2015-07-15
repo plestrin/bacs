@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "traceMine.h"
+#include "synthesisGraph.h"
 #include "result.h"
 #include "dijkstra.h"
 #include "base.h"
@@ -33,11 +33,6 @@ enum synthesisNodeType{
 	SYNTHESISNODETYPE_IR_NODE
 };
 
-struct signatureInstance{
-	struct result* 	result;
-	uint32_t		index;
-};
-
 struct signatureCluster{
 	struct node* 				synthesis_graph_node;
 	uint32_t 					nb_in_parameter;
@@ -46,23 +41,18 @@ struct signatureCluster{
 	struct array 				instance_array;
 };
 
-static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, struct result* result, uint32_t index){
-	struct signatureInstance instance;
-
+static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, struct result* result, struct node* node){
 	cluster->synthesis_graph_node = NULL;
 	cluster->nb_in_parameter = result->signature->nb_parameter_in;
 	cluster->nb_ou_parameter = result->signature->nb_parameter_out;
 	cluster->parameter_mapping = mapping;
 
-	if (array_init(&(cluster->instance_array), sizeof(struct signatureInstance))){
+	if (array_init(&(cluster->instance_array), sizeof(struct node*))){
 		log_err("unable to init array");
 		return -1;
 	}
 
-	instance.result = result;
-	instance.index = index;
-
-	if (array_add(&(cluster->instance_array), &instance) < 0){
+	if (array_add(&(cluster->instance_array), &node) < 0){
 		log_err("unable to add element to array");
 		array_clean(&(cluster->instance_array));
 		return -1;
@@ -102,14 +92,7 @@ static int32_t signatureCluster_may_append(struct signatureCluster* cluster, str
 	return 0;
 }
 
-static inline int32_t signatureCluster_append(struct signatureCluster* cluster, struct result* result, uint32_t index){
-	struct signatureInstance instance;
-
-	instance.result = result;
-	instance.index = index;
-
-	return array_add(&(cluster->instance_array), &instance);
-}
+#define signatureCluster_add(cluster, node) array_add(&((cluster)->instance_array), &(node))
 
 static inline void signatureCluster_clean(struct signatureCluster* cluster){
 	if (cluster->parameter_mapping != NULL){
@@ -137,10 +120,65 @@ struct synthesisNode{
 #define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
 #define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
-void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
-void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
+static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
+static void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
 
-int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){
+static void synthesisGraph_clean_node(struct node* node);
+
+static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_graph, struct ir* ir){
+	struct result* 				result;
+	uint32_t 					i;
+	struct node*				node_cursor;
+	struct irOperation* 		operation_cursor;
+	struct parameterMapping* 	mapping;
+	struct signatureCluster* 	cluster_cursor;
+	struct signatureCluster 	new_cluster;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_SYMBOL){
+			result = (struct result*)operation_cursor->operation_type.symbol.result_ptr;
+
+			mapping = parameterMapping_create(result->signature);
+			if (mapping == NULL){
+				log_err("unable to create parameterMapping");
+				continue;
+			}
+
+			if (parameterMapping_fill_from_ir(mapping, node_cursor)){
+				log_err("unable to fill mapping");
+				free(mapping);
+				continue;
+			}
+
+			for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
+				cluster_cursor = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
+				if (!signatureCluster_may_append(cluster_cursor, mapping, result->signature->nb_parameter_in, result->signature->nb_parameter_out)){
+					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
+						log_err("unable to add element to signatureCluster");
+					}
+					break;
+				}
+			}
+
+			if (i == array_get_length(&(synthesis_graph->cluster_array))){
+				if (signatureCluster_init(&new_cluster, mapping, result, node_cursor)){
+					log_err("unable to init signatureCluster");
+					free(mapping);
+					continue;
+				}
+
+				if (array_add(&(synthesis_graph->cluster_array), &new_cluster) < 0){
+					log_err("unable to add element to array");
+					signatureCluster_clean(&new_cluster);
+				}
+			}
+		}
+	}
+}
+
+static int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){
 	struct synthesisNode* synthesis_node1  = synthesisGraph_get_synthesisNode(*(struct node**)data1);
 	struct synthesisNode* synthesis_node2  = synthesisGraph_get_synthesisNode(*(struct node**)data2);
 
@@ -155,7 +193,7 @@ int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){
 	}
 }
 
-int32_t synthesisGraph_compare_II_path(const void* data1, const void* data2){
+static int32_t synthesisGraph_compare_II_path(const void* data1, const void* data2){
 	struct node* 			node1 = *(struct node**)data1;
 	struct node* 			node2 = *(struct node**)data2;
 	struct synthesisNode* 	synthesis_node1  = synthesisGraph_get_synthesisNode(node1);
@@ -207,7 +245,7 @@ int32_t synthesisGraph_compare_II_path(const void* data1, const void* data2){
 	}
 }
 
-int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
+static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
 	struct edge* edge1 = *(struct edge**)data1;
 	struct edge* edge2 = *(struct edge**)data2;
 
@@ -222,7 +260,7 @@ int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
 	}
 }
 
-static void synthesisGraph_pack(struct graph* synthesis_graph){
+static void synthesisGraph_pack(struct graph* graph){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
 	struct node** 			node_buffer;
@@ -233,14 +271,14 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 	uint32_t 				i;
 	uint32_t 				j;
 
-	node_buffer = (struct node**)malloc(sizeof(struct node*) * synthesis_graph->nb_node);
+	node_buffer = (struct node**)malloc(sizeof(struct node*) * graph->nb_node);
 	edge_buffer = (struct edge**)node_buffer;
 	if (node_buffer == NULL){
 		log_err("unable to allocate memory");
 		return;
 	}
 
-	for (node_cursor = graph_get_head_node(synthesis_graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE){
@@ -252,15 +290,15 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 
 	for (i = 1, j = 0; i < nb_node; i++){
 		if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
-			graph_transfert_src_edge(synthesis_graph, node_buffer[j], node_buffer[i]);
-			graph_remove_node(synthesis_graph, node_buffer[i]);
+			graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
+			graph_remove_node(graph, node_buffer[i]);
 		}
 		else{
 			j = i;
 		}
 	}
 
-	for (node_cursor = graph_get_head_node(synthesis_graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_II_PATH){
@@ -272,15 +310,15 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 
 	for (i = 1, j = 0; i < nb_node; i++){
 		if (synthesisGraph_compare_II_path(node_buffer + j, node_buffer + i) == 0){
-			graph_transfert_src_edge(synthesis_graph, node_buffer[j], node_buffer[i]);
-			graph_remove_node(synthesis_graph, node_buffer[i]);
+			graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
+			graph_remove_node(graph, node_buffer[i]);
 		}
 		else{
 			j = i;
 		}
 	}
 
-	for (node_cursor = graph_get_head_node(synthesis_graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_RESULT){
@@ -292,7 +330,7 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 
 			for (i = 1, j = 0; i < nb_edge; i++){
 				if (synthesisGraph_compare_edge(edge_buffer + j, edge_buffer + i) == 0){
-					graph_remove_edge(synthesis_graph, edge_buffer[i]);
+					graph_remove_edge(graph, edge_buffer[i]);
 				}
 				else{
 					j = i;
@@ -302,77 +340,6 @@ static void synthesisGraph_pack(struct graph* synthesis_graph){
 	}
 
 	free(node_buffer);
-}
-
-void synthesisGraph_clean_node(struct node* node);
-
-static struct array* traceMine_cluster_results(struct array* result_array){
-	struct result* 				result;
-	uint32_t 					i;
-	uint32_t 					j;
-	uint32_t 					k;
-	struct array* 				cluster_array;
-	struct parameterMapping* 	mapping;
-	struct signatureCluster* 	cluster_cursor;
-	struct signatureCluster 	new_cluster;
-
-	cluster_array = array_create(sizeof(struct signatureCluster));
-	if (cluster_array == NULL){
-		log_err("unable to create array");
-		return NULL;
-	}		
-
-	for (i = 0, mapping = NULL; i < array_get_length(result_array); i++){
-		result = (struct result*)array_get(result_array, i);
-		if (result->state == RESULTSTATE_PUSH){
-			for (j = 0; j < result->nb_occurrence; j++){
-				if (mapping == NULL){
-					mapping = parameterMapping_create(result->signature);
-					if (mapping == NULL){
-						log_err("unable to create parameterMapping");
-						continue;
-					}
-				}
-
-				if (parameterMapping_fill(mapping, result, j)){
-					log_err_m("unable to fill mapping for occurrence %u", j);
-					continue;
-				}
-
-				for (k = 0; k < array_get_length(cluster_array); k++){
-					cluster_cursor = (struct signatureCluster*)array_get(cluster_array, k);
-					if (!signatureCluster_may_append(cluster_cursor, mapping, result->signature->nb_parameter_in, result->signature->nb_parameter_out)){
-						if (signatureCluster_append(cluster_cursor, result, j)){
-							log_err("unable to add element to signatureCluster");
-						}
-						break;
-					}
-				}
-
-				if (k == array_get_length(cluster_array)){
-					if (signatureCluster_init(&new_cluster, mapping, result, j)){
-						log_err("unable to init signatureCluster");
-					}
-
-					if (array_add(cluster_array, &new_cluster) < 0){
-						log_err("unable to add element to array");
-						signatureCluster_clean(&new_cluster);
-					}
-					else{
-						mapping = NULL;
-					}
-				}
-			}
-
-			if (mapping != NULL){
-				free(mapping);
-				mapping = NULL;
-			}		
-		}
-	}
-
-
-	return cluster_array;
 }
 
 static void traceMine_search_OI_path(struct signatureCluster* cluster_in, uint32_t parameter_in, struct signatureCluster* cluster_ou, uint32_t parameter_ou, struct ir* ir, struct graph* synthesis_graph){
@@ -493,10 +460,10 @@ static void traceMine_search_II_path(struct signatureCluster* cluster1, uint32_t
 	}
 	if (path2 != NULL){
 		array_delete(path2);
-	}			
+	}
 }
 
-static int32_t traceMine_find_cluster_relation(struct array* cluster_array, struct ir* ir, struct graph* synthesis_graph){
+static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesis_graph, struct ir* ir){
 	struct signatureCluster* 	cluster_i;
 	struct signatureCluster* 	cluster_j;
 	uint32_t 					i;
@@ -505,110 +472,103 @@ static int32_t traceMine_find_cluster_relation(struct array* cluster_array, stru
 	uint32_t 					l;
 	struct synthesisNode 		synthesis_node;
 
-	for (i = 0; i < array_get_length(cluster_array); i++){
-		struct signatureCluster* cluster = (struct signatureCluster*)array_get(cluster_array, i);
+	for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
+		struct signatureCluster* cluster = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
 
 		synthesis_node.type 				= SYNTHESISNODETYPE_RESULT;
 		synthesis_node.node_type.cluster 	= cluster;
 
-		if ((cluster->synthesis_graph_node = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
+		if ((cluster->synthesis_graph_node = graph_add_node(&(synthesis_graph->graph), &synthesis_node)) == NULL){
 			log_err("unable to add node to graph");
 			continue;
 		}
 
 		for (j = 0; j < cluster->nb_in_parameter; j++){
 			for (k = j + 1; k < cluster->nb_ou_parameter; k++){
-				traceMine_search_II_path(cluster, j, cluster, k, ir, synthesis_graph);
+				traceMine_search_II_path(cluster, j, cluster, k, ir, &(synthesis_graph->graph));
 			}
 		}
 	}
 
-	for (i = 0; i < array_get_length(cluster_array); i++){
-		cluster_i = (struct signatureCluster*)array_get(cluster_array, i);
-		for (j = 0; j < array_get_length(cluster_array); j++){
+	for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
+		cluster_i = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
+		for (j = 0; j < array_get_length(&(synthesis_graph->cluster_array)); j++){
 			if (j == i){
 				continue;
 			}
 
-			cluster_j = (struct signatureCluster*)array_get(cluster_array, j);
+			cluster_j = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), j);
 
 			for (k = 0; k < cluster_i->nb_in_parameter; k++){
 				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
-					traceMine_search_OI_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
+					traceMine_search_OI_path(cluster_i, k, cluster_j, l, ir, &(synthesis_graph->graph));
 				}
 			}
 		}
 
-		for (j = i + 1; j < array_get_length(cluster_array); j++){
-			cluster_j = (struct signatureCluster*)array_get(cluster_array, j);
+		for (j = i + 1; j < array_get_length(&(synthesis_graph->cluster_array)); j++){
+			cluster_j = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), j);
 
 			for (k = 0; k < cluster_i->nb_in_parameter; k++){
 				for (l = 0; l < cluster_j->nb_in_parameter; l++){
-					traceMine_search_II_path(cluster_i, k, cluster_j, l, ir, synthesis_graph);
+					traceMine_search_II_path(cluster_i, k, cluster_j, l, ir, &(synthesis_graph->graph));
 				}
 			}
 		}
 	}
+}
+
+struct synthesisGraph* synthesisGraph_create(struct ir* ir){
+	struct synthesisGraph* synthesis_graph;
+
+	synthesis_graph = (struct synthesisGraph*)malloc(sizeof(struct synthesisGraph));
+	if (synthesis_graph != NULL){
+		if (synthesisGraph_init(synthesis_graph, ir)){
+			log_err("unable to init synthesisGraph");
+			free(synthesis_graph);
+			synthesis_graph = NULL;
+		}
+	}
+	else{
+		log_err("unable to allocate memory");
+	}
+
+	return synthesis_graph;
+}
+
+int32_t synthesisGraph_init(struct synthesisGraph* synthesis_graph, struct ir* ir){
+	if (array_init(&(synthesis_graph->cluster_array), sizeof(struct signatureCluster))){
+		log_err("unable to init array");
+		return -1;
+	}
+
+	graph_init(&(synthesis_graph->graph), sizeof(struct synthesisNode), sizeof(uint32_t));
+	graph_register_dotPrint_callback(&(synthesis_graph->graph), NULL, synthesisGraph_printDot_node, synthesisGraph_printDot_edge, NULL);
+	graph_register_node_clean_call_back(&(synthesis_graph->graph), synthesisGraph_clean_node);
+
+	synthesisGraph_cluster_symbols(synthesis_graph, ir);
+	synthesisGraph_find_cluster_relation(synthesis_graph, ir);
+	synthesisGraph_pack(&(synthesis_graph->graph));
 
 	return 0;
 }
 
-void traceMine_mine(struct trace* trace){
-	struct graph 	synthesis_graph;
-	struct array* 	cluster_array;
-	#define SYNTHESISGRAPHG_NAME_MAX_LENGTH 64
-	char 			synthesis_graph_name[SYNTHESISGRAPHG_NAME_MAX_LENGTH] = {0};
-	uint32_t 		i;
+void synthesisGraph_clean(struct synthesisGraph* synthesis_graph){
+	uint32_t i;
 
-	if (trace->ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
-		return;
+	graph_clean(&(synthesis_graph->graph));
+
+	for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
+		signatureCluster_clean((struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i));
 	}
-
-	graph_init(&synthesis_graph, sizeof(struct synthesisNode), sizeof(uint32_t));
-	graph_register_dotPrint_callback(&synthesis_graph, NULL, synthesisGraph_printDot_node, synthesisGraph_printDot_edge, NULL);
-	graph_register_node_clean_call_back(&synthesis_graph, synthesisGraph_clean_node);
-
-	if ((cluster_array = traceMine_cluster_results(&trace->result_array)) == NULL){
-		log_err("unable to cluster results");
-		return;
-	}
-
-	if (traceMine_find_cluster_relation(cluster_array, trace->ir, &synthesis_graph)){
-		log_err("unable to find relation between clusters");
-	}
-
-	synthesisGraph_pack(&synthesis_graph);
-
-	snprintf(synthesis_graph_name, SYNTHESISGRAPHG_NAME_MAX_LENGTH, "synthesis_%s.dot", trace->tag);
-	for (i = 0; i < SYNTHESISGRAPHG_NAME_MAX_LENGTH; i++){
-		switch(synthesis_graph_name[i]){
-			case ' ' : {synthesis_graph_name[i] = '_'; break;}
-			case ':' : {synthesis_graph_name[i] = '_'; break;}
-			case '[' : {synthesis_graph_name[i] = '_'; break;}
-			case ']' : {synthesis_graph_name[i] = '_'; break;}
-			default  : {break;}
-		}
-	}
-
-	log_info_m("writing result(s) to: \"%s\"", synthesis_graph_name);
-
-	graphPrintDot_print(&synthesis_graph, synthesis_graph_name, NULL);
-	graph_clean(&synthesis_graph);
-
-	for (i = 0; i < array_get_length(cluster_array); i++){
-		signatureCluster_clean((struct signatureCluster*)array_get(cluster_array, i));
-	}
-	array_delete(cluster_array);
-
-	#undef SYNTHESISGRAPHG_NAME_MAX_LENGTH
+	array_clean(&(synthesis_graph->cluster_array));
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
+static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 	struct synthesisNode*		synthesis_node;
 	uint32_t 					i;
-	struct signatureInstance* 	instance;
+	struct node* 				symbol;
 	struct edge* 				edge;
 	struct irOperation* 		operation;
 	struct irDependence* 		dependence;
@@ -617,13 +577,13 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 	switch(synthesis_node->type){
 		case SYNTHESISNODETYPE_RESULT : {
 			for (i = 0; i < array_get_length(&(synthesis_node->node_type.cluster->instance_array)); i++){
-				instance = (struct signatureInstance*)array_get(&(synthesis_node->node_type.cluster->instance_array), i);
+				symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i);
 
 				if (i == 0){
-					fprintf(file, "[shape=box,label=\"%s", instance->result->signature->name);
+					fprintf(file, "[shape=box,label=\"%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature->name);
 				}
-				else if ((void*)instance != array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1)){
-					fprintf(file, "\\n%s", instance->result->signature->name);
+				else if (((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature != ((struct result*)(ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.result_ptr))->signature){
+					fprintf(file, "\\n%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature->name);
 				}
 				if (i + 1 == array_get_length(&(synthesis_node->node_type.cluster->instance_array))){
 					fprintf(file, "\"]");
@@ -662,7 +622,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 					edge = *(struct edge**)array_get(synthesis_node->node_type.path, i);
 					operation = ir_node_get_operation(edge_get_dst(edge));
 					dependence = ir_edge_get_dependence(edge);
-						
+
 					switch(operation->type){
 						case IR_OPERATION_TYPE_IN_MEM 	: {
 							if (dependence->type == IR_DEPENDENCE_TYPE_ADDRESS){
@@ -698,7 +658,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
+static void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
 	uint32_t tag = *(uint32_t*)data;
 
 	if (synthesisGraph_edge_is_input(tag)){
@@ -709,7 +669,7 @@ void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
 	}
 }
 
-void synthesisGraph_clean_node(struct node* node){
+static void synthesisGraph_clean_node(struct node* node){
 	struct synthesisNode* synthesis_node;
 
 	synthesis_node = synthesisGraph_get_synthesisNode(node);

@@ -371,7 +371,7 @@ void result_print(struct result* result){
 	}
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		if (parameterMapping_fill(parameter_mapping, result, i)){
+		if (parameterMapping_fill_from_result(parameter_mapping, result, i)){
 			log_err_m("unable to fetch occurrence %u", i);
 			continue;
 		}
@@ -504,7 +504,7 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 	return 0;
 }
 
-int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* result, uint32_t index){
+int32_t parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index){
 	uint32_t 				i;
 	struct signatureLink* 	link;
 
@@ -526,6 +526,32 @@ int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* r
 		}
 
 		parameterMapping_get_node_buffer(mapping + (result->signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
+	}
+
+	return 0;
+}
+
+int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node){
+	struct edge* 			edge_cursor;
+	struct irDependence* 	dependence_cursor;
+	struct codeSignature*	code_signature;
+
+	code_signature = ((struct result*)(ir_node_get_operation(node)->operation_type.symbol.result_ptr))->signature;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		dependence_cursor = ir_edge_get_dependence(edge_cursor);
+
+		if (dependence_cursor->type == IR_DEPENDENCE_TYPE_MACRO){
+			parameterMapping_get_node_buffer(mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence_cursor->dependence_type.macro) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence_cursor->dependence_type.macro) - 1] = edge_get_src(edge_cursor);
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+		dependence_cursor = ir_edge_get_dependence(edge_cursor);
+
+		if (dependence_cursor->type == IR_DEPENDENCE_TYPE_MACRO){
+			parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence_cursor->dependence_type.macro) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence_cursor->dependence_type.macro) - 1] = edge_get_dst(edge_cursor);
+		}
 	}
 
 	return 0;

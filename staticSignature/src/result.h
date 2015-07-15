@@ -70,6 +70,8 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 #define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_parameter_in + (code_signature)->nb_parameter_out) + sizeof(struct node*) * ((code_signature)->nb_frag_tot_in + (code_signature)->nb_frag_tot_out))
 #define parameterMapping_get_node_buffer(mapping) ((struct node**)((char*)(mapping) + (mapping)->node_buffer_offset))
 
-int32_t parameterMapping_fill(struct parameterMapping* mapping, struct result* result, uint32_t index);
+int32_t parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index);
+int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node);
+
 
 #endif

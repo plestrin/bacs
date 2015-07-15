@@ -35,7 +35,6 @@ void analysis_frag_concat(struct analysis* analysis, char* arg);
 void analysis_frag_check(struct analysis* analysis, char* arg);
 void analysis_frag_print_result(struct analysis* analysis, char* arg);
 void analysis_frag_export_result(struct analysis* analysis, char* arg);
-void analysis_frag_mine(struct analysis* analysis, char* arg);
 void analysis_frag_clean(struct analysis* analysis);
 
 void analysis_frag_create_ir(struct analysis* analysis, char* arg);
@@ -53,6 +52,9 @@ void analysis_call_printDot(struct analysis* analysis);
 void analysis_call_check(struct analysis* analysis);
 void analysis_call_export(struct analysis* analysis, char* arg);
 void analysis_call_print_stack(struct analysis* analysis, char* arg);
+
+void analysis_synthesis_create(struct analysis* analysis, char* arg);
+void analysis_synthesis_print(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 

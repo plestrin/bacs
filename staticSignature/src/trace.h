@@ -9,6 +9,7 @@
 #include "array.h"
 #include "base.h"
 #include "memTrace.h"
+#include "synthesisGraph.h"
 
 #define TRACE_TAG_LENGTH 32
 #define TRACE_PATH_MAX_LENGTH 	256
@@ -20,13 +21,14 @@ enum traceType{
 };
 
 struct trace{
-	char 				tag[TRACE_TAG_LENGTH];
-	struct assembly 	assembly;
-	struct ir* 			ir;
-	enum traceType 		type;
-	char 				directory_path[TRACE_PATH_MAX_LENGTH];
-	struct array 		result_array;
-	struct memTrace* 	mem_trace;
+	char 					tag[TRACE_TAG_LENGTH];
+	struct assembly 		assembly;
+	struct ir* 				ir;
+	enum traceType 			type;
+	char 					directory_path[TRACE_PATH_MAX_LENGTH];
+	struct array 			result_array;
+	struct memTrace* 		mem_trace;
+	struct synthesisGraph* 	synthesis_graph;
 };
 
 struct trace* trace_load(const char* directory_path);
@@ -51,7 +53,18 @@ static inline void trace_printDot_ir(struct trace* trace){
 		ir_printDot(trace->ir);
 	}
 	else{
-		log_err("IR is NULL for the current trace");
+		log_err_m("IR is NULL for trace: \"%s\"", trace->tag);
+	}
+}
+
+void trace_create_synthesis(struct trace* trace);
+
+static inline void trace_printDot_synthesis(struct trace* trace){
+	if (trace->synthesis_graph != NULL){
+		synthesisGraph_printDot(trace->synthesis_graph);
+	}
+	else{
+		log_err_m("synthesis graph is NULL for trace: \"%s\"", trace->tag);
 	}
 }
 
