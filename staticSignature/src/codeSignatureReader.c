@@ -317,6 +317,7 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 	builder->code_signature.signature.sub_graph_handle 	= NULL;
 	builder->code_signature.signature.symbol_table 		= symbol_table;
 
+	codeSignature_init(&(builder->code_signature));
 	if (signatureCollection_add(builder->collection, &(builder->code_signature))){
 		log_err("unable to add signature to collection");
 	}
