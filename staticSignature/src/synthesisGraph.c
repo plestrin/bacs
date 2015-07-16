@@ -43,8 +43,8 @@ struct signatureCluster{
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, struct result* result, struct node* node){
 	cluster->synthesis_graph_node = NULL;
-	cluster->nb_in_parameter = result->signature->nb_parameter_in;
-	cluster->nb_ou_parameter = result->signature->nb_parameter_out;
+	cluster->nb_in_parameter = result->code_signature->nb_parameter_in;
+	cluster->nb_ou_parameter = result->code_signature->nb_parameter_out;
 	cluster->parameter_mapping = mapping;
 
 	if (array_init(&(cluster->instance_array), sizeof(struct node*))){
@@ -140,7 +140,7 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 		if (operation_cursor->type == IR_OPERATION_TYPE_SYMBOL){
 			result = (struct result*)operation_cursor->operation_type.symbol.result_ptr;
 
-			mapping = parameterMapping_create(result->signature);
+			mapping = parameterMapping_create(result->code_signature);
 			if (mapping == NULL){
 				log_err("unable to create parameterMapping");
 				continue;
@@ -154,7 +154,7 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 
 			for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
 				cluster_cursor = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
-				if (!signatureCluster_may_append(cluster_cursor, mapping, result->signature->nb_parameter_in, result->signature->nb_parameter_out)){
+				if (!signatureCluster_may_append(cluster_cursor, mapping, result->code_signature->nb_parameter_in, result->code_signature->nb_parameter_out)){
 					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
 						log_err("unable to add element to signatureCluster");
 					}
@@ -580,10 +580,10 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i);
 
 				if (i == 0){
-					fprintf(file, "[shape=box,label=\"%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature->name);
+					fprintf(file, "[shape=box,label=\"%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->code_signature->signature.name);
 				}
-				else if (((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature != ((struct result*)(ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.result_ptr))->signature){
-					fprintf(file, "\\n%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->signature->name);
+				else if (((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->code_signature != ((struct result*)(ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.result_ptr))->code_signature){
+					fprintf(file, "\\n%s", ((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->code_signature->signature.name);
 				}
 				if (i + 1 == array_get_length(&(synthesis_node->node_type.cluster->instance_array))){
 					fprintf(file, "\"]");

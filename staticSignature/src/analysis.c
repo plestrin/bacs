@@ -6,6 +6,7 @@
 #include "inputParser.h"
 #include "printBuffer.h"
 #include "result.h"
+#include "codeSignature.h"
 #include "codeSignatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
@@ -67,7 +68,7 @@ int main(int argc, char** argv){
 	/* code signature specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), codeSignatureCollection_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), signatureCollection_printDot)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
 
 	/* callGraph specific commands */
@@ -95,7 +96,8 @@ int main(int argc, char** argv){
 /* ===================================================================== */
 
 struct analysis* analysis_create(){
-	struct analysis* 	analysis;
+	struct analysis* 			analysis;
+	struct signatureCallback 	callback;
 
 	analysis = (struct analysis*)malloc(sizeof(struct analysis));
 	if (analysis == NULL){
@@ -103,14 +105,16 @@ struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	codeSignatureCollection_init(&(analysis->code_signature_collection));
-
 	if (array_init(&(analysis->frag_array), sizeof(struct trace))){
 		log_err("unable to init traceFragment array");
-		codeSignatureCollection_clean(&(analysis->code_signature_collection));
 		free(analysis);
 		return NULL;
 	}
+
+	callback.signatureNode_get_label = codeSignatureNode_get_label;
+	callback.signatureEdge_get_label = codeSignatureEdge_get_label;
+
+	signatureCollection_init(&(analysis->code_signature_collection), sizeof(struct codeSignature), &callback);
 
 	analysis->trace 		= NULL;
 	analysis->code_map 		= NULL;
@@ -128,7 +132,7 @@ void analysis_delete(struct analysis* analysis){
 	analysis_frag_clean(analysis);
 	array_clean(&(analysis->frag_array));
 
-	codeSignatureCollection_clean(&(analysis->code_signature_collection));
+	signatureCollection_clean(&(analysis->code_signature_collection));
 
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -645,7 +649,7 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	struct codeSignature* 	signature_cursor;
 	char* 					ptr;
 
-	signature_buffer = (void**)malloc(sizeof(void*) * codeSignaturecollection_get_nb_signature(&(analysis->code_signature_collection)));
+	signature_buffer = (void**)malloc(sizeof(void*) * signatureCollection_get_nb_signature(&(analysis->code_signature_collection)));
 	if (signature_buffer == NULL){
 		log_err("unable to allocate memory");
 		return;
@@ -668,14 +672,14 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	}
 
 	for (node_cursor = graph_get_head_node(&(analysis->code_signature_collection.syntax_graph)), nb_signature = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		signature_cursor = syntax_node_get_codeSignature(node_cursor);
+		signature_cursor = signatureCollection_node_get_codeSignature(node_cursor);
 		if (arg == NULL){
 			signature_buffer[nb_signature ++] = signature_cursor;
 		}
 		else{
-			ptr = strstr(arg, signature_cursor->name);
+			ptr = strstr(arg, signature_cursor->signature.name);
 			if (ptr != NULL){
-				if (strlen(ptr) == strlen(signature_cursor->name) || ptr[strlen(signature_cursor->name)] == ' '){
+				if (strlen(ptr) == strlen(signature_cursor->signature.name) || ptr[strlen(signature_cursor->signature.name)] == ' '){
 					if (ptr == arg || ptr[-1] == ' '){
 						signature_buffer[nb_signature ++] = signature_cursor;
 					}
@@ -880,13 +884,13 @@ void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
 /* ===================================================================== */
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg){
-	uint32_t 		index;
-	uint32_t 		start;
-	uint32_t 		stop;
-	uint32_t 		i;
-	struct trace* 	fragment;
-	struct trace**	trace_buffer;
-	uint32_t 		nb_trace;
+	uint32_t 				index;
+	uint32_t 				start;
+	uint32_t 				stop;
+	uint32_t 				i;
+	struct trace* 			fragment;
+	struct graphSearcher*	graph_searcher_buffer;
+	uint32_t 				nb_graph_searcher;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -904,24 +908,30 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 		stop = array_get_length(&(analysis->frag_array));
 	}
 
-	trace_buffer = (struct trace**)malloc(sizeof(struct trace*) * (stop - start));
-	if (trace_buffer == NULL){
+	graph_searcher_buffer = (struct graphSearcher*)malloc(sizeof(struct graphSearcher) * (stop - start));
+	if (graph_searcher_buffer == NULL){
 		log_err("unable to allocate memory");
 		return;
 	}
 
-	for (i = start, nb_trace = 0; i < stop; i++){
+	for (i = start, nb_graph_searcher = 0; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
-			trace_buffer[nb_trace ++] = fragment;
+			graph_searcher_buffer[nb_graph_searcher].graph = &(fragment->ir->graph);
+			graph_searcher_buffer[nb_graph_searcher].result_register = trace_register_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].result_push = trace_push_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].result_pop = trace_pop_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].arg = fragment;
+
+			nb_graph_searcher ++;
 		}
 		else{
 			log_err_m("the IR is NULL for fragment %u", i);
 		}
 	}
 
-	codeSignatureCollection_search(&(analysis->code_signature_collection), trace_buffer, nb_trace);
-	free(trace_buffer);
+	signatureCollection_search(&(analysis->code_signature_collection), graph_searcher_buffer, nb_graph_searcher, irNode_get_label, irEdge_get_label);
+	free(graph_searcher_buffer);
 }
 
 void analysis_code_signature_clean(struct analysis* analysis){
@@ -946,7 +956,7 @@ void analysis_code_signature_clean(struct analysis* analysis){
 		}
 	}
 
-	codeSignatureCollection_clean(&(analysis->code_signature_collection));
+	signatureCollection_clean(&(analysis->code_signature_collection));
 }
 
 /* ===================================================================== */

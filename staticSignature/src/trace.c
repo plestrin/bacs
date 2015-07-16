@@ -226,6 +226,44 @@ void trace_normalize_ir(struct trace* trace){
 	ir_normalize(trace->ir);
 }
 
+int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){
+	struct result 	result;
+	int32_t 		return_value;
+
+	if (result_init(&result, signature, assignement_array)){
+		log_err("unable to init result");
+		return -1;
+	}
+
+	if ((return_value = array_add(&(((struct trace*)arg)->result_array), &result)) < 0){
+		log_err("unable to add element to array");
+	}
+
+	return return_value;
+}
+
+void trace_push_code_signature_result(int32_t idx, void* arg){
+	struct trace* fragment = (struct trace*)arg; 
+
+	if (idx >= 0){
+		result_push((struct result*)array_get(&(fragment->result_array), idx), fragment->ir);
+	}
+	else{
+		log_err_m("incorrect index value %d", idx);
+	}
+}
+
+void trace_pop_code_signature_result(int32_t idx, void* arg){
+	struct trace* fragment = (struct trace*)arg; 
+
+	if (idx >= 0){
+		result_pop((struct result*)array_get(&(fragment->result_array), idx), fragment->ir);
+	}
+	else{
+		log_err_m("incorrect index value %d", idx);
+	}
+}
+
 void trace_create_synthesis(struct trace* trace){
 	if (trace->synthesis_graph != NULL){
 		log_warn_m("an synthesis has already been create for fragment \"%s\" - deleting", trace->tag);
@@ -381,14 +419,14 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
-			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->signature->name);
+			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->code_signature->signature.name);
 			goto exit;
 		}
 		else{
 			for (j = 0; j < nb_signature; j++){
-				if (signature_buffer[j] == result->signature){
+				if (signature_buffer[j] == result->code_signature){
 					#ifdef VERBOSE
-					log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->signature->name, trace->tag);
+					log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->tag);
 					#endif
 					exported_result[nb_exported_result ++] = i;
 				}

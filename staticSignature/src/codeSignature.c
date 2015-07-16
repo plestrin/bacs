@@ -1,395 +1,48 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
-#include <string.h>
 
 #include "codeSignature.h"
-#include "multiColumn.h"
 #include "result.h"
 #include "base.h"
 
-/* ===================================================================== */
-/* codeSignatureCollection routines										 */
-/* ===================================================================== */
+static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
+static void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
 
-void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
-void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
+void codeSignature_init(struct codeSignature* code_signature){
+	struct node* 				node_cursor;
+	struct codeSignatureNode* 	sig_node_cursor;
 
-void syntaxGraph_dotPrint_node(void* data, FILE* file, void* arg);
+	graph_register_dotPrint_callback(&(code_signature->signature.graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
 
-struct codeSignatureCollection* codeSignatureCollection_create(){
-	struct codeSignatureCollection* collection;
+	code_signature->nb_parameter_in 	= 0;
+	code_signature->nb_parameter_out = 0;
+	code_signature->nb_frag_tot_in 	= 0;
+	code_signature->nb_frag_tot_out 	= 0;
 
-	collection = (struct codeSignatureCollection*)malloc(sizeof(struct codeSignatureCollection));
-	if (collection != NULL){
-		codeSignatureCollection_init(collection);
-	}
-	else{
-		log_err("unable to allocate memory");
-	}
-
-	return collection;
-}
-
-int32_t codeSignatureCollection_add_codeSignature(struct codeSignatureCollection* collection, struct codeSignature* code_signature){
-	struct node* 			syntax_node;
-	struct node* 			node_cursor;
-	struct codeSignature* 	new_signature;
-	struct codeSignature* 	signature_cursor;
-	uint32_t 				i;
-	struct signatureNode* 	sig_node_cursor;
-	uint32_t 				nb_unresolved_symbol;
-
-	syntax_node = graph_add_node(&(collection->syntax_graph), code_signature);
-	if (syntax_node == NULL){
-		log_err("unable to add code signature to the collection's syntax graph");
-		return -1;
-	}
-
-	new_signature = syntax_node_get_codeSignature(syntax_node);
-
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (node_cursor != syntax_node){
-			signature_cursor = syntax_node_get_codeSignature(node_cursor);
-
-			if (!strncmp(new_signature->symbol, signature_cursor->symbol, CODESIGNATURE_NAME_MAX_SIZE)){
-				new_signature->id = signature_cursor->id;
-				break;
-			}
-		}
-	}
-	if (node_cursor == NULL){
-		new_signature->id = codeSignatureCollection_get_new_id(collection);
-	}
-
-	if (new_signature->symbol_table != NULL){
-		for (i = 0, nb_unresolved_symbol = 0; i < new_signature->symbol_table->nb_symbol; i++){
-			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-				signature_cursor = syntax_node_get_codeSignature(node_cursor);
-
-				if (!strncmp(new_signature->symbol_table->symbols[i].name, signature_cursor->symbol, CODESIGNATURE_NAME_MAX_SIZE)){
-					signatureSymbol_set_id(new_signature->symbol_table->symbols + i, signature_cursor->id);
-					symbolTableEntry_set_resolved(new_signature->symbol_table->symbols + i);
-
-					if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
-						log_err("unable to add edge to the syntax tree");
-					}
-				}
-			}
-			if (node_cursor == NULL){
-				nb_unresolved_symbol ++;
-			}
-		}
-	}
-	else{
-		nb_unresolved_symbol = 0;
-	}
-
-	if (new_signature->sub_graph_handle == NULL){
-		if (nb_unresolved_symbol == 0){
-			new_signature->sub_graph_handle = graphIso_create_sub_graph_handle(&(new_signature->graph), signatureNode_get_label, signatureEdge_get_label);
-		}
-	}
-	else{
-		log_warn("subgraph handle is already built, symbols are ignored");
-		new_signature->sub_graph_handle->graph = &(new_signature->graph);
-	}
-
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		signature_cursor = syntax_node_get_codeSignature(node_cursor);
-
-		if (signature_cursor->symbol_table != NULL){
-			for (i = 0, nb_unresolved_symbol = 0; i < signature_cursor->symbol_table->nb_symbol; i++){
-				if (!strncmp(signature_cursor->symbol_table->symbols[i].name, new_signature->symbol, CODESIGNATURE_NAME_MAX_SIZE)){
-					signatureSymbol_set_id(signature_cursor->symbol_table->symbols + i, new_signature->id);
-					symbolTableEntry_set_resolved(signature_cursor->symbol_table->symbols + i);
-
-					if (graph_add_edge(&(collection->syntax_graph), syntax_node, node_cursor, &i) == NULL){
-						log_err("unable to add edge to the syntax tree");
-					}
-				}
-				else if (!symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols + i)){
-					nb_unresolved_symbol ++;
-				}
-			}
-
-			if (nb_unresolved_symbol == 0 && signature_cursor->sub_graph_handle == NULL){
-				signature_cursor->sub_graph_handle = graphIso_create_sub_graph_handle(&(signature_cursor->graph), signatureNode_get_label, signatureEdge_get_label);
-			}
-		}
-	}
-
-	graph_register_dotPrint_callback(&(new_signature->graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
-
-	new_signature->nb_parameter_in 	= 0;
-	new_signature->nb_parameter_out = 0;
-	new_signature->nb_frag_tot_in 	= 0;
-	new_signature->nb_frag_tot_out 	= 0;
-
-	for (node_cursor = graph_get_head_node(&(new_signature->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		sig_node_cursor = (struct signatureNode*)&(node_cursor->data);
+	for (node_cursor = graph_get_head_node(&(code_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		sig_node_cursor = (struct codeSignatureNode*)&(node_cursor->data);
 		if (sig_node_cursor->input_number > 0){
-			new_signature->nb_frag_tot_in ++;
-			if (sig_node_cursor->input_number > new_signature->nb_parameter_in){
-				new_signature->nb_parameter_in = sig_node_cursor->input_number;
+			code_signature->nb_frag_tot_in ++;
+			if (sig_node_cursor->input_number > code_signature->nb_parameter_in){
+				code_signature->nb_parameter_in = sig_node_cursor->input_number;
 			}
 		}
 		if (sig_node_cursor->output_number > 0){
-			new_signature->nb_frag_tot_out ++;
-			if (sig_node_cursor->output_number > new_signature->nb_parameter_out){
-				new_signature->nb_parameter_out = sig_node_cursor->output_number;
+			code_signature->nb_frag_tot_out ++;
+			if (sig_node_cursor->output_number > code_signature->nb_parameter_out){
+				code_signature->nb_parameter_out = sig_node_cursor->output_number;
 			}
 		}
 	}
 
-	if (new_signature->nb_parameter_in == 0 || new_signature->nb_parameter_out == 0){
-		log_warn_m("signature \"%s\" has an incorrect number of parameter", new_signature->name);
-	}
-	
-	return 0;
-}
-
-void codeSignatureCollection_search(struct codeSignatureCollection* collection, struct trace** trace_buffer, uint32_t nb_trace){
-	struct node* 				node_cursor;
-	uint32_t 					i;
-	uint32_t 					j;
-	struct edge* 				edge_cursor;
-	struct codeSignature* 		signature_cursor;
-	struct codeSignature*		child;
-	struct codeSignature**		signature_buffer;
-	uint32_t 					nb_signature;
-	struct graphIsoHandle* 		graph_handle;
-	struct timespec 			timer1_start_time;
-	struct timespec 			timer1_stop_time;
-	struct timespec 			timer2_start_time;
-	struct timespec 			timer2_stop_time;
-	double 						timer2_elapsed_time;
-	struct multiColumnPrinter* 	printer;
-	struct array* 				assignement_array;
-	uint32_t 					found;
-	struct result 				result;
-
-	signature_buffer = (struct codeSignature**)malloc(sizeof(struct signature*) * collection->syntax_graph.nb_node);
-	if (signature_buffer == NULL){
-		log_err("unable to allocate memory");
-		return;
-	}
-
-	printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL);
-	if (printer != NULL){
-		multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_INT32);
-		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_DOUBLE);
-		multiColumnPrinter_set_column_size(printer, 0, CODESIGNATURE_NAME_MAX_SIZE);
-		multiColumnPrinter_set_title(printer, 0, "NAME");
-		multiColumnPrinter_set_title(printer, 1, "FOUND");
-		multiColumnPrinter_set_title(printer, 2, "TIME");
-
-		multiColumnPrinter_print_header(printer);
-	}
-	else{
-		log_err("unable to init multiColumnPrinter");
-		free(signature_buffer);
-		return;
-	}
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_start_time)){
-		log_err("clock_gettime fails");
-	}
-
-	for (i = 0; i < nb_trace; i++){
-		for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-			signature_cursor = syntax_node_get_codeSignature(node_cursor);
-			signature_cursor->state = 0;
-		}
-
-		do{
-			nb_signature = 0;
-
-			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-				signature_cursor = syntax_node_get_codeSignature(node_cursor);
-				if (codeSignature_state_is_search(signature_cursor)){
-					goto next1;
-				}
-
-				if (node_cursor->nb_edge_dst){
-					for (edge_cursor = node_get_head_edge_dst(node_cursor), found = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-						child = syntax_node_get_codeSignature(edge_get_src(edge_cursor));
-						if (!codeSignature_state_is_search(child)){
-							goto next1;
-						}
-						else if (codeSignature_state_is_found(child)){
-							found = 1;
-						}
-					}
-					if (!found){
-						codeSignature_state_set_search(signature_cursor);
-						goto next1;
-					}
-				}
-
-				if (signature_cursor->sub_graph_handle == NULL){
-					log_warn_m("sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)", signature_cursor->name);
-					goto next1;
-				}
-
-				signature_buffer[nb_signature ++] = signature_cursor;
-
-				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					child = syntax_node_get_codeSignature(edge_get_src(edge_cursor));
-					if (codeSignature_state_is_found(child)){
-						if (!codeSignature_state_is_pushed(child)){
-							result_push((struct result*)array_get(&(trace_buffer[i]->result_array), child->result_index), trace_buffer[i]->ir);
-							codeSignature_state_set_pushed(child);
-						}
-					}
-				}
-
-				next1:;
-			}
-
-			graph_handle = graphIso_create_graph_handle(&(trace_buffer[i]->ir->graph), irNode_get_label, irEdge_get_label);
-			if (graph_handle == NULL){
-				log_err("unable to create graphHandle");
-				break;
-			}
-
-			for (j = 0; j < nb_signature; j++){
-				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
-					log_err("clock_gettime fails");
-				}
-
-				assignement_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
-
-				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
-					log_err("clock_gettime fails");
-				}
-				timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
-
-				codeSignature_state_set_search(signature_buffer[j]);
-				if (assignement_array == NULL){
-					log_err("the subgraph isomorphism routine fails");
-				}
-				else if (array_get_length(assignement_array) > 0){
-					if (result_init(&result, signature_buffer[j], assignement_array)){
-						log_err("unable to init result");
-					}
-					else{
-						if ((signature_buffer[j]->result_index = array_add(&(trace_buffer[i]->result_array), &result)) < 0){
-							log_err("unable to add element to array");
-						}
-						else{
-							codeSignature_state_set_found(signature_buffer[j]);
-						}
-					}
-					multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
-					array_delete(assignement_array);
-				}
-				else{
-					array_delete(assignement_array);
-				}
-			}
-
-			graphIso_delete_graph_handle(graph_handle);
-
-			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-				signature_cursor = syntax_node_get_codeSignature(node_cursor);
-				if (!codeSignature_state_is_search(signature_cursor) || !codeSignature_state_is_found(signature_cursor) || !codeSignature_state_is_pushed(signature_cursor)){
-					goto next2;
-				}
-
-				for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-					child = syntax_node_get_codeSignature(edge_get_dst(edge_cursor));
-					if (!codeSignature_state_is_search(child)){
-						goto next2;
-					}
-				}
-
-				result_pop((struct result*)array_get(&(trace_buffer[i]->result_array), signature_cursor->result_index), trace_buffer[i]->ir);
-				codeSignature_state_set_poped(signature_cursor);
-
-				next2:;
-			}
-
-		} while(nb_signature);
-		multiColumnPrinter_print_horizontal_separator(printer);
-	}
-
-	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer1_stop_time)){
-		log_err("clock_gettime fails");
-	}
-
-	multiColumnPrinter_delete(printer);
-	log_info_m("total elapsed time: %f", (timer1_stop_time.tv_sec - timer1_start_time.tv_sec) + (timer1_stop_time.tv_nsec - timer1_start_time.tv_nsec) / 1000000000.);
-
-	free(signature_buffer);
-}
-
-void codeSignatureCollection_printDot(struct codeSignatureCollection* collection){
-	struct node* 				node_cursor;
-	struct codeSignature* 		signature_cursor;
-	struct multiColumnPrinter*	printer;
-	char 						file_name[CODESIGNATURE_NAME_MAX_SIZE + 3];
-	char 						symbol_str[10];
-
-	graph_register_dotPrint_callback(&(collection->syntax_graph), NULL, syntaxGraph_dotPrint_node, NULL, NULL);
-	log_info("print symbol dependency (syntax graph) in file: \"collection.dot\"");
-	if (graphPrintDot_print(&(collection->syntax_graph), "collection.dot", NULL)){
-		log_err("graph printDot returned error code");
-	}
-
-	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
-	if (printer != NULL){
-		multiColumnPrinter_set_column_size(printer, 0, CODESIGNATURE_NAME_MAX_SIZE);
-		multiColumnPrinter_set_column_size(printer, 1, CODESIGNATURE_NAME_MAX_SIZE);
-		multiColumnPrinter_set_column_size(printer, 2, CODESIGNATURE_NAME_MAX_SIZE + 3);
-		multiColumnPrinter_set_column_size(printer, 3, 10);
-
-		multiColumnPrinter_set_title(printer, 0, "NAME");
-		multiColumnPrinter_set_title(printer, 1, "SYMBOL");
-		multiColumnPrinter_set_title(printer, 2, "FILE_NAME");
-		multiColumnPrinter_set_title(printer, 3, "RESOLVE");
-
-		multiColumnPrinter_print_header(printer);
-	}
-
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		signature_cursor = syntax_node_get_codeSignature(node_cursor);
-
-		snprintf(file_name, CODESIGNATURE_NAME_MAX_SIZE + 3, "%s.dot", signature_cursor->name);
-
-		if (signature_cursor->symbol_table == NULL){
-			symbol_str[0] = '\0';
-		}
-		else{
-			uint32_t j;
-			uint32_t nb_resolved;
-
-			for (j = 0, nb_resolved = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
-				if (symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols + j)){
-					nb_resolved ++;
-				}
-			}
-
-			snprintf(symbol_str, 10, "%u/%u", nb_resolved, signature_cursor->symbol_table->nb_symbol);
-		}
-
-		if (graphPrintDot_print(&(signature_cursor->graph), file_name, NULL)){
-			log_err("graph printDot returned error code");
-		}
-
-		if (printer != NULL){
-			multiColumnPrinter_print(printer, signature_cursor->name, signature_cursor->symbol, file_name, symbol_str, NULL);
-		}
-	}
-
-	if (printer != NULL){
-		multiColumnPrinter_delete(printer);
+	if (code_signature->nb_parameter_in == 0 || code_signature->nb_parameter_out == 0){
+		log_warn_m("signature \"%s\" has an incorrect number of parameter", code_signature->signature.name);
 	}
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
-	struct signatureNode* node = (struct signatureNode*)data;
+static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
+	struct codeSignatureNode* node = (struct codeSignatureNode*)data;
 
 	switch (node->type){
 		case SIGNATURE_NODE_TYPE_OPCODE : {
@@ -424,8 +77,8 @@ void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
-	struct signatureEdge* edge = (struct signatureEdge*)data;
+static void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
+	struct codeSignatureEdge* edge = (struct codeSignatureEdge*)data;
 
 	switch(edge->type){
 		case IR_DEPENDENCE_TYPE_DIRECT 		: {
@@ -460,29 +113,6 @@ void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void syntaxGraph_dotPrint_node(void* data, FILE* file, void* arg){
-	struct codeSignature* signature = (struct codeSignature*)data;
-
-	fprintf(file, "[label=\"%s\"]", signature->name);
-}
-
-void codeSignatureCollection_clean(struct codeSignatureCollection* collection){
-	struct node* 			node_cursor;
-	struct codeSignature* 	signature_cursor;
-
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		signature_cursor = syntax_node_get_codeSignature(node_cursor);
-		codeSignature_clean(signature_cursor);
-	}
-
-	graph_clean(&(collection->syntax_graph));
-}
-
-/* ===================================================================== */
-/* Label routines													     */
-/* ===================================================================== */
-
 uint32_t irNode_get_label(struct node* node){
 	struct irOperation* operation = ir_node_get_operation(node);
 
@@ -503,7 +133,7 @@ uint32_t irNode_get_label(struct node* node){
 			return 0xfffffffe;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
-			return 0x0000ffff | (((struct result*)operation->operation_type.symbol.result_ptr)->signature->id << 16);
+			return 0x0000ffff | (((struct result*)operation->operation_type.symbol.result_ptr)->code_signature->signature.id << 16);
 		}
 	}
 
@@ -511,8 +141,8 @@ uint32_t irNode_get_label(struct node* node){
 	return 0;
 }
 
-uint32_t signatureNode_get_label(struct node* node){
-	struct signatureNode* signature_node = (struct signatureNode*)&(node->data);
+uint32_t codeSignatureNode_get_label(struct node* node){
+	struct codeSignatureNode* signature_node = (struct codeSignatureNode*)&(node->data);
 
 	switch(signature_node->type){
 		case SIGNATURE_NODE_TYPE_OPCODE : {
@@ -572,8 +202,8 @@ uint32_t irEdge_get_label(struct edge* edge){
 	return IR_DEPENDENCE_TYPE_DIRECT;
 }
 
-uint32_t signatureEdge_get_label(struct edge* edge){
-	struct signatureEdge* signature_edge = (struct signatureEdge*)&(edge->data);
+uint32_t codeSignatureEdge_get_label(struct edge* edge){
+	struct codeSignatureEdge* signature_edge = (struct codeSignatureEdge*)&(edge->data);
 
 	return signature_edge->type | signature_edge->macro_desc;
 }

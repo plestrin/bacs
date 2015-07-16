@@ -472,7 +472,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fprintf(file, "[label=\"%s\"", ((struct result*)(operation->operation_type.symbol.result_ptr))->signature->name);
+			fprintf(file, "[label=\"%s\"", ((struct result*)(operation->operation_type.symbol.result_ptr))->code_signature->signature.name);
 			break;
 		}
 	}

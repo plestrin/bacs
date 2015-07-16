@@ -382,7 +382,7 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 	for (i = 0; i < nb_node_buffer2; i++){
 		internal_cursor = (struct dijkstraInternal*)node_buffer2[i]->ptr;
 
-		if (internal_cursor->tag == 0x00000003){
+		if (internal_cursor->tag == 0x00000001){
 			free(internals);
 			return node_buffer2[i];
 		}

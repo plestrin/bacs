@@ -4,15 +4,16 @@
 #include "array.h"
 #include "codeMap.h"
 #include "trace.h"
-#include "codeSignature.h"
+#include "signatureCollection.h"
 #include "callGraph.h"
 
 struct analysis{
-	struct trace* 					trace;
-	struct codeMap* 				code_map;
-	struct codeSignatureCollection 	code_signature_collection;
-	struct callGraph* 				call_graph;
-	struct array					frag_array;
+	struct trace* 				trace;
+	struct codeMap* 			code_map;
+	struct signatureCollection 	code_signature_collection;
+	struct signatureCollection 	mode_signature_collection;
+	struct callGraph* 			call_graph;
+	struct array				frag_array;
 };
 
 struct analysis* analysis_create();

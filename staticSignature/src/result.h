@@ -24,7 +24,7 @@ enum resultState{
 
 struct result{
 	enum resultState 			state;
-	struct codeSignature* 		signature;
+	struct codeSignature* 		code_signature;
 	uint32_t 					nb_occurrence;
 	struct signatureLink* 		in_mapping_buffer;
 	struct signatureLink* 		ou_mapping_buffer;
@@ -34,7 +34,7 @@ struct result{
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
 
-#define result_get_nb_internal_node(result) ((result)->signature->graph.nb_node - ((result)->signature->nb_frag_tot_in + (result)->signature->nb_frag_tot_out))
+#define result_get_nb_internal_node(result) ((result)->code_signature->signature.graph.nb_node - ((result)->code_signature->nb_frag_tot_in + (result)->code_signature->nb_frag_tot_out))
 
 void result_push(struct result* result, struct ir* ir);
 void result_pop(struct result* result, struct ir* ir);

@@ -678,11 +678,11 @@ void ir_check_connectivity(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
-				struct codeSignature* code_signature = ((struct result*)operation_cursor->operation_type.symbol.result_ptr)->signature;
+				struct codeSignature* code_signature = ((struct result*)operation_cursor->operation_type.symbol.result_ptr)->code_signature;
 
 				/* Check input edge(s) */
 				if (node_cursor->nb_edge_dst != code_signature->nb_frag_tot_in){
-					log_err_m("symbol %s has %u dst edge(s)", code_signature->name, node_cursor->nb_edge_dst);
+					log_err_m("symbol %s has %u dst edge(s)", code_signature->signature.name, node_cursor->nb_edge_dst);
 					operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
 				}
 				else{
@@ -702,7 +702,7 @@ void ir_check_connectivity(struct ir* ir){
 
 				/* Check output edge(s) */
 				if (node_cursor->nb_edge_src != code_signature->nb_frag_tot_out){
-					log_err_m("symbol %s has %u src edge(s)", code_signature->name, node_cursor->nb_edge_src);
+					log_err_m("symbol %s has %u src edge(s)", code_signature->signature.name, node_cursor->nb_edge_src);
 					operation_cursor->status_flag |= IR_NODE_STATUS_FLAG_ERROR;
 				}
 				else{

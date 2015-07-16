@@ -57,6 +57,10 @@ static inline void trace_printDot_ir(struct trace* trace){
 	}
 }
 
+int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg);
+void trace_push_code_signature_result(int32_t idx, void* arg);
+void trace_pop_code_signature_result(int32_t idx, void* arg);
+
 void trace_create_synthesis(struct trace* trace);
 
 static inline void trace_printDot_synthesis(struct trace* trace){
