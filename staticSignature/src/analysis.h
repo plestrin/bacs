@@ -47,6 +47,7 @@ void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
 void analysis_code_signature_clean(struct analysis* analysis);
+void analysis_mode_signature_search(struct analysis* analysis, char* arg);
 
 void analysis_call_create(struct analysis* analysis, char* arg);
 void analysis_call_printDot(struct analysis* analysis);

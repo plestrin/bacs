@@ -5,6 +5,41 @@
 #include "graph.h"
 #include "graphPrintDot.h"
 #include "array.h"
+#include "result.h"
+
+enum synthesisNodeType{
+	SYNTHESISNODETYPE_RESULT,
+	SYNTHESISNODETYPE_OI_PATH,
+	SYNTHESISNODETYPE_II_PATH,
+	SYNTHESISNODETYPE_IR_NODE
+};
+
+struct signatureCluster{
+	struct node* 				synthesis_graph_node;
+	uint32_t 					nb_in_parameter;
+	uint32_t 					nb_ou_parameter;
+	struct parameterMapping* 	parameter_mapping;
+	struct array 				instance_array;
+};
+
+struct synthesisNode{
+	enum synthesisNodeType 			type;
+	union{
+		struct signatureCluster* 	cluster;
+		struct array* 				path;
+		struct node*				ir_node;
+	}								node_type;
+} __attribute__((__may_alias__));
+
+#define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)&((node)->data))
+
+#define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
+
+#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0x80000000)
+#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0xc0000000)
+#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0x80000000)
+#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
+#define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
 struct synthesisGraph {
 	struct graph 		graph;

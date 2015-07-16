@@ -40,6 +40,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)signatureCollection.o 	\
 					$(BUILD_DIR)codeSignature.o 		\
 					$(BUILD_DIR)codeSignatureReader.o 	\
+					$(BUILD_DIR)modeSignature.o 		\
+					$(BUILD_DIR)modeSignatureReader.o 	\
 					$(BUILD_DIR)result.o 				\
 					$(BUILD_DIR)assemblyElfLoader.o 	\
 					$(BUILD_DIR)callGraph.o 			\

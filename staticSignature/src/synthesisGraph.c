@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "synthesisGraph.h"
-#include "result.h"
 #include "dijkstra.h"
 #include "base.h"
 
@@ -25,21 +24,6 @@ uint32_t irEdge_get_distance_OI(void* arg){
 uint32_t irEdge_get_distance_II(void* arg, uint32_t dst){
 	return irEdge_distance_array_II[dst][((struct irDependence*)arg)->type];
 }
-
-enum synthesisNodeType{
-	SYNTHESISNODETYPE_RESULT,
-	SYNTHESISNODETYPE_OI_PATH,
-	SYNTHESISNODETYPE_II_PATH,
-	SYNTHESISNODETYPE_IR_NODE
-};
-
-struct signatureCluster{
-	struct node* 				synthesis_graph_node;
-	uint32_t 					nb_in_parameter;
-	uint32_t 					nb_ou_parameter;
-	struct parameterMapping* 	parameter_mapping;
-	struct array 				instance_array;
-};
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, struct result* result, struct node* node){
 	cluster->synthesis_graph_node = NULL;
@@ -100,25 +84,6 @@ static inline void signatureCluster_clean(struct signatureCluster* cluster){
 	}
 	array_clean(&(cluster->instance_array));
 }
-
-struct synthesisNode{
-	enum synthesisNodeType 			type;
-	union{
-		struct signatureCluster* 	cluster;
-		struct array* 				path;
-		struct node*				ir_node;
-	}								node_type;
-} __attribute__((__may_alias__));
-
-#define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)&((node)->data))
-
-#define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
-
-#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0x80000000)
-#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0xc0000000)
-#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0x80000000)
-#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
-#define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
 static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
 static void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);

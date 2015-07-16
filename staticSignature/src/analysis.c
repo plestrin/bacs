@@ -8,6 +8,8 @@
 #include "result.h"
 #include "codeSignature.h"
 #include "codeSignatureReader.h"
+#include "modeSignature.h"
+#include "modeSignatureReader.h"
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
 #include "base.h"
@@ -70,6 +72,10 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
 	ADD_CMD_TO_INPUT_PARSER(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), signatureCollection_printDot)
 	ADD_CMD_TO_INPUT_PARSER(parser, "clean code signature", 	"Remove every code signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
+	ADD_CMD_TO_INPUT_PARSER(parser, "load mode signature", 		"Load mode signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->mode_signature_collection), modeSignatureReader_parse)
+	ADD_CMD_TO_INPUT_PARSER(parser, "search mode signature", 	"Search mode signature for a given synthesis", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_mode_signature_search)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot mode signature", 	"Print every mode signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_printDot)
+	ADD_CMD_TO_INPUT_PARSER(parser, "clean mode signature", 	"Remove every mode signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_clean)
 
 	/* callGraph specific commands */
 	ADD_CMD_TO_INPUT_PARSER(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 		INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
@@ -116,6 +122,12 @@ struct analysis* analysis_create(){
 
 	signatureCollection_init(&(analysis->code_signature_collection), sizeof(struct codeSignature), &callback);
 
+	callback.signatureNode_get_label = modeSignatureNode_get_label;
+	callback.signatureEdge_get_label = modeSignatureEdge_get_label;
+
+	signatureCollection_init(&(analysis->mode_signature_collection), sizeof(struct modeSignature), &callback);
+	graph_register_node_clean_call_back(&(analysis->mode_signature_collection.syntax_graph), modeSignature_clean);
+
 	analysis->trace 		= NULL;
 	analysis->code_map 		= NULL;
 	analysis->call_graph 	= NULL;
@@ -133,6 +145,7 @@ void analysis_delete(struct analysis* analysis){
 	array_clean(&(analysis->frag_array));
 
 	signatureCollection_clean(&(analysis->code_signature_collection));
+	signatureCollection_clean(&(analysis->mode_signature_collection));
 
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -880,7 +893,7 @@ void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
 }
 
 /* ===================================================================== */
-/* code signature functions						                         */
+/* signature functions										             */
 /* ===================================================================== */
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg){
@@ -917,11 +930,11 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	for (i = start, nb_graph_searcher = 0; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 		if (fragment->ir != NULL){
-			graph_searcher_buffer[nb_graph_searcher].graph = &(fragment->ir->graph);
-			graph_searcher_buffer[nb_graph_searcher].result_register = trace_register_code_signature_result;
-			graph_searcher_buffer[nb_graph_searcher].result_push = trace_push_code_signature_result;
-			graph_searcher_buffer[nb_graph_searcher].result_pop = trace_pop_code_signature_result;
-			graph_searcher_buffer[nb_graph_searcher].arg = fragment;
+			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->ir->graph);
+			graph_searcher_buffer[nb_graph_searcher].result_register 	= trace_register_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].result_push 		= trace_push_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].result_pop 		= trace_pop_code_signature_result;
+			graph_searcher_buffer[nb_graph_searcher].arg 				= fragment;
 
 			nb_graph_searcher ++;
 		}
@@ -957,6 +970,57 @@ void analysis_code_signature_clean(struct analysis* analysis){
 	}
 
 	signatureCollection_clean(&(analysis->code_signature_collection));
+}
+
+void analysis_mode_signature_search(struct analysis* analysis, char* arg){
+	uint32_t 				index;
+	uint32_t 				start;
+	uint32_t 				stop;
+	uint32_t 				i;
+	struct trace* 			fragment;
+	struct graphSearcher*	graph_searcher_buffer;
+	uint32_t 				nb_graph_searcher;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	graph_searcher_buffer = (struct graphSearcher*)malloc(sizeof(struct graphSearcher) * (stop - start));
+	if (graph_searcher_buffer == NULL){
+		log_err("unable to allocate memory");
+		return;
+	}
+
+	for (i = start, nb_graph_searcher = 0; i < stop; i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->synthesis_graph != NULL){
+			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->synthesis_graph->graph);
+			graph_searcher_buffer[nb_graph_searcher].result_register 	= NULL;
+			graph_searcher_buffer[nb_graph_searcher].result_push 		= NULL;
+			graph_searcher_buffer[nb_graph_searcher].result_pop 		= NULL;
+			graph_searcher_buffer[nb_graph_searcher].arg 				= NULL;
+
+			nb_graph_searcher ++;
+		}
+		else{
+			log_err_m("the IR is NULL for fragment %u", i);
+		}
+	}
+
+	signatureCollection_search(&(analysis->mode_signature_collection), graph_searcher_buffer, nb_graph_searcher, synthesisGraphNode_get_label, synthesisGraphEdge_get_label);
+	free(graph_searcher_buffer);
 }
 
 /* ===================================================================== */
