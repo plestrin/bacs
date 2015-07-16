@@ -67,7 +67,7 @@ static void* codeSignatureReader_handle_new_node(void* arg){
 	}
 	else{
 		code_signature_node = (struct codeSignatureNode*)&(node->data);
-		code_signature_node->type 				= SIGNATURE_NODE_TYPE_INVALID;
+		code_signature_node->type 				= CODESIGNATURE_NODE_TYPE_INVALID;
 		code_signature_node->input_number 		= 0;
 		code_signature_node->input_frag_order 	= 0;
 		code_signature_node->output_number 		= 0;
@@ -83,77 +83,77 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 	struct codeSignatureBuilder* 	builder = (struct codeSignatureBuilder*)arg;
 	char 							symbol[SIGNATURE_NAME_MAX_SIZE];
 
-	if (code_signature_node->type != SIGNATURE_NODE_TYPE_INVALID){
-		log_warn_m("the label has already been set for this node %s (signature: %s)", (code_signature_node->type == SIGNATURE_NODE_TYPE_OPCODE) ? irOpcode_2_string(code_signature_node->node_type.opcode): "", builder->is_name_set ? builder->code_signature.signature.name : "?");
+	if (code_signature_node->type != CODESIGNATURE_NODE_TYPE_INVALID){
+		log_warn_m("the label has already been set for this node %s (signature: %s)", (code_signature_node->type == CODESIGNATURE_NODE_TYPE_OPCODE) ? irOpcode_2_string(code_signature_node->node_type.opcode): "", builder->is_name_set ? builder->code_signature.signature.name : "?");
 	}
 
 	if (!strncmp(str, "ADD", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_ADD;
 		return;
 	}
 	else if (!strncmp(str, "AND", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_AND;
 		return;
 	}
 	else if (!strncmp(str, "MUL", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_MUL;
 		return;
 	}
 	else if (!strncmp(str, "MOVZX", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_MOVZX;
 		return;
 	}
 	else if (!strncmp(str, "NOT", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_NOT;
 		return;
 	}
 	else if (!strncmp(str, "OR", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_OR;
 		return;
 	}
 	else if (!strncmp(str, "ROR", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_ROR;
 		return;
 	}
 	else if (!strncmp(str, "SHL", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_SHL;
 		return;
 	}
 	else if (!strncmp(str, "SHR", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_SHR;
 		return;
 	}
 	else if (!strncmp(str, "SUB", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_SUB;
 		return;
 	}
 	else if (!strncmp(str, "XOR", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_XOR;
 		return;
 	}
 	else if (!strncmp(str, "LOAD", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_LOAD;
 		return;
 	}
 	else if (!strncmp(str, "STORE", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_STORE;
 		return;
 	}
 	else if (!strncmp(str, "*", str_len)){
-		code_signature_node->type = SIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_JOKER;
 		return;
 	}
@@ -165,7 +165,7 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 		log_err("unable to add element to array");
 	}
 	else{
-		code_signature_node->type = SIGNATURE_NODE_TYPE_SYMBOL;	
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_SYMBOL;	
 	}
 }
 
@@ -302,10 +302,10 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 	for (node_cursor = graph_get_head_node(&(builder->code_signature.signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		code_signature_node = (struct codeSignatureNode*)&(node_cursor->data);
 
-		if (code_signature_node->type == SIGNATURE_NODE_TYPE_INVALID){
+		if (code_signature_node->type == CODESIGNATURE_NODE_TYPE_INVALID){
 			log_warn("a node label has not been set");
 		}
-		else if (code_signature_node->type == SIGNATURE_NODE_TYPE_SYMBOL){
+		else if (code_signature_node->type == CODESIGNATURE_NODE_TYPE_SYMBOL){
 			code_signature_node->node_type.symbol = symbol_table->symbols + (uint32_t)code_signature_node->node_type.symbol;
 		}
 	}

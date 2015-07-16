@@ -45,7 +45,7 @@ static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 	struct codeSignatureNode* node = (struct codeSignatureNode*)data;
 
 	switch (node->type){
-		case SIGNATURE_NODE_TYPE_OPCODE : {
+		case CODESIGNATURE_NODE_TYPE_OPCODE : {
 			if (node->input_number > 0){
 				fprintf(file, "[label=\"%s %u:%u\",shape=\"box\"]", irOpcode_2_string(node->node_type.opcode), node->input_number, node->input_frag_order);
 			}
@@ -57,7 +57,7 @@ static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 			}
 			break;
 		}
-		case SIGNATURE_NODE_TYPE_SYMBOL : {
+		case CODESIGNATURE_NODE_TYPE_SYMBOL : {
 			if (node->input_number > 0){
 				fprintf(file, "[label=\"%s %u:%u\",shape=\"box\"]", node->node_type.symbol->name, node->input_number, node->input_frag_order);
 			}
@@ -69,7 +69,7 @@ static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 			}
 			break;
 		}
-		case SIGNATURE_NODE_TYPE_INVALID : {
+		case CODESIGNATURE_NODE_TYPE_INVALID : {
 			log_err("this case is not supposed to happen");
 			break;
 		}
@@ -145,7 +145,7 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 	struct codeSignatureNode* signature_node = (struct codeSignatureNode*)&(node->data);
 
 	switch(signature_node->type){
-		case SIGNATURE_NODE_TYPE_OPCODE : {
+		case CODESIGNATURE_NODE_TYPE_OPCODE : {
 			if (signature_node->node_type.opcode == IR_JOKER){
 				return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 			}
@@ -153,7 +153,7 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 				return (uint32_t)signature_node->node_type.opcode;
 			}
 		}
-		case SIGNATURE_NODE_TYPE_SYMBOL : {
+		case CODESIGNATURE_NODE_TYPE_SYMBOL : {
 			if (!symbolTableEntry_is_resolved(signature_node->node_type.symbol)){
 				log_warn_m("the current node is an unresolved symbol (%s) setting its label to joker", signature_node->node_type.symbol->name);
 				return SUBGRAPHISOMORPHISM_JOKER_LABEL;
@@ -162,7 +162,7 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 				return signature_node->node_type.symbol->id;
 			}
 		}
-		case SIGNATURE_NODE_TYPE_INVALID : {
+		case CODESIGNATURE_NODE_TYPE_INVALID : {
 			log_err("this case is not supposed to happen");
 			return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 		}

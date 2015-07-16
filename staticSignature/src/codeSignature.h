@@ -6,14 +6,14 @@
 #include "ir.h"
 #include "signatureCollection.h"
 
-enum signatureNodeType{
-	SIGNATURE_NODE_TYPE_OPCODE,
-	SIGNATURE_NODE_TYPE_SYMBOL,
-	SIGNATURE_NODE_TYPE_INVALID
+enum codeSignatureNodeType{
+	CODESIGNATURE_NODE_TYPE_OPCODE,
+	CODESIGNATURE_NODE_TYPE_SYMBOL,
+	CODESIGNATURE_NODE_TYPE_INVALID
 };
 
 struct codeSignatureNode{
-	enum signatureNodeType 		type;
+	enum codeSignatureNodeType 	type;
 	union{
 		enum irOpcode 			opcode;
 		struct signatureSymbol* symbol;
@@ -37,7 +37,6 @@ uint32_t irEdge_get_label(struct edge* edge);
 
 struct codeSignature{
 	struct signature 	signature;
-	int32_t 			result_index;
 	uint32_t 			nb_parameter_in;
 	uint32_t 			nb_parameter_out;
 	uint32_t 			nb_frag_tot_in;
