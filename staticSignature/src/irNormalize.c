@@ -739,7 +739,7 @@ static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct
 		}
 	}
 
-	if (nb_imm_operand <= 1 && (value & (0xffffffffffffffffULL >> (64 - size))) != 1){
+	if (nb_imm_operand < 1 || (nb_imm_operand == 1 && (value & (0xffffffffffffffffULL >> (64 - size))) != 1)){
 		return;
 	}
 

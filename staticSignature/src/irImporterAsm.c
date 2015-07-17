@@ -897,7 +897,7 @@ static void cisc_decode_special_call(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
 	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
 	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
-	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_get_and_check((mem_addr != NULL) ? (mem_addr + 1) : NULL, MEMADDRESS_DESCRIPTOR_WRITE_0);
+	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0, 2);
 
 }
 

@@ -596,6 +596,18 @@ struct memAccessToken{
 	ADDRESS 		address;
 };
 
+static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node* current_node){
+	struct node* node_cursor;
+
+	for (node_cursor = ir_node_get_operation(current_node)->operation_type.mem.access.prev; node_cursor != NULL; node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.access.prev){
+		if (node_cursor == token->node){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static int32_t compare_address_memToken(const void* arg1, const void* arg2);
 
 void ir_simplify_concrete_memory_access(struct ir* ir){
@@ -629,20 +641,18 @@ void ir_simplify_concrete_memory_access(struct ir* ir){
 		operation_cursor = ir_node_get_operation(node_cursor);
 		next_node_cursor = operation_cursor->operation_type.mem.access.next;
 
+		if (operation_cursor->operation_type.mem.access.con_addr == MEMADDRESS_INVALID){
+			log_warn("a memory access has an incorrect concrete address, further simplications might be incorrect");
+			continue;
+		}
+
 		if ((new_token = (struct memAccessToken*)malloc(sizeof(struct memAccessToken))) == NULL){
 			log_err("unable to allocate memory");
 			continue;
 		}
 
-		new_token->node = node_cursor;
-
-		if (operation_cursor->operation_type.mem.access.con_addr == MEMADDRESS_INVALID){
-			log_warn("a memory access has an incorrect concrete address, further simplications might be incorrect");
-			free(new_token);
-			continue;
-		}
-
-		new_token->address = operation_cursor->operation_type.mem.access.con_addr;
+		new_token->node 	= node_cursor;
+		new_token->address 	= operation_cursor->operation_type.mem.access.con_addr;
 
 		existing_token = (struct memAccessToken**)tsearch((void*)new_token, &binary_tree_root, compare_address_memToken);
 		if (existing_token == NULL){
@@ -650,32 +660,37 @@ void ir_simplify_concrete_memory_access(struct ir* ir){
 			free(new_token);
 		}
 		else if (*existing_token != new_token){
-			operation_prev = ir_node_get_operation((*existing_token)->node);
-			if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
-				return_code = irMemory_simplify_WR(ir, (*existing_token)->node, node_cursor);
-			}
-			else if(operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
-				return_code = irMemory_simplify_RR(ir, (*existing_token)->node, node_cursor);
-			}
-			else if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
-				return_code = irMemory_simplify_WW(ir, (*existing_token)->node, node_cursor);
+			if (memAccessToken_is_alive(*existing_token, node_cursor)){
+				operation_prev = ir_node_get_operation((*existing_token)->node);
+				if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
+					return_code = irMemory_simplify_WR(ir, (*existing_token)->node, node_cursor);
+				}
+				else if(operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
+					return_code = irMemory_simplify_RR(ir, (*existing_token)->node, node_cursor);
+				}
+				else if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+					return_code = irMemory_simplify_WW(ir, (*existing_token)->node, node_cursor);
+				}
+				else{
+					return_code = 0;
+				}
+
+				switch(return_code){
+					case 0  : {
+						memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
+						break;
+					}
+					case 1  : {
+						break;
+					}
+					default : {
+						log_err_m("simplification failed, return code: %d", return_code);
+						break;
+					}
+				}
 			}
 			else{
-				return_code = 0;
-			}
-
-			switch(return_code){
-				case 0  : {
-					memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
-					break;
-				}
-				case 1  : {
-					break;
-				}
-				default : {
-					log_err_m("simplification failed, return code: %d", return_code);
-					break;
-				}
+				memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
 			}
 
 			free(new_token);

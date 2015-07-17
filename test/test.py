@@ -102,7 +102,7 @@ if action == "TRACE" or action == "ALL":
 if action == "SEARCH" or action == "ALL":
 	sys.stdout.write("Building Signature program: ... ")
 	sys.stdout.flush()
-	return_value = subprocess.call(["make", "signature"])
+	return_value = subprocess.call(["make"])
 	if return_value != 0:
 		print("ERROR: unable to build Signature program")
 		exit()

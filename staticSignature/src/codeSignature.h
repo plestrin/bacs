@@ -22,12 +22,12 @@ struct codeSignatureNode{
 	uint16_t 					input_frag_order;
 	uint16_t 					output_number;
 	uint16_t 					output_frag_order;
-};
+}  __attribute__((__may_alias__));
 
 struct codeSignatureEdge{
 	enum irDependenceType 		type;
 	uint32_t 					macro_desc;
-};
+}  __attribute__((__may_alias__));
 
 uint32_t codeSignatureNode_get_label(struct node* node);
 uint32_t codeSignatureEdge_get_label(struct edge* edge);
