@@ -668,7 +668,7 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 		return;
 	}
 
-	if (arg != NULL){
+	if (arg != NULL && arg[0] >= 48 && arg[0] <= 57){
 		index = (uint32_t)atoi(arg);
 		if (index < array_get_length(&(analysis->frag_array))){
 			start = index;

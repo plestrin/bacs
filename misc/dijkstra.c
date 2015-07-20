@@ -409,7 +409,7 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 				node_cursor = edge_get_src(edge_cursor);
 				internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
 
-				if (internal_cursor->path == NULL){
+				if (internal_cursor->path == NULL && (internal_cursor->tag & 0x00000001) == 0){
 					internal_cursor->path 	= edge_cursor;
 					internal_cursor->tag 	= internal_cursor->tag | 0x00000001;
 					internal_cursor->dst 	= dst;
@@ -439,7 +439,7 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 					goto return_path;
 				}
 
-				if (internal_cursor->path == NULL){
+				if (internal_cursor->path == NULL && (internal_cursor->tag & 0x00000002) == 0){
 					internal_cursor->path 	= edge_cursor;
 					internal_cursor->dst 	= dst;
 					internal_cursor->next 	= next_orbital;
@@ -462,6 +462,150 @@ struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** 
 
 	if (curr_orbital1 == NULL){
 		for ( ; edge_cursor != NULL; edge_cursor = ((struct dijkstraInternal*)(edge_get_dst(edge_cursor)->ptr))->path){
+			if (array_add(*path2, &(edge_cursor)) < 0){
+				log_err("unable to add element to array");
+			}
+		}
+	}
+
+	free(internals);
+
+	return node_cursor;
+}
+
+struct node* dijkstra_highest_common_descendant(struct graph* graph, struct node** node_buffer1, uint32_t nb_node_buffer1, struct node** node_buffer2, uint32_t nb_node_buffer2, struct array** path1, struct array** path2, uint32_t(*edge_get_distance)(void*)){
+	struct dijkstraInternal{
+		struct edge*				path;
+		struct node*				node;
+		uint32_t 					tag;
+		struct dijkstraInternal* 	next;
+	};
+
+	struct node* 				node_cursor;
+	uint32_t 					i;
+	struct dijkstraInternal* 	internals;
+	struct dijkstraInternal* 	curr_orbital1 = NULL;
+	struct dijkstraInternal* 	curr_orbital2 = NULL;
+	struct dijkstraInternal* 	next_orbital;
+	struct dijkstraInternal* 	internal_cursor;
+	struct edge* 				edge_cursor;
+
+	if (dijkstra_reset_path(path1)){
+		log_err("unable to reset path");
+		return NULL;
+	}
+	if (dijkstra_reset_path(path2)){
+		log_err("unable to reset path");
+		return NULL;
+	}
+
+	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
+	if (internals == NULL){
+		log_err("unable to allocate memory");
+		return NULL;
+	}
+
+	for (node_cursor = graph_get_head_node(graph), i = 0; i < graph->nb_node && node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+		node_cursor->ptr = internals + i;
+
+		internals[i].path 	= NULL;
+		internals[i].node 	= node_cursor;
+		internals[i].tag 	= 0;
+		internals[i].next 	= NULL;
+	}
+
+	for (i = 0; i < nb_node_buffer1; i++){
+		internal_cursor = (struct dijkstraInternal*)node_buffer1[i]->ptr;
+		internal_cursor->tag 	= 0x00000001;
+		internal_cursor->next 	= curr_orbital1;
+		curr_orbital1 = internal_cursor;
+	}
+
+	for (i = 0; i < nb_node_buffer2; i++){
+		internal_cursor = (struct dijkstraInternal*)node_buffer2[i]->ptr;
+
+		if (internal_cursor->tag == 0x00000001){
+			free(internals);
+			return node_buffer2[i];
+		}
+
+		internal_cursor->tag 	= 0x00000002;
+		internal_cursor->next 	= curr_orbital2;
+		curr_orbital2 = internal_cursor;
+	}
+
+	if (curr_orbital1 == NULL || curr_orbital2 == NULL){
+		log_err("unable to find the any of the specified node(s)");
+		free(internals);
+		return NULL;
+	}
+
+	for( ; curr_orbital1 != NULL; curr_orbital1 = next_orbital){
+		for(next_orbital = NULL; curr_orbital1 != NULL; curr_orbital1 = curr_orbital1->next){
+
+			for (edge_cursor = node_get_head_edge_src(curr_orbital1->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+					continue;
+				}
+
+				node_cursor = edge_get_dst(edge_cursor);
+				internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
+
+				if (internal_cursor->path == NULL && (internal_cursor->tag & 0x00000001) == 0){
+					internal_cursor->path 	= edge_cursor;
+					internal_cursor->tag 	= internal_cursor->tag | 0x00000001;
+					internal_cursor->next 	= next_orbital;
+					next_orbital = internal_cursor;
+
+					if (internal_cursor->tag == 0x00000003){
+						goto return_path;
+					}
+				}
+			}
+		}
+	}
+
+	for( ; curr_orbital2 != NULL; curr_orbital2 = next_orbital){
+		for(next_orbital = NULL; curr_orbital2 != NULL; curr_orbital2 = curr_orbital2->next){
+
+			for (edge_cursor = node_get_head_edge_src(curr_orbital2->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+					continue;
+				}
+
+				node_cursor = edge_get_dst(edge_cursor);
+				internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
+
+				if (internal_cursor->tag == 0x00000001){
+					goto return_path;
+				}
+
+				if (internal_cursor->path == NULL && (internal_cursor->tag & 0x00000002) == 0){
+					internal_cursor->path 	= edge_cursor;
+					internal_cursor->next 	= next_orbital;
+					next_orbital = internal_cursor;
+				}
+			}
+		}
+	}
+
+	free(internals);
+
+	return NULL;
+
+
+	return_path:
+	if (internal_cursor->path != NULL){
+		internal_cursor = (struct dijkstraInternal*)(edge_get_src(internal_cursor->path)->ptr);
+	}
+	for ( ; internal_cursor->path != NULL; internal_cursor = (struct dijkstraInternal*)(edge_get_src(internal_cursor->path)->ptr)){
+		if (array_add(*path1, &(internal_cursor->path)) < 0){
+			log_err("unable to add element to array");
+		}
+	}
+
+	if (curr_orbital1 == NULL){
+		for ( ; edge_cursor != NULL; edge_cursor = ((struct dijkstraInternal*)(edge_get_src(edge_cursor)->ptr))->path){
 			if (array_add(*path2, &(edge_cursor)) < 0){
 				log_err("unable to add element to array");
 			}

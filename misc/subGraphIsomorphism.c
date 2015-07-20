@@ -220,6 +220,11 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	uint32_t 				nb_label;
 	struct graphIsoHandle* 	handle;
 
+	if (graph->nb_node == 0){
+		log_err("unable to create graphHandle for empty graph");
+		return NULL;
+	}
+
 	handle = (struct graphIsoHandle*)malloc(sizeof(struct graphIsoHandle));
 	if (handle == NULL){
 		log_err("unable to allocate memory");
