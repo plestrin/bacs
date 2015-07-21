@@ -15,34 +15,35 @@ enum irOpcode{
 	IR_ADD 		= 0,
 	IR_AND 		= 1,
 	IR_CMOV 	= 2, 	/* temp */
-	IR_DIV 		= 3,
-	IR_IDIV 	= 4,
-	IR_IMUL 	= 5,
-	IR_LEA 		= 6, 	/* importer */
-	IR_MOV 		= 7, 	/* importer */
-	IR_MOVZX 	= 8,
-	IR_MUL 		= 9,
-	IR_NEG 		= 10,
-	IR_NOT 		= 11,
-	IR_OR 		= 12,
-	IR_PART1_8 	= 13, 	/* specific */
-	IR_PART2_8 	= 14, 	/* specific */
-	IR_PART1_16 = 15, 	/* specific */
-	IR_ROL 		= 16,
-	IR_ROR 		= 17,
-	IR_SHL 		= 18,
-	IR_SHLD 	= 19,
-	IR_SHR 		= 20,
-	IR_SHRD 	= 21,
-	IR_SUB 		= 22,
-	IR_XOR 		= 23,
-	IR_LOAD 	= 24, 	/* signature */
-	IR_STORE 	= 25, 	/* signature */
-	IR_JOKER 	= 26, 	/* signature */
-	IR_INVALID 	= 27 	/* specific */
+	IR_DIVQ 	= 3,
+	IR_DIVR 	= 4,
+	IR_IDIV 	= 5,
+	IR_IMUL 	= 6,
+	IR_LEA 		= 7, 	/* importer */
+	IR_MOV 		= 8, 	/* importer */
+	IR_MOVZX 	= 9,
+	IR_MUL 		= 10,
+	IR_NEG 		= 11,
+	IR_NOT 		= 12,
+	IR_OR 		= 13,
+	IR_PART1_8 	= 14, 	/* specific */
+	IR_PART2_8 	= 15, 	/* specific */
+	IR_PART1_16 = 16, 	/* specific */
+	IR_ROL 		= 17,
+	IR_ROR 		= 18,
+	IR_SHL 		= 19,
+	IR_SHLD 	= 20,
+	IR_SHR 		= 21,
+	IR_SHRD 	= 22,
+	IR_SUB 		= 23,
+	IR_XOR 		= 24,
+	IR_LOAD 	= 25, 	/* signature */
+	IR_STORE 	= 26, 	/* signature */
+	IR_JOKER 	= 27, 	/* signature */
+	IR_INVALID 	= 28 	/* specific */
 };
 
-#define NB_IR_OPCODE 28 /* after updating this value, please grep in the code on NB_IR_OPCODE because a lot of static arrays depend on this value */
+#define NB_IR_OPCODE 29 /* after updating this value, please grep in the code on NB_IR_OPCODE because a lot of static arrays depend on this value */
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -70,10 +71,11 @@ enum irRegister{
 	IR_REG_ESI 		= 20,
 	IR_REG_SI 		= 21,
 	IR_REG_EDI 		= 22,
-	IR_REG_DI 		= 23
+	IR_REG_DI 		= 23,
+	IR_REG_TMP 		= 24 	/* importer */
 };
 
-#define NB_IR_REGISTER 24
+#define NB_IR_REGISTER 25
 
 char* irRegister_2_string(enum irRegister reg);
 

@@ -17,60 +17,62 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 0  IR_ADD 		*/
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 1  IR_AND 		*/
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 2  IR_CMOV 		*/
-	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 3  IR_DIV 		*/
-	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 4  IR_IDIV 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 5  IR_IMUL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 6  IR_LEA 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 7  IR_MOV 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 8  IR_MOVZX 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 9  IR_MUL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 10 IR_NEG 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 11 IR_NOT 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 12 IR_OR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 13 IR_PART1_8 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 14 IR_PART2_8 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 15 IR_PART1_16 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 16 IR_ROL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 17 IR_ROR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 18 IR_SHL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 19 IR_SHLD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 20 IR_SHR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 21 IR_SHRD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SUBSTITUTE, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 22 IR_SUB 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 23 IR_XOR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 24 IR_LOAD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 25 IR_STORE 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 26 IR_JOKER 		*/
+	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 3  IR_DIVQ 		*/
+	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 4  IR_DIVR 		*/
+	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 5  IR_IDIV 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 6  IR_IMUL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 7  IR_LEA 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 8  IR_MOV 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 9  IR_MOVZX 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 10 IR_MUL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 11 IR_NEG 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 12 IR_NOT 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 13 IR_OR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 14 IR_PART1_8 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 15 IR_PART2_8 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 16 IR_PART1_16 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 17 IR_ROL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 18 IR_ROR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 19 IR_SHL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 20 IR_SHLD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 21 IR_SHR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 22 IR_SHRD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SUBSTITUTE, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 23 IR_SUB 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 24 IR_XOR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 25 IR_LOAD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 26 IR_STORE 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 27 IR_JOKER 		*/
 };
 
 static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	1, /* 0  IR_ADD 		*/
 	1, /* 1  IR_AND 		*/
 	0, /* 2  IR_CMOV 		*/
-	0, /* 3  IR_DIV 		*/
-	0, /* 4  IR_IDIV 		*/
-	0, /* 5  IR_IMUL 		*/
-	0, /* 6  IR_LEA 		*/
-	0, /* 7  IR_MOV 		*/
-	0, /* 8  IR_MOVZX 		*/
-	0, /* 9  IR_MUL 		*/
-	0, /* 10 IR_NEG 		*/
-	0, /* 11 IR_NOT 		*/
-	0, /* 12 IR_OR 			*/
-	0, /* 13 IR_PART1_8 	*/
-	0, /* 14 IR_PART2_8 	*/
-	0, /* 15 IR_PART1_16 	*/
-	0, /* 16 IR_ROL 		*/
-	0, /* 17 IR_ROR 		*/
-	0, /* 18 IR_SHL 		*/
-	0, /* 19 IR_SHLD 		*/
-	0, /* 20 IR_SHR 		*/
-	0, /* 21 IR_SHRD 		*/
-	1, /* 22 IR_SUB 		*/
-	1, /* 23 IR_XOR 		*/
-	0, /* 24 IR_LOAD 		*/
-	0, /* 25 IR_STORE 		*/
-	0  /* 26 IR_JOKER 		*/
+	0, /* 3  IR_DIVQ 		*/
+	0, /* 4  IR_DIVR 		*/
+	0, /* 5  IR_IDIV 		*/
+	0, /* 6  IR_IMUL 		*/
+	0, /* 7  IR_LEA 		*/
+	0, /* 8  IR_MOV 		*/
+	0, /* 9  IR_MOVZX 		*/
+	0, /* 10  IR_MUL 		*/
+	0, /* 11 IR_NEG 		*/
+	0, /* 12 IR_NOT 		*/
+	0, /* 13 IR_OR 			*/
+	0, /* 14 IR_PART1_8 	*/
+	0, /* 15 IR_PART2_8 	*/
+	0, /* 16 IR_PART1_16 	*/
+	0, /* 17 IR_ROL 		*/
+	0, /* 18 IR_ROR 		*/
+	0, /* 19 IR_SHL 		*/
+	0, /* 20 IR_SHLD 		*/
+	0, /* 21 IR_SHR 		*/
+	0, /* 22 IR_SHRD 		*/
+	1, /* 23 IR_SUB 		*/
+	1, /* 24 IR_XOR 		*/
+	0, /* 25 IR_LOAD 		*/
+	0, /* 26 IR_STORE 		*/
+	0  /* 27 IR_JOKER 		*/
 };
 
 struct memOperand{
@@ -92,6 +94,7 @@ enum asmOperandType{
 #define ASM_OPERAND_ROLE_READ_1 	0x00000001
 #define ASM_OPERAND_ROLE_READ_2 	0x00000002
 #define ASM_OPERAND_ROLE_WRITE_1 	0x00000100
+#define ASM_OPERAND_ROLE_WRITE_2 	0x00000200
 #define ASM_OPERAND_ROLE_READ_ALL 	0x000000ff
 #define ASM_OPERAND_ROLE_WRITE_ALL 	0x0000ff00
 #define ASM_OPERAND_ROLE_ALL 		0x0000ffff
@@ -145,6 +148,7 @@ struct asmCiscIns{
 
 static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_div(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
@@ -178,6 +182,10 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			case XED_ICLASS_CMP 		: {break;}
 			case XED_ICLASS_DEC 		: {
 				cisc_decode_special_dec(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
+				break;
+			}
+			case XED_ICLASS_DIV 		: {
+				cisc_decode_special_div(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_INC 		: {
@@ -802,7 +810,6 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_CMOVP 		: {return IR_CMOV;}
 		case XED_ICLASS_CMOVS 		: {return IR_CMOV;}
 		case XED_ICLASS_CMOVZ 		: {return IR_CMOV;}
-		case XED_ICLASS_DIV			: {return IR_DIV;}
 		case XED_ICLASS_IDIV		: {return IR_IDIV;}
 		case XED_ICLASS_IMUL 		: {return IR_IMUL;}
 		case XED_ICLASS_LEA 		: {return IR_LEA;}
@@ -914,6 +921,30 @@ static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCi
 	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
 	cisc->ins[0].input_operand[1].operand_type.imm 			= 1;
 	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
+}
+
+static void cisc_decode_special_div(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 3;
+
+	cisc->ins[0].opcode 									= IR_DIVQ;
+	asmOperand_decode(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[0].nb_input_operand), mem_addr);
+	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_TMP;
+
+	cisc->ins[1].opcode 									= IR_DIVR;
+	asmOperand_decode(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[1].nb_input_operand), mem_addr);
+	asmOperand_decode(it, &(cisc->ins[1].output_operand), 1, ASM_OPERAND_ROLE_WRITE_2, NULL, mem_addr);
+
+	cisc->ins[2].opcode 									= IR_MOV;
+	cisc->ins[2].nb_input_operand 							= 1;
+	cisc->ins[2].input_operand[0].size 						= cisc->ins[0].output_operand.size;
+	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
+	cisc->ins[2].input_operand[0].variable 					= NULL;
+	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_TMP;
+	asmOperand_decode(it, &(cisc->ins[2].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
 static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){

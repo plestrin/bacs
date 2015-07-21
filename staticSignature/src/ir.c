@@ -560,7 +560,8 @@ char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_ADD 		: {return "add";}
 		case IR_AND 		: {return "and";}
 		case IR_CMOV 		: {return "cmov";}
-		case IR_DIV 		: {return "div";}
+		case IR_DIVQ 		: {return "divq";}
+		case IR_DIVR 		: {return "divr";}
 		case IR_IDIV 		: {return "idiv";}
 		case IR_IMUL 		: {return "imul";}
 		case IR_LEA 		: {return "lea";}
@@ -616,6 +617,7 @@ char* irRegister_2_string(enum irRegister reg){
 		case IR_REG_SI 		: {return "SI";}
 		case IR_REG_EDI 	: {return "EDI";}
 		case IR_REG_DI 		: {return "DI";}
+		case IR_REG_TMP 	: {return "??";}
 	}
 
 	return NULL;

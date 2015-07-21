@@ -359,93 +359,96 @@ static const simplify_numeric_instruction_ptr numeric_simplify[NB_IR_OPCODE] = {
 	ir_normalize_simplify_instruction_numeric_add, 					/* 0  IR_ADD 			*/
 	ir_normalize_simplify_instruction_numeric_and, 					/* 1  IR_AND 			*/
 	NULL, 															/* 2  IR_CMOV 			*/
-	NULL, 															/* 3  IR_DIV  			*/
-	NULL, 															/* 4  IR_IDIV 			*/
-	ir_normalize_simplify_instruction_numeric_imul, 				/* 5  IR_IMUL 			*/
-	NULL, 															/* 6  IR_LEA 			*/
-	NULL, 															/* 7  IR_MOV 			*/
-	NULL, 															/* 8  IR_MOVZX 			*/
-	ir_normalize_simplify_instruction_numeric_mul, 					/* 9  IR_MUL 			*/
-	NULL, 															/* 10 IR_NEG 			*/
-	NULL, 															/* 11 IR_NOT 			*/
-	NULL, 															/* 12 IR_OR 			*/
-	NULL, 															/* 13 IR_PART1_8 		*/
-	NULL, 															/* 14 IR_PART2_8 		*/
-	NULL, 															/* 15 IR_PART1_16 		*/
-	NULL, 															/* 16 IR_ROL 			*/
-	NULL, 															/* 17 IR_ROR 			*/
-	ir_normalize_simplify_instruction_numeric_shl, 					/* 18 IR_SHL 			*/
-	NULL, 															/* 19 IR_SHLD 			*/
-	ir_normalize_simplify_instruction_numeric_shr, 					/* 20 IR_SHR 			*/
-	NULL, 															/* 21 IR_SHRD 			*/
-	NULL, 															/* 22 IR_SUB 			*/
-	NULL, 															/* 23 IR_XOR 			*/
-	NULL, 															/* 24 IR_LOAD 			*/
-	NULL, 															/* 25 IR_STORE 			*/
-	NULL, 															/* 26 IR_JOKER 			*/
-	NULL 															/* 27 IR_INVALID 		*/
+	NULL, 															/* 3  IR_DIVQ  			*/
+	NULL, 															/* 4  IR_DIVR  			*/
+	NULL, 															/* 5  IR_IDIV 			*/
+	ir_normalize_simplify_instruction_numeric_imul, 				/* 6  IR_IMUL 			*/
+	NULL, 															/* 7  IR_LEA 			*/
+	NULL, 															/* 8  IR_MOV 			*/
+	NULL, 															/* 9  IR_MOVZX 			*/
+	ir_normalize_simplify_instruction_numeric_mul, 					/* 10 IR_MUL 			*/
+	NULL, 															/* 11 IR_NEG 			*/
+	NULL, 															/* 12 IR_NOT 			*/
+	NULL, 															/* 13 IR_OR 			*/
+	NULL, 															/* 14 IR_PART1_8 		*/
+	NULL, 															/* 15 IR_PART2_8 		*/
+	NULL, 															/* 16 IR_PART1_16 		*/
+	NULL, 															/* 17 IR_ROL 			*/
+	NULL, 															/* 18 IR_ROR 			*/
+	ir_normalize_simplify_instruction_numeric_shl, 					/* 19 IR_SHL 			*/
+	NULL, 															/* 20 IR_SHLD 			*/
+	ir_normalize_simplify_instruction_numeric_shr, 					/* 21 IR_SHR 			*/
+	NULL, 															/* 22 IR_SHRD 			*/
+	NULL, 															/* 23 IR_SUB 			*/
+	NULL, 															/* 24 IR_XOR 			*/
+	NULL, 															/* 25 IR_LOAD 			*/
+	NULL, 															/* 26 IR_STORE 			*/
+	NULL, 															/* 27 IR_JOKER 			*/
+	NULL 															/* 28 IR_INVALID 		*/
 };
 
 static const simplify_symbolic_instruction_ptr symbolic_simplify[NB_IR_OPCODE] = {
 	NULL, 															/* 0  IR_ADD 			*/
 	NULL, 															/* 1  IR_AND 			*/
 	NULL, 															/* 2  IR_CMOV 			*/
-	NULL, 															/* 3  IR_DIV  			*/
-	NULL, 															/* 4  IR_IDIV 			*/
-	NULL, 															/* 5  IR_IMUL 			*/
-	NULL, 															/* 6  IR_LEA 			*/
-	NULL, 															/* 7  IR_MOV 			*/
-	NULL, 															/* 8  IR_MOVZX 			*/
-	NULL, 															/* 9  IR_MUL 			*/
-	NULL, 															/* 10 IR_NEG 			*/
-	NULL, 															/* 11 IR_NOT 			*/
-	ir_normalize_simplify_instruction_symbolic_or, 					/* 12 IR_OR 			*/
-	NULL, 															/* 13 IR_PART1_8 		*/
-	NULL, 															/* 14 IR_PART2_8 		*/
-	NULL, 															/* 15 IR_PART1_16 		*/
-	NULL, 															/* 16 IR_ROL 			*/
-	NULL, 															/* 17 IR_ROR 			*/
-	NULL, 															/* 18 IR_SHL 			*/
-	NULL, 															/* 19 IR_SHLD 			*/
-	NULL, 															/* 20 IR_SHR 			*/
-	NULL, 															/* 21 IR_SHRD 			*/
-	NULL, 															/* 22 IR_SUB 			*/
-	ir_normalize_simplify_instruction_symbolic_xor, 				/* 23 IR_XOR 			*/
-	NULL, 															/* 24 IR_LOAD 			*/
-	NULL, 															/* 25 IR_STORE 			*/
-	NULL, 															/* 26 IR_JOKER 			*/
-	NULL 															/* 27 IR_INVALID 		*/
+	NULL, 															/* 3  IR_DIVQ  			*/
+	NULL, 															/* 4  IR_DIVR  			*/
+	NULL, 															/* 5  IR_IDIV 			*/
+	NULL, 															/* 6  IR_IMUL 			*/
+	NULL, 															/* 7  IR_LEA 			*/
+	NULL, 															/* 8  IR_MOV 			*/
+	NULL, 															/* 9  IR_MOVZX 			*/
+	NULL, 															/* 10 IR_MUL 			*/
+	NULL, 															/* 11 IR_NEG 			*/
+	NULL, 															/* 12 IR_NOT 			*/
+	ir_normalize_simplify_instruction_symbolic_or, 					/* 13 IR_OR 			*/
+	NULL, 															/* 14 IR_PART1_8 		*/
+	NULL, 															/* 15 IR_PART2_8 		*/
+	NULL, 															/* 16 IR_PART1_16 		*/
+	NULL, 															/* 17 IR_ROL 			*/
+	NULL, 															/* 18 IR_ROR 			*/
+	NULL, 															/* 19 IR_SHL 			*/
+	NULL, 															/* 20 IR_SHLD 			*/
+	NULL, 															/* 21 IR_SHR 			*/
+	NULL, 															/* 22 IR_SHRD 			*/
+	NULL, 															/* 23 IR_SUB 			*/
+	ir_normalize_simplify_instruction_symbolic_xor, 				/* 24 IR_XOR 			*/
+	NULL, 															/* 25 IR_LOAD 			*/
+	NULL, 															/* 26 IR_STORE 			*/
+	NULL, 															/* 27 IR_JOKER 			*/
+	NULL 															/* 28 IR_INVALID 		*/
 };
 
 static const simplify_rewrite_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 	ir_normalize_simplify_instruction_rewrite_add, 					/* 0  IR_ADD 			*/
 	ir_normalize_simplify_instruction_rewrite_and, 					/* 1  IR_AND 			*/
 	NULL, 															/* 2  IR_CMOV 			*/
-	NULL, 															/* 3  IR_DIV  			*/
-	NULL, 															/* 4  IR_IDIV 			*/
-	ir_normalize_simplify_instruction_rewrite_imul, 				/* 5  IR_IMUL 			*/
-	NULL, 															/* 6  IR_LEA 			*/
-	NULL, 															/* 7  IR_MOV 			*/
-	ir_normalize_simplify_instruction_rewrite_movzx, 				/* 8  IR_MOVZX 			*/
-	ir_normalize_simplify_instruction_rewrite_mul, 					/* 9  IR_MUL 			*/
-	NULL, 															/* 10 IR_NEG 			*/
-	NULL, 															/* 11 IR_NOT 			*/
-	ir_normalize_simplify_instruction_rewrite_or, 					/* 12 IR_OR 			*/
-	ir_normalize_simplify_instruction_rewrite_part1_8, 				/* 13 IR_PART1_8 		*/
-	NULL, 															/* 14 IR_PART2_8 		*/
-	NULL, 															/* 15 IR_PART1_16 		*/
-	ir_normalize_simplify_instruction_rewrite_rol, 					/* 16 IR_ROL 			*/
-	NULL, 															/* 17 IR_ROR 			*/
-	ir_normalize_simplify_instruction_rewrite_shl, 					/* 18 IR_SHL 			*/
-	NULL, 															/* 19 IR_SHLD 			*/
-	ir_normalize_simplify_instruction_rewrite_shr, 					/* 20 IR_SHR 			*/
-	NULL, 															/* 21 IR_SHRD 			*/
-	ir_normalize_simplify_instruction_rewrite_sub, 					/* 22 IR_SUB 			*/
-	ir_normalize_simplify_instruction_rewrite_xor, 					/* 23 IR_XOR 			*/
-	NULL, 															/* 24 IR_LOAD 			*/
-	NULL, 															/* 25 IR_STORE 			*/
-	NULL, 															/* 26 IR_JOKER 			*/
-	NULL 															/* 27 IR_INVALID 		*/
+	NULL, 															/* 3  IR_DIVQ  			*/
+	NULL, 															/* 4  IR_DIVR  			*/
+	NULL, 															/* 5  IR_IDIV 			*/
+	ir_normalize_simplify_instruction_rewrite_imul, 				/* 6  IR_IMUL 			*/
+	NULL, 															/* 7  IR_LEA 			*/
+	NULL, 															/* 8  IR_MOV 			*/
+	ir_normalize_simplify_instruction_rewrite_movzx, 				/* 9  IR_MOVZX 			*/
+	ir_normalize_simplify_instruction_rewrite_mul, 					/* 10  IR_MUL 			*/
+	NULL, 															/* 11 IR_NEG 			*/
+	NULL, 															/* 12 IR_NOT 			*/
+	ir_normalize_simplify_instruction_rewrite_or, 					/* 13 IR_OR 			*/
+	ir_normalize_simplify_instruction_rewrite_part1_8, 				/* 14 IR_PART1_8 		*/
+	NULL, 															/* 15 IR_PART2_8 		*/
+	NULL, 															/* 16 IR_PART1_16 		*/
+	ir_normalize_simplify_instruction_rewrite_rol, 					/* 17 IR_ROL 			*/
+	NULL, 															/* 18 IR_ROR 			*/
+	ir_normalize_simplify_instruction_rewrite_shl, 					/* 19 IR_SHL 			*/
+	NULL, 															/* 20 IR_SHLD 			*/
+	ir_normalize_simplify_instruction_rewrite_shr, 					/* 21 IR_SHR 			*/
+	NULL, 															/* 22 IR_SHRD 			*/
+	ir_normalize_simplify_instruction_rewrite_sub, 					/* 23 IR_SUB 			*/
+	ir_normalize_simplify_instruction_rewrite_xor, 					/* 24 IR_XOR 			*/
+	NULL, 															/* 25 IR_LOAD 			*/
+	NULL, 															/* 26 IR_STORE 			*/
+	NULL, 															/* 27 IR_JOKER 			*/
+	NULL 															/* 28 IR_INVALID 		*/
 };
 
 void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uint8_t final){

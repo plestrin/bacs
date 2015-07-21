@@ -76,7 +76,8 @@ void ir_check_size(struct ir* ir){
 					}
 
 					switch(operation_cursor->operation_type.inst.opcode){
-						case IR_DIV 		:
+						case IR_DIVQ 		:
+						case IR_DIVR 		:
 						case IR_IDIV 		: {
 							if (dependence->type == IR_DEPENDENCE_TYPE_DIVISOR){
 								if (operand->size != operation_cursor->size / 2 && operation_cursor->size != operand->size){
@@ -163,61 +164,63 @@ static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
 	2, 	/* 1  IR_AND 						*/
 	2, 	/* 2  IR_CMOV 						*/
 	2, 	/* 3  IR_DIV 						*/
-	2, 	/* 4  IR_IDIV 						*/
-	2, 	/* 5  IR_IMUL 						*/
-	0, 	/* 6  IR_LEA 	It doesn't matter 	*/
-	0, 	/* 7  IR_MOV 	It doesn't matter 	*/
-	1, 	/* 8  IR_MOVZX 						*/
-	2, 	/* 9  IR_MUL 						*/
-	1, 	/* 10 IR_NEG 						*/
-	1, 	/* 11 IR_NOT 						*/
-	2, 	/* 12 IR_OR 						*/
-	1, 	/* 13 IR_PART1_8 					*/
-	1, 	/* 14 IR_PART2_8 					*/
-	1, 	/* 15 IR_PART1_16 					*/
-	2, 	/* 16 IR_ROL 						*/
-	2, 	/* 17 IR_ROR 						*/
-	2, 	/* 18 IR_SHL 						*/
-	3, 	/* 19 IR_SHLD 						*/
-	2, 	/* 20 IR_SHR 						*/
-	3, 	/* 21 IR_SHRD 						*/
-	2, 	/* 22 IR_SUB 						*/
-	2, 	/* 23 IR_XOR 						*/
-	0, 	/* 24 IR_LOAD 	It doesn't matter 	*/
-	0, 	/* 25 IR_STORE It doesn't matter 	*/
-	0, 	/* 26 IR_JOKER It doesn't matter 	*/
-	0, 	/* 27 IR_INVALID It doesn't matter 	*/
+	2, 	/* 4  IR_IDIVQ 						*/
+	2, 	/* 5  IR_IDIVR 						*/
+	2, 	/* 6  IR_IMUL 						*/
+	0, 	/* 7  IR_LEA 	It doesn't matter 	*/
+	0, 	/* 8  IR_MOV 	It doesn't matter 	*/
+	1, 	/* 9  IR_MOVZX 						*/
+	2, 	/* 10 IR_MUL 						*/
+	1, 	/* 11 IR_NEG 						*/
+	1, 	/* 12 IR_NOT 						*/
+	2, 	/* 13 IR_OR 						*/
+	1, 	/* 14 IR_PART1_8 					*/
+	1, 	/* 15 IR_PART2_8 					*/
+	1, 	/* 16 IR_PART1_16 					*/
+	2, 	/* 17 IR_ROL 						*/
+	2, 	/* 18 IR_ROR 						*/
+	2, 	/* 19 IR_SHL 						*/
+	3, 	/* 20 IR_SHLD 						*/
+	2, 	/* 21 IR_SHR 						*/
+	3, 	/* 22 IR_SHRD 						*/
+	2, 	/* 23 IR_SUB 						*/
+	2, 	/* 24 IR_XOR 						*/
+	0, 	/* 25 IR_LOAD 	It doesn't matter 	*/
+	0, 	/* 26 IR_STORE It doesn't matter 	*/
+	0, 	/* 27 IR_JOKER It doesn't matter 	*/
+	0, 	/* 28 IR_INVALID It doesn't matter 	*/
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
 	0xffffffff, /* 0  IR_ADD 						*/
 	0xffffffff, /* 1  IR_AND 						*/
 	0x00000002, /* 2  IR_CMOV 						*/
-	0x00000002, /* 3  IR_DIV 						*/
-	0x00000002, /* 4  IR_IDIV 						*/
-	0xffffffff, /* 5  IR_IMUL 						*/
-	0x00000000, /* 6  IR_LEA 	It doesn't matter 	*/
-	0x00000000, /* 7  IR_MOV 	It doesn't matter 	*/
-	0x00000001, /* 8  IR_MOVZX 						*/
-	0xffffffff, /* 9  IR_MUL 						*/
-	0x00000001, /* 10 IR_NEG 						*/
-	0x00000001, /* 11 IR_NOT 						*/
-	0xffffffff, /* 12 IR_OR 						*/
-	0x00000001, /* 13 IR_PART1_8 					*/
-	0x00000001, /* 14 IR_PART2_8 					*/
-	0x00000001, /* 15 IR_PART1_16 					*/
-	0x00000002, /* 16 IR_ROL 						*/
-	0x00000002, /* 17 IR_ROR 						*/
-	0x00000002, /* 18 IR_SHL 						*/
-	0x00000003, /* 19 IR_SHLD 						*/
-	0x00000002, /* 20 IR_SHR 						*/
-	0x00000003, /* 21 IR_SHRD 						*/
-	0x00000002, /* 22 IR_SUB 						*/
-	0xffffffff, /* 23 IR_XOR 						*/
-	0x00000000, /* 24 IR_LOAD 	It doesn't matter 	*/
-	0x00000000, /* 25 IR_STORE It doesn't matter 	*/
-	0x00000000, /* 26 IR_JOKER It doesn't matter 	*/
-	0x00000000, /* 27 IR_INVALID It doesn't matter 	*/
+	0x00000003, /* 3  IR_DIVQ 						*/
+	0x00000003, /* 4  IR_DIVR 						*/
+	0x00000002, /* 5  IR_IDIV 						*/
+	0xffffffff, /* 6  IR_IMUL 						*/
+	0x00000000, /* 7  IR_LEA 	It doesn't matter 	*/
+	0x00000000, /* 8  IR_MOV 	It doesn't matter 	*/
+	0x00000001, /* 9  IR_MOVZX 						*/
+	0xffffffff, /* 10  IR_MUL 						*/
+	0x00000001, /* 11 IR_NEG 						*/
+	0x00000001, /* 12 IR_NOT 						*/
+	0xffffffff, /* 13 IR_OR 						*/
+	0x00000001, /* 14 IR_PART1_8 					*/
+	0x00000001, /* 15 IR_PART2_8 					*/
+	0x00000001, /* 16 IR_PART1_16 					*/
+	0x00000002, /* 17 IR_ROL 						*/
+	0x00000002, /* 18 IR_ROR 						*/
+	0x00000002, /* 19 IR_SHL 						*/
+	0x00000003, /* 20 IR_SHLD 						*/
+	0x00000002, /* 21 IR_SHR 						*/
+	0x00000003, /* 22 IR_SHRD 						*/
+	0x00000002, /* 23 IR_SUB 						*/
+	0xffffffff, /* 24 IR_XOR 						*/
+	0x00000000, /* 25 IR_LOAD 	It doesn't matter 	*/
+	0x00000000, /* 26 IR_STORE It doesn't matter 	*/
+	0x00000000, /* 27 IR_JOKER It doesn't matter 	*/
+	0x00000000, /* 28 IR_INVALID It doesn't matter 	*/
 };
 
 void ir_check_connectivity(struct ir* ir){
@@ -367,7 +370,8 @@ void ir_check_connectivity(struct ir* ir){
 						}
 						break;
 					}
-					case IR_DIV 		: 
+					case IR_DIVQ 		: 
+					case IR_DIVR 		: 
 					case IR_IDIV 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){

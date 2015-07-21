@@ -38,7 +38,8 @@ static uint8_t registerFamily[NB_IR_REGISTER] = {
 	6, /* IR_REG_ESI */
 	6, /* IR_REG_SI */
 	7, /* IR_REG_EDI */
-	7  /* IR_REG_DI */
+	7, /* IR_REG_DI */
+	8  /* IR_REG_TMP */
 };
 
 static uint8_t registerIndex[NB_IR_REGISTER] = {
@@ -65,7 +66,8 @@ static uint8_t registerIndex[NB_IR_REGISTER] = {
 	0, /* IR_REG_ESI */
 	1, /* IR_REG_SI */
 	0, /* IR_REG_EDI */
-	1  /* IR_REG_DI */
+	1, /* IR_REG_DI */
+	0  /* IR_REG_TMP */
 };
 
 #define NB_IRREGISTER_FAMILY 	8
@@ -347,6 +349,10 @@ static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegist
 			nb_inner = 1;
 			break;
 		}
+		case IR_REG_TMP : {
+			nb_inner = 0;
+			break;
+		}
 	}
 
 	for (i = 0, nb_newer = 0; i < nb_inner; i++){
@@ -618,6 +624,10 @@ void irRenameEngine_tag_final_node(struct irRenameEngine* engine){
 	struct irOperation* operation;
 
 	for (i = 0; i < NB_IR_REGISTER; i++){
+		if (i == IR_REG_TMP){
+			continue;
+		}
+
 		if (engine->register_alias[i].ir_node != NULL  && ALIAS_IS_WRITE(engine->register_alias[i].type)){
 			operation = ir_node_get_operation(engine->register_alias[i].ir_node);
 			operation->status_flag |= IR_NODE_STATUS_FLAG_FINAL;
