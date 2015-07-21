@@ -63,7 +63,7 @@ enum aliasResult{
 	MUST_ALIAS 		= 0x00000003
 };
 
-#define ADDRESS_NB_MAX_DEPENDENCE 32 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
+#define ADDRESS_NB_MAX_DEPENDENCE 64 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
 #define FINGERPRINT_MAX_RECURSION_LEVEL 5
 
 struct addrFingerprint{
@@ -210,7 +210,6 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	else if (irVariableRange_intersect(&range1, &range2)){
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
 		if (addr1_fgp.flag & 0x00000002 || addr2_fgp.flag & 0x00000002){
-			log_warn("ESP heuristic cannot be applied on incomplete finger print");
 			return MAY_ALIAS;
 		}
 		else if ((addr1_fgp.flag & 0x00000001) == (addr2_fgp.flag & 0x00000001)){

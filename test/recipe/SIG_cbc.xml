@@ -7,20 +7,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -32,20 +38,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -57,20 +69,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -82,20 +100,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -107,20 +131,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -132,20 +162,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -157,20 +193,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -182,20 +224,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -207,20 +255,26 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
-			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
 		</result>
 	</recipe>
 
@@ -232,20 +286,146 @@
 		<search>
 			<arg value="load trace traceTEST_CBC_TEA_COz"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph mode_enc_cbc"/>
 			<arg value="export callGraph mode_dec_cbc"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<!-- a completer -->
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_CBC_TEA_WD"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_TEA_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_CBC_TEA_WR"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="xtea_dec" number="440"/>
+			<algo name="xtea_dec_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb" number="7"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_CBC_TEA" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_CBC_TEA"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph cbc_encrypt"/>
+			<arg value="export callGraph cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="504"/>
-			<algo name="xtea_enc_32" number="8"/>
+			<algo name="xtea_enc_32_v1" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
 			<algo name="xtea_dec" number="504"/>
-			<algo name="xtea_dec_32" number="8"/>
+			<algo name="xtea_dec_32_v1" number="8"/>
+			<algo name="dec_cbc_cfb" number="7"/>
+		</result>
+	</recipe>
+
+		<recipe name="BOT_CBC_TEA" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_CBC_TEA"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan14CBC_Encryption5writeEPKhj"/>
+			<arg value="export callGraph _ZN5Botan14CBC_Decryption5writeEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="504"/>
+			<algo name="xtea_enc_32_v1" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="xtea_dec" number="252"/>
+			<algo name="xtea_dec_32_v1" number="4"/>
+			<algo name="dec_cbc_cfb" number="3"/>
 		</result>
 	</recipe>
 </xml>

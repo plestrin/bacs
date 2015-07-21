@@ -1,6 +1,15 @@
-"cbc_cfb"
+"enc_cbc_cfb"
 
 1 (*) -> (I1) 2 (encrypt)
 2 -> (O0) 3 (*)
 3 -> (I0) 4 (encrypt)
 1 -> (I1) 4
+
+
+"dec_cbc_cfb"
+
+1 (decrypt) -> (O0) 2 (*)
+3 (*) -> (I1) 1
+3 -> (I1) 4 (decrypt)
+5 (*) -> (I0) 4
+5 -> 2

@@ -105,7 +105,7 @@ static void botan_cbc_tea(){
 
 	delete(dec_pipe);
 
-	if (!memcmp(pt, vt, 16)){
+	if (!memcmp(pt, vt, sizeof(pt))){
 		readBuffer_reverse_endianness((Botan::byte*)ct, sizeof(pt));
 
 		std::cout << std::endl << "Ciphertext CBC: ";
