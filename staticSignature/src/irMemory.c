@@ -8,7 +8,8 @@
 #include "dagPartialOrder.h"
 #include "base.h"
 
-#define IRMEMORY_ALIAS_HEURISTIC_ESP 1
+#define IRMEMORY_ALIAS_HEURISTIC_ESP 		1
+#define IRMEMORY_ALIAS_HEURISTIC_CONCRETE 	1
 
 static int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
 
@@ -57,9 +58,9 @@ static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t s
 }
 
 enum aliasResult{
-	MAY_ALIAS,
-	MUST_ALIAS,
-	CANNOT_ALIAS
+	CANNOT_ALIAS 	= 0x00000000,
+	MAY_ALIAS 		= 0x00000001,
+	MUST_ALIAS 		= 0x00000003
 };
 
 #define ADDRESS_NB_MAX_DEPENDENCE 32 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
@@ -208,7 +209,11 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	}
 	else if (irVariableRange_intersect(&range1, &range2)){
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-		if ((addr1_fgp.flag & 0x00000001) == (addr2_fgp.flag & 0x00000001)){
+		if (addr1_fgp.flag & 0x00000002 || addr2_fgp.flag & 0x00000002){
+			log_warn("ESP heuristic cannot be applied on incomplete finger print");
+			return MAY_ALIAS;
+		}
+		else if ((addr1_fgp.flag & 0x00000001) == (addr2_fgp.flag & 0x00000001)){
 			return MAY_ALIAS;
 		}
 		else{
@@ -243,6 +248,14 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 				return node_cursor;
 			}
 			else{
+				#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE == 1
+				if (ir_node_get_operation(node1)->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
+					if (ir_node_get_operation(node1)->operation_type.mem.access.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.access.con_addr){
+						return node_cursor;
+					}
+				}
+				#endif
+
 				if (addr1 == NULL){
 					for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 						if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
