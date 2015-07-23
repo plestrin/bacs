@@ -60,7 +60,6 @@ int32_t signatureCollection_add(struct signatureCollection* collection, void* cu
 
 				if (!strncmp(signature->symbol_table->symbols[i].name, signature_cursor->symbol, SIGNATURE_NAME_MAX_SIZE)){
 					signatureSymbol_set_id(signature->symbol_table->symbols + i, signature_cursor->id);
-					symbolTableEntry_set_resolved(signature->symbol_table->symbols + i);
 
 					if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
 						log_err("unable to add edge to the syntax tree");
@@ -93,13 +92,12 @@ int32_t signatureCollection_add(struct signatureCollection* collection, void* cu
 			for (i = 0, nb_unresolved_symbol = 0; i < signature_cursor->symbol_table->nb_symbol; i++){
 				if (!strncmp(signature_cursor->symbol_table->symbols[i].name, signature->symbol, SIGNATURE_NAME_MAX_SIZE)){
 					signatureSymbol_set_id(signature_cursor->symbol_table->symbols + i, signature->id);
-					symbolTableEntry_set_resolved(signature_cursor->symbol_table->symbols + i);
 
 					if (graph_add_edge(&(collection->syntax_graph), syntax_node, node_cursor, &i) == NULL){
 						log_err("unable to add edge to the syntax tree");
 					}
 				}
-				else if (!symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols + i)){
+				else if (!signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + i)){
 					nb_unresolved_symbol ++;
 				}
 			}
@@ -130,7 +128,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	double 						timer2_elapsed_time;
 	struct multiColumnPrinter* 	printer;
 	struct array* 				assignement_array;
-	uint32_t 					found;
+	uint32_t 					nb_searched;
 
 	signature_buffer = (struct signature**)malloc(sizeof(struct signature*) * signatureCollection_get_nb_signature(collection));
 	if (signature_buffer == NULL){
@@ -165,33 +163,50 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 			signature_cursor->state = 0;
 		}
 
-		do{
+		for (nb_searched = 0; nb_searched != collection->syntax_graph.nb_node; ){
 			nb_signature = 0;
+			nb_searched = 0;
 
 			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 				signature_cursor = signatureCollection_node_get_signature(node_cursor);
 				if (signature_state_is_search(signature_cursor)){
+					nb_searched ++;
 					goto next1;
 				}
 
-				if (node_cursor->nb_edge_dst){
-					for (edge_cursor = node_get_head_edge_dst(node_cursor), found = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				if (signature_cursor->symbol_table != NULL){
+					for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 						child = signatureCollection_node_get_signature(edge_get_src(edge_cursor));
 						if (!signature_state_is_search(child)){
 							goto next1;
 						}
-						else if (signature_state_is_found(child)){
-							found = 1;
-						}
 					}
-					if (!found){
-						signature_state_set_search(signature_cursor);
-						goto next1;
+
+					for (j = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
+						if (signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + j)){
+							for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+								child = signatureCollection_node_get_signature(edge_get_src(edge_cursor));
+
+								if (child->id == signatureSymbol_get_id(signature_cursor->symbol_table->symbols + j) && signature_state_is_found(child)){
+									break;
+								}
+							}
+							if (edge_cursor == NULL){
+								signature_state_set_search(signature_cursor);
+								goto next1;
+							}
+						}
+						else{
+							log_warn_m("unresolved symbol(s) for signature %s", signature_cursor->name);
+							signature_state_set_search(signature_cursor);
+							goto next1;
+						}
 					}
 				}
 
 				if (signature_cursor->sub_graph_handle == NULL){
 					log_warn_m("sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)", signature_cursor->name);
+					signature_state_set_search(signature_cursor);
 					goto next1;
 				}
 
@@ -199,62 +214,62 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 
 				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					child = signatureCollection_node_get_signature(edge_get_src(edge_cursor));
-					if (signature_state_is_found(child)){
-						if (!signature_state_is_pushed(child)){
-							if (graph_searcher_buffer[i].result_push != NULL){
-								graph_searcher_buffer[i].result_push(child->result_index, graph_searcher_buffer[i].arg);
-							}
-							signature_state_set_pushed(child);
+					if (signature_state_is_found(child) && !signature_state_is_pushed(child)){
+						if (graph_searcher_buffer[i].result_push != NULL){
+							graph_searcher_buffer[i].result_push(child->result_index, graph_searcher_buffer[i].arg);
 						}
+						signature_state_set_pushed(child);
 					}
 				}
 
 				next1:;
 			}
 
-			graph_handle = graphIso_create_graph_handle(graph_searcher_buffer[i].graph, graphNode_get_label, graphEdge_get_label);
-			if (graph_handle == NULL){
-				log_err("unable to create graphHandle");
-				break;
-			}
-
-			for (j = 0; j < nb_signature; j++){
-				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
-					log_err("clock_gettime fails");
+			if (nb_signature){
+				graph_handle = graphIso_create_graph_handle(graph_searcher_buffer[i].graph, graphNode_get_label, graphEdge_get_label);
+				if (graph_handle == NULL){
+					log_err("unable to create graphHandle");
+					break;
 				}
 
-				assignement_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
+				for (j = 0; j < nb_signature; j++){
+					if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
+						log_err("clock_gettime fails");
+					}
 
-				if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
-					log_err("clock_gettime fails");
-				}
-				timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
+					assignement_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
 
-				signature_state_set_search(signature_buffer[j]);
-				if (assignement_array == NULL){
-					log_err("the subgraph isomorphism routine fails");
-				}
-				else if (array_get_length(assignement_array) > 0){
-					if (graph_searcher_buffer[i].result_register != NULL){
-						signature_buffer[j]->result_index = graph_searcher_buffer[i].result_register(signature_buffer[j], assignement_array, graph_searcher_buffer[i].arg);
-						if (signature_buffer[j]->result_index  < 0){
-							log_err("unable to add element to array");
+					if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
+						log_err("clock_gettime fails");
+					}
+					timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
+
+					signature_state_set_search(signature_buffer[j]);
+					if (assignement_array == NULL){
+						log_err("the subgraph isomorphism routine fails");
+					}
+					else if (array_get_length(assignement_array) > 0){
+						if (graph_searcher_buffer[i].result_register != NULL){
+							signature_buffer[j]->result_index = graph_searcher_buffer[i].result_register(signature_buffer[j], assignement_array, graph_searcher_buffer[i].arg);
+							if (signature_buffer[j]->result_index  < 0){
+								log_err("unable to add element to array");
+							}
 						}
+						else{
+							signature_buffer[j]->result_index = -1;
+						}
+
+						signature_state_set_found(signature_buffer[j]);
+						multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
+						array_delete(assignement_array);
 					}
 					else{
-						signature_buffer[j]->result_index = -1;
+						array_delete(assignement_array);
 					}
+				}
 
-					signature_state_set_found(signature_buffer[j]);
-					multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
-					array_delete(assignement_array);
-				}
-				else{
-					array_delete(assignement_array);
-				}
+				graphIso_delete_graph_handle(graph_handle);
 			}
-
-			graphIso_delete_graph_handle(graph_handle);
 
 			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 				signature_cursor = signatureCollection_node_get_signature(node_cursor);
@@ -276,8 +291,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 
 				next2:;
 			}
-
-		} while(nb_signature);
+		}
 		multiColumnPrinter_print_horizontal_separator(printer);
 	}
 
@@ -336,7 +350,7 @@ void signatureCollection_printDot(struct signatureCollection* collection){
 			uint32_t nb_resolved;
 
 			for (j = 0, nb_resolved = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
-				if (symbolTableEntry_is_resolved(signature_cursor->symbol_table->symbols + j)){
+				if (signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + j)){
 					nb_resolved ++;
 				}
 			}

@@ -285,37 +285,39 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
 	struct possibleAssignment* 	possible_assignment;
 	struct node** 				assignment;
-	struct array*				assignment_array = NULL;
+	struct array*				assignment_array;
 	uint8_t 					error;
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	uint32_t 					i;
 	#endif
 
-	if (sub_graph_handle->graph->nb_node > 0){
-		assignment_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-		if (assignment_array == NULL){
-			log_err("unable to create array");
-		}
-		else{
-			possible_assignment = possibleAssignment_create_init_first(graph_handle, sub_graph_handle, &error);
-			if (possible_assignment == NULL){
-				if (error){
-					log_err("unable to create first possible assignment");
-				}
-			}
-			else{
-				#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-				for (i = 0; i < sub_graph_handle->graph->nb_node; i++){
-					sub_graph_handle->node_order[i] = i;
-				}
-				#endif
-
-				assignment = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
-				graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, 0, possible_assignment, assignment_array);
-				possibleAssignment_delete(possible_assignment);
-			}
-		}
+	if (sub_graph_handle->graph->nb_node == 0){
+		return NULL;
 	}
+	
+	assignment_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+	if (assignment_array == NULL){
+		log_err("unable to create array");
+		return NULL;
+	}
+	
+	possible_assignment = possibleAssignment_create_init_first(graph_handle, sub_graph_handle, &error);
+	if (possible_assignment == NULL){
+		if (error){
+			log_err("unable to create first possible assignment");
+		}
+		return assignment_array;
+	}
+				
+	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+	for (i = 0; i < sub_graph_handle->graph->nb_node; i++){
+		sub_graph_handle->node_order[i] = i;
+	}
+	#endif
+
+	assignment = (struct node**)alloca(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
+	graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, 0, possible_assignment, assignment_array);
+	possibleAssignment_delete(possible_assignment);
 
 	return assignment_array;
 }

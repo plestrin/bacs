@@ -123,6 +123,7 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
 						log_err("unable to add element to signatureCluster");
 					}
+					free(mapping);
 					break;
 				}
 			}
@@ -663,7 +664,7 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 		}
 		case SYNTHESISNODETYPE_OI_PATH : {
 			if (array_get_length(synthesis_node->node_type.path) == 0){
-				fprintf(file, "[shape=plaintext,label=<->");
+				fprintf(file, "[shape=plaintext,label=<->]");
 			}
 			else{
 				fprintf(file, "[shape=plaintext,label=<");

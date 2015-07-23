@@ -74,10 +74,11 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 				offset += data->d_size;
 			}
 
-			buffer_block->header.id 		= 1;
-			buffer_block->header.size 		= offset;
-			buffer_block->header.nb_ins 	= asmBlock_count_nb_ins(buffer_block);
-			buffer_block->header.address 	= section_header.sh_addr;
+			buffer_block->header.id 			= 1;
+			buffer_block->header.size 			= offset;
+			buffer_block->header.nb_ins 		= asmBlock_count_nb_ins(buffer_block);
+			buffer_block->header.nb_mem_access 	= UNTRACK_MEM_ACCESS;
+			buffer_block->header.address 		= section_header.sh_addr;
 
 			result = assembly_init(assembly, &buffer_id, sizeof(uint32_t), (uint32_t*)buffer_block, buffer_size_block, ALLOCATION_MALLOC);
 			break;

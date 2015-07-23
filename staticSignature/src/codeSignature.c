@@ -15,8 +15,8 @@ void codeSignature_init(struct codeSignature* code_signature){
 	graph_register_dotPrint_callback(&(code_signature->signature.graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
 
 	code_signature->nb_parameter_in 	= 0;
-	code_signature->nb_parameter_out = 0;
-	code_signature->nb_frag_tot_in 	= 0;
+	code_signature->nb_parameter_out 	= 0;
+	code_signature->nb_frag_tot_in 		= 0;
 	code_signature->nb_frag_tot_out 	= 0;
 
 	for (node_cursor = graph_get_head_node(&(code_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -154,12 +154,12 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 			}
 		}
 		case CODESIGNATURE_NODE_TYPE_SYMBOL : {
-			if (!symbolTableEntry_is_resolved(signature_node->node_type.symbol)){
+			if (!signatureSymbol_is_resolved(signature_node->node_type.symbol)){
 				log_warn_m("the current node is an unresolved symbol (%s) setting its label to joker", signature_node->node_type.symbol->name);
 				return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 			}
 			else{
-				return signature_node->node_type.symbol->id;
+				return (signatureSymbol_get_id(signature_node->node_type.symbol) << 16 ) | 0x0000ffff;
 			}
 		}
 		case CODESIGNATURE_NODE_TYPE_INVALID : {

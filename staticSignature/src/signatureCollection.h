@@ -16,15 +16,13 @@
 */
 
 struct signatureSymbol{
-	uint8_t 	status;
 	uint32_t 	id;
 	char 		name[SIGNATURE_NAME_MAX_SIZE];
 };
-
-#define symbolTableEntry_set_resolved(symbol) 	((symbol)->status |= 0x01)
-#define symbolTableEntry_is_resolved(symbol) 	((symbol)->status & 0x01)
-
-#define signatureSymbol_set_id(sym, index) (sym)->id = 0x0000ffff | ((index) << 16)
+#define SIGNATURESYMBOL_RAW_ID 0
+#define signatureSymbol_is_resolved(symbol) ((symbol)->id & 0x00000001)
+#define signatureSymbol_set_id(sym, index) (sym)->id = 0x00000001 | ((index) << 1)
+#define signatureSymbol_get_id(sym) ((sym)->id >> 1)
 
 struct signatureSymbolTable{
 	uint32_t 				nb_symbol;

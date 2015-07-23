@@ -295,7 +295,7 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 
 	symbol_table->nb_symbol = set_get_length(builder->symbol_set);
 	for (symbol_ptr = (char*)setIterator_get_first(builder->symbol_set, &iterator), i = 0; symbol_ptr != NULL; symbol_ptr = setIterator_get_next(&iterator), i++){
-		symbol_table->symbols[i].status = 0;
+		symbol_table->symbols[i].id = SIGNATURESYMBOL_RAW_ID;
 		memcpy(symbol_table->symbols[i].name, symbol_ptr, SIGNATURE_NAME_MAX_SIZE);	
 	}
 
