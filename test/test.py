@@ -18,10 +18,11 @@ MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
 LOG_PATH 				= "/home/pierre/Documents/bacs/test/log/"
 
-if len(sys.argv) != 3:
+if len(sys.argv) < 3:
 	print("ERROR: incorrect number of argument")
 	print("- 1 arg: recipe file name")
 	print("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL")
+	print("- 3 arg: name of specific test case [OPT]")
 	exit()
 
 file_name = sys.argv[1]
@@ -65,10 +66,14 @@ try:
 		for xml_algo in xml_recipe.find("result").findall("algo"):
 			algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
 
-		if xml_recipe.attrib.get("active") == "yes":
-			recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
+		if len(sys.argv) == 4:
+			if name == sys.argv[3]:
+				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
 		else:
-			print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
+			if xml_recipe.attrib.get("active") == "yes":
+				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
+			else:
+				print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
 except IOError:
 	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
 	exit()
