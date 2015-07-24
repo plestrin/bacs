@@ -266,46 +266,19 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 }
 
 void ir_remove_node(struct ir* ir, struct node* node){
-	struct edge* 	edge_cursor;
-	uint32_t 		nb_parent;
-	struct node** 	parent;
-	uint32_t 		i;
+	struct edge* 	edge_curr;
+	struct edge* 	edge_next;
 
 	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_remove(ir_node_get_operation(node));
 	}
 
-	for (edge_cursor = node_get_head_edge_dst(node), nb_parent = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (edge_get_src(edge_cursor)->nb_edge_src == 1)){
-			nb_parent ++;
-		}
+	for (edge_curr = node_get_head_edge_dst(node); edge_curr != NULL; edge_curr = edge_next){
+		edge_next = edge_get_next_dst(edge_curr);
+		ir_remove_dependence(ir, edge_curr);
 	}
 
-	if (nb_parent != 0){
-		parent = (struct node**)malloc(sizeof(struct node*) * nb_parent);
-		if (parent == NULL){
-			log_err("unable to allocate memory");
-			graph_remove_node(&(ir->graph), node);
-		}
-		else{
-			for (edge_cursor = node_get_head_edge_dst(node), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (edge_get_src(edge_cursor)->nb_edge_src == 1)){
-					parent[i ++] = edge_get_src(edge_cursor);
-				}
-			}
-
-			graph_remove_node(&(ir->graph), node);
-
-			for (i = 0; i < nb_parent; i++){
-				ir_remove_node(ir, parent[i]);
-			}
-
-			free(parent);
-		}
-	}
-	else{
-		graph_remove_node(&(ir->graph), node);
-	}
+	graph_remove_node(&(ir->graph), node);
 }
 
 void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_node){
@@ -343,7 +316,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 
 	node_src = edge_get_src(edge);
 	graph_remove_edge(&(ir->graph), edge);
-	if (node_src->nb_edge_src == 0 && !(ir_node_get_operation(node_src)->status_flag & IR_NODE_STATUS_FLAG_FINAL)){
+	if (!(ir_node_get_operation(node_src)->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (node_src->nb_edge_src == 0 || ir_node_get_operation(node_src)->type == IR_OPERATION_TYPE_SYMBOL)){
 		ir_remove_node(ir, node_src);
 	}
 }

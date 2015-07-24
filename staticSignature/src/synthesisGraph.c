@@ -142,6 +142,10 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 			}
 		}
 	}
+
+	#if VERBOSE == 1
+	log_info_m("symbols divided into %u clusters", array_get_length(&(synthesis_graph->cluster_array)));
+	#endif
 }
 
 static int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){

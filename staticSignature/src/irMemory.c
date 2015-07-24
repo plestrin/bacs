@@ -512,9 +512,8 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 					log_err("unable to add new dependency to IR");
 				}
 
-				if (graph_copy_src_edge(&(ir->graph), new_inst, node2)){
-					log_err("unable to add new dependency to IR");
-				}
+				graph_transfert_src_edge(&(ir->graph), new_inst, node2);
+				ir_remove_node(ir, node2);
 
 				result = 1;
 			}
@@ -522,17 +521,12 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				log_warn("simplification of memory access of different size (case STORE -> LOAD)");
 			}
 			else{
-				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2)){
-					log_err("unable to copy src edge");
-				}
+				graph_transfert_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2);
+				ir_remove_node(ir, node2);
 
 				result = 1;
 			}
 		}
-	}
-
-	if (result == 1){
-		ir_remove_node(ir, node2);
 	}
 
 	return result;
@@ -551,7 +545,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 
 		for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-				graph_remove_edge(&(ir->graph), edge_cursor);
+				ir_remove_dependence(ir, edge_cursor);
 				break;
 			}
 		}
@@ -568,7 +562,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 
 		for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-				graph_remove_edge(&(ir->graph), edge_cursor);
+				ir_remove_dependence(ir, edge_cursor);
 				break;
 			}
 		}

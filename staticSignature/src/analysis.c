@@ -85,7 +85,7 @@ int main(int argc, char** argv){
 	ADD_CMD_TO_INPUT_PARSER(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
 
 	ADD_CMD_TO_INPUT_PARSER(parser, "create synthesis", 		"Search for relation between results in IR", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_create)
-	ADD_CMD_TO_INPUT_PARSER(parser, "printDot synthesis", 		"Print the synthesis graph in dot format", 		"Frag index", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_synthesis_print)
+	ADD_CMD_TO_INPUT_PARSER(parser, "printDot synthesis", 		"Print the synthesis graph in dot format", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_print)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
 
@@ -1134,7 +1134,19 @@ void analysis_synthesis_create(struct analysis* analysis, char* arg){
 void analysis_synthesis_print(struct analysis* analysis, char* arg){
 	uint32_t index;
 
-	index = (uint32_t)atoi(arg);
+	if (arg == NULL){
+		if (array_get_length(&(analysis->frag_array)) < 2){
+			index = 0;
+		}
+		else{
+			log_err("several fragment available, please specify fragment number");
+			return;
+		}
+	}
+	else{
+		index = (uint32_t)atoi(arg);
+	}
+
 	if (index < array_get_length(&(analysis->frag_array))){
 		trace_printDot_synthesis((struct trace*)array_get(&(analysis->frag_array), index));
 	}

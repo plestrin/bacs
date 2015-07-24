@@ -985,10 +985,31 @@ static void ir_normalize_simplify_instruction_symbolic_or(struct ir* ir, struct 
 }
 
 static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct edge* 			edge_cursor;
+	struct edge* 			current_edge;
+	struct irOperation* 	operand_operation;
+
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
 		*modification = 1;
+
+		return;
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; ){
+		current_edge = edge_cursor;
+		edge_cursor = edge_get_next_dst(edge_cursor);
+		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
+
+		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_OR){
+			if (edge_get_src(current_edge)->nb_edge_src == 1){
+				graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
+				ir_remove_node(ir, edge_get_src(current_edge));
+
+				*modification = 1;
+			}
+		}
 	}
 }
 

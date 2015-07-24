@@ -535,6 +535,8 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 	struct edge* 			edge_cursor;
 	struct irDependence* 	dependence_cursor;
 	struct codeSignature*	code_signature;
+	uint32_t 				i;
+	uint32_t 				j;
 
 	code_signature = ((struct result*)(ir_node_get_operation(node)->operation_type.symbol.result_ptr))->code_signature;
 
@@ -553,6 +555,25 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 			parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence_cursor->dependence_type.macro) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence_cursor->dependence_type.macro) - 1] = edge_get_dst(edge_cursor);
 		}
 	}
+
+	for (i = 0; i < code_signature->nb_parameter_in; i++){
+		for (j = 0; j < mapping[i].nb_fragment; j++){
+			if (parameterMapping_get_node_buffer(mapping + i)[j] == NULL){
+				log_err_m("missing I%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+				return -1;
+			}
+		}
+	}
+
+	for (i = 0; i < code_signature->nb_parameter_out; i++){
+		for (j = 0; j < mapping[code_signature->nb_parameter_in + i].nb_fragment; j++){
+			if (parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[j] == NULL){
+				log_err_m("missing O%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+				return -1;
+			}
+		}
+	}
+
 
 	return 0;
 }
