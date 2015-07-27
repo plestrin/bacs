@@ -1,7 +1,7 @@
 # This file define the following signature(s):
 #	- aes_t4 		: one round of the AES encryption/decryption (round 1 to 9), four tables version
-#	- aes_t1_v1 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two version should be required since which of the for table is actually used. 1 )
-#	- aes_t1_v2 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two version should be required since which of the for table is actually used. 2 )
+#	- aes_t1_v1 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two versions should be required since which of the for table is actually used. 1 )
+#	- aes_t1_v2 	: one round of the AES encryption/decryption (round 1 to 9), one table version (Remark: to be complete two versions should be required since which of the for table is actually used. 2 )
 # 	- aes_r9		: 9 rounds of {aes_t4 | aes_t1}
 # 	- aes_r11 		: 11 rounds of {aes_t4 | aes_t1}
 # 	- aes_r13 		: 13 rounds of {aes_t4 | aes_t1}

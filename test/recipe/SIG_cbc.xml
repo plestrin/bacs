@@ -1,5 +1,5 @@
 <xml>
-	<recipe name="TEST_CBC_TEA_GO0" active="yes">
+	<recipe name="TEST_CBC_TEA_GO0" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0">
 			<arg value="-m"/>
@@ -30,7 +30,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO1" active="yes">
+	<recipe name="TEST_CBC_TEA_GO1" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1">
 			<arg value="-m"/>
@@ -61,7 +61,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO2" active="yes">
+	<recipe name="TEST_CBC_TEA_GO2" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2">
 			<arg value="-m"/>
@@ -92,7 +92,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO3" active="yes">
+	<recipe name="TEST_CBC_TEA_GO3" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3">
 			<arg value="-m"/>
@@ -123,7 +123,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GOs" active="yes">
+	<recipe name="TEST_CBC_TEA_GOs" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos">
 			<arg value="-m"/>
@@ -154,7 +154,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO0" active="yes">
+	<recipe name="TEST_CBC_TEA_CO0" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0">
 			<arg value="-m"/>
@@ -185,7 +185,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO1" active="yes">
+	<recipe name="TEST_CBC_TEA_CO1" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1">
 			<arg value="-m"/>
@@ -216,7 +216,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO2" active="yes">
+	<recipe name="TEST_CBC_TEA_CO2" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2">
 			<arg value="-m"/>
@@ -247,7 +247,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO3" active="yes">
+	<recipe name="TEST_CBC_TEA_CO3" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3">
 			<arg value="-m"/>
@@ -278,7 +278,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_COz" active="yes">
+	<recipe name="TEST_CBC_TEA_COz" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz">
 			<arg value="-m"/>
@@ -309,7 +309,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_WD" active="yes">
+	<recipe name="TEST_CBC_TEA_WD" active="no">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -338,7 +338,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_WR" active="yes">
+	<recipe name="TEST_CBC_TEA_WR" active="no">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -367,7 +367,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_CBC_TEA" active="yes">
+	<recipe name="TOM_CBC_TEA" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
 			<arg value="-m"/>
@@ -398,7 +398,7 @@
 		</result>
 	</recipe>
 
-		<recipe name="BOT_CBC_TEA" active="yes">
+	<recipe name="BOT_CBC_TEA" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
 			<arg value="-m"/>
@@ -426,6 +426,378 @@
 			<algo name="xtea_dec" number="252"/>
 			<algo name="xtea_dec_32_v1" number="4"/>
 			<algo name="dec_cbc_cfb" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_GO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_CO0" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_CBC_AES_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_CBC_AES_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_CBC_AES_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace ../windows/trace/traceTEST_CBC_AES_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph mode_enc_cbc"/>
+			<arg value="export callGraph mode_dec_cbc"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1728"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_CBC_AES" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_CBC_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph cbc_encrypt"/>
+			<arg value="export callGraph cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_CBC_AES" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_CBC_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan14CBC_Encryption5writeEPKhj"/>
+			<arg value="export callGraph _ZN5Botan14CBC_Decryption5writeEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
 		</result>
 	</recipe>
 </xml>

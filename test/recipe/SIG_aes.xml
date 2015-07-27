@@ -340,6 +340,7 @@
 			<arg value="load trace tracePP_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<!--<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>-->
 			<arg value="export callGraph _ZThn4_NK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>

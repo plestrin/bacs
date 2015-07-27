@@ -422,14 +422,13 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->code_signature->signature.name);
 			goto exit;
 		}
-		else{
-			for (j = 0; j < nb_signature; j++){
-				if (signature_buffer[j] == result->code_signature){
-					#ifdef VERBOSE
-					log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->tag);
-					#endif
-					exported_result[nb_exported_result ++] = i;
-				}
+		
+		for (j = 0; j < nb_signature; j++){
+			if (signature_buffer[j] == result->code_signature){
+				#ifdef VERBOSE
+				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->tag);
+				#endif
+				exported_result[nb_exported_result ++] = i;
 			}
 		}
 	}
@@ -463,7 +462,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	set_delete(node_set);
 	node_set = NULL;
 
-	ir_remove_footprint(trace->ir, footprint, nb_node_footprint);
+	/*ir_remove_footprint(trace->ir, footprint, nb_node_footprint);*/
 	ir_normalize_remove_dead_code(trace->ir, NULL);
 
 	exit:

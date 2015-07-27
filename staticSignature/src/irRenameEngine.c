@@ -14,7 +14,10 @@ struct irRegisterBuffer{
 static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegister reg, struct irRegisterBuffer* list);
 static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, struct irRegisterBuffer* list);
 
-static uint8_t registerFamily[NB_IR_REGISTER] = {
+#define irRenameEngine_is_register_nested(reg) ((reg) <= 23)
+#define NB_IR_NESTED_REGISTER 24
+
+static uint8_t registerFamily[NB_IR_NESTED_REGISTER] = {
 	0, /* IR_REG_EAX */
 	0, /* IR_REG_AX */
 	0, /* IR_REG_AH */
@@ -38,11 +41,10 @@ static uint8_t registerFamily[NB_IR_REGISTER] = {
 	6, /* IR_REG_ESI */
 	6, /* IR_REG_SI */
 	7, /* IR_REG_EDI */
-	7, /* IR_REG_DI */
-	8  /* IR_REG_TMP */
+	7  /* IR_REG_DI */
 };
 
-static uint8_t registerIndex[NB_IR_REGISTER] = {
+static uint8_t registerIndex[NB_IR_NESTED_REGISTER] = {
 	0, /* IR_REG_EAX */
 	1, /* IR_REG_AX */
 	2, /* IR_REG_AH */
@@ -66,8 +68,7 @@ static uint8_t registerIndex[NB_IR_REGISTER] = {
 	0, /* IR_REG_ESI */
 	1, /* IR_REG_SI */
 	0, /* IR_REG_EDI */
-	1, /* IR_REG_DI */
-	0  /* IR_REG_TMP */
+	1  /* IR_REG_DI */
 };
 
 #define NB_IRREGISTER_FAMILY 	8
@@ -349,7 +350,7 @@ static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegist
 			nb_inner = 1;
 			break;
 		}
-		case IR_REG_TMP : {
+		default 		: {
 			nb_inner = 0;
 			break;
 		}
@@ -406,7 +407,12 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 	uint8_t 				family;
 	enum irOpcode 			new_ins;
 
-	irRenameEngine_get_list(engine, reg, &list);
+	if (irRenameEngine_is_register_nested(reg)){
+		irRenameEngine_get_list(engine, reg, &list);
+	}
+	else {
+		list.nb_register = 0;
+	}
 	if (list.nb_register){
 		reg1 = irRenameEngine_pop_list(engine, &list);
 		family = registerFamily[reg];
