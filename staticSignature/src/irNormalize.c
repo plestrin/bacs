@@ -23,7 +23,6 @@
 #define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
 #define IR_NORMALIZE_EXPAND_VARIABLE				1
 #define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
-#define IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR 			1
 #define IR_NORMALIZE_ALIASING_SENSITIVITY 			1 /* 0=WEAK, 1=CHECK, 2+=STRICT */
 #define IR_NORMALIZE_AFFINE_EXPRESSION 				1
 
@@ -39,7 +38,6 @@ int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
 #define INIT_TIMER																																			\
 	struct timespec 			timer_start_time; 																											\
 	struct timespec 			timer_stop_time; 																											\
-	double 						timer_elapsed_time; 																										\
 	struct multiColumnPrinter* 	printer; 																													\
 																																							\
 	printer = multiColumnPrinter_create(stdout, 2, NULL, NULL, NULL); 																						\
@@ -258,15 +256,6 @@ void ir_normalize(struct ir* ir){
 	multiColumnPrinter_print(printer, "Expand variable", timer_6_elapsed_time, NULL);
 	multiColumnPrinter_print(printer, "Affine expression", timer_7_elapsed_time, NULL);
 	#endif
-	
-	#if IR_NORMALIZE_MERGE_ASSOCIATIVE_XOR == 1
-	{
-		START_TIMER
-		ir_normalize_merge_associative_operation(ir, IR_XOR);
-		STOP_TIMER
-		PRINT_TIMER("Merge associative xor")
-	}
-	#endif
 
 	CLEAN_TIMER
 }
@@ -287,14 +276,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 
 		switch (operation_cursor->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
 					local_modification = 1;
 				}
@@ -304,14 +293,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 				break;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_NODE_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					ir_remove_node(ir, node_cursor);
 					local_modification = 1;
 				}
@@ -804,7 +793,7 @@ static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct
 
 				ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM;
 				ir_node_get_operation(node)->operation_type.imm.value = 0;
-				ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
+				ir_node_get_operation(node)->status_flag = IR_OPERATION_STATUS_FLAG_NONE;
 
 				*modification = 1;
 				return;
@@ -938,7 +927,7 @@ static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct 
 
 					ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM;
 					ir_node_get_operation(node)->operation_type.imm.value = 0;
-					ir_node_get_operation(node)->status_flag = IR_NODE_STATUS_FLAG_NONE;
+					ir_node_get_operation(node)->status_flag = IR_OPERATION_STATUS_FLAG_NONE;
 
 					*modification = 1;
 					break;
@@ -1204,7 +1193,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 		if (node1->nb_edge_src > 1){
 			struct node* node_temp;
 
-			node_temp = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode);
+			node_temp = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
 			if (node_temp == NULL){
 				log_err("unable to add instruction to IR");
 				return;
@@ -1297,7 +1286,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 
 			if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
 				graph_transfert_src_edge(&(ir->graph), node1, node);
-				ir_node_get_operation(node1)->status_flag = ir_node_get_operation(node)->status_flag & IR_NODE_STATUS_FLAG_FINAL;
+				ir_node_get_operation(node1)->status_flag = ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL;
 				ir_remove_node(ir, node);
 			}
 			else{
@@ -1451,7 +1440,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 					struct node* add_node = NULL;
 
 					if (edge_get_src(operand1)->nb_edge_src > 1){
-						add_node = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor->size, IR_ADD);
+						add_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor->size, IR_ADD, IR_OPERATION_BB_ID_UNKOWN);
 						if (add_node != NULL){
 							for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
@@ -1553,13 +1542,19 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 
 static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	struct edge* 		edge_cursor;
+	struct edge* 		current_edge;
 	struct irOperation*	operand_operation;
+	int32_t 			diff;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
+
+		*modification = 1;
+		return;
 	}
-	else if(node->nb_edge_dst == 2){
+
+	if(node->nb_edge_dst == 2){
 		for(edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			operand_operation = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand_operation->type == IR_OPERATION_TYPE_IMM){
@@ -1569,11 +1564,48 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 						ir_node_get_operation(node)->operation_type.inst.opcode = IR_NOT;
 
 						*modification = 1;
-						break;
+						return;
 					}
 				}
 				else{
 					log_warn("found IMM operand but it is shared -> skip");
+				}
+			}
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; ){
+		current_edge = edge_cursor;
+		edge_cursor = edge_get_next_dst(edge_cursor);
+		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
+
+		if (operand_operation->operation_type.inst.bb_id == IR_OPERATION_BB_ID_UNKOWN || ir_node_get_operation(node)->operation_type.inst.bb_id == IR_OPERATION_BB_ID_UNKOWN){
+			log_warn("unkown basic block id");
+			diff = 0;
+		}
+		else{
+			diff = operand_operation->operation_type.inst.bb_id - ir_node_get_operation(node)->operation_type.inst.bb_id;
+		}
+		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_XOR && abs(diff) < 2){
+			if (edge_get_src(current_edge)->nb_edge_src == 1){
+				graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
+				ir_remove_node(ir, edge_get_src(current_edge));
+
+				*modification = 1;
+				continue;
+			}
+			else if (final){
+				if (edge_get_src(current_edge)->nb_edge_dst > 100){
+					log_warn_m("uncommon number of dst edge (%u), do not develop", edge_get_src(current_edge)->nb_edge_dst);
+				}
+				else{
+					if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
+						log_err("unable to copy dst edge");
+					}
+					ir_remove_dependence(ir, current_edge);
+
+					*modification = 1;
+					continue;
 				}
 			}
 		}
@@ -1732,7 +1764,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				}
 				/* CASE 4 */
 				else if (nb_match > 1 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
-					new_intermediate_inst = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode);
+					new_intermediate_inst = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
 					if (new_intermediate_inst == NULL){
 						log_err("unable to add instruction to IR");
 					}
@@ -1853,7 +1885,7 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 							node_cursor3 = edge_get_src(edge_cursor);
 							operation_cursor3 = ir_node_get_operation(node_cursor3);
 
-							new_node = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
+							new_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
 							if (new_node == NULL){
 								log_err("unable to add inst node to IR");
 							}
@@ -1988,7 +2020,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					struct edge* 			op2;
 					enum irDependenceType 	common_operand_dependence_type = IR_DEPENDENCE_TYPE_DIRECT;
 
-					new_node1 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode);
+					new_node1 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
 					if (new_node1 == NULL){
 						log_err("unable to add inst to IR");
 						goto next;
@@ -2024,7 +2056,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					}
 
 					if (new_node2 == NULL){
-						new_node2 = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, operation_cursor1->size, opcode);
+						new_node2 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, opcode, IR_OPERATION_BB_ID_UNKOWN);
 						if (new_node2 == NULL){
 							log_err("unable to add instruction to IR");
 							goto next;
@@ -2060,66 +2092,6 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 		}
 
 		next:;
-	}
-}
-
-/* I wish I could delete this routine */
-void ir_normalize_merge_associative_operation(struct ir* ir, enum irOpcode opcode){
-	struct node* 			node_cursor;
-	struct edge* 			edge_cursor;
-	struct node* 			merge_node;
-	struct irOperation* 	operation;
-
-	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		operation = ir_node_get_operation(node_cursor);
-		if (operation->type == IR_OPERATION_TYPE_INST && operation->operation_type.inst.opcode == opcode){
-
-			start:
-			for(edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				merge_node = edge_get_src(edge_cursor);
-				operation = ir_node_get_operation(merge_node);
-				if (operation->type == IR_OPERATION_TYPE_INST && operation->operation_type.inst.opcode == opcode){
-					if (merge_node->nb_edge_src == 1){
-						graph_merge_node(&(ir->graph), node_cursor, merge_node);
-						ir_remove_node(ir, merge_node);
-						goto start;
-					}
-					/* Here starts the swamp of doom and death */
-					else if (opcode == IR_XOR){
-						if (merge_node->nb_edge_dst > 100){
-							log_warn_m("uncommon number of dst edge (%u), do not develop", merge_node->nb_edge_dst);
-						}
-						else{
-							graph_remove_edge(&(ir->graph), edge_cursor);
-							for(edge_cursor = node_get_head_edge_dst(merge_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-								if (graph_add_edge(&(ir->graph), edge_get_src(edge_cursor), node_cursor, &(edge_cursor->data)) == NULL){
-									log_err("unable to add dependency to IR");
-								}
-							}
-							goto start;
-						}
-					}
-					else if (opcode == IR_ADD && merge_node->nb_edge_src == 2){
-						struct edge* edge_cursor123;
-						struct node* node_cursor123;
-
-						for(edge_cursor123 = node_get_head_edge_src(merge_node); edge_cursor123 != NULL; edge_cursor123 = edge_get_next_src(edge_cursor123)){
-							node_cursor123 = edge_get_dst(edge_cursor123);
-
-							if (ir_node_get_operation(node_cursor123)->type == IR_OPERATION_TYPE_OUT_MEM){
-								graph_remove_edge(&(ir->graph), edge_cursor);
-								for(edge_cursor = node_get_head_edge_dst(merge_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-									if (graph_add_edge(&(ir->graph), edge_get_src(edge_cursor), node_cursor, &(edge_cursor->data)) == NULL){
-										log_err("unable to add dependency to IR");
-									}
-								}
-								goto start;
-							}
-						}
-					}
-				}
-			}
-		}
 	}
 }
 

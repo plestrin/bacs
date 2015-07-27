@@ -399,7 +399,7 @@ static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, st
 	return reg;
 }
 
-struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg, uint32_t instruction_index){
+struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg, uint32_t instruction_index, uint64_t bb_id){
 	struct irRegisterBuffer list;
 	struct node* 			node = NULL;
 	enum irRegister 		reg1;
@@ -421,7 +421,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
 
 				if (new_ins != IR_INVALID){
-					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, instruction_index, irRegister_get_size(reg), new_ins);
+					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, instruction_index, irRegister_get_size(reg), new_ins, bb_id);
 					engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 					engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
 					if (engine->register_alias[reg].ir_node == NULL){
@@ -506,9 +506,9 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 							size_reg1 	= irRegister_get_size(reg1);
 
 							imm_mask 	= ir_add_immediate(engine->ir, size_reg, (0xffffffffffffffff >> (64 - size_reg)) << size_reg1);
-							ins_and 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_AND);
-							node 		= ir_add_inst(engine->ir, instruction_index, size_reg, IR_OR);
-							ins_movzx 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_MOVZX);
+							ins_and 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_AND, bb_id);
+							node 		= ir_add_inst(engine->ir, instruction_index, size_reg, IR_OR, bb_id);
+							ins_movzx 	= ir_add_inst(engine->ir, instruction_index, size_reg, IR_MOVZX, bb_id);
 
 							if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
 								log_err("unable to add node to IR");
@@ -636,7 +636,7 @@ void irRenameEngine_tag_final_node(struct irRenameEngine* engine){
 
 		if (engine->register_alias[i].ir_node != NULL  && ALIAS_IS_WRITE(engine->register_alias[i].type)){
 			operation = ir_node_get_operation(engine->register_alias[i].ir_node);
-			operation->status_flag |= IR_NODE_STATUS_FLAG_FINAL;
+			operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
 		}
 	}
 }

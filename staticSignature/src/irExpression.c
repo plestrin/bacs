@@ -33,7 +33,7 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 		return term->variable;
 	}
 	else if ((coef & (0xffffffffffffffffULL >> (64 - size))) == (0xffffffffffffffffULL >> (64 - size)) && irAffineTerm_is_signed(term)){
-		if ((new_op = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, size, IR_NEG)) != NULL){
+		if ((new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_NEG, IR_OPERATION_BB_ID_UNKOWN)) != NULL){
 			if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 				log_err("unable to add depedence to IR");
 			}
@@ -46,10 +46,10 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 	else{
 		if ((new_im = ir_add_immediate(ir, size, term->coef)) != NULL){
 			if (irAffineTerm_is_signed(term)){
-				new_op = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, size, IR_IMUL);
+				new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_IMUL, IR_OPERATION_BB_ID_UNKOWN);
 			}
 			else{
-				new_op = ir_add_inst(ir, IR_INSTRUCTION_INDEX_UNKOWN, size, IR_MUL);
+				new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_MUL, IR_OPERATION_BB_ID_UNKOWN);
 			}
 			if (new_op != NULL){
 				if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){

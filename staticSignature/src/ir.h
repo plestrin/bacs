@@ -175,14 +175,16 @@ struct irMemAccess{
 	ADDRESS 		con_addr;
 };
 
-#define IR_NODE_STATUS_FLAG_NONE 	0x00000000
-#define IR_NODE_STATUS_FLAG_FINAL 	0x00000001
-#define IR_NODE_STATUS_FLAG_ERROR 	0x40000000
-#define IR_NODE_STATUS_FLAG_TEST 	0x80000000
+#define IR_OPERATION_STATUS_FLAG_NONE 	0x00000000
+#define IR_OPERATION_STATUS_FLAG_FINAL 	0x00000001
+#define IR_OPERATION_STATUS_FLAG_ERROR 	0x40000000
+#define IR_OPERATION_STATUS_FLAG_TEST 	0x80000000
 
-#define IR_INSTRUCTION_INDEX_ADDRESS 	0xfffffffd
-#define IR_INSTRUCTION_INDEX_IMMEDIATE 	0xfffffffe
-#define IR_INSTRUCTION_INDEX_UNKOWN 	0xffffffff
+#define IR_OPERATION_INDEX_ADDRESS 		0xfffffffd
+#define IR_OPERATION_INDEX_IMMEDIATE 	0xfffffffe
+#define IR_OPERATION_INDEX_UNKOWN 		0xffffffff
+
+#define IR_OPERATION_BB_ID_UNKOWN 		0xffffffffffffffffULL
 
 struct irOperation{
 	enum irOperationType 		type;
@@ -198,6 +200,7 @@ struct irOperation{
 		} 						imm;
 		struct {
 			enum irOpcode 		opcode;
+			uint64_t 			bb_id;
 		} 						inst;
 		struct {
 			void* 				result_ptr;
@@ -278,7 +281,7 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 #define ir_add_out_mem(ir, index, size, address, prev) ir_add_out_mem_(ir, index, size, address, prev, MEMADDRESS_INVALID)
 
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
-struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode);
+struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint64_t bb_id);
 struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index);
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
@@ -291,11 +294,12 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 		ir_mem_remove(operation);
 	}
 
-	operation->type = IR_OPERATION_TYPE_INST;
-	operation->operation_type.inst.opcode = opcode;
-	operation->size = size;
-	operation->index = index;
-	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
+	operation->type 						= IR_OPERATION_TYPE_INST;
+	operation->operation_type.inst.opcode 	= opcode;
+	operation->operation_type.inst.bb_id 	= IR_OPERATION_BB_ID_UNKOWN;
+	operation->size 						= size;
+	operation->index 						= index;
+	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
 }
 
 static inline void ir_convert_node_to_imm(struct node* node, uint8_t size, uint64_t value){
@@ -305,11 +309,11 @@ static inline void ir_convert_node_to_imm(struct node* node, uint8_t size, uint6
 		ir_mem_remove(operation);
 	}
 
-	operation->type = IR_OPERATION_TYPE_IMM;
-	operation->operation_type.imm.value = value;
-	operation->size = size;
-	operation->index = IR_INSTRUCTION_INDEX_IMMEDIATE;
-	operation->status_flag = IR_NODE_STATUS_FLAG_NONE;
+	operation->type 						= IR_OPERATION_TYPE_IMM;
+	operation->operation_type.imm.value 	= value;
+	operation->size 						= size;
+	operation->index 						= IR_OPERATION_INDEX_IMMEDIATE;
+	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
 }
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);

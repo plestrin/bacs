@@ -59,7 +59,7 @@ struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
 		operation->operation_type.in_reg.reg 			= reg;
 		operation->size 								= irRegister_get_size(reg);
 		operation->index 								= index;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -88,7 +88,7 @@ struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct 
 		operation->operation_type.mem.access.con_addr 	= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			log_err("unable to add address dependence");
@@ -121,7 +121,7 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 		operation->operation_type.mem.access.con_addr 	= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_FINAL;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_FINAL;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			log_err("unable to add address dependence");
@@ -144,14 +144,14 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 		operation->type 								= IR_OPERATION_TYPE_IMM;
 		operation->operation_type.imm.value 			= value;
 		operation->size 								= size;
-		operation->index 								= IR_INSTRUCTION_INDEX_IMMEDIATE;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->index 								= IR_OPERATION_INDEX_IMMEDIATE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
 }
 
-struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode){
+struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint64_t bb_id){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -163,9 +163,10 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_INST;
 		operation->operation_type.inst.opcode 			= opcode;
+		operation->operation_type.inst.bb_id 			= bb_id;
 		operation->size 								= size;
 		operation->index 								= index;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -185,8 +186,8 @@ struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
 		operation->operation_type.symbol.result_ptr 	= result_ptr;
 		operation->operation_type.symbol.index 			= index;
 		operation->size 								= 1;
-		operation->index 								= IR_INSTRUCTION_INDEX_UNKOWN;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->index 								= IR_OPERATION_INDEX_UNKOWN;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -205,8 +206,8 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 		operation->type 								= IR_OPERATION_TYPE_IMM;
 		operation->operation_type.imm.value 			= value;
 		operation->size 								= size;
-		operation->index 								= IR_INSTRUCTION_INDEX_IMMEDIATE;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->index 								= IR_OPERATION_INDEX_IMMEDIATE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -226,7 +227,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 		operation->operation_type.inst.opcode 			= opcode;
 		operation->size 								= size;
 		operation->index 								= index;
-		operation->status_flag 							= IR_NODE_STATUS_FLAG_NONE;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 	}
 
 	return node;
@@ -316,7 +317,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 
 	node_src = edge_get_src(edge);
 	graph_remove_edge(&(ir->graph), edge);
-	if (!(ir_node_get_operation(node_src)->status_flag & IR_NODE_STATUS_FLAG_FINAL) && (node_src->nb_edge_src == 0 || ir_node_get_operation(node_src)->type == IR_OPERATION_TYPE_SYMBOL)){
+	if (!(ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) && (node_src->nb_edge_src == 0 || ir_node_get_operation(node_src)->type == IR_OPERATION_TYPE_SYMBOL)){
 		ir_remove_node(ir, node_src);
 	}
 }
@@ -332,12 +333,12 @@ void ir_print_location_node(struct node* node, struct assembly* assembly){
 
 	operation = ir_node_get_operation(node);
 	switch(operation->index){
-		case IR_INSTRUCTION_INDEX_IMMEDIATE 	: {
+		case IR_OPERATION_INDEX_IMMEDIATE 	: {
 			printf("IMM=%llx", ir_imm_operation_get_unsigned_value(operation));
 			break;
 		}
-		case IR_INSTRUCTION_INDEX_ADDRESS 		: 
-		case IR_INSTRUCTION_INDEX_UNKOWN 		: {
+		case IR_OPERATION_INDEX_ADDRESS 		: 
+		case IR_OPERATION_INDEX_UNKOWN 		: {
 			switch(operation->type){
 				case IR_OPERATION_TYPE_IN_REG 	: {
 					printf("%s@??", irRegister_2_string(operation->operation_type.in_reg.reg));
@@ -409,7 +410,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
-			if (operation->status_flag & IR_NODE_STATUS_FLAG_FINAL){
+			if (operation->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
 				fprintf(file, "[shape=\"Mdiamond\"");
 			}
 			else{
@@ -436,7 +437,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 		: {
-			if (operation->status_flag & IR_NODE_STATUS_FLAG_FINAL){
+			if (operation->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
 				fprintf(file, "[shape=\"octagon\",label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
 			}
 			else{
@@ -449,7 +450,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 	}
-	if (operation->status_flag & IR_NODE_STATUS_FLAG_ERROR){
+	if (operation->status_flag & IR_OPERATION_STATUS_FLAG_ERROR){
 		fprintf(file, ",color=\"red\"]");
 	}
 	else{

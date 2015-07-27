@@ -54,6 +54,7 @@
 #define min(a, b) (((a) > (b)) ? (b) : (a))
 #endif
 #define max(a, b) (((a) > (b)) ? (a) : (b))
+#define abs(a) (((a) ^ ((a) >> (sizeof(a) * 8 - 1))) - ((a) >> (sizeof(a) * 8 - 1)))
 
 enum allocationType{
 	ALLOCATION_MALLOC,
