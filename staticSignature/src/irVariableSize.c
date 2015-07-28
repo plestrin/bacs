@@ -198,7 +198,7 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 
 					if (child->size == ir_node_get_operation(operand)->size && !(child->type == IR_OPERATION_TYPE_INST && child->operation_type.inst.opcode == IR_MOVZX)){
 						if (shift == NULL){
-							shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, child->size, IR_SHR, IR_OPERATION_BB_ID_UNKOWN);
+							shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, child->size, IR_SHR, IR_OPERATION_DST_UNKOWN);
 							if (shift){
 								struct node* disp;
 
@@ -310,19 +310,19 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 
 				/* Add instruction to convert size */
 				if (operation_cursor->size == 32 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_BB_ID_UNKOWN);
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
 				}
 				else if (operation_cursor->size == 8 && operand_operation->size == 32){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_BB_ID_UNKOWN);
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
 				}
 				else if (operation_cursor->size == 32 && operand_operation->size == 16){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_BB_ID_UNKOWN);
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
 				}
 				else if (operation_cursor->size == 16 && operand_operation->size == 32){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_PART1_16, IR_OPERATION_BB_ID_UNKOWN);
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_PART1_16, IR_OPERATION_DST_UNKOWN);
 				}
 				else if (operation_cursor->size == 16 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_MOVZX, IR_OPERATION_BB_ID_UNKOWN);
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
 				}
 				else{
 					log_err_m("this case is not implemented, size mismatch %u -> %u", operand_operation->size, operation_cursor->size);
@@ -459,7 +459,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 
 									mask = ir_insert_immediate(ir, node_cursor, 32, 0xffffffffffffffff >> (64 - ir_node_get_operation(node_cursor)->size));
 									if (mask){
-										and_tab[i] = ir_insert_inst(ir, node_cursor, IR_OPERATION_INDEX_UNKOWN, 32, IR_AND);
+										and_tab[i] = ir_insert_inst(ir, node_cursor, IR_OPERATION_INDEX_UNKOWN, 32, IR_AND, IR_OPERATION_DST_UNKOWN);
 										if (and_tab[i]){
 											if (ir_add_dependence(ir, mask, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 												log_err("unable to add dependency to IR");

@@ -9,6 +9,7 @@
 #include "irMemory.h"
 #include "irVariableSize.h"
 #include "irExpression.h"
+#include "irVariableRange.h"
 #include "dagPartialOrder.h"
 #include "base.h"
 
@@ -633,14 +634,16 @@ static void ir_normalize_simplify_instruction_numeric_and(struct ir* ir, struct 
 	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, (0xffffffffffffffff >> (64 - ir_node_get_operation(node)->size)), &)
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
-	struct node* 		imm_operand 	= NULL;
-	struct edge* 		and_operand 	= NULL;
-	struct node*		movzx_operand 	= NULL;
-	struct edge* 		edge_cursor1;
-	struct edge* 		edge_cursor2;
-	struct irOperation*	operand_operation;
+	struct edge* 			imm_operand 	= NULL;
+	struct edge* 			and_operand 	= NULL;
+	struct edge* 			edge_cursor1;
+	struct edge* 			edge_cursor2;
+	struct irOperation*		operand_operation;
+	struct irVariableRange 	range;
+	struct irVariableRange 	operand_range;
+	struct irOperation* 	operation;
+	struct node* 			operand;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
@@ -650,57 +653,58 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 		return;
 	}
 
-	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
-		operand_operation = ir_node_get_operation(edge_get_src(edge_cursor1));
+	operation = ir_node_get_operation(node);
+	irVariableRange_init_size(&range, operation->size);
 
-		if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-			imm_operand = edge_get_src(edge_cursor1);
+	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+		operand = edge_get_src(edge_cursor1);
+
+		if (ir_node_get_operation(operand)->type == IR_OPERATION_TYPE_IMM){
+			imm_operand = edge_cursor1;
 		}
-		else if (operand_operation->type == IR_OPERATION_TYPE_INST){
-			if (operand_operation->operation_type.inst.opcode == IR_AND){
-				if (and_operand != NULL){
-					log_warn("multiple AND operands, can't decide how to associate IMM");
-					return;
-				}
-				else{
-					for (edge_cursor2 = node_get_head_edge_dst(edge_get_src(edge_cursor1)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-						if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
-							and_operand = edge_cursor1;
+		else{
+			irVariableRange_compute(operand, &operand_range);
+			irVariableRange_and_range(&range, &operand_range, operation->size);
+		}
+	}
+	if (imm_operand != NULL){
+		if ((range.upper_bound & (~ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(imm_operand))))) == 0){
+			ir_remove_dependence(ir, imm_operand);
+
+			*modification = 1;
+			ir_normalize_simplify_instruction_rewrite_and(ir, node, modification, final);
+			return;
+		}
+
+		for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+			operand = edge_get_src(edge_cursor1);
+			operand_operation = ir_node_get_operation(operand);
+
+			if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_AND){
+				for (edge_cursor2 = node_get_head_edge_dst(operand); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
+					if (ir_node_get_operation(edge_get_src(edge_cursor2))->type == IR_OPERATION_TYPE_IMM){
+						if (and_operand != NULL){
+							log_warn("multiple AND operands, can't decide how to associate IMM");
+							return;
 						}
+						and_operand = edge_cursor1;
 					}
 				}
 			}
-			else if (operand_operation->operation_type.inst.opcode == IR_MOVZX){
-				movzx_operand = edge_get_src(edge_cursor1);
+		}
+
+		if (and_operand != NULL){
+			if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(and_operand))){
+				log_err("unable to copy dst edge");
 			}
-		}
-	}
+			ir_remove_dependence(ir, and_operand);
 
-	if (node->nb_edge_dst == 2 && imm_operand != NULL && movzx_operand != NULL){
-		if (movzx_operand->nb_edge_dst == 1){
-			if ((~ir_imm_operation_get_unsigned_value(ir_node_get_operation(imm_operand)) & (0xffffffffffffffff >> (64 - ir_node_get_operation(edge_get_src(node_get_head_edge_dst(movzx_operand)))->size))) == 0){
-				graph_transfert_src_edge(&(ir->graph), movzx_operand, node);
-				ir_remove_node(ir, node);
-		
-				*modification = 1;
-				return;
-			}
+			*modification = 1;
 		}
-		else{
-			log_err_m("MOVZX has a wrong number of dst edge: %u", movzx_operand->nb_edge_dst);
-		}
-	}
-
-	if (imm_operand != NULL && and_operand != NULL){
-		if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(and_operand))){
-			log_err("unable to copy dst edge");
-		}
-		ir_remove_dependence(ir, and_operand);
-
-		*modification = 1;
 	}
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct node* node, uint8_t* modification){
 	uint32_t 			nb_imm_operand;
 	struct edge* 		edge_cursor;
@@ -1193,7 +1197,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 		if (node1->nb_edge_src > 1){
 			struct node* node_temp;
 
-			node_temp = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
+			node_temp = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(node1)->size, ir_node_get_operation(node1)->operation_type.inst.opcode, IR_OPERATION_DST_UNKOWN);
 			if (node_temp == NULL){
 				log_err("unable to add instruction to IR");
 				return;
@@ -1440,7 +1444,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 					struct node* add_node = NULL;
 
 					if (edge_get_src(operand1)->nb_edge_src > 1){
-						add_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor->size, IR_ADD, IR_OPERATION_BB_ID_UNKOWN);
+						add_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor->size, IR_ADD, IR_OPERATION_DST_UNKOWN);
 						if (add_node != NULL){
 							for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
@@ -1579,34 +1583,40 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 		edge_cursor = edge_get_next_dst(edge_cursor);
 		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
 
-		if (operand_operation->operation_type.inst.bb_id == IR_OPERATION_BB_ID_UNKOWN || ir_node_get_operation(node)->operation_type.inst.bb_id == IR_OPERATION_BB_ID_UNKOWN){
-			log_warn("unkown basic block id");
-			diff = 0;
-		}
-		else{
-			diff = operand_operation->operation_type.inst.bb_id - ir_node_get_operation(node)->operation_type.inst.bb_id;
-		}
-		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_XOR && abs(diff) < 2){
-			if (edge_get_src(current_edge)->nb_edge_src == 1){
-				graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
-				ir_remove_node(ir, edge_get_src(current_edge));
-
-				*modification = 1;
-				continue;
+		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_XOR){
+			if (operand_operation->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN || ir_node_get_operation(node)->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN){
+				log_warn("unkown instruction dst");
+				diff = 0;
 			}
-			else if (final){
-				if (edge_get_src(current_edge)->nb_edge_dst > 100){
-					log_warn_m("uncommon number of dst edge (%u), do not develop", edge_get_src(current_edge)->nb_edge_dst);
-				}
-				else{
-					if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
-						log_err("unable to copy dst edge");
-					}
-					ir_remove_dependence(ir, current_edge);
+			else{
+				diff = operand_operation->operation_type.inst.dst - ir_node_get_operation(node)->operation_type.inst.dst;
+			}
+			
+			if (!diff){
+				if (edge_get_src(current_edge)->nb_edge_src == 1){
+					graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
+					ir_remove_node(ir, edge_get_src(current_edge));
 
 					*modification = 1;
 					continue;
 				}
+				else if (final){
+					if (edge_get_src(current_edge)->nb_edge_dst > 100){
+						log_warn_m("uncommon number of dst edge (%u), do not develop", edge_get_src(current_edge)->nb_edge_dst);
+					}
+					else{
+						if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
+							log_err("unable to copy dst edge");
+						}
+						ir_remove_dependence(ir, current_edge);
+
+						*modification = 1;
+						continue;
+					}
+				}
+			}
+			else{
+				log_debug_m("gap is too big: %d", diff);
 			}
 		}
 	}
@@ -1764,7 +1774,7 @@ void ir_normalize_remove_subexpression(struct ir* ir, uint8_t* modification){
 				}
 				/* CASE 4 */
 				else if (nb_match > 1 && (operation1->operation_type.inst.opcode == IR_ADD || operation1->operation_type.inst.opcode == IR_XOR)){
-					new_intermediate_inst = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
+					new_intermediate_inst = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation1->size, operation1->operation_type.inst.opcode, IR_OPERATION_DST_UNKOWN);
 					if (new_intermediate_inst == NULL){
 						log_err("unable to add instruction to IR");
 					}
@@ -1885,7 +1895,7 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 							node_cursor3 = edge_get_src(edge_cursor);
 							operation_cursor3 = ir_node_get_operation(node_cursor3);
 
-							new_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
+							new_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_DST_UNKOWN);
 							if (new_node == NULL){
 								log_err("unable to add inst node to IR");
 							}
@@ -2020,7 +2030,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					struct edge* 			op2;
 					enum irDependenceType 	common_operand_dependence_type = IR_DEPENDENCE_TYPE_DIRECT;
 
-					new_node1 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_BB_ID_UNKOWN);
+					new_node1 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_DST_UNKOWN);
 					if (new_node1 == NULL){
 						log_err("unable to add inst to IR");
 						goto next;
@@ -2056,7 +2066,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 					}
 
 					if (new_node2 == NULL){
-						new_node2 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, opcode, IR_OPERATION_BB_ID_UNKOWN);
+						new_node2 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, opcode, IR_OPERATION_DST_UNKOWN);
 						if (new_node2 == NULL){
 							log_err("unable to add instruction to IR");
 							goto next;

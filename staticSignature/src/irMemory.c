@@ -327,7 +327,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
 		node_cursor->ptr =  range_buffer + i;
-		irVariableRange_compute(node_cursor);
+		irVariableRange_compute(node_cursor, NULL);
 	}
 
 	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -503,7 +503,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 	for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
 			if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size > operation2->size){
-				if ((new_inst = ir_add_inst(ir, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size), IR_OPERATION_BB_ID_UNKOWN)) == NULL){
+				if ((new_inst = ir_add_inst(ir, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size), IR_OPERATION_DST_UNKOWN)) == NULL){
 					log_err("unable to add instruction to IR");
 					continue;
 				}

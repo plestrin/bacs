@@ -151,7 +151,7 @@ struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value){
 	return node;
 }
 
-struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint64_t bb_id){
+struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -163,7 +163,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_INST;
 		operation->operation_type.inst.opcode 			= opcode;
-		operation->operation_type.inst.bb_id 			= bb_id;
+		operation->operation_type.inst.dst 				= dst;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
@@ -213,7 +213,7 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 	return node;
 }
 
-struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode){
+struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -225,6 +225,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_INST;
 		operation->operation_type.inst.opcode 			= opcode;
+		operation->operation_type.inst.dst 				= dst;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;

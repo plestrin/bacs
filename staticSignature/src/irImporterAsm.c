@@ -145,7 +145,7 @@ struct memOperand{
 	ADDRESS 		con_addr;
 };
 
-static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem, uint32_t instruction_index);
+static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem, uint32_t instruction_index, uint32_t dst);
 
 enum asmOperandType{
 	ASM_OPERAND_IMM,
@@ -184,8 +184,8 @@ struct asmOperand{
 static void asmOperand_decode(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_, struct memAddress* mem_addr);
 static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOperand* operand_buffer, uint8_t max_nb_operand, uint32_t selector, uint8_t* nb_operand_, struct memAddress* mem_addr);
 
-static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand);
-static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode);
+static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand, uint32_t dst);
+static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode, uint32_t dst);
 
 static void asmOperand_sign_extend(struct asmOperand* operand, uint16_t size);
 
@@ -196,11 +196,11 @@ struct asmRiscIns{
 	struct asmOperand 		output_operand;
 };
 
-static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
 
-static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc);
-static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc);
-static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc);
+static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
 
 struct asmCiscIns{
 	uint8_t 				valid;
@@ -237,6 +237,10 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 	struct irRenameEngine 		engine;
 	struct instructionIterator 	it;
 	uint32_t 					i;
+	#define STACK_MAX_SIZE 		32
+	uint32_t 					stack[STACK_MAX_SIZE] 	= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int32_t 					stack_ptr 				= 15;
+	uint32_t 					func_id 				= 16;
 
 	irRenameEngine_init(engine, ir)
 
@@ -252,6 +256,12 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			case XED_ICLASS_BSWAP 		: {break;}
 			case XED_ICLASS_CALL_NEAR 	: {
 				cisc_decode_special_call(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
+				if (stack_ptr + 1 == STACK_MAX_SIZE){
+					log_err(" the top of the stack has been reached");
+				}
+				else{
+					stack[++ stack_ptr] = func_id ++;
+				}
 				break;
 			}
 			case XED_ICLASS_CMP 		: {break;}
@@ -361,10 +371,22 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			}
 			case XED_ICLASS_RET_FAR 	: {
 				cisc_decode_special_ret(&it, &cisc);
+				if (stack_ptr == 0){
+					log_err(" the bottom of the stack has been reached");
+				}
+				else{
+					stack_ptr --;
+				}
 				break;
 			}
 			case XED_ICLASS_RET_NEAR 	: {
 				cisc_decode_special_ret(&it, &cisc);
+				if (stack_ptr == 0){
+					log_err(" the bottom of the stack has been reached");
+				}
+				else{
+					stack_ptr --;
+				}
 				break;
 			}
 			case XED_ICLASS_TEST 		: {break;}
@@ -387,19 +409,19 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			for (i = 0; i < cisc.nb_ins; i++){
 				switch(cisc.ins[i].opcode){
 					case IR_CMOV 	: {
-						asmRisc_process_special_cmov(&engine, cisc.ins + i);
+						asmRisc_process_special_cmov(&engine, cisc.ins + i, stack[stack_ptr]);
 						break;
 					}
 					case IR_LEA 	: {
-						asmRisc_process_special_lea(&engine, cisc.ins + i);
+						asmRisc_process_special_lea(&engine, cisc.ins + i, stack[stack_ptr]);
 						break;
 					}
 					case IR_MOV 	: {
-						asmRisc_process_special_mov(&engine, cisc.ins + i);
+						asmRisc_process_special_mov(&engine, cisc.ins + i, stack[stack_ptr]);
 						break;
 					}
 					default 				: {
-						asmRisc_process(&engine, cisc.ins + i);
+						asmRisc_process(&engine, cisc.ins + i, stack[stack_ptr]);
 					}
 				}
 			}
@@ -711,7 +733,7 @@ static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOpe
 	}
 }
 
-static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand){
+static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOperand* operand, uint32_t dst){
 	switch(operand->type){
 		case ASM_OPERAND_IMM : {
 			operand->variable = ir_add_immediate(engine->ir, operand->size, operand->operand_type.imm);
@@ -721,7 +743,7 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 			break;
 		}
 		case ASM_OPERAND_REG : {
-			operand->variable = irRenameEngine_get_register_ref(engine, operand->operand_type.reg, operand->instruction_index);
+			operand->variable = irRenameEngine_get_register_ref(engine, operand->operand_type.reg, operand->instruction_index, dst);
 			if (operand->variable == NULL){
 				log_err("unable to register reference from the renaming engine");
 			}
@@ -730,7 +752,7 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 		case ASM_OPERAND_MEM : {
 			struct node* address;
 
-			address = memOperand_build_address(engine, &(operand->operand_type.mem), operand->instruction_index);
+			address = memOperand_build_address(engine, &(operand->operand_type.mem), operand->instruction_index, dst);
 			if (address != NULL){
 				operand->variable = ir_add_in_mem_(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine), operand->operand_type.mem.con_addr);
 				if (operand->variable == NULL){
@@ -748,10 +770,10 @@ static void asmOperand_fetch_input(struct irRenameEngine* engine, struct asmOper
 	}
 }
 
-static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode){
+static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOperand* operand, enum irOpcode opcode, uint32_t dst){
 	switch(operand->type){
 		case ASM_OPERAND_REG 	: {
-			operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode);
+			operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode, dst);
 			if (operand->variable == NULL){
 				log_err("unable to add operation to IR");
 			}
@@ -764,9 +786,9 @@ static void asmOperand_fetch_output(struct irRenameEngine* engine, struct asmOpe
 			struct node* address;
 			struct node* mem_write;
 
-			address = memOperand_build_address(engine, &(operand->operand_type.mem), operand->instruction_index);
+			address = memOperand_build_address(engine, &(operand->operand_type.mem), operand->instruction_index, dst);
 			if (address != NULL){
-				operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode);
+				operand->variable = ir_add_inst(engine->ir, operand->instruction_index, operand->size, opcode, dst);
 				if (operand->variable != NULL){
 					mem_write = ir_add_out_mem_(engine->ir, operand->instruction_index, operand->size, address, irRenameEngine_get_mem_order(engine), operand->operand_type.mem.con_addr);
 					if (mem_write != NULL){
@@ -810,7 +832,7 @@ static void asmOperand_sign_extend(struct asmOperand* operand, uint16_t size){
 	}
 }
 
-static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem, uint32_t instruction_index){
+static struct node* memOperand_build_address(struct irRenameEngine* engine, struct memOperand* mem, uint32_t instruction_index, uint32_t dst){
 	struct node* 	base 		= NULL;
 	struct node* 	index 		= NULL;
 	struct node* 	disp 		= NULL;
@@ -820,7 +842,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	struct node* 	address 	= NULL;
 
 	if (mem->base != XED_REG_INVALID){
-		base = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->base), instruction_index);
+		base = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->base), instruction_index, dst);
 		if (base == NULL){
 			log_err("unable to get register reference from the renaming engine");
 		}
@@ -838,7 +860,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	}
 
 	if (mem->index != XED_REG_INVALID){
-		index = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->index), instruction_index);
+		index = irRenameEngine_get_register_ref(engine, xedRegister_2_irRegister(mem->index), instruction_index, dst);
 		if (index == NULL){
 			log_err("unable to get register reference from the renaming engine");
 		}
@@ -850,7 +872,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			else{
 				struct node* shl;
 
-				shl = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_SHL);
+				shl = ir_add_inst(engine->ir, IR_OPERATION_INDEX_ADDRESS, 32, IR_SHL, dst);
 				if (shl != NULL){
 					if (ir_add_dependence(engine->ir, index, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 						log_err("unable to add dependence between IR nodes");
@@ -886,7 +908,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			break;
 		}
 		case 2 : {
-			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
+			address = ir_add_inst(engine->ir, IR_OPERATION_INDEX_ADDRESS, 32, IR_ADD, dst);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					log_err("unable to add dependence between IR nodes");
@@ -901,7 +923,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 			break;
 		}
 		case 3 : {
-			address = ir_add_inst(engine->ir, IR_INSTRUCTION_INDEX_ADDRESS, 32, IR_ADD);
+			address = ir_add_inst(engine->ir, IR_OPERATION_INDEX_ADDRESS, 32, IR_ADD, dst);
 			if (address != NULL){
 				if (ir_add_dependence(engine->ir, operands[0], address, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					log_err("unable to add dependence between IR nodes");
@@ -926,7 +948,7 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	return address;
 }
 
-static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
 	uint8_t i;
 
 	if (sign_extand_table[risc->opcode]){
@@ -936,9 +958,9 @@ static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* ri
 	}
 
 	for (i = 0; i < risc->nb_input_operand; i++){
-		asmOperand_fetch_input(engine, risc->input_operand + i);
+		asmOperand_fetch_input(engine, risc->input_operand + i, dst);
 	}
-	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode);
+	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode, dst);
 
 	if (risc->output_operand.variable != NULL){
 		for (i = 0; i < risc->nb_input_operand; i++){
@@ -951,7 +973,7 @@ static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* ri
 	}
 }
 
-static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
 	log_warn("translating CMOVxx instruction into glue operation");
 
 	if (risc->nb_input_operand != 1){
@@ -962,10 +984,10 @@ static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct a
 	memcpy(risc->input_operand + 1, &(risc->output_operand), sizeof(struct asmOperand));
 	risc->nb_input_operand ++;
 
-	asmOperand_fetch_input(engine, risc->input_operand + 0);
-	asmOperand_fetch_input(engine, risc->input_operand + 1);
+	asmOperand_fetch_input(engine, risc->input_operand + 0, dst);
+	asmOperand_fetch_input(engine, risc->input_operand + 1, dst);
 
-	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode);
+	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode, dst);
 
 	if (risc->output_operand.variable != NULL){
 		if (risc->input_operand[0].variable != NULL){
@@ -991,7 +1013,7 @@ static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct a
 	}
 }
 
-static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
 	struct node* address;
 	struct node* mem_write;
 
@@ -1000,7 +1022,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 		return;
 	}
 
-	risc->input_operand[0].variable = memOperand_build_address(engine, &(risc->input_operand[0].operand_type.mem), risc->input_operand[0].instruction_index);
+	risc->input_operand[0].variable = memOperand_build_address(engine, &(risc->input_operand[0].operand_type.mem), risc->input_operand[0].instruction_index, dst);
 	if (risc->input_operand[0].variable != NULL){
 		switch(risc->output_operand.type){
 			case ASM_OPERAND_REG 	: {
@@ -1008,7 +1030,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 				break;
 			}
 			case ASM_OPERAND_MEM 	: {
-				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index);
+				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
 				if (address != NULL){
 					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
 					if (mem_write != NULL){
@@ -1036,7 +1058,7 @@ static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct as
 	}
 }
 
-static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc){
+static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
 	struct node* address;
 	struct node* mem_write;
 
@@ -1045,7 +1067,7 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 		return;
 	}
 
-	asmOperand_fetch_input(engine, risc->input_operand);
+	asmOperand_fetch_input(engine, risc->input_operand, dst);
 	if (risc->input_operand[0].variable != NULL){
 		switch(risc->output_operand.type){
 			case ASM_OPERAND_REG 	: {
@@ -1053,7 +1075,7 @@ static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct as
 				break;
 			}
 			case ASM_OPERAND_MEM 	: {
-				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index);
+				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
 				if (address != NULL){
 					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
 					if (mem_write != NULL){

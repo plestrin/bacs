@@ -184,7 +184,7 @@ struct irMemAccess{
 #define IR_OPERATION_INDEX_IMMEDIATE 	0xfffffffe
 #define IR_OPERATION_INDEX_UNKOWN 		0xffffffff
 
-#define IR_OPERATION_BB_ID_UNKOWN 		0xffffffffffffffffULL
+#define IR_OPERATION_DST_UNKOWN 		0xffffffff
 
 struct irOperation{
 	enum irOperationType 		type;
@@ -200,7 +200,7 @@ struct irOperation{
 		} 						imm;
 		struct {
 			enum irOpcode 		opcode;
-			uint64_t 			bb_id;
+			uint32_t 			dst;
 		} 						inst;
 		struct {
 			void* 				result_ptr;
@@ -281,11 +281,11 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 #define ir_add_out_mem(ir, index, size, address, prev) ir_add_out_mem_(ir, index, size, address, prev, MEMADDRESS_INVALID)
 
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
-struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint64_t bb_id);
+struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);
 struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index);
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
-struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode);
+struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);
 
 static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, uint8_t size, enum irOpcode opcode){
 	struct irOperation* operation = ir_node_get_operation(node);
@@ -296,7 +296,7 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 
 	operation->type 						= IR_OPERATION_TYPE_INST;
 	operation->operation_type.inst.opcode 	= opcode;
-	operation->operation_type.inst.bb_id 	= IR_OPERATION_BB_ID_UNKOWN;
+	operation->operation_type.inst.dst 		= IR_OPERATION_DST_UNKOWN;
 	operation->size 						= size;
 	operation->index 						= index;
 	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
