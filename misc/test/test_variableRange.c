@@ -12,13 +12,13 @@
 #define MAX_SIZE 		8
 #define MASK 			(0xffffffffffffffff >> (64 - MAX_SIZE))
 /*#define SEED 			10347*/ 				/* comment this line to start to used a different SEED */
-#define TEST_ADD
+/*#define TEST_ADD
 #define TEST_AND
 #define TEST_SHL 
 #define TEST_SHR
 #define TEST_INCLUDE
-#define TEST_INTERSECT
-/*#define TEST_CUSTOM*/
+#define TEST_INTERSECT*/
+#define TEST_CUSTOM
 #define NO_PRINT 								/* comment this line to print successful test */
 
 #ifndef SEED
@@ -517,44 +517,21 @@ static int32_t test_intersect(void){
 static int32_t test_custom(void){
 	struct variableRange 	range1;
 	struct variableRange 	range2;
-	uint64_t 				v1 = 0x6c; /*0x1c*/
-	uint64_t 				v2 = 0x1;
-	uint64_t 				v3;
-	struct variableRange 	cst;
 
 	range1.index_lo 	= 0x0;
-	range1.index_up 	= 0x12;
-	range1.scale 		= 2;
-	range1.disp 		= 0x5c;
-	range1.size_mask 	= MASK;
+	range1.index_up 	= 0xffffffff;
+	range1.scale 		= 0x0;
+	range1.disp 		= 0x0;
+	range1.size_mask 	= 0xffffffff;
 
 	range2.index_lo 	= 0x0;
 	range2.index_up 	= 0x0;
 	range2.scale 		= 0xffffffff;
-	range2.disp 		= 0x1;
-	range2.size_mask 	= MASK;
+	range2.disp 		= 0x00ff0000;
+	range2.size_mask 	= 0xffffffff;
 
-	variableRange_init_cst(&cst, v1);
-	if (!variableRange_include(&range1, &cst, MAX_SIZE)){
-		log_err("v1 is not in range1");
-		return -1;
-	}
-
-	variableRange_init_cst(&cst, v2);
-	if (!variableRange_include(&range2, &cst, MAX_SIZE)){
-		log_err("v2 is not in range2");
-		return -1;
-	}
-
-	v3 = v1 >> v2;
-
-	variableRange_shr(&range1, &range2, MAX_SIZE);
-	variableRange_init_cst(&cst, v3);
-	if (!variableRange_include(&range1, &cst, MAX_SIZE)){
-		log_err("test failed");
-		printf("\t0x%llx not in ", v3); variableRange_print(&range1); printf("\n");
-		return -1;
-	}
+	variableRange_and(&range1, &range2, 32);
+	variableRange_print(&range1); printf("\n");
 
 	return 0;
 }

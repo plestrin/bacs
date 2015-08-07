@@ -56,7 +56,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)graphReader.o 			\
 					$(BUILD_DIR)dagPartialOrder.o 		\
 					$(BUILD_DIR)dijkstra.o 				\
-					$(BUILD_DIR)set.o
+					$(BUILD_DIR)set.o 					\
+					$(BUILD_DIR)variableRange.o
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g3

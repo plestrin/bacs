@@ -640,10 +640,10 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 	struct edge* 			edge_cursor1;
 	struct edge* 			edge_cursor2;
 	struct irOperation*		operand_operation;
-	struct irVariableRange 	range;
-	struct irVariableRange 	operand_range;
-	struct irOperation* 	operation;
 	struct node* 			operand;
+	uint64_t 				imm_value;
+	struct node** 			operand_buffer;
+	uint32_t 				nb_operand;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
@@ -653,27 +653,35 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 		return;
 	}
 
-	operation = ir_node_get_operation(node);
-	irVariableRange_init_size(&range, operation->size);
+	operand_buffer = (struct node**)alloca(sizeof(struct node*) * node->nb_edge_dst);
 
-	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
+	for (edge_cursor1 = node_get_head_edge_dst(node), nb_operand = 0; edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
 		operand = edge_get_src(edge_cursor1);
 
 		if (ir_node_get_operation(operand)->type == IR_OPERATION_TYPE_IMM){
 			imm_operand = edge_cursor1;
 		}
 		else{
-			irVariableRange_compute(operand, &operand_range);
-			irVariableRange_and_range(&range, &operand_range, operation->size);
+			operand_buffer[nb_operand ++] = operand;
 		}
 	}
-	if (imm_operand != NULL){
-		if ((range.upper_bound & (~ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(imm_operand))))) == 0){
-			ir_remove_dependence(ir, imm_operand);
 
-			*modification = 1;
-			ir_normalize_simplify_instruction_rewrite_and(ir, node, modification, final);
-			return;
+	if (imm_operand != NULL){
+		imm_value = ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(imm_operand)));
+		if (variableRange_is_mask_compact(imm_value)){
+			struct variableRange 	range;
+			struct variableRange 	mask_range;
+
+			irVariableRange_get_range_and_buffer(&range, operand_buffer, nb_operand, ir_node_get_operation(node)->size, 0);
+			variableRange_init_mask(&mask_range, imm_value, ir_node_get_operation(edge_get_src(imm_operand))->size);
+
+			if (variableRange_include(&mask_range, &range)){
+				ir_remove_dependence(ir, imm_operand);
+
+				*modification = 1;
+				ir_normalize_simplify_instruction_rewrite_and(ir, node, modification, final);
+				return;
+			}
 		}
 
 		for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1)){
@@ -2106,7 +2114,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 }
 
 /* ===================================================================== */
-/* Sorting routines						                                 */
+/* Sorting routines													     */
 /* ===================================================================== */
 
 int32_t compare_address_node_irOperand(const void* arg1, const void* arg2){

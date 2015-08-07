@@ -191,7 +191,7 @@ void variableRange_and(struct variableRange* range_dst, const struct variableRan
 				range_dst->index_up = min(range_dst->index_up, mask);
 			}
 			range_dst->index_lo 	= 0;
-			range_dst->size_mask 	= 0xffffffffffffffff >> (__builtin_ctzll(mask) - range_dst->scale);
+			range_dst->size_mask 	= (0xffffffffffffffff >> (__builtin_clzll(mask) - range_dst->scale)) & variableRange_get_size_mask(size);
 		}
 	}
 

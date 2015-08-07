@@ -161,8 +161,8 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	struct addrFingerprint 	addr2_fgp;
 	uint32_t 				i;
 	uint32_t 				j;
-	struct irVariableRange 	range1;
-	struct irVariableRange 	range2;
+	struct variableRange 	range1;
+	struct variableRange 	range2;
 	uint32_t 				nb_dependence_left1;
 	uint32_t 				nb_dependence_left2;
 	struct node* 			dependence_left1[ADDRESS_NB_MAX_DEPENDENCE];
@@ -196,18 +196,18 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 		}
 	}
 
-	irVariableRange_get_range_additive_list(&range1, dependence_left1, nb_dependence_left1);
-	irVariableRange_get_range_additive_list(&range2, dependence_left2, nb_dependence_left2);
+	irVariableRange_get_range_add_buffer(&range1, dependence_left1, nb_dependence_left1, 32, 1);
+	irVariableRange_get_range_add_buffer(&range2, dependence_left2, nb_dependence_left2, 32, 1);
 
-	if (irVariableRange_is_cst(range1) && irVariableRange_is_cst(range2)){
-		if (irVariableRange_cst_equal(range1, range2)){
+	if (variableRange_is_cst(&range1) && variableRange_is_cst(&range2)){
+		if (variableRange_get_cst(&range1) == variableRange_get_cst(&range2)){
 			return MUST_ALIAS;
 		}
 		else{
 			return CANNOT_ALIAS;
 		}
 	}
-	else if (irVariableRange_intersect(&range1, &range2)){
+	else if (variableRange_intersect(&range1, &range2)){
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
 		if (addr1_fgp.flag & 0x00000002 || addr2_fgp.flag & 0x00000002){
 			return MAY_ALIAS;
@@ -310,7 +310,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 	struct node** 			access_list 			= NULL;
 	uint32_t 				access_list_alloc_size;
 	uint32_t 				i;
-	struct irVariableRange* range_buffer 			= NULL;
+	struct variableRange* 	range_buffer 			= NULL;
 	struct node*			alias;
 	int32_t 				return_code;
 
@@ -319,7 +319,7 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 		goto exit;
 	}
 
-	range_buffer = (struct irVariableRange*)malloc(sizeof(struct irVariableRange) * ir->graph.nb_node);
+	range_buffer = (struct variableRange*)malloc(sizeof(struct variableRange) * ir->graph.nb_node);
 	if (range_buffer == NULL){
 		log_err("unable to allocate memory");
 		goto exit;

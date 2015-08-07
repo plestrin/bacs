@@ -42,8 +42,6 @@ struct signature{
 	uint32_t 						state;
 } __attribute__((__may_alias__));
 
-/* a completer */
-
 #define signature_state_is_search(signature) 	((signature)->state & 0x00000001)
 #define signature_state_is_found(signature) 	((signature)->state & 0x00000002)
 #define signature_state_is_pushed(signature) 	((signature)->state & 0x00000004)

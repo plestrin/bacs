@@ -281,4 +281,21 @@
 		</result>
 	</recipe>
 
+	<recipe name="OPEN_RC4" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/open_rc4"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
+		<search>
+			<arg value="load trace traceOPEN_RC4"/>
+			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph RC4"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="rc4_prga_v3" number="24"/>
+		</result>
+	</recipe>
 </xml>
