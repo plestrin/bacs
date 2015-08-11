@@ -328,9 +328,7 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 
 void ir_print_location_node(struct node* node, struct assembly* assembly);
 
-int32_t ir_printDot_filter_macro_node(struct node* node, void* arg);
-int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg);
-
+void ir_print_node(struct irOperation* operation, FILE* file);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 

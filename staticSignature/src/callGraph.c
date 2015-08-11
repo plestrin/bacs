@@ -27,14 +27,14 @@ void callGraph_dotPrint_node(void* data, FILE* file, void* arg){
 	struct function* func = (struct function*)data;
 
 	if (function_is_invalid(func)){
-		fprintf(file, "[label=\"-\"]");
+		fputs("[label=\"-\"]", file);
 	}
 	else{
 		if (func->routine != NULL){
 			fprintf(file, "[label=\"%s\"]", func->routine->name);
 		}
 		else{
-			fprintf(file, "[label=\"NULL\"]");
+			fputs("[label=\"NULL\"]", file);
 		}
 	}
 }
@@ -44,8 +44,8 @@ void callGraph_dotPrint_edge(void* data, FILE* file, void* arg){
 	struct callGraphEdge* edge = (struct callGraphEdge*)data;
 
 	switch(edge->type){
-		case CALLGRAPH_EDGE_CALL 	: {fprintf(file, "[label=\"call\"]"); break;}
-		case CALLGRAPH_EDGE_RET 	: {fprintf(file, "[label=\"ret\"]"); break;}
+		case CALLGRAPH_EDGE_CALL 	: {fputs("[label=\"call\"]", file); break;}
+		case CALLGRAPH_EDGE_RET 	: {fputs("[label=\"ret\"]", file); break;}
 	}
 }
 
@@ -690,7 +690,7 @@ void callGraph_print_stack(struct callGraph* call_graph, uint32_t index){
 							}
 						}
 						else{
-							printf("\t-\n");
+							fputs("\t-\n", stdout);
 						}
 					}
 					else{

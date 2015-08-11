@@ -18,6 +18,7 @@ void ir_check_size(struct ir* ir){
 
 		if (operation_cursor->size % 8 && operation_cursor->type != IR_OPERATION_TYPE_SYMBOL){
 			log_err_m("incorrect size: %u is not a multiple of 8", operation_cursor->size);
+			fputs("\t", stderr); ir_print_node(operation_cursor, stderr); fputs("\n", stderr);
 			operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 			continue;
 		}

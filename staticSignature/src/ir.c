@@ -327,7 +327,6 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 /* Printing functions						                             */
 /* ===================================================================== */
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void ir_print_location_node(struct node* node, struct assembly* assembly){
 	struct irOperation* operation;
 	struct edge* 		edge_cursor;
@@ -346,25 +345,25 @@ void ir_print_location_node(struct node* node, struct assembly* assembly){
 					break;
 				}
 				case IR_OPERATION_TYPE_IN_MEM 	: {
-					printf("IMEM@??");
+					fputs("IMEM@??", stdout);
 					break;
 				}
 				case IR_OPERATION_TYPE_OUT_MEM 	: {
-					printf("OMEM@??");
+					fputs("OMEM@??", stdout);
 					break;
 				}
 				case IR_OPERATION_TYPE_INST 	: {
 					printf("%s(", irOpcode_2_string(operation->operation_type.inst.opcode));
 					for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 						ir_print_location_node(edge_get_src(edge_cursor), assembly);
-						printf(",");
+						fputs(",", stdout);
 					}
-					printf("\b)");
+					fputs("\b)", stdout);
 
 					break;
 				}
 				default 						: {
-					printf("??");
+					fputs("??", stdout);
 					break;
 				}
 			}
@@ -393,6 +392,35 @@ void ir_print_location_node(struct node* node, struct assembly* assembly){
 	}
 }
 
+void ir_print_node(struct irOperation* operation, FILE* file){
+	switch(operation->type){
+		case IR_OPERATION_TYPE_IN_REG 		: {
+			fputs(irRegister_2_string(operation->operation_type.in_reg.reg), file);
+			break;
+		}
+		case IR_OPERATION_TYPE_IN_MEM 		: {
+			fputs("LOAD", file);
+			break;
+		}
+		case IR_OPERATION_TYPE_OUT_MEM 		: {
+			fputs("STORE", file);
+			break;
+		}
+		case IR_OPERATION_TYPE_IMM 			: {
+			fprintf(file, "0x%llx", ir_imm_operation_get_unsigned_value(operation));
+			break;
+		}
+		case IR_OPERATION_TYPE_INST 		: {
+			fputs(irOpcode_2_string(operation->operation_type.inst.opcode), file);
+			break;
+		}
+		case IR_OPERATION_TYPE_SYMBOL 		: {
+			fputs(((struct result*)(operation->operation_type.symbol.result_ptr))->code_signature->signature.name, file);
+			break;
+		}
+	}
+}
+
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void ir_dotPrint_node(void* data, FILE* file, void* arg){
 	struct irOperation* operation = (struct irOperation*)data;
@@ -403,19 +431,19 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_IN_MEM 		: {
-			fprintf(file, "[shape=\"box\",label=\"LOAD\"");
+			fputs("[shape=\"box\",label=\"LOAD\"", file);
 			break;
 		}
 		case IR_OPERATION_TYPE_OUT_MEM 		: {
-			fprintf(file, "[shape=\"box\",label=\"STORE\"");
+			fputs("[shape=\"box\",label=\"STORE\"", file);
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
 			if (operation->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
-				fprintf(file, "[shape=\"Mdiamond\"");
+				fputs("[shape=\"Mdiamond\"", file);
 			}
 			else{
-				fprintf(file, "[shape=\"diamond\"");
+				fputs("[shape=\"diamond\"", file);
 			}
 			switch(operation->size){
 				case 8 	: {
@@ -431,7 +459,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 					break;
 				}
 				default : {
-					printf("ERROR: in %s, this case is not implemented, size: %u\n", __func__, operation->size);
+					log_err_m("this case is not implemented, size: %u", operation->size);
 					break;
 				}
 			}
@@ -452,10 +480,10 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		}
 	}
 	if (operation->status_flag & IR_OPERATION_STATUS_FLAG_ERROR){
-		fprintf(file, ",color=\"red\"]");
+		fputs(",color=\"red\"]", file);
 	}
 	else{
-		fprintf(file, "]");
+		fputs("]", file);
 	}
 }
 
@@ -468,20 +496,20 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
-			fprintf(file, "[label=\"@\"]");
+			fputs("[label=\"@\"]", file);
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
-			fprintf(file, "[label=\"disp\"]");
+			fputs("[label=\"disp\"]", file);
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
-			fprintf(file, "[label=\"/\"]");
+			fputs("[label=\"/\"]", file);
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_ROUND_OFF 	:
 		case IR_DEPENDENCE_TYPE_SUBSTITUTE  : {
-			fprintf(file, "[label=\"s\"]"); 		/* the s is used to tag special operands */
+			fputs("[label=\"s\"]", file); 		/* the s is used to tag special operands */
 			break;
 		}
 		case IR_DEPENDENCE_TYPE_MACRO 		: {
@@ -494,40 +522,6 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 			break;
 		}
 	}
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-int32_t ir_printDot_filter_macro_node(struct node* node, void* arg){
-	struct edge* 			edge_cursor;
-	struct irDependence* 	dependence;
-
-	for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-		dependence = ir_edge_get_dependence(edge_cursor);
-		if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
-			return 1;
-		}
-	}
-
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		dependence = ir_edge_get_dependence(edge_cursor);
-		if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-int32_t ir_printDot_filter_macro_edge(struct edge* edge, void* arg){
-	struct irDependence* dependence;
-
-	dependence = ir_edge_get_dependence(edge);
-	if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
-		return 1;
-	}
-
-	return 0;
 }
 
 char* irOpcode_2_string(enum irOpcode opcode){
