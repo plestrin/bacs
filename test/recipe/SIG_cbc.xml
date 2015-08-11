@@ -1,5 +1,5 @@
 <xml>
-	<recipe name="TEST_CBC_TEA_GO0" active="no">
+	<recipe name="TEST_CBC_TEA_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0">
 			<arg value="-m"/>
@@ -26,11 +26,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO1" active="no">
+	<recipe name="TEST_CBC_TEA_GO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1">
 			<arg value="-m"/>
@@ -57,11 +57,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO2" active="no">
+	<recipe name="TEST_CBC_TEA_GO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2">
 			<arg value="-m"/>
@@ -88,11 +88,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GO3" active="no">
+	<recipe name="TEST_CBC_TEA_GO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3">
 			<arg value="-m"/>
@@ -119,11 +119,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_GOs" active="no">
+	<recipe name="TEST_CBC_TEA_GOs" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_gos"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos">
 			<arg value="-m"/>
@@ -150,11 +150,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO0" active="no">
+	<recipe name="TEST_CBC_TEA_CO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0">
 			<arg value="-m"/>
@@ -181,11 +181,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO1" active="no">
+	<recipe name="TEST_CBC_TEA_CO1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co1"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1">
 			<arg value="-m"/>
@@ -212,11 +212,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO2" active="no">
+	<recipe name="TEST_CBC_TEA_CO2" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2">
 			<arg value="-m"/>
@@ -243,11 +243,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_CO3" active="no">
+	<recipe name="TEST_CBC_TEA_CO3" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3">
 			<arg value="-m"/>
@@ -274,11 +274,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_COz" active="no">
+	<recipe name="TEST_CBC_TEA_COz" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz">
 			<arg value="-m"/>
@@ -305,11 +305,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_WD" active="no">
+	<recipe name="TEST_CBC_TEA_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -334,11 +334,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TEST_CBC_TEA_WR" active="no">
+	<recipe name="TEST_CBC_TEA_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -363,11 +363,11 @@
 			<algo name="xtea_dec" number="440"/>
 			<algo name="xtea_dec_32_v2" number="8"/>
 			<algo name="enc_cbc_cfb" number="7"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="TOM_CBC_TEA" active="no">
+	<recipe name="TOM_CBC_TEA" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
 			<arg value="-m"/>
@@ -394,11 +394,11 @@
 			<algo name="enc_cbc_cfb" number="7"/>
 			<algo name="xtea_dec" number="504"/>
 			<algo name="xtea_dec_32_v1" number="8"/>
-			<algo name="dec_cbc_cfb" number="7"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
 		</result>
 	</recipe>
 
-	<recipe name="BOT_CBC_TEA" active="no">
+	<recipe name="BOT_CBC_TEA" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
 			<arg value="-m"/>
@@ -425,7 +425,7 @@
 			<algo name="enc_cbc_cfb" number="7"/>
 			<algo name="xtea_dec" number="252"/>
 			<algo name="xtea_dec_32_v1" number="4"/>
-			<algo name="dec_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -445,7 +445,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -453,6 +453,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -472,7 +478,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -480,6 +486,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -499,7 +511,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -507,6 +519,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -526,7 +544,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -534,6 +552,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -553,7 +577,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -561,6 +585,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -580,7 +610,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -588,6 +618,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -607,7 +643,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -615,6 +651,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v2" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -634,7 +676,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -642,6 +684,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v2" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -661,7 +709,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -669,6 +717,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v2" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -688,7 +742,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -696,6 +750,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v2" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
 		</result>
 	</recipe>
 
@@ -713,7 +773,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -721,6 +781,12 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v1" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v2" number="3"/>
 		</result>
 	</recipe>
 
@@ -738,20 +804,27 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v2"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 1"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
+			<algo name="aes_r9" number="224"/>
+			<algo name="aes128_enc" number="4"/>
+			<algo name="aes128_dec" number="4"/>
+			<algo name="aes_last_v3" number="32"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v2" number="3"/>
 		</result>
 	</recipe>
 
-	<recipe name="TOM_CBC_AES" active="no">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
+	<recipe name="TOM_CBC_AES" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -765,19 +838,21 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb" number="3"/>
 		</result>
 	</recipe>
 
-	<recipe name="BOT_CBC_AES" active="no">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
+	<recipe name="BOT_CBC_AES" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -791,13 +866,15 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result xtea_enc_32_v1 xtea_dec_32_v1"/>
+			<arg value="export result aes128_enc aes128_dec"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb" number="3"/>
 		</result>
 	</recipe>
 </xml>
