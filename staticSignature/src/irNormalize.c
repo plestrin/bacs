@@ -813,15 +813,15 @@ static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct
 		}
 		if (node->nb_edge_dst == 2){
 			for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+				operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
 
-			if (operation_cursor->type == IR_OPERATION_TYPE_IMM && ((ir_imm_operation_get_unsigned_value(operation_cursor) >> (operation_cursor->size - 1) & 0x0000000000000001ULL) == 0)){
-				ir_node_get_operation(node)->operation_type.inst.opcode = IR_MUL;
+				if (operation_cursor->type == IR_OPERATION_TYPE_IMM && ((ir_imm_operation_get_unsigned_value(operation_cursor) >> (operation_cursor->size - 1) & 0x0000000000000001ULL) == 0)){
+					ir_node_get_operation(node)->operation_type.inst.opcode = IR_MUL;
 
-				*modification = 1;
-				return;
+					*modification = 1;
+					return;
+				}
 			}
-		}
 		}
 	}
 }
@@ -1038,7 +1038,7 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 			}
 		}
 		else if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-			ir_convert_node_to_imm(node, operand_operation->operation_type.imm.value, 8);
+			ir_convert_node_to_imm(node, 8, operand_operation->operation_type.imm.value);
 			ir_remove_dependence(ir, node_get_head_edge_dst(node));
 
 			*modification = 1;
@@ -1624,7 +1624,7 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 				}
 			}
 			else{
-				log_debug_m("gap is too big: %d", diff);
+				log_warn_m("gap is too big: %d", diff);
 			}
 		}
 	}
