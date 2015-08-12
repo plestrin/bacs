@@ -845,11 +845,25 @@ static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd)
 	return nb_mem_access;
 }
 
+static void assembly_print_opcode_hex(char* buffer, uint32_t size, uint32_t padding_size){
+	uint32_t i;
+
+	for (i = 0; i < padding_size; i++){
+		if (i < size){
+			printf("%02x ", buffer[i] & 0x000000ff);
+		}
+		else{
+			fputs("   ", stdout);
+		}
+	}
+}
+
 void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	uint32_t 					i;
 	struct instructionIterator 	it;
 	char 						buffer[256];
 	xed_print_info_t 			print_info;
+	uint32_t 					prev_dyn_block_index;
 
 	if (assembly_get_instruction(assembly, &it, start)){
 		log_err_m("unable to fetch instruction %u from the assembly", start);
@@ -871,11 +885,15 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	print_info.syntax 					= XED_SYNTAX_INTEL;
 
 	if (xed_format_generic(&print_info)){
-		printf("0x%08x  %s\n", it.instruction_address, buffer);
+		printf("0x%08x . ", it.instruction_address);
+		assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, 8);
+		printf("%s\n", buffer);
 	}
 	else{
 		log_err("xed_format_generic returns an error code");
 	}
+
+	prev_dyn_block_index = it.dyn_block_index;
 
 	for (i = start + 1; i < stop && i < assembly_get_nb_instruction(assembly); i++){
 		if (assembly_get_next_instruction(assembly, &it)){
@@ -898,11 +916,20 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 		print_info.syntax 					= XED_SYNTAX_INTEL;
 
 		if (xed_format_generic(&print_info)){
-			printf("0x%08x  %s\n", it.instruction_address, buffer);
+			if (prev_dyn_block_index != it.dyn_block_index){
+				printf("0x%08x . ", it.instruction_address);
+			}
+			else{
+				printf("0x%08x   ", it.instruction_address);
+			}
+			assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, 8);
+			printf("%s\n", buffer);
 		}
 		else{
 			log_err("xed_format_generic returns an error code");
 		}
+
+		prev_dyn_block_index = it.dyn_block_index;
 	}
 }
 
