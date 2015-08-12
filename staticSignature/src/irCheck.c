@@ -161,67 +161,69 @@ void ir_check_size(struct ir* ir){
 }
 
 static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
-	2, 	/* 0  IR_ADD 						*/
-	2, 	/* 1  IR_AND 						*/
-	2, 	/* 2  IR_CMOV 						*/
-	2, 	/* 3  IR_DIV 						*/
-	2, 	/* 4  IR_IDIVQ 						*/
-	2, 	/* 5  IR_IDIVR 						*/
-	2, 	/* 6  IR_IMUL 						*/
-	0, 	/* 7  IR_LEA 	It doesn't matter 	*/
-	0, 	/* 8  IR_MOV 	It doesn't matter 	*/
-	1, 	/* 9  IR_MOVZX 						*/
-	2, 	/* 10 IR_MUL 						*/
-	1, 	/* 11 IR_NEG 						*/
-	1, 	/* 12 IR_NOT 						*/
-	2, 	/* 13 IR_OR 						*/
-	1, 	/* 14 IR_PART1_8 					*/
-	1, 	/* 15 IR_PART2_8 					*/
-	1, 	/* 16 IR_PART1_16 					*/
-	2, 	/* 17 IR_ROL 						*/
-	2, 	/* 18 IR_ROR 						*/
-	2, 	/* 19 IR_SHL 						*/
-	3, 	/* 20 IR_SHLD 						*/
-	2, 	/* 21 IR_SHR 						*/
-	3, 	/* 22 IR_SHRD 						*/
-	2, 	/* 23 IR_SUB 						*/
-	2, 	/* 24 IR_XOR 						*/
-	0, 	/* 25 IR_LOAD 	It doesn't matter 	*/
-	0, 	/* 26 IR_STORE It doesn't matter 	*/
-	0, 	/* 27 IR_JOKER It doesn't matter 	*/
-	0, 	/* 28 IR_INVALID It doesn't matter 	*/
+	2, 	/* 0  IR_ADC 						*/
+	2, 	/* 1  IR_ADD 						*/
+	2, 	/* 2  IR_AND 						*/
+	2, 	/* 3  IR_CMOV 						*/
+	2, 	/* 4  IR_DIV 						*/
+	2, 	/* 5  IR_IDIVQ 						*/
+	2, 	/* 6  IR_IDIVR 						*/
+	2, 	/* 7  IR_IMUL 						*/
+	0, 	/* 8  IR_LEA 	It doesn't matter 	*/
+	0, 	/* 9  IR_MOV 	It doesn't matter 	*/
+	1, 	/* 10  IR_MOVZX 					*/
+	2, 	/* 11 IR_MUL 						*/
+	1, 	/* 12 IR_NEG 						*/
+	1, 	/* 13 IR_NOT 						*/
+	2, 	/* 14 IR_OR 						*/
+	1, 	/* 15 IR_PART1_8 					*/
+	1, 	/* 16 IR_PART2_8 					*/
+	1, 	/* 17 IR_PART1_16 					*/
+	2, 	/* 18 IR_ROL 						*/
+	2, 	/* 19 IR_ROR 						*/
+	2, 	/* 20 IR_SHL 						*/
+	3, 	/* 21 IR_SHLD 						*/
+	2, 	/* 22 IR_SHR 						*/
+	3, 	/* 23 IR_SHRD 						*/
+	2, 	/* 24 IR_SUB 						*/
+	2, 	/* 25 IR_XOR 						*/
+	0, 	/* 26 IR_LOAD 	It doesn't matter 	*/
+	0, 	/* 27 IR_STORE It doesn't matter 	*/
+	0, 	/* 28 IR_JOKER It doesn't matter 	*/
+	0, 	/* 29 IR_INVALID It doesn't matter 	*/
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
-	0xffffffff, /* 0  IR_ADD 						*/
-	0xffffffff, /* 1  IR_AND 						*/
-	0x00000002, /* 2  IR_CMOV 						*/
-	0x00000003, /* 3  IR_DIVQ 						*/
-	0x00000003, /* 4  IR_DIVR 						*/
-	0x00000002, /* 5  IR_IDIV 						*/
-	0xffffffff, /* 6  IR_IMUL 						*/
-	0x00000000, /* 7  IR_LEA 	It doesn't matter 	*/
-	0x00000000, /* 8  IR_MOV 	It doesn't matter 	*/
-	0x00000001, /* 9  IR_MOVZX 						*/
-	0xffffffff, /* 10  IR_MUL 						*/
-	0x00000001, /* 11 IR_NEG 						*/
-	0x00000001, /* 12 IR_NOT 						*/
-	0xffffffff, /* 13 IR_OR 						*/
-	0x00000001, /* 14 IR_PART1_8 					*/
-	0x00000001, /* 15 IR_PART2_8 					*/
-	0x00000001, /* 16 IR_PART1_16 					*/
-	0x00000002, /* 17 IR_ROL 						*/
-	0x00000002, /* 18 IR_ROR 						*/
-	0x00000002, /* 19 IR_SHL 						*/
-	0x00000003, /* 20 IR_SHLD 						*/
-	0x00000002, /* 21 IR_SHR 						*/
-	0x00000003, /* 22 IR_SHRD 						*/
-	0x00000002, /* 23 IR_SUB 						*/
-	0xffffffff, /* 24 IR_XOR 						*/
-	0x00000000, /* 25 IR_LOAD 	It doesn't matter 	*/
-	0x00000000, /* 26 IR_STORE It doesn't matter 	*/
-	0x00000000, /* 27 IR_JOKER It doesn't matter 	*/
-	0x00000000, /* 28 IR_INVALID It doesn't matter 	*/
+	0xffffffff, /* 0  IR_ADc 						*/
+	0xffffffff, /* 1  IR_ADD 						*/
+	0xffffffff, /* 2  IR_AND 						*/
+	0x00000002, /* 3  IR_CMOV 						*/
+	0x00000003, /* 4  IR_DIVQ 						*/
+	0x00000003, /* 5  IR_DIVR 						*/
+	0x00000002, /* 6  IR_IDIV 						*/
+	0xffffffff, /* 7  IR_IMUL 						*/
+	0x00000000, /* 8  IR_LEA 	It doesn't matter 	*/
+	0x00000000, /* 9  IR_MOV 	It doesn't matter 	*/
+	0x00000001, /* 10  IR_MOVZX 					*/
+	0xffffffff, /* 11  IR_MUL 						*/
+	0x00000001, /* 12 IR_NEG 						*/
+	0x00000001, /* 13 IR_NOT 						*/
+	0xffffffff, /* 14 IR_OR 						*/
+	0x00000001, /* 15 IR_PART1_8 					*/
+	0x00000001, /* 16 IR_PART2_8 					*/
+	0x00000001, /* 17 IR_PART1_16 					*/
+	0x00000002, /* 18 IR_ROL 						*/
+	0x00000002, /* 19 IR_ROR 						*/
+	0x00000002, /* 20 IR_SHL 						*/
+	0x00000003, /* 21 IR_SHLD 						*/
+	0x00000002, /* 22 IR_SHR 						*/
+	0x00000003, /* 23 IR_SHRD 						*/
+	0x00000002, /* 24 IR_SUB 						*/
+	0xffffffff, /* 25 IR_XOR 						*/
+	0x00000000, /* 26 IR_LOAD 	It doesn't matter 	*/
+	0x00000000, /* 27 IR_STORE It doesn't matter 	*/
+	0x00000000, /* 28 IR_JOKER It doesn't matter 	*/
+	0x00000000, /* 29 IR_INVALID It doesn't matter 	*/
 };
 
 void ir_check_connectivity(struct ir* ir){
@@ -335,6 +337,7 @@ void ir_check_connectivity(struct ir* ir){
 				}
 
 				switch(operation_cursor->operation_type.inst.opcode){
+					case IR_ADC 		:
 					case IR_ADD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
@@ -731,6 +734,49 @@ void ir_check_connectivity(struct ir* ir){
 	}
 }
 
+static void ir_check_acyclic_recursive(struct node* node){
+	struct irOperation* 	operation;
+	struct edge*			edge_cursor;
+	struct node*			operand_node;
+	struct irOperation*		operand_operation;
+
+	operation = ir_node_get_operation(node);
+	operation->status_flag |= IR_OPERATION_STATUS_FLAG_TESTING;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		operand_node = edge_get_src(edge_cursor);
+		operand_operation = ir_node_get_operation(operand_node);
+
+		if (!(operand_operation->status_flag & (IR_OPERATION_STATUS_FLAG_TEST | IR_OPERATION_STATUS_FLAG_TESTING))){
+			ir_check_acyclic_recursive(operand_node);
+		}
+		else if (operand_operation->status_flag & IR_OPERATION_STATUS_FLAG_TESTING){
+			log_err("cycle detected in graph");
+			operand_operation->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+		}
+	}
+
+	operation->status_flag = IR_OPERATION_STATUS_FLAG_TEST | (operation->status_flag & (~IR_OPERATION_STATUS_FLAG_TESTING));
+}
+
+void ir_check_acyclic(struct ir* ir){
+	struct node* 			node_cursor;
+	struct irOperation* 	operation_cursor;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		operation_cursor->status_flag &= ~(IR_OPERATION_STATUS_FLAG_TEST | IR_OPERATION_STATUS_FLAG_TESTING);
+	}
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		if (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_TEST){
+			continue;
+		}
+		ir_check_acyclic_recursive(node_cursor);
+	}
+}
+
 void ir_check_order(struct ir* ir){
 	struct node* 		node_cursor;
 	struct irOperation* operation_cursor;
@@ -761,13 +807,13 @@ void ir_check_order(struct ir* ir){
 		else if (direction < 0){
 			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if (ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST){
-					log_err("direction src -> dst, buit found tagged dst");
+					log_err("direction src -> dst, but found tagged dst");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 				}
 			}
 			for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 				if ((ir_node_get_operation(edge_get_dst(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST) == 0){
-					log_err("direction src -> dst, buit found untagged src");
+					log_err("direction src -> dst, but found untagged src");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 				}
 			}
@@ -775,13 +821,13 @@ void ir_check_order(struct ir* ir){
 		else{
 			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if ((ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST) == 0){
-					log_err("direction src -> dst, buit found untagged dst");
+					log_err("direction src -> dst, but found untagged dst");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 				}
 			}
 			for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 				if (ir_node_get_operation(edge_get_dst(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST){
-					log_err("direction src -> dst, buit found tagged src");
+					log_err("direction src -> dst, but found tagged src");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 				}
 			}

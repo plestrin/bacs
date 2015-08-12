@@ -808,7 +808,6 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
-			<arg value="printDot synthesis 1"/>
 			<arg value="exit"/>
 		</search>
 		<result>

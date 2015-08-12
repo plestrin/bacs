@@ -356,35 +356,36 @@ enum paddingStrategy{
 };
 
 static const enum paddingStrategy insPaddingStrategy[NB_IR_OPCODE] = {
-	PADDING_OK, 		/* 0  IR_ADD 		*/
-	PADDING_OK, 		/* 1  IR_AND 		*/
-	PADDING_OK, 		/* 2  IR_CMOV 		*/
-	PADDING_SECURE, 	/* 3  IR_DIVQ 		*/
-	PADDING_SECURE, 	/* 4  IR_DIVR 		*/
-	PADDING_SECURE, 	/* 5  IR_IDIV 		*/
-	PADDING_COMPLAIN, 	/* 6  IR_IMUL 		*/
-	PADDING_IGNORE, 	/* 7  IR_LEA 		- not important */
-	PADDING_IGNORE, 	/* 8  IR_MOV 		- not important */
-	PADDING_IGNORE, 	/* 9  IR_MOVZX 		*/
-	PADDING_COMPLAIN, 	/* 10  IR_MUL 		*/
-	PADDING_COMPLAIN, 	/* 11 IR_NEG 		*/
-	PADDING_OK, 		/* 12 IR_NOT 		*/
-	PADDING_OK, 		/* 13 IR_OR 		*/
-	PADDING_IGNORE, 	/* 14 IR_PART1_8 	*/
-	PADDING_IGNORE, 	/* 15 IR_PART2_8 	*/
-	PADDING_IGNORE, 	/* 16 IR_PART1_16 	*/
-	PADDING_COMPLAIN, 	/* 17 IR_ROL 		*/
-	PADDING_COMPLAIN, 	/* 18 IR_ROR 		*/
-	PADDING_COMPLAIN, 	/* 19 IR_SHL 		*/
-	PADDING_COMPLAIN, 	/* 20 IR_SHLD 		*/
-	PADDING_COMPLAIN, 	/* 21 IR_SHR 		*/
-	PADDING_COMPLAIN, 	/* 22 IR_SHRD 		*/
-	PADDING_COMPLAIN, 	/* 23 IR_SUB 		*/
-	PADDING_OK, 		/* 24 IR_XOR 		*/
-	PADDING_IGNORE, 	/* 25 IR_LOAD 		- not important */
-	PADDING_IGNORE, 	/* 26 IR_STORE 		- not important */
-	PADDING_IGNORE, 	/* 27 IR_JOKER 		- not important */
-	PADDING_IGNORE, 	/* 28 IR_INVALID 	- not important */
+	PADDING_OK, 		/* 0  IR_ADC 		*/
+	PADDING_OK, 		/* 1  IR_ADD 		*/
+	PADDING_OK, 		/* 2  IR_AND 		*/
+	PADDING_OK, 		/* 3  IR_CMOV 		*/
+	PADDING_SECURE, 	/* 4  IR_DIVQ 		*/
+	PADDING_SECURE, 	/* 5  IR_DIVR 		*/
+	PADDING_SECURE, 	/* 6  IR_IDIV 		*/
+	PADDING_COMPLAIN, 	/* 7  IR_IMUL 		*/
+	PADDING_IGNORE, 	/* 8  IR_LEA 		- not important */
+	PADDING_IGNORE, 	/* 9  IR_MOV 		- not important */
+	PADDING_IGNORE, 	/* 10  IR_MOVZX 		*/
+	PADDING_COMPLAIN, 	/* 11  IR_MUL 		*/
+	PADDING_COMPLAIN, 	/* 12 IR_NEG 		*/
+	PADDING_OK, 		/* 13 IR_NOT 		*/
+	PADDING_OK, 		/* 14 IR_OR 		*/
+	PADDING_IGNORE, 	/* 15 IR_PART1_8 	*/
+	PADDING_IGNORE, 	/* 16 IR_PART2_8 	*/
+	PADDING_IGNORE, 	/* 17 IR_PART1_16 	*/
+	PADDING_COMPLAIN, 	/* 18 IR_ROL 		*/
+	PADDING_COMPLAIN, 	/* 19 IR_ROR 		*/
+	PADDING_COMPLAIN, 	/* 20 IR_SHL 		*/
+	PADDING_COMPLAIN, 	/* 21 IR_SHLD 		*/
+	PADDING_COMPLAIN, 	/* 22 IR_SHR 		*/
+	PADDING_COMPLAIN, 	/* 23 IR_SHRD 		*/
+	PADDING_COMPLAIN, 	/* 24 IR_SUB 		*/
+	PADDING_OK, 		/* 25 IR_XOR 		*/
+	PADDING_IGNORE, 	/* 26 IR_LOAD 		- not important */
+	PADDING_IGNORE, 	/* 27 IR_STORE 		- not important */
+	PADDING_IGNORE, 	/* 28 IR_JOKER 		- not important */
+	PADDING_IGNORE, 	/* 29 IR_INVALID 	- not important */
 };
 
 void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){

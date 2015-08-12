@@ -347,6 +347,14 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 		struct dijkstraInternal* 	next;
 	};
 
+	/*
+	 * Bit map of the tag field:
+	 * 	- [1]: reachable from node_buffer1
+	 * 	- [2]: reachable from node_buffer2
+	 * 	- [3]: going downward
+	 * 	- [4]: going downward and processed
+	 */
+
 	struct dijkstraInternal* 	internals;
 	struct dijkstraInternal* 	curr_orbital1 = NULL;
 	struct dijkstraInternal* 	curr_orbital2 = NULL;
@@ -404,7 +412,6 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 		return -1;
 	}
 
-
 	for( ; curr_orbital1 != NULL; curr_orbital1 = next_orbital){
 		for(next_orbital = NULL; curr_orbital1 != NULL; curr_orbital1 = curr_orbital1->next){
 
@@ -416,16 +423,18 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 				node_cursor = edge_get_dst(edge_cursor);
 				internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
 
-				if (!(internal_cursor->tag & 0x00000001)){
-					internal_cursor->path1 	= edge_cursor;
-					internal_cursor->tag 	= internal_cursor->tag | 0x00000001;
-					internal_cursor->next 	= next_orbital;
-					next_orbital = internal_cursor;
+				if (internal_cursor->tag & 0x00000001){
+					continue;
+				}
+					
+				internal_cursor->path1 	= edge_cursor;
+				internal_cursor->tag 	= internal_cursor->tag | 0x00000001;
+				internal_cursor->next 	= next_orbital;
+				next_orbital = internal_cursor;
 
-					if (internal_cursor->tag == 0x00000003){
-						ancestor = internal_cursor;
-						goto return_path3;
-					}
+				if (internal_cursor->tag == 0x00000003){
+					ancestor = internal_cursor;
+					goto return_path1;
 				}
 			}
 		}
@@ -443,18 +452,35 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 					node_cursor = edge_get_src(edge_cursor);
 					internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
 
+					if (internal_cursor->tag & 0x00000002){
+						if (internal_cursor->tag & 0x00000004){
+							if (internal_cursor->tag & 0x00000008){
+								internal_cursor->path1 	= edge_cursor;
+								internal_cursor->tag 	= 0x00000002;
+								internal_cursor->next 	= next_orbital;
+								next_orbital = internal_cursor;
+							}
+							else{
+								internal_cursor->path1 	= edge_cursor;
+								internal_cursor->tag 	= 0x00000002;
+							}
+						}
+						continue;
+					}
+
 					if (internal_cursor->tag & 0x00000001){
 						ancestor = internal_cursor;
 						goto return_path2;
 					}
 
-					if (((internal_cursor->tag & 0x00000002) == 0) || (internal_cursor->tag & 0x00000004)){
-						internal_cursor->path1 	= edge_cursor;
-						internal_cursor->tag 	= 0x00000002;
-						internal_cursor->next 	= next_orbital;
-						next_orbital = internal_cursor;
-					}
+					internal_cursor->path1 	= edge_cursor;
+					internal_cursor->tag 	= 0x00000002;
+					internal_cursor->next 	= next_orbital;
+					next_orbital = internal_cursor;
 				}
+			}
+			else{
+				curr_orbital2->tag |= 0x00000008;
 			}
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital2->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
@@ -465,17 +491,18 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 				node_cursor = edge_get_dst(edge_cursor);
 				internal_cursor = (struct dijkstraInternal*)node_cursor->ptr;
 
-				if (internal_cursor->tag & 0x00000001){
-					internal_cursor->path2 = edge_cursor;
-					ancestor = internal_cursor;
-					goto return_path1;
+				if (internal_cursor->tag & 0x00000002){
+					continue;
 				}
 
-				if ((internal_cursor->tag & 0x00000002) == 0){
-					internal_cursor->path2 	= edge_cursor;
-					internal_cursor->tag 	= 0x00000006;
-					internal_cursor->next 	= next_orbital;
-					next_orbital = internal_cursor;
+				internal_cursor->path2 	= edge_cursor;
+				internal_cursor->tag 	|= 0x00000006;
+				internal_cursor->next 	= next_orbital;
+				next_orbital = internal_cursor;
+
+				if (internal_cursor->tag & 0x00000001){
+					ancestor = internal_cursor;
+					goto return_path3;
 				}
 			}
 		}
@@ -485,7 +512,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 
 	return 1;
 
-	return_path1:
+	return_path3:
 
 	for ( ; internal_cursor->path2 != NULL; internal_cursor = (struct dijkstraInternal*)(edge_get_src(internal_cursor->path2)->ptr)){
 		if (array_add(path->path_ancestor_descendant, &(internal_cursor->path2)) < 0){
@@ -501,7 +528,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 		}
 	}
 
-	return_path3:
+	return_path1:
 
 	for (edge_cursor = ancestor->path1 ; edge_cursor != NULL; edge_cursor = ((struct dijkstraInternal*)(edge_get_src(edge_cursor)->ptr))->path1){
 		if (array_add(path->path_1_descendant, &(edge_cursor)) < 0){

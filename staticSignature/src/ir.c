@@ -526,6 +526,7 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 
 char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
+		case IR_ADC 		: {return "adc";}
 		case IR_ADD 		: {return "add";}
 		case IR_AND 		: {return "and";}
 		case IR_CMOV 		: {return "cmov";}

@@ -12,38 +12,39 @@
 #define IRLAYER
 
 enum irOpcode{
-	IR_ADD 		= 0,
-	IR_AND 		= 1,
-	IR_CMOV 	= 2, 	/* temp */
-	IR_DIVQ 	= 3,
-	IR_DIVR 	= 4,
-	IR_IDIV 	= 5,
-	IR_IMUL 	= 6,
-	IR_LEA 		= 7, 	/* importer */
-	IR_MOV 		= 8, 	/* importer */
-	IR_MOVZX 	= 9,
-	IR_MUL 		= 10,
-	IR_NEG 		= 11,
-	IR_NOT 		= 12,
-	IR_OR 		= 13,
-	IR_PART1_8 	= 14, 	/* specific */
-	IR_PART2_8 	= 15, 	/* specific */
-	IR_PART1_16 = 16, 	/* specific */
-	IR_ROL 		= 17,
-	IR_ROR 		= 18,
-	IR_SHL 		= 19,
-	IR_SHLD 	= 20,
-	IR_SHR 		= 21,
-	IR_SHRD 	= 22,
-	IR_SUB 		= 23,
-	IR_XOR 		= 24,
-	IR_LOAD 	= 25, 	/* signature */
-	IR_STORE 	= 26, 	/* signature */
-	IR_JOKER 	= 27, 	/* signature */
-	IR_INVALID 	= 28 	/* specific */
+	IR_ADC 		= 0,
+	IR_ADD 		= 1,
+	IR_AND 		= 2,
+	IR_CMOV 	= 3, 	/* temp */
+	IR_DIVQ 	= 4,
+	IR_DIVR 	= 5,
+	IR_IDIV 	= 6,
+	IR_IMUL 	= 7,
+	IR_LEA 		= 8, 	/* importer */
+	IR_MOV 		= 9, 	/* importer */
+	IR_MOVZX 	= 10,
+	IR_MUL 		= 11,
+	IR_NEG 		= 12,
+	IR_NOT 		= 13,
+	IR_OR 		= 14,
+	IR_PART1_8 	= 15, 	/* specific */
+	IR_PART2_8 	= 16, 	/* specific */
+	IR_PART1_16 = 17, 	/* specific */
+	IR_ROL 		= 18,
+	IR_ROR 		= 19,
+	IR_SHL 		= 20,
+	IR_SHLD 	= 21,
+	IR_SHR 		= 22,
+	IR_SHRD 	= 23,
+	IR_SUB 		= 24,
+	IR_XOR 		= 25,
+	IR_LOAD 	= 26, 	/* signature */
+	IR_STORE 	= 27, 	/* signature */
+	IR_JOKER 	= 28, 	/* signature */
+	IR_INVALID 	= 29 	/* specific */
 };
 
-#define NB_IR_OPCODE 29 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
+#define NB_IR_OPCODE 30 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
 
 char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -175,16 +176,17 @@ struct irMemAccess{
 	ADDRESS 		con_addr;
 };
 
-#define IR_OPERATION_STATUS_FLAG_NONE 	0x00000000
-#define IR_OPERATION_STATUS_FLAG_FINAL 	0x00000001
-#define IR_OPERATION_STATUS_FLAG_ERROR 	0x40000000
-#define IR_OPERATION_STATUS_FLAG_TEST 	0x80000000
+#define IR_OPERATION_STATUS_FLAG_NONE 		0x00000000
+#define IR_OPERATION_STATUS_FLAG_FINAL 		0x00000001
+#define IR_OPERATION_STATUS_FLAG_ERROR 		0x80000000
+#define IR_OPERATION_STATUS_FLAG_TEST 		0x40000000
+#define IR_OPERATION_STATUS_FLAG_TESTING 	0x20000000
 
-#define IR_OPERATION_INDEX_ADDRESS 		0xfffffffd
-#define IR_OPERATION_INDEX_IMMEDIATE 	0xfffffffe
-#define IR_OPERATION_INDEX_UNKOWN 		0xffffffff
+#define IR_OPERATION_INDEX_ADDRESS 			0xfffffffd
+#define IR_OPERATION_INDEX_IMMEDIATE 		0xfffffffe
+#define IR_OPERATION_INDEX_UNKOWN 			0xffffffff
 
-#define IR_OPERATION_DST_UNKOWN 		0xffffffff
+#define IR_OPERATION_DST_UNKOWN 			0xffffffff
 
 struct irOperation{
 	enum irOperationType 		type;
