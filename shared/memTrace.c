@@ -122,12 +122,12 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 
 		memcpy(new_mem_addr_buffer + size, mem_trace->mem_addr_buffer + start, sizeof(struct memAddress) * (mem_trace->nb_mem_addr - start));
 		size += mem_trace->nb_mem_addr - start;
+	
+		mappingDesc_free_mapping(mem_trace->mapping);
+		mem_trace->allocation_type 	= ALLOCATION_MALLOC;
+		mem_trace->nb_mem_addr 		= size;
+		mem_trace->mem_addr_buffer 	= new_mem_addr_buffer;
 	}
-
-	mappingDesc_free_mapping(mem_trace->mapping);
-	mem_trace->allocation_type 	= ALLOCATION_MALLOC;
-	mem_trace->nb_mem_addr 		= size;
-	mem_trace->mem_addr_buffer 	= new_mem_addr_buffer;
 
 	return mem_trace;
 }
