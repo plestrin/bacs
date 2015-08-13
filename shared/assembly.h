@@ -5,6 +5,7 @@
 
 #include "xed-interface.h"
 #include "address.h"
+#include "array.h"
 #include "base.h"
 
 struct asmWriter{
@@ -26,7 +27,7 @@ struct asmBlockHeader{
 
 struct asmBlock{
 	struct asmBlockHeader 	header;
-	char 					data[1];
+	uint8_t 				data[1];
 };
 
 struct dynBlock{
@@ -87,10 +88,17 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 
 void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop);
 
+struct memAccessExtrude{
+	uint64_t index_start;
+	uint64_t index_stop;
+};
+
+int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, struct array** extrude_array);
+
 void assembly_clean(struct assembly* assembly);
 
-#define assembly_delete(assembly) 																																\
-	assembly_clean(assembly); 																																	\
+#define assembly_delete(assembly) 				\
+	assembly_clean(assembly); 					\
 	free(assembly)
 
 #endif

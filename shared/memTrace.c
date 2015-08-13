@@ -70,8 +70,13 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t thre
 	return mem_trace;
 }
 
-struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop){
-	struct memTrace* mem_trace;
+struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop, struct array* extrude_array){
+	uint32_t 					i;
+	struct memTrace* 			mem_trace;
+	struct memAddress* 			new_mem_addr_buffer;
+	struct memAccessExtrude* 	extrude;
+	uint64_t 					size;
+	uint64_t 					start;
 
 	if (master->file == -1){
 		log_err("incorrect argument, extraction from a fragment is not implemented yet");
@@ -93,6 +98,36 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 		free(mem_trace);
 		return NULL;
 	}
+
+	if (array_get_length(extrude_array)){
+		for (i = 0, size = 0; i < array_get_length(extrude_array); i++){
+			extrude = (struct memAccessExtrude*)array_get(extrude_array, i);
+			size += extrude->index_stop - extrude->index_start;
+		}
+
+		new_mem_addr_buffer = (struct memAddress*)malloc((mem_trace->nb_mem_addr - size) * sizeof(struct memAddress));
+		if (new_mem_addr_buffer == NULL){
+			log_err("unable to allocate memory");
+			memTrace_delete(mem_trace);
+			return NULL;
+		}
+
+		for (i = 0, size = 0, start = 0; i < array_get_length(extrude_array); i++){
+			extrude = (struct memAccessExtrude*)array_get(extrude_array, i);
+			
+			memcpy(new_mem_addr_buffer + size, mem_trace->mem_addr_buffer + start, sizeof(struct memAddress) * (extrude->index_start - start));
+			size += extrude->index_start - start;
+			start = extrude->index_stop;
+		}
+
+		memcpy(new_mem_addr_buffer + size, mem_trace->mem_addr_buffer + start, sizeof(struct memAddress) * (mem_trace->nb_mem_addr - start));
+		size += mem_trace->nb_mem_addr - start;
+	}
+
+	mappingDesc_free_mapping(mem_trace->mapping);
+	mem_trace->allocation_type 	= ALLOCATION_MALLOC;
+	mem_trace->nb_mem_addr 		= size;
+	mem_trace->mem_addr_buffer 	= new_mem_addr_buffer;
 
 	return mem_trace;
 }
@@ -142,41 +177,3 @@ void memTrace_clean(struct memTrace* mem_trace){
 		}
 	}
 }
-
-
-
-/**
-
-
-static int32_t trace_try_load_memAddress(struct trace* trace, uint32_t thread_id){
-	char 				file_path[TRACE_PATH_MAX_LENGTH];
-	struct memAddress* 	mem_address_buffer;
-	size_t 				mem_address_buffer_size;
-
-	snprintf(file_path, TRACE_PATH_MAX_LENGTH, "%s/memAddr%u.bin", trace->directory_path, thread_id);
-	if (access(file_path, R_OK)){
-		return 0;
-	}
-
-	if ((mem_address_buffer = (struct memAddress*)mapFile_map(file_path, &mem_address_buffer_size)) == NULL){
-		log_err_m("unable to map file: \"%s\"", file_path);
-		return -1;
-	}
-
-	if (mem_address_buffer_size % sizeof(struct memAddress) != 0){
-		log_err_m("incorrect size %u", mem_address_buffer_size);
-		munmap(mem_address_buffer, mem_address_buffer_size);
-		return -1;
-	}
-
-	trace->nb_mem_address = mem_address_buffer_size / sizeof(struct memAddress);
-	trace->mem_address_buffer = mem_address_buffer;
-
-	
-
-	return 0;
-} 
-
-
-*/
-

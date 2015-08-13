@@ -845,7 +845,7 @@ static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd)
 	return nb_mem_access;
 }
 
-static void assembly_print_opcode_hex(char* buffer, uint32_t size, uint32_t padding_size){
+static void assembly_print_opcode_hex(uint8_t* buffer, uint32_t size, uint32_t padding_size){
 	uint32_t i;
 
 	for (i = 0; i < padding_size; i++){
@@ -931,6 +931,265 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 
 		prev_dyn_block_index = it.dyn_block_index;
 	}
+}
+
+static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint8_t* buffer, const uint8_t* valid, uint32_t size){
+	uint32_t i;
+
+	if (block->header.size != size){
+		return 0;
+	}
+
+	for (i = 0; i < size; i++){
+		if (valid[i]){
+			if (block->data[i] != buffer[i]){
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+#define SIZE_BBL_1_LINUX_1 12
+static const uint8_t buffer_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {0xff, 0x35, 0x00, 0x00, 0x00, 0x00, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0};
+
+#define SIZE_BBL_2_LINUX_1 10
+static const uint8_t buffer_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {0x68, 0x00, 0x00, 0x00, 0x00, 0xe9, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+
+#define SIZE_BBL_3_LINUX_1 6
+static const uint8_t buffer_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {1, 1, 0, 0, 0, 0};
+
+#define SIZE_BBL_1_LINUX_2 6
+static const uint8_t buffer_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {1, 1, 0, 0, 0, 0};
+
+#define SIZE_MAGIC_BLOCK 6
+static const uint8_t magic_block[SIZE_MAGIC_BLOCK] = {0x81, 0xc4, 0x04, 0x00, 0x00, 0x00};
+
+int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, struct array** extrude_array){
+	union asmBlockMaintainer{
+		size_t 					size;
+		struct asmBlock* 		ptr;
+	};				
+
+	uint32_t 					i;
+	xed_decoded_inst_t 			xedd;
+	uint32_t 					offset;
+	union asmBlockMaintainer* 	asm_block_maintainer;
+	struct asmBlock* 			asm_block_cursor;
+	uint32_t 					nb_asm_block;
+	struct memAccessExtrude		extrude;
+	size_t 						new_mapping_size_block;
+	void* 						new_mapping_block;
+	size_t 						disp;
+	uint32_t 					modify = 0;
+
+	*extrude_array = array_create(sizeof(struct memAccessExtrude));
+	if (*extrude_array == NULL){
+		log_err("unable to create array");
+		return -1;
+	}
+
+	for (i = 0, offset = 0; i < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
+
+			/* LINUX - resolve @ plt */
+			if (i - offset >= 4){
+				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 3) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 4)){
+					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 2 && assembly->dyn_blocks[i - offset - 2].block->header.nb_ins == 2 && assembly->dyn_blocks[i - offset - 3].block->header.nb_ins == 1){
+						assembly_get_last_instruction(assembly->dyn_blocks[i - offset - 4].block, &xedd);
+						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
+							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_1, valid_bbl_1_linux_1, SIZE_BBL_1_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 2].block, buffer_bbl_2_linux_1, valid_bbl_2_linux_1, SIZE_BBL_2_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 3].block, buffer_bbl_3_linux_1, valid_bbl_3_linux_1, SIZE_BBL_3_LINUX_1)){
+								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
+
+								extrude.index_start = assembly->dyn_blocks[i - offset - 3].mem_access_count; 
+								extrude.index_stop = assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+
+								if (array_add(*extrude_array, &extrude) < 0){
+									log_err("unable to add element to array");
+								}
+
+								assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
+								assembly->dyn_blocks[i - offset - 3].mem_access_count 	= assembly->dyn_blocks[i - offset - 4].mem_access_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_mem_access;
+								assembly->dyn_blocks[i - offset - 3].block 				= NULL;
+
+								assembly->dyn_blocks[i - offset - 2].instruction_count 	= assembly->dyn_blocks[i - offset - 3].instruction_count;
+								assembly->dyn_blocks[i - offset - 2].mem_access_count 	= assembly->dyn_blocks[i - offset - 3].mem_access_count;
+								assembly->dyn_blocks[i - offset - 2].block 				= (void*)(-1);
+
+								offset += 2;
+
+								modify = 1;
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			/* LINUX - already resolved call */
+			if (i - offset >= 2){
+				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2)){
+					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 1){
+						assembly_get_last_instruction(assembly->dyn_blocks[i - offset - 2].block, &xedd);
+						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
+							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_2, valid_bbl_1_linux_2, SIZE_BBL_1_LINUX_2)){
+								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 1].instruction_count - 1);
+
+								extrude.index_start = assembly->dyn_blocks[i - offset - 1].mem_access_count; 
+								extrude.index_stop = assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+
+								if (array_add(*extrude_array, &extrude) < 0){
+									log_err("unable to add element to array");
+								}
+
+								assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
+								assembly->dyn_blocks[i - offset - 1].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
+								assembly->dyn_blocks[i - offset - 1].block 				= NULL;
+
+								assembly->dyn_blocks[i - offset - 0].instruction_count 	= assembly->dyn_blocks[i - offset - 1].instruction_count;
+								assembly->dyn_blocks[i - offset - 0].mem_access_count 	= assembly->dyn_blocks[i - offset - 1].mem_access_count;
+								assembly->dyn_blocks[i - offset - 0].block 				= (void*)(-1);
+
+								modify = 1;
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			log_warn_m("unable to format black listed call @ %u", (i - offset > 0) ? assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins : 0);
+		}
+		else{
+			if (i - offset == 0){
+				assembly->dyn_blocks[i - offset].instruction_count 		= 0;
+				assembly->dyn_blocks[i - offset].mem_access_count 		= 0;
+				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+			}
+			else if (dynBlock_is_invalid(assembly->dyn_blocks + i - offset - 1)){
+				if (i - offset == 1){
+					assembly->dyn_blocks[i - offset].instruction_count 	= 0;
+					assembly->dyn_blocks[i - offset].mem_access_count 	= 0;
+					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
+				}
+				else if (assembly->dyn_blocks[i - offset - 2].block == (void*)(-1)){
+					assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + 1;
+					assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count;
+					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
+				}
+				else{
+					assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
+					assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
+					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
+				}
+			}
+			else if (assembly->dyn_blocks[i - offset - 1].block == (void*)(-1)){
+				assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + 1;
+				assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count;
+				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+			}
+			else{
+				assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins;
+				assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+			}
+		}
+	}
+
+	if (offset){
+		assembly->nb_dyn_block -= offset;
+		assembly->dyn_blocks = (struct dynBlock*)realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * assembly->nb_dyn_block);
+		if (assembly->dyn_blocks == NULL){
+			log_err("unable to realloc memory");
+			return -1;
+		}
+	}
+
+	if (modify){
+		for (asm_block_cursor = (struct asmBlock*)(assembly->mapping_block), nb_asm_block = 0; (char*)asm_block_cursor != (char*)(assembly->mapping_block) + assembly->mapping_size_block; ){
+			nb_asm_block ++;
+			asm_block_cursor->header.id = nb_asm_block;
+			asm_block_cursor = (struct asmBlock*)((char*)asm_block_cursor + asm_block_cursor->header.size + sizeof(struct asmBlockHeader));
+		}
+
+		asm_block_maintainer = (union asmBlockMaintainer*)calloc(nb_asm_block , sizeof(union asmBlockMaintainer));
+		if (asm_block_maintainer == NULL){
+			log_err("unable to allocate memory");
+			return -1;
+		}
+
+		for (i = 0; i < assembly->nb_dyn_block; i++){
+			if (dynBlock_is_valid(assembly->dyn_blocks + i) && assembly->dyn_blocks[i].block != (void*)(-1)){
+				asm_block_maintainer[assembly->dyn_blocks[i].block->header.id - 1].size = assembly->dyn_blocks[i].block->header.size + sizeof(struct asmBlockHeader);
+			}
+		}
+
+		for (i = 0, new_mapping_size_block = sizeof(struct asmBlockHeader) + SIZE_MAGIC_BLOCK; i < nb_asm_block; i++){
+			new_mapping_size_block += asm_block_maintainer[i].size;
+		}
+
+		new_mapping_block = malloc(new_mapping_size_block);
+		if (new_mapping_block == NULL){
+			log_err("unable to allocate memory");
+			free(asm_block_maintainer);
+			return -1;
+		}
+
+		for (asm_block_cursor = (struct asmBlock*)(assembly->mapping_block), disp = 0, i = 0; (char*)asm_block_cursor != (char*)(assembly->mapping_block) + assembly->mapping_size_block; asm_block_cursor = (struct asmBlock*)((char*)asm_block_cursor + asm_block_cursor->header.size + sizeof(struct asmBlockHeader)), i++){
+			if (asm_block_maintainer[i].size){
+				memcpy((char*)new_mapping_block + disp, asm_block_cursor, sizeof(struct asmBlockHeader) + asm_block_cursor->header.size);
+				asm_block_maintainer[i].ptr = (struct asmBlock*)((char*)new_mapping_block + disp);
+				disp += sizeof(struct asmBlockHeader) + asm_block_cursor->header.size;
+			}
+			else{
+				asm_block_maintainer[i].ptr = NULL;
+			}
+		}
+		asm_block_cursor = (struct asmBlock*)((char*)new_mapping_block + disp);
+
+		asm_block_cursor->header.id 			= nb_asm_block + 1;
+		asm_block_cursor->header.size 			= SIZE_MAGIC_BLOCK;
+		asm_block_cursor->header.nb_ins 		= 1;
+		asm_block_cursor->header.nb_mem_access 	= 0;
+		asm_block_cursor->header.address 		= 0;
+		memcpy(asm_block_cursor->data, magic_block, SIZE_MAGIC_BLOCK);
+
+		for (i = 0, assembly->nb_dyn_instruction = 0; i < assembly->nb_dyn_block; i++){
+			if (dynBlock_is_valid(assembly->dyn_blocks + i)){
+				if (assembly->dyn_blocks[i].block != (void*)(-1)){
+					assembly->dyn_blocks[i].block = asm_block_maintainer[assembly->dyn_blocks[i].block->header.id - 1].ptr;
+				}
+				else{
+					assembly->dyn_blocks[i].block = asm_block_cursor;
+				}
+				assembly->nb_dyn_instruction += assembly->dyn_blocks[i].block->header.nb_ins;
+			}
+		}
+
+		free(asm_block_maintainer);
+
+		switch(assembly->allocation_type){
+			case ALLOCATION_MALLOC : {
+				free(assembly->mapping_block);
+				break;
+			}
+			case ALLOCATION_MMAP : {
+				munmap(assembly->mapping_block, assembly->mapping_size_block);
+				break;
+			}
+		}
+
+		assembly->allocation_type 		= ALLOCATION_MALLOC;
+		assembly->mapping_block 		= new_mapping_block;
+		assembly->mapping_size_block 	= new_mapping_size_block;
+	}
+
+	return 0;
 }
 
 void assembly_clean(struct assembly* assembly){

@@ -6,6 +6,7 @@
 #include "address.h"
 #include "mapFile.h"
 #include "assembly.h"
+#include "array.h"
 #include "base.h"
 
 struct memAddress{
@@ -66,7 +67,7 @@ struct memTrace{
 int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t thread_id);
 
 struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t thread_id, struct assembly* assembly);
-struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop);
+struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop, struct array* extrude_array);
 struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, uint32_t nb_mem_trace_src);
 
 void memTrace_clean(struct memTrace* mem_trace);

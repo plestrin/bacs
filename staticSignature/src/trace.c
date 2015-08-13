@@ -145,23 +145,36 @@ struct trace* trace_load_elf(const char* file_path){
 }
 
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length){
-	uint64_t index_mem_start;
-	uint64_t index_mem_stop;
+	uint64_t 		index_mem_start;
+	uint64_t 		index_mem_stop;
+	struct array* 	extrude_array = NULL;
 
 	if (assembly_extract_segment(&(trace_src->assembly), &(trace_dst->assembly), offset, length, &index_mem_start, &index_mem_stop)){
 		log_err("unable to extract assembly fragment");
 		return -1;
 	}
 
-	if (trace_init(trace_dst, FRAGMENT_TRACE)){
-		log_err("unable to init traceFragment");
+	if (assembly_filter_blacklisted_function_call(&(trace_dst->assembly), &extrude_array)){
+		log_err("unable to filter assembly fragment");
 		assembly_clean(&(trace_dst->assembly));
+		if (extrude_array != NULL){
+			array_delete(extrude_array);
+		}
 		return - 1;
 	}
 
-	if (trace_src->mem_trace != NULL && (trace_dst->mem_trace = memTrace_create_frag(trace_src->mem_trace, index_mem_start, index_mem_stop)) == NULL){
+	if (trace_init(trace_dst, FRAGMENT_TRACE)){
+		log_err("unable to init traceFragment");
+		assembly_clean(&(trace_dst->assembly));
+		array_delete(extrude_array);
+		return - 1;
+	}
+
+	if (trace_src->mem_trace != NULL && (trace_dst->mem_trace = memTrace_create_frag(trace_src->mem_trace, index_mem_start, index_mem_stop, extrude_array)) == NULL){
 		log_err("unable to extract memory trace");
 	}
+
+	array_delete(extrude_array);
 
 	return 0;
 }
@@ -462,7 +475,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	set_delete(node_set);
 	node_set = NULL;
 
-	/*ir_remove_footprint(trace->ir, footprint, nb_node_footprint);*/
+	ir_remove_footprint(trace->ir, footprint, nb_node_footprint);
 	ir_normalize_remove_dead_code(trace->ir, NULL);
 
 	exit:
