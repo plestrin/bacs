@@ -32,7 +32,8 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v2" number="24"/>
+			<algo name="rc4_prga_v1" number="2"/>
+			<algo name="rc4_prga_v2" number="22"/>
 		</result>
 	</recipe>
 
