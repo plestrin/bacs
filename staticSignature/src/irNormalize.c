@@ -569,6 +569,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 	struct edge* 		edge_cursor2;
 	struct edge* 		current_edge;
 	struct irOperation*	operand_operation;
+	int32_t 			diff;
 
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
@@ -592,27 +593,37 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
 
 		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_ADD){
-			if (edge_get_src(current_edge)->nb_edge_src == 1){
-				graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
-				ir_remove_node(ir, edge_get_src(current_edge));
-
-				*modification = 1;
-				continue;
+			if (operand_operation->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN || ir_node_get_operation(node)->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN){
+				log_warn("unkown instruction dst");
+				diff = 0;
 			}
-			else if (final){
-				for (edge_cursor2 = node_get_head_edge_src(edge_get_src(current_edge)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_src(edge_cursor2)){
-					if (edge_cursor2 != current_edge && (ir_node_get_operation(edge_get_dst(edge_cursor2))->type != IR_OPERATION_TYPE_OUT_MEM || ir_edge_get_dependence(edge_cursor2)->type == IR_DEPENDENCE_TYPE_ADDRESS)){
-						break;
-					}
-				}
-				if (edge_cursor2 == NULL){
-					if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
-						log_err("unable to copy dst edge");
-					}
-					ir_remove_dependence(ir, current_edge);
+			else{
+				diff = operand_operation->operation_type.inst.dst - ir_node_get_operation(node)->operation_type.inst.dst;
+			}
+
+			if (!diff){
+				if (edge_get_src(current_edge)->nb_edge_src == 1){
+					graph_transfert_dst_edge(&(ir->graph), node, edge_get_src(current_edge));
+					ir_remove_node(ir, edge_get_src(current_edge));
 
 					*modification = 1;
 					continue;
+				}
+				else if (final){
+					for (edge_cursor2 = node_get_head_edge_src(edge_get_src(current_edge)); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_src(edge_cursor2)){
+						if (edge_cursor2 != current_edge && (ir_node_get_operation(edge_get_dst(edge_cursor2))->type != IR_OPERATION_TYPE_OUT_MEM || ir_edge_get_dependence(edge_cursor2)->type == IR_DEPENDENCE_TYPE_ADDRESS)){
+							break;
+						}
+					}
+					if (edge_cursor2 == NULL){
+						if (graph_copy_dst_edge(&(ir->graph), node, edge_get_src(current_edge))){
+							log_err("unable to copy dst edge");
+						}
+						ir_remove_dependence(ir, current_edge);
+
+						*modification = 1;
+						continue;
+					}
 				}
 			}
 
@@ -1573,17 +1584,12 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 		for(edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			operand_operation = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-				if (edge_get_src(edge_cursor)->nb_edge_src){
-					if (ir_imm_operation_get_unsigned_value(operand_operation) == (0xffffffffffffffffULL >> (64 - ir_node_get_operation(node)->size))){
-						ir_remove_dependence(ir, edge_cursor);
-						ir_node_get_operation(node)->operation_type.inst.opcode = IR_NOT;
+				if (ir_imm_operation_get_unsigned_value(operand_operation) == (0xffffffffffffffffULL >> (64 - ir_node_get_operation(node)->size))){
+					ir_remove_dependence(ir, edge_cursor);
+					ir_node_get_operation(node)->operation_type.inst.opcode = IR_NOT;
 
-						*modification = 1;
-						return;
-					}
-				}
-				else{
-					log_warn("found IMM operand but it is shared -> skip");
+					*modification = 1;
+					return;
 				}
 			}
 		}
