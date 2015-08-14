@@ -226,6 +226,7 @@ static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCi
 static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_generic_smid2(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_movd(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_movq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pinsrw(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pshufd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pslld(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
@@ -309,6 +310,10 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			}
 			case XED_ICLASS_MOVDQU 		: {
 				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
+				break;
+			}
+			case XED_ICLASS_MOVQ 		: {
+				cisc_decode_special_movq(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
 				break;
 			}
 			case XED_ICLASS_MOVUPS 		: {
@@ -1133,6 +1138,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_MOVAPS 		: {return IR_MOV;}
 		case XED_ICLASS_MOVDQA 		: {return IR_MOV;}
 		case XED_ICLASS_MOVDQU 		: {return IR_MOV;}
+		case XED_ICLASS_MOVQ 		: {return IR_MOV;}
 		case XED_ICLASS_MOVUPS 		: {return IR_MOV;}
 		case XED_ICLASS_MOVZX 		: {return IR_MOVZX;}
 		case XED_ICLASS_MUL 		: {return IR_MUL;}
@@ -1531,6 +1537,48 @@ static void cisc_decode_special_movd(struct assembly* assembly, struct instructi
 		cisc->ins[0].nb_input_operand 						= 1;
 		asmOperand_decode_simd(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_1, 0), NULL, mem_addr);
 		asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, mem_addr);
+	}
+}
+
+static void cisc_decode_special_movq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x0f){
+		cisc_decode_generic_smid2(it, cisc, mem_addr);
+	}
+	else{
+		cisc->valid 										= 1;
+		cisc->nb_ins 										= 2;
+
+		cisc->ins[0].opcode 								= IR_MOV;
+		cisc->ins[0].nb_input_operand 						= 1;
+		asmOperand_decode_simd(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_1, 0), NULL, mem_addr);
+		asmOperand_decode_simd(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_1, 0), NULL, mem_addr);
+
+		cisc->ins[1].opcode 								= IR_MOV;
+		cisc->ins[1].nb_input_operand 						= 1;
+		asmOperand_decode_simd(it, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_1, 1), NULL, mem_addr);
+		asmOperand_decode_simd(it, &(cisc->ins[1].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_1, 1), NULL, mem_addr);
+
+		if (cisc->ins[0].output_operand.type == ASM_OPERAND_REG){
+			cisc->nb_ins 									= 4;
+
+			cisc->ins[2].opcode 							= IR_MOV;
+			cisc->ins[2].nb_input_operand 					= 1;
+			cisc->ins[2].input_operand[0].size 				= 32;
+			cisc->ins[2].input_operand[0].instruction_index = it->instruction_index;
+			cisc->ins[2].input_operand[0].variable 			= NULL;
+			cisc->ins[2].input_operand[0].type 				= ASM_OPERAND_IMM;
+			cisc->ins[2].input_operand[0].operand_type.imm 	= 0x0000000000000000;
+			asmOperand_decode_simd(it, &(cisc->ins[2].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_1, 2), NULL, mem_addr);
+
+			cisc->ins[3].opcode 							= IR_MOV;
+			cisc->ins[3].nb_input_operand 					= 1;
+			cisc->ins[3].input_operand[0].size 				= 32;
+			cisc->ins[3].input_operand[0].instruction_index = it->instruction_index;
+			cisc->ins[3].input_operand[0].variable 			= NULL;
+			cisc->ins[3].input_operand[0].type 				= ASM_OPERAND_IMM;
+			cisc->ins[3].input_operand[0].operand_type.imm 	= 0x0000000000000000;
+			asmOperand_decode_simd(it, &(cisc->ins[3].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_1, 3), NULL, mem_addr);
+		}
 	}
 }
 
