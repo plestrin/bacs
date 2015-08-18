@@ -21,6 +21,7 @@ OFB_AES_TEST_NAME 		:= test_ofb_aes
 CFB_AES_TEST_NAME 		:= test_cfb_aes
 CTR_AES_TEST_NAME 		:= test_ctr_aes
 SHA1_TEST_NAME 			:= test_sha1
+HMAC_SHA1_TEST_NAME 	:= test_hmac_sha1
 SERPENT_TEST_NAME 		:= test_serpent
 DES_TEST_NAME 			:= test_des
 TWOFISH_TEST_NAME 		:= test_twofish
@@ -41,9 +42,11 @@ TARGETS 				:= 	$(TEA_TEST_NAME) 			\
 							$(CFB_AES_TEST_NAME) 		\
 							$(CTR_AES_TEST_NAME) 		\
 							$(SHA1_TEST_NAME) 			\
+							$(HMAC_SHA1_TEST_NAME) 		\
 							$(SERPENT_TEST_NAME) 		\
 							$(DES_TEST_NAME) 			\
 							$(TWOFISH_TEST_NAME)
+
 COMPILATIONS 			:= go0 go1 go2 go3 gos co0 co1 co2 co3 coz
 
 define TEMPLATE
@@ -78,6 +81,8 @@ build/$(CFB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_cfb_a
 build/$(CTR_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ctr_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(SHA1_TEST_NAME)_$(1): build/SHA1.$(1) build/test_sha1.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(HMAC_SHA1_TEST_NAME)_$(1): build/SHA1.$(1) build/mode.$(1)  build/test_hmac_sha1.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(SERPENT_TEST_NAME)_$(1): build/serpent.$(1) build/test_serpent.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
