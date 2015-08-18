@@ -11,6 +11,7 @@ OFB_TEA_TOMCRYPT_EXAMPLE_NAME 	:= tom_ofb_tea
 CFB_TEA_TOMCRYPT_EXAMPLE_NAME 	:= tom_cfb_tea
 CTR_TEA_TOMCRYPT_EXAMPLE_NAME 	:= tom_ctr_tea
 MD5_TOMCRYPT_EXAMPLE_NAME 		:= tom_md5
+HMAC_MD5_TOMCRYPT_EXAMPLE_NAME 	:= tom_hmac_md5
 RC4_TOMCRYPT_EXAMPLE_NAME 		:= tom_rc4
 AES_TOMCRYPT_EXAMPLE_NAME 		:= tom_aes
 ECB_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_ecb_aes
@@ -31,6 +32,7 @@ all: build/$(TEA_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(CFB_TEA_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(CTR_TEA_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(MD5_TOMCRYPT_EXAMPLE_NAME) 		\
+	 build/$(HMAC_MD5_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(RC4_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(AES_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(ECB_AES_TOMCRYPT_EXAMPLE_NAME) 	\
@@ -63,6 +65,9 @@ build/$(CTR_TEA_TOMCRYPT_EXAMPLE_NAME): build/tom_ctr_tea.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/$(MD5_TOMCRYPT_EXAMPLE_NAME): build/tom_md5.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(HMAC_MD5_TOMCRYPT_EXAMPLE_NAME): build/tom_hmac_md5.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/$(RC4_TOMCRYPT_EXAMPLE_NAME): build/tom_rc4.o build/printBuffer.o

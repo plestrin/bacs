@@ -12,6 +12,7 @@ OFB_TEA_TEST_NAME 		:= test_ofb_tea
 CFB_TEA_TEST_NAME 		:= test_cfb_tea
 CTR_TEA_TEST_NAME 		:= test_ctr_tea
 MD5_TEST_NAME 			:= test_md5
+HMAC_MD5_TEST_NAME 		:= test_hmac_md5
 RC4_TEST_NAME 			:= test_rc4
 AES_TEST_NAME 			:= test_aes
 ECB_AES_TEST_NAME 		:= test_ecb_aes
@@ -31,6 +32,7 @@ TARGETS 				:= 	$(TEA_TEST_NAME) 			\
 							$(CFB_TEA_TEST_NAME) 		\
 							$(CTR_TEA_TEST_NAME) 		\
 							$(MD5_TEST_NAME) 			\
+							$(HMAC_MD5_TEST_NAME) 		\
 							$(RC4_TEST_NAME) 			\
 							$(AES_TEST_NAME) 			\
 							$(ECB_AES_TEST_NAME) 		\
@@ -58,6 +60,8 @@ build/$(CFB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_cfb_t
 build/$(CTR_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ctr_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(MD5_TEST_NAME)_$(1): build/MD5.$(1) build/test_md5.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
+	$$(GCC_CC) -o $$@ $$^
+build/$(HMAC_MD5_TEST_NAME)_$(1): build/MD5.$(1) build/mode.$(1) build/test_hmac_md5.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^
 build/$(RC4_TEST_NAME)_$(1): build/RC4.$(1) build/test_rc4.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
 	$$(GCC_CC) -o $$@ $$^

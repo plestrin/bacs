@@ -20,6 +20,7 @@ RC4_BOTAN_EXAMPLE_NAME 		:= bot_rc4
 TWOFISH_BOTAN_EXAMPLE_NAME 	:= bot_twofish
 SHA1_BOTAN_EXAMPLE_NAME 	:= bot_sha1
 MD5_BOTAN_EXAMPLE_NAME 		:= bot_md5
+HMAC_MD5_BOTAN_EXAMPLE_NAME := bot_hmac_md5
 
 all: 	build/$(TEA_BOTAN_EXAMPLE_NAME) 		\
 		build/$(ECB_TEA_BOTAN_EXAMPLE_NAME) 	\
@@ -39,7 +40,8 @@ all: 	build/$(TEA_BOTAN_EXAMPLE_NAME) 		\
 		build/$(RC4_BOTAN_EXAMPLE_NAME) 		\
 		build/$(TWOFISH_BOTAN_EXAMPLE_NAME) 	\
 		build/$(SHA1_BOTAN_EXAMPLE_NAME) 		\
-		build/$(MD5_BOTAN_EXAMPLE_NAME)
+		build/$(MD5_BOTAN_EXAMPLE_NAME) 		\
+		build/$(HMAC_MD5_BOTAN_EXAMPLE_NAME)
 
 build/$(TEA_BOTAN_EXAMPLE_NAME): build/botan_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
@@ -93,6 +95,9 @@ build/$(SHA1_BOTAN_EXAMPLE_NAME): build/botan_sha1.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(MD5_BOTAN_EXAMPLE_NAME): build/botan_md5.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+build/$(HMAC_MD5_BOTAN_EXAMPLE_NAME): build/botan_hmac_md5.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.cpp

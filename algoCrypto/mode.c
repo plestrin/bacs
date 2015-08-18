@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -170,4 +171,52 @@ void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	}
 
 	xor(input, output, output, size);
+}
+
+#define IPAD 0x36
+#define OPAD 0x5c
+
+int32_t hmac(struct hash* hash, uint8_t* input, uint8_t* output, uint64_t size, uint8_t* key, size_t key_size){
+	uint8_t* block;
+	uint32_t i;
+
+	if (key_size > hash->block_size){
+		printf("WARNING: in %s, key size is larger than block size\n", __func__);
+		key_size = hash->block_size;
+	}
+
+	if (hash->hash_size > hash->block_size){
+		printf("ERROR: in %s, hash size is larger than block size\n", __func__);
+		return -1;
+	}
+
+	block = (uint8_t*)malloc(hash->block_size + hash->hash_size);
+	if (block == NULL){
+		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		return -1;
+	}
+
+	memset(block, 0, hash->block_size);
+	memcpy(block, key, key_size);
+
+	for (i = 0; i < hash->block_size; i++){
+		block[i] ^= IPAD;
+	}
+
+	hash->func_init(hash->state);
+	hash->func_feed(hash->state, block, hash->block_size);
+	hash->func_feed(hash->state, input, size);
+	hash->func_hash(hash->state, block + hash->block_size);
+
+	for (i = 0; i < hash->block_size; i++){
+		block[i] ^= IPAD ^ OPAD;
+	}
+
+	hash->func_init(hash->state);
+	hash->func_feed(hash->state, block, hash->block_size + hash->hash_size);
+	hash->func_hash(hash->state, output);
+
+	free(block);
+
+	return 0;
 }

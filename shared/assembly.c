@@ -952,20 +952,20 @@ static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint
 }
 
 #define SIZE_BBL_1_LINUX_1 12
-static const uint8_t buffer_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {0xff, 0x35, 0x00, 0x00, 0x00, 0x00, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
 
 #define SIZE_BBL_2_LINUX_1 10
 static const uint8_t buffer_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {0x68, 0x00, 0x00, 0x00, 0x00, 0xe9, 0x00, 0x00, 0x00, 0x00};
 static const uint8_t valid_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
 
 #define SIZE_BBL_3_LINUX_1 6
-static const uint8_t buffer_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {1, 1, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {1, 0, 0, 0, 0, 0};
 
 #define SIZE_BBL_1_LINUX_2 6
-static const uint8_t buffer_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {0xff, 0x25, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {1, 1, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {1, 0, 0, 0, 0, 0};
 
 #define SIZE_MAGIC_BLOCK 6
 static const uint8_t magic_block[SIZE_MAGIC_BLOCK] = {0x81, 0xc4, 0x04, 0x00, 0x00, 0x00};
