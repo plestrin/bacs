@@ -43,7 +43,7 @@
 20 (*) [I:2:4] -> 11
 
 
-"tea_enc_32" (encrypt)
+"tea_enc_32" (block_cipher)
 
 # INPUT: 1 [2 frag]
 # OUTPUT: 1 [2 frag]
@@ -240,7 +240,7 @@
 19 (*) [I:2:3] -> 6
 20 (*) [I:2:4] -> 4
 
-"tea_dec_32" (decrypt)
+"tea_dec_32" (block_cipher)
 
 # INPUT: 1 [2 frag]
 # OUTPUT: 1 [2 frag]
@@ -434,7 +434,7 @@
 2 -> 19
 
 
-"xtea_enc_32_v1" (encrypt)
+"xtea_enc_32_v1" (block_cipher)
 
 # INPUT: 2 [2 frag, 64 frag]
 # OUTPUT: 1 [2 frag]
@@ -664,7 +664,7 @@
 132 -> (O1F2) 1322 (ADD) [O:1:2]
 
 
-"xtea_enc_32_v2" (encrypt)
+"xtea_enc_32_v2" (block_cipher)
 
 # INPUT: 2 [2 frag, 56 frag]
 # OUTPUT: 1 [2 frag]
@@ -922,7 +922,7 @@
 2 -> 19
 
 
-"xtea_dec_32_v1" (decrypt)
+"xtea_dec_32_v1" (block_cipher)
 
 # INPUT: 2 [2 frag, 64 frag]
 # OUTPUT: 1 [2 frag]
@@ -1152,7 +1152,7 @@
 132 -> (O1F2) 1322 (SUB) [O:1:2]
 
 
-"xtea_dec_32_v2" (decrypt)
+"xtea_dec_32_v2" (block_cipher)
 
 # INPUT: 2 [2 frag, 56 frag]
 # OUTPUT: 1 [2 frag]

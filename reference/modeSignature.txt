@@ -1,26 +1,51 @@
+# This file define the following signature(s):
+#	- enc_cbc_cfb: 			RAS
+#	- dec_cbc_cfb_v1: 		second block input is used directly for the first block XOR
+#	- dec_cbc_cfb_v1: 		additional instruction between the second block input and the first block XOR (Like BSWAP)
+#	- ctr_v1 				RAS
+#	- ctr_v2 				no addition node. It correpondans to case where the pt is larger than 64 bits thus the addition is not performed directly
+
+
 "enc_cbc_cfb"
 
-1 (*) -> (I1) 2 (encrypt)
+1 (*) -> (I1) 2 (block_cipher)
 2 -> (O0) 3 (*)
-3 -> (I0) 4 (encrypt)
+3 -> (I0) 4 (block_cipher)
 1 -> (I1) 4
 
 
 "dec_cbc_cfb_v1"
 
-1 (decrypt) -> (O0) 2 (*)
+1 (block_cipher) -> (O0) 2 (*)
 3 (*) -> (I1) 1
-3 -> (I1) 4 (decrypt)
+3 -> (I1) 4 (block_cipher)
 5 (*) -> (I0) 4
 5 -> 2
 
 
 "dec_cbc_cfb_v2"
 
-1 (decrypt) -> (O0) 2 (*)
+1 (block_cipher) -> (O0) 2 (*)
 2 -> 3 (*)
 4 (*) -> (I1) 1
-4 -> (I1) 5 (decrypt)
+4 -> (I1) 5 (block_cipher)
 6 (*) -> 7 (*)
 7 -> (I0) 5
 6 -> 3
+
+
+"ctr_v1"
+
+1 (*) -> (I1) 2 (block_cipher)
+1 -> (I1) 3 (block_cipher)
+4 (*) ->  (I0) 2
+4 -> 5 (*)
+5 -> (I0) 3
+
+
+"ctr_v2"
+
+1 (*) -> (I1) 2 (block_cipher)
+1 -> (I1) 3 (block_cipher)
+4 (*) ->  (I0) 2
+4 -> (I0) 3

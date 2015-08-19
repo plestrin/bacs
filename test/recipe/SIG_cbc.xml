@@ -445,7 +445,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -454,8 +454,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -478,7 +478,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -487,8 +487,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -511,7 +511,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -520,8 +520,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -544,7 +544,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -553,8 +553,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -577,7 +577,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -586,8 +586,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -610,7 +610,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -619,8 +619,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -643,7 +643,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -652,8 +652,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -676,7 +676,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -685,8 +685,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -709,7 +709,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -718,8 +718,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -742,7 +742,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -751,8 +751,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
@@ -773,7 +773,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -782,8 +782,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v2" number="3"/>
@@ -804,7 +804,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -813,8 +813,8 @@
 		<result>
 			<algo name="aes_t4" number="1728"/>
 			<algo name="aes_r9" number="224"/>
-			<algo name="aes128_enc" number="4"/>
-			<algo name="aes128_dec" number="4"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v3" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v2" number="3"/>
@@ -837,7 +837,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
@@ -845,7 +845,11 @@
 		</search>
 		<result>
 			<algo name="enc_cbc_cfb" number="3"/>
-			<algo name="dec_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
+			<algo name="aes128_v2" number="192"/>
+			<algo name="aes_last_v4" number="96"/>
+			<algo name="aes_r9" number="384"/>
+			<algo name="aes_t4" number="1824"/>
 		</result>
 	</recipe>
 
@@ -865,7 +869,7 @@
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
-			<arg value="export result aes128_enc aes128_dec"/>
+			<arg value="export result aes128_v1 aes128_v2"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
