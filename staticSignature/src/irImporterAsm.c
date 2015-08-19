@@ -1385,36 +1385,37 @@ static void cisc_decode_special_push(struct instructionIterator* it, struct asmC
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 2;
 
-	cisc->ins[1].opcode 									= IR_MOV;
-	asmOperand_decode(it, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_READ_1, &(cisc->ins[1].nb_input_operand), mem_addr);
-	asmOperand_sign_extend(cisc->ins[1].input_operand, 32);
-	cisc->ins[1].output_operand.size 						= cisc->ins[1].input_operand[0].size;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_MEM;
-	cisc->ins[1].output_operand.operand_type.mem.base 		= XED_REG_ESP;
-	cisc->ins[1].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
-	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
-	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
-	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0, 2);
-
-	cisc->ins[0].opcode 									= IR_SUB;
-	cisc->ins[0].nb_input_operand 							= 2;
-	cisc->ins[0].input_operand[0].size 						= 32;
-	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[0].variable 					= NULL;
-	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
-	cisc->ins[0].input_operand[1].size 						= 32;
-	cisc->ins[0].input_operand[1].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[1].variable 					= NULL;
-	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
-	cisc->ins[0].input_operand[1].operand_type.imm 			= cisc->ins[1].input_operand[0].size / 8;
-	cisc->ins[0].output_operand.size 						= 32;
+	cisc->ins[0].opcode 									= IR_MOV;
+	cisc->ins[0].nb_input_operand 							= 1;
+	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_READ_1, NULL, mem_addr);
+	asmOperand_sign_extend(cisc->ins[0].input_operand, 32);
+	cisc->ins[0].output_operand.size 						= cisc->ins[0].input_operand[0].size;
 	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
 	cisc->ins[0].output_operand.variable 					= NULL;
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_MEM;
+	cisc->ins[0].output_operand.operand_type.mem.base 		= XED_REG_ESP;
+	cisc->ins[0].output_operand.operand_type.mem.index 		= XED_REG_INVALID;
+	cisc->ins[0].output_operand.operand_type.mem.scale 		= 1;
+	cisc->ins[0].output_operand.operand_type.mem.disp 		= -(cisc->ins[0].input_operand[0].size / 8);
+	cisc->ins[0].output_operand.operand_type.mem.con_addr 	= memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0, 2);
+
+	cisc->ins[1].opcode 									= IR_SUB;
+	cisc->ins[1].nb_input_operand 							= 2;
+	cisc->ins[1].input_operand[0].size 						= 32;
+	cisc->ins[1].input_operand[0].instruction_index 		= it->instruction_index;
+	cisc->ins[1].input_operand[0].variable 					= NULL;
+	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[1].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	cisc->ins[1].input_operand[1].size 						= 32;
+	cisc->ins[1].input_operand[1].instruction_index 		= it->instruction_index;
+	cisc->ins[1].input_operand[1].variable 					= NULL;
+	cisc->ins[1].input_operand[1].type 						= ASM_OPERAND_IMM;
+	cisc->ins[1].input_operand[1].operand_type.imm 			= cisc->ins[0].input_operand[0].size / 8;
+	cisc->ins[1].output_operand.size 						= 32;
+	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
+	cisc->ins[1].output_operand.variable 					= NULL;
+	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
 static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc){
