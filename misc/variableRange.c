@@ -144,7 +144,7 @@ void variableRange_and(struct variableRange* range_dst, const struct variableRan
 		#ifdef DEBUG_RANGE
 		log_warn("unable to mask by a non constant value");
 		#endif
-		variableRange_init_size(range_dst, size);
+		variableRange_bitwise_heuristic(range_dst, range_src, size);
 		return;
 	}
 
@@ -270,14 +270,43 @@ void variableRange_shr(struct variableRange* range_dst, const struct variableRan
 	variableRange_pack(range_dst);
 }
 
-int32_t variableRange_intersect(const struct variableRange* range1, const struct variableRange* range2){
-	/*uint64_t 					size_mask 	= variableRange_get_size_mask(size);*/
-	/*uint64_t 					index_lo;
-	uint64_t 					index_up;
-	uint64_t 					reduce_disp;
-	uint64_t 					reduce_scale;
-	const struct variableRange* range_ptr;*/
+void variableRange_bitwise_heuristic(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size){
+	if (range_src->disp != 0 || range_dst->disp != 0){
+		#ifdef DEBUG_RANGE
+		log_warn("bitwise heuristic cannot be applied if disp is non zero");
+		#endif
+		variableRange_init_size(range_dst, size);
+		return;
+	}
 
+	if (range_src->index_lo > range_src->index_up){
+		if (range_dst->index_lo > range_dst->index_up){
+			range_dst->index_lo = 0;
+			range_dst->index_up = max(variableRange_get_index_mask(range_src), variableRange_get_index_mask(range_dst));
+		}
+		else{
+			range_dst->index_lo = 0;
+			range_dst->index_up = max(variableRange_get_index_mask(range_src), 0xffffffffffffffff >> __builtin_clzll(range_dst->index_up));
+		}
+	}
+	else{
+		if (range_dst->index_lo > range_dst->index_up){
+			range_dst->index_lo = 0;
+			range_dst->index_up = max(0xffffffffffffffff >> __builtin_clzll(range_src->index_up), variableRange_get_index_mask(range_dst));
+		}
+		else{
+			range_dst->index_lo = 0;
+			range_dst->index_up = max(0xffffffffffffffff >> __builtin_clzll(range_src->index_up), 0xffffffffffffffff >> __builtin_clzll(range_dst->index_up));
+		}
+	}
+
+	range_dst->scale = min(range_src->scale, range_dst->scale);
+	range_dst->size_mask = variableRange_get_size_mask(size);
+
+	variableRange_pack(range_dst);
+}
+
+int32_t variableRange_intersect(const struct variableRange* range1, const struct variableRange* range2){
 	if (variableRange_is_cst(range1) && variableRange_is_cst(range2)){
 		return variableRange_include(range2, range1);
 	}

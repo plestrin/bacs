@@ -2,7 +2,7 @@ BIN_DIR 	:= build/
 SRC_DIR 	:= ../staticSignature/
 LOG_DIR 	:= log/
 RECIPE_DIR 	:= recipe/
-RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml
+RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml SIG_ctr.xml
 EXE 		:= signature
 
 define TRACE_template

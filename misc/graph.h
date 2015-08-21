@@ -110,6 +110,8 @@ void graph_remove_edge(struct graph* graph, struct edge* edge);
 #define node_get_head_edge_dst(node) 	((node)->dst_edge_linkedList)
 #define edge_get_next_src(edge) 		((edge)->src_next)
 #define edge_get_next_dst(edge) 		((edge)->dst_next)
+#define edge_get_prev_src(edge) 		((edge)->src_prev)
+#define edge_get_prev_dst(edge) 		((edge)->dst_prev)
 
 static inline struct edge* node_get_edge_dst(struct node* node, uint32_t i){
 	struct edge* edge_dst = node_get_head_edge_dst(node);
