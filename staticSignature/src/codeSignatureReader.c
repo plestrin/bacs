@@ -117,6 +117,11 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 		code_signature_node->node_type.opcode = IR_OR;
 		return;
 	}
+	else if (!strncmp(str, "PART1_8", str_len)){
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->node_type.opcode = IR_PART1_8;
+		return;
+	}
 	else if (!strncmp(str, "ROR", str_len)){
 		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_ROR;

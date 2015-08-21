@@ -11,7 +11,7 @@
 struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
 	struct ir* ir;
 
-	ir =(struct ir*)malloc(sizeof(struct ir));
+	ir = (struct ir*)malloc(sizeof(struct ir));
 	if (ir != NULL){
 		if(ir_init(ir, assembly, mem_trace)){
 			log_err("unable to init ir");
@@ -28,6 +28,8 @@ struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
 
 int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
+
+	ir->range_seed = 1;
 
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
 	
@@ -164,6 +166,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 		operation->type 								= IR_OPERATION_TYPE_INST;
 		operation->operation_type.inst.opcode 			= opcode;
 		operation->operation_type.inst.dst 				= dst;
+		operation->operation_type.inst.seed 			= IR_INVALID_RANGE_SEED;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
@@ -226,6 +229,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 		operation->type 								= IR_OPERATION_TYPE_INST;
 		operation->operation_type.inst.opcode 			= opcode;
 		operation->operation_type.inst.dst 				= dst;
+		operation->operation_type.inst.seed 			= IR_INVALID_RANGE_SEED;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;

@@ -165,7 +165,7 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 
 				operand = edge_get_src(node_get_head_edge_dst(node_cursor));
 
-				for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL;){
+				for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; ){
 					child = ir_node_get_operation(edge_get_dst(edge_cursor));
 
 					if (child->size == ir_node_get_operation(operand)->size && !(child->type == IR_OPERATION_TYPE_INST && child->operation_type.inst.opcode == IR_MOVZX)){
@@ -395,6 +395,7 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort DAG");
+		return;
 	}
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){

@@ -6,176 +6,229 @@
 #include "ir.h"
 #include "base.h"
 
-#define ir_node_get_range(node) ((struct variableRange*)((node)->ptr))
-
-void irVariableRange_compute(struct node* node, struct variableRange* range){
-	struct irOperation* 	operation;
-	struct variableRange* 	range_ptr;
-
-	if (range == NULL){
-		range_ptr = ir_node_get_range(node);
+static inline struct variableRange* ir_operation_get_range(struct irOperation* operation){
+	if (operation->type != IR_OPERATION_TYPE_INST){
+		return NULL;
 	}
 	else{
-		range_ptr = range;
+		return &(operation->operation_type.inst.range);
 	}
+}
+
+static void irVariableRange_apply_all_operand(struct node* node, void(*func)(struct variableRange*,const struct variableRange*,uint32_t), uint32_t seed){
+	uint32_t 				i;
+	struct edge* 			edge_cursor;
+	struct node* 			node_cursor;
+	struct variableRange 	range;
+	struct variableRange* 	ptr;
+	struct irOperation* 	operation;
+
+	operation = ir_node_get_operation(node);
+
+	for (edge_cursor = node_get_head_edge_dst(node), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor), i++){
+		node_cursor = edge_get_src(edge_cursor);
+		if (i == 0){
+			ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+			if (ptr == NULL){
+				irVariableRange_compute(node_cursor, &(operation->operation_type.inst.range), seed);
+			}
+			else{
+				irVariableRange_compute(node_cursor, ptr, seed);
+				memcpy(&(operation->operation_type.inst.range), ptr, sizeof(struct variableRange));
+			}
+
+			operation->operation_type.inst.range.size_mask = variableRange_get_size_mask(operation->size);
+			variableRange_pack(&(operation->operation_type.inst.range));
+		}
+		else{
+			ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+			if (ptr == NULL){
+				ptr = &range;
+			}
+
+			irVariableRange_compute(node_cursor, ptr, seed);
+			func(&(operation->operation_type.inst.range), ptr, operation->size);
+		}
+	}
+}
+
+static void irVariableRange_apply_shift(struct node* node, void(*func)(struct variableRange*,const struct variableRange*,uint32_t), uint32_t seed){
+	struct edge* 			edge_cursor;
+	struct node* 			node_cursor;
+	struct variableRange 	range;
+	struct variableRange* 	ptr;
+	struct irOperation* 	operation;
+
+	operation = ir_node_get_operation(node);
+
+	edge_cursor = node_get_head_edge_dst(node);
+	if (edge_cursor == NULL){
+		log_err("incorrect instruction format, run check");
+		variableRange_init_size(&(operation->operation_type.inst.range), operation->size);
+		return;
+	}
+	node_cursor = edge_get_src(edge_cursor);
+
+	if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+		ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+		if (ptr == NULL){
+			irVariableRange_compute(node_cursor, &(operation->operation_type.inst.range), seed);
+		}
+		else{
+			irVariableRange_compute(node_cursor, ptr, seed);
+			memcpy(&(operation->operation_type.inst.range), ptr, sizeof(struct variableRange));
+		}
+
+		operation->operation_type.inst.range.size_mask = variableRange_get_size_mask(operation->size);
+		variableRange_pack(&(operation->operation_type.inst.range));
+
+		edge_cursor = edge_get_next_dst(edge_cursor);
+		node_cursor = edge_get_src(edge_cursor);
+
+		ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+		if (ptr == NULL){
+			ptr = &range;
+		}
+
+		irVariableRange_compute(node_cursor, ptr, seed);
+		func(&(operation->operation_type.inst.range), ptr, operation->size);
+	}
+	else{
+		edge_cursor = edge_get_next_dst(edge_cursor);
+		if (edge_cursor == NULL){
+			log_err("incorrect instruction format, run check");
+			variableRange_init_size(&(operation->operation_type.inst.range), operation->size);
+			return;
+		}
+		node_cursor = edge_get_src(edge_cursor);
+
+		ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+		if (ptr == NULL){
+			irVariableRange_compute(node_cursor, &(operation->operation_type.inst.range), seed);
+		}
+		else{
+			irVariableRange_compute(node_cursor, ptr, seed);
+			memcpy(&(operation->operation_type.inst.range), ptr, sizeof(struct variableRange));
+		}
+
+		operation->operation_type.inst.range.size_mask = variableRange_get_size_mask(operation->size);
+		variableRange_pack(&(operation->operation_type.inst.range));
+
+		edge_cursor = edge_get_prev_dst(edge_cursor);
+		node_cursor = edge_get_src(edge_cursor);
+
+		ptr = ir_operation_get_range(ir_node_get_operation(node_cursor));
+		if (ptr == NULL){
+			ptr = &range;
+		}
+
+		irVariableRange_compute(node_cursor, ptr, seed);
+		func(&(operation->operation_type.inst.range), ptr, operation->size);
+	}
+
+}
+
+void irVariableRange_compute(struct node* node, struct variableRange* range_dst, uint32_t seed){
+	struct irOperation* operation;
 
 	operation = ir_node_get_operation(node);
 	switch(operation->type){
 		case IR_OPERATION_TYPE_IN_REG 	: {
-			variableRange_init_size(range_ptr, operation->size);
+			variableRange_init_size(range_dst, operation->size);
 			break;
 		}
 		case IR_OPERATION_TYPE_IN_MEM 	: {
-			variableRange_init_size(range_ptr, operation->size);
+			variableRange_init_size(range_dst, operation->size);
 			break;
 		}
 		case IR_OPERATION_TYPE_OUT_MEM 	: {
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 		: {
-			variableRange_init_cst(range_ptr, ir_imm_operation_get_unsigned_value(operation), operation->size);
+			variableRange_init_cst(range_dst, ir_imm_operation_get_unsigned_value(operation), operation->size);
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 	: {
+			if (seed == operation->operation_type.inst.seed){
+				return;
+			}
+
 			switch(operation->operation_type.inst.opcode){
 				case IR_ADD 	: {
-					struct edge* 			operand_cursor;
-					struct variableRange 	operand_range;
-
-					variableRange_init_cst(range_ptr, 0, operation->size);
-
-					for (operand_cursor = node_get_head_edge_dst(node); operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(operand_cursor), &operand_range);
-							variableRange_add(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							variableRange_add(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), operation->size);
-						}
-					}
+					irVariableRange_apply_all_operand(node, variableRange_add, seed);
 					break;
 				}
 				case IR_AND 	: {
-					struct edge* 			operand_cursor;
-					struct variableRange 	operand_range;
-
-					variableRange_init_cst(range_ptr, 0xffffffffffffffff, operation->size);
-
-					for (operand_cursor = node_get_head_edge_dst(node); operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(operand_cursor), &operand_range);
-							variableRange_and(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							variableRange_and(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), operation->size);
-						}
-					}
+					irVariableRange_apply_all_operand(node, variableRange_and, seed);
 					break;
 				}
 				case IR_MOVZX 	: {
-					variableRange_init_size(range_ptr, ir_node_get_operation(edge_get_src(node_get_head_edge_dst(node)))->size);
+					variableRange_init_size(&(operation->operation_type.inst.range), ir_node_get_operation(edge_get_src(node_get_head_edge_dst(node)))->size);
+					break;
+				}
+				case IR_OR	: {
+					irVariableRange_apply_all_operand(node, variableRange_bitwise_heuristic, seed);
 					break;
 				}
 				case IR_SHL 	: {
-					struct edge* 			operand_cursor;
-					struct variableRange 	operand_range;
-
-					operand_cursor = node_get_head_edge_dst(node);
-					if (ir_edge_get_dependence(operand_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(operand_cursor), range_ptr);
-							irVariableRange_compute(edge_get_src(edge_get_next_dst(operand_cursor)), &operand_range);
-							variableRange_shl(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							memcpy(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), sizeof(struct variableRange));
-							variableRange_shl(range_ptr, ir_node_get_range(edge_get_src(edge_get_next_dst(operand_cursor))), operation->size);
-						}
-					}
-					else{
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(edge_get_next_dst(operand_cursor)), range_ptr);
-							irVariableRange_compute(edge_get_src(operand_cursor), &operand_range);
-							variableRange_shl(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							memcpy(range_ptr, ir_node_get_range(edge_get_src(edge_get_next_dst(operand_cursor))), sizeof(struct variableRange));
-							variableRange_shl(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), operation->size);
-						}
-					}
+					irVariableRange_apply_shift(node, variableRange_shl, seed);
 					break;
 				}
 				case IR_SHR 	: {
-					struct edge* 			operand_cursor;
-					struct variableRange 	operand_range;
-
-					operand_cursor = node_get_head_edge_dst(node);
-					if (ir_edge_get_dependence(operand_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(operand_cursor), range_ptr);
-							irVariableRange_compute(edge_get_src(edge_get_next_dst(operand_cursor)), &operand_range);
-							variableRange_shr(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							memcpy(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), sizeof(struct variableRange));
-							variableRange_shr(range_ptr, ir_node_get_range(edge_get_src(edge_get_next_dst(operand_cursor))), operation->size);
-						}
-					}
-					else{
-						if (range != NULL){
-							irVariableRange_compute(edge_get_src(edge_get_next_dst(operand_cursor)), range_ptr);
-							irVariableRange_compute(edge_get_src(operand_cursor), &operand_range);
-							variableRange_shr(range_ptr, &operand_range, operation->size);
-						}
-						else{
-							memcpy(range_ptr, ir_node_get_range(edge_get_src(edge_get_next_dst(operand_cursor))), sizeof(struct variableRange));
-							variableRange_shr(range_ptr, ir_node_get_range(edge_get_src(operand_cursor)), operation->size);
-						}
-					}
+					irVariableRange_apply_shift(node, variableRange_shr, seed);
+					break;
+				}
+				case IR_XOR	: {
+					irVariableRange_apply_all_operand(node, variableRange_bitwise_heuristic, seed);
 					break;
 				}
 				default 		: {
-					variableRange_init_size(range_ptr, operation->size);
+					variableRange_init_size(range_dst, operation->size);
 					break;
 				}
 			}
+
+			operation->operation_type.inst.seed = seed;
+
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
-			variableRange_init_size(range_ptr, 64);
+			variableRange_init_size(range_dst, 64);
 			break;
 		}
 	}
 }
 
-void irVariableRange_get_range_add_buffer(struct variableRange* dst_range, struct node** node_buffer, uint32_t nb_node, uint32_t size, uint32_t cache){
+void irVariableRange_get_range_add_buffer(struct variableRange* dst_range, struct node** node_buffer, uint32_t nb_node, uint32_t size, uint32_t seed){
 	uint32_t 				i;
-	struct variableRange 	node_range;
+	struct variableRange 	range;
+	struct variableRange* 	ptr;
 
 	variableRange_init_cst(dst_range, 0, size);
 	for (i = 0; i < nb_node; i++){
-		if (cache){
-			variableRange_add(dst_range, ir_node_get_range(node_buffer[i]), size);
+		ptr = ir_operation_get_range(ir_node_get_operation(node_buffer[i]));
+		if (ptr == NULL){
+			ptr = &range;
 		}
-		else{
-			irVariableRange_compute(node_buffer[i], &node_range);
-			variableRange_add(dst_range, &node_range, size);
-		}
+
+		irVariableRange_compute(node_buffer[i], ptr, seed);
+		variableRange_add(dst_range, ptr, size);
 	}
 }
 
-void irVariableRange_get_range_and_buffer(struct variableRange* dst_range, struct node** node_buffer, uint32_t nb_node, uint32_t size, uint32_t cache){
+void irVariableRange_get_range_and_buffer(struct variableRange* dst_range, struct node** node_buffer, uint32_t nb_node, uint32_t size, uint32_t seed){
 	uint32_t 				i;
-	struct variableRange 	node_range;
+	struct variableRange 	range;
+	struct variableRange* 	ptr;
 
 	variableRange_init_cst(dst_range, 0xffffffffffffffff, size);
 	for (i = 0; i < nb_node; i++){
-		if (cache){
-			variableRange_and(dst_range, ir_node_get_range(node_buffer[i]), size);
+		ptr = ir_operation_get_range(ir_node_get_operation(node_buffer[i]));
+		if (ptr == NULL){
+			ptr = &range;
 		}
-		else{
-			irVariableRange_compute(node_buffer[i], &node_range);
-			variableRange_and(dst_range, &node_range, size);
-		}
+		
+		irVariableRange_compute(node_buffer[i], ptr, seed);
+		variableRange_and(dst_range, ptr, size);
 	}
 }

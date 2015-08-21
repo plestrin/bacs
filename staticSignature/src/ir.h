@@ -5,6 +5,7 @@
 
 #include "assembly.h"
 #include "memTrace.h"
+#include "variableRange.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 #include "array.h"
@@ -189,29 +190,31 @@ struct irMemAccess{
 #define IR_OPERATION_DST_UNKOWN 			0xffffffff
 
 struct irOperation{
-	enum irOperationType 		type;
+	enum irOperationType 			type;
 	union {
 		struct {
-			enum irRegister 	reg;
-		} 						in_reg;
+			enum irRegister 		reg;
+		} 							in_reg;
 		struct {
-			struct irMemAccess 	access;
-		} 						mem;
+			struct irMemAccess 		access;
+		} 							mem;
 		struct {
-			uint64_t 			value;
-		} 						imm;
+			uint64_t 				value;
+		} 							imm;
 		struct {
-			enum irOpcode 		opcode;
-			uint32_t 			dst;
-		} 						inst;
+			enum irOpcode 			opcode;
+			uint32_t 				dst;
+			struct variableRange	range;
+			uint32_t 				seed;
+		} 							inst;
 		struct {
-			void* 				result_ptr;
-			int32_t 			index;
-		} 						symbol;
-	} 							operation_type;
-	uint8_t 					size;
-	uint32_t 					index;
-	uint32_t 					status_flag;
+			void* 					result_ptr;
+			int32_t 				index;
+		} 							symbol;
+	} 								operation_type;
+	uint8_t 						size;
+	uint32_t 						index;
+	uint32_t 						status_flag;
 } __attribute__((__may_alias__));
 
 #define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
@@ -268,8 +271,12 @@ struct irDependence{
 #define IR_DEPENDENCE_MACRO_DESC_GET_ARG(desc) 			(((desc) >> 16) & 0x00000ff)
 
 struct ir{
-	struct graph graph;
+	struct 			graph graph;
+	uint32_t 		range_seed;
 };
+
+#define IR_INVALID_RANGE_SEED 0
+#define ir_drop_range(ir) ((ir)->range_seed ++)
 
 struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace);
 int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace);
@@ -299,6 +306,7 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 	operation->type 						= IR_OPERATION_TYPE_INST;
 	operation->operation_type.inst.opcode 	= opcode;
 	operation->operation_type.inst.dst 		= IR_OPERATION_DST_UNKOWN;
+	operation->operation_type.inst.seed 	= IR_INVALID_RANGE_SEED;
 	operation->size 						= size;
 	operation->index 						= index;
 	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;

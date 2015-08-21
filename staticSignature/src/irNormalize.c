@@ -686,7 +686,9 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 			struct variableRange 	range;
 			struct variableRange 	mask_range;
 
-			irVariableRange_get_range_and_buffer(&range, operand_buffer, nb_operand, ir_node_get_operation(node)->size, 0);
+			ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
+
+			irVariableRange_get_range_and_buffer(&range, operand_buffer, nb_operand, ir_node_get_operation(node)->size, ir->range_seed);
 			variableRange_init_mask(&mask_range, imm_value, ir_node_get_operation(edge_get_src(imm_operand))->size);
 
 			if (variableRange_include(&mask_range, &range)){
@@ -850,14 +852,14 @@ static void ir_normalize_simplify_instruction_rewrite_movzx(struct ir* ir, struc
 		edge = node_get_head_edge_dst(node);
 		operand = edge_get_src(edge);
 		operand_operation = ir_node_get_operation(operand);
-		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_PART1_8){
+		if (operand_operation->type == IR_OPERATION_TYPE_INST && (operand_operation->operation_type.inst.opcode == IR_PART1_8 || operand_operation->operation_type.inst.opcode == IR_PART1_16)){
 			if (operand->nb_edge_dst == 1){
 				if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size != ir_node_get_operation(node)->size){
 					return;
 				}
 			}
 
-			node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0x000000ff);
+			node_imm_new = ir_add_immediate(ir, ir_node_get_operation(node)->size, 0xffffffffffffffff >> (64 - operand_operation->size));
 			if (node_imm_new != NULL){
 				if (ir_add_dependence(ir, node_imm_new, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					log_err("unable to add dependency to IR");
