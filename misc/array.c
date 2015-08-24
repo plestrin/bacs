@@ -5,8 +5,7 @@
 #include "array.h"
 #include "base.h"
 
-int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg);
-
+static int32_t array_compare(const uint32_t* index1, const uint32_t* index2, void** arg);
 
 struct _array* _array_create(void){
 	struct _array* _array;
@@ -190,7 +189,7 @@ uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* elem
 	return mapping;
 }
 
-int32_t array_compare(uint32_t* index1, uint32_t* index2, void** arg){
+static int32_t array_compare(const uint32_t* index1, const uint32_t* index2, void** arg){
 	struct array* array = arg[0];
 	int32_t(*compare)(void*, void*) = arg[1];
 

@@ -423,6 +423,7 @@ void ir_print_node(struct irOperation* operation, FILE* file){
 			break;
 		}
 	}
+	fprintf(file, ":{size=%u, flag=0x%08x}", operation->size, operation->status_flag);
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"

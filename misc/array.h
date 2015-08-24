@@ -94,5 +94,4 @@ void array_clean(struct array* array);
 		free(array); 							\
 	}
 
-
 #endif
