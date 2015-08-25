@@ -12,13 +12,13 @@
 #define MAX_SIZE 		8
 #define MASK 			(0xffffffffffffffff >> (64 - MAX_SIZE))
 /*#define SEED 			10347*/ 				/* comment this line to start to used a different SEED */
-/*#define TEST_ADD
+#define TEST_ADD
 #define TEST_AND
 #define TEST_SHL 
 #define TEST_SHR
 #define TEST_INCLUDE
-#define TEST_INTERSECT*/
-#define TEST_CUSTOM
+#define TEST_INTERSECT
+/*#define TEST_CUSTOM*/
 #define NO_PRINT 								/* comment this line to print successful test */
 
 #ifndef SEED

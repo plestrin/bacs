@@ -69,6 +69,10 @@ void variableRange_init_mask(struct variableRange* range, uint64_t mask, uint32_
 			(range)->index_up 	= 0; 																								\
 			(range)->scale 		= 0xffffffff; 																						\
 		} 																															\
+		else if ((range)->index_lo - (range)->index_up == 1){ 																		\
+			(range)->index_lo 	= 0; 																								\
+			(range)->index_up 	= (range)->size_mask; 																				\
+		} 																															\
 	} 																																\
 	else{ 																															\
 		if ((((range)->index_up - (range)->index_lo) & variableRange_get_index_mask(range)) == 0){ 									\
@@ -76,6 +80,11 @@ void variableRange_init_mask(struct variableRange* range, uint64_t mask, uint32_
 			(range)->index_lo 	= 0; 																								\
 			(range)->index_up 	= 0; 																								\
 			(range)->scale 		= 0xffffffff; 																						\
+		} 																															\
+		else if ((range)->index_lo - (range)->index_up == 1){ 																		\
+			(range)->index_lo 	= 0; 																								\
+			(range)->index_up 	= variableRange_get_index_mask(range); 																\
+			(range)->disp 		= (range)->disp & (~(0xffffffffffffffff << (range)->scale)); 										\
 		} 																															\
 		else{ 																														\
 			(range)->index_lo 	= ((range)->index_lo + ((range)->disp >> (range)->scale)) & variableRange_get_index_mask(range); 	\

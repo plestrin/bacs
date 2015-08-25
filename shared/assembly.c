@@ -987,6 +987,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 	void* 						new_mapping_block;
 	size_t 						disp;
 	uint32_t 					modify = 0;
+	uint32_t 					mem_access_delete_count;
 
 	*extrude_array = array_create(sizeof(struct memAccessExtrude));
 	if (*extrude_array == NULL){
@@ -994,7 +995,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 		return -1;
 	}
 
-	for (i = 0, offset = 0; i < assembly->nb_dyn_block; i++){
+	for (i = 0, offset = 0, mem_access_delete_count = 0; i < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
 
 			/* LINUX - resolve @ plt */
@@ -1006,11 +1007,14 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_1, valid_bbl_1_linux_1, SIZE_BBL_1_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 2].block, buffer_bbl_2_linux_1, valid_bbl_2_linux_1, SIZE_BBL_2_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 3].block, buffer_bbl_3_linux_1, valid_bbl_3_linux_1, SIZE_BBL_3_LINUX_1)){
 								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
 
-								extrude.index_start = assembly->dyn_blocks[i - offset - 3].mem_access_count; 
-								extrude.index_stop = assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+								extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 3].mem_access_count; 
+								extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
 
 								if (array_add(*extrude_array, &extrude) < 0){
 									log_err("unable to add element to array");
+								}
+								else{
+									mem_access_delete_count += extrude.index_stop - extrude.index_start;
 								}
 
 								assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
@@ -1040,11 +1044,14 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_2, valid_bbl_1_linux_2, SIZE_BBL_1_LINUX_2)){
 								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 1].instruction_count - 1);
 
-								extrude.index_start = assembly->dyn_blocks[i - offset - 1].mem_access_count; 
-								extrude.index_stop = assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+								extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count; 
+								extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
 
 								if (array_add(*extrude_array, &extrude) < 0){
 									log_err("unable to add element to array");
+								}
+								else{
+									mem_access_delete_count += extrude.index_stop - extrude.index_start;
 								}
 
 								assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
