@@ -41,7 +41,6 @@ void analysis_frag_clean(struct analysis* analysis);
 void analysis_frag_create_ir(struct analysis* analysis, char* arg);
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
-void analysis_frag_check_ir(struct analysis* analysis, char* arg);
 void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
 void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
 
@@ -56,7 +55,7 @@ void analysis_call_export(struct analysis* analysis, char* arg);
 void analysis_call_print_stack(struct analysis* analysis, char* arg);
 
 void analysis_synthesis_create(struct analysis* analysis, char* arg);
-void analysis_synthesis_print(struct analysis* analysis, char* arg);
+void analysis_synthesis_printDot(struct analysis* analysis, char* arg);
 
 void analysis_delete(struct analysis* analysis);
 
