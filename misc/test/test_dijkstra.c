@@ -297,6 +297,115 @@ static void zzPath_test(void){
 	graph_delete(graph);
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static uint32_t get_distance(void* arg){
+	return 0;
+}
+
+static void backwardPath_print(struct array* array){
+	uint32_t 		i;
+	struct edge* 	edge;
+
+	for (i = 1; i < array_get_length(array); i++){
+		edge = *(struct edge**)array_get(array, i);
+		printf("%c ", *(char*)(edge_get_src(edge)->data));
+	}
+}
+
+static void forwardPath_print(struct array* array){
+	uint32_t 		i;
+	struct edge* 	edge;
+
+	for (i = array_get_length(array); i > 1; i--){
+		edge = *(struct edge**)array_get(array, i - 1);
+		printf("%c ", *(char*)(edge_get_dst(edge)->data));
+	}
+}
+
+static void common_test(void){
+	struct graph* 	graph;
+	struct node* 	node1;
+	struct node* 	node2;
+	struct node* 	node3;
+	struct node* 	node4;
+	struct node* 	node5;
+	struct node* 	node6;
+	struct node* 	node7;
+	struct node* 	node8;
+	struct node* 	node9;
+	struct node* 	node10;
+	struct array* 	path1 = NULL;
+	struct array* 	path2 = NULL;
+	struct node* 	result;
+
+	graph = graph_create(1, 0);
+	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
+
+	/* add nodes */
+	node1  = graph_add_node(graph, "a");
+	node2  = graph_add_node(graph, "b");
+	node3  = graph_add_node(graph, "c");
+	node4  = graph_add_node(graph, "d");
+	node5  = graph_add_node(graph, "e");
+	node6  = graph_add_node(graph, "f");
+	node7  = graph_add_node(graph, "g");
+	node8  = graph_add_node(graph, "h");
+	node9  = graph_add_node(graph, "i");
+	node10 = graph_add_node(graph, "j");
+
+	/* add edges */
+	graph_add_edge_(graph, node1, node6);
+	graph_add_edge_(graph, node6, node7);
+	graph_add_edge_(graph, node7, node2);
+	graph_add_edge_(graph, node3, node4);
+	graph_add_edge_(graph, node4, node2);
+	graph_add_edge_(graph, node3, node8);
+	graph_add_edge_(graph, node8, node5);
+	graph_add_edge_(graph, node9, node3);
+	graph_add_edge_(graph, node9, node5);
+	graph_add_edge_(graph, node5, node10);
+
+	/* print graph */
+	if (graphPrintDot_print(graph, "common.dot", NULL)){
+		log_err("unable to print graph to dot format");
+	}
+
+	#define ANCESTOR_1 node10
+	#define ANCESTOR_2 node2
+
+	result = dijkstra_lowest_common_ancestor(graph, &ANCESTOR_1, 1, &ANCESTOR_2, 1, &path1, &path2, get_distance);
+	if (result == NULL){
+		log_err_m("unable to find common ancestor for (%c, %c)", *(char*)(ANCESTOR_1->data), *(char*)(ANCESTOR_2->data));
+	}
+	else{
+		log_info_m("%c is lowest common ancestor for (%c, %c)", *(char*)(result->data), *(char*)(ANCESTOR_1->data), *(char*)(ANCESTOR_2->data));
+		printf("\t-Path1: "); backwardPath_print(path1); printf("\n");
+		printf("\t-Path2: "); backwardPath_print(path2); printf("\n");
+	}
+
+	#define DESCENDANT_1 node9
+	#define DESCENDANT_2 node1
+
+	result = dijkstra_highest_common_descendant(graph, &DESCENDANT_1, 1, &DESCENDANT_2, 1, &path1, &path2, get_distance);
+	if (result == NULL){
+		log_err_m("unable to find common descendant for (%c, %c)", *(char*)(DESCENDANT_1->data), *(char*)(DESCENDANT_2->data));
+	}
+	else{
+		log_info_m("%c is highest common descendant for (%c, %c)", *(char*)(result->data), *(char*)(DESCENDANT_1->data), *(char*)(DESCENDANT_2->data));
+		printf("\t-Path1: "); forwardPath_print(path1); printf("\n");
+		printf("\t-Path2: "); forwardPath_print(path2); printf("\n");
+	}
+	
+	if (path1 != NULL){
+		array_delete(path1);
+	}
+	if (path2 != NULL){
+		array_delete(path2);
+	}
+
+	graph_delete(graph);
+}
+
 int main(){
 	struct graph* 	graph;
 	struct node* 	node_cursor1;
@@ -349,6 +458,8 @@ int main(){
 	}
 
 	zzPath_test();
+
+	common_test();
 
 	return 0;
 }
