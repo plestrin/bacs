@@ -340,7 +340,7 @@ void ir_check_connectivity(struct ir* ir){
 					case IR_ADC 		:
 					case IR_ADD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -352,7 +352,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_AND 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -364,7 +364,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_CMOV 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -378,7 +378,7 @@ void ir_check_connectivity(struct ir* ir){
 					case IR_DIVR 		: 
 					case IR_IDIV 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIVISOR && nb_dependence[i] > 0){
@@ -398,7 +398,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_IMUL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -416,7 +416,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_MOVZX 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -428,7 +428,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_MUL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -440,7 +440,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_NEG 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -452,7 +452,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_NOT 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -464,7 +464,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_OR 			: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -476,7 +476,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART1_8 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -488,7 +488,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART2_8 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -500,7 +500,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_PART1_16 	: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
@@ -512,7 +512,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_ROL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -532,7 +532,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_ROR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -552,7 +552,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHL 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -572,7 +572,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHLD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
@@ -596,7 +596,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && nb_dependence[i] > 0){
@@ -616,7 +616,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SHRD 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SHIFT_DISP && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_ROUND_OFF && nb_dependence[i] > 0){
@@ -640,7 +640,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_SUB 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SUBSTITUTE && nb_dependence[i] > 0){
@@ -660,7 +660,7 @@ void ir_check_connectivity(struct ir* ir){
 					}
 					case IR_XOR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
-							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_MACRO){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
