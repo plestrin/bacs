@@ -23,13 +23,13 @@ enum resultState{
 };
 
 struct result{
-	enum resultState 			state;
-	struct codeSignature* 		code_signature;
-	uint32_t 					nb_occurrence;
-	struct signatureLink* 		in_mapping_buffer;
-	struct signatureLink* 		ou_mapping_buffer;
-	struct virtualNode*			intern_node_buffer;
-	struct node** 				symbol_node_buffer;
+	enum resultState 		state;
+	struct codeSignature* 	code_signature;
+	uint32_t 				nb_occurrence;
+	struct signatureLink* 	in_mapping_buffer;
+	struct signatureLink* 	ou_mapping_buffer;
+	struct virtualNode*		intern_node_buffer;
+	struct node** 			symbol_node_buffer;
 };
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
