@@ -233,6 +233,7 @@ void ir_check_connectivity(struct ir* ir){
 	struct irDependence* 	dependence;
 	uint32_t 				nb_dependence[NB_DEPENDENCE_TYPE];
 	uint32_t 				i;
+	uint32_t 				nb_edge_dst;
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
@@ -322,18 +323,21 @@ void ir_check_connectivity(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				if (node_cursor->nb_edge_dst < min_dst_edge[operation_cursor->operation_type.inst.opcode] || node_cursor->nb_edge_dst > max_dst_edge[operation_cursor->operation_type.inst.opcode]){
-					log_err_m("inst %s has an incorrect number of dst edge: %u (min=%u, max=%u)", irOpcode_2_string(operation_cursor->operation_type.inst.opcode), node_cursor->nb_edge_dst, min_dst_edge[operation_cursor->operation_type.inst.opcode], max_dst_edge[operation_cursor->operation_type.inst.opcode]);
+				for (edge_cursor = node_get_head_edge_dst(node_cursor), memset(nb_dependence, 0, sizeof(uint32_t) * NB_DEPENDENCE_TYPE), nb_edge_dst = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					dependence = ir_edge_get_dependence(edge_cursor);
+					nb_dependence[dependence->type] ++;
+					if (dependence->type != IR_DEPENDENCE_TYPE_MACRO){
+						nb_edge_dst ++;
+					}
+				}
+
+				if (nb_edge_dst < min_dst_edge[operation_cursor->operation_type.inst.opcode] || nb_edge_dst > max_dst_edge[operation_cursor->operation_type.inst.opcode]){
+					log_err_m("inst %s has an incorrect number of dst edge: %u (min=%u, max=%u)", irOpcode_2_string(operation_cursor->operation_type.inst.opcode), nb_edge_dst, min_dst_edge[operation_cursor->operation_type.inst.opcode], max_dst_edge[operation_cursor->operation_type.inst.opcode]);
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 				}
 				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					log_err_m("inst %s has no src edge but neither is flagged as final", irOpcode_2_string(operation_cursor->operation_type.inst.opcode));
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-				}
-
-				for (edge_cursor = node_get_head_edge_dst(node_cursor), memset(nb_dependence, 0, sizeof(uint32_t) * NB_DEPENDENCE_TYPE); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					dependence = ir_edge_get_dependence(edge_cursor);
-					nb_dependence[dependence->type] ++;
 				}
 
 				switch(operation_cursor->operation_type.inst.opcode){
@@ -866,5 +870,15 @@ void ir_check_instruction_index(struct ir* ir){
 				}
 			}
 		}
+	}
+}
+
+void ir_check_clean_error_flag(struct ir* ir){
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		operation_cursor->status_flag &= ~IR_OPERATION_STATUS_FLAG_ERROR;
 	}
 }

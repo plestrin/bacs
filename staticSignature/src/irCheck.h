@@ -10,8 +10,10 @@ void ir_check_size(struct ir* ir);
 void ir_check_order(struct ir* ir);
 void ir_check_instruction_index(struct ir* ir);
 void ir_check_acyclic(struct ir* ir);
+void ir_check_clean_error_flag(struct ir* ir);
 
 #define ir_check(ir) 				\
+	ir_check_clean_error_flag(ir); 	\
 	ir_check_connectivity(ir); 		\
 	ir_check_size(ir); 				\
 	ir_check_acyclic(ir); 			\
