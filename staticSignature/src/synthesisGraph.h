@@ -9,9 +9,8 @@
 
 enum synthesisNodeType{
 	SYNTHESISNODETYPE_RESULT,
-	SYNTHESISNODETYPE_OI_PATH,
-	SYNTHESISNODETYPE_II_PATH,
-	SYNTHESISNODETYPE_ZZ_PATH,
+	SYNTHESISNODETYPE_FORWARD_PATH,
+	SYNTHESISNODETYPE_BACKWARD_PATH,
 	SYNTHESISNODETYPE_IR_NODE
 };
 
@@ -30,6 +29,7 @@ struct synthesisNode{
 		struct array* 				path;
 		struct node*				ir_node;
 	}								node_type;
+	uint32_t 						index; 				/* used to compute the adjacency matrix */
 } __attribute__((__may_alias__));
 
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)&((node)->data))
@@ -42,7 +42,7 @@ struct synthesisNode{
 #define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
 #define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
-struct synthesisGraph {
+struct synthesisGraph{
 	struct graph 		graph;
 	struct array 		cluster_array;
 };
@@ -51,6 +51,8 @@ struct synthesisGraph* synthesisGraph_create(struct ir* ir);
 int32_t synthesisGraph_init(struct synthesisGraph* synthesis_graph, struct ir* ir);
 
 #define synthesisGraph_printDot(synthesis_graph) graphPrintDot_print(&(synthesis_graph->graph), NULL, NULL)
+
+void synthesisGraph_delete_edge(struct graph* graph, struct edge* edge);
 
 void synthesisGraph_clean(struct synthesisGraph* synthesis_graph);
 
