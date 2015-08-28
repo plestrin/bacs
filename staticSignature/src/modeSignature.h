@@ -21,11 +21,11 @@ struct modeSignatureNode{
 	union{
 		char 					name[SIGNATURE_NAME_MAX_SIZE];
 	} 							node_type;
-}  __attribute__((__may_alias__));
+};
 
 struct modeSignatureEdge{
 	uint32_t tag;
-}  __attribute__((__may_alias__));
+};
 
 uint32_t modeSignatureNode_get_label(struct node* node);
 uint32_t modeSignatureEdge_get_label(struct edge* edge);
@@ -37,7 +37,7 @@ struct modeSignature{
 	struct signature signature;
 };
 
-#define signatureCollection_node_get_modeSignature(node) ((struct modeSignature*)&((node)->data))
+#define signatureCollection_node_get_modeSignature(node) ((struct modeSignature*)node_get_data(node))
 
 void modeSignature_init(struct modeSignature* mode_signature);
 #define modeSignature_clean (void(*)(struct node*))nameEngine_release

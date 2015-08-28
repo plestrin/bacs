@@ -40,7 +40,7 @@ struct signature{
 	struct signatureSymbolTable* 	symbol_table;
 	int32_t 						result_index;
 	uint32_t 						state;
-} __attribute__((__may_alias__));
+};
 
 #define signature_state_is_search(signature) 	((signature)->state & 0x00000001)
 #define signature_state_is_found(signature) 	((signature)->state & 0x00000002)
@@ -59,7 +59,7 @@ struct signature{
 		free((signature)->symbol_table); 																			\
 	}
 
-#define signatureCollection_node_get_signature(node) ((struct signature*)&((node)->data))
+#define signatureCollection_node_get_signature(node) ((struct signature*)node_get_data(node))
 
 struct signatureCallback{
 	uint32_t(*signatureNode_get_label)(struct node*);

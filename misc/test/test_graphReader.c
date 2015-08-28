@@ -42,8 +42,8 @@ static void handle_graph_end(void* arg){
 static void handle_node_label(const char* str, size_t str_len, void* ptr, void* arg){
 	struct node* node = (struct node*)ptr;
 
-	memset(node->data, 0, NODE_MAX_LABEL_SIZE);
-	memcpy(node->data, str, min(NODE_MAX_LABEL_SIZE - 1, str_len));
+	memset(node_get_data(node), 0, NODE_MAX_LABEL_SIZE);
+	memcpy(node_get_data(node), str, min(NODE_MAX_LABEL_SIZE - 1, str_len));
 }
 
 static void* handle_create_edge(void* src, void* dst, void* arg){

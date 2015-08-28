@@ -60,7 +60,7 @@ static void* modeSignatureReader_handle_new_node(void* arg){
 		log_err("unable to add node to graph");
 	}
 	else{
-		mode_signature_node = (struct modeSignatureNode*)&(node->data);
+		mode_signature_node = (struct modeSignatureNode*)node_get_data(node);
 		mode_signature_node->type = MODESIGNATURE_NODE_TYPE_INVALID;
 	}
 
@@ -70,7 +70,7 @@ static void* modeSignatureReader_handle_new_node(void* arg){
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static void modeSignatureReader_handle_node_label(const char* str, size_t str_len, void* ptr, void* arg){
 	struct node* 				node = (struct node*)ptr;
-	struct modeSignatureNode* 	mode_signature_node = (struct modeSignatureNode*)&(node->data);
+	struct modeSignatureNode* 	mode_signature_node = (struct modeSignatureNode*)node_get_data(node);
 
 	if (str_len == 1 && str[0] == '*'){
 		mode_signature_node->type = MODESIGNATURE_NODE_TYPE_RAW;
@@ -94,7 +94,7 @@ static void* modeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 		log_err("unable to add edge to graph");
 	}
 	else{
-		mode_signature_edge = (struct modeSignatureEdge*)&(edge->data);
+		mode_signature_edge = (struct modeSignatureEdge*)edge_get_data(edge);
 		mode_signature_edge->tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
 	}
 
@@ -104,7 +104,7 @@ static void* modeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static void modeSignatureReader_handle_edge_label(const char* str, size_t str_len, void* ptr, void* arg){
 	struct edge* 				edge = (struct edge*)ptr;
-	struct modeSignatureEdge* 	mode_signature_edge = (struct modeSignatureEdge*)&(edge->data);
+	struct modeSignatureEdge* 	mode_signature_edge = (struct modeSignatureEdge*)edge_get_data(edge);
 	
 	if (str_len > 1 && (str[0] == 'I' || str[0] == 'O')){
 		if (str[1] >= 48 && str[1] <= 57){

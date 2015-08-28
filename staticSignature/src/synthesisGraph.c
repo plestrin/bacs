@@ -214,7 +214,7 @@ static void synthesisGraph_connect_adj_matrix(struct adjacencyMatrix* adjacency_
 		case SYNTHESISNODETYPE_FORWARD_PATH 	:
 		case SYNTHESISNODETYPE_BACKWARD_PATH 	: {
 			for (edge_cursor = node_get_head_edge_dst(node_src); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				synthesisGraph_connect_adj_matrix(adjacency_matrix, dst_entry, root_edge, dst + array_get_length(synthesis_node->node_type.path) - 1, edge_get_src(edge_cursor), *(uint32_t*)&(edge_cursor->data));
+				synthesisGraph_connect_adj_matrix(adjacency_matrix, dst_entry, root_edge, dst + array_get_length(synthesis_node->node_type.path) - 1, edge_get_src(edge_cursor), synthesisGraph_get_edgeTag(edge_cursor));
 			}
 			break;
 		}
@@ -260,7 +260,7 @@ static struct adjacencyMatrix* synthesisGraph_create_adjacencyMatrix(struct grap
 		synthesis_node_cursor  = synthesisGraph_get_synthesisNode(node_cursor);
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_RESULT){
 			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				edge_tag = *(uint32_t*)&(edge_cursor->data);
+				edge_tag = synthesisGraph_get_edgeTag(edge_cursor);
 				if (synthesisGraph_edge_is_input(edge_tag)){
 					synthesisGraph_connect_adj_matrix(adjacency_matrix, synthesis_node_cursor->index + synthesisGraph_edge_get_parameter(edge_tag),edge_cursor,  1, edge_get_src(edge_cursor), SYNTHESISGRAPH_EGDE_TAG_RAW);
 				}
@@ -275,7 +275,7 @@ static struct adjacencyMatrix* synthesisGraph_create_adjacencyMatrix(struct grap
 		}
 		else if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE){
 			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				synthesisGraph_connect_adj_matrix(adjacency_matrix, synthesis_node_cursor->index, edge_cursor, 1, edge_get_src(edge_cursor), *(uint32_t*)&(edge_cursor->data));
+				synthesisGraph_connect_adj_matrix(adjacency_matrix, synthesis_node_cursor->index, edge_cursor, 1, edge_get_src(edge_cursor), synthesisGraph_get_edgeTag(edge_cursor));
 			}
 		}
 	}
@@ -482,7 +482,7 @@ static int32_t synthesisGraph_compare_II_path(const void* data1, const void* dat
 	struct edge* 			edge_cursor2;
 
 	for (edge_cursor1 = node_get_head_edge_dst(node1), edge_cursor2 = node_get_head_edge_dst(node2); edge_cursor1 != NULL && edge_cursor2 != NULL; edge_cursor1 = edge_get_next_dst(edge_cursor1), edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-		int32_t r = memcmp(edge_cursor1->data, edge_cursor2->data, sizeof(uint32_t));
+		int32_t r = memcmp(edge_get_data(edge_cursor1), edge_get_data(edge_cursor2), sizeof(uint32_t));
 		if (r != 0){
 			return r;
 		}
@@ -535,7 +535,7 @@ static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2)
 		return 1;
 	}
 	else{
-		return memcmp(edge1->data, edge2->data, sizeof(uint32_t));
+		return memcmp(edge_get_data(edge1), edge_get_data(edge2), sizeof(uint32_t));
 	}
 }
 

@@ -20,7 +20,7 @@ void codeSignature_init(struct codeSignature* code_signature){
 	code_signature->nb_frag_tot_out 	= 0;
 
 	for (node_cursor = graph_get_head_node(&(code_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		sig_node_cursor = (struct codeSignatureNode*)&(node_cursor->data);
+		sig_node_cursor = (struct codeSignatureNode*)node_get_data(node_cursor);
 		if (sig_node_cursor->input_number > 0){
 			code_signature->nb_frag_tot_in ++;
 			if (sig_node_cursor->input_number > code_signature->nb_parameter_in){
@@ -142,7 +142,7 @@ uint32_t irNode_get_label(struct node* node){
 }
 
 uint32_t codeSignatureNode_get_label(struct node* node){
-	struct codeSignatureNode* signature_node = (struct codeSignatureNode*)&(node->data);
+	struct codeSignatureNode* signature_node = (struct codeSignatureNode*)node_get_data(node);
 
 	switch(signature_node->type){
 		case CODESIGNATURE_NODE_TYPE_OPCODE : {
@@ -203,7 +203,7 @@ uint32_t irEdge_get_label(struct edge* edge){
 }
 
 uint32_t codeSignatureEdge_get_label(struct edge* edge){
-	struct codeSignatureEdge* signature_edge = (struct codeSignatureEdge*)&(edge->data);
+	struct codeSignatureEdge* signature_edge = (struct codeSignatureEdge*)edge_get_data(edge);
 
 	return signature_edge->type | signature_edge->macro_desc;
 }

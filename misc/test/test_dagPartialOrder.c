@@ -57,7 +57,7 @@ int main(){
 	if (graph != NULL){
 		printf("Printing node in intial order:\n");
 		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-			printf("\t%u\n", *(uint32_t*)&(node_cursor->data));
+			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}
 
 		if (dagPartialOrder_sort_dst_src(graph)){
@@ -66,7 +66,7 @@ int main(){
 
 		printf("Printing node in partial order:\n");
 		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-			printf("\t%u\n", *(uint32_t*)&(node_cursor->data));
+			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}
 
 		graph_delete(graph);

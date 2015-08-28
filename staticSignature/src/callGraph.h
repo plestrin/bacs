@@ -23,9 +23,9 @@ struct function{
 	enum functionType 	type;
 	int32_t 			last_snippet_offset;
 	struct cm_routine* 	routine;
-} __attribute__((__may_alias__));
+};
 
-#define callGraph_node_get_function(node) 	((struct function*)&((node)->data))
+#define callGraph_node_get_function(node) 	((struct function*)node_get_data(node))
 
 #define function_init_valid(func) 														\
 	(func)->type = FUNCTION_VALID; 														\
@@ -48,9 +48,9 @@ enum callGraphEdgeType{
 
 struct callGraphEdge{
 	enum callGraphEdgeType type;
-} __attribute__((__may_alias__));
+};
 
-#define callGraph_edge_get_data(edge) 	((struct callGraphEdge*)&((edge)->data))
+#define callGraph_edge_get_data(edge) 	((struct callGraphEdge*)edge_get_data(edge))
 
 struct callGraph{
 	struct graph 			graph;

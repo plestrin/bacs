@@ -215,9 +215,9 @@ struct irOperation{
 	uint8_t 						size;
 	uint32_t 						index;
 	uint32_t 						status_flag;
-} __attribute__((__may_alias__));
+};
 
-#define ir_node_get_operation(node) 	((struct irOperation*)&((node)->data))
+#define ir_node_get_operation(node) 	((struct irOperation*)node_get_data(node))
 
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)(((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))) | ((((op)->operation_type.imm.value >> ((op)->size - 1)) & 0x0000000000000001ULL) ? (0xffffffffffffffffULL << (op)->size) : 0)))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
@@ -251,9 +251,9 @@ struct irDependence{
 	union{
 		uint32_t 				macro;
 	} 							dependence_type;
-} __attribute__((__may_alias__));
+};
 
-#define ir_edge_get_dependence(edge) 	((struct irDependence*)&((edge)->data))
+#define ir_edge_get_dependence(edge) 	((struct irDependence*)edge_get_data(edge))
 
 /* Bit map description of the macro parameter (read the edge labeling prior to modify this mapping)
 	- [0 :6 ] 	reserved

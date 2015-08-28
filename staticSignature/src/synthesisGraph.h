@@ -30,9 +30,10 @@ struct synthesisNode{
 		struct node*				ir_node;
 	}								node_type;
 	uint32_t 						index; 				/* used to compute the adjacency matrix */
-} __attribute__((__may_alias__));
+};
 
-#define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)&((node)->data))
+#define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)node_get_data(node))
+#define synthesisGraph_get_edgeTag(edge) (*(uint32_t*)edge_get_data(edge))
 
 #define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
 

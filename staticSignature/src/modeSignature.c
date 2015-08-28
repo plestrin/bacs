@@ -104,7 +104,7 @@ static void modeSignature_printDot_edge(void* data, FILE* file, void* arg){
 
 
 uint32_t modeSignatureNode_get_label(struct node* node){
-	struct modeSignatureNode* 	mode_signature_node = (struct modeSignatureNode*)&(node->data);
+	struct modeSignatureNode* 	mode_signature_node = (struct modeSignatureNode*)node_get_data(node);
 	uint32_t 					label = SUBGRAPHISOMORPHISM_JOKER_LABEL;
 
 	switch(mode_signature_node->type){
@@ -129,7 +129,7 @@ uint32_t modeSignatureNode_get_label(struct node* node){
 }
 
 uint32_t modeSignatureEdge_get_label(struct edge* edge){
-	return ((struct modeSignatureEdge*)&(edge->data))->tag;
+	return ((struct modeSignatureEdge*)edge_get_data(edge))->tag;
 }
 
 uint32_t synthesisGraphNode_get_label(struct node* node){
@@ -138,25 +138,22 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 	struct node*			symbol;
 
 	switch(synthesis_node->type){
-		case SYNTHESISNODETYPE_RESULT 	: {
+		case SYNTHESISNODETYPE_RESULT 			: {
 			symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), 0);
 			nameEngine_get();
 			label = nameEngine_search(((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->code_signature->signature.symbol) << 2;
 			nameEngine_release();
 			break;
 		}
-		case SYNTHESISNODETYPE_OI_PATH 	: {
+		case SYNTHESISNODETYPE_FORWARD_PATH 	: {
 			label = 0x00000001;
 			break;
 		}
-		case SYNTHESISNODETYPE_II_PATH 	: {
+		case SYNTHESISNODETYPE_BACKWARD_PATH 	: {
 			label = 0x00000001;
 			break;
 		}
-		case SYNTHESISNODETYPE_ZZ_PATH 	: {
-			label = 0x00000001;
-		}
-		case SYNTHESISNODETYPE_IR_NODE 	: {
+		case SYNTHESISNODETYPE_IR_NODE 			: {
 			label = 0x00000003;
 			break;
 		}
@@ -166,7 +163,7 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 }
 
 uint32_t synthesisGraphEdge_get_label(struct edge* edge){
-	return *(uint32_t*)&(edge->data);
+	return *(uint32_t*)edge_get_data(edge);
 }
 
 void modeSignature_init(struct modeSignature* mode_signature){

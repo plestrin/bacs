@@ -296,7 +296,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t 
 			}
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+				if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){
 					continue;
 				}
 
@@ -424,7 +424,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 		for(next_orbital = NULL; curr_orbital1 != NULL; curr_orbital1 = curr_orbital1->next){
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital1->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+				if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){
 					continue;
 				}
 
@@ -453,7 +453,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 
 			if ((curr_orbital2->tag & 0x00000004) == 0){
 				for (edge_cursor = node_get_head_edge_dst(curr_orbital2->node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+					if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){
 						continue;
 					}
 
@@ -492,7 +492,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 			}
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital2->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){
+				if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){
 					continue;
 				}
 
@@ -634,7 +634,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 																																									\
 		for(next_orbital1 = NULL; curr_orbital1 != NULL; curr_orbital1 = curr_orbital1->next){ 																		\
 			for (edge_cursor = common_get_head_##type(curr_orbital1->node); edge_cursor != NULL; edge_cursor = common_get_next_##type(edge_cursor)){ 				\
-				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){ 													\
+				if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){ 											\
 					continue; 																																		\
 				} 																																					\
 																																									\
@@ -670,7 +670,7 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 																																									\
 		for(next_orbital2 = NULL; curr_orbital2 != NULL; curr_orbital2 = curr_orbital2->next){ 																		\
 			for (edge_cursor = common_get_head_##type(curr_orbital2->node); edge_cursor != NULL; edge_cursor = common_get_next_##type(edge_cursor)){ 				\
-				if (edge_get_distance != NULL && edge_get_distance(&(edge_cursor->data)) == DIJKSTRA_INVALID_DST){ 													\
+				if (edge_get_distance != NULL && edge_get_distance(edge_get_data(edge_cursor)) == DIJKSTRA_INVALID_DST){ 											\
 					continue; 																																		\
 				} 																																					\
 																																									\

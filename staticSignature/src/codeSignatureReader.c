@@ -66,7 +66,7 @@ static void* codeSignatureReader_handle_new_node(void* arg){
 		log_err("unable to add node to graph");
 	}
 	else{
-		code_signature_node = (struct codeSignatureNode*)&(node->data);
+		code_signature_node = (struct codeSignatureNode*)node_get_data(node);
 		code_signature_node->type 				= CODESIGNATURE_NODE_TYPE_INVALID;
 		code_signature_node->input_number 		= 0;
 		code_signature_node->input_frag_order 	= 0;
@@ -79,7 +79,7 @@ static void* codeSignatureReader_handle_new_node(void* arg){
 
 static void codeSignatureReader_handle_node_label(const char* str, size_t str_len, void* ptr, void* arg){
 	struct node* 					node = (struct node*)ptr;
-	struct codeSignatureNode* 		code_signature_node = (struct codeSignatureNode*)&(node->data);
+	struct codeSignatureNode* 		code_signature_node = (struct codeSignatureNode*)node_get_data(node);
 	struct codeSignatureBuilder* 	builder = (struct codeSignatureBuilder*)arg;
 	char 							symbol[SIGNATURE_NAME_MAX_SIZE];
 
@@ -177,7 +177,7 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static void codeSignatureReader_handle_node_io(const char* str, size_t str_len, void* ptr, void* arg){
 	struct node* 				node = (struct node*)ptr;
-	struct codeSignatureNode* 	code_signature_node = (struct codeSignatureNode*)&(node->data);
+	struct codeSignatureNode* 	code_signature_node = (struct codeSignatureNode*)node_get_data(node);
 	size_t 					i;
 
 	if (str_len < 5){
@@ -227,7 +227,7 @@ static void* codeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 		log_err("unable to add edge to graph");
 	}
 	else{
-		code_signature_edge = (struct codeSignatureEdge*)&(edge->data);
+		code_signature_edge = (struct codeSignatureEdge*)edge_get_data(edge);
 		code_signature_edge->type = IR_DEPENDENCE_TYPE_DIRECT;
 		code_signature_edge->macro_desc = 0;
 	}
@@ -237,7 +237,7 @@ static void* codeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 
 static void codeSignatureReader_handle_edge_label(const char* str, size_t str_len, void* ptr, void* arg){
 	struct edge* 				edge = (struct edge*)ptr;
-	struct codeSignatureEdge* 	code_signature_edge = (struct codeSignatureEdge*)&(edge->data);
+	struct codeSignatureEdge* 	code_signature_edge = (struct codeSignatureEdge*)edge_get_data(edge);
 
 	if (str_len == 1 && str[0] == '@'){
 		code_signature_edge->type = IR_DEPENDENCE_TYPE_ADDRESS;
@@ -305,7 +305,7 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 	}
 
 	for (node_cursor = graph_get_head_node(&(builder->code_signature.signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		code_signature_node = (struct codeSignatureNode*)&(node_cursor->data);
+		code_signature_node = (struct codeSignatureNode*)node_get_data(node_cursor);
 
 		if (code_signature_node->type == CODESIGNATURE_NODE_TYPE_INVALID){
 			log_warn("a node label has not been set");

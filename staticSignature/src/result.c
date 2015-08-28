@@ -53,7 +53,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 		nb_intern 	= 0;
 
 		for (j = 0; j < code_signature->signature.graph.nb_node; j++){
-			sig_node = (struct codeSignatureNode*)&(code_signature->signature.sub_graph_handle->node_tab[j].node->data);
+			sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[j].node);
 			operation = ir_node_get_operation(assignement[j]);
 
 			if (operation->type == IR_OPERATION_TYPE_SYMBOL){
@@ -475,7 +475,7 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 	memset(mapping, 0, parameterMapping_get_size(code_signature));
 
 	for (i = 0; i < code_signature->signature.graph.nb_node; i++){
-		sig_node = (struct codeSignatureNode*)&(code_signature->signature.sub_graph_handle->node_tab[i].node->data);
+		sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[i].node);
 
 		if (sig_node->input_number > 0){
 			mapping[sig_node->input_number - 1].nb_fragment ++;
@@ -486,7 +486,7 @@ int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSigna
 	}
 
 	for (i = 0; i < code_signature->signature.graph.nb_node; i++){
-		sig_node = (struct codeSignatureNode*)&(code_signature->signature.sub_graph_handle->node_tab[i].node->data);
+		sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[i].node);
 
 		if (sig_node->input_number > 0){
 			if (sig_node->input_frag_order > mapping[sig_node->input_number - 1].nb_fragment){

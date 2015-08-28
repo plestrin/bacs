@@ -22,7 +22,7 @@ static void dotPrint_node(void* data, FILE* file, void* arg){
 	else{
 		sta_assignement = (struct standaloneAssignement*)arg;
 		for (i = 0; i < sta_assignement->nb_node; i++){
-			if (data == sta_assignement->assignement[i]->data){
+			if (data == node_get_data(sta_assignement->assignement[i])){
 				color= "red";
 				break;
 			}
@@ -32,7 +32,7 @@ static void dotPrint_node(void* data, FILE* file, void* arg){
 }
 
 static uint32_t node_get_label(struct node* node){
-	switch(*(char*)node->data){
+	switch(*(char*)node_get_data(node)){
 		case 'a' : {return 97 ;}
 		case 'b' : {return 98 ;}
 		case 'i' : {return 105;}
@@ -40,7 +40,7 @@ static uint32_t node_get_label(struct node* node){
 		case 'o' : {return 111;}
 		case 'r' : {return 114;}
 		default : {
-			log_err_m("unknown label: %c", *(char*)node->data);
+			log_err_m("unknown label: %c", *(char*)node_get_data(node));
 			return 0;
 		}
 	}
@@ -241,7 +241,7 @@ int main(){
 			printf("Assignement %u:\n", i + 1);
 
 			for (j = 0; j < sub_graph->nb_node; j++){
-				printf("\t %u - %p -> %p (%c)\n", j, (void*)sub_graph_handle->node_tab[j].node->data, (void*)assignement[j]->data, (char)(sub_graph_handle->node_tab[j].label));
+				printf("\t %u - %p -> %p (%c)\n", j, node_get_data(sub_graph_handle->node_tab[j].node), node_get_data(assignement[j]), (char)(sub_graph_handle->node_tab[j].label));
 			}
 
 			sta_assignement.nb_node = sub_graph->nb_node;

@@ -6,8 +6,8 @@
 #include "base.h"
 
 /* One can implement special callback mecanisms here */
-#define graph_node_set_data(graph, node, data_) 	memcpy(&((node)->data), (data_), (graph)->node_data_size);
-#define graph_edge_set_data(graph, edge, data_) 	memcpy(&((edge)->data), (data_), (graph)->edge_data_size);
+#define graph_node_set_data(graph, node, data_) 	memcpy(node_get_data(node), (data_), (graph)->node_data_size);
+#define graph_edge_set_data(graph, edge, data_) 	memcpy(edge_get_data(edge), (data_), (graph)->edge_data_size);
 #define graph_node_clean_data(graph, node) 			if ((graph)->node_clean_data != NULL){(graph)->node_clean_data(node);}
 #define graph_edge_clean_data(graph, edge) 			if ((graph)->edge_clean_data != NULL){(graph)->edge_clean_data(edge);}
 
@@ -193,7 +193,7 @@ int32_t graph_copy_src_edge(struct graph* graph, struct node* node1, struct node
 	struct edge* edge_cursor;
 
 	for (edge_cursor = node_get_head_edge_src(node2); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-		if (graph_add_edge(graph, node1, edge_get_dst(edge_cursor), &(edge_cursor->data)) == NULL){
+		if (graph_add_edge(graph, node1, edge_get_dst(edge_cursor), edge_get_data(edge_cursor)) == NULL){
 			return -1;
 		}
 	}
@@ -205,7 +205,7 @@ int32_t graph_copy_dst_edge(struct graph* graph, struct node* node1, struct node
 	struct edge* edge_cursor;
 
 	for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (graph_add_edge(graph, edge_get_src(edge_cursor), node1, &(edge_cursor->data)) == NULL){
+		if (graph_add_edge(graph, edge_get_src(edge_cursor), node1, edge_get_data(edge_cursor)) == NULL){
 			return -1;
 		}
 	}

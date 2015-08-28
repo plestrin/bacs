@@ -12,12 +12,12 @@
 
 #define graphPrintDot_print_node_data(graph, node, file, arg) 														\
 	if ((graph)->dotPrint_node_data != NULL){ 																		\
-		(graph)->dotPrint_node_data(&((node)->data), (file), (arg)); 												\
+		(graph)->dotPrint_node_data(node_get_data(node), (file), (arg)); 											\
 	}
 
 #define graphPrintDot_print_edge_data(graph, edge, file, arg) 														\
 	if ((graph)->dotPrint_edge_data != NULL){ 																		\
-		(graph)->dotPrint_edge_data(&((edge)->data), (file), (arg)); 												\
+		(graph)->dotPrint_edge_data(edge_get_data(edge), (file), (arg)); 											\
 	}
 
 #define graphPrintDot_print_epilogue(graph, file, arg) 																\
