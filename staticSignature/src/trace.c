@@ -222,7 +222,7 @@ void trace_normalize_ir(struct trace* trace){
 	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
 		result = (struct result*)array_get(&(trace->result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
-			log_err_m("cannot normalize IR of fragment \"%s\" resulls have been exported", trace->tag);
+			log_err_m("cannot normalize IR of fragment \"%s\" results have been exported", trace->tag);
 			return;
 		}
 	}
@@ -237,6 +237,20 @@ void trace_normalize_ir(struct trace* trace){
 	}
 
 	ir_normalize(trace->ir);
+}
+
+void trace_normalize_concrete_ir(struct trace* trace){
+	if (trace->ir == NULL){
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
+		return;
+	}
+
+	if (trace->mem_trace == NULL){
+		log_err_m("no concrete address for fragment \"%s\"", trace->tag);
+		return;
+	}
+
+	ir_normalize_concrete(trace->ir);
 }
 
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){

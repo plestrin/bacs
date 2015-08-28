@@ -47,6 +47,7 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 
 void trace_create_ir(struct trace* trace);
 void trace_normalize_ir(struct trace* trace);
+void trace_normalize_concrete_ir(struct trace* trace);
 
 static inline void trace_printDot_ir(struct trace* trace){
 	if (trace->ir != NULL){

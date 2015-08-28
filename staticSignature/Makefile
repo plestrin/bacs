@@ -60,7 +60,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)variableRange.o
 
 ifeq ($(DEBUG),1)
-CFLAGS			:= $(CFLAGS) -g3
+CFLAGS			:= $(CFLAGS) -g3 -DIR_FULL_CHECK
 else
 CFLAGS			:= $(CFLAGS) -O2
 endif
