@@ -22,7 +22,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -49,7 +49,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -76,7 +76,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -103,7 +103,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -130,7 +130,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -157,7 +157,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -184,7 +184,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -211,7 +211,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -238,7 +238,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -265,7 +265,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -290,7 +290,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -315,7 +315,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -342,7 +342,7 @@
 		<result>
 			<algo name="xtea_enc" number="441"/> <!-- the first block cipher call is done in ctr_start -->
 			<algo name="xtea_enc_32_v1" number="7"/>
-			<algo name="ctr_v2" number="42"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -369,7 +369,33 @@
 		<result>
 			<algo name="xtea_enc" number="504"/>
 			<algo name="xtea_enc_32_v1" number="8"/>
-			<algo name="ctr_v1" number="7"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_CTR_TEA" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_ctr_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_ctr_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_CTR_TEA"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZThn24_N8CryptoPP14CTR_ModePolicy16OperateKeystreamENS_18KeystreamOperationEPhPKhj"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 xtea_enc_32_v2 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="ctr_v1" number="56"/>
 		</result>
 	</recipe>
 
@@ -399,7 +425,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -429,7 +455,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -459,7 +485,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -489,7 +515,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -519,7 +545,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -549,7 +575,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -579,7 +605,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -609,7 +635,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -639,7 +665,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -669,7 +695,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -697,7 +723,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 
@@ -725,7 +751,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v3" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v1" number="12"/>
 		</result>
 	</recipe>
 

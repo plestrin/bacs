@@ -429,6 +429,37 @@
 		</result>
 	</recipe>
 
+	<recipe name="PP_CBC_TEA" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_cbc_tea"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_cbc_tea">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_CBC_TEA"/>
+			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP14CBC_Encryption11ProcessDataEPhPKhj"/>
+			<arg value="export callGraph _ZN8CryptoPP14CBC_Decryption11ProcessDataEPhPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result xtea_enc_32_v2 xtea_dec_32_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="enc_cbc_cfb" number="7"/>
+			<algo name="xtea_dec" number="504"/>
+			<algo name="xtea_dec_32_v1" number="8"/>
+			<algo name="dec_cbc_cfb_v1" number="7"/>
+		</result>
+	</recipe>
+
 	<recipe name="TEST_CBC_AES_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go0">

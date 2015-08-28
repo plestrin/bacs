@@ -3,7 +3,6 @@
 #	- dec_cbc_cfb_v1: 		second block input is used directly for the first block XOR
 #	- dec_cbc_cfb_v1: 		additional instruction between the second block input and the first block XOR (Like BSWAP)
 #	- ctr_v1 				RAS
-#	- ctr_v2 				no addition node. It correpondans to case where the pt is larger than 64 bits thus the addition is not performed directly
 
 
 "enc_cbc_cfb"
@@ -35,15 +34,6 @@
 
 
 "ctr_v1"
-
-1 (*) -> (I1) 2 (block_cipher)
-1 -> (I1) 3 (block_cipher)
-4 (*) ->  (I0) 2
-4 -> 5 (*)
-5 -> (I0) 3
-
-
-"ctr_v2"
 
 1 (*) -> (I1) 2 (block_cipher)
 1 -> (I1) 3 (block_cipher)
