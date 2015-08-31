@@ -3,17 +3,7 @@
 #include <string.h>
 
 #include "irVariableRange.h"
-#include "ir.h"
 #include "base.h"
-
-static inline struct variableRange* ir_operation_get_range(struct irOperation* operation){
-	if (operation->type != IR_OPERATION_TYPE_INST){
-		return NULL;
-	}
-	else{
-		return &(operation->operation_type.inst.range);
-	}
-}
 
 static void irVariableRange_apply_all_operand(struct node* node, void(*func)(struct variableRange*,const struct variableRange*,uint32_t), uint32_t seed){
 	uint32_t 				i;

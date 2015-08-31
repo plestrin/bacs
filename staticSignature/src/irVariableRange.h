@@ -4,7 +4,16 @@
 #include <stdint.h>
 
 #include "variableRange.h"
-#include "graph.h"
+#include "ir.h"
+
+static inline struct variableRange* ir_operation_get_range(struct irOperation* operation){
+	if (operation->type != IR_OPERATION_TYPE_INST){
+		return NULL;
+	}
+	else{
+		return &(operation->operation_type.inst.range);
+	}
+}
 
 void irVariableRange_compute(struct node* node, struct variableRange* range_dst, uint32_t seed);
 
