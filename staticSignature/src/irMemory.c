@@ -226,7 +226,7 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	return CANNOT_ALIAS;
 }
 
-static struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum irOperationType alias_type, enum aliasingStrategy strategy, uint32_t ir_range_seed){
+struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, enum aliasingStrategy strategy, uint32_t ir_range_seed){
 	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
 	struct edge* 			edge_cursor;
@@ -242,7 +242,7 @@ static struct node* ir_normalize_search_alias_conflict(struct node* node1, struc
 
 	while(node_cursor != node2){
 		operation_cursor = ir_node_get_operation(node_cursor);
-		if (operation_cursor->type == alias_type){
+		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_IN) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_OUT)){
 			if (strategy == ALIASING_STRATEGY_STRICT){
 				return node_cursor;
 			}
@@ -359,14 +359,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
 								}
@@ -390,14 +390,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_OUT_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
 								}
@@ -421,14 +421,14 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 							}
 							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, strategy, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], IR_OPERATION_TYPE_IN_MEM, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, strategy, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
 								}

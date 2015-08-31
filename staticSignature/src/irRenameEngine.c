@@ -443,7 +443,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						log_err("this case is not implemented yet, more than two element in the dependence list");
 					}
 					else if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
-						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, instruction_index, reg);
+						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, min(ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, ir_node_get_operation(engine->register_alias[reg2].ir_node)->index), reg);
 						engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 						engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
 
@@ -474,7 +474,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
 
 						if (new_ins != IR_INVALID){
-							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, instruction_index, reg);
+							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, reg);
 							engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
 							engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
 
