@@ -230,8 +230,11 @@ int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIt
 			if (idx != down){
 				idx --;
 			}
-			else{
+			else if (idx + 1 != assembly->nb_dyn_block){
 				idx ++;
+			}
+			else{
+				break;
 			}
 		}
 		if (index >= assembly->dyn_blocks[idx].instruction_count + assembly->dyn_blocks[idx].block->header.nb_ins){
@@ -1197,6 +1200,46 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 	}
 
 	return 0;
+}
+
+void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, size_t opcode_length){
+	uint32_t 			block_offset;
+	struct asmBlock* 	block;
+	uint8_t* 			ptr;
+	size_t 				offset;
+	uint32_t 			instruction_offset;
+	xed_error_enum_t 	xed_error;
+	xed_decoded_inst_t 	xedd;
+
+	for (block_offset = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
+		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
+		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
+			log_err("the last asmBlock is incomplete");
+			break;
+		}
+
+		if (block->header.size >= opcode_length){
+			if ((ptr = memmem(block->data, block->header.size, opcode, opcode_length)) != NULL){
+				offset = ptr - block->data;
+
+				for (instruction_offset = 0; ; instruction_offset += xed_decoded_inst_get_length(&xedd)){
+					xed_decoded_inst_zero(&xedd);
+					xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+					if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
+						log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+						break;
+					}
+
+					
+					if (instruction_offset + xed_decoded_inst_get_length(&xedd) > offset){
+						break;
+					}
+				}
+
+				printf("  - found opcode in trace @ address: 0x%08x\n", block->header.address + instruction_offset);
+			}
+		}
+	}
 }
 
 void assembly_clean(struct assembly* assembly){

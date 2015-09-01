@@ -10,6 +10,7 @@ TEST_SET 				:= test_set
 TEST_UGRAPH 			:= test_ugraph
 TEST_GRAPHREADER		:= test_graphReader
 TEST_VARIABLERANGE 		:= test_variableRange
+TEST_READBUFFER 		:= test_readBuffer
 
 CC						:= gcc
 # gcc FLAGS
@@ -30,7 +31,8 @@ all: 										\
 	$(TEST_SET) 							\
 	$(TEST_UGRAPH) 							\
 	$(TEST_GRAPHREADER) 					\
-	$(TEST_VARIABLERANGE)
+	$(TEST_VARIABLERANGE) 					\
+	$(TEST_READBUFFER)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -69,6 +71,9 @@ $(TEST_GRAPHREADER): test_graphReader.o mapFile.o graph.o graphReader.o graphPri
 $(TEST_VARIABLERANGE): test_variableRange.o variableRange.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_READBUFFER): test_readBuffer.o readBuffer.o printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 # *** General compile rules ***
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -88,10 +93,12 @@ test_set.o: ../set.h ../base.h
 test_ugraph.o: ../ugraph.h ../set.h ../base.h
 test_graphReader.o: ../graphReader.h ../mapFile.h ../graph.h ../graphPrintDot.h ../base.h
 test_variableRange.o: ../variableRange.h
+test_readBuffer.o: ../readBuffer.h ../printBuffer.h ../readBuffer.h ../base.h
 array.o: ../array.h ../base.h
 multiColumn.o: ../multiColumn.h
 inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h  ../base.h
 printBuffer.o: ../printBuffer.h
+readBuffer.o: ../readBuffer.h ../base.h
 mapFile.o: ../mapFile.h ../base.h
 graph.o: ../graph.h ../base.h
 graphPrintDot.o: ../graph.h ../graphPrintDot.h ../base.h
@@ -119,3 +126,4 @@ clean:
 	@ rm -f $(TEST_UGRAPH)
 	@ rm -f $(TEST_GRAPHREADER)
 	@ rm -f $(TEST_VARIABLERANGE)
+	@ rm -f $(TEST_READBUFFER)

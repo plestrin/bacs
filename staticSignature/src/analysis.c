@@ -5,6 +5,7 @@
 #include "analysis.h"
 #include "inputParser.h"
 #include "printBuffer.h"
+#include "readBuffer.h"
 #include "result.h"
 #include "codeSignature.h"
 #include "codeSignatureReader.h"
@@ -47,6 +48,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
+	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -354,6 +356,11 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	struct instructionIterator 	it;
 	uint32_t 					i;
 
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+		return;
+	}
+
 	pc = strtoul((const char*)arg, NULL, 16);
 
 	#if defined ARCH_32
@@ -393,6 +400,26 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 			}
 		}
 	}
+}
+
+void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
+	uint8_t* 			opcode;
+	size_t 				opcode_length = 0;
+	
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+		return;
+	}
+
+	opcode = (uint8_t*)readBuffer_raw(arg, strlen(arg), NULL, &opcode_length);
+	if (opcode == NULL){
+		log_err("unable to parse input hexa string");
+		return;
+	}
+
+	assembly_locate_opcode(&(analysis->trace->assembly), opcode, opcode_length);
+
+	free(opcode);
 }
 
 void analysis_trace_delete(struct analysis* analysis){

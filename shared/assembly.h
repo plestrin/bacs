@@ -95,6 +95,8 @@ struct memAccessExtrude{
 
 int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, struct array** extrude_array);
 
+void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, size_t opcode_length);
+
 void assembly_clean(struct assembly* assembly);
 
 #define assembly_delete(assembly) 				\
