@@ -1,6 +1,0 @@
-/lib/ld-linux.so.2
-/lib/i386-linux-gnu/libc.so.6
-/usr/lib/i386-linux-gnu/libstdc++.so.6
-/lib/i386-linux-gnu/libpthread.so.0
-/lib/i386-linux-gnu/libgcc_s.so.1
-VDSO

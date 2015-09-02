@@ -244,5 +244,10 @@ void whiteList_delete(struct whiteList* list){
 }
 
 int whiteList_compare(const void* entry1, const void* entry2){
+	#ifdef __linux__
 	return strcmp(*(char**)entry1, *(char**)entry2);
+	#endif
+	#ifdef WIN32
+	return _stricmp(*(char**)entry1, *(char**)entry2);
+	#endif
 }

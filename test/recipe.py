@@ -49,7 +49,7 @@ class recipe(object):
 		else:
 			sys.stdout.write("no rule\n")
 
-	def trace_prog(self, log_path, pin_path, tool_path, trace_path):
+	def trace_prog(self, log_path, pin_path, tool_path, trace_path, whiteList_path):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 		if self.trace != "":
@@ -60,7 +60,7 @@ class recipe(object):
 			self.log.flush()
 
 			time_start = time.time()
-			cmd_l = [pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name]
+			cmd_l = [pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", whiteList_path + self.name + ".lst"]
 			cmd_l.extend(self.trace_arg)
 			cmd_l.extend(["--", self.trace])
 			process = subprocess.Popen(cmd_l, stdout = subprocess.PIPE, stderr = subprocess.PIPE)

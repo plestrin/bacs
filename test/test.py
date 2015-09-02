@@ -12,7 +12,7 @@ from recipe import recipe
 PIN_PATH 				= "/home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/pin"
 TOOL_PATH 				= "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
 TOOL_SRC_PATH 			= "/home/pierre/Documents/bacs/lightTracer_pin/"
-WHITE_LIST_PATH 		= "/home/pierre/Documents/bacs/lightTracer_pin/linux_lib.lst"
+WHITELIST_PATH 			= "/home/pierre/Documents/bacs/test/whiteList/"
 MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
 MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
 TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
@@ -51,7 +51,7 @@ try:
 		kind 		= None
 		build 		= None
 		trace 		= None
-		trace_arg 	= ["-w", WHITE_LIST_PATH]
+		trace_arg 	= []
 		search_arg 	= []
 		algo 		= {}
 
@@ -101,7 +101,7 @@ if action == "TRACE" or action == "ALL":
 # TRACE step
 if action == "TRACE" or action == "ALL":
 	for r in recipes:
-		r.trace_prog(LOG_PATH, PIN_PATH, TOOL_PATH, TRACE_PATH)
+		r.trace_prog(LOG_PATH, PIN_PATH, TOOL_PATH, TRACE_PATH, WHITELIST_PATH)
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":

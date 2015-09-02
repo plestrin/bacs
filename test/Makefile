@@ -34,5 +34,6 @@ clean:
 	@ rm -f $(EXE)
 
 cleaner: clean
-	@ rm -r trace*
-	@ rm -rf $(LOG_DIR)
+	@ rm -rf trace*
+	@ rm -f $(LOG_DIR)/*.log
+	@ rm -f *.pyc

@@ -58,7 +58,7 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 	uint32_t 				descriptor;
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
-		if (codeMap_is_instruction_whiteListed(light_tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_NOT_WHITELISTED){
+		if (codeMap_is_instruction_whiteListed(light_tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_WHITELISTED){
 			
 			nb_mem_access = UNTRACK_MEM_ACCESS;
 			if (light_tracer.trace_memory){
@@ -117,10 +117,11 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 	SEC 				section;
 	RTN 				routine;
 	struct cm_routine*	cm_rtn;
-	char				white_listed;
+	uint32_t			img_white_listed;
+	uint32_t			rtn_white_listed;
 
-	white_listed = (whiteList_search(light_tracer.white_list, IMG_Name(image).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
-	if (codeMap_add_image(light_tracer.code_map, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str(), white_listed)){
+	img_white_listed = (whiteList_search(light_tracer.white_list, IMG_Name(image).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
+	if (codeMap_add_image(light_tracer.code_map, IMG_LowAddress(image), IMG_HighAddress(image), IMG_Name(image).c_str(), img_white_listed)){
 		std::cerr << "ERROR: in " << __func__ << ", unable to add image " << IMG_Name(image) << " to code map structure" << std::endl;
 	}
 	else{
@@ -132,13 +133,13 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 				}
 				else{
 					for (routine = SEC_RtnHead(section); RTN_Valid(routine); routine = RTN_Next(routine)){
-						white_listed |= (whiteList_search(light_tracer.white_list, RTN_Name(routine).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
-						cm_rtn = codeMap_add_routine(light_tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Range(routine), RTN_Name(routine).c_str(), white_listed);
+						rtn_white_listed = img_white_listed | (whiteList_search(light_tracer.white_list, RTN_Name(routine).c_str()) == 0) ? CODEMAP_WHITELISTED : CODEMAP_NOT_WHITELISTED;
+						cm_rtn = codeMap_add_routine(light_tracer.code_map, RTN_Address(routine), RTN_Address(routine) + RTN_Range(routine), RTN_Name(routine).c_str(), rtn_white_listed);
 						if (cm_rtn == NULL){
 							std::cerr << "ERROR: in " << __func__ << ", unable to add routine " << RTN_Name(routine) << " to code map structure" << std::endl;
 							break;
 						}
-						else if (white_listed == CODEMAP_WHITELISTED){
+						else{
 							RTN_Open(routine);
 							RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)TOOL_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
 							RTN_Close(routine);
@@ -282,7 +283,6 @@ static int TOOL_init(const char* trace_dir_name, const char* white_list_file_nam
 		light_tracer.white_list = whiteList_create(white_list_file_name);
 		if (light_tracer.white_list == NULL){
 			std::cerr << "ERROR: in " << __func__ << ", unable to create shared library whiteList" << std::endl;
-			goto fail;
 		}
 	}
 	else{

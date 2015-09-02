@@ -548,7 +548,7 @@ static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_
 			}
 		}
 		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (codeMap_filter_routine_whitelisted(routine)){
+			if (!codeMap_filter_routine_whitelisted(routine)){
 				return;
 			}
 		}
@@ -572,7 +572,7 @@ static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_
 			}
 		}
 		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (codeMap_filter_section_whitelisted(section)){
+			if (!codeMap_filter_section_whitelisted(section)){
 				return;
 			}
 		}
@@ -597,7 +597,7 @@ static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_im
 			}
 		}
 		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (codeMap_filter_image_whitelisted(image)){
+			if (!codeMap_filter_image_whitelisted(image)){
 				return;
 			}
 		}

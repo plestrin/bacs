@@ -6,7 +6,7 @@
 
 #include "address.h"
 
-#define CODEMAP_DEFAULT_NAME_SIZE 		256
+#define CODEMAP_DEFAULT_NAME_SIZE 		512
 
 #define CODEMAP_NOT_WHITELISTED			0
 #define CODEMAP_WHITELISTED				1
