@@ -49,6 +49,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
+	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report intersting basic block", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_scan)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -420,6 +421,15 @@ void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
 	assembly_locate_opcode(&(analysis->trace->assembly), opcode, opcode_length);
 
 	free(opcode);
+}
+
+void analysis_trace_scan(struct analysis* analysis){
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+		return;
+	}
+
+	assemblyScan_scan(&(analysis->trace->assembly));
 }
 
 void analysis_trace_delete(struct analysis* analysis){

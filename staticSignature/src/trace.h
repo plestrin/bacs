@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "assembly.h"
+#include "assemblyScan.h"
 #include "ir.h"
 #include "codeMap.h"
 #include "array.h"

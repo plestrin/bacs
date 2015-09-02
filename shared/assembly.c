@@ -26,16 +26,17 @@ struct disassembler disas = {
 	.stack_addr_width 	= XED_ADDRESS_WIDTH_32b
 };
 
+#define disassembler_init() 			\
+	if (disas.xed_init == 0){ 			\
+		xed_tables_init(); 				\
+		disas.xed_init = 1; 			\
+	}
+
 uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 	xed_decoded_inst_t 		xedd;
 	xed_error_enum_t 		xed_error;
 	uint32_t 				offset;
 	uint32_t 				result;
-
-	if (disas.xed_init == 0){
-		xed_tables_init();
-		disas.xed_init = 1;
-	}
 
 	for (offset = 0, result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(&xedd), result ++){
 		xed_decoded_inst_zero(&xedd);
@@ -47,6 +48,29 @@ uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 	}
 
 	return result;
+}
+
+uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length, xed_decoded_inst_t* xedd, uint32_t offset){
+	xed_error_enum_t 	xed_error;
+	uint32_t 			result;
+	uint32_t 			i;
+
+	for (result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(xedd), result ++){
+		xed_decoded_inst_zero(xedd);
+		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+		if ((xed_error = xed_decode(xedd, (const xed_uint8_t*)(block->data + offset), min(block->header.size - offset, 15))) != XED_ERROR_NONE){
+			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+			return NULL;
+		}
+
+		for (i = 0; i < buffer_length; i++){
+			if (buffer[i] == xed_decoded_inst_get_iclass(xedd)){
+				return block->data + offset;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block){
@@ -85,10 +109,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	size_t 				current_offset;
 	struct dynBlock* 	dyn_blocks_realloc;
 
-	if (disas.xed_init == 0){
-		xed_tables_init();
-		disas.xed_init = 1;
-	}
+	disassembler_init()
 
 	assembly->allocation_type 		= buffer_alloc_block;
 	assembly->mapping_block 		= buffer_block;

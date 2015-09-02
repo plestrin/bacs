@@ -26,6 +26,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)memTrace.o 				\
 					$(BUILD_DIR)analysis.o 				\
 					$(BUILD_DIR)trace.o 				\
+					$(BUILD_DIR)assemblyScan.o 			\
 					$(BUILD_DIR)cmReaderJSON.o 			\
 					$(BUILD_DIR)ir.o 					\
 					$(BUILD_DIR)irImporterAsm.o 		\

@@ -41,6 +41,7 @@ struct dynBlock{
 #define dynBlock_set_invalid(dyn_block) (dyn_block)->block = NULL
 
 uint32_t asmBlock_count_nb_ins(struct asmBlock* block);
+uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length, xed_decoded_inst_t* xedd, uint32_t offset);
 
 struct assembly{
 	uint32_t 				nb_dyn_instruction;
