@@ -1572,11 +1572,65 @@ static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct 
 }
 
 static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct edge* 	edge_cursor;
+	struct node* 	direct_operand 	= NULL;
+	struct node* 	disp_operand;
+	uint64_t 		value 			= 0;
+
 	if (node->nb_edge_dst == 1){
 		graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(node)), node);
 		ir_remove_node(ir, node);
+
 		*modification = 1;
+		return;
 	}
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			disp_operand = edge_get_src(edge_cursor);
+			if (ir_node_get_operation(disp_operand)->type == IR_OPERATION_TYPE_IMM){
+				value = ir_imm_operation_get_unsigned_value(ir_node_get_operation(disp_operand));
+			}
+		}
+		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+			direct_operand = edge_get_src(edge_cursor);
+		}
+	}
+
+	if (value != 0 && direct_operand != NULL && direct_operand->nb_edge_src == 1 && ir_node_get_operation(direct_operand)->type == IR_OPERATION_TYPE_INST && ir_node_get_operation(direct_operand)->operation_type.inst.opcode == IR_SHR){
+
+		for (edge_cursor = node_get_head_edge_dst(direct_operand); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+				disp_operand = edge_get_src(edge_cursor);
+				if (ir_node_get_operation(disp_operand)->type == IR_OPERATION_TYPE_IMM){
+					if (disp_operand->nb_edge_src == 1){
+						ir_node_get_operation(disp_operand)->operation_type.imm.value += value;
+					}
+					else{
+						disp_operand = ir_add_immediate(ir, ir_node_get_operation(node)->size, value + ir_imm_operation_get_unsigned_value(ir_node_get_operation(disp_operand)));
+						if (disp_operand == NULL){
+							log_err("unable to add immediate to IR");
+						}
+						else{
+							if (ir_add_dependence(ir, disp_operand, direct_operand, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+								log_err("unable to add dependency to IR");
+							}
+							else{
+								ir_remove_dependence(ir, edge_cursor);
+							}
+						}
+					}
+					graph_transfert_src_edge(&(ir->graph), direct_operand, node);
+					ir_remove_node(ir, node);
+
+					*modification = 1;
+					return;
+				}
+			}
+		}
+	}
+
+
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
