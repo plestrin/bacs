@@ -14,12 +14,12 @@
 
 #include "traceFile.h"
 
-struct traceFile* traceFile_create(const char* dir_name){
+struct traceFile* traceFile_create(const char* dir_name, uint32_t pid){
 	struct traceFile* trace_file;
 
 	trace_file = (struct traceFile*)malloc(sizeof(struct traceFile));
 	if (trace_file != NULL){
-		if (traceFile_init(trace_file, dir_name)){
+		if (traceFile_init(trace_file, dir_name, pid)){
 			std::cerr << "ERROR: in " << __func__ << ", unable to initialize traceFile" << std::endl;
 			free(trace_file);
 			trace_file = NULL;
@@ -32,7 +32,7 @@ struct traceFile* traceFile_create(const char* dir_name){
 	return trace_file;
 }
 
-int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name){
+int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name, uint32_t pid){
 	char file_name[TRACEFILE_NAME_MAX_LENGTH];
 
 	asmWriter_init(&(trace_file->asm_writer));
@@ -40,7 +40,7 @@ int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name){
 	strncpy(trace_file->dir_name, dir_name, TRACEFILE_NAME_MAX_LENGTH);
 	mkdir(dir_name, 0777);
 
-	snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/%s", dir_name, TRACEFILE_BLOCK_FILE_NAME);
+	snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/block%u.bin", dir_name, pid);
 	#ifdef __linux__
 	trace_file->block_file = fopen(file_name, "wb");
 	#endif
@@ -49,9 +49,11 @@ int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name){
 	#endif
 
 	if (trace_file->block_file == NULL){
-		std::cerr << "ERROR: in " << __func__ << ", unable to create file \"" << TRACEFILE_BLOCK_FILE_NAME << "\"" << std::endl;
+		std::cerr << "ERROR: in " << __func__ << ", unable to create file \"" << file_name << "\"" << std::endl;
 		return -1;
 	}
+
+	trace_file->pid = pid;
 
 	return 0;
 }
@@ -60,7 +62,7 @@ void traceFile_print_codeMap(struct traceFile* trace_file, struct codeMap* code_
 	char 	file_name[TRACEFILE_NAME_MAX_LENGTH];
 	FILE* 	codeMap_file;
 
-	snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/%s", trace_file->dir_name, TRACEFILE_CM_FILE_NAME);
+	snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/cm%u.json", trace_file->dir_name, trace_file->pid);
 
 	#ifdef __linux__
 	codeMap_file = fopen(file_name, "w");

@@ -138,7 +138,7 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 							std::cerr << "ERROR: in " << __func__ << ", unable to add routine " << RTN_Name(routine) << " to code map structure" << std::endl;
 							break;
 						}
-						else if (white_listed == CODEMAP_NOT_WHITELISTED){
+						else if (white_listed == CODEMAP_WHITELISTED){
 							RTN_Open(routine);
 							RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)TOOL_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
 							RTN_Close(routine);
@@ -173,7 +173,7 @@ void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, vo
 	if (data->block_file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
 
-		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/blockId%u.bin", traceFile_get_dir_name(light_tracer.trace_file), tid);
+		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/blockId%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
 		#ifdef __linux__
 		data->block_file = fopen(file_name, "wb");
 		#endif
@@ -215,7 +215,7 @@ void* TOOL_mem_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void
 	if (data->memory_file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
 
-		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memAddr%u.bin", traceFile_get_dir_name(light_tracer.trace_file), tid);
+		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memAddr%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
 		#ifdef __linux__
 		data->memory_file = fopen(file_name, "wb");
 		#endif
@@ -289,7 +289,7 @@ static int TOOL_init(const char* trace_dir_name, const char* white_list_file_nam
 		light_tracer.white_list = NULL;
 	}
 
-	light_tracer.trace_file = traceFile_create(trace_dir_name);
+	light_tracer.trace_file = traceFile_create(trace_dir_name, PIN_GetPid());
 	if (light_tracer.trace_file == NULL){
 		std::cerr << "ERROR: in " << __func__ << ", unable to create traceFile" << std::endl;
 		goto fail;
