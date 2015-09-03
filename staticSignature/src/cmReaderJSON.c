@@ -22,7 +22,6 @@
 #define ROUTINE_MAP_LEVEL				4
 
 #define CMREADERJSON_PATH_MAX_LENGTH 	256
-#define CMREADERJSON_INS_FILE_NAME 		"cm.json"
 
 enum cm_json_map_key{
 	CM_JSON_MAP_KEY_IDLE,
@@ -68,7 +67,7 @@ static yajl_callbacks json_parser_callback = {
 };
 
 
-struct codeMap* cmReaderJSON_parse(const char* directory_path){
+struct codeMap* cmReaderJSON_parse(const char* directory_path, uint32_t pid){
 	void*				buffer;
 	size_t 				size;
 	yajl_handle 		json_parser_handle;
@@ -86,7 +85,7 @@ struct codeMap* cmReaderJSON_parse(const char* directory_path){
 	cm_reader.actual_key 		= CM_JSON_MAP_KEY_IDLE;
 	cm_reader.actual_map_level 	= 0;
 
-	snprintf(file_name, CMREADERJSON_PATH_MAX_LENGTH, "%s/%s", directory_path, CMREADERJSON_INS_FILE_NAME);
+	snprintf(file_name, CMREADERJSON_PATH_MAX_LENGTH, "%s/cm%u.json", directory_path, pid);
 	buffer = mapFile_map(file_name, &size);
 	if (buffer == NULL){
 		log_err("unable to map file");

@@ -5,6 +5,6 @@
 
 #include "codeMap.h"
 
-struct codeMap* cmReaderJSON_parse(const char* directory_path);
+struct codeMap* cmReaderJSON_parse(const char* directory_path, uint32_t pid);
 
 #endif

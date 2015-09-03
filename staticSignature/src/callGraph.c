@@ -738,7 +738,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 			
 			log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
 			if (func->routine != NULL){
-				snprintf(fragment.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
+				snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
 			}
 
 			if (array_add(frag_array, &fragment) < 0){

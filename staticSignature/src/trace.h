@@ -21,20 +21,46 @@ enum traceType{
 	FRAGMENT_TRACE
 };
 
-struct trace{
-	char 					tag[TRACE_TAG_LENGTH];
-	struct assembly 		assembly;
-	struct ir* 				ir;
-	enum traceType 			type;
-	char 					directory_path[TRACE_PATH_MAX_LENGTH];
-	struct array 			result_array;
-	struct memTrace* 		mem_trace;
-	struct synthesisGraph* 	synthesis_graph;
+#define TRACE_NB_MAX_PROCESS 	16
+#define TRACE_NB_MAX_THREAD 	32
+
+struct traceIdentifier{
+	uint32_t 		nb_process;
+	struct {
+		uint32_t 	id;
+		uint32_t 	thread_id[TRACE_NB_MAX_THREAD];
+		uint32_t 	nb_thread;
+	} 				process[TRACE_NB_MAX_PROCESS];
+	uint32_t 		current_pid;
+	uint32_t 		current_tid;
 };
 
-struct trace* trace_load(const char* directory_path);
+#define traceIdentifier_init(identifier) (identifier)->nb_process = 0
 
-int32_t trace_change_thread(struct trace* trace, uint32_t thread_id);
+int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, uint32_t tid);
+int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_index, uint32_t t_index);
+
+struct trace{
+	enum traceType 					type;
+	struct memTrace* 				mem_trace;
+	struct assembly 				assembly;
+	union {
+		struct {
+			char 					tag[TRACE_TAG_LENGTH];
+			struct ir* 				ir;
+			struct array 			result_array;
+			struct synthesisGraph* 	synthesis_graph;
+		} 							frag;
+		struct {
+			char 					directory_path[TRACE_PATH_MAX_LENGTH];
+			struct traceIdentifier 	identifier;
+		} 							exe;
+	} 								trace_type;
+};
+
+struct trace* trace_load_exe(const char* directory_path);
+
+int32_t trace_change(struct trace* trace, uint32_t p_index, uint32_t t_index);
 
 struct trace* trace_load_elf(const char* file_path);
 
@@ -48,14 +74,31 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 
 void trace_create_ir(struct trace* trace);
 void trace_normalize_ir(struct trace* trace);
-void trace_normalize_concrete_ir(struct trace* trace);
 
-static inline void trace_printDot_ir(struct trace* trace){
-	if (trace->ir != NULL){
-		ir_printDot(trace->ir);
+static inline void trace_normalize_concrete_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
+		ir_normalize_concrete(trace->trace_type.frag.ir);
 	}
 	else{
-		log_err_m("IR is NULL for trace: \"%s\"", trace->tag);
+		log_err_m("the IR is NULL or no concrete address for fragment \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
+static inline void trace_printDot_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		ir_printDot(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
+static inline void trace_print_aliasing_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		ir_print_aliasing(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
 	}
 }
 
@@ -66,11 +109,11 @@ void trace_pop_code_signature_result(int32_t idx, void* arg);
 void trace_create_synthesis(struct trace* trace);
 
 static inline void trace_printDot_synthesis(struct trace* trace){
-	if (trace->synthesis_graph != NULL){
-		synthesisGraph_printDot(trace->synthesis_graph);
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.synthesis_graph != NULL){
+		synthesisGraph_printDot(trace->trace_type.frag.synthesis_graph);
 	}
 	else{
-		log_err_m("synthesis graph is NULL for trace: \"%s\"", trace->tag);
+		log_err_m("synthesis graph is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
 	}
 }
 

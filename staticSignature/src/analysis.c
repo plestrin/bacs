@@ -40,7 +40,7 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	add_cmd_to_input_parser(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
-	add_cmd_to_input_parser(parser, "change thread", 			"Switch the current thread", 					"Thread Index", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change_thread)
+	add_cmd_to_input_parser(parser, "change thread", 			"Switch the current process/thread", 			"Proc and thread index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change)
 	add_cmd_to_input_parser(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
 	add_cmd_to_input_parser(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
 	add_cmd_to_input_parser(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
@@ -234,25 +234,42 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	if (analysis->code_map != NULL){
 		log_warn("deleting previous codeMap");
 		codeMap_delete(analysis->code_map);
+		analysis->code_map = NULL;
 	}
 
-	analysis->trace = trace_load(arg);
+	analysis->trace = trace_load_exe(arg);
 	if (analysis->trace == NULL){
 		log_err("unable to create trace");
+		return;
 	}
 
-	analysis->code_map = cmReaderJSON_parse(arg);
+	analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid);
 	if (analysis->code_map == NULL){
 		log_err("unable to create codeMap");
 	}
 }
 
-void analysis_trace_change_thread(struct analysis* analysis, char* arg){
+void analysis_trace_change(struct analysis* analysis, char* arg){
+	char* t_index_ptr;
+
 	if (analysis->trace != NULL){
-		if (trace_change_thread(analysis->trace, atoi(arg))){
-			log_err_m("unable to load trace for thread %u", (uint32_t)atoi(arg));
+		t_index_ptr = strchr(arg, ' ');
+		if (trace_change(analysis->trace, atoi(arg), (t_index_ptr != NULL) ? atoi(t_index_ptr + 1) : 0)){
+			log_err_m("unable to load trace process:%u, thread:%u", (uint32_t)atoi(arg), (uint32_t)((t_index_ptr != NULL) ? atoi(t_index_ptr + 1) : 0));
 			trace_delete(analysis->trace);
 			analysis->trace = NULL;
+			return;
+		}
+
+		if (analysis->code_map != NULL){
+			log_warn("deleting previous codeMap");
+			codeMap_delete(analysis->code_map);
+			analysis->code_map = NULL;
+		}
+
+		analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid);
+		if (analysis->code_map == NULL){
+			log_err("unable to create codeMap");
 		}
 	}
 	else{
@@ -343,8 +360,6 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 		log_err("unable to extract traceFragment");
 		return;
 	}
-
-	snprintf(fragment.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", start, stop);
 
 	if (array_add(&(analysis->frag_array), &fragment) < 0){
 		log_err("unable to add traceFragment to array");
@@ -525,17 +540,17 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 			percent = trace_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-			if (fragment->ir == NULL){
+			if (fragment->type != FRAGMENT_TRACE || fragment->trace_type.frag.ir == NULL){
 				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "NULL");
 			}
 			else{
-				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->ir->graph.nb_node, fragment->ir->graph.nb_edge);
+				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->trace_type.frag.ir->graph.nb_node, fragment->trace_type.frag.ir->graph.nb_edge);
 			}
 			if (fragment->mem_trace != NULL){
-				multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "yes", NULL);
+				multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "yes", NULL);
 			}
 			else{
-				multiColumnPrinter_print(printer, i, fragment->tag, trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "no", NULL);
+				multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "no", NULL);
 			}
 		}
 
@@ -564,12 +579,13 @@ void analysis_frag_set_tag(struct analysis* analysis, char* arg){
 
 		if (index < array_get_length(&(analysis->frag_array))){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
+			if (fragment->type == FRAGMENT_TRACE){
+				#ifdef VERBOSE
+				log_info_m("setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"", index, fragment->trace_type.frag.tag, arg + i + 1);
+				#endif
 
-			#ifdef VERBOSE
-			log_info_m("setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"", index, fragment->tag, arg + i + 1);
-			#endif
-
-			strncpy(fragment->tag, arg + i + 1, TRACE_TAG_LENGTH);
+				strncpy(fragment->trace_type.frag.tag, arg + i + 1, TRACE_TAG_LENGTH);
+			}
 		}
 		else{
 			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
@@ -608,7 +624,9 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
 
 			#ifdef VERBOSE
-			printf("Locating frag %u (tag: \"%s\")\n", i, fragment->tag);
+			if (fragment->type == FRAGMENT_TRACE){
+				printf("Locating frag %u (tag: \"%s\")\n", i, fragment->trace_type.frag.tag);
+			}
 			#endif
 			
 			trace_print_location(fragment, analysis->code_map);
@@ -674,7 +692,7 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 		return;
 	}
 
-	snprintf(new_fragment.tag, TRACE_TAG_LENGTH, "concat %s", arg);
+	snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "concat %s", arg);
 
 	if (array_add(&(analysis->frag_array), &new_fragment) < 0){
 		log_err("unable to add traceFragment to array");
@@ -712,8 +730,12 @@ void analysis_frag_print_result(struct analysis* analysis, char* arg){
 
 	for (i = start; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		for (j = 0; j < array_get_length(&(fragment->result_array)); j++){
-			result_print((struct result*)array_get(&(fragment->result_array), j));
+		if (fragment->type != FRAGMENT_TRACE){
+			continue;
+		}
+
+		for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
+			result_print((struct result*)array_get(&(fragment->trace_type.frag.result_array), j));
 		}
 	}
 }
@@ -802,37 +824,7 @@ void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
 }
 
 void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
-	uint32_t 		index;
-	uint32_t 		start;
-	uint32_t 		stop;
-	uint32_t 		i;
-	struct trace* 	fragment;
-
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
-	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
-	}
-
-	for (i = start; i < stop; i++){
-		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		if (fragment->ir != NULL){
-			ir_print_aliasing(fragment->ir);
-		}
-		else{
-			log_err("the IR is NULL for the current fragment");
-		}
-	}
+	apply_to_multiple_frags(analysis, trace_print_aliasing_ir, arg)
 }
 
 void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
@@ -876,8 +868,12 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 
 	for (i = start, nb_graph_searcher = 0; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		if (fragment->ir != NULL){
-			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->ir->graph);
+		if (fragment->type != FRAGMENT_TRACE){
+			continue;
+		}
+
+		if (fragment->trace_type.frag.ir != NULL){
+			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->trace_type.frag.ir->graph);
 			graph_searcher_buffer[nb_graph_searcher].result_register 	= trace_register_code_signature_result;
 			graph_searcher_buffer[nb_graph_searcher].result_push 		= trace_push_code_signature_result;
 			graph_searcher_buffer[nb_graph_searcher].result_pop 		= trace_pop_code_signature_result;
@@ -902,17 +898,20 @@ void analysis_code_signature_clean(struct analysis* analysis){
 
 	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->type != FRAGMENT_TRACE){
+			continue;
+		}
 
-		if (array_get_length(&(fragment->result_array))){
-			for (j = 0; j < array_get_length(&(fragment->result_array)); j++){
-				result = (struct result*)array_get(&(fragment->result_array), j);
-				if (result->state == RESULTSTATE_PUSH && fragment->ir != NULL){
-					ir_delete(fragment->ir)
-					fragment->ir = NULL;
+		if (array_get_length(&(fragment->trace_type.frag.result_array))){
+			for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
+				result = (struct result*)array_get(&(fragment->trace_type.frag.result_array), j);
+				if (result->state == RESULTSTATE_PUSH && fragment->trace_type.frag.ir != NULL){
+					ir_delete(fragment->trace_type.frag.ir)
+					fragment->trace_type.frag.ir = NULL;
 				}
 				result_clean(result)
 			}
-			array_empty(&(fragment->result_array));
+			array_empty(&(fragment->trace_type.frag.result_array));
 		}
 	}
 
@@ -952,8 +951,12 @@ void analysis_mode_signature_search(struct analysis* analysis, char* arg){
 
 	for (i = start, nb_graph_searcher = 0; i < stop; i++){
 		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		if (fragment->synthesis_graph != NULL){
-			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->synthesis_graph->graph);
+		if (fragment->type != FRAGMENT_TRACE){
+			continue;
+		}
+
+		if (fragment->trace_type.frag.synthesis_graph != NULL){
+			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->trace_type.frag.synthesis_graph->graph);
 			graph_searcher_buffer[nb_graph_searcher].result_register 	= NULL;
 			graph_searcher_buffer[nb_graph_searcher].result_push 		= NULL;
 			graph_searcher_buffer[nb_graph_searcher].result_pop 		= NULL;

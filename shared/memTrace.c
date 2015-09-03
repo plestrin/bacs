@@ -10,10 +10,10 @@
 #include "memTrace.h"
 #include "base.h"
 
-int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t thread_id){
+int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t pid, uint32_t tid){
 	char file_path[PATH_MAX];
 
-	snprintf(file_path, PATH_MAX, "%s/memAddr%u.bin", directory_path, thread_id);
+	snprintf(file_path, PATH_MAX, "%s/memAddr%u_%u.bin", directory_path, pid, tid);
 	if (access(file_path, R_OK)){
 		return 0;
 	}
@@ -25,7 +25,7 @@ int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t thread_id){
 	return 1;
 }
 
-struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t thread_id, struct assembly* assembly){
+struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid, uint32_t tid, struct assembly* assembly){
 	struct memTrace* 	mem_trace;
 	char 				file_path[PATH_MAX];
 	uint32_t 			i;
@@ -41,7 +41,7 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t thre
 	mem_trace->mem_addr_buffer = NULL;
 	mem_trace->allocation_type = ALLOCATION_MMAP;
 
-	snprintf(file_path, PATH_MAX, "%s/memAddr%u.bin", directory_path, thread_id);
+	snprintf(file_path, PATH_MAX, "%s/memAddr%u_%u.bin", directory_path, pid, tid);
 	mem_trace->file = open(file_path, O_RDONLY);
 	if (mem_trace->file == -1){
 		log_err_m("unable to open file: \"%s\"", file_path);

@@ -8,109 +8,213 @@
 #include "result.h"
 #include "base.h"
 
-#define TRACE_BLOCK_FILE_NAME 	"block.bin"
-#define TRACE_NB_MAX_THREAD 	64
+int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, uint32_t tid){
+	uint32_t i;
 
-static inline int32_t trace_init(struct trace* trace, enum traceType type){
-	trace->tag[0]			= '\0';
-	trace->ir 				= NULL;
-	trace->type 			= type;
-	trace->mem_trace 		= NULL;
-	trace->synthesis_graph 	= NULL;
+	for (i = 0; i < identifier->nb_process; i++){
+		if (identifier->process[i].id == pid){
+			if (identifier->process[i].nb_thread == TRACE_NB_MAX_THREAD){
+				log_err("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
+				return -1;
+			}
+			else{
+				identifier->process[i].thread_id[identifier->process[i].nb_thread] = tid;
+				identifier->process[i].nb_thread ++;
+			}
+		}
+	}
+	if (i == identifier->nb_process){
+		if (identifier->nb_process == TRACE_NB_MAX_PROCESS){
+			log_err("the max number of process has been reached, increment TRACE_NB_MAX_PROCESS");
+			return -1;
+		}
+		else{
+			identifier->process[i].id = pid;
+			identifier->process[i].thread_id[0] = tid;
+			identifier->process[i].nb_thread = 1;
+			identifier->nb_process ++;
+		}
+	}
 
-	return array_init(&(trace->result_array), sizeof(struct result));
+	return 0;
 }
 
-struct trace* trace_load(const char* directory_path){
-	struct trace* 	trace;
-	char 			file1_path[TRACE_PATH_MAX_LENGTH];
-	char 			file2_path[TRACE_PATH_MAX_LENGTH];
-	DIR* 			directory;
-	struct dirent* 	entry;
-	uint32_t 		thread_id[TRACE_NB_MAX_THREAD];
-	uint32_t 		thread_counter = 0;
-	uint32_t 		i;
+int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_index, uint32_t t_index){
+	uint32_t i;
 
-	if ((directory = opendir(directory_path)) == NULL){
-		log_err_m("unable to open directory: \"%s\"", directory_path);
-		return NULL;
+	if (p_index >= identifier->nb_process){
+		log_err_m("process index (%u) is out of bound", p_index);
+		return -1;
 	}
 
-	while ((entry = readdir(directory)) != NULL){
-		if (!memcmp(entry->d_name, "blockId", 7) && !strcmp(entry->d_name + 7 + strspn(entry->d_name + 7, "0123456789"), ".bin")){
-			if (thread_counter == TRACE_NB_MAX_THREAD){
-				log_warn("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
-				break;
+	if (t_index >= identifier->process[p_index].nb_thread){
+		log_err_m("thread index (%u) is out of bound", t_index);
+		return -1;
+	}
+
+	if (identifier->nb_process > 1){
+		log_info_m("several processes have been found, loading %u:", p_index);
+		for (i = 0; i < identifier->nb_process; i++){
+			if (i == p_index){
+				printf("\t- process: %u; pid=%u (loaded)\n", i, identifier->process[i].id);
 			}
 			else{
-				thread_id[thread_counter ++] = atoi(entry->d_name + 7);
+				printf("\t- process: %u; pid=%u\n", i, identifier->process[i].id);
 			}
 		}
+		printf("Use: \"change trace\" command to load a different process/tread\n");
 	}
-	closedir(directory);
 
-	if (thread_counter > 1){
-		log_info_m("several thread traces have been found, loading the first (%u):", thread_id[0]);
-		for (i = 0; i < thread_counter; i++){
-			if (i == 0){
-				printf("\t- Thread: %u (loaded)\n", thread_id[i]);
+	if (identifier->process[p_index].nb_thread > 1){
+		log_info_m("several threads have been found, loading %u:", t_index);
+		for (i = 0; i < identifier->process[p_index].nb_thread; i++){
+			if (i == t_index){
+				printf("\t- thread: %u; tid=%u (loaded)\n", i, identifier->process[p_index].thread_id[i]);
 			}
 			else{
-				printf("\t- Thread: %u\n", thread_id[i]);
+				printf("\t- thread: %u; tid=%u\n", i, identifier->process[p_index].thread_id[i]);
 			}
 		}
-		printf("Use: \"change thread\" command to load a different thread\n");
+		printf("Use: \"change trace\" command to load a different process/thread\n");
 	}
+
+	identifier->current_pid = identifier->process[p_index].id;
+	identifier->current_tid = identifier->process[p_index].thread_id[t_index];
+
+	return 0;
+}
+
+static inline int32_t trace_init(struct trace* trace, enum traceType type){
+	int32_t result = 0;
+
+	trace->type 		= type;
+	trace->mem_trace 	= NULL;
+	switch(type){
+		case EXECUTION_TRACE 	: {
+			traceIdentifier_init(&(trace->trace_type.exe.identifier));
+			break;
+		}
+		case ELF_TRACE 			: {
+			break;
+		}
+		case FRAGMENT_TRACE 	: {
+			trace->trace_type.frag.tag[0]			= '\0';
+			trace->trace_type.frag.ir 				= NULL;
+			trace->trace_type.frag.synthesis_graph 	= NULL;
+			result = array_init(&(trace->trace_type.frag.result_array), sizeof(struct result));
+			break;
+		}
+	}
+
+	return result;
+}
+
+struct trace* trace_load_exe(const char* directory_path){
+	struct trace* 			trace;
+	char 					file1_path[TRACE_PATH_MAX_LENGTH];
+	char 					file2_path[TRACE_PATH_MAX_LENGTH];
+	DIR* 					directory;
+	struct dirent* 			entry;
+	size_t 					offset;
 
 	if ((trace = (struct trace*)malloc(sizeof(struct trace))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
-		
-	strncpy(trace->directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
-
-	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", directory_path, thread_id[0]);
-	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", directory_path, TRACE_BLOCK_FILE_NAME);
-			
-	if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
-		log_err("unable to init assembly structure");
-		free(trace);
-		return NULL;
-	}
 
 	if (trace_init(trace, EXECUTION_TRACE)){
 		log_err("unable to init executionTrace");
-		assembly_clean(&(trace->assembly));
-		free(trace);
-		return NULL;
+		goto error;
 	}
 
-	if (memTrace_is_trace_exist(trace->directory_path, thread_id[0])){
-		if ((trace->mem_trace = memTrace_create_trace(trace->directory_path, thread_id[0], &(trace->assembly))) == NULL){
+	if ((directory = opendir(directory_path)) == NULL){
+		log_err_m("unable to open directory: \"%s\"", directory_path);
+		goto error;
+	}
+
+	while ((entry = readdir(directory)) != NULL){
+		if (!memcmp(entry->d_name, "blockId", 7)){
+			uint32_t pid;
+			uint32_t tid;
+
+			offset = strspn(entry->d_name + 7, "0123456789");
+			if (offset == 0){
+				continue;
+			}
+
+			offset += 7;
+
+			if (entry->d_name[offset ++] != '_'){
+				continue;
+			}
+
+			pid = atoi(entry->d_name + 7);
+			tid = atoi(entry->d_name + offset);
+
+			offset += strspn(entry->d_name + offset, "0123456789");
+
+			if (strcmp(entry->d_name + offset, ".bin")){
+				continue;
+			}
+
+			if (traceIdentifier_add(&(trace->trace_type.exe.identifier), pid, tid)){
+				log_err_m("unable to add (pid=%u, tid=%u) to traceIdentifier", pid, tid);
+			}
+		}
+	}
+	closedir(directory);
+
+	if (traceIdentifier_select(&(trace->trace_type.exe.identifier), 0, 0)){
+		log_err("unable to load default trace identifier");
+		goto error;
+	}
+		
+	strncpy(trace->trace_type.exe.directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
+
+	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u_%u.bin", directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid);
+	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/block%u.bin", directory_path, trace->trace_type.exe.identifier.current_pid);
+			
+	if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
+		log_err("unable to init assembly structure");
+		goto error;
+	}
+
+	if (memTrace_is_trace_exist(trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid)){
+		if ((trace->mem_trace = memTrace_create_trace(trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid, &(trace->assembly))) == NULL){
 			log_err("unable to load associated memory addresses");
 		}
 	}
 
 	return trace;
+
+	error:
+	free(trace);
+
+	return NULL;
 }
 
-int32_t trace_change_thread(struct trace* trace, uint32_t thread_id){
+int32_t trace_change(struct trace* trace, uint32_t p_index, uint32_t t_index){
 	char file1_path[TRACE_PATH_MAX_LENGTH];
 	char file2_path[TRACE_PATH_MAX_LENGTH];
 
 	if (trace->type == EXECUTION_TRACE){
+		if (traceIdentifier_select(&(trace->trace_type.exe.identifier), p_index, t_index)){
+			log_err_m("unable to load trace identifier (process index: %u; thread index: %u)", p_index, t_index);
+			return -1;
+		}
+
 		trace_reset(trace);
 
-		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u.bin", trace->directory_path, thread_id);
-		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/%s", trace->directory_path, TRACE_BLOCK_FILE_NAME);
+		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u_%u.bin", trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid);
+		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/block%u.bin", trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid);
 			
 		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 			log_err("unable to init assembly structure");
 			return -1;
 		}
 
-		if (memTrace_is_trace_exist(trace->directory_path, thread_id)){
-			if ((trace->mem_trace = memTrace_create_trace(trace->directory_path, thread_id, &(trace->assembly))) == NULL){
+		if (memTrace_is_trace_exist(trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid)){
+			if ((trace->mem_trace = memTrace_create_trace(trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid, &(trace->assembly))) == NULL){
 				log_err("unable to load associated memory addresses");
 			}
 		}
@@ -176,6 +280,8 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 
 	array_delete(extrude_array);
 
+	snprintf(trace_dst->trace_type.frag.tag, TRACE_TAG_LENGTH, "trace [%u:%u]", offset, offset + length);
+
 	return 0;
 }
 
@@ -183,30 +289,35 @@ void trace_create_ir(struct trace* trace){
 	uint32_t 		i;
 	struct result* 	result;
 
-	if (trace->ir != NULL){
-		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->tag);
-		ir_delete(trace->ir);
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
 
-		if(array_get_length(&(trace->result_array))){
-			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->tag);
-			for (i = 0; i < array_get_length(&(trace->result_array)); i++){
-				result = (struct result*)array_get(&(trace->result_array), i);
+	if (trace->trace_type.frag.ir != NULL){
+		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
+		ir_delete(trace->trace_type.frag.ir);
+
+		if(array_get_length(&(trace->trace_type.frag.result_array))){
+			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
+			for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+				result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
 				result_clean(result)
 			}
-			array_empty(&(trace->result_array));
+			array_empty(&(trace->trace_type.frag.result_array));
 		}
 	}
 	
 	if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
-		trace->ir = ir_create(&(trace->assembly), trace->mem_trace);
+		trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
 	}
 	else{
-		trace->ir = ir_create(&(trace->assembly), NULL);
+		trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
 	}
 
 	
-	if (trace->ir == NULL){
-		log_err_m("unable to create IR for fragment \"%s\"", trace->tag);
+	if (trace->trace_type.frag.ir == NULL){
+		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
 }
 
@@ -214,55 +325,52 @@ void trace_normalize_ir(struct trace* trace){
 	uint32_t 		i;
 	struct result* 	result;
 
-	if (trace->ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
 		return;
 	}
 
-	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
-		result = (struct result*)array_get(&(trace->result_array), i);
+	if (trace->trace_type.frag.ir == NULL){
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
+		return;
+	}
+
+	for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
-			log_err_m("cannot normalize IR of fragment \"%s\" results have been exported", trace->tag);
+			log_err_m("cannot normalize IR of fragment \"%s\" results have been exported", trace->trace_type.frag.tag);
 			return;
 		}
 	}
 
-	if(array_get_length(&(trace->result_array))){
-		log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->tag);
-		for (i = 0; i < array_get_length(&(trace->result_array)); i++){
-			result = (struct result*)array_get(&(trace->result_array), i);
+	if(array_get_length(&(trace->trace_type.frag.result_array))){
+		log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
+		for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+			result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
 			result_clean(result)
 		}
-		array_empty(&(trace->result_array));
+		array_empty(&(trace->trace_type.frag.result_array));
 	}
 
-	ir_normalize(trace->ir);
-}
-
-void trace_normalize_concrete_ir(struct trace* trace){
-	if (trace->ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
-		return;
-	}
-
-	if (trace->mem_trace == NULL){
-		log_err_m("no concrete address for fragment \"%s\"", trace->tag);
-		return;
-	}
-
-	ir_normalize_concrete(trace->ir);
+	ir_normalize(trace->trace_type.frag.ir);
 }
 
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){
 	struct result 	result;
 	int32_t 		return_value;
+	struct trace* 	trace = (struct trace*)arg;
+
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return -1;
+	}
 
 	if (result_init(&result, signature, assignement_array)){
 		log_err("unable to init result");
 		return -1;
 	}
 
-	if ((return_value = array_add(&(((struct trace*)arg)->result_array), &result)) < 0){
+	if ((return_value = array_add(&(trace->trace_type.frag.result_array), &result)) < 0){
 		log_err("unable to add element to array");
 	}
 
@@ -270,10 +378,15 @@ int32_t trace_register_code_signature_result(void* signature, struct array* assi
 }
 
 void trace_push_code_signature_result(int32_t idx, void* arg){
-	struct trace* fragment = (struct trace*)arg; 
+	struct trace* 	trace = (struct trace*)arg;
+
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
 
 	if (idx >= 0){
-		result_push((struct result*)array_get(&(fragment->result_array), idx), fragment->ir);
+		result_push((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("incorrect index value %d", idx);
@@ -281,10 +394,15 @@ void trace_push_code_signature_result(int32_t idx, void* arg){
 }
 
 void trace_pop_code_signature_result(int32_t idx, void* arg){
-	struct trace* fragment = (struct trace*)arg; 
+	struct trace* trace = (struct trace*)arg;
+
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
 
 	if (idx >= 0){
-		result_pop((struct result*)array_get(&(fragment->result_array), idx), fragment->ir);
+		result_pop((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("incorrect index value %d", idx);
@@ -292,19 +410,24 @@ void trace_pop_code_signature_result(int32_t idx, void* arg){
 }
 
 void trace_create_synthesis(struct trace* trace){
-	if (trace->synthesis_graph != NULL){
-		log_warn_m("an synthesis has already been create for fragment \"%s\" - deleting", trace->tag);
-		synthesisGraph_delete(trace->synthesis_graph);
-		trace->synthesis_graph = NULL;
-	}
-
-	if (trace->ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
 		return;
 	}
 
-	if((trace->synthesis_graph = synthesisGraph_create(trace->ir)) == NULL){
-		log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->tag);
+	if (trace->trace_type.frag.synthesis_graph != NULL){
+		log_warn_m("an synthesis has already been create for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
+		synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
+		trace->trace_type.frag.synthesis_graph = NULL;
+	}
+
+	if (trace->trace_type.frag.ir == NULL){
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
+		return;
+	}
+
+	if((trace->trace_type.frag.synthesis_graph = synthesisGraph_create(trace->trace_type.frag.ir)) == NULL){
+		log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
 }
 
@@ -347,8 +470,8 @@ void trace_check(struct trace* trace){
 	if (assembly_check(&(trace->assembly))){
 		log_err("assembly check failed");
 	}
-	if (trace->ir != NULL){
-		ir_check(trace->ir);
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		ir_check(trace->trace_type.frag.ir);
 	}
 }
 
@@ -432,19 +555,24 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	struct node** 	footprint 			= NULL;
 	uint32_t 		nb_node_footprint;
 
-	if (trace->ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->tag);
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
+
+	if (trace->trace_type.frag.ir == NULL){
+		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
 		goto exit;
 	}
 
-	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->result_array)));
+	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->trace_type.frag.result_array)));
 	if (exported_result == NULL){
 		log_err("unable to allocate memory");
 		goto exit;
 	}
 
-	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->result_array)); i++){
-		result = (struct result*)array_get(&(trace->result_array), i);
+	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
 		if (result->state != RESULTSTATE_IDLE){
 			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->code_signature->signature.name);
 			goto exit;
@@ -453,7 +581,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		for (j = 0; j < nb_signature; j++){
 			if (signature_buffer[j] == result->code_signature){
 				#ifdef VERBOSE
-				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->tag);
+				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->trace_type.frag.tag);
 				#endif
 				exported_result[nb_exported_result ++] = i;
 			}
@@ -472,8 +600,8 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	}
 
 	for (i = 0; i < nb_exported_result; i++){
-		result = (struct result*)array_get(&(trace->result_array), exported_result[i]);
-		result_push(result, trace->ir);
+		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]);
+		result_push(result, trace->trace_type.frag.ir);
 		
 		for (j = 0; j < result->nb_occurrence; j++){
 			result_get_footprint(result, j, node_set);
@@ -489,8 +617,8 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	set_delete(node_set);
 	node_set = NULL;
 
-	ir_remove_footprint(trace->ir, footprint, nb_node_footprint);
-	ir_normalize_remove_dead_code(trace->ir, NULL);
+	ir_remove_footprint(trace->trace_type.frag.ir, footprint, nb_node_footprint);
+	ir_normalize_remove_dead_code(trace->trace_type.frag.ir, NULL);
 
 	exit:
 	if (exported_result != NULL){
@@ -508,20 +636,22 @@ void trace_reset(struct trace* trace){
 	struct result* 	result;
 	uint32_t 		i;
 
-	if (trace->synthesis_graph != NULL){
-		synthesisGraph_delete(trace->synthesis_graph);
-		trace->synthesis_graph = NULL;
-	}
+	if (trace->type == FRAGMENT_TRACE){
+		if (trace->trace_type.frag.synthesis_graph != NULL){
+			synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
+			trace->trace_type.frag.synthesis_graph = NULL;
+		}
 
-	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
-		result = (struct result*)array_get(&(trace->result_array), i);
-		result_clean(result)
-	}
-	array_empty(&(trace->result_array));
+		for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+			result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
+			result_clean(result)
+		}
+		array_empty(&(trace->trace_type.frag.result_array));
 
-	if (trace->ir != NULL){
-		ir_delete(trace->ir)
-		trace->ir = NULL;
+		if (trace->trace_type.frag.ir != NULL){
+			ir_delete(trace->trace_type.frag.ir)
+			trace->trace_type.frag.ir = NULL;
+		}
 	}
 
 	assembly_clean(&(trace->assembly));
@@ -535,18 +665,20 @@ void trace_clean(struct trace* trace){
 	struct result* 	result;
 	uint32_t 		i;
 
-	if (trace->synthesis_graph != NULL){
-		synthesisGraph_delete(trace->synthesis_graph);
-	}
+	if (trace->type == FRAGMENT_TRACE){
+		if (trace->trace_type.frag.synthesis_graph != NULL){
+			synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
+		}
 
-	for (i = 0; i < array_get_length(&(trace->result_array)); i++){
-		result = (struct result*)array_get(&(trace->result_array), i);
-		result_clean(result)
-	}
-	array_clean(&(trace->result_array));
+		for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+			result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
+			result_clean(result)
+		}
+		array_clean(&(trace->trace_type.frag.result_array));
 
-	if (trace->ir != NULL){
-		ir_delete(trace->ir)
+		if (trace->trace_type.frag.ir != NULL){
+			ir_delete(trace->trace_type.frag.ir)
+		}
 	}
 
 	assembly_clean(&(trace->assembly));
