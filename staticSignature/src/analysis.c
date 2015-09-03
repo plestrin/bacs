@@ -40,7 +40,7 @@ int main(int argc, char** argv){
 
 	/* trace specific commands */
 	add_cmd_to_input_parser(parser, "load trace", 				"Load a trace in the analysis engine", 			"Trace directory", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load)
-	add_cmd_to_input_parser(parser, "change thread", 			"Switch the current process/thread", 			"Proc and thread index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change)
+	add_cmd_to_input_parser(parser, "change trace", 			"Switch the current process/thread", 			"Proc and thread index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_change)
 	add_cmd_to_input_parser(parser, "load elf", 				"Load an ELF file in the analysis engine", 		"ELF file", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_load_elf)
 	add_cmd_to_input_parser(parser, "print trace", 				"Print trace's instructions (assembly code)", 	"Index or range", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print)
 	add_cmd_to_input_parser(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
@@ -250,9 +250,11 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 }
 
 void analysis_trace_change(struct analysis* analysis, char* arg){
-	char* t_index_ptr;
+	char* 		t_index_ptr;
+	uint32_t 	prev_pid;
 
 	if (analysis->trace != NULL){
+		prev_pid = analysis->trace->trace_type.exe.identifier.current_pid;
 		t_index_ptr = strchr(arg, ' ');
 		if (trace_change(analysis->trace, atoi(arg), (t_index_ptr != NULL) ? atoi(t_index_ptr + 1) : 0)){
 			log_err_m("unable to load trace process:%u, thread:%u", (uint32_t)atoi(arg), (uint32_t)((t_index_ptr != NULL) ? atoi(t_index_ptr + 1) : 0));
@@ -261,15 +263,17 @@ void analysis_trace_change(struct analysis* analysis, char* arg){
 			return;
 		}
 
-		if (analysis->code_map != NULL){
-			log_warn("deleting previous codeMap");
-			codeMap_delete(analysis->code_map);
-			analysis->code_map = NULL;
-		}
+		if (prev_pid != analysis->trace->trace_type.exe.identifier.current_pid){
+			if (analysis->code_map != NULL){
+				log_warn("deleting previous codeMap");
+				codeMap_delete(analysis->code_map);
+				analysis->code_map = NULL;
+			}
 
-		analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid);
-		if (analysis->code_map == NULL){
-			log_err("unable to create codeMap");
+			analysis->code_map = cmReaderJSON_parse(analysis->trace->trace_type.exe.directory_path, analysis->trace->trace_type.exe.identifier.current_pid);
+			if (analysis->code_map == NULL){
+				log_err("unable to create codeMap");
+			}
 		}
 	}
 	else{

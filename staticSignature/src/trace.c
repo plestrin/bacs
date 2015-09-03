@@ -17,10 +17,10 @@ int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, ui
 				log_err("the max number of thread has been reached, increment TRACE_NB_MAX_THREAD");
 				return -1;
 			}
-			else{
-				identifier->process[i].thread_id[identifier->process[i].nb_thread] = tid;
-				identifier->process[i].nb_thread ++;
-			}
+
+			identifier->process[i].thread_id[identifier->process[i].nb_thread] = tid;
+			identifier->process[i].nb_thread ++;
+			break;
 		}
 	}
 	if (i == identifier->nb_process){
@@ -28,12 +28,11 @@ int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, ui
 			log_err("the max number of process has been reached, increment TRACE_NB_MAX_PROCESS");
 			return -1;
 		}
-		else{
-			identifier->process[i].id = pid;
-			identifier->process[i].thread_id[0] = tid;
-			identifier->process[i].nb_thread = 1;
-			identifier->nb_process ++;
-		}
+			
+		identifier->process[i].id = pid;
+		identifier->process[i].thread_id[0] = tid;
+		identifier->process[i].nb_thread = 1;
+		identifier->nb_process ++;
 	}
 
 	return 0;
@@ -56,17 +55,17 @@ int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_in
 		log_info_m("several processes have been found, loading %u:", p_index);
 		for (i = 0; i < identifier->nb_process; i++){
 			if (i == p_index){
-				printf("\t- process: %u; pid=%u (loaded)\n", i, identifier->process[i].id);
+				printf("\t- process: %u; pid=%u. %u thread(s) (loaded)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
 			}
 			else{
-				printf("\t- process: %u; pid=%u\n", i, identifier->process[i].id);
+				printf("\t- process: %u; pid=%u; %u thread(s)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
 			}
 		}
 		printf("Use: \"change trace\" command to load a different process/tread\n");
 	}
 
 	if (identifier->process[p_index].nb_thread > 1){
-		log_info_m("several threads have been found, loading %u:", t_index);
+		log_info_m("several threads have been found for process %u, loading %u:", identifier->process[p_index].id, t_index);
 		for (i = 0; i < identifier->process[p_index].nb_thread; i++){
 			if (i == t_index){
 				printf("\t- thread: %u; tid=%u (loaded)\n", i, identifier->process[p_index].thread_id[i]);

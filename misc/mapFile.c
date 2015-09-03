@@ -20,7 +20,7 @@ void* mapFile_map(const char* file_name, size_t* size){
 	}
 
 	if (fstat(file, &sb) < 0){
-		log_err("unable to read file size");
+		log_err_m("unable to read file %s size", file_name);
 		close(file);
 		return NULL;
 	}
@@ -29,7 +29,7 @@ void* mapFile_map(const char* file_name, size_t* size){
 	buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, file, 0);
 	close(file);
 	if (buffer == MAP_FAILED){
-		log_err("unable to map file");
+		log_err_m("unable to map file %s, (size=%u)", file_name, *size);
 		return NULL;
 	}
 

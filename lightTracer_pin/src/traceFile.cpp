@@ -38,7 +38,10 @@ int32_t traceFile_init(struct traceFile* trace_file, const char* dir_name, uint3
 	asmWriter_init(&(trace_file->asm_writer));
 
 	strncpy(trace_file->dir_name, dir_name, TRACEFILE_NAME_MAX_LENGTH);
-	mkdir(dir_name, 0777);
+	if (mkdir(dir_name, 0777) == -1){
+		std::cerr << "ERROR: in " << __func__ << ", unable to create directory \"" << dir_name << "\"" << std::endl;
+		return -1;
+	}
 
 	snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/block%u.bin", dir_name, pid);
 	#ifdef __linux__
