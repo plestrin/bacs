@@ -312,19 +312,7 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
 }
 
-static inline void ir_convert_node_to_imm(struct node* node, uint8_t size, uint64_t value){
-	struct irOperation* operation = ir_node_get_operation(node);
-
-	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
-		ir_mem_remove(operation);
-	}
-
-	operation->type 						= IR_OPERATION_TYPE_IMM;
-	operation->operation_type.imm.value 	= value;
-	operation->size 						= size;
-	operation->index 						= IR_OPERATION_INDEX_IMMEDIATE;
-	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
-}
+void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value);
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);

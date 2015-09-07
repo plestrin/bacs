@@ -216,6 +216,29 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 	return node;
 }
 
+void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value){
+	struct irOperation* operation = ir_node_get_operation(node);
+	struct edge* 		edge_cursor;
+	struct edge* 		edge_current;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; ){
+		edge_current = edge_cursor;
+		edge_cursor = edge_get_next_dst(edge_cursor);
+
+		ir_remove_dependence(ir, edge_current);
+	}
+
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_remove(operation);
+	}
+
+	operation->type 						= IR_OPERATION_TYPE_IMM;
+	operation->operation_type.imm.value 	= value;
+	operation->size 						= size;
+	operation->index 						= IR_OPERATION_INDEX_IMMEDIATE;
+	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
+}
+
 struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst){
 	struct node* 			node;
 	struct irOperation* 	operation;

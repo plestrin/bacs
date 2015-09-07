@@ -550,6 +550,10 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	struct node* 			node_cursor;
 	struct node* 			next_node_cursor;
 	struct irOperation* 	operation;
+	#ifdef IR_FULL_CHECK
+	uint8_t 				local_modification = 0;
+	enum irOpcode 			local_opcode;
+	#endif
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
@@ -559,6 +563,27 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL;){
 		operation = ir_node_get_operation(node_cursor);
 		if (operation->type == IR_OPERATION_TYPE_INST){
+			#ifdef IR_FULL_CHECK
+			local_opcode = operation->operation_type.inst.opcode;
+
+			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
+				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification);
+			}
+			if (symbolic_simplify[operation->operation_type.inst.opcode] != NULL){
+				symbolic_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification);
+			}
+			if (rewrite_simplify[operation->operation_type.inst.opcode] != NULL){
+				rewrite_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification, final);
+			}
+
+			if (local_modification){
+				*modification = 1;
+				if (ir_check(ir)){
+					log_debug_m("IR check failed after simplification of instrcution %s", irOpcode_2_string(local_opcode));
+				}
+				local_modification = 0;
+			}
+			#else
 			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
 				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification);
 			}
@@ -568,6 +593,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 			if (rewrite_simplify[operation->operation_type.inst.opcode] != NULL){
 				rewrite_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification, final);
 			}
+			#endif
 		}
 
 		if (next_node_cursor != NULL){
@@ -901,7 +927,6 @@ static void ir_normalize_simplify_instruction_numeric_imul(struct ir* ir, struct
 
 static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	struct edge* 			edge_cursor;
-	struct edge* 			edge_current;
 	struct irOperation*		operation_cursor;
 
 	if (node->nb_edge_dst == 1){
@@ -914,16 +939,7 @@ static void ir_normalize_simplify_instruction_rewrite_imul(struct ir* ir, struct
 			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
 
 			if (operation_cursor->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(operation_cursor) == 0){
-				for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL;){
-					edge_current = edge_cursor;
-					edge_cursor = edge_get_next_dst(edge_cursor);
-
-					ir_remove_dependence(ir, edge_current);
-				}
-
-				ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM;
-				ir_node_get_operation(node)->operation_type.imm.value = 0;
-				ir_node_get_operation(node)->status_flag = IR_OPERATION_STATUS_FLAG_NONE;
+				ir_convert_node_to_imm(ir, node, ir_node_get_operation(node)->size, 0);
 
 				*modification = 1;
 				return;
@@ -1034,7 +1050,6 @@ static void ir_normalize_simplify_instruction_numeric_mul(struct ir* ir, struct 
 
 static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	struct edge* 			edge_cursor;
-	struct edge* 			edge_current;
 	struct irOperation*		operation_cursor;
 
 	if (node->nb_edge_dst == 1){
@@ -1048,16 +1063,7 @@ static void ir_normalize_simplify_instruction_rewrite_mul(struct ir* ir, struct 
 
 			if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
 				if (ir_imm_operation_get_unsigned_value(operation_cursor) == 0){
-					for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL;){
-						edge_current = edge_cursor;
-						edge_cursor = edge_get_next_dst(edge_cursor);
-
-						ir_remove_dependence(ir, edge_current);
-					}
-
-					ir_node_get_operation(node)->type = IR_OPERATION_TYPE_IMM;
-					ir_node_get_operation(node)->operation_type.imm.value = 0;
-					ir_node_get_operation(node)->status_flag = IR_OPERATION_STATUS_FLAG_NONE;
+					ir_convert_node_to_imm(ir, node, ir_node_get_operation(node)->size, 0);
 
 					*modification = 1;
 					break;
@@ -1196,8 +1202,7 @@ static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, str
 			}
 		}
 		else if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-			ir_convert_node_to_imm(node, 8, operand_operation->operation_type.imm.value);
-			ir_remove_dependence(ir, node_get_head_edge_dst(node));
+			ir_convert_node_to_imm(ir, node, 8, operand_operation->operation_type.imm.value);
 
 			*modification = 1;
 		}

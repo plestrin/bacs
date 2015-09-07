@@ -470,7 +470,9 @@ void trace_check(struct trace* trace){
 		log_err("assembly check failed");
 	}
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
-		ir_check(trace->trace_type.frag.ir);
+		if (ir_check(trace->trace_type.frag.ir)){
+			log_info("error(s) have been found in IR");
+		}
 	}
 }
 

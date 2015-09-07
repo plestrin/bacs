@@ -5,18 +5,17 @@
 
 #include "ir.h"
 
-void ir_check_connectivity(struct ir* ir);
-void ir_check_size(struct ir* ir);
-void ir_check_order(struct ir* ir);
-void ir_check_instruction_index(struct ir* ir);
-void ir_check_acyclic(struct ir* ir);
+uint32_t ir_check_connectivity(struct ir* ir);
+uint32_t ir_check_size(struct ir* ir);
+uint32_t ir_check_order(struct ir* ir);
+uint32_t ir_check_instruction_index(struct ir* ir);
+uint32_t ir_check_acyclic(struct ir* ir);
+
 void ir_check_clean_error_flag(struct ir* ir);
 
-#define ir_check(ir) 				\
-	ir_check_clean_error_flag(ir); 	\
-	ir_check_connectivity(ir); 		\
-	ir_check_size(ir); 				\
-	ir_check_acyclic(ir); 			\
-	ir_check_instruction_index(ir)
+static inline int32_t ir_check(struct ir* ir){
+	ir_check_clean_error_flag(ir);
+	return ir_check_connectivity(ir) | ir_check_size(ir) | ir_check_acyclic(ir) | ir_check_instruction_index(ir);
+}
 
 #endif

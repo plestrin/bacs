@@ -10,6 +10,7 @@
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 		1
 #define IRMEMORY_ALIAS_HEURISTIC_CONCRETE 	1
+#define IRMEMORY_ALIAS_HEURISTIC_TOTAL 		0
 
 static int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
 
@@ -252,6 +253,11 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 					if (ir_node_get_operation(node1)->operation_type.mem.access.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.access.con_addr){
 						return node_cursor;
 					}
+					#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
+					else{
+						goto next;
+					}
+					#endif
 				}
 				#endif
 
@@ -282,6 +288,10 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 				}
 			}
 		}
+
+		#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
+		next:
+		#endif
 		node_cursor = operation_cursor->operation_type.mem.access.next;
 		if (node_cursor == NULL){
 			log_err("found NULL pointer instead of the expected element");
@@ -349,6 +359,19 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 
 					operation_prev = ir_node_get_operation(access_list[i - 1]);
 					operation_next = ir_node_get_operation(access_list[i]);
+
+					#ifdef IR_FULL_CHECK
+					if (operation_prev->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
+						if (operation_prev->operation_type.mem.access.con_addr != operation_next->operation_type.mem.access.con_addr){
+							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.access.con_addr, operation_next->operation_type.mem.access.con_addr);
+
+							operation_prev->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+							operation_next->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+
+							continue;
+						}
+					}
+					#endif
 
 					/* STORE -> LOAD */
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
