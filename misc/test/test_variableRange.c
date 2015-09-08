@@ -22,7 +22,7 @@
 #define NO_PRINT 								/* comment this line to print successful test */
 
 #ifndef SEED
-#define SEED getpid()
+#define SEED (uint32_t)getpid()
 #endif
 
 #ifdef TEST_ADD
@@ -42,17 +42,17 @@ static int32_t test_add(void){
 		nb_test_predicted = 1;
 		nb_test_performed = 0;
 
-		range[0].index_lo 	= rand();
-		range[0].index_up 	= rand();
-		range[0].scale 		= rand() % MAX_SIZE;
-		range[0].disp 		= rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
-		range[1].index_lo 	= rand();
-		range[1].index_up 	= rand();
+		range[1].index_lo 	= (uint64_t)rand();
+		range[1].index_up 	= (uint64_t)rand();
 		range[1].scale 		= range[0].scale; /* cannot add range with different scale */
-		range[1].disp 		= rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[1].disp 		= (uint64_t)rand();
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		variableRange_pack(range + 0);
 		variableRange_pack(range + 1);
@@ -128,17 +128,17 @@ static int32_t test_and(void){
 		nb_test_predicted = 1;
 		nb_test_performed = 0;
 
-		range[0].index_lo 	= rand();
-		range[0].index_up 	= rand();
-		range[0].scale 		= rand() % MAX_SIZE;
-		range[0].disp 		= rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		range[1].index_lo 	= 0;
 		range[1].index_up 	= 0;
 		range[1].scale 		= 0xffffffff; /* cannot mask range by a not constant value */
-		range[1].disp 		= rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[1].disp 		= (uint64_t)rand();
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		variableRange_pack(range + 0);
 		variableRange_pack(range + 1);
@@ -204,11 +204,11 @@ static int32_t test_shl(void){
 		nb_test_predicted = 1;
 		nb_test_performed = 0;
 
-		range[0].index_lo 	= rand();
-		range[0].index_up 	= rand();
-		range[0].scale 		= rand() % MAX_SIZE;
-		range[0].disp 		= rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		variableRange_pack(range + 0);
 
@@ -220,8 +220,8 @@ static int32_t test_shl(void){
 		range[1].index_lo 	= 0;
 		range[1].index_up 	= 0;
 		range[1].scale 		= 0xffffffff; /* cannot shift by a not constant value */
-		range[1].disp 		= rand() % (MAX_SIZE + 1);
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[1].disp 		= (uint64_t)rand() % (MAX_SIZE + 1);
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		
 		variableRange_pack(range + 1);
@@ -287,11 +287,11 @@ static int32_t test_shr(void){
 		nb_test_predicted = 1;
 		nb_test_performed = 0;
 
-		range[0].index_lo 	= rand();
-		range[0].index_up 	= rand();
-		range[0].scale 		= rand() % MAX_SIZE;
-		range[0].disp 		= rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		variableRange_pack(range + 0);
 
@@ -303,8 +303,8 @@ static int32_t test_shr(void){
 		range[1].index_lo 	= 0;
 		range[1].index_up 	= 0;
 		range[1].scale 		= 0xffffffff; /* cannot shift by a not constant value */
-		range[1].disp 		= rand() % (MAX_SIZE + 1);
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[1].disp 		= (uint64_t)rand() % (MAX_SIZE + 1);
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		
 		variableRange_pack(range + 1);
@@ -360,18 +360,18 @@ static int32_t test_include(void){
 	uint32_t 				j;
 	struct variableRange 	range[2];
 	struct variableRange 	cst;
-	uint32_t 				included_predicted;
-	uint32_t 				included_performed;
+	int32_t 				included_predicted;
+	int32_t 				included_performed;
 	uint64_t 				nb_test;
 
 	log_info_m("starting %u TEST INCLUDE", NB_TEST);
 
 	for (i = 0; i < NB_TEST; i++){
-		range[0].index_lo 	= rand();
-		range[0].index_up 	= rand();
-		range[0].scale 		= rand() % MAX_SIZE;
-		range[0].disp 		= rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
 
 		variableRange_pack(range + 0);
 
@@ -380,11 +380,11 @@ static int32_t test_include(void){
 			continue;
 		}
 
-		range[1].index_lo 	= rand();
-		range[1].index_up 	= rand();
-		range[1].scale 		= rand() % MAX_SIZE;
-		range[1].disp 		= rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - ((rand() % (MAX_SIZE - 1)) + 1)));;
+		range[1].index_lo 	= (uint64_t)rand();
+		range[1].index_up 	= (uint64_t)rand();
+		range[1].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[1].disp 		= (uint64_t)rand();
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));;
 
 		variableRange_pack(range + 1);
 
@@ -438,17 +438,17 @@ static int32_t test_intersect(void){
 	struct variableRange 	range1;
 	struct variableRange 	range2;
 	struct variableRange 	cst;
-	uint32_t 				intersect_predicted;
-	uint32_t 				intersect_performed;
+	int32_t 				intersect_predicted;
+	int32_t 				intersect_performed;
 	uint64_t 				nb_test;
 
 	log_info_m("starting %u TEST INTERSECT", NB_TEST);
 
 	for (i = 0; i < NB_TEST; i++){
-		range1.index_lo 	= rand();
-		range1.index_up 	= rand();
-		range1.scale 		= rand() % MAX_SIZE;
-		range1.disp 		= rand();
+		range1.index_lo 	= (uint64_t)rand();
+		range1.index_up 	= (uint64_t)rand();
+		range1.scale 		= (uint64_t)rand() % MAX_SIZE;
+		range1.disp 		= (uint64_t)rand();
 		range1.size_mask 	= MASK;
 
 		variableRange_pack(&range1);
@@ -458,10 +458,10 @@ static int32_t test_intersect(void){
 			continue;
 		}
 
-		range2.index_lo 	= rand();
-		range2.index_up 	= rand();
-		range2.scale 		= rand() % MAX_SIZE;
-		range2.disp 		= rand();
+		range2.index_lo 	= (uint64_t)rand();
+		range2.index_up 	= (uint64_t)rand();
+		range2.scale 		= (uint64_t)rand() % MAX_SIZE;
+		range2.disp 		= (uint64_t)rand();
 		range2.size_mask 	= MASK;
 		
 		variableRange_pack(&range2);

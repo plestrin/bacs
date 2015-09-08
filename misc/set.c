@@ -26,7 +26,7 @@ int32_t set_add(struct set* set, void* element){
 		if (block_cursor->nb_element < set->nb_element_block){
 			memcpy(block_cursor->data + (block_cursor->nb_element * set->element_size), element, set->element_size);
 			block_cursor->nb_element ++;
-			return set->nb_element_tot ++;
+			return (int32_t)(set->nb_element_tot ++);
 		}
 
 		if (block_cursor->next == NULL){
@@ -53,14 +53,14 @@ int32_t set_add_unique(struct set* set, void* element){
 	for (block_cursor = &(set->block), element_count = 0; block_cursor != NULL; element_count += block_cursor->nb_element, block_cursor = block_cursor->next){
 		for (i = 0; i < block_cursor->nb_element; i++){
 			if (!memcmp(block_cursor->data + (i * set->element_size), element, set->element_size)){
-				return element_count + i;
+				return (int32_t)(element_count + i);
 			}
 		}
 
 		if (block_cursor->nb_element < set->nb_element_block){
 			memcpy(block_cursor->data + (block_cursor->nb_element * set->element_size), element, set->element_size);
 			block_cursor->nb_element ++;
-			return set->nb_element_tot ++;
+			return (int32_t)(set->nb_element_tot ++);
 		}
 
 		if (block_cursor->next == NULL){

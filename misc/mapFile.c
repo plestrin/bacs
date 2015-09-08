@@ -25,8 +25,8 @@ void* mapFile_map(const char* file_name, size_t* size){
 		return NULL;
 	}
 
-	*size = sb.st_size;
-	buffer = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, file, 0);
+	*size = (size_t)sb.st_size;
+	buffer = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, file, 0);
 	close(file);
 	if (buffer == MAP_FAILED){
 		log_err_m("unable to map file %s, (size=%u)", file_name, *size);
@@ -45,9 +45,9 @@ void* mapFile_part(int file, off_t offset, size_t size, struct mappingDesc* desc
 		return NULL;
 	}
 
-	align = offset % page_size;
+	align = (size_t)(offset % page_size);
 	desc->size = size + align;
-	desc->buffer = mmap(NULL, size + align, PROT_READ, MAP_PRIVATE, file, offset - align);
+	desc->buffer = mmap(NULL, size + align, PROT_READ, MAP_PRIVATE, file, offset - (off_t)align);
 	if (desc->buffer == MAP_FAILED){
 		log_err("unable to map file");
 		return NULL;

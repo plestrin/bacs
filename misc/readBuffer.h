@@ -7,6 +7,4 @@
 
 char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer, size_t* buffer_length);
 
-void readBuffer_reverse_endianness(char* buffer, size_t buffer_length);
-
 #endif

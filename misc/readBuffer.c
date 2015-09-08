@@ -69,16 +69,3 @@ char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer, size_t* b
 
 	return result;
 }
-
-void readBuffer_reverse_endianness(char* buffer, size_t buffer_length){
-	uint64_t i;
-
-	if (buffer_length % 4){
-		log_err("buffer size (in byte) must be a multiple of 4");
-		return;
-	}
-
-	for (i = 0; i < buffer_length; i += 4){
-		*(uint32_t*)(buffer + i) = __builtin_bswap32(*(uint32_t*)(buffer + i));
-	}
-}

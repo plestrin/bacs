@@ -21,13 +21,13 @@ int32_t compare_labelTabItem_label(const void* arg1, const void* arg2);
 int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2);
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2);
-int32_t compare_labelTabPtr_connectivity(const void* arg1, const void* arg2);
+int32_t compare_labelTabPtr_connectivity(void* arg1, void* arg2);
 #endif
 
 struct possibleAssignmentHeader{
-	uint32_t 	nb_possible_assignment;
-	uint32_t 	node_offset;
-	uint8_t 	assigned;
+	uint32_t nb_possible_assignment;
+	uint32_t node_offset;
+	uint32_t assigned;
 };
 
 struct possibleAssignment{
@@ -138,7 +138,7 @@ static struct labelTab** graphIso_create_connectivity_mapping(struct labelTab* l
 	for(i = 0; i < nb_node; i++){
 		connectivity_mapping[i] = label_tab + i;
 	}
-	qsort(connectivity_mapping, nb_node, sizeof(struct labelTab*), compare_labelTabPtr_connectivity);
+	qsort(connectivity_mapping, nb_node, sizeof(struct labelTab*), (int32_t(*)(const void*,const void*))compare_labelTabPtr_connectivity);
 
 	return connectivity_mapping;
 }
@@ -162,30 +162,27 @@ static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, s
 	label_fast = (struct labelFastAccess*)malloc(sizeof(struct labelFastAccess) * (*nb_label));
 	if (label_fast == NULL){
 		log_err("unable to allocate memory");
+		return NULL;
 	}
-	else{
-		for (i = 0; i < graph->nb_node; i++){
-			if (i == 0){
-				label_fast[0].label 	= label_tab[0].label;
-				label_fast[0].offset 	= 0;
-				label_fast[0].size 		= 1;
-				prev_label_index = 0;
-			}
-			else{
-				if (label_tab[i].label == label_fast[prev_label_index].label){
-					label_fast[prev_label_index].size ++;
-				}
-				else{
-					#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-					qsort(label_tab + label_fast[prev_label_index].offset, label_fast[prev_label_index].size, sizeof(struct labelTab), compare_labelTabItem_connectivity);
-					#endif
 
-					prev_label_index  ++;
-					label_fast[prev_label_index].label 		= label_tab[i].label;
-					label_fast[prev_label_index].offset 	= i;
-					label_fast[prev_label_index].size 		= 1;
-				}
-			}
+	label_fast[0].label 	= label_tab[0].label;
+	label_fast[0].offset 	= 0;
+	label_fast[0].size 		= 1;
+	prev_label_index = 0;
+
+	for (i = 1; i < graph->nb_node; i++){
+		if (label_tab[i].label == label_fast[prev_label_index].label){
+			label_fast[prev_label_index].size ++;
+		}
+		else{
+			#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
+			qsort(label_tab + label_fast[prev_label_index].offset, label_fast[prev_label_index].size, sizeof(struct labelTab), compare_labelTabItem_connectivity);
+			#endif
+
+			prev_label_index  ++;
+			label_fast[prev_label_index].label 		= label_tab[i].label;
+			label_fast[prev_label_index].offset 	= i;
+			label_fast[prev_label_index].size 		= 1;
 		}
 	}
 
@@ -206,8 +203,8 @@ static struct edgeTab* graphIso_create_edge_tab(struct graph* graph, uint32_t(*e
 		for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 				edge_tab[i].label 	= edge_get_label(edge_cursor);
-				edge_tab[i].src 	= (struct nodeTab*)(node_cursor->ptr) - node_tab;
-				edge_tab[i].dst 	= (struct nodeTab*)(edge_get_dst(edge_cursor)->ptr) - node_tab;
+				edge_tab[i].src 	= (uint32_t)((struct nodeTab*)(node_cursor->ptr) - node_tab);
+				edge_tab[i].dst 	= (uint32_t)((struct nodeTab*)(edge_get_dst(edge_cursor)->ptr) - node_tab);
 				i ++;
 			}
 		}
@@ -535,9 +532,9 @@ static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, ui
 	possible_assignment = (struct possibleAssignment*)malloc(sizeof(struct possibleAssignment) + nb_node * sizeof(struct possibleAssignmentHeader) + nb_assignment * sizeof(struct node*) + nb_node * nb_node * sizeof(uint32_t));
 	if (possible_assignment != NULL){
 		possible_assignment->nb_node 		= nb_node;
-		possible_assignment->headers 		= (struct possibleAssignmentHeader*)((char*)possible_assignment + sizeof(struct possibleAssignment));
-		possible_assignment->nodes 			= (uint32_t*)((char*)possible_assignment->headers + nb_node * sizeof(struct possibleAssignmentHeader));
-		possible_assignment->stacked_size 	= (uint32_t*)((char*)possible_assignment->nodes + nb_assignment * sizeof(uint32_t));
+		possible_assignment->headers 		= (struct possibleAssignmentHeader*)(possible_assignment + 1);
+		possible_assignment->nodes 			= (uint32_t*)(possible_assignment->headers + nb_node);
+		possible_assignment->stacked_size 	= (uint32_t*)(possible_assignment->nodes + nb_assignment);
 	}
 	else{
 		log_err("unable to allocate memory");
@@ -627,7 +624,7 @@ static struct possibleAssignment* possibleAssignment_create_init_first(struct gr
 			else{
 				#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
 				for (j = 0; j < graph_node_list[i].size; j++){
-					possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] =  (graph_handle->connectivity_mapping[j] - graph_handle->label_tab);
+					possible_assignment->nodes[possible_assignment->headers[i].node_offset + j] = (uint32_t)(graph_handle->connectivity_mapping[j] - graph_handle->label_tab);
 				}
 				#else
 				for (j = 0; j < graph_node_list[i].size; j++){
@@ -907,7 +904,7 @@ int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2){
 	}
 }
 
-int32_t compare_labelTabPtr_connectivity(const void* arg1, const void* arg2){
+int32_t compare_labelTabPtr_connectivity(void* arg1, void* arg2){
 	struct labelTab* label_item1 = *(struct labelTab**)arg1;
 	struct labelTab* label_item2 = *(struct labelTab**)arg2;
 
