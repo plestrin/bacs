@@ -35,7 +35,7 @@ void assemblyScan_scan(struct assembly* assembly){
 		for (ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, 0); ptr != NULL; ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, ptr - block->data)){
 			printf("  - %s @ 0x%08x\n", xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&xedd)), block->header.address + (ptr - block->data));
 		}
-				
+
 		if ((nb_instruction = asmBlock_count_nb_ins(block)) > ASSEMBLYSCAN_NB_MIN_INSTRUCTION){
 			printf("  - bbl of %u instruction @ 0x%08x\n", nb_instruction, block->header.address);
 		}
