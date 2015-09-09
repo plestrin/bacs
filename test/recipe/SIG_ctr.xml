@@ -393,9 +393,9 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="440"/>
-			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="xtea_enc" number="385"/> <!-- the last encryption round is deleted by the remove subexpression function. May be caused by black listed fontion calls -> ESP flaw -->
+			<algo name="xtea_enc_32_v2" number="7"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 

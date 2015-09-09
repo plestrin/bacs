@@ -221,7 +221,7 @@ static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCi
 static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc);
+static void cisc_decode_special_ret(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc);
 
 static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_generic_smid2(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
@@ -267,6 +267,10 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 				}
 				break;
 			}
+			case XED_ICLASS_CDQ 		: {
+				log_warn("no translation for CDQ");
+				break;
+			}
 			case XED_ICLASS_CMP 		: {break;}
 			case XED_ICLASS_DEC 		: {
 				cisc_decode_special_dec(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
@@ -289,6 +293,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 			case XED_ICLASS_JNB 		: {break;}
 			case XED_ICLASS_JNBE 		: {break;}
 			case XED_ICLASS_JNL 		: {break;}
+			case XED_ICLASS_JNS 		: {break;}
 			case XED_ICLASS_JNZ 		: {break;}
 			case XED_ICLASS_JZ 			: {break;}
 			case XED_ICLASS_LEAVE 		: {
@@ -377,7 +382,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 				break;
 			}
 			case XED_ICLASS_RET_FAR 	: {
-				cisc_decode_special_ret(&it, &cisc);
+				cisc_decode_special_ret(assembly, &it, &cisc);
 				if (stack_ptr == 0){
 					log_err(" the bottom of the stack has been reached");
 				}
@@ -387,7 +392,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 				break;
 			}
 			case XED_ICLASS_RET_NEAR 	: {
-				cisc_decode_special_ret(&it, &cisc);
+				cisc_decode_special_ret(assembly, &it, &cisc);
 				if (stack_ptr == 0){
 					log_err(" the bottom of the stack has been reached");
 				}
@@ -1418,7 +1423,7 @@ static void cisc_decode_special_push(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
 }
 
-static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_ret(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 1;
 
@@ -1433,7 +1438,12 @@ static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCi
 	cisc->ins[0].input_operand[1].instruction_index 		= it->instruction_index;
 	cisc->ins[0].input_operand[1].variable 					= NULL;
 	cisc->ins[0].input_operand[1].type 						= ASM_OPERAND_IMM;
-	cisc->ins[0].input_operand[1].operand_type.imm 			= 4;
+	if (it->instruction_size == 3){
+		cisc->ins[0].input_operand[1].operand_type.imm 		= 4 + ((uint64_t)assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset + 1] << 8) + assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset + 2];
+	}
+	else{
+		cisc->ins[0].input_operand[1].operand_type.imm 		= 4;
+	}
 	cisc->ins[0].output_operand.size 						= 32;
 	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
 	cisc->ins[0].output_operand.variable 					= NULL;

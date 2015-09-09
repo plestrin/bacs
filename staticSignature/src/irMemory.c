@@ -10,7 +10,7 @@
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 		1
 #define IRMEMORY_ALIAS_HEURISTIC_CONCRETE 	1
-#define IRMEMORY_ALIAS_HEURISTIC_TOTAL 		0
+#define IRMEMORY_ALIAS_HEURISTIC_TOTAL 		1
 
 static int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
 
@@ -364,6 +364,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
 						if (operation_prev->operation_type.mem.access.con_addr != operation_next->operation_type.mem.access.con_addr){
 							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.access.con_addr, operation_next->operation_type.mem.access.con_addr);
+							printf("  - %p ", (void*)access_list[i - 1]); ir_print_node(operation_prev, stdout); fputs("\n", stdout);
+							printf("  - %p ", (void*)access_list[i - 0]); ir_print_node(operation_next, stdout); fputs("\n", stdout);
 
 							operation_prev->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							operation_next->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
