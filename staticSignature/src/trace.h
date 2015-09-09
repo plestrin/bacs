@@ -66,7 +66,7 @@ struct trace* trace_load_elf(const char* file_path);
 
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
 
-#define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop)
+#define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop, (trace)->mem_trace)
 
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst);
 

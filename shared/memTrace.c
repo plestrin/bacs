@@ -10,6 +10,20 @@
 #include "memTrace.h"
 #include "base.h"
 
+void memAddress_print(struct memAddress* address){
+	if (address->descriptor & 0x00000001){
+		printf("R:%u:", (address->descriptor >> 8) & 0x000000ff);
+	}
+	else if (address->descriptor & 0x00010000){
+		printf("W:%u:", (address->descriptor >> 24) & 0x000000ff);
+	}
+	else{
+		printf("??:");
+	}
+
+	printf("0x%08x", address->address);
+}
+
 int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t pid, uint32_t tid){
 	char file_path[PATH_MAX];
 

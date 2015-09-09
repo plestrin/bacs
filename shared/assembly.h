@@ -87,7 +87,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 
 #define assembly_get_nb_instruction(assembly) ((assembly)->nb_dyn_instruction)
 
-void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop);
+void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop, void* mem_trace);
 
 struct memAccessExtrude{
 	uint64_t index_start;

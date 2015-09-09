@@ -5,6 +5,7 @@
 #include <search.h>
 
 #include "assembly.h"
+#include "memTrace.h"
 #include "mapFile.h"
 #include "array.h"
 #include "printBuffer.h"
@@ -882,12 +883,19 @@ static void assembly_print_opcode_hex(uint8_t* buffer, uint32_t size, uint32_t p
 	}
 }
 
-void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
+void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop, void* mem_trace){
+	#define ASSEMBLY_PRINT_PADDING_INDEX 	"10"
+	#define ASSEMBLY_PRINT_PADDING_OPCODE 	8
+	#define ASSEMBLY_PRINT_PADDING_STRING 	"40"
+	#define ASSEMBLY_PRINT_BUFFER_SIZE 		256
+
 	uint32_t 					i;
 	struct instructionIterator 	it;
-	char 						buffer[256];
+	char 						buffer[ASSEMBLY_PRINT_BUFFER_SIZE];
 	xed_print_info_t 			print_info;
 	uint32_t 					prev_dyn_block_index;
+	uint32_t 					j;
+	uint32_t 					nb_mem_access;
 
 	if (assembly_get_instruction(assembly, &it, start)){
 		log_err_m("unable to fetch instruction %u from the assembly", start);
@@ -899,7 +907,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	}
 
 	xed_init_print_info(&print_info);
-	print_info.blen 					= 256;
+	print_info.blen 					= ASSEMBLY_PRINT_BUFFER_SIZE;
 	print_info.buf  					= buffer;
 	print_info.context  				= NULL;
 	print_info.disassembly_callback		= NULL;
@@ -909,9 +917,20 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 	print_info.syntax 					= XED_SYNTAX_INTEL;
 
 	if (xed_format_generic(&print_info)){
-		printf("0x%08x . ", it.instruction_address);
-		assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, 8);
-		printf("%s\n", buffer);
+		printf("0x%08x * %-" ASSEMBLY_PRINT_PADDING_INDEX "u", it.instruction_address, it.instruction_index);
+		assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, ASSEMBLY_PRINT_PADDING_OPCODE);
+		printf("%-" ASSEMBLY_PRINT_PADDING_STRING "s", buffer);
+
+		if (mem_trace != NULL && ((struct memTrace*)mem_trace)->mem_addr_buffer != NULL && (nb_mem_access = assembly_get_instruction_nb_mem_access(&(it.xedd))) > 0){
+			for (j = 0; j < nb_mem_access ; j++){
+				memAddress_print(((struct memTrace*)mem_trace)->mem_addr_buffer + it.mem_access_index + j);
+				if (it.instruction_address != ((struct memTrace*)mem_trace)->mem_addr_buffer[it.mem_access_index + j].pc){
+					log_err("memory access has a different pc address");
+				}
+			}
+		}
+			
+		putchar('\n');
 	}
 	else{
 		log_err("xed_format_generic returns an error code");
@@ -930,7 +949,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 		}
 
 		xed_init_print_info(&print_info);
-		print_info.blen 					= 256;
+		print_info.blen 					= ASSEMBLY_PRINT_BUFFER_SIZE;
 		print_info.buf  					= buffer;
 		print_info.context  				= NULL;
 		print_info.disassembly_callback		= NULL;
@@ -940,14 +959,20 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop){
 		print_info.syntax 					= XED_SYNTAX_INTEL;
 
 		if (xed_format_generic(&print_info)){
-			if (prev_dyn_block_index != it.dyn_block_index){
-				printf("0x%08x . ", it.instruction_address);
+			printf("0x%08x %c %-" ASSEMBLY_PRINT_PADDING_INDEX "u", it.instruction_address, (prev_dyn_block_index != it.dyn_block_index) ? '*' : ' ', it.instruction_index);
+			assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, ASSEMBLY_PRINT_PADDING_OPCODE);
+			printf("%-" ASSEMBLY_PRINT_PADDING_STRING "s", buffer);
+
+			if (mem_trace != NULL && ((struct memTrace*)mem_trace)->mem_addr_buffer != NULL && (nb_mem_access = assembly_get_instruction_nb_mem_access(&(it.xedd))) > 0){
+				for (j = 0; j < nb_mem_access ; j++){
+					memAddress_print(((struct memTrace*)mem_trace)->mem_addr_buffer + it.mem_access_index + j);
+					if (it.instruction_address != ((struct memTrace*)mem_trace)->mem_addr_buffer[it.mem_access_index + j].pc){
+						log_err("memory access has a different pc address");
+					}
+				}
 			}
-			else{
-				printf("0x%08x   ", it.instruction_address);
-			}
-			assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, 8);
-			printf("%s\n", buffer);
+
+			putchar('\n');
 		}
 		else{
 			log_err("xed_format_generic returns an error code");
@@ -1020,7 +1045,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 	}
 
 	for (i = 0, offset = 0, mem_access_delete_count = 0; i < assembly->nb_dyn_block; i++){
-		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i) &&  i + 1 < assembly->nb_dyn_block){
 
 			/* LINUX - resolve @ plt */
 			if (i - offset >= 4){
@@ -1041,15 +1066,26 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 									mem_access_delete_count += extrude.index_stop - extrude.index_start;
 								}
 
-								assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
-								assembly->dyn_blocks[i - offset - 3].mem_access_count 	= assembly->dyn_blocks[i - offset - 4].mem_access_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_mem_access;
-								assembly->dyn_blocks[i - offset - 3].block 				= NULL;
+								if (dynBlock_is_invalid(assembly->dyn_blocks + i + 1) || assembly->dyn_blocks[i + 1].block->header.address != assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size){
+									log_warn("black listed function call has not returned, ESP value could be incorrect");
 
-								assembly->dyn_blocks[i - offset - 2].instruction_count 	= assembly->dyn_blocks[i - offset - 3].instruction_count;
-								assembly->dyn_blocks[i - offset - 2].mem_access_count 	= assembly->dyn_blocks[i - offset - 3].mem_access_count;
-								assembly->dyn_blocks[i - offset - 2].block 				= (void*)(-1);
+									assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 3].mem_access_count 	= assembly->dyn_blocks[i - offset - 4].mem_access_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 3].block 				= NULL;
 
-								offset += 2;
+									offset += 3;
+								}
+								else{
+									assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 3].mem_access_count 	= assembly->dyn_blocks[i - offset - 4].mem_access_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 3].block 				= NULL;
+
+									assembly->dyn_blocks[i - offset - 2].instruction_count 	= assembly->dyn_blocks[i - offset - 3].instruction_count;
+									assembly->dyn_blocks[i - offset - 2].mem_access_count 	= assembly->dyn_blocks[i - offset - 3].mem_access_count;
+									assembly->dyn_blocks[i - offset - 2].block 				= (void*)(-1);
+
+									offset += 2;
+								}
 
 								modify = 1;
 								continue;
@@ -1078,13 +1114,24 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 									mem_access_delete_count += extrude.index_stop - extrude.index_start;
 								}
 
-								assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
-								assembly->dyn_blocks[i - offset - 1].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
-								assembly->dyn_blocks[i - offset - 1].block 				= NULL;
+								if (dynBlock_is_invalid(assembly->dyn_blocks + i + 1) || assembly->dyn_blocks[i + 1].block->header.address != assembly->dyn_blocks[i - offset - 2].block->header.address + assembly->dyn_blocks[i - offset - 2].block->header.size){
+									log_warn("black listed function call has not returned, ESP value could be incorrect");
 
-								assembly->dyn_blocks[i - offset - 0].instruction_count 	= assembly->dyn_blocks[i - offset - 1].instruction_count;
-								assembly->dyn_blocks[i - offset - 0].mem_access_count 	= assembly->dyn_blocks[i - offset - 1].mem_access_count;
-								assembly->dyn_blocks[i - offset - 0].block 				= (void*)(-1);
+									assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 1].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 1].block 				= NULL;
+
+									offset += 1;
+								}
+								else{
+									assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 1].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 1].block 				= NULL;
+
+									assembly->dyn_blocks[i - offset - 0].instruction_count 	= assembly->dyn_blocks[i - offset - 1].instruction_count;
+									assembly->dyn_blocks[i - offset - 0].mem_access_count 	= assembly->dyn_blocks[i - offset - 1].mem_access_count;
+									assembly->dyn_blocks[i - offset - 0].block 				= (void*)(-1);
+								}
 
 								modify = 1;
 								continue;

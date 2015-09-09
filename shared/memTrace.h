@@ -26,6 +26,8 @@ struct memAddress{
 
 #define MEMADDRESS_INVALID 0x00000000
 
+void memAddress_print(struct memAddress* address);
+
 static inline ADDRESS memAddress_get_and_check(struct memAddress* mem_addr, uint32_t descriptor){
 	if (mem_addr == NULL){
 		return MEMADDRESS_INVALID;
