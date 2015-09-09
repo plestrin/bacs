@@ -12,11 +12,11 @@ TEST_GRAPHREADER		:= test_graphReader
 TEST_VARIABLERANGE 		:= test_variableRange
 TEST_READBUFFER 		:= test_readBuffer
 
-CC						:= clang
+CC						:= gcc
 # gcc FLAGS
-# CFLAGS				:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 # clang FLAGS
-CFLAGS 					:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
+##CFLAGS 				:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 LDFLAGS					:=
 
 all: 										\

@@ -534,24 +534,26 @@ static struct graphReaderNode* graphReader_get_node(struct graphReaderCursor* re
 
 	if ((new_node = (struct graphReaderNode*)malloc(sizeof(struct graphReaderNode))) == NULL){
 		log_err("unable to allocate memory");
+		return NULL;
+	}
+	
+	new_node->id = (uint32_t)atoi(reader_cursor->cursor);
+
+	existing_node = (struct graphReaderNode**)tsearch((void*)new_node, binary_tree_root, graphReaderNode_compare_id);
+	if (existing_node == NULL){
+		log_err("tsearch failed");
+		free(new_node);
+		return NULL;
+	}
+	
+	if (*existing_node != new_node){
+		free(new_node);
+		new_node = *existing_node;
 	}
 	else{
-		new_node->id = (uint32_t)atoi(reader_cursor->cursor);
-
-		existing_node = (struct graphReaderNode**)tsearch((void*)new_node, binary_tree_root, graphReaderNode_compare_id);
-		if (existing_node == NULL){
-			log_err("tsearch failed");
-			free(new_node);
-		}
-		else if (*existing_node != new_node){
-			free(new_node);
-			new_node = *existing_node;
-		}
-		else{
-			new_node->ptr = NULL;
-			if (callback->callback_create_node != NULL){
-				new_node->ptr = callback->callback_create_node(callback->arg);
-			}
+		new_node->ptr = NULL;
+		if (callback->callback_create_node != NULL){
+			new_node->ptr = callback->callback_create_node(callback->arg);
 		}
 	}
 
