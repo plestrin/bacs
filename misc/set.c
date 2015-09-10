@@ -85,7 +85,7 @@ void* set_get(struct set* set, uint32_t index){
 
 	for (block_cursor = &(set->block), nb = 0; block_cursor != NULL; block_cursor = block_cursor->next){
 		if (nb + set->nb_element_block > index){
-			return block_cursor->data + (index - nb);
+			return block_cursor->data + (index - nb) * set->element_size;
 		}
 		else{
 			nb += set->nb_element_block;

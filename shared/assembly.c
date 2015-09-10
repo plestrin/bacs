@@ -485,6 +485,11 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	void* 				bintree_root 		= NULL;
 	void* 				realloc_mapping;
 
+	if (length == 0){
+		log_err("Unable to export 0 length segment");
+		return -1;
+	}
+
 	while(down < up){
 		idx_block_start  = (up + down) / 2;
 		if (!dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_start)){
