@@ -170,13 +170,6 @@ enum irOperationType{
 	IR_OPERATION_TYPE_SYMBOL
 };
 
-struct irMemAccess{
-	struct node* 	prev;
-	struct node* 	next;
-	uint32_t 		order;
-	ADDRESS 		con_addr;
-};
-
 #define IR_OPERATION_STATUS_FLAG_NONE 		0x00000000
 #define IR_OPERATION_STATUS_FLAG_FINAL 		0x00000001
 #define IR_OPERATION_STATUS_FLAG_ERROR 		0x80000000
@@ -196,7 +189,10 @@ struct irOperation{
 			enum irRegister 		reg;
 		} 							in_reg;
 		struct {
-			struct irMemAccess 		access;
+			struct node* 			prev;
+			struct node* 			next;
+			uint32_t 				order;
+			ADDRESS 				con_addr;
 		} 							mem;
 		struct {
 			uint64_t 				value;
@@ -222,15 +218,15 @@ struct irOperation{
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)(((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))) | ((((op)->operation_type.imm.value >> ((op)->size - 1)) & 0x0000000000000001ULL) ? (0xffffffffffffffffULL << (op)->size) : 0)))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
 
-#define ir_mem_get_next(op) ((op).operation_type.mem.access.next);
-#define ir_mem_get_prev(op) ((op).operation_type.mem.access.prev);
+#define ir_mem_get_next(op) ((op).operation_type.mem.next);
+#define ir_mem_get_prev(op) ((op).operation_type.mem.prev);
 
 static inline void ir_mem_remove(struct irOperation* operation){
-	if (operation->operation_type.mem.access.next != NULL){
-		ir_node_get_operation(operation->operation_type.mem.access.next)->operation_type.mem.access.prev = operation->operation_type.mem.access.prev;
+	if (operation->operation_type.mem.next != NULL){
+		ir_node_get_operation(operation->operation_type.mem.next)->operation_type.mem.prev = operation->operation_type.mem.prev;
 	}
-	if (operation->operation_type.mem.access.prev != NULL){
-		ir_node_get_operation(operation->operation_type.mem.access.prev)->operation_type.mem.access.next = operation->operation_type.mem.access.next;
+	if (operation->operation_type.mem.prev != NULL){
+		ir_node_get_operation(operation->operation_type.mem.prev)->operation_type.mem.next = operation->operation_type.mem.next;
 	}
 }
 

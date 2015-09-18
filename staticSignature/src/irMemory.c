@@ -235,7 +235,7 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 	struct node* 			addr_cursor;
 	struct addrFingerprint 	addr1_fgp;
 
-	node_cursor = ir_node_get_operation(node1)->operation_type.mem.access.next;
+	node_cursor = ir_node_get_operation(node1)->operation_type.mem.next;
 	if (node_cursor == NULL){
 		log_err("found NULL pointer instead of the expected element");
 		return NULL;
@@ -249,8 +249,8 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 			}
 			else{
 				#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE == 1
-				if (ir_node_get_operation(node1)->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
-					if (ir_node_get_operation(node1)->operation_type.mem.access.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.access.con_addr){
+				if (ir_node_get_operation(node1)->operation_type.mem.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.con_addr != MEMADDRESS_INVALID){
+					if (ir_node_get_operation(node1)->operation_type.mem.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.con_addr){
 						return node_cursor;
 					}
 					#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
@@ -292,7 +292,7 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 		#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
 		next:
 		#endif
-		node_cursor = operation_cursor->operation_type.mem.access.next;
+		node_cursor = operation_cursor->operation_type.mem.next;
 		if (node_cursor == NULL){
 			log_err("found NULL pointer instead of the expected element");
 			break;
@@ -361,9 +361,9 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					operation_next = ir_node_get_operation(access_list[i]);
 
 					#ifdef IR_FULL_CHECK
-					if (operation_prev->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
-						if (operation_prev->operation_type.mem.access.con_addr != operation_next->operation_type.mem.access.con_addr){
-							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.access.con_addr, operation_next->operation_type.mem.access.con_addr);
+					if (operation_prev->operation_type.mem.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.con_addr != MEMADDRESS_INVALID){
+						if (operation_prev->operation_type.mem.con_addr != operation_next->operation_type.mem.con_addr){
+							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.con_addr, operation_next->operation_type.mem.con_addr);
 							printf("  - %p ", (void*)access_list[i - 1]); ir_print_node(operation_prev, stdout); putchar('\n');
 							printf("  - %p ", (void*)access_list[i - 0]); ir_print_node(operation_next, stdout); putchar('\n');
 
@@ -615,7 +615,7 @@ struct memAccessToken{
 static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node* current_node){
 	struct node* node_cursor;
 
-	for (node_cursor = ir_node_get_operation(current_node)->operation_type.mem.access.prev; node_cursor != NULL; node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.access.prev){
+	for (node_cursor = ir_node_get_operation(current_node)->operation_type.mem.prev; node_cursor != NULL; node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.prev){
 		if (node_cursor == token->node){
 			return 1;
 		}
@@ -648,16 +648,16 @@ void ir_simplify_concrete_memory_access(struct ir* ir){
 		return;
 	}
 
-	while (operation_cursor->operation_type.mem.access.prev != NULL){
-		node_cursor = operation_cursor->operation_type.mem.access.prev;
+	while (operation_cursor->operation_type.mem.prev != NULL){
+		node_cursor = operation_cursor->operation_type.mem.prev;
 		operation_cursor = ir_node_get_operation(node_cursor);
 	}
 
 	for ( ; node_cursor != NULL; node_cursor = next_node_cursor){
 		operation_cursor = ir_node_get_operation(node_cursor);
-		next_node_cursor = operation_cursor->operation_type.mem.access.next;
+		next_node_cursor = operation_cursor->operation_type.mem.next;
 
-		if (operation_cursor->operation_type.mem.access.con_addr == MEMADDRESS_INVALID){
+		if (operation_cursor->operation_type.mem.con_addr == MEMADDRESS_INVALID){
 			log_warn("a memory access has an incorrect concrete address, further simplications might be incorrect");
 			continue;
 		}
@@ -668,7 +668,7 @@ void ir_simplify_concrete_memory_access(struct ir* ir){
 		}
 
 		new_token->node 	= node_cursor;
-		new_token->address 	= operation_cursor->operation_type.mem.access.con_addr;
+		new_token->address 	= operation_cursor->operation_type.mem.con_addr;
 
 		existing_token = (struct memAccessToken**)tsearch((void*)new_token, &binary_tree_root, compare_address_memToken);
 		if (existing_token == NULL){
@@ -727,10 +727,10 @@ static int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 	struct irOperation* op1 = ir_node_get_operation(access1);
 	struct irOperation* op2 = ir_node_get_operation(access2);
 
-	if (op1->operation_type.mem.access.order < op2->operation_type.mem.access.order){
+	if (op1->operation_type.mem.order < op2->operation_type.mem.order){
 		return -1;
 	}
-	else if (op1->operation_type.mem.access.order > op2->operation_type.mem.access.order){
+	else if (op1->operation_type.mem.order > op2->operation_type.mem.order){
 		return 1;
 	}
 	else{

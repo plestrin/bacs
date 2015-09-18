@@ -561,10 +561,10 @@ static int32_t accessEntry_compare_order(const void* element1, const void* eleme
 	mem_access1 = ir_node_get_operation(edge_get_dst(entry1->access));
 	mem_access2 = ir_node_get_operation(edge_get_dst(entry2->access));
 
-	if (mem_access1->operation_type.mem.access.order < mem_access2->operation_type.mem.access.order){
+	if (mem_access1->operation_type.mem.order < mem_access2->operation_type.mem.order){
 		return -1;
 	}
-	else if (mem_access1->operation_type.mem.access.order > mem_access2->operation_type.mem.access.order){
+	else if (mem_access1->operation_type.mem.order > mem_access2->operation_type.mem.order){
 		return 1;
 	}
 	else{
@@ -817,8 +817,8 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 			struct node* 		node_mem_access2 = edge_get_dst(group->entries[nb_entry]->access); 																	\
 			struct irOperation* op_mem_access1 = ir_node_get_operation(node_mem_access1); 																			\
 			struct irOperation* op_mem_access2 = ir_node_get_operation(node_mem_access2); 																			\
-			ADDRESS 			address1 = op_mem_access1->operation_type.mem.access.con_addr; 																		\
-			ADDRESS 			address2 = op_mem_access2->operation_type.mem.access.con_addr; 																		\
+			ADDRESS 			address1 = op_mem_access1->operation_type.mem.con_addr; 																			\
+			ADDRESS 			address2 = op_mem_access2->operation_type.mem.con_addr; 																			\
 																																									\
 			if (address1 != MEMADDRESS_INVALID && address2 != MEMADDRESS_INVALID){ 																					\
 				if (address1 + size != address2){ 																													\
@@ -854,9 +854,6 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 
 			group->nb_entry = nb_entry + 1;
 
-			#ifdef IR_FULL_CHECK
-			printf("\tscheduling group i=%u ", i); accessGroup_print(group, stdout); putchar('\n'); /* pour le debug */
-			#endif
 			if (accessGroup_check_aliasing(group, table->ir)){
 				if (array_add(table->group_array, group) < 0){
 					log_err("unable to add element to array");
@@ -899,10 +896,6 @@ static void accessTable_regroup(const void* data, const VISIT which, int32_t dep
 		return;
 	}
 
-	#ifdef IR_FULL_CHECK
-	printf("Table: "); accessTable_print(table, mapping, stdout); putchar('\n'); /* pour le debug */
-	#endif
-
 	for (i = 0; i < array_get_length(&(table->access_array)); i++){	
 		group.entries[0] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
 		if (group.entries[0]->offset & 0x0000000000000003){
@@ -913,7 +906,7 @@ static void accessTable_regroup(const void* data, const VISIT which, int32_t dep
 		{
 			struct irOperation* op_mem_access = ir_node_get_operation(edge_get_dst(group.entries[0]->access));
 
-			if (op_mem_access->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && op_mem_access->operation_type.mem.access.con_addr & 0x0000000000000003){
+			if (op_mem_access->operation_type.mem.con_addr != MEMADDRESS_INVALID && op_mem_access->operation_type.mem.con_addr & 0x0000000000000003){
 				log_warn("memory access seems to be aligned but concrete address is not");
 			}
 		}

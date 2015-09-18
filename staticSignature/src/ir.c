@@ -78,16 +78,16 @@ struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct 
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_IN_MEM;
-		operation->operation_type.mem.access.prev 		= prev;
-		operation->operation_type.mem.access.next 		= NULL;
+		operation->operation_type.mem.prev 				= prev;
+		operation->operation_type.mem.next 				= NULL;
 		if (prev == NULL){
-			operation->operation_type.mem.access.order 	= 1;
+			operation->operation_type.mem.order 		= 1;
 		}
 		else{
-			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
-			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
+			ir_node_get_operation(prev)->operation_type.mem.next = node;
+			operation->operation_type.mem.order 		= ir_node_get_operation(prev)->operation_type.mem.order + 1;
 		}
-		operation->operation_type.mem.access.con_addr 	= concrete_address;
+		operation->operation_type.mem.con_addr 			= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
@@ -111,16 +111,16 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_OUT_MEM;
-		operation->operation_type.mem.access.prev 		= prev;
-		operation->operation_type.mem.access.next 		= NULL;
+		operation->operation_type.mem.prev 				= prev;
+		operation->operation_type.mem.next 				= NULL;
 		if (prev == NULL){
-			operation->operation_type.mem.access.order 	= 1;
+			operation->operation_type.mem.order 		= 1;
 		}
 		else{
-			ir_node_get_operation(prev)->operation_type.mem.access.next = node;
-			operation->operation_type.mem.access.order 	= ir_node_get_operation(prev)->operation_type.mem.access.order + 1;
+			ir_node_get_operation(prev)->operation_type.mem.next = node;
+			operation->operation_type.mem.order 		= ir_node_get_operation(prev)->operation_type.mem.order + 1;
 		}
-		operation->operation_type.mem.access.con_addr 	= concrete_address;
+		operation->operation_type.mem.con_addr 			= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_FINAL;
