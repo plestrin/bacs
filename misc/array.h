@@ -65,7 +65,7 @@ struct array* array_create(uint32_t element_size);
 int32_t array_init(struct array* array, uint32_t element_size);
 int32_t array_add(struct array* array, void* element);
 
-static inline void* array_get(struct array* array, uint32_t index){
+static inline void* array_get(const struct array* array, uint32_t index){
 	struct arrayPage* 	page;
 	uint32_t 			local_offset;
 

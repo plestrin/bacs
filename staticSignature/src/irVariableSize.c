@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <search.h>
+#include <string.h>
 
 #include "irVariableSize.h"
 #include "dagPartialOrder.h"
@@ -578,36 +579,42 @@ struct accessGroup{
 	struct accessEntry* entries[IRVARIABLESIZE_GROUP_MAX_SIZE];
 };
 
-void accessGroup_print(struct accessGroup* group, FILE* file){
+void accessGroup_print(const struct accessGroup* group, FILE* file){
 	uint32_t i;
 
-	fputs("{", file);
+	fputc('{', file);
 	for (i = 0; i < group->nb_entry; i++){
-		if (i == group->nb_entry - 1){
-			fprintf(file, "%c:0x%llx:%u", (ir_node_get_operation(edge_get_dst(group->entries[i]->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', group->entries[i]->offset, group->entries[i]->size);
+		if (ir_node_get_operation(edge_get_dst(group->entries[i]->access))->type == IR_OPERATION_TYPE_IN_MEM){
+			fputc('R', file);
 		}
 		else{
-			fprintf(file, "%c:0x%llx:%u ", (ir_node_get_operation(edge_get_dst(group->entries[i]->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', group->entries[i]->offset, group->entries[i]->size);
+			fputc('W', file);
+		}
+		fprintf(file, ":0x%llx:%u:%p", group->entries[i]->offset, group->entries[i]->size, (void*)group->entries[i]);
+		if (i != group->nb_entry - 1){
+			fputc(' ', file);
 		}
 	}
-	fputs("}", file);
+	fputc('}', file);
 }
 
-static uint32_t accessGroup_check_aliasing(struct accessGroup* group, struct ir* ir){
-	uint32_t 		i;
-	enum aliasType 	alias_type;
+static uint32_t accessGroup_check_aliasing(const struct accessGroup* group, struct ir* ir){
+	uint32_t 			i;
+	enum aliasType 		alias_type;
+	struct accessGroup 	local_group;
 
-	qsort(group->entries, group->nb_entry, sizeof(struct accessEntry*), accessEntry_compare_order);
+	memcpy(&local_group, group, sizeof(struct accessGroup));
+	qsort(local_group.entries, local_group.nb_entry, sizeof(struct accessEntry*), accessEntry_compare_order);
 
-	if (ir_node_get_operation(edge_get_dst(group->entries[0]->access))->type == IR_OPERATION_TYPE_IN_MEM){
+	if (ir_node_get_operation(edge_get_dst(local_group.entries[0]->access))->type == IR_OPERATION_TYPE_IN_MEM){
 		alias_type = ALIAS_OUT;
 	}
 	else{
 		alias_type = ALIAS_ALL;
 	}
 
-	for (i = 0; i + 1 < group->nb_entry; i++){
-		if(ir_normalize_search_alias_conflict(edge_get_dst(group->entries[i]->access), edge_get_dst(group->entries[group->nb_entry - 1]->access), alias_type, ALIASING_STRATEGY_CHECK, ir->range_seed)){
+	for (i = 0; i + 1 < local_group.nb_entry; i++){
+		if(ir_normalize_search_alias_conflict(edge_get_dst(local_group.entries[i]->access), edge_get_dst(local_group.entries[local_group.nb_entry - 1]->access), alias_type, ALIASING_STRATEGY_CHECK, ir->range_seed)){
 			return 0;
 		}
 	}
@@ -637,22 +644,23 @@ static enum irOpcode accessGroup_choose_part_opcode(uint32_t offset, uint32_t si
 static void accessGroup_commit(struct accessGroup* group, struct ir* ir, uint8_t* modification){
 	uint32_t 		i;
 	uint32_t 		offset;
-	enum irOpcode 	opcode;
-	struct node*	root;
-	struct node*	new_node;
 
 	if (ir_node_get_operation(edge_get_dst(group->entries[0]->access))->type == IR_OPERATION_TYPE_IN_MEM){
+		enum irOpcode 	opcode;
+		struct node*	part_node;
+		struct node*	root;
+
 		root = edge_get_dst(group->entries[0]->access);
 		for (i = 0, offset = 0; i < group->nb_entry; i++){
 			opcode = accessGroup_choose_part_opcode(offset, group->entries[i]->size * 8);
 			if (opcode != IR_INVALID){
-				new_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, group->entries[i]->size * 8, opcode, IR_OPERATION_DST_UNKOWN);
-				if (new_node == NULL){
+				part_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, group->entries[i]->size * 8, opcode, IR_OPERATION_DST_UNKOWN);
+				if (part_node == NULL){
 					log_err("unable to add instruction to IR");
 				}
 				else{
-					graph_transfert_src_edge(&(ir->graph), new_node, edge_get_dst(group->entries[i]->access));
-					if (ir_add_dependence(ir, root, new_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					graph_transfert_src_edge(&(ir->graph), part_node, edge_get_dst(group->entries[i]->access));
+					if (ir_add_dependence(ir, root, part_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 						log_err("unable to add dependency to IR");
 					}
 				}
@@ -671,12 +679,12 @@ static void accessGroup_commit(struct accessGroup* group, struct ir* ir, uint8_t
 					return;
 				}
 
-				new_node = ir_add_immediate(ir, 32, 16);
-				if (new_node == NULL){
+				part_node = ir_add_immediate(ir, 32, 16);
+				if (part_node == NULL){
 					log_err("unable to add immediate to IR");
 				}
 				else{
-					if (ir_add_dependence(ir, new_node, root, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+					if (ir_add_dependence(ir, part_node, root, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
 						log_err("unable to add dependency to IR");
 					}
 				}
@@ -686,17 +694,85 @@ static void accessGroup_commit(struct accessGroup* group, struct ir* ir, uint8_t
 				}
 			}
 		}
+
+		for (i = 1; i < group->nb_entry; i++){
+			ir_remove_node(ir, edge_get_dst(group->entries[i]->access));
+		}
+
+		ir_node_get_operation(edge_get_dst(group->entries[0]->access))->size = 32;
 	}
 	else{
-		log_warn("this case is not implemented yet");
-		return;
-	}
+		struct node* shl_node;
+		struct node* exp_node;
+		struct node* or_node;
+		struct node* imm_node;
+		struct edge* edge_cursor;
 
-	for (i = 1; i < group->nb_entry; i++){
-		ir_remove_node(ir, edge_get_dst(group->entries[i]->access));
-	}
+		or_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_OR, IR_OPERATION_DST_UNKOWN);
+		if (or_node == NULL){
+			log_err("unable to add instruction to IR");
+		}
+		else{
+			for (i = 0, offset = 0; i < group->nb_entry; i++){
+				for (edge_cursor = node_get_head_edge_dst(edge_get_dst(group->entries[i]->access)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+						break;
+					}
+				}
+				if (edge_cursor == NULL){
+					log_err("unable to locate direct operand");
+					continue;
+				}
 
-	ir_node_get_operation(edge_get_dst(group->entries[0]->access))->size = 32;
+				exp_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
+				if (exp_node == NULL){
+					log_err("unable to add instruction to IR");
+				}
+				else{
+					if (ir_add_dependence(ir, edge_get_src(edge_cursor), exp_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependency to IR");
+					}
+					if (i == 0){
+						if (ir_add_dependence(ir, exp_node, or_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependency to IR");
+						}
+						ir_remove_dependence(ir, edge_cursor);
+					}
+					else{
+						shl_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_SHL, IR_OPERATION_DST_UNKOWN);
+						if (shl_node == NULL){
+							log_err("unable to add instruction to IR");
+						}
+						else{
+							imm_node = ir_add_immediate(ir, 32, offset);
+							if (imm_node == NULL){
+								log_err("unable to add immediate to IR");
+							}
+							else{
+								if (ir_add_dependence(ir, imm_node, shl_node, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+									log_err("unable to add dependency to IR");
+								}
+							}
+							if (ir_add_dependence(ir, exp_node, shl_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+								log_err("unable to add dependency to IR");
+							}
+							if (ir_add_dependence(ir, shl_node, or_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+								log_err("unable to add dependency to IR");
+							}
+
+							ir_remove_node(ir, edge_get_dst(group->entries[i]->access));
+						}
+					}
+				}
+				offset += group->entries[i]->size * 8;
+			}
+
+			if (ir_add_dependence(ir, or_node, edge_get_dst(group->entries[0]->access), IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add dependency to IR");
+			}
+			ir_node_get_operation(edge_get_dst(group->entries[0]->access))->size = 32;
+		}
+	}
 
 	*modification = 1;
 }
@@ -708,7 +784,7 @@ struct accessTable{
 	struct array 	access_array;
 };
 
-void accessTable_print(struct accessTable* table, uint32_t* mapping, FILE* file){
+void accessTable_print(const struct accessTable* table, uint32_t* mapping, FILE* file){
 	uint32_t 			i;
 	struct accessEntry* entry;
 
@@ -734,6 +810,33 @@ void accessTable_print(struct accessTable* table, uint32_t* mapping, FILE* file)
 static uint32_t accessTable_generate_recursive_group(struct accessTable* table, uint32_t* mapping, struct accessGroup* group, uint32_t offset_start, uint32_t nb_entry, uint32_t size){
 	uint32_t i;
 
+	#ifdef IR_FULL_CHECK
+	#define accessGroup_check() 																																	\
+		{ 																																							\
+			struct node* 		node_mem_access1 = edge_get_dst(group->entries[0]->access); 																		\
+			struct node* 		node_mem_access2 = edge_get_dst(group->entries[nb_entry]->access); 																	\
+			struct irOperation* op_mem_access1 = ir_node_get_operation(node_mem_access1); 																			\
+			struct irOperation* op_mem_access2 = ir_node_get_operation(node_mem_access2); 																			\
+			ADDRESS 			address1 = op_mem_access1->operation_type.mem.access.con_addr; 																		\
+			ADDRESS 			address2 = op_mem_access2->operation_type.mem.access.con_addr; 																		\
+																																									\
+			if (address1 != MEMADDRESS_INVALID && address2 != MEMADDRESS_INVALID){ 																					\
+				if (address1 + size != address2){ 																													\
+					log_err_m("found group with concrete address incoherence, expected 0x%08x but get 0x%08x", address1 + size, address2); 							\
+					printf("  - %p ", (void*)node_mem_access1); ir_print_node(op_mem_access1, stdout); putchar('\n'); 												\
+					printf("  - %p ", (void*)node_mem_access2); ir_print_node(op_mem_access2, stdout); putchar('\n'); 												\
+																																									\
+					op_mem_access1->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\
+					op_mem_access2->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\
+																																									\
+					continue; 																																		\
+				} 																																					\
+			} 																																						\
+		}
+	#else
+	#define accessGroup_check()
+	#endif
+
 	for (i = offset_start; i < array_get_length(&(table->access_array)); i++){
 		group->entries[nb_entry] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
 		if (ir_node_get_operation(edge_get_dst(group->entries[0]->access))->type != ir_node_get_operation(edge_get_dst(group->entries[nb_entry]->access))->type){
@@ -747,9 +850,13 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 			continue;
 		}
 		else if (group->entries[nb_entry]->size + size == 4){
+			accessGroup_check()
+
 			group->nb_entry = nb_entry + 1;
 
-			printf("\tscheduling group i=%u ", i); accessGroup_print(group, stdout); printf("\n"); /* pour le debug */
+			#ifdef IR_FULL_CHECK
+			printf("\tscheduling group i=%u ", i); accessGroup_print(group, stdout); putchar('\n'); /* pour le debug */
+			#endif
 			if (accessGroup_check_aliasing(group, table->ir)){
 				if (array_add(table->group_array, group) < 0){
 					log_err("unable to add element to array");
@@ -760,6 +867,8 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 			}
 		}
 		else if (nb_entry != IRVARIABLESIZE_GROUP_MAX_SIZE - 1){
+			accessGroup_check()
+
 			if (accessTable_generate_recursive_group(table, mapping, group, i + 1, nb_entry + 1, size + group->entries[nb_entry]->size)){
 				return 1;
 			}
@@ -790,7 +899,9 @@ static void accessTable_regroup(const void* data, const VISIT which, int32_t dep
 		return;
 	}
 
-	printf("Table: "); accessTable_print(table, mapping, stdout); printf("\n"); /* pour le debug */
+	#ifdef IR_FULL_CHECK
+	printf("Table: "); accessTable_print(table, mapping, stdout); putchar('\n'); /* pour le debug */
+	#endif
 
 	for (i = 0; i < array_get_length(&(table->access_array)); i++){	
 		group.entries[0] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
@@ -798,8 +909,17 @@ static void accessTable_regroup(const void* data, const VISIT which, int32_t dep
 			continue;
 		}
 
+		#ifdef IR_FULL_CHECK
+		{
+			struct irOperation* op_mem_access = ir_node_get_operation(edge_get_dst(group.entries[0]->access));
+
+			if (op_mem_access->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && op_mem_access->operation_type.mem.access.con_addr & 0x0000000000000003){
+				log_warn("memory access seems to be aligned but concrete address is not");
+			}
+		}
+		#endif
+
 		if (accessTable_generate_recursive_group(table, mapping, &group, i + 1, 1, group.entries[0]->size)){
-			log_debug("Group creation stopped");
 			break;
 		}
 	}
