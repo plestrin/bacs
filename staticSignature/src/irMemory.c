@@ -38,7 +38,7 @@ static void ir_normalize_print_alias_conflict(struct node* node1, struct node* n
 		ir_print_location_node(addr1, NULL);
 		printf(", ");
 		ir_print_location_node(addr2, NULL);
-		printf("\n");
+		putchar('\n');
 	}
 	else{
 		log_err("unable to get memory access address");
@@ -364,8 +364,8 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->operation_type.mem.access.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.access.con_addr != MEMADDRESS_INVALID){
 						if (operation_prev->operation_type.mem.access.con_addr != operation_next->operation_type.mem.access.con_addr){
 							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.access.con_addr, operation_next->operation_type.mem.access.con_addr);
-							printf("  - %p ", (void*)access_list[i - 1]); ir_print_node(operation_prev, stdout); fputs("\n", stdout);
-							printf("  - %p ", (void*)access_list[i - 0]); ir_print_node(operation_next, stdout); fputs("\n", stdout);
+							printf("  - %p ", (void*)access_list[i - 1]); ir_print_node(operation_prev, stdout); putchar('\n');
+							printf("  - %p ", (void*)access_list[i - 0]); ir_print_node(operation_next, stdout); putchar('\n');
 
 							operation_prev->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							operation_next->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
@@ -526,7 +526,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				result = 1;
 			}
 			else if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size < operation2->size){
-				log_warn("simplification of memory access of different size (case STORE -> LOAD)");
+				log_warn_m("simplification of memory access of different size (case STORE:%u -> LOAD:%u)", operation1->size, operation2->size);
 			}
 			else{
 				graph_transfert_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2);

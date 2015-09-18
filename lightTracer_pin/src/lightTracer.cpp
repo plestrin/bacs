@@ -140,9 +140,11 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 							break;
 						}
 						else{
-							RTN_Open(routine);
-							RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)TOOL_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
-							RTN_Close(routine);
+							if (!SYM_IFuncResolver(RTN_Sym(routine))){
+								RTN_Open(routine);
+								RTN_InsertCall(routine, IPOINT_BEFORE, (AFUNPTR)TOOL_routine_analysis, IARG_PTR, cm_rtn, IARG_END);
+								RTN_Close(routine);
+							}
 						}
 					}
 				}
@@ -343,7 +345,7 @@ static int TOOL_init(const char* trace_dir_name, const char* white_list_file_nam
 /* ===================================================================== */
 
 int main(int argc, char * argv[]){
-	PIN_InitSymbols();
+	PIN_InitSymbolsAlt(SYMBOL_INFO_MODE(IFUNC_SYMBOLS | DEBUG_OR_EXPORT_SYMBOLS));
 
 	if (PIN_Init(argc, argv)){
 		std::cerr << "ERROR: in " << __func__ << ", unable to init PIN" << std::endl << KNOB_BASE::StringKnobSummary();

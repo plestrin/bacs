@@ -39,6 +39,8 @@ uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 	uint32_t 				offset;
 	uint32_t 				result;
 
+	disassembler_init();
+
 	for (offset = 0, result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(&xedd), result ++){
 		xed_decoded_inst_zero(&xedd);
 		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
@@ -1024,6 +1026,35 @@ static const uint8_t valid_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {1, 0, 0, 0, 0, 0
 #define SIZE_MAGIC_BLOCK 6
 static const uint8_t magic_block[SIZE_MAGIC_BLOCK] = {0x81, 0xc4, 0x04, 0x00, 0x00, 0x00};
 
+#define RM_BLACKLISTED_NESTED_FUNC 1
+
+#if RM_BLACKLISTED_NESTED_FUNC == 1
+static uint32_t assembly_search_return_blacklisted_func(struct assembly* assembly, uint32_t offset){
+	uint32_t 			i;
+	xed_decoded_inst_t 	xedd;
+
+	for (i = offset + 1; i + 1 < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i) && dynBlock_is_valid(assembly->dyn_blocks + i - 1) && dynBlock_is_valid(assembly->dyn_blocks + i + 1)){
+			if (!assembly_get_last_instruction(assembly->dyn_blocks[i - 1].block, &xedd)){
+				if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_RET_FAR || xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_RET_NEAR){
+					return i;
+				}
+				else{
+					log_warn("black listed function call recursion level is 1");
+					return offset;
+				}
+			}
+			else{
+				log_err("unable to fetch the last instruction of the block");
+				return offset;
+			}
+		}
+	}
+
+	return offset;
+}
+#endif
+
 int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, struct array** extrude_array){
 	union asmBlockMaintainer{
 		size_t 					size;
@@ -1059,10 +1090,48 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 						assembly_get_last_instruction(assembly->dyn_blocks[i - offset - 4].block, &xedd);
 						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
 							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_1, valid_bbl_1_linux_1, SIZE_BBL_1_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 2].block, buffer_bbl_2_linux_1, valid_bbl_2_linux_1, SIZE_BBL_2_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 3].block, buffer_bbl_3_linux_1, valid_bbl_3_linux_1, SIZE_BBL_3_LINUX_1)){
+								
+								#if RM_BLACKLISTED_NESTED_FUNC == 1
+								if (dynBlock_is_valid(assembly->dyn_blocks + i + 1) && assembly->dyn_blocks[i + 1].block->header.address != assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size){
+									uint32_t next_offset;
+									uint32_t prev_offset;
+
+									for (prev_offset = 0, next_offset = i + 1; next_offset > prev_offset; ){
+										prev_offset = next_offset;
+										next_offset = assembly_search_return_blacklisted_func(assembly, prev_offset);
+										if (assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size == assembly->dyn_blocks[next_offset + 1].block->header.address){
+											break;
+										}
+									}
+
+									if (next_offset > i + 1){
+										log_info_m("found LINUX nested black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
+
+										extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 3].mem_access_count; 
+										extrude.index_stop = assembly->dyn_blocks[next_offset + 1].mem_access_count;
+
+										offset += next_offset - i;
+										i = next_offset;
+									}
+									else{
+										log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
+
+										extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 3].mem_access_count; 
+										extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+									}
+								}
+								else{
+									log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
+
+									extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 3].mem_access_count; 
+									extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+								}
+								#else
 								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 3].instruction_count - 1);
 
 								extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 3].mem_access_count; 
 								extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+								#endif
 
 								if (array_add(*extrude_array, &extrude) < 0){
 									log_err("unable to add element to array");
@@ -1072,7 +1141,11 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 								}
 
 								if (dynBlock_is_invalid(assembly->dyn_blocks + i + 1) || assembly->dyn_blocks[i + 1].block->header.address != assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size){
-									log_warn("black listed function call has not returned, ESP value could be incorrect");
+									#if RM_BLACKLISTED_NESTED_FUNC == 1
+									log_warn("nested black listed function call, ESP value could be incorrect");
+									#else
+									log_warn("nested black listed function call, ESP value could be incorrect try turning RM_BLACKLISTED_NESTED_FUNC to 1");
+									#endif
 
 									assembly->dyn_blocks[i - offset - 3].instruction_count 	= assembly->dyn_blocks[i - offset - 4].instruction_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_ins;
 									assembly->dyn_blocks[i - offset - 3].mem_access_count 	= assembly->dyn_blocks[i - offset - 4].mem_access_count + assembly->dyn_blocks[i - offset - 4].block->header.nb_mem_access;
@@ -1148,39 +1221,38 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 
 			log_warn_m("unable to format black listed call @ %u", (i - offset > 0) ? assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins : 0);
 		}
-		else{
-			if (i - offset == 0){
-				assembly->dyn_blocks[i - offset].instruction_count 		= 0;
-				assembly->dyn_blocks[i - offset].mem_access_count 		= 0;
-				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+
+		if (i - offset == 0){
+			assembly->dyn_blocks[i - offset].instruction_count 		= 0;
+			assembly->dyn_blocks[i - offset].mem_access_count 		= 0;
+			assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+		}
+		else if (dynBlock_is_invalid(assembly->dyn_blocks + i - offset - 1)){
+			if (i - offset == 1){
+				assembly->dyn_blocks[i - offset].instruction_count 	= 0;
+				assembly->dyn_blocks[i - offset].mem_access_count 	= 0;
+				assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
 			}
-			else if (dynBlock_is_invalid(assembly->dyn_blocks + i - offset - 1)){
-				if (i - offset == 1){
-					assembly->dyn_blocks[i - offset].instruction_count 	= 0;
-					assembly->dyn_blocks[i - offset].mem_access_count 	= 0;
-					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
-				}
-				else if (assembly->dyn_blocks[i - offset - 2].block == (void*)(-1)){
-					assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + 1;
-					assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count;
-					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
-				}
-				else{
-					assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
-					assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
-					assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
-				}
-			}
-			else if (assembly->dyn_blocks[i - offset - 1].block == (void*)(-1)){
-				assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + 1;
-				assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count;
-				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+			else if (assembly->dyn_blocks[i - offset - 2].block == (void*)(-1)){
+				assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + 1;
+				assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count;
+				assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
 			}
 			else{
-				assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins;
-				assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
-				assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+				assembly->dyn_blocks[i - offset].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_ins;
+				assembly->dyn_blocks[i - offset].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count + assembly->dyn_blocks[i - offset - 2].block->header.nb_mem_access;
+				assembly->dyn_blocks[i - offset].block 				= assembly->dyn_blocks[i].block;
 			}
+		}
+		else if (assembly->dyn_blocks[i - offset - 1].block == (void*)(-1)){
+			assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + 1;
+			assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count;
+			assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
+		}
+		else{
+			assembly->dyn_blocks[i - offset].instruction_count 		= assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins;
+			assembly->dyn_blocks[i - offset].mem_access_count 		= assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+			assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
 		}
 	}
 
