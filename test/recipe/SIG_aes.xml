@@ -382,6 +382,28 @@
 		</result>
 	</recipe>
 
+	<recipe name="NET_AES" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_aes"/>
+		<search>
+			<arg value="load trace traceNET_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph nettle_aes_encrypt"/>
+			<arg value="export callGraph nettle_aes_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1584"/>
+			<algo name="aes_r9" number="432"/>
+			<algo name="aes_r11" number="192"/>
+			<algo name="aes_r13" number="48"/>
+		</result>
+	</recipe>
+
 	<recipe name="GLAD_AES_V0_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>

@@ -1,9 +1,11 @@
 #!/usr/bin/python2.7
 
 import sys
+import os
 import time
 import subprocess
 import re
+import shutil
 
 class recipe(object):
 
@@ -59,8 +61,12 @@ class recipe(object):
 			self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
 			self.log.flush()
 
+			folder = trace_path + "trace" + self.name
+			if os.path.isdir(folder):
+				shutil.rmtree(folder)
+
 			time_start = time.time()
-			cmd_l = [pin_path, "-t", tool_path, "-o", trace_path + "trace" + self.name, "-w", whiteList_path + self.name + ".lst"]
+			cmd_l = [pin_path, "-t", tool_path, "-o", folder, "-w", whiteList_path + self.name + ".lst"]
 			cmd_l.extend(self.trace_arg)
 			cmd_l.extend(["--", self.trace])
 			process = subprocess.Popen(cmd_l, stdout = subprocess.PIPE, stderr = subprocess.PIPE)

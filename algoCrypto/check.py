@@ -25,6 +25,7 @@ ckeck_list = [
 	[
 		r'test/build/test_cbc_tea_[gc]o[0-9sz]',
 		r'tomCrypt/build/tom_cbc_tea',
+		r'cryptopp/build/cryptopp_cbc_tea',
 		r'botan/build/bot_cbc_tea'
 	],
 
@@ -73,7 +74,8 @@ ckeck_list = [
 		r'openssl/build/openssl_aes',
 		r'cryptopp/build/cryptopp_aes',
 		r'tomCrypt/build/tom_aes',
-		r'botan/build/bot_aes'
+		r'botan/build/bot_aes',
+		r'nettle/build/net_aes'
 	],
 
 	# AES ECB
@@ -87,8 +89,8 @@ ckeck_list = [
 	[
 		r'test/build/test_cbc_aes_[gc]o[0-9sz]',
 		r'tomCrypt/build/tom_cbc_aes',
-		r'botan/build/bot_cbc_aes'
-
+		r'botan/build/bot_cbc_aes',
+		r'nettle/build/net_cbc_aes'
 	],
 
 	# AES OFB
@@ -118,14 +120,14 @@ ckeck_list = [
 		r'cryptopp/build/cryptopp_sha1',
 		r'tomCrypt/build/tom_sha1',
 		r'botan/build/bot_sha1',
-		r'go/build/go_sha1',
+		r'go/build/go_sha1'
 	],
 
 	# SERPENT
 	[
 		r'test/build/test_serpent_[gc]o[0-9sz]',
 		r'cryptopp/build/cryptopp_serpent',
-		r'botan/build/bot_serpent',
+		r'botan/build/bot_serpent'
 	],
 	
 	# DES
@@ -134,7 +136,7 @@ ckeck_list = [
 		r'openssl/build/openssl_des',
 		r'cryptopp/build/cryptopp_des',
 		r'tomCrypt/build/tom_des',
-		r'botan/build/bot_des',
+		r'botan/build/bot_des'
 	],
 	
 	# TWOFISH
@@ -142,7 +144,7 @@ ckeck_list = [
 		r'test/build/test_twofish_[gc]o[0-9sz]',
 		r'cryptopp/build/cryptopp_twofish',
 		r'tomCrypt/build/tom_twofish',
-		r'botan/build/bot_twofish',
+		r'botan/build/bot_twofish'
 	],
 
 ]

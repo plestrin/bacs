@@ -782,6 +782,36 @@
 		</result>
 	</recipe>
 
+	<recipe name="NET_CTR_AES" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_ctr_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_ctr_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_CTR_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph nettle_ctr_crypt"/>
+			<arg value="create ir 0"/>
+			<arg value="normalize ir 0"/>
+			<arg value="search code signature 0"/>
+			<arg value="export result 0 aes128_v1"/>
+			<arg value="simplify concrete ir 0"/>
+			<arg value="create synthesis 0"/>
+			<arg value="search mode signature 0"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="864"/>
+			<algo name="aes_r9" number="112"/>
+			<algo name="aes128_v1" number="4"/>
+			<algo name="aes_last_v2" number="16"/>
+			<algo name="ctr_v1" number="12"/>
+		</result>
+	</recipe>
+
 	<recipe name="BOT_CTR_AES" active="no">  <!-- block cipher is called 256 times in the set IV function. It is too big to apply our method -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_ctr_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_ctr_aes">
