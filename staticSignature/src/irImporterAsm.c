@@ -326,6 +326,15 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 				break;
 			}
 			case XED_ICLASS_NOP 		: {break;}
+			case XED_ICLASS_PADDD 		: {
+				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
+					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
+				}
+				else{
+					cisc_decode_generic_smid2(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
+				}
+				break;
+			}
 			case XED_ICLASS_PAND 		: {
 				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
 					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
@@ -1150,6 +1159,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_NEG 		: {return IR_NEG;}
 		case XED_ICLASS_NOT 		: {return IR_NOT;}
 		case XED_ICLASS_OR 			: {return IR_OR;}
+		case XED_ICLASS_PADDD 		: {return IR_ADD;}
 		case XED_ICLASS_PAND 		: {return IR_AND;}
 		case XED_ICLASS_POR 		: {return IR_OR;}
 		case XED_ICLASS_PXOR 		: {return IR_XOR;}
