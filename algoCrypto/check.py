@@ -57,6 +57,13 @@ ckeck_list = [
 		r'tomCrypt/build/tom_md5',
 		r'go/build/go_md5'
 	],
+
+	# MD5 HMAC
+	[
+		r'test/build/test_hmac_md5_[gc]o[0-9sz]',
+		r'tomCrypt/build/tom_hmac_md5',
+		r'botan/build/bot_hmac_md5'
+	],
 	
 	# RC4
 	[
@@ -121,6 +128,13 @@ ckeck_list = [
 		r'tomCrypt/build/tom_sha1',
 		r'botan/build/bot_sha1',
 		r'go/build/go_sha1'
+	],
+
+	# SHA1 HMAC
+	[
+		r'test/build/test_hmac_sha1_[gc]o[0-9sz]',
+		r'tomCrypt/build/tom_hmac_sha1',
+		r'botan/build/bot_hmac_sha1'
 	],
 
 	# SERPENT

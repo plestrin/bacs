@@ -53,7 +53,7 @@ static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	0, /* 4  IR_DIVQ 		*/
 	0, /* 5  IR_DIVR 		*/
 	0, /* 6  IR_IDIV 		*/
-	0, /* 7  IR_IMUL 		*/
+	1, /* 7  IR_IMUL 		*/
 	0, /* 8  IR_LEA 		*/
 	0, /* 9  IR_MOV 		*/
 	0, /* 10 IR_MOVZX 		*/

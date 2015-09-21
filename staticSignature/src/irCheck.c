@@ -155,6 +155,16 @@ uint32_t ir_check_size(struct ir* ir){
 							}
 							break;
 						}
+						case IR_IMUL 	:
+						case IR_MUL 	: {
+							if (operand->size * 2 != operation_cursor->size && operand->size != operation_cursor->size){
+								log_err_m("incorrect operand size for multiply: %u -> %u", operand->size, operation_cursor->size);
+								putchar('\t'); ir_print_node(operation_cursor, stdout); putchar('\n');
+								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+								result = 1;
+							}
+							break;
+						}
 						default 		: {
 							if (operation_cursor->size != operand->size){
 								log_err_m("found size mismatch (%u -> %s:%u)", operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
