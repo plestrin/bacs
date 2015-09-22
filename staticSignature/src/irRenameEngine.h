@@ -41,6 +41,12 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 
 void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegister reg, struct node* node);
 
+#define irRenameEngine_clear_eax_std_call(engine) 											\
+	(engine).register_alias[IR_REG_EAX].ir_node = NULL; 									\
+	(engine).register_alias[IR_REG_AX].ir_node  = NULL; 									\
+	(engine).register_alias[IR_REG_AH].ir_node  = NULL; 									\
+	(engine).register_alias[IR_REG_AL].ir_node  = NULL;
+
 void irRenameEngine_tag_final_node(struct irRenameEngine* engine);
 
 #endif

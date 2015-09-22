@@ -255,6 +255,14 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 	for (;;){
 		ASMCISCINS_SET_INVALID(cisc);
 
+		/* for stdcall and cdecl eax is caller-saved so it's safe to erase */
+		if (it.instruction_index > 0 && it.prev_black_listed){
+			#ifdef VERBOSE
+			log_info_m("assuming stdcall/cdecl @ %u", it.instruction_index);
+			#endif
+			irRenameEngine_clear_eax_std_call(engine);
+		}
+
 		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
 			case XED_ICLASS_BSWAP 		: {break;}
 			case XED_ICLASS_CALL_NEAR 	: {
