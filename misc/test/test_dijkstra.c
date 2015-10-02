@@ -140,189 +140,39 @@ static struct graph* create_graph(){
 	return graph;
 }
 
-static void zzPath_print(struct zzPath* path){
-	uint32_t 		i;
-	struct edge* 	edge;
-	struct node*	desc;
-	struct node* 	ancs;
+static void path_print(struct array* array){
+	uint32_t 					i;
+	struct dijkstraPathStep* 	step;
 
-	desc = zzPath_get_descendant(path);
-	ancs = zzPath_get_ancestor(path);
-	if (desc != NULL){
-		printf("1 -> desc=%c (%u): ", *(char*)node_get_data(desc), array_get_length(path->path_1_descendant) - 1);
-		for (i = array_get_length(path->path_1_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_1_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
+	for (i = array_get_length(array); i > 0; i--){
+		step = (struct dijkstraPathStep*)array_get(array, i - 1);
+		switch(step->dir){
+			case PATH_SRC_TO_DST : {
+				if (i == array_get_length(array)){
+					printf("%c -> %c", *(char*)node_get_data(edge_get_src(step->edge)), *(char*)node_get_data(edge_get_dst(step->edge)));
+				}
+				else{
+					printf(" -> %c", *(char*)node_get_data(edge_get_dst(step->edge)));
+				}
+				break;
+			}
+			case PATH_DST_TO_SRC : {
+				if (i == array_get_length(array)){
+					printf("%c <- %c", *(char*)node_get_data(edge_get_dst(step->edge)), *(char*)node_get_data(edge_get_src(step->edge)));
+				}
+				else{
+					printf(" <- %c", *(char*)node_get_data(edge_get_src(step->edge)));
+				}
+				break;
+			}
+			case PATH_INVALID : {
+				break;
+			}
 		}
-		printf("\n");
-	}
-	if (ancs != NULL){
-		printf("Ancs=%c -> 2 (%u): ", *(char*)node_get_data(ancs), array_get_length(path->path_ancestor_2) - 1);
-		for (i = 1; i < array_get_length(path->path_ancestor_2); i++){
-			edge = *(struct edge**)array_get(path->path_ancestor_2, i);
-			printf("%c ", *(char*)node_get_data(edge_get_src(edge)));
-		}
-		printf("\n");
-	}
-	if (desc != NULL && ancs != NULL){
-		printf("Ancs=%c -> desc=%c (%u): ", *(char*)node_get_data(ancs), *(char*)node_get_data(desc), array_get_length(path->path_ancestor_descendant) - 1);
-		for (i = array_get_length(path->path_ancestor_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_ancestor_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-		}
-	}
-	else if (desc != NULL){
-		printf("2 -> desc=%c (%u): ", *(char*)node_get_data(desc), array_get_length(path->path_ancestor_descendant) - 1);
-		for (i = array_get_length(path->path_ancestor_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_ancestor_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-		}
-	}
-	else if (ancs != NULL){
-		printf("Ancs=%c -> 1 (%u): ", *(char*)node_get_data(ancs), array_get_length(path->path_ancestor_descendant) - 1);
-		for (i = array_get_length(path->path_ancestor_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_ancestor_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-		}
-	}
-	else if (array_get_length(path->path_1_descendant)){
-		printf("1 -> 2 (%u): ", array_get_length(path->path_1_descendant) - 1);
-		for (i = array_get_length(path->path_1_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_1_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-		}
-	}
-	else if (array_get_length(path->path_ancestor_descendant)){
-		printf("2 -> 1 (%u): ", array_get_length(path->path_ancestor_descendant) - 1);
-		for (i = array_get_length(path->path_ancestor_descendant); i > 1; i--){
-			edge = *(struct edge**)array_get(path->path_ancestor_descendant, i - 1);
-			printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-		}
-	}
-	printf("\n");
-}
-
-static void zzPath_test(void){
-	struct graph* 	graph;
-	struct node* 	node1;
-	struct node* 	node2;
-	struct node* 	node3;
-	struct node* 	node4;
-	struct node* 	node5;
-	struct node* 	node6;
-	struct node* 	node7;
-	struct node* 	node8;
-	struct node* 	node9;
-	struct zzPath 	path;
-	int32_t 		return_code;
-
-	graph = graph_create(1, 0);
-	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
-
-	/* add nodes */
-	node1 = graph_add_node(graph, "a");
-	node2 = graph_add_node(graph, "b");
-	node3 = graph_add_node(graph, "c");
-	node4 = graph_add_node(graph, "d");
-	node5 = graph_add_node(graph, "e");
-	node6 = graph_add_node(graph, "f");
-	node7 = graph_add_node(graph, "g");
-	node8 = graph_add_node(graph, "h");
-	node9 = graph_add_node(graph, "i");
-
-	/* add edges */
-	graph_add_edge_(graph, node1, node6);
-	graph_add_edge_(graph, node6, node7);
-	graph_add_edge_(graph, node7, node2);
-	graph_add_edge_(graph, node3, node4);
-	graph_add_edge_(graph, node4, node2);
-	graph_add_edge_(graph, node3, node8);
-	graph_add_edge_(graph, node8, node5);
-	graph_add_edge_(graph, node9, node3);
-	graph_add_edge_(graph, node9, node5);
-
-	/* print graph */
-	if (graphPrintDot_print(graph, "zzPath.dot", NULL)){
-		log_err("unable to print graph to dot format");
-	}
-
-	zzPath_init(&path);
-
-	log_info_m("normal form {node_1=%c; node_2=%c}", *(char*)node_get_data(node1), *(char*)node_get_data(node5));
-	return_code = dijkstra_min_zzPath(graph, &node1, 1, &node5, 1, &path, NULL);
-	if (return_code < 0){
-		log_err("error code");
-	}
-	else if (return_code == 0){
-		zzPath_print(&path);
-	}
-
-	log_info_m("degenerate form 1 {node_1=%c; node_2=%c}", *(char*)node_get_data(node2), *(char*)node_get_data(node5));
-	return_code = dijkstra_min_zzPath(graph, &node2, 1, &node5, 1, &path, NULL);
-	if (return_code < 0){
-		log_err("error code");
-	}
-	else if (return_code == 0){
-		zzPath_print(&path);
-	}
-
-	log_info_m("degenerate form 2 {node_1=%c; node_2=%c}", *(char*)node_get_data(node1), *(char*)node_get_data(node3));
-	return_code = dijkstra_min_zzPath(graph, &node1, 1, &node3, 1, &path, NULL);
-	if (return_code < 0){
-		log_err("error code");
-	}
-	else if (return_code == 0){
-		zzPath_print(&path);
-	}
-
-	log_info_m("degenerate form 3 {node_1=%c; node_2=%c}", *(char*)node_get_data(node2), *(char*)node_get_data(node1));
-	return_code = dijkstra_min_zzPath(graph, &node2, 1, &node1, 1, &path, NULL);
-	if (return_code < 0){
-		log_err("error code");
-	}
-	else if (return_code == 0){
-		zzPath_print(&path);
-	}
-
-	log_info_m("degenerate form 4 {node_1=%c; node_2=%c}", *(char*)node_get_data(node3), *(char*)node_get_data(node5));
-	return_code = dijkstra_min_zzPath(graph, &node3, 1, &node5, 1, &path, NULL);
-	if (return_code < 0){
-		log_err("error code");
-	}
-	else if (return_code == 0){
-		zzPath_print(&path);
-	}
-
-	zzPath_clean(&path);
-	graph_delete(graph);
-}
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static uint32_t get_distance(void* arg){
-	return 0;
-}
-
-static void backwardPath_print(struct array* array){
-	uint32_t 		i;
-	struct edge* 	edge;
-
-	for (i = 1; i < array_get_length(array); i++){
-		edge = *(struct edge**)array_get(array, i);
-		printf("%c ", *(char*)node_get_data(edge_get_src(edge)));
 	}
 }
 
-static void forwardPath_print(struct array* array){
-	uint32_t 		i;
-	struct edge* 	edge;
-
-	for (i = array_get_length(array); i > 1; i--){
-		edge = *(struct edge**)array_get(array, i - 1);
-		printf("%c ", *(char*)node_get_data(edge_get_dst(edge)));
-	}
-}
-
-static void common_test(void){
+static void path_test(void){
 	struct graph* 	graph;
 	struct node* 	node1;
 	struct node* 	node2;
@@ -334,9 +184,7 @@ static void common_test(void){
 	struct node* 	node8;
 	struct node* 	node9;
 	struct node* 	node10;
-	struct array* 	path1 = NULL;
-	struct array* 	path2 = NULL;
-	struct node* 	result;
+	struct array* 	path = NULL;
 
 	graph = graph_create(1, 0);
 	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
@@ -366,41 +214,37 @@ static void common_test(void){
 	graph_add_edge_(graph, node5, node10);
 
 	/* print graph */
-	if (graphPrintDot_print(graph, "common.dot", NULL)){
+	if (graphPrintDot_print(graph, "path.dot", NULL)){
 		log_err("unable to print graph to dot format");
 	}
 
-	#define ANCESTOR_1 node10
-	#define ANCESTOR_2 node2
+	#define search_print_path(node1_, node2_) 																							\
+	{ 																																	\
+		int32_t result; 																												\
+																																		\
+		result = dijkstra_min_path_(graph, &(node1_), 1, &(node2_), 1, &path, NULL); 													\
+		if (result < 0){ 																												\
+			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
+		} 																																\
+		else if (result){ 																												\
+			log_info_m("there is not path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 			\
+		} 																																\
+		else{ 																															\
+			log_info_m("a path has been found between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 		\
+			putchar('\t'); path_print(path); putchar('\n'); 																			\
+		} 																																\
+	}
 
-	result = dijkstra_lowest_common_ancestor(graph, &ANCESTOR_1, 1, &ANCESTOR_2, 1, &path1, &path2, get_distance);
-	if (result == NULL){
-		log_err_m("unable to find common ancestor for (%c, %c)", *(char*)node_get_data(ANCESTOR_1), *(char*)node_get_data(ANCESTOR_2));
-	}
-	else{
-		log_info_m("%c is lowest common ancestor for (%c, %c)", *(char*)node_get_data(result), *(char*)node_get_data(ANCESTOR_1), *(char*)node_get_data(ANCESTOR_2));
-		printf("\t-Path1: "); backwardPath_print(path1); printf("\n");
-		printf("\t-Path2: "); backwardPath_print(path2); printf("\n");
-	}
-
-	#define DESCENDANT_1 node9
-	#define DESCENDANT_2 node1
-
-	result = dijkstra_highest_common_descendant(graph, &DESCENDANT_1, 1, &DESCENDANT_2, 1, &path1, &path2, get_distance);
-	if (result == NULL){
-		log_err_m("unable to find common descendant for (%c, %c)", *(char*)node_get_data(DESCENDANT_1), *(char*)node_get_data(DESCENDANT_2));
-	}
-	else{
-		log_info_m("%c is highest common descendant for (%c, %c)", *(char*)node_get_data(result), *(char*)node_get_data(DESCENDANT_1), *(char*)node_get_data(DESCENDANT_2));
-		printf("\t-Path1: "); forwardPath_print(path1); printf("\n");
-		printf("\t-Path2: "); forwardPath_print(path2); printf("\n");
-	}
+	search_print_path(node10, node2)
+	search_print_path(node9 , node1)
+	search_print_path(node1 , node5)
+	search_print_path(node2 , node5)
+	search_print_path(node3 , node5)
+	search_print_path(node1 , node3)
+	search_print_path(node2 , node1)
 	
-	if (path1 != NULL){
-		array_delete(path1);
-	}
-	if (path2 != NULL){
-		array_delete(path2);
+	if (path != NULL){
+		array_delete(path);
 	}
 
 	graph_delete(graph);
@@ -457,9 +301,7 @@ int main(){
 		log_err("unable to create graph");
 	}
 
-	zzPath_test();
-
-	common_test();
+	path_test();
 
 	return 0;
 }

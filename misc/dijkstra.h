@@ -13,6 +13,10 @@ int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_bu
 int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_buffer);
 int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffer);
 
+
+
+/* this all garbage */
+
 int32_t dijkstra_min_path(struct graph* graph, struct node** src_node, uint32_t nb_src, struct node** dst_node, uint32_t nb_dst, struct array** path, uint32_t(*edge_get_distance)(void*));
 
 struct zzPath{
@@ -43,5 +47,21 @@ int32_t dijkstra_min_zzPath(struct graph* graph, struct node** node_buffer1, uin
 
 struct node* dijkstra_lowest_common_ancestor(struct graph* graph, struct node** node_buffer1, uint32_t nb_node_buffer1, struct node** node_buffer2, uint32_t nb_node_buffer2, struct array** path1, struct array** path2, uint32_t(*edge_get_distance)(void*));
 struct node* dijkstra_highest_common_descendant(struct graph* graph, struct node** node_buffer1, uint32_t nb_node_buffer1, struct node** node_buffer2, uint32_t nb_node_buffer2, struct array** path1, struct array** path2, uint32_t(*edge_get_distance)(void*));
+
+/* New fuckin awesome API */
+
+enum dijkstraPathDirection{
+	PATH_SRC_TO_DST,
+	PATH_DST_TO_SRC,
+	PATH_INVALID
+};
+
+struct dijkstraPathStep{
+	struct edge* 				edge;
+	enum dijkstraPathDirection 	dir;
+};
+
+/* renommer les variables dans le prototype */
+int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array** path, uint32_t(*edge_get_distance)(void*));
 
 #endif
