@@ -19,12 +19,12 @@ static void asterix_dotPrint_edge(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 
-static int32_t asterix_clone_node(void* data_dst, const void* data_src){
+static int32_t asterix_copy_node(void* data_dst, const void* data_src){
 	memcpy(data_dst, data_src, NODE_DESCRIPTION_LENGTH);
 	return 0;
 }
 
-static int32_t asterix_clone_edge(void* data_dst, const void* data_src){
+static int32_t asterix_copy_edge(void* data_dst, const void* data_src){
 	memcpy(data_dst, data_src, EDGE_DESCRIPTION_LENGTH);
 	return 0;
 }
@@ -88,7 +88,7 @@ int main(){
 		log_err("unable to add edge to graph");
 	}
 
-	clone = graph_clone(graph, asterix_clone_node, asterix_clone_edge);
+	clone = graph_clone(graph, asterix_copy_node, asterix_copy_edge);
 
 	graph_delete(graph);
 
