@@ -31,7 +31,7 @@ struct node{
 	uint32_t 		nb_edge_dst;
 	struct edge*	src_edge_linkedList;
 	struct edge*	dst_edge_linkedList;
-	void* 			ptr; 									/* Used in various algorithm: dijktra, isomosphism, dag partial ordering */
+	void* 			ptr; 									/* Used in various algorithm: dijktra, isomosphism, dag partial ordering, graph copy */
 };
 
 #define node_get_data(node_) ((void*)((struct node*)(node_) + 1))
@@ -113,27 +113,10 @@ void graph_remove_edge(struct graph* graph, struct edge* edge);
 #define edge_get_prev_src(edge) 		((edge)->src_prev)
 #define edge_get_prev_dst(edge) 		((edge)->dst_prev)
 
-static inline struct edge* node_get_edge_dst(struct node* node, uint32_t i){
-	struct edge* edge_dst = node_get_head_edge_dst(node);
+int32_t graph_copy(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_clone)(void*,const void*), int32_t(*edge_clone)(void*,const void*));
 
-	while (i != 0 && edge_dst != NULL){
-		edge_dst = edge_get_next_dst(edge_dst);
-		i --;
-	}
-
-	return edge_dst;
-}
-
-static inline struct edge* node_get_edge_src(struct node* node, uint32_t i){
-	struct edge* edge_src = node_get_head_edge_src(node);
-
-	while (i != 0 && edge_src != NULL){
-		edge_src = edge_get_next_src(edge_src);
-		i --;
-	}
-
-	return edge_src;
-}
+struct graph* graph_clone(struct graph* graph_src, int32_t(*node_clone)(void*,const void*), int32_t(*edge_clone)(void*,const void*));
+int32_t graph_concat(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_clone)(void*,const void*), int32_t(*edge_clone)(void*,const void*));
 
 #define graph_clean(graph) 																												\
 	while((graph)->node_linkedList_head != NULL){ 																						\

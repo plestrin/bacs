@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../graph.h"
 #include "../graphPrintDot.h"
@@ -18,8 +19,19 @@ static void asterix_dotPrint_edge(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%s\"]", (char*)data);
 }
 
+static int32_t asterix_clone_node(void* data_dst, const void* data_src){
+	memcpy(data_dst, data_src, NODE_DESCRIPTION_LENGTH);
+	return 0;
+}
+
+static int32_t asterix_clone_edge(void* data_dst, const void* data_src){
+	memcpy(data_dst, data_src, EDGE_DESCRIPTION_LENGTH);
+	return 0;
+}
+
 int main(){
 	struct graph* 	graph;
+	struct graph* 	clone;
 	char 			node_desc[NODE_DESCRIPTION_LENGTH];
 	char 			edge_desc[EDGE_DESCRIPTION_LENGTH];
 	struct node* 	node_asterix;
@@ -76,12 +88,16 @@ int main(){
 		log_err("unable to add edge to graph");
 	}
 
+	clone = graph_clone(graph, asterix_clone_node, asterix_clone_edge);
+
+	graph_delete(graph);
+
 	/* print graph */
-	if (graphPrintDot_print(graph, "asterix.dot", NULL)){
+	if (graphPrintDot_print(clone, "asterix.dot", NULL)){
 		log_err("unable to print graph to dot format");
 	}
 
-	graph_delete(graph);
+	graph_delete(clone);
 	
 	return 0;
 }
