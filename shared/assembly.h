@@ -74,8 +74,9 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block);
 
-int32_t assembly_get_instruction(struct assembly* assembly, struct instructionIterator* it, uint32_t index);
-int32_t assembly_get_next_instruction(struct assembly* assembly, struct instructionIterator* it);
+int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index);
+int32_t assembly_get_next_instruction(const struct assembly* assembly, struct instructionIterator* it);
+int32_t assembly_get_next_block(const struct assembly* assembly, struct instructionIterator* it);
 
 int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
 
@@ -97,6 +98,8 @@ struct memAccessExtrude{
 int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, struct array** extrude_array);
 
 void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, size_t opcode_length);
+
+uint32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const struct assembly* assembly_inn, uint32_t start);
 
 void assembly_clean(struct assembly* assembly);
 

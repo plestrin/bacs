@@ -354,6 +354,127 @@ void trace_normalize_ir(struct trace* trace){
 	ir_normalize(trace->trace_type.frag.ir);
 }
 
+void trace_search_componentFrag(struct trace* trace_ext, struct trace* trace_inn, struct array* component_frag_array){
+	struct componentFrag component_frag;
+
+	if (trace_ext->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
+
+	if (trace_inn->type != FRAGMENT_TRACE || trace_inn->trace_type.frag.ir == NULL){
+		return;
+	}
+
+	component_frag.instruction_start = assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), 0);
+	while (component_frag.instruction_start != 0xffffffff){
+		component_frag.instruction_stop = component_frag.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
+		component_frag.component_ir = trace_inn->trace_type.frag.ir;
+
+		log_debug_m("found component [%u:%u]", component_frag.instruction_start, component_frag.instruction_stop);
+
+		if (array_add(component_frag_array, &component_frag) < 0){
+			log_err("unable to add element to array");
+		}
+
+		if (component_frag.instruction_stop == assembly_get_nb_instruction(&(trace_ext->assembly))){
+			break;
+		}
+		component_frag.instruction_start = assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), component_frag.instruction_stop);
+	}
+}
+
+static int32_t componentFrag_compare(void* arg1, void* arg2){
+	struct componentFrag* component1 = (struct componentFrag*)arg1;
+	struct componentFrag* component2 = (struct componentFrag*)arg2;
+
+	if (component1->instruction_start < component2->instruction_start){
+		return -1;
+	}
+	else if (component1->instruction_start < component2->instruction_start){
+		return 1;
+	}
+	else if (component1->instruction_stop > component2->instruction_stop){
+		return -1;
+	}
+	else if (component1->instruction_stop < component2->instruction_stop){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+void trace_create_compound_ir(struct trace* trace, struct array* component_frag_array){
+	uint32_t* 				mapping;
+	uint32_t 				i;
+	uint32_t 				nb_component;
+	struct result* 			result;
+	struct componentFrag* 	component1;
+	struct componentFrag* 	component2;
+
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
+
+	if (trace->trace_type.frag.ir != NULL){
+		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
+		ir_delete(trace->trace_type.frag.ir);
+
+		if(array_get_length(&(trace->trace_type.frag.result_array))){
+			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
+			for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+				result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
+				result_clean(result)
+			}
+			array_empty(&(trace->trace_type.frag.result_array));
+		}
+	}
+
+	if ((mapping = array_create_mapping(component_frag_array, componentFrag_compare)) == NULL){
+		log_err("unable to create array mappping");
+		return;
+	}
+
+	for (i = 1, nb_component = min(1, array_get_length(component_frag_array)); i < array_get_length(component_frag_array); i++){
+		component1 = (struct componentFrag*)array_get(component_frag_array, mapping[nb_component - 1]);
+		component2 = (struct componentFrag*)array_get(component_frag_array, mapping[i]);
+
+		if (component2->instruction_start < component1->instruction_stop){
+			log_warn("overlapping component, taking the largest");
+		}
+		else{
+			mapping[nb_component] = mapping[i];
+			nb_component ++;
+		}
+	}
+
+	log_info_m("found %u already processed instructions sequence(s) in fragment \"%s\"", nb_component, trace->trace_type.frag.tag);
+
+
+	/* a completer */
+
+	
+
+	/* pass the data to the IR importer */
+
+	/*if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
+		trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
+	}
+	else{
+		trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
+	}
+
+	if (trace->trace_type.frag.ir == NULL){
+		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
+	}
+	*/
+
+
+	free(mapping);
+}
+
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){
 	struct result 	result;
 	int32_t 		return_value;

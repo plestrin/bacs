@@ -75,6 +75,19 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 void trace_create_ir(struct trace* trace);
 void trace_normalize_ir(struct trace* trace);
 
+struct componentFrag{
+	uint32_t 	instruction_start;
+	uint32_t 	instruction_stop;
+	struct ir*	component_ir;
+};
+
+#define componentFrag_init_array(array) array_init(array, sizeof(struct componentFrag))
+
+void trace_search_componentFrag(struct trace* trace_ext, struct trace* trace_inn, struct array* component_frag_array);
+void trace_create_compound_ir(struct trace* trace, struct array* component_frag_array);
+
+#define componentFrag_clean_array(array) array_clean(array)
+
 static inline void trace_normalize_concrete_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
 		ir_normalize_concrete(trace->trace_type.frag.ir);
@@ -108,9 +121,9 @@ void trace_pop_code_signature_result(int32_t idx, void* arg);
 
 void trace_create_synthesis(struct trace* trace);
 
-static inline void trace_printDot_synthesis(struct trace* trace){
+static inline void trace_printDot_synthesis(struct trace* trace, const char* name){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.synthesis_graph != NULL){
-		synthesisGraph_printDot(trace->trace_type.frag.synthesis_graph);
+		synthesisGraph_printDot(trace->trace_type.frag.synthesis_graph, name);
 	}
 	else{
 		log_err_m("synthesis graph is NULL for trace: \"%s\"", trace->trace_type.frag.tag);

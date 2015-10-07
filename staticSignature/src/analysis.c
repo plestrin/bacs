@@ -49,7 +49,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
-	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report intersting basic block", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_scan)
+	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting basic block", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_scan)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -64,6 +64,7 @@ int main(int argc, char** argv){
 
 	/* ir specific commands */
 	add_cmd_to_input_parser(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
+	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
 	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
@@ -819,6 +820,51 @@ void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_create_ir, arg)
 }
 
+void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
+	uint32_t 		index;
+	uint32_t 		start;
+	uint32_t 		stop;
+	uint32_t 		i;
+	uint32_t 		j;
+	struct trace* 	selected_trace;
+	struct array 	component_frag_array;
+
+	if (arg != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			start = index;
+			stop = index + 1;
+		}
+		else{
+			log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+	}
+	else{
+		start = 0;
+		stop = array_get_length(&(analysis->frag_array));
+	}
+
+	for (i = start; i < stop; i++){
+		selected_trace = (struct trace*)array_get(&(analysis->frag_array), i);
+
+		if (componentFrag_init_array(&component_frag_array)){
+			log_err("unable to init componentFrag array");
+			break;
+		}
+
+		for (j = 0; j < array_get_length(&(analysis->frag_array)); j++){
+			if (j == i){
+				continue;
+			}
+			trace_search_componentFrag(selected_trace, (struct trace*)array_get(&(analysis->frag_array), j), &component_frag_array);
+		}
+
+		trace_create_compound_ir(selected_trace, &component_frag_array);
+		componentFrag_clean_array(&component_frag_array);
+	}
+}
+
 void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 	apply_to_one_frag(analysis, trace_printDot_ir, arg)
 }
@@ -1063,5 +1109,32 @@ void analysis_synthesis_create(struct analysis* analysis, char* arg){
 }
 
 void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
-	apply_to_one_frag(analysis, trace_printDot_synthesis, arg)
+	uint32_t 	index;
+	char* 		name = NULL;
+	size_t 		offset;
+
+	if (arg == NULL){
+		if (array_get_length(&(analysis->frag_array)) < 2){
+			index = 0;
+		}
+		else{
+			log_err_m("%u fragments available, please specify fragment index", array_get_length(&(analysis->frag_array)));
+			return;
+		}
+
+	}
+	else{
+		index = (uint32_t)atoi(arg);
+		offset = strspn(arg, " 0123456789");
+		if (arg[offset] != '\0'){
+			name = arg + offset;
+		}
+	}
+
+	if (index < array_get_length(&(analysis->frag_array))){
+		trace_printDot_synthesis((struct trace*)array_get(&(analysis->frag_array), index), name);
+	}
+	else{
+		log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&(analysis->frag_array)));
+	} 	
 }
