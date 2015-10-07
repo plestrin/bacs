@@ -11,6 +11,7 @@ enum synthesisNodeType{
 	SYNTHESISNODETYPE_RESULT,
 	SYNTHESISNODETYPE_FORWARD_PATH,
 	SYNTHESISNODETYPE_BACKWARD_PATH,
+	SYNTHESISNODETYPE_PATH,
 	SYNTHESISNODETYPE_IR_NODE
 };
 
@@ -27,6 +28,10 @@ struct synthesisNode{
 	union{
 		struct signatureCluster* 	cluster;
 		struct array* 				path;
+		struct{
+			uint32_t 				nb_edge;
+			struct edge** 			edge_buffer;
+		} 							path_; 				/* a renomer plus tard */
 		struct node*				ir_node;
 	}								node_type;
 	uint32_t 						index; 				/* used to compute the adjacency matrix */
@@ -51,7 +56,7 @@ struct synthesisGraph{
 struct synthesisGraph* synthesisGraph_create(struct ir* ir);
 int32_t synthesisGraph_init(struct synthesisGraph* synthesis_graph, struct ir* ir);
 
-#define synthesisGraph_printDot(synthesis_graph) graphPrintDot_print(&(synthesis_graph->graph), NULL, NULL)
+#define synthesisGraph_printDot(synthesis_graph, name) graphPrintDot_print(&(synthesis_graph->graph), name, NULL)
 
 void synthesisGraph_delete_edge(struct graph* graph, struct edge* edge);
 

@@ -153,6 +153,10 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 			label = 0x00000001;
 			break;
 		}
+		case SYNTHESISNODETYPE_PATH 			: {
+			label = 0x00000001;
+			break;
+		}
 		case SYNTHESISNODETYPE_IR_NODE 			: {
 			label = 0x00000003;
 			break;

@@ -717,7 +717,7 @@ struct node* dijkstra_highest_common_descendant(struct graph* graph, struct node
 	dijkstra_common_node_core(graph, node_buffer1, nb_node_buffer1, node_buffer2, nb_node_buffer2, path1, path2, edge_get_distance, descendant)
 }
 
-int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array** path, uint32_t(*edge_get_distance)(void*)){
+int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct dijkstraPath* path, uint32_t(*edge_get_distance)(void*)){
 	struct dijkstraInternal{
 		struct dijkstraPathStep 	step;
 		struct node*				node;
@@ -734,15 +734,15 @@ int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32
 
 	#define END_ORBITAL (void*)(-1)
 
-	if (*path == NULL){
-		*path = array_create(sizeof(struct dijkstraPathStep));
-		if (*path == NULL){
+	if (path->step_array == NULL){
+		path->step_array = array_create(sizeof(struct dijkstraPathStep));
+		if (path->step_array == NULL){
 			log_err("unable to create array");
 			return -1;
 		}
 	}
 	else{
-		array_empty(*path);
+		array_empty(path->step_array);
 	}
 
 	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
@@ -776,6 +776,7 @@ int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32
 		curr_orbital = internal_cursor;
 
 		if (internal_cursor->node == NULL){
+			path->reached_node = buffer_src[i];
 			goto return_path;
 		}
 	}
@@ -797,6 +798,7 @@ int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32
 
 					if (internal_cursor->node == NULL){
 						curr_orbital = internal_cursor;
+						path->reached_node = node_cursor;
 						goto return_path;
 					}
 					else{
@@ -820,6 +822,7 @@ int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32
 
 					if (internal_cursor->node == NULL){
 						curr_orbital = internal_cursor;
+						path->reached_node = node_cursor;
 						goto return_path;
 					}
 					else{
@@ -837,7 +840,7 @@ int32_t dijkstra_min_path_(struct graph* graph, struct node** buffer_src, uint32
 
 	return_path:
 	for ( ; curr_orbital->step.edge != NULL; ){
-		if (array_add(*path, &(curr_orbital->step)) < 0){
+		if (array_add(path->step_array, &(curr_orbital->step)) < 0){
 			log_err("unable to add element to array");
 		}
 

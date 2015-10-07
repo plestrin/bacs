@@ -435,7 +435,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 								result = 1;
 							}
 						}
-						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] != 1){
+						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] < 1 || nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] > 2){
 							log_err_m("incorrect number of dependence of type DIRECT: %u for inst %s", nb_dependence[IR_DEPENDENCE_TYPE_DIRECT], irOpcode_2_string(operation_cursor->operation_type.inst.opcode));
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;

@@ -173,18 +173,18 @@ static void path_print(struct array* array){
 }
 
 static void path_test(void){
-	struct graph* 	graph;
-	struct node* 	node1;
-	struct node* 	node2;
-	struct node* 	node3;
-	struct node* 	node4;
-	struct node* 	node5;
-	struct node* 	node6;
-	struct node* 	node7;
-	struct node* 	node8;
-	struct node* 	node9;
-	struct node* 	node10;
-	struct array* 	path = NULL;
+	struct graph* 			graph;
+	struct node* 			node1;
+	struct node* 			node2;
+	struct node* 			node3;
+	struct node* 			node4;
+	struct node* 			node5;
+	struct node* 			node6;
+	struct node* 			node7;
+	struct node* 			node8;
+	struct node* 			node9;
+	struct node* 			node10;
+	struct dijkstraPath 	path;
 
 	graph = graph_create(1, 0);
 	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
@@ -231,9 +231,11 @@ static void path_test(void){
 		} 																																\
 		else{ 																															\
 			log_info_m("a path has been found between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 		\
-			putchar('\t'); path_print(path); putchar('\n'); 																			\
+			putchar('\t'); path_print(path.step_array); putchar('\n'); 																	\
 		} 																																\
 	}
+
+	dijkstraPath_init(path)
 
 	search_print_path(node10, node2)
 	search_print_path(node9 , node1)
@@ -243,9 +245,7 @@ static void path_test(void){
 	search_print_path(node1 , node3)
 	search_print_path(node2 , node1)
 	
-	if (path != NULL){
-		array_delete(path);
-	}
+	dijkstraPath_clean(path)
 
 	graph_delete(graph);
 }
