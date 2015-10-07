@@ -17,12 +17,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_GO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/> <!-- 42 = 28 + 2 x 7; 28 = 7 + 6 + 5 + ... + 1 (first 32 bits linked by add) 7 (second 32 bits linked by adc) -->
 		</result>
 	</recipe>
 
@@ -44,12 +45,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_GO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -71,12 +73,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_GO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -98,12 +101,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_GO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -125,12 +129,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_GOs.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -152,12 +157,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_CO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -179,12 +185,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_CO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -206,12 +213,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_CO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -233,12 +241,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_CO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -260,12 +269,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_COz.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -285,12 +295,13 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_TEA_WD.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -310,12 +321,13 @@
 			<arg value="simplify concrete ir 0"/>
 			<arg value="create synthesis 0"/>
 			<arg value="search mode signature 0"/>
+			<arg value="printDot synthesis 0 fig/TEST_CTR_TEA_WR.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="56"/>
+			<algo name="ctr_v1" number="42"/>
 		</result>
 	</recipe>
 
@@ -337,12 +349,13 @@
 			<arg value="simplify concrete ir 0"/>
 			<arg value="create synthesis 0"/>
 			<arg value="search mode signature 0"/>
+			<arg value="printDot synthesis 0 fig/TOM_CTR_TEA.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="441"/> <!-- the first block cipher call is done in ctr_start -->
 			<algo name="xtea_enc_32_v1" number="7"/>
-			<algo name="ctr_v1" number="42"/>
+			<algo name="ctr_v2" number="42"/>
 		</result>
 	</recipe>
 
@@ -364,6 +377,7 @@
 			<arg value="simplify concrete ir 1"/>
 			<arg value="create synthesis 1"/>
 			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/BOT_CTR_TEA.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -390,12 +404,13 @@
 			<arg value="simplify concrete ir 1"/>
 			<arg value="create synthesis 1"/>
 			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/PP_CTR_TEA.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="xtea_enc" number="385"/> <!-- the last encryption round is deleted by the remove subexpression function. May be caused by black listed fontion calls -> ESP flaw -->
 			<algo name="xtea_enc_32_v2" number="7"/>
-			<algo name="ctr_v1" number="42"/>
+			<algo name="ctr_v2" number="42"/>
 		</result>
 	</recipe>
 
@@ -418,6 +433,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_GO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -425,7 +441,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -448,6 +464,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_GO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -455,7 +472,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -478,6 +495,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_GO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -485,7 +503,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -508,6 +526,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_GO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -515,7 +534,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -538,6 +557,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_GOs.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -545,7 +565,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -568,6 +588,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_CO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -575,7 +596,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -598,6 +619,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_CO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -605,7 +627,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -628,6 +650,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_CO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -635,7 +658,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -658,6 +681,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_CO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -665,7 +689,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -688,6 +712,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_COz.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -695,7 +720,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -716,6 +741,7 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis fig/TEST_CTR_AES_WD.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -723,7 +749,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v1" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -744,6 +770,7 @@
 			<arg value="simplify concrete ir 0"/>
 			<arg value="create synthesis 0"/>
 			<arg value="search mode signature 0"/>
+			<arg value="printDot synthesis 0 fig/TEST_CTR_AES_WR.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -751,7 +778,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v3" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -774,6 +801,7 @@
 			<arg value="simplify concrete ir 0"/>
 			<arg value="create synthesis 0"/>
 			<arg value="search mode signature 0"/>
+			<arg value="printDot synthesis 0 fig/TOM_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -801,6 +829,7 @@
 			<arg value="simplify concrete ir 0"/>
 			<arg value="create synthesis 0"/>
 			<arg value="search mode signature 0"/>
+			<arg value="printDot synthesis 0 fig/NET_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -808,7 +837,7 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v2" number="16"/>
-			<algo name="ctr_v1" number="12"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
@@ -831,6 +860,7 @@
 			<arg value="simplify concrete ir 1"/>
 			<arg value="create synthesis 1"/>
 			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/BOT_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>

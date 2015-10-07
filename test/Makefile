@@ -1,6 +1,7 @@
 BIN_DIR 	:= build/
 SRC_DIR 	:= ../staticSignature/
 LOG_DIR 	:= log/
+FIG_DIR 	:= fig/
 RECIPE_DIR 	:= recipe/
 RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml SIG_ctr.xml
 EXE 		:= signature
@@ -35,5 +36,7 @@ clean:
 
 cleaner: clean
 	@ rm -rf trace*
-	@ rm -f $(LOG_DIR)/*.log
+	@ rm -f $(LOG_DIR)*.log
 	@ rm -f *.pyc
+	@ rm -f $(FIG_DIR)*.dot
+	@ rm -f $(FIG_DIR)*.png

@@ -3,6 +3,7 @@
 #	- dec_cbc_cfb_v1: 		second block input is used directly for the first block XOR
 #	- dec_cbc_cfb_v1: 		additional instruction between the second block input and the first block XOR (Like BSWAP)
 #	- ctr_v1 				RAS
+# 	- ctr_v2  				input is the same. Useful for large block when the addition is done with conditional statements. one part of the block stay unchanged.
 
 
 "enc_cbc_cfb"
@@ -37,5 +38,14 @@
 
 1 (*) -> (I1) 2 (block_cipher)
 1 -> (I1) 3 (block_cipher)
-4 (*) ->  (I0) 2
+4 (*) -> (I0) 2
+4 -> 5 (*)
+5 -> (I0) 3
+
+
+"ctr_v2"
+
+1 (*) -> (I1) 2 (block_cipher)
+1 -> (I1) 3 (block_cipher)
+4 (*) -> (I0) 2
 4 -> (I0) 3

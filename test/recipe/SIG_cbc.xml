@@ -18,6 +18,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_GO0.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_GO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -49,6 +51,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_GO1.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_GO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -80,6 +84,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_GO2.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_GO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -111,6 +117,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_GO3.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_GO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -142,6 +150,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_GOs.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_GOs.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -173,6 +183,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_CO0.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_CO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -204,6 +216,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_CO1.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_CO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -235,6 +249,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_CO2.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_CO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -266,6 +282,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_CO3.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_CO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -297,6 +315,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_COz.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_COz.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -326,6 +346,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_WD.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_WD.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -355,6 +377,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_TEA_ENC_WR.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_TEA_DEC_WR.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -386,6 +410,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TOM_CBC_TEA_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/TOM_CBC_TEA_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -417,6 +443,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/BOT_CBC_TEA_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/BOT_CBC_TEA_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -448,6 +476,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/PP_CBC_TEA_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/PP_CBC_TEA_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -480,6 +510,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_GO0.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_GO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -513,6 +545,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_GO1.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_GO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -546,6 +580,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_GO2.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_GO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -579,6 +615,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_GO3.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_GO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -612,6 +650,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_GOs.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_GOs.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -645,6 +685,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_CO0.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_CO0.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -678,6 +720,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_CO1.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_CO1.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -711,6 +755,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_CO2.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_CO2.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -744,6 +790,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_CO3.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_CO3.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -777,6 +825,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_COz.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_COz.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -808,6 +858,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_WD.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_WD.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -839,6 +891,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TEST_CBC_AES_ENC_WR.dot"/>
+			<arg value="printDot synthesis 1 fig/TEST_CBC_AES_DEC_WR.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -872,6 +926,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/TOM_CBC_AES_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/TOM_CBC_AES_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -904,6 +960,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/NET_CBC_AES_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/NET_CBC_AES_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -936,6 +994,8 @@
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
 			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/BOT_CBC_AES_ENC.dot"/>
+			<arg value="printDot synthesis 1 fig/BOT_CBC_AES_DEC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
