@@ -145,14 +145,6 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 			nameEngine_release();
 			break;
 		}
-		case SYNTHESISNODETYPE_FORWARD_PATH 	: {
-			label = 0x00000001;
-			break;
-		}
-		case SYNTHESISNODETYPE_BACKWARD_PATH 	: {
-			label = 0x00000001;
-			break;
-		}
 		case SYNTHESISNODETYPE_PATH 			: {
 			label = 0x00000001;
 			break;

@@ -222,7 +222,7 @@ static void path_test(void){
 	{ 																																	\
 		int32_t result; 																												\
 																																		\
-		result = dijkstra_min_path_(graph, &(node1_), 1, &(node2_), 1, &path, NULL); 													\
+		result = dijkstra_min_path(graph, &(node1_), 1, &(node2_), 1, &path, NULL); 													\
 		if (result < 0){ 																												\
 			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
 		} 																																\

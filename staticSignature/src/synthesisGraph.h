@@ -9,8 +9,6 @@
 
 enum synthesisNodeType{
 	SYNTHESISNODETYPE_RESULT,
-	SYNTHESISNODETYPE_FORWARD_PATH,
-	SYNTHESISNODETYPE_BACKWARD_PATH,
 	SYNTHESISNODETYPE_PATH,
 	SYNTHESISNODETYPE_IR_NODE
 };
@@ -27,14 +25,12 @@ struct synthesisNode{
 	enum synthesisNodeType 			type;
 	union{
 		struct signatureCluster* 	cluster;
-		struct array* 				path;
 		struct{
 			uint32_t 				nb_edge;
 			struct edge** 			edge_buffer;
-		} 							path_; 				/* a renomer plus tard */
+		} 							path;
 		struct node*				ir_node;
 	}								node_type;
-	uint32_t 						index; 				/* used to compute the adjacency matrix */
 };
 
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)node_get_data(node))
