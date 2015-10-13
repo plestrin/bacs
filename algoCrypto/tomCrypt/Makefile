@@ -19,6 +19,7 @@ CBC_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_cbc_aes
 OFB_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_ofb_aes
 CFB_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_cfb_aes
 CTR_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_ctr_aes
+OCB_AES_TOMCRYPT_EXAMPLE_NAME 	:= tom_ocb_aes
 SHA1_TOMCRYPT_EXAMPLE_NAME 		:= tom_sha1
 HMAC_SHA1_TOMCRYPT_EXAMPLE_NAME := tom_hmac_sha1
 SHA256_TOMCRYPT_EXAMPLE_NAME 	:= tom_sha256
@@ -41,6 +42,7 @@ all: build/$(TEA_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(OFB_AES_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(CFB_AES_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(CTR_AES_TOMCRYPT_EXAMPLE_NAME) 	\
+	 build/$(OCB_AES_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(SHA1_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(HMAC_SHA1_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(SHA256_TOMCRYPT_EXAMPLE_NAME) 		\
@@ -91,6 +93,9 @@ build/$(CFB_AES_TOMCRYPT_EXAMPLE_NAME): build/tom_cfb_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/$(CTR_AES_TOMCRYPT_EXAMPLE_NAME): build/tom_ctr_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(OCB_AES_TOMCRYPT_EXAMPLE_NAME): build/tom_ocb_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/$(SHA1_TOMCRYPT_EXAMPLE_NAME): build/tom_sha1.o build/printBuffer.o
