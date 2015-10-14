@@ -20,6 +20,7 @@ CBC_AES_TEST_NAME 		:= test_cbc_aes
 OFB_AES_TEST_NAME 		:= test_ofb_aes
 CFB_AES_TEST_NAME 		:= test_cfb_aes
 CTR_AES_TEST_NAME 		:= test_ctr_aes
+ASA_CBC_AES_TEST_NAME 	:= test_asa_cbc_aes
 SHA1_TEST_NAME 			:= test_sha1
 HMAC_SHA1_TEST_NAME 	:= test_hmac_sha1
 SERPENT_TEST_NAME 		:= test_serpent
@@ -92,9 +93,12 @@ build/$(TWOFISH_TEST_NAME)_$(1): build/twofish.$(1) build/test_twofish.$$(shell 
 	$$(GCC_CC) -o $$@ $$^
 endef
 
-all: $(foreach target,$(TARGETS),$(foreach compilation,$(COMPILATIONS),build/$(target)_$(compilation)))
+all: $(foreach target,$(TARGETS),$(foreach compilation,$(COMPILATIONS),build/$(target)_$(compilation))) build/$(ASA_CBC_AES_TEST_NAME)
 
 $(foreach compilation,$(COMPILATIONS),$(eval $(call TEMPLATE,$(compilation))))
+
+build/$(ASA_CBC_AES_TEST_NAME): build/test_asa_cbc_aes.go0 build/mode.go2 build/AES.go2 build/printBuffer.go0
+	$(GCC_CC) -o $@ $^
 
 # GCC compiler
 
