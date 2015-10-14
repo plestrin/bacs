@@ -13,22 +13,22 @@
  * 	- arg3: output_buffer
  */
 
-typedef void(*blockCipher)(void*,void*,void*);
+typedef void(*blockCipher)(const void*, const void*,void*);
 
-void mode_enc_ecb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key);
-void mode_dec_ecb(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key);
+void mode_enc_ecb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key);
+void mode_dec_ecb(blockCipher decrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key);
 
-void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
-void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
+void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
+void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
 
-void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
-void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
+void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
+void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
 
-void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
-void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
+void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
+void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
 
-void mode_enc_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
-void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv);
+void mode_enc_ctr(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
+void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv);
 
 struct hash{
 	uint32_t 	block_size;

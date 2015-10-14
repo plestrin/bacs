@@ -15,7 +15,7 @@ int main(){
 	char 		message[] = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
 	char* 		padded_message;
 	uint32_t 	message_size;
-	uint32_t 	hash[SHA1_HASH_NB_WORD];
+	uint32_t 	hash[SHA1_HASH_NB_DWORD];
 
 	message_size = strlen(message);
 	padded_message = (char*)malloc(SHA1_DATA_SIZE_TO_NB_BLOCK(message_size) * SHA1_BLOCK_NB_BYTE);

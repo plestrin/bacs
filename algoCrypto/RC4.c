@@ -1,6 +1,6 @@
 #include "RC4.h"
 
-void rc4(uint8_t* input, uint64_t input_length, uint8_t* key, uint8_t key_length, uint8_t* output){
+void rc4(const uint8_t* input, const uint64_t input_length, const uint8_t* key, const uint8_t key_length, uint8_t* output){
 	uint8_t 	S[256];
 	uint8_t 	i;
 	uint8_t 	j = 0;

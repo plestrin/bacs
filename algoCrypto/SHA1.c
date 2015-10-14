@@ -3,11 +3,11 @@
 #include "SHA1.h"
 
 #ifdef __GNUC__
-#   define SHA1_LOAD_WORD(w)        __builtin_bswap32(w)
-#   define SHA1_STORE_WORD(w)       __builtin_bswap32(w)
+#   define SHA1_LOAD_DWORD(w)        __builtin_bswap32(w)
+#   define SHA1_STORE_DWORD(w)       __builtin_bswap32(w)
 #else
-#   define SHA1_LOAD_WORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
-#   define SHA1_STORE_WORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#   define SHA1_LOAD_DWORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#   define SHA1_STORE_DWORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
 #endif
 
 #define F0(x, y, z) (((x) & (y)) | ((~(x)) & (z)))
@@ -61,22 +61,22 @@ void sha1(uint32_t* data, uint64_t data_length, uint32_t* hash){
 	*((uint8_t*)data + data_length + i + 7) = (uint8_t)(data_length << 3);
 
 	for (i = 0; i < nb_block; i++){
-		w[0 ] = SHA1_LOAD_WORD(data[i*16 + 0 ]);
-		w[1 ] = SHA1_LOAD_WORD(data[i*16 + 1 ]);
-		w[2 ] = SHA1_LOAD_WORD(data[i*16 + 2 ]);
-		w[3 ] = SHA1_LOAD_WORD(data[i*16 + 3 ]);
-		w[4 ] = SHA1_LOAD_WORD(data[i*16 + 4 ]);
-		w[5 ] = SHA1_LOAD_WORD(data[i*16 + 5 ]);
-		w[6 ] = SHA1_LOAD_WORD(data[i*16 + 6 ]);
-		w[7 ] = SHA1_LOAD_WORD(data[i*16 + 7 ]);
-		w[8 ] = SHA1_LOAD_WORD(data[i*16 + 8 ]);
-		w[9 ] = SHA1_LOAD_WORD(data[i*16 + 9 ]);
-		w[10] = SHA1_LOAD_WORD(data[i*16 + 10]);
-		w[11] = SHA1_LOAD_WORD(data[i*16 + 11]);
-		w[12] = SHA1_LOAD_WORD(data[i*16 + 12]);
-		w[13] = SHA1_LOAD_WORD(data[i*16 + 13]);
-		w[14] = SHA1_LOAD_WORD(data[i*16 + 14]);
-		w[15] = SHA1_LOAD_WORD(data[i*16 + 15]);
+		w[0 ] = SHA1_LOAD_DWORD(data[i*16 + 0 ]);
+		w[1 ] = SHA1_LOAD_DWORD(data[i*16 + 1 ]);
+		w[2 ] = SHA1_LOAD_DWORD(data[i*16 + 2 ]);
+		w[3 ] = SHA1_LOAD_DWORD(data[i*16 + 3 ]);
+		w[4 ] = SHA1_LOAD_DWORD(data[i*16 + 4 ]);
+		w[5 ] = SHA1_LOAD_DWORD(data[i*16 + 5 ]);
+		w[6 ] = SHA1_LOAD_DWORD(data[i*16 + 6 ]);
+		w[7 ] = SHA1_LOAD_DWORD(data[i*16 + 7 ]);
+		w[8 ] = SHA1_LOAD_DWORD(data[i*16 + 8 ]);
+		w[9 ] = SHA1_LOAD_DWORD(data[i*16 + 9 ]);
+		w[10] = SHA1_LOAD_DWORD(data[i*16 + 10]);
+		w[11] = SHA1_LOAD_DWORD(data[i*16 + 11]);
+		w[12] = SHA1_LOAD_DWORD(data[i*16 + 12]);
+		w[13] = SHA1_LOAD_DWORD(data[i*16 + 13]);
+		w[14] = SHA1_LOAD_DWORD(data[i*16 + 14]);
+		w[15] = SHA1_LOAD_DWORD(data[i*16 + 15]);
 
 		for(j = 16; j < 80; j++){
 			w[j] = ROTATE_LEFT(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
@@ -130,11 +130,11 @@ void sha1(uint32_t* data, uint64_t data_length, uint32_t* hash){
 		h4 += e;
 	}
 
-	hash[0] = SHA1_STORE_WORD(h0);
-	hash[1] = SHA1_STORE_WORD(h1);
-	hash[2] = SHA1_STORE_WORD(h2);
-	hash[3] = SHA1_STORE_WORD(h3);
-	hash[4] = SHA1_STORE_WORD(h4);
+	hash[0] = SHA1_STORE_DWORD(h0);
+	hash[1] = SHA1_STORE_DWORD(h1);
+	hash[2] = SHA1_STORE_DWORD(h2);
+	hash[3] = SHA1_STORE_DWORD(h3);
+	hash[4] = SHA1_STORE_DWORD(h4);
 }
 
 void sha1_init(struct sha1State* sha1_state){
@@ -157,22 +157,22 @@ static void sha1_compress(struct sha1State* sha1_state){
 	uint32_t j;
 	uint32_t tmp;
 
-	w[0 ] = SHA1_LOAD_WORD(sha1_state->block[0 ]);
-	w[1 ] = SHA1_LOAD_WORD(sha1_state->block[1 ]);
-	w[2 ] = SHA1_LOAD_WORD(sha1_state->block[2 ]);
-	w[3 ] = SHA1_LOAD_WORD(sha1_state->block[3 ]);
-	w[4 ] = SHA1_LOAD_WORD(sha1_state->block[4 ]);
-	w[5 ] = SHA1_LOAD_WORD(sha1_state->block[5 ]);
-	w[6 ] = SHA1_LOAD_WORD(sha1_state->block[6 ]);
-	w[7 ] = SHA1_LOAD_WORD(sha1_state->block[7 ]);
-	w[8 ] = SHA1_LOAD_WORD(sha1_state->block[8 ]);
-	w[9 ] = SHA1_LOAD_WORD(sha1_state->block[9 ]);
-	w[10] = SHA1_LOAD_WORD(sha1_state->block[10]);
-	w[11] = SHA1_LOAD_WORD(sha1_state->block[11]);
-	w[12] = SHA1_LOAD_WORD(sha1_state->block[12]);
-	w[13] = SHA1_LOAD_WORD(sha1_state->block[13]);
-	w[14] = SHA1_LOAD_WORD(sha1_state->block[14]);
-	w[15] = SHA1_LOAD_WORD(sha1_state->block[15]);
+	w[0 ] = SHA1_LOAD_DWORD(sha1_state->block[0 ]);
+	w[1 ] = SHA1_LOAD_DWORD(sha1_state->block[1 ]);
+	w[2 ] = SHA1_LOAD_DWORD(sha1_state->block[2 ]);
+	w[3 ] = SHA1_LOAD_DWORD(sha1_state->block[3 ]);
+	w[4 ] = SHA1_LOAD_DWORD(sha1_state->block[4 ]);
+	w[5 ] = SHA1_LOAD_DWORD(sha1_state->block[5 ]);
+	w[6 ] = SHA1_LOAD_DWORD(sha1_state->block[6 ]);
+	w[7 ] = SHA1_LOAD_DWORD(sha1_state->block[7 ]);
+	w[8 ] = SHA1_LOAD_DWORD(sha1_state->block[8 ]);
+	w[9 ] = SHA1_LOAD_DWORD(sha1_state->block[9 ]);
+	w[10] = SHA1_LOAD_DWORD(sha1_state->block[10]);
+	w[11] = SHA1_LOAD_DWORD(sha1_state->block[11]);
+	w[12] = SHA1_LOAD_DWORD(sha1_state->block[12]);
+	w[13] = SHA1_LOAD_DWORD(sha1_state->block[13]);
+	w[14] = SHA1_LOAD_DWORD(sha1_state->block[14]);
+	w[15] = SHA1_LOAD_DWORD(sha1_state->block[15]);
 
 	for(j = 16; j < 80; j++){
 		w[j] = ROTATE_LEFT(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
@@ -266,9 +266,9 @@ void sha1_hash(struct sha1State* sha1_state, uint32_t* hash){
 
 	sha1_compress(sha1_state);
 
-	hash[0] = SHA1_STORE_WORD(sha1_state->state[0]);
-	hash[1] = SHA1_STORE_WORD(sha1_state->state[1]);
-	hash[2] = SHA1_STORE_WORD(sha1_state->state[2]);
-	hash[3] = SHA1_STORE_WORD(sha1_state->state[3]);
-	hash[4] = SHA1_STORE_WORD(sha1_state->state[4]);
+	hash[0] = SHA1_STORE_DWORD(sha1_state->state[0]);
+	hash[1] = SHA1_STORE_DWORD(sha1_state->state[1]);
+	hash[2] = SHA1_STORE_DWORD(sha1_state->state[2]);
+	hash[3] = SHA1_STORE_DWORD(sha1_state->state[3]);
+	hash[4] = SHA1_STORE_DWORD(sha1_state->state[4]);
 }

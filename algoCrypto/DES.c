@@ -3,11 +3,11 @@
 #include "DES.h"
 
 #ifdef __GNUC__
-#   define DES_LOAD_WORD(w)        __builtin_bswap32(w)
-#   define DES_STORE_WORD(w)       __builtin_bswap32(w)
+#   define DES_LOAD_DWORD(w)        __builtin_bswap32(w)
+#   define DES_STORE_DWORD(w)       __builtin_bswap32(w)
 #else
-#   define DES_LOAD_WORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
-#   define DES_STORE_WORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#   define DES_LOAD_DWORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+#   define DES_STORE_DWORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
 #endif
 
 
@@ -226,7 +226,7 @@ static const uint32_t spBox[8][64] = {
 		x1 = ROTATE_RIGHT(x1 ^ tmp_, 4); 	\
 	}
 
-void des_key_expand(uint8_t* key, uint8_t* round_key){
+void des_key_expand(const uint8_t* key, uint8_t* round_key){
 	uint32_t i;
 	uint32_t j;
 
@@ -240,14 +240,14 @@ void des_key_expand(uint8_t* key, uint8_t* round_key){
 	}
 }
 
-void des_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
+void des_encrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output){
 	uint32_t x1;
 	uint32_t x2;
 	uint32_t i;
 	uint32_t tmp;
 
-	x1 = DES_LOAD_WORD(input[0]);
-	x2 = DES_LOAD_WORD(input[1]);
+	x1 = DES_LOAD_DWORD(input[0]);
+	x2 = DES_LOAD_DWORD(input[1]);
 
 	IPERM(x1 ,x2);
 
@@ -264,18 +264,18 @@ void des_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
 
 	FPERM(x1, x2);
 
-	output[0] = DES_STORE_WORD(x2);
-	output[1] = DES_STORE_WORD(x1);
+	output[0] = DES_STORE_DWORD(x2);
+	output[1] = DES_STORE_DWORD(x1);
 }
 
-void des_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
+void des_decrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output){
 	uint32_t x1;
 	uint32_t x2;
 	uint32_t i;
 	uint32_t tmp;
 
-	x1 = DES_LOAD_WORD(input[0]);
-	x2 = DES_LOAD_WORD(input[1]);
+	x1 = DES_LOAD_DWORD(input[0]);
+	x2 = DES_LOAD_DWORD(input[1]);
 
 	IPERM(x1 ,x2);
 
@@ -293,6 +293,6 @@ void des_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
 
 	FPERM(x1, x2);
 
-	output[0] = DES_STORE_WORD(x2);
-	output[1] = DES_STORE_WORD(x1);
+	output[0] = DES_STORE_DWORD(x2);
+	output[1] = DES_STORE_DWORD(x1);
 }

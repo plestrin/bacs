@@ -5,15 +5,15 @@
 
 #define SERPENT_BLOCK_NB_BIT 		128
 #define SERPENT_BLOCK_NB_BYTE 		16
-#define SERPENT_BLOCK_NB_WORD 		4
+#define SERPENT_BLOCK_NB_DWORD 		4
 
 #define SERPENT_KEY_MAX_NB_BIT 		256
 #define SERPENT_KEY_MAX_NB_BYTE 	32
-#define SERPENT_KEY_MAX_NB_WORD 	8
+#define SERPENT_KEY_MAX_NB_DWORD 	8
 
 #define SERPENT_ROUND_KEY_NB_BIT 	4224
 #define SERPENT_ROUND_KEY_NB_BYTE 	528
-#define SERPENT_ROUND_KEY_NB_WORD 	132
+#define SERPENT_ROUND_KEY_NB_DWORD 	132
 
 #define SERPENT_NB_ROUND 			32
 
@@ -33,7 +33,7 @@ void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key)
  * - output 		: 128 bits (ciphertext for encryption and plaintext for decryption)
  */
 
-void serpent_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
-void serpent_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output);
+void serpent_encrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output);
+void serpent_decrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output);
 
 #endif

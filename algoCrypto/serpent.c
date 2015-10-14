@@ -581,7 +581,7 @@ void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key)
 		key[key_length >> 5] &= ~(0xffffffff << (key_length & 0x0000001f));
 		key[key_length >> 5] |= 0x00000001 << (key_length & 0x0000001f);
 
-		for (i = (key_length >> 5) + 1; i < SERPENT_KEY_MAX_NB_WORD; i++){
+		for (i = (key_length >> 5) + 1; i < SERPENT_KEY_MAX_NB_DWORD; i++){
 			key[i] = 0;
 		}
 	}
@@ -595,7 +595,7 @@ void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key)
 	round_key[6] = ROTATE_L(key[6] ^ round_key[1] ^ round_key[3] ^ round_key[5] ^ SERPENT_GOLDEN_RATIO ^ 6, 11);
 	round_key[7] = ROTATE_L(key[7] ^ round_key[2] ^ round_key[4] ^ round_key[6] ^ SERPENT_GOLDEN_RATIO ^ 7, 11);
 
-	for(i = 8; i < SERPENT_ROUND_KEY_NB_WORD; i++){
+	for(i = 8; i < SERPENT_ROUND_KEY_NB_DWORD; i++){
 		round_key[i] = ROTATE_L(round_key[i - 8] ^ round_key[i - 5] ^ round_key[i - 3] ^ round_key[i - 1] ^ SERPENT_GOLDEN_RATIO ^ i, 11);
 	}
 
@@ -638,7 +638,7 @@ void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key)
 	SBoxE3(round_key[128], round_key[129], round_key[130], round_key[131]);
 }
 
-void serpent_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
+void serpent_encrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output){
 	uint32_t x0 = input[0];
 	uint32_t x1 = input[1];
 	uint32_t x2 = input[2];
@@ -686,7 +686,7 @@ void serpent_encrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
 	output[3] = x3 ^ round_key[131];
 }
 
-void serpent_decrypt(uint32_t* input, uint32_t* round_key, uint32_t* output){
+void serpent_decrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output){
 	uint32_t x0 = input[0];
 	uint32_t x1 = input[1];
 	uint32_t x2 = input[2];

@@ -15,7 +15,7 @@ int main(){
 	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	char* 		padded_message;
 	uint32_t 	message_size;
-	uint32_t 	hash[MD5_HASH_NB_WORD];
+	uint32_t 	hash[MD5_HASH_NB_DWORD];
 
 	message_size = strlen(message);
 	padded_message = (char*)malloc(MD5_DATA_SIZE_TO_NB_BLOCK(message_size) * MD5_BLOCK_NB_BYTE);

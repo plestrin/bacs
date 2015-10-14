@@ -235,7 +235,7 @@ static uint32_t gf_mult(uint32_t a, uint32_t b, uint32_t p){
 	return result;
 }
 
-static uint32_t h_func(uint8_t x, uint8_t* key, uint32_t k, uint32_t offset){
+static uint32_t h_func(uint8_t x, const uint8_t* key, uint32_t k, uint32_t offset){
 	uint8_t tmp[4];
 
 	tmp[0] = x;
@@ -284,7 +284,7 @@ static void rs_mult(const uint8_t* in, uint8_t* out){
 	}
 }
 
-void twofish128_key_init(uint32_t* key, struct twofishKey* twofish_key){
+void twofish128_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t 	i;
 	uint32_t 	j;
 	uint32_t 	a;
@@ -292,12 +292,12 @@ void twofish128_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t  	S[4*TWOFISH_128_K];
 
 	for (i = 0; i < TWOFISH_128_K; i++){
-		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
+		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);
 	}
 
 	for (i = 0; i < TWOFISH_NB_ROUND_KEY / 2; i++){
-		a = h_func(2*i + 0, (uint8_t*)key, TWOFISH_128_K, 0);
-		b = h_func(2*i + 1, (uint8_t*)key, TWOFISH_128_K, 1);
+		a = h_func(2*i + 0, (const uint8_t*)key, TWOFISH_128_K, 0);
+		b = h_func(2*i + 1, (const uint8_t*)key, TWOFISH_128_K, 1);
 		b = ROLc(b ,8);
 
 		twofish_key->ks[2*i + 0] = a + b;
@@ -312,7 +312,7 @@ void twofish128_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	}
 }
 
-void twofish192_key_init(uint32_t* key, struct twofishKey* twofish_key){
+void twofish192_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t 	i;
 	uint32_t 	j;
 	uint32_t 	a;
@@ -320,12 +320,12 @@ void twofish192_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t  	S[4*TWOFISH_192_K];
 
 	for (i = 0; i < TWOFISH_192_K; i++){
-		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
+		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);
 	}
 
 	for (i = 0; i < TWOFISH_NB_ROUND_KEY / 2; i++){
-		a = h_func(2*i + 0, (uint8_t*)key, TWOFISH_192_K, 0);
-		b = h_func(2*i + 1, (uint8_t*)key, TWOFISH_192_K, 1);
+		a = h_func(2*i + 0, (const uint8_t*)key, TWOFISH_192_K, 0); 
+		b = h_func(2*i + 1, (const uint8_t*)key, TWOFISH_192_K, 1);
 		b = ROLc(b ,8);
 
 		twofish_key->ks[2*i + 0] = a + b;
@@ -340,7 +340,7 @@ void twofish192_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	}
 }
 
-void twofish256_key_init(uint32_t* key, struct twofishKey* twofish_key){
+void twofish256_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t 	i;
 	uint32_t 	j;
 	uint32_t 	a;
@@ -348,12 +348,12 @@ void twofish256_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	uint8_t  	S[4*TWOFISH_256_K];
 
 	for (i = 0; i < TWOFISH_256_K; i++){
-		rs_mult((uint8_t*)(key + 2*i), S + 4*i);
+		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);
 	}
 
 	for (i = 0; i < TWOFISH_NB_ROUND_KEY / 2; i++){
-		a = h_func(2*i + 0, (uint8_t*)key, TWOFISH_256_K, 0);
-		b = h_func(2*i + 1, (uint8_t*)key, TWOFISH_256_K, 1);
+		a = h_func(2*i + 0, (const uint8_t*)key, TWOFISH_256_K, 0);
+		b = h_func(2*i + 1, (const uint8_t*)key, TWOFISH_256_K, 1);
 		b = ROLc(b ,8);
 
 		twofish_key->ks[2*i + 0] = a + b;
@@ -368,7 +368,7 @@ void twofish256_key_init(uint32_t* key, struct twofishKey* twofish_key){
 	}
 }
 
-void twofish_encrypt(uint32_t* input, struct twofishKey* twofish_key, uint32_t* output){
+void twofish_encrypt(const uint32_t* input, const struct twofishKey* twofish_key, uint32_t* output){
 	uint32_t a;
 	uint32_t b;
 	uint32_t c;
@@ -403,7 +403,7 @@ void twofish_encrypt(uint32_t* input, struct twofishKey* twofish_key, uint32_t* 
 	output[3] = b ^ twofish_key->ks[7];
 }
 
-void twofish_decrypt(uint32_t* input, struct twofishKey* twofish_key, uint32_t* output){
+void twofish_decrypt(const uint32_t* input, const struct twofishKey* twofish_key, uint32_t* output){
 	uint32_t a;
 	uint32_t b;
 	uint32_t c;

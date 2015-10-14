@@ -8,20 +8,20 @@
 #include "windowsComp.h"
 #endif
 
-static inline void xor(void* input1, void* input2, void* output, uint32_t size){
+static inline void xor(const void* input1, const void* input2, void* output, uint32_t size){
 	uint32_t i;
 
 	for (i = 0; i < size / 4; i++){
-		*((uint32_t*)(output) + i) = *((uint32_t*)(input1) + i) ^ *((uint32_t*)(input2) + i);
+		*((uint32_t*)(output) + i) = *((const uint32_t*)(input1) + i) ^ *((const uint32_t*)(input2) + i);
 	}
 	switch(size % 4){
-		case 3 : *((uint8_t*)(output) + 4*i + 0) = *((uint8_t*)(input1) + 4*i + 0) ^ *((uint8_t*)(input2) + 4*i + 0);
-		case 2 : *((uint8_t*)(output) + 4*i + 1) = *((uint8_t*)(input1) + 4*i + 1) ^ *((uint8_t*)(input2) + 4*i + 1);
-		case 1 : *((uint8_t*)(output) + 4*i + 2) = *((uint8_t*)(input1) + 4*i + 2) ^ *((uint8_t*)(input2) + 4*i + 2);
+		case 3 : *((uint8_t*)(output) + 4*i + 0) = *((const uint8_t*)(input1) + 4*i + 0) ^ *((const uint8_t*)(input2) + 4*i + 0);
+		case 2 : *((uint8_t*)(output) + 4*i + 1) = *((const uint8_t*)(input1) + 4*i + 1) ^ *((const uint8_t*)(input2) + 4*i + 1);
+		case 1 : *((uint8_t*)(output) + 4*i + 2) = *((const uint8_t*)(input1) + 4*i + 2) ^ *((const uint8_t*)(input2) + 4*i + 2);
 	}
 }
 
-void mode_enc_ecb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key){
+void mode_enc_ecb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -29,7 +29,7 @@ void mode_enc_ecb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_dec_ecb(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key){
+void mode_dec_ecb(blockCipher decrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -37,7 +37,7 @@ void mode_dec_ecb(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -51,7 +51,7 @@ void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -65,7 +65,7 @@ void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -80,7 +80,7 @@ void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	xor(input, output, output, size);
 }
 
-void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -95,7 +95,7 @@ void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	xor(input, output, output, size);
 }
 
-void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -109,7 +109,7 @@ void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
@@ -123,7 +123,7 @@ void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	}
 }
 
-void mode_enc_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_enc_ctr(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t 	i;
 	uint64_t local_iv[MAX_BLOCK_SIZE / 8];
 
@@ -148,7 +148,7 @@ void mode_enc_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint
 	xor(input, output, output, size);
 }
 
-void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, uint8_t* input, uint8_t* output, size_t size, void* key, uint8_t* iv){
+void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, const uint8_t* input, uint8_t* output, size_t size, const void* key, const uint8_t* iv){
 	size_t 	i;
 	uint64_t local_iv[MAX_BLOCK_SIZE / 8];
 

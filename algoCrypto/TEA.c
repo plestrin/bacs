@@ -4,7 +4,7 @@
 #define TEA_NB_ROUND	32
 #define XTEA_NB_ROUND 	32
 
-void tea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output){
+void tea_encrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t y;
 	uint32_t z;
 	uint32_t s;
@@ -22,7 +22,7 @@ void tea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output){
 	output[1] = z;
 }
 
-void tea_decrypt(uint32_t* data, uint32_t* key, uint32_t* output){
+void tea_decrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t y;
 	uint32_t z;
 	uint32_t s;
@@ -40,7 +40,7 @@ void tea_decrypt(uint32_t* data, uint32_t* key, uint32_t* output){
 	output[1] = z;
 }
 
-void xtea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output){
+void xtea_encrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t y;
 	uint32_t z;
 	uint32_t s;
@@ -59,7 +59,7 @@ void xtea_encrypt(uint32_t* data, uint32_t* key, uint32_t* output){
 	output[1] = z;
 }
 
-void xtea_decrypt(uint32_t* data, uint32_t* key, uint32_t* output){
+void xtea_decrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t y;
 	uint32_t z;
 	uint32_t s;
