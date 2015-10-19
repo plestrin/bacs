@@ -56,10 +56,10 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 			sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[j].node);
 			operation = ir_node_get_operation(assignement[j]);
 
-			if (operation->type == IR_OPERATION_TYPE_SYMBOL){
+			if (operation->type == IR_OPERATION_TYPE_SYMBOL && operation->operation_type.symbol.result != NULL){
 				if (sig_node->input_number > 0){
 					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.node 		= NULL;
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= operation->operation_type.symbol.result_ptr;
+					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= operation->operation_type.symbol.result;
 					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.index 	= operation->operation_type.symbol.index;
 					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 					nb_input ++;
@@ -67,7 +67,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 				if (sig_node->output_number > 0){
 					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.node 	= NULL;
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= operation->operation_type.symbol.result_ptr;
+					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= operation->operation_type.symbol.result;
 					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.index 	= operation->operation_type.symbol.index;
 					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
 					nb_output ++;
@@ -75,7 +75,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
 					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].node 			= NULL;
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= operation->operation_type.symbol.result_ptr;
+					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= operation->operation_type.symbol.result;
 					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].index 			= operation->operation_type.symbol.index;
 					nb_intern ++;
 				}
@@ -114,17 +114,14 @@ void result_push(struct result* result, struct ir* ir){
 	result->state = RESULTSTATE_PUSH;
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		result->symbol_node_buffer[i] = ir_add_symbol(ir, result, i);
+		result->symbol_node_buffer[i] = ir_add_symbol(ir, result->code_signature, result, i);
 		if (result->symbol_node_buffer[i] == NULL){
 			log_err("unable to add symbolic node to IR");
 			continue;
 		}
 
 		for (j = 0; j < result->code_signature->nb_frag_tot_in; j++){
-			if (result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node == NULL){
-				result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node = result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.result->symbol_node_buffer[result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.index];
-			}
-
+			virtualNode_push(result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node)
 			if (result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node == NULL){
 				log_err("unsatisfied input dependence");
 				continue;
@@ -136,10 +133,7 @@ void result_push(struct result* result, struct ir* ir){
 		}
 
 		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
-			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node == NULL){
-				result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node = result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.result->symbol_node_buffer[result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.index];
-			}
-
+			virtualNode_push(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node)
 			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node == NULL){
 				log_err("unsatisfied input dependence");
 				continue;
@@ -165,15 +159,11 @@ void result_pop(struct result* result, struct ir* ir){
 		result->symbol_node_buffer[i] = NULL;
 
 		for (j = 0; j < result->code_signature->nb_frag_tot_in; j++){
-			if (result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.result != NULL){
-				result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node = NULL;
-			}
+			virtualNode_pop(result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node)
 		}
 
 		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
-			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.result != NULL){
-				result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node = NULL;
-			}
+			virtualNode_pop(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node)
 		}
 	}
 }
@@ -551,7 +541,7 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 	uint32_t 				i;
 	uint32_t 				j;
 
-	code_signature = ((struct result*)(ir_node_get_operation(node)->operation_type.symbol.result_ptr))->code_signature;
+	code_signature = (struct codeSignature*)(ir_node_get_operation(node)->operation_type.symbol.code_signature);
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		dependence_cursor = ir_edge_get_dependence(edge_cursor);

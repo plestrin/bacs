@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "irCheck.h"
-#include "result.h"
+#include "codeSignature.h"
 #include "base.h"
 
 uint32_t ir_check_size(struct ir* ir){
@@ -770,7 +770,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
-				struct codeSignature* code_signature = ((struct result*)operation_cursor->operation_type.symbol.result_ptr)->code_signature;
+				struct codeSignature* code_signature = (struct codeSignature*)operation_cursor->operation_type.symbol.code_signature;
 
 				/* Check input edge(s) */
 				if (node_cursor->nb_edge_dst != code_signature->nb_frag_tot_in){
@@ -973,6 +973,71 @@ uint32_t ir_check_instruction_index(struct ir* ir){
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
 					break;
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+uint32_t ir_check_memory(struct ir* ir){
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+	struct node* 		root 				= NULL;
+	uint32_t 			result 				= 0;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+			operation_cursor->status_flag &= ~IR_OPERATION_STATUS_FLAG_TEST;
+			root = node_cursor;
+		}
+	}
+
+	if (root != NULL){
+		for (node_cursor = root; ir_node_get_operation(node_cursor)->operation_type.mem.prev != NULL; ){
+			operation_cursor = ir_node_get_operation(node_cursor);
+			if (operation_cursor->operation_type.mem.order <= ir_node_get_operation(operation_cursor->operation_type.mem.prev)->operation_type.mem.order){
+				log_err_m("memory access linked list is not ordered: %u <- %u", ir_node_get_operation(operation_cursor->operation_type.mem.prev)->operation_type.mem.order, operation_cursor->operation_type.mem.order);
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			if (ir_node_get_operation(operation_cursor->operation_type.mem.prev)->operation_type.mem.next != node_cursor){
+				log_err("memory access linked list is broken (a->prev->next != a)");
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.prev;
+			ir_node_get_operation(node_cursor)->status_flag |= IR_OPERATION_STATUS_FLAG_TEST;
+		}
+
+		for (node_cursor = root; ir_node_get_operation(node_cursor)->operation_type.mem.next != NULL; ){
+			operation_cursor = ir_node_get_operation(node_cursor);
+			if (operation_cursor->operation_type.mem.order >= ir_node_get_operation(operation_cursor->operation_type.mem.next)->operation_type.mem.order){
+				log_err_m("memory access linked list is not ordered: %u -> %u", operation_cursor->operation_type.mem.order, ir_node_get_operation(operation_cursor->operation_type.mem.next)->operation_type.mem.order);
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			if (ir_node_get_operation(operation_cursor->operation_type.mem.next)->operation_type.mem.prev != node_cursor){
+				log_err("memory access linked list is broken (a->next->prev != a)");
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.next;
+			ir_node_get_operation(node_cursor)->status_flag |= IR_OPERATION_STATUS_FLAG_TEST;
+		}
+
+		for (node_cursor = node_get_next(root); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+			operation_cursor = ir_node_get_operation(node_cursor);
+			if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+				if ((operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_TEST) == 0){
+					log_err("memory access linked list is not connected");
+					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+					result = 1;
+				}
+				else{
+					operation_cursor->status_flag &= ~IR_OPERATION_STATUS_FLAG_TEST;
 				}
 			}
 		}

@@ -172,6 +172,7 @@ enum irOperationType{
 
 #define IR_OPERATION_STATUS_FLAG_NONE 		0x00000000
 #define IR_OPERATION_STATUS_FLAG_FINAL 		0x00000001
+#define IR_OPERATION_STATUS_FLAG_COMPOUND 	0x00000002
 #define IR_OPERATION_STATUS_FLAG_ERROR 		0x80000000
 #define IR_OPERATION_STATUS_FLAG_TEST 		0x40000000
 #define IR_OPERATION_STATUS_FLAG_TESTING 	0x20000000
@@ -182,11 +183,14 @@ enum irOperationType{
 
 #define IR_OPERATION_DST_UNKOWN 			0xffffffff
 
+#define IR_IN_REG_IS_PRIMER 				0x00000001
+
 struct irOperation{
 	enum irOperationType 			type;
 	union {
 		struct {
 			enum irRegister 		reg;
+			uint32_t 				primer;
 		} 							in_reg;
 		struct {
 			struct node* 			prev;
@@ -204,8 +208,9 @@ struct irOperation{
 			uint32_t 				seed;
 		} 							inst;
 		struct {
-			void* 					result_ptr;
-			int32_t 				index;
+			void* 					code_signature;
+			void* 					result;
+			uint32_t 				index;
 		} 							symbol;
 	} 								operation_type;
 	uint8_t 						size;
@@ -214,6 +219,7 @@ struct irOperation{
 };
 
 #define ir_node_get_operation(node) 	((struct irOperation*)node_get_data(node))
+#define irOperation_get_node(operation) (((struct node*)(operation)) - 1)
 
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)(((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))) | ((((op)->operation_type.imm.value >> ((op)->size - 1)) & 0x0000000000000001ULL) ? (0xffffffffffffffffULL << (op)->size) : 0)))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
@@ -249,7 +255,8 @@ struct irDependence{
 	} 							dependence_type;
 };
 
-#define ir_edge_get_dependence(edge) 	((struct irDependence*)edge_get_data(edge))
+#define ir_edge_get_dependence(edge) 		((struct irDependence*)edge_get_data(edge))
+#define irDependence_get_edge(dependence) 	(((struct edge*)(dependence)) - 1)
 
 /* Bit map description of the macro parameter (read the edge labeling prior to modify this mapping)
 	- [0 :6 ] 	reserved
@@ -266,9 +273,16 @@ struct irDependence{
 #define IR_DEPENDENCE_MACRO_DESC_GET_FRAG(desc) 		(((desc) >> 8) & 0x000000ff)
 #define IR_DEPENDENCE_MACRO_DESC_GET_ARG(desc) 			(((desc) >> 16) & 0x00000ff)
 
+struct alias{
+	struct node* 		ir_node;
+	uint32_t 			order;
+	uint8_t 			type;
+};
+
 struct ir{
-	struct 			graph graph;
+	struct graph 	graph;
 	uint32_t 		range_seed;
+	struct alias 	alias_buffer[NB_IR_REGISTER];
 };
 
 #define IR_INVALID_RANGE_SEED 0
@@ -277,7 +291,16 @@ struct ir{
 struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace);
 int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace);
 
-struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg);
+struct irComponent{
+	uint32_t 	instruction_start;
+	uint32_t 	instruction_stop;
+	struct ir*	ir;
+};
+
+struct ir* ir_create_compound(struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
+int32_t ir_init_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
+
+struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg, uint32_t primer);
 
 struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct node* address, struct node* prev, ADDRESS concrete_address);
 #define ir_add_in_mem(ir, index, size, address, prev) ir_add_in_mem_(ir, index, size, address, prev, MEMADDRESS_INVALID)
@@ -287,7 +310,7 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);
-struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index);
+struct node* ir_add_symbol(struct ir* ir, void* code_signature, void* result, uint32_t index);
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
 struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);

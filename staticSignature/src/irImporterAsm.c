@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "irImporterAsm.h"
-#include "graph.h"
 #include "irRenameEngine.h"
+#include "irConcat.h"
 #include "base.h"
 
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
@@ -235,227 +235,265 @@ static void cisc_decode_special_punpckldq(struct assembly* assembly, struct inst
 
 #define irImporterAsm_get_mem_trace(trace, ins_it) (((trace) != NULL && instructionIterator_is_mem_addr_valid(ins_it)) ? ((trace)->mem_addr_buffer + instructionIterator_get_mem_addr_index(ins_it)) : NULL)
 
-int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct memTrace* trace){
-	struct asmCiscIns 			cisc;
-	struct irRenameEngine 		engine;
+#define IRIMPORTER_STACK_MAX_SIZE 	32
+#define IRIMPORTER_STACK_PTR 		15 /* must be strictly smaller than IRIMPORTER_STACK_MAX_SIZE */
+
+struct irImporter{
+	struct irRenameEngine 	engine;
+	uint32_t 				stack[IRIMPORTER_STACK_MAX_SIZE];
+	int32_t 				stack_ptr;
+	uint32_t 				func_id;
+};
+
+static void irImporter_init(struct irImporter* importer, struct ir* ir){
+	uint32_t i;
+
+	irRenameEngine_init(importer->engine, ir)
+
+	for (i = 0; i <= IRIMPORTER_STACK_PTR; i++){
+		importer->stack[i] = i;
+	}
+
+	memset(importer->stack + i, 0, IRIMPORTER_STACK_MAX_SIZE - (IRIMPORTER_STACK_PTR + 1));
+
+	importer->stack_ptr = IRIMPORTER_STACK_PTR;
+	importer->func_id = IRIMPORTER_STACK_PTR + 1;
+}
+
+#define irImporter_increment_call_stack(importer) 										\
+	if ((importer)->stack_ptr + 1 == IRIMPORTER_STACK_MAX_SIZE){ 						\
+		log_err("the top of the stack has been reached"); 								\
+	} 																					\
+	else{ 																				\
+		(importer)->stack[++ (importer)->stack_ptr] = (importer)->func_id ++; 			\
+	}
+
+#define irImporter_get_call_id(importer) ((importer)->stack[(importer)->stack_ptr])
+
+#define irImporter_decrement_call_stack(importer) 										\
+	if ((importer)->stack_ptr == 0){ 													\
+		log_err("the bottom of the stack has been reached"); 							\
+	} 																					\
+	else{ 																				\
+		(importer)->stack_ptr --; 														\
+	}
+
+static void irImporter_clean(struct irImporter* importer){
+	irRenameEngine_tag_final_node(&(importer->engine));
+}
+
+static void irImporter_handle_instruction(struct assembly* assembly, struct irImporter* importer, struct instructionIterator* it, struct memAddress* mem_addr){
+	struct asmCiscIns 	cisc;
+	uint32_t 			i;
+
+	ASMCISCINS_SET_INVALID(cisc);
+
+	/* for stdcall and cdecl eax is caller-saved so it's safe to erase */
+	if (it->instruction_index > 0 && it->prev_black_listed){
+		#ifdef VERBOSE
+		log_info_m("assuming stdcall/cdecl @ %u", it->instruction_index);
+		#endif
+		irRenameEngine_clear_eax_std_call(importer->engine);
+	}
+
+	switch(xed_decoded_inst_get_iclass(&(it->xedd))){
+		case XED_ICLASS_BSWAP 		: {break;}
+		case XED_ICLASS_CALL_NEAR 	: {
+			cisc_decode_special_call(it, &cisc, mem_addr);
+			irImporter_increment_call_stack(importer)
+			break;
+		}
+		case XED_ICLASS_CDQ 		: {
+			log_warn("no translation for CDQ");
+			break;
+		}
+		case XED_ICLASS_CMP 		: {break;}
+		case XED_ICLASS_DEC 		: {
+			cisc_decode_special_dec(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_DIV 		: {
+			cisc_decode_special_div(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_EMMS 		: {break;}
+		case XED_ICLASS_INC 		: {
+			cisc_decode_special_inc(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_JB 			: {break;}
+		case XED_ICLASS_JBE 		: {break;}
+		case XED_ICLASS_JL  		: {break;}
+		case XED_ICLASS_JLE 		: {break;}
+		case XED_ICLASS_JMP 		: {break;}
+		case XED_ICLASS_JNB 		: {break;}
+		case XED_ICLASS_JNBE 		: {break;}
+		case XED_ICLASS_JNL 		: {break;}
+		case XED_ICLASS_JNS 		: {break;}
+		case XED_ICLASS_JNZ 		: {break;}
+		case XED_ICLASS_JZ 			: {break;}
+		case XED_ICLASS_LEAVE 		: {
+			cisc_decode_special_leave(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_LFENCE 		: {break;}
+		case XED_ICLASS_MOVAPS 		: {
+			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVD 		: {
+			cisc_decode_special_movd(assembly, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVDQA 		: {
+			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVDQU 		: {
+			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVQ 		: {
+			cisc_decode_special_movq(assembly, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVUPS 		: {
+			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_NOP 		: {break;}
+		case XED_ICLASS_PADDD 		: {
+			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
+				cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			}
+			else{
+				cisc_decode_generic_smid2(it, &cisc, mem_addr);
+			}
+			break;
+		}
+		case XED_ICLASS_PAND 		: {
+			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
+				cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			}
+			else{
+				cisc_decode_generic_smid2(it, &cisc, mem_addr);
+			}
+			break;
+		}
+		case XED_ICLASS_PINSRW 		: {
+			cisc_decode_special_pinsrw(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_POR 		: {
+			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
+				cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			}
+			else{
+				cisc_decode_generic_smid2(it, &cisc, mem_addr);
+			}
+			break;
+		}
+		case XED_ICLASS_POP 		: {
+			cisc_decode_special_pop(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PSHUFD 		: {
+			cisc_decode_special_pshufd(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PSLLD 		: {
+			cisc_decode_special_pslld(assembly, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PSRLD 		: {
+			cisc_decode_special_psrld(assembly, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PUNPCKLDQ 	: {
+			cisc_decode_special_punpckldq(assembly, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PUSH 		: {
+			cisc_decode_special_push(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PXOR 		: {
+			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
+				cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			}
+			else{
+				cisc_decode_generic_smid2(it, &cisc, mem_addr);
+			}
+			break;
+		}
+		case XED_ICLASS_RET_FAR 	: {
+			cisc_decode_special_ret(assembly, it, &cisc);
+			irImporter_decrement_call_stack(importer)
+			break;
+		}
+		case XED_ICLASS_RET_NEAR 	: {
+			cisc_decode_special_ret(assembly, it, &cisc);
+			irImporter_decrement_call_stack(importer)
+			break;
+		}
+		case XED_ICLASS_TEST 		: {break;}
+		case XED_ICLASS_XORPS 		: {
+			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			break;
+		}
+		default :{
+			cisc.nb_ins = 1;
+			cisc.ins[0].opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
+			if (cisc.ins[0].opcode != IR_INVALID){
+				ASMCISCINS_SET_VALID(cisc);
+				asmOperand_decode(it, cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand), mem_addr);
+				asmOperand_decode(it, &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, mem_addr);
+			}
+		}
+	}
+
+	if (ASMCISCINS_IS_VALID(cisc)){
+		for (i = 0; i < cisc.nb_ins; i++){
+			switch(cisc.ins[i].opcode){
+				case IR_CMOV 	: {
+					asmRisc_process_special_cmov(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					break;
+				}
+				case IR_LEA 	: {
+					asmRisc_process_special_lea(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					break;
+				}
+				case IR_MOV 	: {
+					asmRisc_process_special_mov(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					break;
+				}
+				default 				: {
+					asmRisc_process(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+				}
+			}
+		}
+	}
+}
+
+static void irImporter_handle_irComponent(struct ir* ir, struct irImporter* importer, struct irComponent* ir_component){
+	if (ir_concat(ir, ir_component->ir, &(importer->engine))){
+		log_err("unable to concat IR");
+	}
+}
+
+int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
 	struct instructionIterator 	it;
-	uint32_t 					i;
-	#define STACK_MAX_SIZE 		32
-	uint32_t 					stack[STACK_MAX_SIZE] 	= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	int32_t 					stack_ptr 				= 15;
-	uint32_t 					func_id 				= 16;
+	struct irImporter 			importer;
 
-	irRenameEngine_init(engine, ir)
+	irImporter_init(&importer, ir);
 
-	if (assembly_get_instruction(assembly, &it, 0)){
+	if (assembly_get_first_instruction(assembly, &it)){
 		log_err("unable to fetch first instruction from the assembly");
 		return -1;
 	}
 
-	for (;;){
-		ASMCISCINS_SET_INVALID(cisc);
-
-		/* for stdcall and cdecl eax is caller-saved so it's safe to erase */
-		if (it.instruction_index > 0 && it.prev_black_listed){
-			#ifdef VERBOSE
-			log_info_m("assuming stdcall/cdecl @ %u", it.instruction_index);
-			#endif
-			irRenameEngine_clear_eax_std_call(engine);
-		}
-
-		switch(xed_decoded_inst_get_iclass(&(it.xedd))){
-			case XED_ICLASS_BSWAP 		: {break;}
-			case XED_ICLASS_CALL_NEAR 	: {
-				cisc_decode_special_call(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				if (stack_ptr + 1 == STACK_MAX_SIZE){
-					log_err(" the top of the stack has been reached");
-				}
-				else{
-					stack[++ stack_ptr] = func_id ++;
-				}
-				break;
-			}
-			case XED_ICLASS_CDQ 		: {
-				log_warn("no translation for CDQ");
-				break;
-			}
-			case XED_ICLASS_CMP 		: {break;}
-			case XED_ICLASS_DEC 		: {
-				cisc_decode_special_dec(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_DIV 		: {
-				cisc_decode_special_div(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_EMMS 		: {break;}
-			case XED_ICLASS_INC 		: {
-				cisc_decode_special_inc(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_JB 			: {break;}
-			case XED_ICLASS_JBE 		: {break;}
-			case XED_ICLASS_JL  		: {break;}
-			case XED_ICLASS_JLE 		: {break;}
-			case XED_ICLASS_JMP 		: {break;}
-			case XED_ICLASS_JNB 		: {break;}
-			case XED_ICLASS_JNBE 		: {break;}
-			case XED_ICLASS_JNL 		: {break;}
-			case XED_ICLASS_JNS 		: {break;}
-			case XED_ICLASS_JNZ 		: {break;}
-			case XED_ICLASS_JZ 			: {break;}
-			case XED_ICLASS_LEAVE 		: {
-				cisc_decode_special_leave(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_LFENCE 		: {break;}
-			case XED_ICLASS_MOVAPS 		: {
-				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_MOVD 		: {
-				cisc_decode_special_movd(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_MOVDQA 		: {
-				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_MOVDQU 		: {
-				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_MOVQ 		: {
-				cisc_decode_special_movq(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_MOVUPS 		: {
-				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_NOP 		: {break;}
-			case XED_ICLASS_PADDD 		: {
-				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
-					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				else{
-					cisc_decode_generic_smid2(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				break;
-			}
-			case XED_ICLASS_PAND 		: {
-				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
-					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				else{
-					cisc_decode_generic_smid2(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				break;
-			}
-			case XED_ICLASS_PINSRW 		: {
-				cisc_decode_special_pinsrw(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_POR 		: {
-				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
-					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				else{
-					cisc_decode_generic_smid2(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				break;
-			}
-			case XED_ICLASS_POP 		: {
-				cisc_decode_special_pop(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PSHUFD 		: {
-				cisc_decode_special_pshufd(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PSLLD 		: {
-				cisc_decode_special_pslld(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PSRLD 		: {
-				cisc_decode_special_psrld(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PUNPCKLDQ 	: {
-				cisc_decode_special_punpckldq(assembly, &it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PUSH 		: {
-				cisc_decode_special_push(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			case XED_ICLASS_PXOR 		: {
-				if (assembly->dyn_blocks[it.dyn_block_index].block->data[it.instruction_offset] == 0x66){
-					cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				else{
-					cisc_decode_generic_smid2(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				}
-				break;
-			}
-			case XED_ICLASS_RET_FAR 	: {
-				cisc_decode_special_ret(assembly, &it, &cisc);
-				if (stack_ptr == 0){
-					log_err(" the bottom of the stack has been reached");
-				}
-				else{
-					stack_ptr --;
-				}
-				break;
-			}
-			case XED_ICLASS_RET_NEAR 	: {
-				cisc_decode_special_ret(assembly, &it, &cisc);
-				if (stack_ptr == 0){
-					log_err(" the bottom of the stack has been reached");
-				}
-				else{
-					stack_ptr --;
-				}
-				break;
-			}
-			case XED_ICLASS_TEST 		: {break;}
-			case XED_ICLASS_XORPS 		: {
-				cisc_decode_generic_smid4(&it, &cisc, irImporterAsm_get_mem_trace(trace, &it));
-				break;
-			}
-			default :{
-				cisc.nb_ins = 1;
-				cisc.ins[0].opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it.xedd)));
-				if (cisc.ins[0].opcode != IR_INVALID){
-					ASMCISCINS_SET_VALID(cisc);
-					asmOperand_decode(&it, cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand), irImporterAsm_get_mem_trace(trace, &it));
-					asmOperand_decode(&it, &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, irImporterAsm_get_mem_trace(trace, &it));
-				}
-			}
-		}
-
-		if (ASMCISCINS_IS_VALID(cisc)){
-			for (i = 0; i < cisc.nb_ins; i++){
-				switch(cisc.ins[i].opcode){
-					case IR_CMOV 	: {
-						asmRisc_process_special_cmov(&engine, cisc.ins + i, stack[stack_ptr]);
-						break;
-					}
-					case IR_LEA 	: {
-						asmRisc_process_special_lea(&engine, cisc.ins + i, stack[stack_ptr]);
-						break;
-					}
-					case IR_MOV 	: {
-						asmRisc_process_special_mov(&engine, cisc.ins + i, stack[stack_ptr]);
-						break;
-					}
-					default 				: {
-						asmRisc_process(&engine, cisc.ins + i, stack[stack_ptr]);
-					}
-				}
-			}
-		}
-
+	for (; ; ){
+		irImporter_handle_instruction(assembly, &importer, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
 		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
 			break;
 		}
@@ -467,7 +505,56 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 		}
 	}
 
-	irRenameEngine_tag_final_node(&engine);
+	irImporter_clean(&importer);
+
+	return 0;
+}
+
+int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+	struct instructionIterator 	it;
+	struct irImporter 			importer;
+	uint32_t 					i;
+
+	irImporter_init(&importer, ir);
+
+	if (assembly_get_first_instruction(assembly, &it)){
+		log_err("unable to fetch first instruction from the assembly");
+		return -1;
+	}
+
+	for (i = 0; ; ){
+		if (i < nb_ir_component && instructionIterator_get_instruction_index(&it) == ir_component_buffer[i]->instruction_start){
+			irImporter_handle_irComponent(ir, &importer, ir_component_buffer[i]);
+			if (ir_component_buffer[i]->instruction_stop == assembly_get_nb_instruction(assembly)){
+				break;
+			}
+			else{
+				if (assembly_get_instruction(assembly, &it, ir_component_buffer[i]->instruction_stop)){
+					log_err_m("unable to fetch instruction %u from the assembly", ir_component_buffer[i]->instruction_stop);
+					return -1;
+				}
+				i ++;
+			}
+		}
+		else{
+			irImporter_handle_instruction(assembly, &importer, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
+			if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
+				break;
+			}
+			else{
+				if (assembly_get_next_instruction(assembly, &it)){
+					log_err("unable to fetch next instruction from the assembly");
+					return -1;
+				}
+			}	
+		}
+	}
+
+	irImporter_clean(&importer);
+
+	#ifdef IR_FULL_CHECK
+	ir_check_memory(ir);
+	#endif
 
 	return 0;
 }

@@ -10,6 +10,7 @@ uint32_t ir_check_size(struct ir* ir);
 uint32_t ir_check_order(struct ir* ir);
 uint32_t ir_check_instruction_index(struct ir* ir);
 uint32_t ir_check_acyclic(struct ir* ir);
+uint32_t ir_check_memory(struct ir* ir);
 
 void ir_check_clean_error_flag(struct ir* ir);
 

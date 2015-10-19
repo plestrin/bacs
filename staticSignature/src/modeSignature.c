@@ -4,7 +4,7 @@
 
 #include "modeSignature.h"
 #include "synthesisGraph.h"
-#include "result.h"
+#include "codeSignature.h"
 #include "ir.h"
 #include "base.h"
 
@@ -141,7 +141,7 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 		case SYNTHESISNODETYPE_RESULT 			: {
 			symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), 0);
 			nameEngine_get();
-			label = nameEngine_search(((struct result*)(ir_node_get_operation(symbol)->operation_type.symbol.result_ptr))->code_signature->signature.symbol) << 2;
+			label = nameEngine_search(((struct codeSignature*)(ir_node_get_operation(symbol)->operation_type.symbol.code_signature))->signature.symbol) << 2;
 			nameEngine_release();
 			break;
 		}

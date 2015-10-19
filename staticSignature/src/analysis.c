@@ -70,7 +70,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
 
-	/* code signature specific commands */
+	/* signature specific commands */
 	add_cmd_to_input_parser(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	add_cmd_to_input_parser(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
 	add_cmd_to_input_parser(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), signatureCollection_printDot)
@@ -87,6 +87,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_call_export)
 	add_cmd_to_input_parser(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
 
+	/* synthesisGraph specific commands */
 	add_cmd_to_input_parser(parser, "create synthesis", 		"Search for relation between results in IR", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_create)
 	add_cmd_to_input_parser(parser, "printDot synthesis", 		"Print the synthesis graph in dot format", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_printDot)
 
@@ -827,7 +828,7 @@ void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 	uint32_t 		i;
 	uint32_t 		j;
 	struct trace* 	selected_trace;
-	struct array 	component_frag_array;
+	struct array 	ir_component_array;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
@@ -848,7 +849,7 @@ void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 	for (i = start; i < stop; i++){
 		selected_trace = (struct trace*)array_get(&(analysis->frag_array), i);
 
-		if (componentFrag_init_array(&component_frag_array)){
+		if (array_init(&ir_component_array, sizeof(struct irComponent))){
 			log_err("unable to init componentFrag array");
 			break;
 		}
@@ -857,11 +858,11 @@ void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 			if (j == i){
 				continue;
 			}
-			trace_search_componentFrag(selected_trace, (struct trace*)array_get(&(analysis->frag_array), j), &component_frag_array);
+			trace_search_irComponent(selected_trace, (struct trace*)array_get(&(analysis->frag_array), j), &ir_component_array);
 		}
 
-		trace_create_compound_ir(selected_trace, &component_frag_array);
-		componentFrag_clean_array(&component_frag_array);
+		trace_create_compound_ir(selected_trace, &ir_component_array);
+		componentFrag_clean_array(&ir_component_array);
 	}
 }
 
@@ -956,6 +957,7 @@ void analysis_code_signature_clean(struct analysis* analysis){
 			for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
 				result = (struct result*)array_get(&(fragment->trace_type.frag.result_array), j);
 				if (result->state == RESULTSTATE_PUSH && fragment->trace_type.frag.ir != NULL){
+					log_warn_m("deleting IR of fragment \"%s\" because it depends on signature \"%s\"", fragment->trace_type.frag.tag, result->code_signature->signature.name);
 					ir_delete(fragment->trace_type.frag.ir)
 					fragment->trace_type.frag.ir = NULL;
 				}

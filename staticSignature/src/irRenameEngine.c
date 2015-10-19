@@ -357,7 +357,7 @@ static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegist
 	}
 
 	for (i = 0, nb_newer = 0; i < nb_inner; i++){
-		if (engine->register_alias[list->registers[i]].ir_node != NULL && engine->register_alias[reg].order < engine->register_alias[list->registers[i]].order){
+		if (engine->ir->alias_buffer[list->registers[i]].ir_node != NULL && engine->ir->alias_buffer[reg].order < engine->ir->alias_buffer[list->registers[i]].order){
 			if (nb_newer != i){
 				list->registers[nb_newer] = list->registers[i];
 			}
@@ -374,20 +374,20 @@ static enum irRegister irRenameEngine_pop_list(struct irRenameEngine* engine, st
 	uint8_t  			nb_older;
 	
 	reg = list->registers[0];
-	max_ts = engine->register_alias[list->registers[0]].order;
+	max_ts = engine->ir->alias_buffer[list->registers[0]].order;
 
 	for (i = 1; i < list->nb_register; i++){
-		if (max_ts < engine->register_alias[list->registers[i]].order){
-			max_ts = engine->register_alias[list->registers[i]].order;
+		if (max_ts < engine->ir->alias_buffer[list->registers[i]].order){
+			max_ts = engine->ir->alias_buffer[list->registers[i]].order;
 			reg = list->registers[i];
 		}
-		else if (max_ts == engine->register_alias[list->registers[i]].order && (ALIAS_IS_EXTEND(engine->register_alias[reg].type) || ALIAS_IS_WRITE(engine->register_alias[list->registers[i]].type))){
+		else if (max_ts == engine->ir->alias_buffer[list->registers[i]].order && (alias_is_extend(engine->ir->alias_buffer[reg]) || alias_is_write(engine->ir->alias_buffer[list->registers[i]]))){
 			reg = list->registers[i];
 		}
 	}
 
 	for (i = 0, nb_older = 0; i < list->nb_register; i++){
-		if (engine->register_alias[list->registers[i]].order != max_ts){
+		if (engine->ir->alias_buffer[list->registers[i]].order != max_ts){
 			if (nb_older != i){
 				list->registers[nb_older] = list->registers[i];
 			}
@@ -421,15 +421,15 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
 
 				if (new_ins != IR_INVALID){
-					engine->register_alias[reg].ir_node = ir_add_inst(engine->ir, instruction_index, irRegister_get_size(reg), new_ins, dst);
-					engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
-					engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_EXTEND;
-					if (engine->register_alias[reg].ir_node == NULL){
+					engine->ir->alias_buffer[reg].ir_node = ir_add_inst(engine->ir, instruction_index, irRegister_get_size(reg), new_ins, dst);
+					engine->ir->alias_buffer[reg].order = engine->ir->alias_buffer[reg1].order;
+					alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_EXTEND);
+					if (engine->ir->alias_buffer[reg].ir_node == NULL){
 						log_err("unable to add operation to IR");
 					}
 					else{
-						ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, engine->register_alias[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
-						node = engine->register_alias[reg].ir_node;
+						ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg1].ir_node, engine->ir->alias_buffer[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+						node = engine->ir->alias_buffer[reg].ir_node;
 					}
 				}
 				else{
@@ -440,26 +440,26 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 				if (list.nb_register){
 					reg2 = irRenameEngine_pop_list(engine, &list);
 					if (list.nb_register){
-						log_err("this case is not implemented yet, more than two element in the dependence list");
+						log_err("this case is not implemented yet, more than two elements in the dependence list");
 					}
-					else if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
-						engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, min(ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, ir_node_get_operation(engine->register_alias[reg2].ir_node)->index), reg);
-						engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
-						engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+					else if (alias_is_read(engine->ir->alias_buffer[reg1])){
+						engine->ir->alias_buffer[reg].ir_node = ir_add_in_reg(engine->ir, min(ir_node_get_operation(engine->ir->alias_buffer[reg1].ir_node)->index, ir_node_get_operation(engine->ir->alias_buffer[reg2].ir_node)->index), reg, (alias_is_primer(engine->ir->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
+						engine->ir->alias_buffer[reg].order = engine->ir->alias_buffer[reg1].order;
+						alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_READ);
 
-						if (engine->register_alias[reg].ir_node != NULL){
-							engine->register_alias[reg1].type = IRRENAMEENGINE_TYPE_EXTEND;
+						if (engine->ir->alias_buffer[reg].ir_node != NULL){
+							alias_set_type(engine->ir->alias_buffer[reg1], IRRENAMEENGINE_TYPE_EXTEND);
 
-							ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, irRegister_get_size(reg1), partIns[family][registerIndex[reg]][registerIndex[reg1]]);
-							ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+							ir_convert_node_to_inst(engine->ir->alias_buffer[reg1].ir_node, ir_node_get_operation(engine->ir->alias_buffer[reg1].ir_node)->index, irRegister_get_size(reg1), partIns[family][registerIndex[reg]][registerIndex[reg1]]);
+							ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg].ir_node, engine->ir->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
-							engine->register_alias[reg2].type = IRRENAMEENGINE_TYPE_EXTEND;
-							engine->register_alias[reg2].order = engine->register_alias[reg1].order;
+							alias_set_type(engine->ir->alias_buffer[reg2], IRRENAMEENGINE_TYPE_EXTEND);
+							engine->ir->alias_buffer[reg2].order = engine->ir->alias_buffer[reg1].order;
 
-							ir_convert_node_to_inst(engine->register_alias[reg2].ir_node, ir_node_get_operation(engine->register_alias[reg2].ir_node)->index, irRegister_get_size(reg2), partIns[family][registerIndex[reg]][registerIndex[reg2]]);
-							ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+							ir_convert_node_to_inst(engine->ir->alias_buffer[reg2].ir_node, ir_node_get_operation(engine->ir->alias_buffer[reg2].ir_node)->index, irRegister_get_size(reg2), partIns[family][registerIndex[reg]][registerIndex[reg2]]);
+							ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg].ir_node, engine->ir->alias_buffer[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
-							node = engine->register_alias[reg].ir_node;
+							node = engine->ir->alias_buffer[reg].ir_node;
 						}
 						else{
 							log_err("unable to add input to IR");
@@ -470,21 +470,21 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					}
 				}
 				else{
-					if (ALIAS_IS_READ(engine->register_alias[reg1].type)){
+					if (alias_is_read(engine->ir->alias_buffer[reg1])){
 						new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
 
 						if (new_ins != IR_INVALID){
-							engine->register_alias[reg].ir_node = ir_add_in_reg(engine->ir, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, reg);
-							engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
-							engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+							engine->ir->alias_buffer[reg].ir_node = ir_add_in_reg(engine->ir, ir_node_get_operation(engine->ir->alias_buffer[reg1].ir_node)->index, reg, (alias_is_primer(engine->ir->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
+							engine->ir->alias_buffer[reg].order = engine->ir->alias_buffer[reg1].order;
+							alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_READ);
 
-							if (engine->register_alias[reg].ir_node != NULL){
-								engine->register_alias[reg1].type = IRRENAMEENGINE_TYPE_EXTEND;
+							if (engine->ir->alias_buffer[reg].ir_node != NULL){
+								alias_set_type(engine->ir->alias_buffer[reg1], IRRENAMEENGINE_TYPE_EXTEND);
 
-								ir_convert_node_to_inst(engine->register_alias[reg1].ir_node, ir_node_get_operation(engine->register_alias[reg1].ir_node)->index, irRegister_get_size(reg1), new_ins);
-								ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, engine->register_alias[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_convert_node_to_inst(engine->ir->alias_buffer[reg1].ir_node, ir_node_get_operation(engine->ir->alias_buffer[reg1].ir_node)->index, irRegister_get_size(reg1), new_ins);
+								ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg].ir_node, engine->ir->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
-								node = engine->register_alias[reg].ir_node;
+								node = engine->ir->alias_buffer[reg].ir_node;
 							}
 							else{
 								log_err("unable to add input to IR");
@@ -495,7 +495,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 						}
 					}
 					else{
-						if (engine->register_alias[reg].ir_node){
+						if (engine->ir->alias_buffer[reg].ir_node){
 							uint32_t 		size_reg1;
 							uint32_t 		size_reg;
 							struct node* 	imm_mask;
@@ -517,12 +517,12 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 								ir_add_dependence(engine->ir, imm_mask, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
 								ir_add_dependence(engine->ir, ins_and, node, IR_DEPENDENCE_TYPE_DIRECT);
 								ir_add_dependence(engine->ir, ins_movzx, node, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(engine->ir, engine->register_alias[reg].ir_node, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(engine->ir, engine->register_alias[reg1].ir_node, ins_movzx, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg].ir_node, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
+								ir_add_dependence(engine->ir, engine->ir->alias_buffer[reg1].ir_node, ins_movzx, IR_DEPENDENCE_TYPE_DIRECT);
 
-								engine->register_alias[reg].ir_node = node;
-								engine->register_alias[reg].order 	= engine->register_alias[reg1].order;
-								engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+								engine->ir->alias_buffer[reg].ir_node = node;
+								engine->ir->alias_buffer[reg].order = engine->ir->alias_buffer[reg1].order;
+								alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_READ);
 							}
 						}
 						else{
@@ -537,13 +537,13 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 		}
 	}
 	else{
-		node = engine->register_alias[reg].ir_node;
+		node = engine->ir->alias_buffer[reg].ir_node;
 		if (node == NULL){
-			node = ir_add_in_reg(engine->ir, instruction_index, reg);
+			node = ir_add_in_reg(engine->ir, instruction_index, reg, (alias_is_primer(engine->ir->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
 			if (node != NULL){
-				engine->register_alias[reg].ir_node = node;
-				engine->register_alias[reg].order 	= irRenameEngine_get_reg_order(engine);
-				engine->register_alias[reg].type 	= IRRENAMEENGINE_TYPE_READ;
+				engine->ir->alias_buffer[reg].ir_node = node;
+				engine->ir->alias_buffer[reg].order = irRenameEngine_get_reg_order(engine);
+				alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_READ);
 			}
 			else{
 				log_err("unable to add input to IR");
@@ -555,68 +555,68 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 }
 
 void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegister reg, struct node* node){
-	engine->register_alias[reg].ir_node 	= node;
-	engine->register_alias[reg].order  		= irRenameEngine_get_reg_order(engine);
-	engine->register_alias[reg].type 		= IRRENAMEENGINE_TYPE_WRITE;
+	engine->ir->alias_buffer[reg].ir_node 	= node;
+	engine->ir->alias_buffer[reg].order  	= irRenameEngine_get_reg_order(engine);
+	alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_WRITE);
 	switch(reg){
 		case IR_REG_EAX 	: {
-			engine->register_alias[IR_REG_AX].ir_node = NULL;
-			engine->register_alias[IR_REG_AH].ir_node = NULL;
-			engine->register_alias[IR_REG_AL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_AX].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_AH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_AL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_AX 		: {
-			engine->register_alias[IR_REG_AH].ir_node = NULL;
-			engine->register_alias[IR_REG_AL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_AH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_AL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_EBX 	: {
-			engine->register_alias[IR_REG_BX].ir_node = NULL;
-			engine->register_alias[IR_REG_BH].ir_node = NULL;
-			engine->register_alias[IR_REG_BL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BX].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_BX 		: {
-			engine->register_alias[IR_REG_BH].ir_node = NULL;
-			engine->register_alias[IR_REG_BL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_ECX 	: {
-			engine->register_alias[IR_REG_CX].ir_node = NULL;
-			engine->register_alias[IR_REG_CH].ir_node = NULL;
-			engine->register_alias[IR_REG_CL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_CX].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_CH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_CL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_CX 		: {
-			engine->register_alias[IR_REG_CH].ir_node = NULL;
-			engine->register_alias[IR_REG_CL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_CH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_CL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_EDX 	: {
-			engine->register_alias[IR_REG_DX].ir_node = NULL;
-			engine->register_alias[IR_REG_DH].ir_node = NULL;
-			engine->register_alias[IR_REG_DL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DX].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_DX 		: {
-			engine->register_alias[IR_REG_DH].ir_node = NULL;
-			engine->register_alias[IR_REG_DL].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DH].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DL].ir_node = NULL;
 			break;
 		}
 		case IR_REG_ESP 		: {
-			engine->register_alias[IR_REG_SP].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_SP].ir_node = NULL;
 			break;
 		}
 		case IR_REG_EBP 		: {
-			engine->register_alias[IR_REG_BP].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_BP].ir_node = NULL;
 			break;
 		}
 		case IR_REG_ESI 		: {
-			engine->register_alias[IR_REG_SI].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_SI].ir_node = NULL;
 			break;
 		}
 		case IR_REG_EDI 		: {
-			engine->register_alias[IR_REG_DI].ir_node = NULL;
+			engine->ir->alias_buffer[IR_REG_DI].ir_node = NULL;
 			break;
 		}
 		default 			: {
@@ -634,9 +634,43 @@ void irRenameEngine_tag_final_node(struct irRenameEngine* engine){
 			continue;
 		}
 
-		if (engine->register_alias[i].ir_node != NULL  && ALIAS_IS_WRITE(engine->register_alias[i].type)){
-			operation = ir_node_get_operation(engine->register_alias[i].ir_node);
+		if (engine->ir->alias_buffer[i].ir_node != NULL  && alias_is_write(engine->ir->alias_buffer[i])){
+			operation = ir_node_get_operation(engine->ir->alias_buffer[i].ir_node);
 			operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
 		}
 	}
+}
+
+void irRenameEngine_delete_node(struct alias* alias_buffer, struct node* node){
+	uint32_t i;
+
+	for (i = 0; i < NB_IR_REGISTER; i++){
+		if (alias_buffer[i].ir_node == node){
+			log_warn("deleting final node, this fragment should not be used to build compound ir");
+			alias_buffer[i].ir_node = NULL;
+		}
+	}
+}
+
+void irRenameEngine_propagate_alias(struct irRenameEngine* engine_dst, struct alias* alias_buffer_src){
+	uint32_t i;
+	uint32_t order = 0;
+
+	for (i = 0; i < NB_IR_REGISTER; i++){
+		if (i == IR_REG_TMP){
+			continue;
+		}
+
+		if (alias_buffer_src[i].ir_node != NULL){
+			order = max(order, alias_buffer_src[i].order);
+
+			if (alias_is_write(alias_buffer_src[i])){
+				engine_dst->ir->alias_buffer[i].ir_node 	= alias_buffer_src[i].ir_node->ptr;
+				engine_dst->ir->alias_buffer[i].order 		= alias_buffer_src[i].order + engine_dst->reg_op_order;
+				engine_dst->ir->alias_buffer[i].type 		= alias_buffer_src[i].type;
+			}
+		}
+	}
+
+	engine_dst->reg_op_order += order;
 }

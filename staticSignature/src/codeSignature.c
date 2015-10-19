@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "codeSignature.h"
-#include "result.h"
 #include "base.h"
 
 static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
@@ -133,7 +132,7 @@ uint32_t irNode_get_label(struct node* node){
 			return 0xfffffffe;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
-			return 0x0000ffff | (((struct result*)operation->operation_type.symbol.result_ptr)->code_signature->signature.id << 16);
+			return 0x0000ffff | (((struct codeSignature*)operation->operation_type.symbol.code_signature)->signature.id << 16);
 		}
 	}
 

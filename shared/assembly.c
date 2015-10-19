@@ -240,6 +240,39 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	return 0;
 }
 
+int32_t assembly_get_first_instruction(const struct assembly* assembly, struct instructionIterator* it){
+	xed_error_enum_t 	xed_error;
+
+	it->instruction_index 			= 0;
+	it->dyn_block_index 			= 0;
+	it->instruction_sub_index 		= 0;
+	it->instruction_offset 			= 0;
+	it->prev_black_listed 			= 0;
+	if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+		it->mem_access_valid 		= 0;
+	}
+	else{
+		it->mem_access_valid 		= 1;
+	}
+	it->mem_access_index 			= 0;
+
+	for (; dynBlock_is_invalid(assembly->dyn_blocks + it->dyn_block_index); it->dyn_block_index ++){
+		it->prev_black_listed = 1;
+	}
+
+	xed_decoded_inst_zero(&(it->xedd));
+	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
+	if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size, 15))) != XED_ERROR_NONE){
+		log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+		return -1;
+	}
+			
+	it->instruction_size = xed_decoded_inst_get_length(&(it->xedd));
+	it->instruction_address = assembly->dyn_blocks[it->dyn_block_index].block->header.address;
+
+	return 0;
+}
+
 int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index){
 	uint32_t 			up 		= assembly->nb_dyn_block;
 	uint32_t 			down 	= 0;
@@ -310,7 +343,7 @@ int32_t assembly_get_instruction(const struct assembly* assembly, struct instruc
 		else{
 			it->instruction_offset += xed_decoded_inst_get_length(&(it->xedd));
 
-			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
 				it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
 			}
 		}
@@ -1403,54 +1436,46 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 	}
 }
 
-uint32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const struct assembly* assembly_inn, uint32_t start){
-	struct instructionIterator 	it;
-	uint32_t 					j;
-
-	log_debug_m("Starting @ %u, inn has %u  block(s)", start, assembly_inn->nb_dyn_block);
-
-	if (assembly_get_instruction(assembly_ext, &it, start)){
-		log_err_m("unable to get instruction %u", start);
-		return 0xffffffff;
-	}
+int32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const struct assembly* assembly_inn, struct instructionIterator* it){
+	uint32_t j;
 
 	for ( ; ; ){
 		if (assembly_inn->nb_dyn_block > 1){
-			while (assembly_ext->dyn_blocks[it.dyn_block_index].block->header.size - it.instruction_offset > assembly_inn->dyn_blocks[0].block->header.size && it.instruction_sub_index + 1 != assembly_ext->dyn_blocks[it.dyn_block_index].block->header.nb_ins){
-				if (assembly_get_next_instruction(assembly_ext, &it)){
+			while (assembly_ext->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset > assembly_inn->dyn_blocks[0].block->header.size && it->instruction_sub_index + 1 != assembly_ext->dyn_blocks[it->dyn_block_index].block->header.nb_ins){
+				if (assembly_get_next_instruction(assembly_ext, it)){
 					log_err("unable to get next instruction");
 					goto next;
 				}
 			}
 
-			if (assembly_ext->dyn_blocks[it.dyn_block_index].block->header.size - it.instruction_offset != assembly_inn->dyn_blocks[0].block->header.size){
+			if (assembly_ext->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset != assembly_inn->dyn_blocks[0].block->header.size){
 				goto next;
 			}
 
-			if (memcmp(assembly_ext->dyn_blocks[it.dyn_block_index].block->data + (assembly_ext->dyn_blocks[it.dyn_block_index].block->header.size - assembly_inn->dyn_blocks[0].block->header.size), assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size)){
+			if (memcmp(assembly_ext->dyn_blocks[it->dyn_block_index].block->data + (assembly_ext->dyn_blocks[it->dyn_block_index].block->header.size - assembly_inn->dyn_blocks[0].block->header.size), assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size)){
 				goto next;
 			}
 
 			for (j = 1; j < assembly_inn->nb_dyn_block; j++){
-				if (it.dyn_block_index + j >= assembly_ext->nb_dyn_block){
+				if (it->dyn_block_index + j >= assembly_ext->nb_dyn_block){
 					goto next;
 				}
 
-				if (dynBlock_is_valid(assembly_ext->dyn_blocks + it.dyn_block_index + j)){
+				if (dynBlock_is_valid(assembly_ext->dyn_blocks + it->dyn_block_index + j)){
 					if (dynBlock_is_valid(assembly_inn->dyn_blocks + j)){
 						if (j + 1 == assembly_inn->nb_dyn_block){
-							if (assembly_ext->dyn_blocks[it.dyn_block_index + j].block->header.size < assembly_inn->dyn_blocks[j].block->header.size){
+							if (assembly_ext->dyn_blocks[it->dyn_block_index + j].block->header.size < assembly_inn->dyn_blocks[j].block->header.size){
 	 							goto next;
 	 						}
-	 						if (memcmp(assembly_ext->dyn_blocks[it.dyn_block_index + j].block->data, assembly_inn->dyn_blocks[j].block->data, assembly_inn->dyn_blocks[j].block->header.size)){
+	 						if (memcmp(assembly_ext->dyn_blocks[it->dyn_block_index + j].block->data, assembly_inn->dyn_blocks[j].block->data, assembly_inn->dyn_blocks[j].block->header.size)){
 	 							goto next;
 	 						}
 						}
 						else{
-	 						if (assembly_ext->dyn_blocks[it.dyn_block_index + j].block->header.size != assembly_inn->dyn_blocks[j].block->header.size){
+	 						if (assembly_ext->dyn_blocks[it->dyn_block_index + j].block->header.size != assembly_inn->dyn_blocks[j].block->header.size){
 	 							goto next;
 	 						}
-	 						if (memcmp(assembly_ext->dyn_blocks[it.dyn_block_index + j].block->data, assembly_inn->dyn_blocks[j].block->data, assembly_inn->dyn_blocks[j].block->header.size)){
+	 						if (memcmp(assembly_ext->dyn_blocks[it->dyn_block_index + j].block->data, assembly_inn->dyn_blocks[j].block->data, assembly_inn->dyn_blocks[j].block->header.size)){
 	 							goto next;
 	 						}
 						}
@@ -1466,19 +1491,19 @@ uint32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const
 				}
 			}
 
-			return it.instruction_index;
+			return 0;
 		}
 		else{
-			while (assembly_ext->dyn_blocks[it.dyn_block_index].block->header.size - it.instruction_offset >= assembly_inn->dyn_blocks[0].block->header.size){
-				if (memcmp(assembly_ext->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size) == 0){
-					return it.instruction_index;
+			while (assembly_ext->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset >= assembly_inn->dyn_blocks[0].block->header.size){
+				if (memcmp(assembly_ext->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset, assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size) == 0){
+					return 0;
 				}
 
-				if (it.instruction_sub_index + 1 == assembly_ext->dyn_blocks[it.dyn_block_index].block->header.nb_ins){
+				if (it->instruction_sub_index + 1 == assembly_ext->dyn_blocks[it->dyn_block_index].block->header.nb_ins){
 					break;
 				}
 
-				if (assembly_get_next_instruction(assembly_ext, &it)){
+				if (assembly_get_next_instruction(assembly_ext, it)){
 					log_err("unable to get next instruction");
 					break;
 				}
@@ -1486,8 +1511,8 @@ uint32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const
 		}
 
 		next:
-		if (it.dyn_block_index + 1 < assembly_ext->nb_dyn_block && (assembly_ext->nb_dyn_instruction - assembly_ext->dyn_blocks[it.dyn_block_index + 1].instruction_count) >= assembly_inn->nb_dyn_instruction){
-			if (assembly_get_next_block(assembly_ext, &it)){
+		if (it->dyn_block_index + 1 < assembly_ext->nb_dyn_block && (assembly_ext->nb_dyn_instruction - assembly_ext->dyn_blocks[it->dyn_block_index + 1].instruction_count) >= assembly_inn->nb_dyn_instruction){
+			if (assembly_get_next_block(assembly_ext, it)){
 				log_err("unable to get next block");
 				break;
 			}
@@ -1497,7 +1522,7 @@ uint32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const
 		}
 	}
 
-	return 0xffffffff;
+	return 1;
 }
 
 void assembly_clean(struct assembly* assembly){

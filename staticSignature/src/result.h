@@ -12,6 +12,17 @@ struct virtualNode{
 	uint32_t 		index;
 };
 
+#define virtualNode_get_node(virtual_node) (virtual_node).result->symbol_node_buffer[(virtual_node).index];
+#define virtualNode_push(virtual_node) 								\
+	if ((virtual_node).node == NULL){ 								\
+		(virtual_node).node = virtualNode_get_node(virtual_node); 	\
+	}
+
+#define virtualNode_pop(virtual_node) 								\
+	if ((virtual_node).result != NULL){ 							\
+		(virtual_node).node = NULL; 								\
+	}
+
 struct signatureLink{
 	struct virtualNode 		virtual_node;
 	uint32_t 				edge_desc;

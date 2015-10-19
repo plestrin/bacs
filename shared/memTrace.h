@@ -15,6 +15,8 @@ struct memAddress{
 	ADDRESS 	address;
 };
 
+uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint32_t nb_mem_addr);
+
 #define MEMADDRESS_DESCRIPTOR_CLEAN 	0x00000000
 #define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
 #define MEMADDRESS_DESCRIPTOR_WRITE_0 	0x00010000

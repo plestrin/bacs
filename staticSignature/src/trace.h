@@ -75,16 +75,8 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 void trace_create_ir(struct trace* trace);
 void trace_normalize_ir(struct trace* trace);
 
-struct componentFrag{
-	uint32_t 	instruction_start;
-	uint32_t 	instruction_stop;
-	struct ir*	component_ir;
-};
-
-#define componentFrag_init_array(array) array_init(array, sizeof(struct componentFrag))
-
-void trace_search_componentFrag(struct trace* trace_ext, struct trace* trace_inn, struct array* component_frag_array);
-void trace_create_compound_ir(struct trace* trace, struct array* component_frag_array);
+void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, struct array* ir_component_array);
+void trace_create_compound_ir(struct trace* trace, struct array* ir_component_array);
 
 #define componentFrag_clean_array(array) array_clean(array)
 

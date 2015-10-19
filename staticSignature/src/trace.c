@@ -354,8 +354,10 @@ void trace_normalize_ir(struct trace* trace){
 	ir_normalize(trace->trace_type.frag.ir);
 }
 
-void trace_search_componentFrag(struct trace* trace_ext, struct trace* trace_inn, struct array* component_frag_array){
-	struct componentFrag component_frag;
+void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, struct array* ir_component_array){
+	struct irComponent 			ir_component;
+	struct instructionIterator 	it;
+	int32_t 					status;
 
 	if (trace_ext->type != FRAGMENT_TRACE){
 		log_err("wrong trace type");
@@ -366,27 +368,47 @@ void trace_search_componentFrag(struct trace* trace_ext, struct trace* trace_inn
 		return;
 	}
 
-	component_frag.instruction_start = assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), 0);
-	while (component_frag.instruction_start != 0xffffffff){
-		component_frag.instruction_stop = component_frag.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
-		component_frag.component_ir = trace_inn->trace_type.frag.ir;
+	if (trace_ext->mem_trace != NULL && trace_ext->mem_trace->mem_addr_buffer != NULL){
+		if (trace_ext->mem_trace == NULL || trace_ext->mem_trace->mem_addr_buffer == NULL){
+			return;
+		}
+	}
+	else{
+		if (trace_ext->mem_trace != NULL && trace_ext->mem_trace->mem_addr_buffer != NULL){
+			return;
+		}
+	}
+	
+	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it);  status == 0 && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
+		ir_component.instruction_start 	= it.instruction_index;
+		ir_component.instruction_stop 	= ir_component.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
+		ir_component.ir 				= trace_inn->trace_type.frag.ir;
 
-		log_debug_m("found component [%u:%u]", component_frag.instruction_start, component_frag.instruction_stop);
+		if (trace_ext->mem_trace != NULL && trace_ext->mem_trace->mem_addr_buffer != NULL){
+			if (memAddress_buffer_compare(trace_ext->mem_trace->mem_addr_buffer + instructionIterator_get_mem_addr_index(&it), trace_inn->mem_trace->mem_addr_buffer, trace_inn->mem_trace->nb_mem_addr)){
+				goto next;
+			}
+		}
+		
+		log_info_m("found component [%u:%u] fragment \"%s\"", ir_component.instruction_start, ir_component.instruction_stop, trace_inn->trace_type.frag.tag);
 
-		if (array_add(component_frag_array, &component_frag) < 0){
+		if (array_add(ir_component_array, &ir_component) < 0){
 			log_err("unable to add element to array");
 		}
 
-		if (component_frag.instruction_stop == assembly_get_nb_instruction(&(trace_ext->assembly))){
+		next:
+		if (ir_component.instruction_stop == assembly_get_nb_instruction(&(trace_ext->assembly))){
 			break;
 		}
-		component_frag.instruction_start = assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), component_frag.instruction_stop);
+	}
+	if (status){
+		log_err("unable to fetch next instruction from the assembly");
 	}
 }
 
-static int32_t componentFrag_compare(void* arg1, void* arg2){
-	struct componentFrag* component1 = (struct componentFrag*)arg1;
-	struct componentFrag* component2 = (struct componentFrag*)arg2;
+static int32_t irComponent_compare(void* arg1, void* arg2){
+	struct irComponent* component1 = (struct irComponent*)arg1;
+	struct irComponent* component2 = (struct irComponent*)arg2;
 
 	if (component1->instruction_start < component2->instruction_start){
 		return -1;
@@ -405,13 +427,14 @@ static int32_t componentFrag_compare(void* arg1, void* arg2){
 	}
 }
 
-void trace_create_compound_ir(struct trace* trace, struct array* component_frag_array){
+void trace_create_compound_ir(struct trace* trace, struct array* ir_component_array){
 	uint32_t* 				mapping;
 	uint32_t 				i;
 	uint32_t 				nb_component;
 	struct result* 			result;
-	struct componentFrag* 	component1;
-	struct componentFrag* 	component2;
+	struct irComponent* 	component1;
+	struct irComponent* 	component2;
+	struct irComponent** 	component_buffer;
 
 	if (trace->type != FRAGMENT_TRACE){
 		log_err("wrong trace type");
@@ -432,14 +455,14 @@ void trace_create_compound_ir(struct trace* trace, struct array* component_frag_
 		}
 	}
 
-	if ((mapping = array_create_mapping(component_frag_array, componentFrag_compare)) == NULL){
+	if ((mapping = array_create_mapping(ir_component_array, irComponent_compare)) == NULL){
 		log_err("unable to create array mappping");
 		return;
 	}
 
-	for (i = 1, nb_component = min(1, array_get_length(component_frag_array)); i < array_get_length(component_frag_array); i++){
-		component1 = (struct componentFrag*)array_get(component_frag_array, mapping[nb_component - 1]);
-		component2 = (struct componentFrag*)array_get(component_frag_array, mapping[i]);
+	for (i = 1, nb_component = min(1, array_get_length(ir_component_array)); i < array_get_length(ir_component_array); i++){
+		component1 = (struct irComponent*)array_get(ir_component_array, mapping[nb_component - 1]);
+		component2 = (struct irComponent*)array_get(ir_component_array, mapping[i]);
 
 		if (component2->instruction_start < component1->instruction_stop){
 			log_warn("overlapping component, taking the largest");
@@ -452,25 +475,38 @@ void trace_create_compound_ir(struct trace* trace, struct array* component_frag_
 
 	log_info_m("found %u already processed instructions sequence(s) in fragment \"%s\"", nb_component, trace->trace_type.frag.tag);
 
+	if (nb_component > 0){
+		component_buffer = (struct irComponent**)malloc(sizeof(struct irComponent*) * nb_component);
+		if (component_buffer == NULL){
+			log_err("unable to allocate memory");
+		}
+		else{
+			for (i = 0; i < nb_component; i++){
+				component_buffer[i] = (struct irComponent*)array_get(ir_component_array, mapping[i]);
+			}
 
-	/* a completer */
+			if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
+				trace->trace_type.frag.ir = ir_create_compound(&(trace->assembly), trace->mem_trace, component_buffer, nb_component);
+			}
+			else{
+				trace->trace_type.frag.ir = ir_create_compound(&(trace->assembly), NULL, component_buffer, nb_component);
+			}
 
-	
-
-	/* pass the data to the IR importer */
-
-	/*if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
-		trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
+			free(component_buffer);
+		}
 	}
 	else{
-		trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
+		if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
+			trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
+		}
+		else{
+			trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
+		}
 	}
 
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
-	*/
-
 
 	free(mapping);
 }
@@ -684,13 +720,13 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
-		goto exit;
+		return;
 	}
 
 	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->trace_type.frag.result_array)));
 	if (exported_result == NULL){
 		log_err("unable to allocate memory");
-		goto exit;
+		return;
 	}
 
 	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
@@ -706,6 +742,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->trace_type.frag.tag);
 				#endif
 				exported_result[nb_exported_result ++] = i;
+				continue;
 			}
 		}
 	}

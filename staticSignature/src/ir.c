@@ -4,8 +4,8 @@
 
 #include "ir.h"
 #include "irImporterAsm.h"
-#include "result.h"
-#include "multiColumn.h"
+#include "irRenameEngine.h"
+#include "codeSignature.h"
 #include "base.h"
 
 struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
@@ -47,7 +47,46 @@ int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_t
 	return 0;
 }
 
-struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
+struct ir* ir_create_compound(struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+	struct ir* ir;
+
+	ir = (struct ir*)malloc(sizeof(struct ir));
+	if (ir != NULL){
+		if(ir_init_compound(ir, assembly, mem_trace, ir_component_buffer, nb_ir_component)){
+			log_err("unable to init ir");
+			free(ir);
+			ir = NULL;
+		}
+	}
+	else{
+		log_err("unable to allocate memory");
+	}
+
+	return ir;
+}
+
+int32_t ir_init_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
+
+	ir->range_seed = 1;
+
+	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
+	
+	#ifdef VERBOSE
+	if (mem_trace != NULL){
+		log_info("found memory concrete values");
+	}
+	#endif
+
+	if (irImporterAsm_import_compound(ir, assembly, mem_trace, ir_component_buffer, nb_ir_component)){
+		log_err("trace asm import has failed");
+		return -1;
+	}
+
+	return 0;
+}
+
+struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg, uint32_t primer){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -59,6 +98,7 @@ struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg){
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_IN_REG;
 		operation->operation_type.in_reg.reg 			= reg;
+		operation->operation_type.in_reg.primer 		= primer;
 		operation->size 								= irRegister_get_size(reg);
 		operation->index 								= index;
 		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
@@ -175,7 +215,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 	return node;
 }
 
-struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
+struct node* ir_add_symbol(struct ir* ir, void* code_signature, void* result, uint32_t index){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -186,7 +226,8 @@ struct node* ir_add_symbol(struct ir* ir, void* result_ptr, uint32_t index){
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_SYMBOL;
-		operation->operation_type.symbol.result_ptr 	= result_ptr;
+		operation->operation_type.symbol.code_signature = code_signature;
+		operation->operation_type.symbol.result 		= result;
 		operation->operation_type.symbol.index 			= index;
 		operation->size 								= 1;
 		operation->index 								= IR_OPERATION_INDEX_UNKOWN;
@@ -302,6 +343,10 @@ void ir_remove_node(struct ir* ir, struct node* node){
 		ir_mem_remove(ir_node_get_operation(node));
 	}
 
+	if (ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+		irRenameEngine_delete_node(ir->alias_buffer, node);
+	}
+
 	for (edge_curr = node_get_head_edge_dst(node); edge_curr != NULL; edge_curr = edge_next){
 		edge_next = edge_get_next_dst(edge_curr);
 		ir_remove_dependence(ir, edge_curr);
@@ -334,6 +379,10 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 
 		if (ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_OUT_MEM){
 			ir_mem_remove(ir_node_get_operation(node_buffer[i]));
+		}
+
+		if (ir_node_get_operation(node_buffer[i])->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+			irRenameEngine_delete_node(ir->alias_buffer, node_buffer[i]);
 		}
 
 		graph_remove_node(&(ir->graph), node_buffer[i]);
@@ -442,7 +491,7 @@ void ir_print_node(struct irOperation* operation, FILE* file){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fputs(((struct result*)(operation->operation_type.symbol.result_ptr))->code_signature->signature.name, file);
+			fputs(((struct codeSignature*)(operation->operation_type.symbol.code_signature))->signature.name, file);
 			break;
 		}
 	}
@@ -503,7 +552,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fprintf(file, "[label=\"%s\"", ((struct result*)(operation->operation_type.symbol.result_ptr))->code_signature->signature.name);
+			fprintf(file, "[label=\"%s\"", ((struct codeSignature*)(operation->operation_type.symbol.code_signature))->signature.name);
 			break;
 		}
 	}

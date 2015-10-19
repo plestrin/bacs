@@ -180,6 +180,27 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 	return mem_trace;
 }
 
+uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint32_t nb_mem_addr){
+	uint32_t i;
+
+	for (i = 0; i < nb_mem_addr; i++){
+		if (buffer1[i].descriptor < buffer2[i].descriptor){
+			return -1;
+		}
+		else if (buffer1[i].descriptor > buffer2[i].descriptor){
+			return 1;
+		}
+		else if (buffer1[i].address < buffer2[i].address){
+			return -1;
+		}
+		else if (buffer1[i].address > buffer2[i].address){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 void memTrace_clean(struct memTrace* mem_trace){
 	if (mem_trace->file != -1){
 		close(mem_trace->file);
