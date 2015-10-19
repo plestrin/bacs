@@ -45,7 +45,12 @@ void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegis
 	(engine).ir->alias_buffer[IR_REG_AL].ir_node  = NULL;
 
 void irRenameEngine_tag_final_node(struct irRenameEngine* engine);
-void irRenameEngine_delete_node(struct alias* alias_buffer, struct node* node);
+void irRenameEngine_change_node(struct alias* alias_buffer, struct node* node_old, struct node* node_new);
+
+#define irRenameEngine_delete_node(alias_buffer, node) 										\
+	log_warn("deleting final node, this fragment should not be used to build compound IR"); \
+	irRenameEngine_change_node(alias_buffer, node, NULL);
+
 void irRenameEngine_propagate_alias(struct irRenameEngine* engine_dst, struct alias* alias_buffer_src);
 
 #endif

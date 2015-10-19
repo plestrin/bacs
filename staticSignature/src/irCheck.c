@@ -275,7 +275,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				}
 
 				/* Check output edge(s) */
-				if (!node_cursor->nb_edge_src){
+				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
 					log_err("input register has no src edge");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;

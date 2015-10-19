@@ -641,14 +641,18 @@ void irRenameEngine_tag_final_node(struct irRenameEngine* engine){
 	}
 }
 
-void irRenameEngine_delete_node(struct alias* alias_buffer, struct node* node){
+void irRenameEngine_change_node(struct alias* alias_buffer, struct node* node_old, struct node* node_new){
 	uint32_t i;
 
 	for (i = 0; i < NB_IR_REGISTER; i++){
-		if (alias_buffer[i].ir_node == node){
-			log_warn("deleting final node, this fragment should not be used to build compound ir");
-			alias_buffer[i].ir_node = NULL;
+		if (alias_buffer[i].ir_node == node_old){
+			alias_buffer[i].ir_node = node_new;
 		}
+	}
+
+	ir_node_get_operation(node_old)->status_flag &= ~IR_OPERATION_STATUS_FLAG_FINAL;
+	if (node_new != NULL){
+		ir_node_get_operation(node_new)->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
 	}
 }
 

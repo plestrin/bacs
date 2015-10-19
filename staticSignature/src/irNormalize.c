@@ -6,8 +6,7 @@
 #endif
 
 #include "irNormalize.h"
-#include "irMemory.h"
-#include "irVariableSize.h"
+#include "irRenameEngine.h"
 #include "irExpression.h"
 #include "irVariableRange.h"
 #include "dagPartialOrder.h"
@@ -695,6 +694,9 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 #define ir_normalize_simplify_instruction_rewrite_generic_1op(ir, node, modification) 																		\
 	if ((node)->nb_edge_dst == 1){ 																															\
 		graph_transfert_src_edge(&((ir)->graph), edge_get_src(node_get_head_edge_dst(node)), (node)); 														\
+		if (ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){ 																	\
+			irRenameEngine_change_node((ir)->alias_buffer, (node) , edge_get_src(node_get_head_edge_dst(node))); 											\
+		} 																																					\
 		ir_remove_node(ir, node); 																															\
 																																							\
 		*(modification) = 1; 																																\
@@ -1643,7 +1645,6 @@ static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct 
 
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
 	struct edge* 		edge_cursor;
 	struct irOperation*	operation_cursor;
@@ -1675,31 +1676,20 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 	if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_ADD && edge_get_src(operand2)->nb_edge_src > 1){
 		for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (edge_get_src(edge_cursor) == edge_get_src(operand2)){
-				struct node* add_node = NULL;
-
-				if (edge_get_src(operand1)->nb_edge_src > 1){
-					add_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor->size, IR_ADD, IR_OPERATION_DST_UNKOWN);
-					if (add_node != NULL){
-						for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-							if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
-								if (ir_add_dependence(ir, edge_get_src(edge_cursor), add_node, ir_edge_get_dependence(edge_cursor)->type) == NULL){
-									log_err("unable to add dependency to IR");
-								}
-							}
+				
+				for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
+						if (ir_add_dependence(ir, edge_get_src(edge_cursor), node, ir_edge_get_dependence(edge_cursor)->type) == NULL){
+							log_err("unable to add dependency to IR");
 						}
 					}
-					else{
-						log_err("unable to add instruction to IR");
-						return;
-					}
-				}
-				else{
-					ir_remove_dependence(ir, edge_cursor);
-					add_node = edge_get_src(operand1);
 				}
 
-				graph_transfert_src_edge(&(ir->graph), add_node, node);
-				ir_remove_node(ir, node);
+				ir_remove_dependence(ir, operand1);
+				ir_remove_dependence(ir, operand2);
+
+				ir_node_get_operation(node)->operation_type.inst.opcode = IR_ADD;
+				ir_normalize_simplify_instruction_rewrite_add(ir, node, modification, final);
 
 				*modification = 1;
 				return;

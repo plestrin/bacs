@@ -60,7 +60,6 @@ int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
 	}
 
 	op_dst->status_flag &= ~IR_OPERATION_STATUS_FLAG_FINAL;
-	op_dst->status_flag |= IR_OPERATION_STATUS_FLAG_COMPOUND;
 
 	return 0;
 }
@@ -73,8 +72,7 @@ int32_t irDependence_copy(void* data_dst, const void* data_src, void* arg){
 
 int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* engine){
 	struct irCopyArg 	copy_arg;
-	struct node* 		curr_node_cursor;
-	struct node* 		next_node_cursor;
+	struct node* 		node_cursor;
 	struct irOperation* operation_cursor;
 	struct node* 		ref;
 
@@ -93,23 +91,18 @@ int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* e
 		return - 1;
 	}
 
-	for (curr_node_cursor = graph_get_head_node(&(ir_dst->graph)); curr_node_cursor != NULL; curr_node_cursor = next_node_cursor){
-		next_node_cursor = node_get_next(curr_node_cursor);
-		operation_cursor = ir_node_get_operation(curr_node_cursor);
+	for (node_cursor = graph_get_head_node(&(ir_src->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor->ptr);
 
-		if (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_COMPOUND){
-			if ((operation_cursor->type == IR_OPERATION_TYPE_IN_REG) && (operation_cursor->operation_type.in_reg.primer == IR_IN_REG_IS_PRIMER)){
-				ref = irRenameEngine_get_register_ref(engine, operation_cursor->operation_type.in_reg.reg, operation_cursor->index, IR_OPERATION_DST_UNKOWN);
-				if (ref == NULL){
-					log_err("unable to register reference from the renaming engine");
-				}
-				else{
-					graph_transfert_src_edge(&(ir_dst->graph), ref, curr_node_cursor);
-					ir_remove_node(ir_dst, curr_node_cursor);
-				}
+		if ((operation_cursor->type == IR_OPERATION_TYPE_IN_REG) && (operation_cursor->operation_type.in_reg.primer == IR_IN_REG_IS_PRIMER)){
+			ref = irRenameEngine_get_register_ref(engine, operation_cursor->operation_type.in_reg.reg, operation_cursor->index, IR_OPERATION_DST_UNKOWN);
+			if (ref == NULL){
+				log_err("unable to register reference from the renaming engine");
 			}
 			else{
-				operation_cursor->status_flag &= ~IR_OPERATION_STATUS_FLAG_COMPOUND;
+				graph_transfert_src_edge(&(ir_dst->graph), ref, (struct node*)node_cursor->ptr);
+				ir_remove_node(ir_dst, (struct node*)node_cursor->ptr);
+				node_cursor->ptr = ref;
 			}
 		}
 	}
