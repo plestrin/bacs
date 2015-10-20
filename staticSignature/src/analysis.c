@@ -31,7 +31,7 @@ int main(int argc, char** argv){
 		log_err("unable to create inputParser");
 		goto exit;
 	}
-	
+
 	analysis = analysis_create();
 	if (analysis == NULL){
 		log_err("unable to create the analysis structure");
@@ -427,7 +427,7 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
 	uint8_t* 			opcode;
 	size_t 				opcode_length = 0;
-	
+
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 		return;
@@ -490,7 +490,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
-		
+
 		if (index < array_get_length(&(analysis->frag_array))){
 			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
 			trace_print(fragment, 0, trace_get_nb_instruction(fragment));
@@ -522,13 +522,15 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 	}
 	#endif
 
-	printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
+	printer = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL);
 	if (printer != NULL){
 		multiColumnPrinter_set_column_size(printer, 0, 5);
 		multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
 		multiColumnPrinter_set_column_size(printer, 2, 8);
 		multiColumnPrinter_set_column_size(printer, 3, 16);
 		multiColumnPrinter_set_column_size(printer, 4, IRDESCRIPTOR_MAX_LENGTH);
+		multiColumnPrinter_set_column_size(printer, 5, 9);
+		multiColumnPrinter_set_column_size(printer, 6, 9);
 
 		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
 		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT32);
@@ -540,6 +542,7 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		multiColumnPrinter_set_title(printer, 3, "Percent (%)");
 		multiColumnPrinter_set_title(printer, 4, "IR");
 		multiColumnPrinter_set_title(printer, 5, "Mem Trace");
+		multiColumnPrinter_set_title(printer, 6, "Synthesis");
 
 		multiColumnPrinter_print_header(printer);
 
@@ -552,12 +555,8 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 			else{
 				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->trace_type.frag.ir->graph.nb_node, fragment->trace_type.frag.ir->graph.nb_edge);
 			}
-			if (fragment->mem_trace != NULL){
-				multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "yes", NULL);
-			}
-			else{
-				multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, "no", NULL);
-			}
+
+			multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, (fragment->mem_trace != NULL) ? "yes" : "no", (fragment->type == FRAGMENT_TRACE && fragment->trace_type.frag.synthesis_graph != NULL) ? "yes" : "no", NULL);
 		}
 
 		multiColumnPrinter_delete(printer);
@@ -634,7 +633,7 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 				printf("Locating frag %u (tag: \"%s\")\n", i, fragment->trace_type.frag.tag);
 			}
 			#endif
-			
+
 			trace_print_location(fragment, analysis->code_map);
 		}
 	}
@@ -1017,7 +1016,7 @@ void analysis_mode_signature_search(struct analysis* analysis, char* arg){
 			nb_graph_searcher ++;
 		}
 		else{
-			log_err_m("the IR is NULL for fragment %u", i);
+			log_err_m("the synthesis graph is NULL for fragment %u", i);
 		}
 	}
 
@@ -1138,5 +1137,5 @@ void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
 	}
 	else{
 		log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&(analysis->frag_array)));
-	} 	
+	}
 }

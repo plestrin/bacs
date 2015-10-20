@@ -708,7 +708,7 @@ void irRenameEngine_update_call_stack(struct irRenameEngine* engine, uint32_t* s
 		}
 	}
 
-	if (i < IR_CALL_STACK_PTR){
+	if (i <= IR_CALL_STACK_PTR){
 		if (engine->ir->stack_ptr < (IR_CALL_STACK_PTR - i + 1)){
 			log_err("the bottom of the stack has been reached");
 			return;

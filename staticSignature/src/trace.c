@@ -413,7 +413,7 @@ static int32_t irComponent_compare(void* arg1, void* arg2){
 	if (component1->instruction_start < component2->instruction_start){
 		return -1;
 	}
-	else if (component1->instruction_start < component2->instruction_start){
+	else if (component1->instruction_start > component2->instruction_start){
 		return 1;
 	}
 	else if (component1->instruction_stop > component2->instruction_stop){
