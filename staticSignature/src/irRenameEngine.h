@@ -19,16 +19,13 @@
 #define alias_is_primer(alias) 	(((alias).type & IRRENAMEENGINE_TYPE_USED) == 0)
 
 struct irRenameEngine{
-	struct node* 		prev_mem_access;
-	uint32_t 			reg_op_order;
-	struct ir* 			ir;
+	struct node* 	prev_mem_access;
+	uint32_t 		reg_op_order;
+	uint32_t 		func_id;
+	struct ir* 		ir;
 };
 
-#define irRenameEngine_init(engine, ir_) 													\
-	memset(&((ir_)->alias_buffer), 0, sizeof(struct alias) * NB_IR_REGISTER); 				\
-	(engine).prev_mem_access = NULL; 														\
-	(engine).reg_op_order = 1; 																\
-	(engine).ir = (ir_);
+void irRenameEngine_init(struct irRenameEngine* engine, struct ir* ir);
 
 struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum irRegister reg, uint32_t instruction_index, uint32_t dst);
 
@@ -39,10 +36,10 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 void irRenameEngine_set_register_ref(struct irRenameEngine* engine, enum irRegister reg, struct node* node);
 
 #define irRenameEngine_clear_eax_std_call(engine) 											\
-	(engine).ir->alias_buffer[IR_REG_EAX].ir_node = NULL; 									\
-	(engine).ir->alias_buffer[IR_REG_AX].ir_node  = NULL; 									\
-	(engine).ir->alias_buffer[IR_REG_AH].ir_node  = NULL; 									\
-	(engine).ir->alias_buffer[IR_REG_AL].ir_node  = NULL;
+	(engine)->ir->alias_buffer[IR_REG_EAX].ir_node = NULL; 									\
+	(engine)->ir->alias_buffer[IR_REG_AX].ir_node  = NULL; 									\
+	(engine)->ir->alias_buffer[IR_REG_AH].ir_node  = NULL; 									\
+	(engine)->ir->alias_buffer[IR_REG_AL].ir_node  = NULL;
 
 void irRenameEngine_tag_final_node(struct irRenameEngine* engine);
 void irRenameEngine_change_node(struct alias* alias_buffer, struct node* node_old, struct node* node_new);
@@ -52,5 +49,25 @@ void irRenameEngine_change_node(struct alias* alias_buffer, struct node* node_ol
 	irRenameEngine_change_node(alias_buffer, node, NULL);
 
 void irRenameEngine_propagate_alias(struct irRenameEngine* engine_dst, struct alias* alias_buffer_src);
+
+#define irRenameEngine_increment_call_stack(engine) 										\
+	if ((engine)->ir->stack_ptr + 1 == IR_CALL_STACK_PTR){ 									\
+		log_err("the top of the stack has been reached"); 									\
+	} 																						\
+	else{ 																					\
+		(engine)->ir->stack[++ (engine)->ir->stack_ptr] = (engine)->func_id ++; 			\
+	}
+
+#define irRenameEngine_get_call_id(engine) ((engine)->ir->stack[(engine)->ir->stack_ptr])
+
+#define irRenameEngine_decrement_call_stack(engine) 										\
+	if ((engine)->ir->stack_ptr == 0){ 														\
+		log_err("the bottom of the stack has been reached"); 								\
+	} 																						\
+	else{ 																					\
+		(engine)->ir->stack_ptr --; 														\
+	}
+
+void irRenameEngine_update_call_stack(struct irRenameEngine* engine, uint32_t* stack, uint32_t stack_ptr);
 
 #endif

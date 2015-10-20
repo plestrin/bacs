@@ -278,10 +278,15 @@ struct alias{
 	uint8_t 			type;
 };
 
+#define IR_CALL_STACK_MAX_SIZE 	32
+#define IR_CALL_STACK_PTR 		15 /* must be strictly smaller than IR_CALL_STACK_MAX_SIZE */
+
 struct ir{
 	struct graph 	graph;
 	uint32_t 		range_seed;
 	struct alias 	alias_buffer[NB_IR_REGISTER];
+	uint32_t 		stack[IR_CALL_STACK_MAX_SIZE];
+	uint32_t 		stack_ptr;
 };
 
 #define IR_INVALID_RANGE_SEED 0
@@ -334,6 +339,8 @@ void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);
+
+void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node* node_src);
 
 void ir_remove_node(struct ir* ir, struct node* node);
 void ir_remove_dependence(struct ir* ir, struct edge* edge);

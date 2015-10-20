@@ -235,54 +235,7 @@ static void cisc_decode_special_punpckldq(struct assembly* assembly, struct inst
 
 #define irImporterAsm_get_mem_trace(trace, ins_it) (((trace) != NULL && instructionIterator_is_mem_addr_valid(ins_it)) ? ((trace)->mem_addr_buffer + instructionIterator_get_mem_addr_index(ins_it)) : NULL)
 
-#define IRIMPORTER_STACK_MAX_SIZE 	32
-#define IRIMPORTER_STACK_PTR 		15 /* must be strictly smaller than IRIMPORTER_STACK_MAX_SIZE */
-
-struct irImporter{
-	struct irRenameEngine 	engine;
-	uint32_t 				stack[IRIMPORTER_STACK_MAX_SIZE];
-	int32_t 				stack_ptr;
-	uint32_t 				func_id;
-};
-
-static void irImporter_init(struct irImporter* importer, struct ir* ir){
-	uint32_t i;
-
-	irRenameEngine_init(importer->engine, ir)
-
-	for (i = 0; i <= IRIMPORTER_STACK_PTR; i++){
-		importer->stack[i] = i;
-	}
-
-	memset(importer->stack + i, 0, IRIMPORTER_STACK_MAX_SIZE - (IRIMPORTER_STACK_PTR + 1));
-
-	importer->stack_ptr = IRIMPORTER_STACK_PTR;
-	importer->func_id = IRIMPORTER_STACK_PTR + 1;
-}
-
-#define irImporter_increment_call_stack(importer) 										\
-	if ((importer)->stack_ptr + 1 == IRIMPORTER_STACK_MAX_SIZE){ 						\
-		log_err("the top of the stack has been reached"); 								\
-	} 																					\
-	else{ 																				\
-		(importer)->stack[++ (importer)->stack_ptr] = (importer)->func_id ++; 			\
-	}
-
-#define irImporter_get_call_id(importer) ((importer)->stack[(importer)->stack_ptr])
-
-#define irImporter_decrement_call_stack(importer) 										\
-	if ((importer)->stack_ptr == 0){ 													\
-		log_err("the bottom of the stack has been reached"); 							\
-	} 																					\
-	else{ 																				\
-		(importer)->stack_ptr --; 														\
-	}
-
-static void irImporter_clean(struct irImporter* importer){
-	irRenameEngine_tag_final_node(&(importer->engine));
-}
-
-static void irImporter_handle_instruction(struct assembly* assembly, struct irImporter* importer, struct instructionIterator* it, struct memAddress* mem_addr){
+static void irImporter_handle_instruction(struct assembly* assembly, struct irRenameEngine* engine, struct instructionIterator* it, struct memAddress* mem_addr){
 	struct asmCiscIns 	cisc;
 	uint32_t 			i;
 
@@ -293,14 +246,14 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irIm
 		#ifdef VERBOSE
 		log_info_m("assuming stdcall/cdecl @ %u", it->instruction_index);
 		#endif
-		irRenameEngine_clear_eax_std_call(importer->engine);
+		irRenameEngine_clear_eax_std_call(engine);
 	}
 
 	switch(xed_decoded_inst_get_iclass(&(it->xedd))){
 		case XED_ICLASS_BSWAP 		: {break;}
 		case XED_ICLASS_CALL_NEAR 	: {
 			cisc_decode_special_call(it, &cisc, mem_addr);
-			irImporter_increment_call_stack(importer)
+			irRenameEngine_increment_call_stack(engine)
 			break;
 		}
 		case XED_ICLASS_CDQ 		: {
@@ -428,12 +381,12 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irIm
 		}
 		case XED_ICLASS_RET_FAR 	: {
 			cisc_decode_special_ret(assembly, it, &cisc);
-			irImporter_decrement_call_stack(importer)
+			irRenameEngine_decrement_call_stack(engine)
 			break;
 		}
 		case XED_ICLASS_RET_NEAR 	: {
 			cisc_decode_special_ret(assembly, it, &cisc);
-			irImporter_decrement_call_stack(importer)
+			irRenameEngine_decrement_call_stack(engine)
 			break;
 		}
 		case XED_ICLASS_TEST 		: {break;}
@@ -456,36 +409,36 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irIm
 		for (i = 0; i < cisc.nb_ins; i++){
 			switch(cisc.ins[i].opcode){
 				case IR_CMOV 	: {
-					asmRisc_process_special_cmov(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					asmRisc_process_special_cmov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				case IR_LEA 	: {
-					asmRisc_process_special_lea(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					asmRisc_process_special_lea(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				case IR_MOV 	: {
-					asmRisc_process_special_mov(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					asmRisc_process_special_mov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				default 				: {
-					asmRisc_process(&(importer->engine), cisc.ins + i, irImporter_get_call_id(importer));
+					asmRisc_process(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 				}
 			}
 		}
 	}
 }
 
-static void irImporter_handle_irComponent(struct ir* ir, struct irImporter* importer, struct irComponent* ir_component){
-	if (ir_concat(ir, ir_component->ir, &(importer->engine))){
+static void irImporter_handle_irComponent(struct ir* ir, struct irRenameEngine* engine, struct irComponent* ir_component){
+	if (ir_concat(ir, ir_component->ir, engine)){
 		log_err("unable to concat IR");
 	}
 }
 
 int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
 	struct instructionIterator 	it;
-	struct irImporter 			importer;
+	struct irRenameEngine 		engine;
 
-	irImporter_init(&importer, ir);
+	irRenameEngine_init(&engine, ir);
 
 	if (assembly_get_first_instruction(assembly, &it)){
 		log_err("unable to fetch first instruction from the assembly");
@@ -493,7 +446,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 	}
 
 	for (; ; ){
-		irImporter_handle_instruction(assembly, &importer, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
+		irImporter_handle_instruction(assembly, &engine, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
 		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
 			break;
 		}
@@ -505,17 +458,17 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 		}
 	}
 
-	irImporter_clean(&importer);
+	irRenameEngine_tag_final_node(&engine);
 
 	return 0;
 }
 
 int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
 	struct instructionIterator 	it;
-	struct irImporter 			importer;
+	struct irRenameEngine 		engine;
 	uint32_t 					i;
 
-	irImporter_init(&importer, ir);
+	irRenameEngine_init(&engine, ir);
 
 	if (assembly_get_first_instruction(assembly, &it)){
 		log_err("unable to fetch first instruction from the assembly");
@@ -524,7 +477,7 @@ int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, 
 
 	for (i = 0; ; ){
 		if (i < nb_ir_component && instructionIterator_get_instruction_index(&it) == ir_component_buffer[i]->instruction_start){
-			irImporter_handle_irComponent(ir, &importer, ir_component_buffer[i]);
+			irImporter_handle_irComponent(ir, &engine, ir_component_buffer[i]);
 			if (ir_component_buffer[i]->instruction_stop == assembly_get_nb_instruction(assembly)){
 				break;
 			}
@@ -537,7 +490,7 @@ int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, 
 			}
 		}
 		else{
-			irImporter_handle_instruction(assembly, &importer, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
+			irImporter_handle_instruction(assembly, &engine, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
 			if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
 				break;
 			}
@@ -550,7 +503,7 @@ int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, 
 		}
 	}
 
-	irImporter_clean(&importer);
+	irRenameEngine_tag_final_node(&engine);
 
 	#ifdef IR_FULL_CHECK
 	ir_check_memory(ir);

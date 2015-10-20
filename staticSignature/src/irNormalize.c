@@ -6,7 +6,6 @@
 #endif
 
 #include "irNormalize.h"
-#include "irRenameEngine.h"
 #include "irExpression.h"
 #include "irVariableRange.h"
 #include "dagPartialOrder.h"
@@ -693,12 +692,7 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 
 #define ir_normalize_simplify_instruction_rewrite_generic_1op(ir, node, modification) 																		\
 	if ((node)->nb_edge_dst == 1){ 																															\
-		graph_transfert_src_edge(&((ir)->graph), edge_get_src(node_get_head_edge_dst(node)), (node)); 														\
-		if (ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){ 																	\
-			irRenameEngine_change_node((ir)->alias_buffer, (node) , edge_get_src(node_get_head_edge_dst(node))); 											\
-		} 																																					\
-		ir_remove_node(ir, node); 																															\
-																																							\
+		ir_merge_equivalent_node((ir), edge_get_src(node_get_head_edge_dst(node)), (node)); 																\
 		*(modification) = 1; 																																\
 		return; 																																			\
 	}

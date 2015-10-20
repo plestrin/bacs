@@ -176,6 +176,25 @@ static enum irOpcode partIns[NB_IRREGISTER_FAMILY][MAX_REGISTER_PER_FAMILY][MAX_
 	}
 };
 
+void irRenameEngine_init(struct irRenameEngine* engine, struct ir* ir){
+	uint32_t i;
+
+	engine->prev_mem_access = NULL;
+	engine->reg_op_order 	= 1;
+	engine->func_id 		= IR_CALL_STACK_PTR + 1;
+	engine->ir 				= ir;
+
+	memset(&(ir->alias_buffer), 0, sizeof(struct alias) * NB_IR_REGISTER);
+
+	for (i = 0; i <= IR_CALL_STACK_PTR; i++){
+		engine->ir->stack[i] = i;
+	}
+
+	memset(ir->stack + i, 0, IR_CALL_STACK_MAX_SIZE - (IR_CALL_STACK_PTR + 1));
+
+	ir->stack_ptr = IR_CALL_STACK_PTR;
+}
+
 static void irRenameEngine_get_list(struct irRenameEngine* engine, enum irRegister reg, struct irRegisterBuffer* list){
 	uint8_t i;
 	uint8_t nb_inner = 0;
@@ -677,4 +696,34 @@ void irRenameEngine_propagate_alias(struct irRenameEngine* engine_dst, struct al
 	}
 
 	engine_dst->reg_op_order += order;
+}
+
+void irRenameEngine_update_call_stack(struct irRenameEngine* engine, uint32_t* stack, uint32_t stack_ptr){
+	uint32_t i;
+	uint32_t j;
+
+	for (i = 0; i <= min(IR_CALL_STACK_PTR, stack_ptr); i++){
+		if (stack[i] != i){
+			break;
+		}
+	}
+
+	if (i < IR_CALL_STACK_PTR){
+		if (engine->ir->stack_ptr < (IR_CALL_STACK_PTR - i + 1)){
+			log_err("the bottom of the stack has been reached");
+			return;
+		}
+		engine->ir->stack_ptr = engine->ir->stack_ptr - (IR_CALL_STACK_PTR - i + 1);
+	}
+
+	for (j = 0; j + i <= stack_ptr; j++){
+		if (engine->ir->stack_ptr + 1 < IR_CALL_STACK_MAX_SIZE){
+			engine->ir->stack_ptr = engine->ir->stack_ptr + 1;
+			engine->ir->stack[engine->ir->stack_ptr] = stack[j + i] - IR_CALL_STACK_PTR + engine->func_id - 1;
+		}
+		else{
+			log_err("the top of the stack has been reached");
+			break;
+		}
+	}
 }

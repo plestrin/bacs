@@ -335,6 +335,14 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, 
 	return edge;
 }
 
+void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node* node_src){
+	graph_transfert_src_edge(&(ir->graph), node_dst, node_src);
+	if (ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+		irRenameEngine_change_node(ir->alias_buffer, node_src, node_dst);
+	}
+	ir_remove_node(ir, node_src);
+}
+
 void ir_remove_node(struct ir* ir, struct node* node){
 	struct edge* 	edge_curr;
 	struct edge* 	edge_next;

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "irConcat.h"
+#include "irImporterAsm.h"
 #include "base.h"
 
 struct irCopyArg{
@@ -10,6 +11,10 @@ struct irCopyArg{
 	uint32_t 				order;
 	struct node* 			prev_mem_access;
 	struct node* 			next_mem_access;
+	int32_t 				off_dst;
+	uint32_t* 				stack;
+	uint32_t 				stack_ptr;
+	uint32_t 				max_dst;
 };
 
 int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
@@ -49,7 +54,19 @@ int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 	: {
-			/* what about the dst */
+			copy_arg->max_dst = max(copy_arg->max_dst, op_dst->operation_type.inst.dst);
+			if (op_dst->operation_type.inst.dst <= IR_CALL_STACK_PTR){
+				if (IR_CALL_STACK_PTR - op_dst->operation_type.inst.dst > copy_arg->stack_ptr){
+					log_err("the bottom of the stack has been reached");
+					op_dst->operation_type.inst.dst = IR_OPERATION_DST_UNKOWN;
+				}
+				else{
+					op_dst->operation_type.inst.dst = copy_arg->stack[copy_arg->stack_ptr - (IR_CALL_STACK_PTR - op_dst->operation_type.inst.dst)];
+				}
+			}
+			else{
+				op_dst->operation_type.inst.dst 	= op_dst->operation_type.inst.dst + copy_arg->off_dst;
+			}
 			op_dst->operation_type.inst.seed 		= copy_arg->seed;
 			break;
 		}
@@ -85,6 +102,10 @@ int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* e
 	else{
 		copy_arg.order 			= 1;
 	}
+	copy_arg.off_dst 			= irRenameEngine_get_call_id(engine) - IR_CALL_STACK_PTR;
+	copy_arg.stack 				= engine->ir->stack;
+	copy_arg.stack_ptr 			= engine->ir->stack_ptr;
+	copy_arg.max_dst 			= 0;
 
 	if (graph_concat(&(ir_dst->graph), &(ir_src->graph), irOperation_copy, irDependence_copy, &copy_arg)){
 		log_err("unable to concat graph");
@@ -109,6 +130,8 @@ int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* e
 
 	irRenameEngine_propagate_alias(engine, ir_src->alias_buffer);
 	irRenameEngine_set_mem_order(engine, copy_arg.next_mem_access);
+	irRenameEngine_update_call_stack(engine, ir_src->stack, ir_src->stack_ptr);
+	engine->func_id += copy_arg.max_dst - IR_CALL_STACK_PTR;
 
 	ir_drop_range(ir_dst);
 

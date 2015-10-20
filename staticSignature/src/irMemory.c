@@ -529,8 +529,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				log_warn_m("simplification of memory access of different size (case STORE:%u -> LOAD:%u)", operation1->size, operation2->size);
 			}
 			else{
-				graph_transfert_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2);
-				ir_remove_node(ir, node2);
+				ir_merge_equivalent_node(ir, edge_get_src(edge_cursor), node2);
 
 				ir_drop_range(ir);
 
@@ -584,8 +583,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 		return 0;
 	}
 
-	graph_transfert_src_edge(&(ir->graph), node1, node2);
-	ir_remove_node(ir, node2);
+	ir_merge_equivalent_node(ir, node1, node2);
 
 	return 1;
 }
@@ -602,7 +600,7 @@ static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct no
 		return -1;
 	}
 
-	ir_remove_node(ir, node1);
+	ir_merge_equivalent_node(ir, node2, node1);
 
 	return 0;
 }
