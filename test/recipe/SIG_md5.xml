@@ -13,7 +13,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
@@ -36,11 +36,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/>  <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -59,11 +59,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -82,11 +82,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -105,11 +105,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -132,7 +132,7 @@
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="128"/>
 			<algo name="md5_p4_v2" number="64"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -151,11 +151,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -174,11 +174,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -197,11 +197,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
@@ -220,11 +220,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="176"/> <!-- 174 = 6 x 28 + 4 + 4 (round 1 and 2 are not detected, round 3 and 4 count only for 4) -->
+			<algo name="md5_p1_v1" number="172"/> <!-- 172 = 6 x 28 + 2 + 2 (round 1 & 2 are not detected, round 3 & 4 count only for 2) -->
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
+			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
 			<algo name="md5_v2" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>

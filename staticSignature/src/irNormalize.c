@@ -443,6 +443,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_numeric_xor(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 
@@ -476,7 +477,7 @@ static const simplify_numeric_instruction_ptr numeric_simplify[NB_IR_OPCODE] = {
 	ir_normalize_simplify_instruction_numeric_shr, 					/* 22 IR_SHR 			*/
 	NULL, 															/* 23 IR_SHRD 			*/
 	NULL, 															/* 24 IR_SUB 			*/
-	NULL, 															/* 25 IR_XOR 			*/
+	ir_normalize_simplify_instruction_numeric_xor, 					/* 25 IR_XOR 			*/
 	NULL, 															/* 26 IR_LOAD 			*/
 	NULL, 															/* 27 IR_STORE 			*/
 	NULL, 															/* 28 IR_JOKER 			*/
@@ -569,11 +570,11 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 			#ifdef IR_FULL_CHECK
 			local_opcode = operation->operation_type.inst.opcode;
 
-			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
-				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification);
-			}
 			if (symbolic_simplify[operation->operation_type.inst.opcode] != NULL){
 				symbolic_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification);
+			}
+			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
+				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification);
 			}
 			if (rewrite_simplify[operation->operation_type.inst.opcode] != NULL){
 				rewrite_simplify[operation->operation_type.inst.opcode](ir, node_cursor, &local_modification, final);
@@ -736,7 +737,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 		}
 	}
 
-	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL;){
+	for (edge_cursor1 = node_get_head_edge_dst(node); edge_cursor1 != NULL; ){
 		current_edge = edge_cursor1;
 		edge_cursor1 = edge_get_next_dst(edge_cursor1);
 		operand_operation = ir_node_get_operation(edge_get_src(current_edge));
@@ -1731,6 +1732,10 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 	}
 }
 
+static void ir_normalize_simplify_instruction_numeric_xor(struct ir* ir, struct node* node, uint8_t* modification){
+	ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, 0, ^)
+}
+
 static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 			edge_cursor;
 	struct irOperand*		operand_list;
@@ -1834,6 +1839,12 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 				}
 			}
 		}
+	}
+
+	if (*modification == 1 && final){
+		ir_normalize_simplify_instruction_symbolic_xor(ir, node, modification);
+		ir_normalize_simplify_instruction_numeric_xor(ir, node, modification);
+		ir_normalize_simplify_instruction_rewrite_xor(ir, node, modification, 0);
 	}
 }
 
