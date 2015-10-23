@@ -168,9 +168,9 @@ void result_pop(struct result* result, struct ir* ir){
 	}
 }
 
-void result_get_footprint(struct result* result, uint32_t index, struct set* set){
+void result_get_node_footprint(struct result* result, uint32_t index, struct set* set){
 	uint32_t 		i;
-	struct edge* 	edge_cursor;
+	/*struct edge* 	edge_cursor;*/
 
 	if (index >= result->nb_occurrence){
 		log_err_m("incorrect index %u (max is %u)", index, result->nb_occurrence);
@@ -179,7 +179,7 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 
 	for (i = 0; i < result_get_nb_internal_node(result); i++){
 		if (result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node == NULL){
-			result_get_footprint(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].result, result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].index, set);
+			result_get_node_footprint(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].result, result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].index, set);
 		}
 		else{
 			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node)) < 0){
@@ -188,7 +188,7 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 		}
 	}
 
-	for (i = 0; i < result->code_signature->nb_frag_tot_out; i++){
+	/*for (i = 0; i < result->code_signature->nb_frag_tot_out; i++){
 		for (edge_cursor = node_get_head_edge_dst(result->ou_mapping_buffer[index * result->code_signature->nb_frag_tot_out + i].virtual_node.node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_MACRO){
 				continue;
@@ -196,6 +196,30 @@ void result_get_footprint(struct result* result, uint32_t index, struct set* set
 
 			if (set_add(set, &(edge_get_src(edge_cursor))) < 0){
 				log_err("unable to add element to set");
+			}
+		}
+	}*/
+}
+
+void result_remove_edge_footprint(struct result* result, struct ir* ir){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct edge* 	edge_curr;
+	struct edge* 	edge_next;
+
+	for (i = 0; i < result->nb_occurrence; i++){
+		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
+			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node == NULL){
+				log_err("unsatisfied input dependence");
+				continue;
+			}
+
+			for (edge_curr = node_get_head_edge_dst(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node); edge_curr != NULL; edge_curr = edge_next){
+				edge_next = edge_get_next_dst(edge_curr);
+
+				if (ir_edge_get_dependence(edge_curr)->type != IR_DEPENDENCE_TYPE_MACRO){
+					ir_remove_dependence(ir, edge_curr);
+				}
 			}
 		}
 	}
@@ -540,6 +564,7 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 	struct codeSignature*	code_signature;
 	uint32_t 				i;
 	uint32_t 				j;
+	uint32_t 				k;
 
 	code_signature = (struct codeSignature*)(ir_node_get_operation(node)->operation_type.symbol.code_signature);
 
@@ -560,21 +585,29 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 	}
 
 	for (i = 0; i < code_signature->nb_parameter_in; i++){
-		for (j = 0; j < mapping[i].nb_fragment; j++){
+		for (j = 0, k = 0; j < mapping[i].nb_fragment; j++){
 			if (parameterMapping_get_node_buffer(mapping + i)[j] == NULL){
-				log_err_m("missing I%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
-				return -1;
+				log_warn_m("missing I%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+			}
+			else{
+				parameterMapping_get_node_buffer(mapping + i)[k] = parameterMapping_get_node_buffer(mapping + i)[j];
+				k ++;
 			}
 		}
+		mapping[i].nb_fragment = k;
 	}
 
 	for (i = 0; i < code_signature->nb_parameter_out; i++){
-		for (j = 0; j < mapping[code_signature->nb_parameter_in + i].nb_fragment; j++){
+		for (j = 0, k = 0; j < mapping[code_signature->nb_parameter_in + i].nb_fragment; j++){
 			if (parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[j] == NULL){
-				log_err_m("missing O%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
-				return -1;
+				log_warn_m("missing O%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+			}
+			else{
+				parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[k] = parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[j];
+				k ++;
 			}
 		}
+		mapping[code_signature->nb_parameter_in + i].nb_fragment = k;
 	}
 
 

@@ -402,7 +402,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 
 	node_src = edge_get_src(edge);
 	graph_remove_edge(&(ir->graph), edge);
-	if (!(ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) && (node_src->nb_edge_src == 0 || ir_node_get_operation(node_src)->type == IR_OPERATION_TYPE_SYMBOL)){
+	if (!(ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) && node_src->nb_edge_src == 0){
 		ir_remove_node(ir, node_src);
 	}
 }

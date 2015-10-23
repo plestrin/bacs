@@ -5,6 +5,7 @@
 
 #include "irMemory.h"
 #include "irVariableRange.h"
+#include "irRenameEngine.h"
 #include "dagPartialOrder.h"
 #include "base.h"
 
@@ -518,10 +519,12 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 					log_err("unable to add new dependency to IR");
 				}
 
-				graph_transfert_src_edge(&(ir->graph), new_inst, node2);
-				ir_remove_node(ir, node2);
-
-				ir_drop_range(ir);
+				if (graph_copy_src_edge(&(ir->graph), new_inst, node2)){
+					log_err("unable to copy edge(s)");
+				}
+				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+					irRenameEngine_change_node(ir->alias_buffer, node2, new_inst);
+				}
 
 				result = 1;
 			}
@@ -529,13 +532,21 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				log_warn_m("simplification of memory access of different size (case STORE:%u -> LOAD:%u)", operation1->size, operation2->size);
 			}
 			else{
-				ir_merge_equivalent_node(ir, edge_get_src(edge_cursor), node2);
-
-				ir_drop_range(ir);
+				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2)){
+					log_err("unable to copy edge(s)");
+				}
+				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+					irRenameEngine_change_node(ir->alias_buffer, node2, edge_get_src(edge_cursor));
+				}
 
 				result = 1;
 			}
 		}
+	}
+
+	if (result == 1){
+		ir_remove_node(ir, node2);
+		ir_drop_range(ir);
 	}
 
 	return result;

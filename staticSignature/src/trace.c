@@ -763,7 +763,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		result_push(result, trace->trace_type.frag.ir);
 		
 		for (j = 0; j < result->nb_occurrence; j++){
-			result_get_footprint(result, j, node_set);
+			result_get_node_footprint(result, j, node_set);
 		}
 	}
 
@@ -777,7 +777,16 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	node_set = NULL;
 
 	ir_remove_footprint(trace->trace_type.frag.ir, footprint, nb_node_footprint);
+
+	for (i = 0; i < nb_exported_result; i++){
+		result_remove_edge_footprint((struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]), trace->trace_type.frag.ir);
+	}
+
 	ir_normalize_remove_dead_code(trace->trace_type.frag.ir, NULL);
+
+	#ifdef IR_FULL_CHECK
+	ir_check(trace->trace_type.frag.ir);
+	#endif
 
 	exit:
 	if (exported_result != NULL){

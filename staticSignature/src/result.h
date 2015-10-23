@@ -49,7 +49,8 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 void result_push(struct result* result, struct ir* ir);
 void result_pop(struct result* result, struct ir* ir);
-void result_get_footprint(struct result* result, uint32_t index, struct set* set);
+void result_get_node_footprint(struct result* result, uint32_t index, struct set* set);
+void result_remove_edge_footprint(struct result* result, struct ir* ir);
 void result_print(struct result* result);
 
 #define result_clean(result) 										\

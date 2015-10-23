@@ -219,6 +219,7 @@ static void synthesisGraph_pack(struct graph* graph){
 
 	for (i = 1, j = 0; i < nb_node; i++){
 		if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
+			graph_transfert_dst_edge(graph, node_buffer[j], node_buffer[i]);
 			graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
 			graph_remove_node(graph, node_buffer[i]);
 		}

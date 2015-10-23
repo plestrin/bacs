@@ -370,7 +370,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 					}
 				}
 
-				if (nb_edge_dst < min_dst_edge[operation_cursor->operation_type.inst.opcode] || nb_edge_dst > max_dst_edge[operation_cursor->operation_type.inst.opcode]){
+				if ((nb_edge_dst < min_dst_edge[operation_cursor->operation_type.inst.opcode] && nb_dependence[IR_DEPENDENCE_TYPE_MACRO] == 0) || nb_edge_dst > max_dst_edge[operation_cursor->operation_type.inst.opcode]){
 					log_err_m("inst %s has an incorrect number of dst edge: %u (min=%u, max=%u)", irOpcode_2_string(operation_cursor->operation_type.inst.opcode), nb_edge_dst, min_dst_edge[operation_cursor->operation_type.inst.opcode], max_dst_edge[operation_cursor->operation_type.inst.opcode]);
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -747,7 +747,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 								continue;
 							}
 							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && nb_dependence[i] > 0){
-								log_err_m("incorrect dependence type %u for inst PART1_16", i);
+								log_err_m("incorrect dependence type %u for inst XOR", i);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}

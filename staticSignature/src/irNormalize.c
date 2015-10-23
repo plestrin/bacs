@@ -115,7 +115,7 @@ void ir_normalize(struct ir* ir){
 		/*char 	file_name[256];
 		snprintf(file_name, 256, "%u.dot", round_counter);
 		graphPrintDot_print(&(ir->graph), file_name, NULL);*/
-		
+
 		modification = 0;
 
 		#ifdef VERBOSE
@@ -279,16 +279,20 @@ void ir_normalize(struct ir* ir){
 	}
 
 	#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-	START_TIMER
-	ir_normalize_simplify_instruction(ir, &modification, 1);
-	STOP_TIMER
-	#ifdef VERBOSE
-	timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+	do {
+		modification = 0;
 
-	if (modification){
-		log_info("modification simplify instruction @ FINAL");
-	}
-	#endif
+		START_TIMER
+		ir_normalize_simplify_instruction(ir, &modification, 1);
+		STOP_TIMER
+		#ifdef VERBOSE
+		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+
+		if (modification){
+			log_info("modification simplify instruction @ FINAL");
+		}
+		#endif
+	} while(modification);
 	#endif
 
 	#ifdef VERBOSE
@@ -313,9 +317,24 @@ void ir_normalize_concrete(struct ir* ir){
 	uint8_t 	modification_copy;
 	double 		timer_1_elapsed_time = 0.0;
 	#endif
-	uint8_t 	modification = 1;
+	uint8_t 	modification = 0;
 
 	INIT_TIMER
+
+	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
+	ir_normalize_remove_dead_code(ir, &modification);
+	#ifdef VERBOSE
+	if (modification){
+		log_info("modification remove dead code @ START");
+	}
+	#endif
+	modification = 1;
+	#ifdef IR_FULL_CHECK
+	ir_check(ir);
+	#endif
+	#else
+	modification = 1;
+	#endif
 
 	ir_simplify_concrete_memory_access(ir);
 
@@ -1671,7 +1690,7 @@ static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct 
 	if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_ADD && edge_get_src(operand2)->nb_edge_src > 1){
 		for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (edge_get_src(edge_cursor) == edge_get_src(operand2)){
-				
+
 				for (edge_cursor = node_get_head_edge_dst(edge_get_src(operand1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					if (edge_get_src(edge_cursor) != edge_get_src(operand2)){
 						if (ir_add_dependence(ir, edge_get_src(edge_cursor), node, ir_edge_get_dependence(edge_cursor)->type) == NULL){
@@ -1840,12 +1859,13 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 			}
 		}
 	}
-
+/*
 	if (*modification == 1 && final){
 		ir_normalize_simplify_instruction_symbolic_xor(ir, node, modification);
 		ir_normalize_simplify_instruction_numeric_xor(ir, node, modification);
 		ir_normalize_simplify_instruction_rewrite_xor(ir, node, modification, 0);
 	}
+*/
 }
 
 void ir_normalize_remove_common_subexpression(struct ir* ir, uint8_t* modification){

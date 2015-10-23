@@ -263,8 +263,8 @@ static void inputParser_print_help(struct inputParser* parser){
 
 	multiColumnPrinter_set_column_size(printer, 0, 24);
 	multiColumnPrinter_set_column_size(printer, 1, 3);
-	multiColumnPrinter_set_column_size(printer, 2, 64);
-	multiColumnPrinter_set_column_size(printer, 3, 48);
+	multiColumnPrinter_set_column_size(printer, 2, 48);
+	multiColumnPrinter_set_column_size(printer, 3, 32);
 
 	printf("List of available command(s):\n");
 
