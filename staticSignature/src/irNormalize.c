@@ -22,7 +22,6 @@
 #define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
 #define IR_NORMALIZE_EXPAND_VARIABLE				1
 #define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
-#define IR_NORMALIZE_ALIASING_SENSITIVITY 			1 /* 0=WEAK, 1=CHECK, 2+=STRICT */
 #define IR_NORMALIZE_AFFINE_EXPRESSION 				1
 #define IR_NORMALIZE_REGROUP_MEM_ACCESS 			1
 
@@ -161,13 +160,7 @@ void ir_normalize(struct ir* ir){
 
 		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
 		START_TIMER
-		#if IR_NORMALIZE_ALIASING_SENSITIVITY == 0
-		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_WEAK);
-		#elif IR_NORMALIZE_ALIASING_SENSITIVITY == 1
 		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_CHECK);
-		#else
-		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_STRICT);
-		#endif
 		STOP_TIMER
 		#ifdef VERBOSE
 		timer_3_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;

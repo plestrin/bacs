@@ -228,7 +228,7 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	return CANNOT_ALIAS;
 }
 
-struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, enum aliasingStrategy strategy, uint32_t ir_range_seed){
+struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed){
 	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
 	struct edge* 			edge_cursor;
@@ -245,48 +245,43 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 	while(node_cursor != node2){
 		operation_cursor = ir_node_get_operation(node_cursor);
 		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_IN) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_OUT)){
-			if (strategy == ALIASING_STRATEGY_STRICT){
-				return node_cursor;
-			}
-			else{
-				#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE == 1
-				if (ir_node_get_operation(node1)->operation_type.mem.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.con_addr != MEMADDRESS_INVALID){
-					if (ir_node_get_operation(node1)->operation_type.mem.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.con_addr){
-						return node_cursor;
-					}
-					#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
-					else{
-						goto next;
-					}
-					#endif
+			#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE == 1
+			if (ir_node_get_operation(node1)->operation_type.mem.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.con_addr != MEMADDRESS_INVALID){
+				if (ir_node_get_operation(node1)->operation_type.mem.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.con_addr){
+					return node_cursor;
+				}
+				#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
+				else{
+					goto next;
 				}
 				#endif
+			}
+			#endif
 
-				if (addr1 == NULL){
-					for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-						if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-							addr1 = edge_get_src(edge_cursor);
-							addrFingerprint_init(addr1, &addr1_fgp, 0, 0);
-							break;
-						}
-					}
-				}
-
-				for (edge_cursor = node_get_head_edge_dst(node_cursor), addr_cursor = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (addr1 == NULL){
+				for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-						addr_cursor = edge_get_src(edge_cursor);
+						addr1 = edge_get_src(edge_cursor);
+						addrFingerprint_init(addr1, &addr1_fgp, 0, 0);
 						break;
 					}
 				}
+			}
 
-				if (addr1 != NULL && addr_cursor != NULL){
-					if (ir_normalize_alias_analysis(&addr1_fgp, addr_cursor, ir_range_seed) != CANNOT_ALIAS){
-						return node_cursor;
-					}
+			for (edge_cursor = node_get_head_edge_dst(node_cursor), addr_cursor = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+					addr_cursor = edge_get_src(edge_cursor);
+					break;
 				}
-				else{
-					log_err("memory access with no address operand");
+			}
+
+			if (addr1 != NULL && addr_cursor != NULL){
+				if (ir_normalize_alias_analysis(&addr1_fgp, addr_cursor, ir_range_seed) != CANNOT_ALIAS){
+					return node_cursor;
 				}
+			}
+			else{
+				log_err("memory access with no address operand");
 			}
 		}
 
@@ -380,19 +375,15 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 
 						switch(strategy){
-							case ALIASING_STRATEGY_WEAK 	: {
-								break;
-							}
-							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
 								}
@@ -411,19 +402,15 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
 
 						switch(strategy){
-							case ALIASING_STRATEGY_WEAK 	: {
-								break;
-							}
-							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
 								}
@@ -442,19 +429,15 @@ void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, e
 					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
 
 						switch(strategy){
-							case ALIASING_STRATEGY_WEAK 	: {
-								break;
-							}
-							case ALIASING_STRATEGY_STRICT 	:
 							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, ir->range_seed);
 								if (alias){
 									continue;
 								}
 								break;
 							}
 							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, strategy, ir->range_seed);
+								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, ir->range_seed);
 								if (alias){
 									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
 								}

@@ -6,8 +6,6 @@
 #include "ir.h"
 
 enum aliasingStrategy{
-	ALIASING_STRATEGY_WEAK,
-	ALIASING_STRATEGY_STRICT,
 	ALIASING_STRATEGY_CHECK,
 	ALIASING_STRATEGY_PRINT
 };
@@ -18,7 +16,7 @@ enum aliasType{
 	ALIAS_ALL
 };
 
-struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, enum aliasingStrategy strategy, uint32_t ir_range_seed);
+struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed);
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy);
 

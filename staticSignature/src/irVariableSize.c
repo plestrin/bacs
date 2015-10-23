@@ -614,7 +614,7 @@ static uint32_t accessGroup_check_aliasing(const struct accessGroup* group, stru
 	}
 
 	for (i = 0; i + 1 < local_group.nb_entry; i++){
-		if(ir_normalize_search_alias_conflict(edge_get_dst(local_group.entries[i]->access), edge_get_dst(local_group.entries[local_group.nb_entry - 1]->access), alias_type, ALIASING_STRATEGY_CHECK, ir->range_seed)){
+		if(ir_normalize_search_alias_conflict(edge_get_dst(local_group.entries[i]->access), edge_get_dst(local_group.entries[local_group.nb_entry - 1]->access), alias_type, ir->range_seed)){
 			return 0;
 		}
 	}
