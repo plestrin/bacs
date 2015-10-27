@@ -235,7 +235,9 @@ struct dijkstraInternal{
 	struct dijkstraInternal* 		next;
 };
 
-static void dijkstraPath_add_recursive(struct array* path_array, struct dijkstraPath* dijkstra_path, struct dijkstraPathStep* step){
+#define DIJKSTRA_MAX_MIN_PATH 1024
+
+static uint32_t dijkstraPath_add_recursive(struct array* path_array, struct dijkstraPath* dijkstra_path, struct dijkstraPathStep* step, uint32_t nb_path){
 	struct dijkstraPath 			fork;
 	struct dijkstraInternal* 		node_meta_data;
 	struct dijkstraPathMultiStep* 	multi_step;
@@ -267,7 +269,11 @@ static void dijkstraPath_add_recursive(struct array* path_array, struct dijkstra
 				continue;
 			}
 
-			dijkstraPath_add_recursive(path_array, &fork, &(multi_step->step));
+			nb_path = dijkstraPath_add_recursive(path_array, &fork, &(multi_step->step), nb_path);
+			if (nb_path == DIJKSTRA_MAX_MIN_PATH){
+				array_delete(dijkstra_path->step_array);
+				return DIJKSTRA_MAX_MIN_PATH;
+			}
 		}
 	}
 
@@ -275,20 +281,30 @@ static void dijkstraPath_add_recursive(struct array* path_array, struct dijkstra
 		log_err("unable to add element to array");
 		array_delete(dijkstra_path->step_array);
 	}
-}
-
-static void dijkstraPath_add(struct array* path_array, struct dijkstraInternal* node_meta_data, struct node* reached_node){
-	struct dijkstraPath dijkstra_path;
-
-	dijkstra_path.step_array = array_create(sizeof(struct dijkstraPathStep));
-	if (dijkstra_path.step_array == NULL){
-		log_err("unable to create array");
-		return;
+	else{
+		nb_path ++;
 	}
 
-	dijkstra_path.reached_node = reached_node;
+	return nb_path;
+}
 
-	dijkstraPath_add_recursive(path_array, &dijkstra_path, &(node_meta_data->multi_step.step));
+static uint32_t dijkstraPath_add(struct array* path_array, struct dijkstraInternal* node_meta_data, struct node* reached_node, uint32_t nb_path){
+	struct dijkstraPath dijkstra_path;
+
+	if (nb_path < DIJKSTRA_MAX_MIN_PATH){
+		dijkstra_path.step_array = array_create(sizeof(struct dijkstraPathStep));
+		if (dijkstra_path.step_array == NULL){
+			log_err("unable to create array");
+			return nb_path;
+		}
+
+		dijkstra_path.reached_node = reached_node;
+
+		return dijkstraPath_add_recursive(path_array, &dijkstra_path, &(node_meta_data->multi_step.step), nb_path);
+	}
+	else{
+		return DIJKSTRA_MAX_MIN_PATH;
+	}
 }
 
 int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t(*edge_get_distance)(void*)){
@@ -338,12 +354,11 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 		curr_orbital = internal_cursor;
 
 		if (internal_cursor->node == NULL){
-			dijkstraPath_add(path_array, curr_orbital, buffer_src[i]);
-			nb_min_path ++;
+			nb_min_path = dijkstraPath_add(path_array, curr_orbital, buffer_src[i], nb_min_path);
 		}
 	}
 
-	for(dst = 0; curr_orbital != NULL && nb_min_path == 0; curr_orbital = next_orbital, dst ++){
+	for(dst = 1; curr_orbital != NULL && nb_min_path == 0; curr_orbital = next_orbital, dst ++){
 		for(next_orbital = NULL; curr_orbital != NULL; curr_orbital = curr_orbital->next){
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
@@ -359,8 +374,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 					internal_cursor->multi_step.step.dir = PATH_SRC_TO_DST;
 
 					if (internal_cursor->node == NULL){
-						dijkstraPath_add(path_array, internal_cursor, node_cursor);
-						nb_min_path ++;
+						nb_min_path = dijkstraPath_add(path_array, internal_cursor, node_cursor, nb_min_path);
 					}
 					else{
 						internal_cursor->dst = dst;
@@ -396,8 +410,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 					internal_cursor->multi_step.step.dir = PATH_DST_TO_SRC;
 
 					if (internal_cursor->node == NULL){
-						dijkstraPath_add(path_array, internal_cursor, node_cursor);
-						nb_min_path ++;
+						nb_min_path = dijkstraPath_add(path_array, internal_cursor, node_cursor, nb_min_path);
 					}
 					else{
 						internal_cursor->dst = dst;
@@ -428,6 +441,10 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 			free(multi_step);
 			multi_step = tmp;
 		}
+	}
+
+	if (nb_min_path == DIJKSTRA_MAX_MIN_PATH){
+		log_warn("min path limit has been reached");
 	}
 
 	free(internals);
