@@ -60,7 +60,8 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)dagPartialOrder.o 		\
 					$(BUILD_DIR)dijkstra.o 				\
 					$(BUILD_DIR)set.o 					\
-					$(BUILD_DIR)variableRange.o
+					$(BUILD_DIR)variableRange.o 		\
+					$(BUILD_DIR)arrayMinCoverage.o
 
 ifeq ($(DEBUG),1)
 CFLAGS			:= $(CFLAGS) -g3 -DIR_FULL_CHECK

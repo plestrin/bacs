@@ -173,18 +173,18 @@ static void path_print(struct array* array){
 }
 
 static void path_test(void){
-	struct graph* 			graph;
-	struct node* 			node1;
-	struct node* 			node2;
-	struct node* 			node3;
-	struct node* 			node4;
-	struct node* 			node5;
-	struct node* 			node6;
-	struct node* 			node7;
-	struct node* 			node8;
-	struct node* 			node9;
-	struct node* 			node10;
-	struct dijkstraPath 	path;
+	struct graph* 	graph;
+	struct node* 	node1;
+	struct node* 	node2;
+	struct node* 	node3;
+	struct node* 	node4;
+	struct node* 	node5;
+	struct node* 	node6;
+	struct node* 	node7;
+	struct node* 	node8;
+	struct node* 	node9;
+	struct node* 	node10;
+	struct array 	path_array;
 
 	graph = graph_create(1, 0);
 	graph_register_dotPrint_callback(graph, NULL, dotPrint_node, NULL, NULL)
@@ -218,24 +218,32 @@ static void path_test(void){
 		log_err("unable to print graph to dot format");
 	}
 
-	#define search_print_path(node1_, node2_) 																							\
-	{ 																																	\
-		int32_t result; 																												\
-																																		\
-		result = dijkstra_min_path(graph, &(node1_), 1, &(node2_), 1, &path, NULL); 													\
-		if (result < 0){ 																												\
-			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
-		} 																																\
-		else if (result){ 																												\
-			log_info_m("there is not path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 			\
-		} 																																\
-		else{ 																															\
-			log_info_m("a path has been found between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 		\
-			putchar('\t'); path_print(path.step_array); putchar('\n'); 																	\
-		} 																																\
+	#define search_print_path(node1_, node2_) 																											\
+	{ 																																					\
+		uint32_t 				i_; 																													\
+		struct dijkstraPath* 	path_; 																													\
+																																						\
+		if (dijkstra_min_path(graph, &(node1_), 1, &(node2_), 1, &path_array, NULL)){ 																	\
+			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 					\
+		} 																																				\
+		else if (!array_get_length(&path_array)){ 																										\
+			log_info_m("there is not path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 							\
+		} 																																				\
+		else{ 																																			\
+			log_info_m("%u path(s) between (%c, %c)", array_get_length(&path_array), *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
+			for (i_ = 0; i_ < array_get_length(&path_array); i_ ++){ 																					\
+				path_ = (struct dijkstraPath*)array_get(&path_array, i_); 																				\
+				putchar('\t'); path_print(path_->step_array); putchar('\n'); 																			\
+				array_delete(path_->step_array); 																										\
+			} 																																			\
+			array_empty(&path_array); 																													\
+		} 																																				\
 	}
 
-	dijkstraPath_init(path)
+	if (array_init(&path_array, sizeof(struct dijkstraPath))){
+		log_err("unable to init array");
+		return;
+	}
 
 	search_print_path(node10, node2)
 	search_print_path(node9 , node1)
@@ -245,7 +253,7 @@ static void path_test(void){
 	search_print_path(node1 , node3)
 	search_print_path(node2 , node1)
 	
-	dijkstraPath_clean(path)
+	array_clean(&path_array);
 
 	graph_delete(graph);
 }

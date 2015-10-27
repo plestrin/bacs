@@ -25,19 +25,10 @@ struct dijkstraPathStep{
 };
 
 struct dijkstraPath{
-	struct array* 	step_array;
+	struct array* 	step_array; 		/* Must be first because there is a cast to an array in the minCoverage computation */
 	struct node* 	reached_node;
 };
 
-#define dijkstraPath_init(path) 											\
-	(path).step_array = NULL; 												\
-	(path).reached_node = NULL;
-
-#define dijkstraPath_clean(path) 											\
-	if ((path).step_array != NULL){ 										\
-		array_delete((path).step_array); 									\
-	}
-
-int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct dijkstraPath* path, uint32_t(*edge_get_distance)(void*));
+int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t(*edge_get_distance)(void*));
 
 #endif

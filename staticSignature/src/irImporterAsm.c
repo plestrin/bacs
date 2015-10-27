@@ -282,6 +282,7 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 		case XED_ICLASS_JNB 		: {break;}
 		case XED_ICLASS_JNBE 		: {break;}
 		case XED_ICLASS_JNL 		: {break;}
+		case XED_ICLASS_JNLE 		: {break;}
 		case XED_ICLASS_JNS 		: {break;}
 		case XED_ICLASS_JNZ 		: {break;}
 		case XED_ICLASS_JZ 			: {break;}
