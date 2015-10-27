@@ -11,6 +11,7 @@ TEST_UGRAPH 			:= test_ugraph
 TEST_GRAPHREADER		:= test_graphReader
 TEST_VARIABLERANGE 		:= test_variableRange
 TEST_READBUFFER 		:= test_readBuffer
+TEST_ARRAYMINCOVERAGE 	:= test_arrayMinCoverage
 
 CC						:= gcc
 # gcc FLAGS
@@ -32,7 +33,8 @@ all: 										\
 	$(TEST_UGRAPH) 							\
 	$(TEST_GRAPHREADER) 					\
 	$(TEST_VARIABLERANGE) 					\
-	$(TEST_READBUFFER)
+	$(TEST_READBUFFER) 						\
+	$(TEST_ARRAYMINCOVERAGE)
 
 # *** Test compile rules ***
 $(TEST_ARRAY): array.o test_array.o
@@ -74,6 +76,9 @@ $(TEST_VARIABLERANGE): test_variableRange.o variableRange.o
 $(TEST_READBUFFER): test_readBuffer.o readBuffer.o printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_ARRAYMINCOVERAGE): test_arrayMinCoverage.o arrayMinCoverage.o array.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 # *** General compile rules ***
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -94,6 +99,7 @@ test_ugraph.o: ../ugraph.h ../set.h ../base.h
 test_graphReader.o: ../graphReader.h ../mapFile.h ../graph.h ../graphPrintDot.h ../base.h
 test_variableRange.o: ../variableRange.h
 test_readBuffer.o: ../readBuffer.h ../printBuffer.h ../readBuffer.h ../base.h
+test_arrayMinCoverage.o: ../arrayMinCoverage.h ../array.h ../base.h
 array.o: ../array.h ../base.h
 multiColumn.o: ../multiColumn.h
 inputParser.o: ../inputParser.h ../array.h ../multiColumn.h ../termReader.h  ../base.h
@@ -109,6 +115,7 @@ set.o: ../set.h ../base.h
 ugraph.o: ../ugraph.h ../set.h ../base.h
 graphReader.o: ../graphReader.h ../base.h
 variableRange.o: ../variableRange.h ../base.h
+arrayMinCoverage.o: ../arrayMinCoverage.h ../array.h ../base.h
 
 clean:
 	@ rm -f *.o
@@ -127,3 +134,4 @@ clean:
 	@ rm -f $(TEST_GRAPHREADER)
 	@ rm -f $(TEST_VARIABLERANGE)
 	@ rm -f $(TEST_READBUFFER)
+	@ rm -f $(TEST_ARRAYMINCOVERAGE)
