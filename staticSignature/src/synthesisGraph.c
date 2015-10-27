@@ -604,7 +604,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		} 																																							\
 		else{ 																																						\
 			rrd.nb_element = array_get_length(&path_array) - rrd.offset; 																							\
-			if (array_add(&rrd_array, &rrd)){ 																														\
+			if (array_add(&rrd_array, &rrd) < 0){ 																														\
 				log_err("unable to add element to array"); 																											\
 			} 																																						\
 		} 																																							\

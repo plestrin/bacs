@@ -33,11 +33,6 @@ int main(){
 		return EXIT_FAILURE;
 	}
 
-	if ((err = ocb_decrypt_authenticate_memory(find_cipher("aes"), key, sizeof(key), iv, plaintext, sizeof(plaintext), ciphertext, tag, &tag_length)) != CRYPT_OK){
-		printf("ERROR: in %s, %s\n", __func__, error_to_string(err));
-		return EXIT_FAILURE;
-	}
-
 	printf("\nCiphertext OCB: ");
 	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 	printf("\nTag:            ");
