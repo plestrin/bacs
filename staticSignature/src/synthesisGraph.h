@@ -21,13 +21,14 @@ struct signatureCluster{
 	struct array 				instance_array;
 };
 
+
 struct synthesisNode{
 	enum synthesisNodeType 			type;
 	union{
 		struct signatureCluster* 	cluster;
 		struct{
-			uint32_t 				nb_edge;
-			struct edge** 			edge_buffer;
+			uint32_t 				nb_node;
+			struct node** 			node_buffer;
 		} 							path;
 		struct node*				ir_node;
 	}								node_type;

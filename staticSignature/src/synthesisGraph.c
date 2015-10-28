@@ -170,21 +170,6 @@ static int32_t synthesisGraph_compare_ir_node(const void* data1, const void* dat
 	}
 }
 
-static int32_t synthesisGraph_compare_path(const void* data1, const void* data2){
-	struct synthesisNode* 	synthesis_node1  = synthesisGraph_get_synthesisNode(*(struct node**)data1);
-	struct synthesisNode* 	synthesis_node2  = synthesisGraph_get_synthesisNode(*(struct node**)data2);
-
-	if (synthesis_node1->node_type.path.nb_edge < synthesis_node2->node_type.path.nb_edge){
-		return -1;
-	}
-	else if (synthesis_node1->node_type.path.nb_edge > synthesis_node2->node_type.path.nb_edge){
-		return 1;
-	}
-	else{
-		return memcmp(synthesis_node1->node_type.path.edge_buffer, synthesis_node2->node_type.path.edge_buffer, sizeof(struct edge*) * synthesis_node1->node_type.path.nb_edge);
-	}
-}
-
 static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
 	struct edge* edge1 = *(struct edge**)data1;
 	struct edge* edge2 = *(struct edge**)data2;
@@ -200,6 +185,100 @@ static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2)
 	}
 }
 
+static struct node* synthesisGraph_add_ir_node(struct graph* synthesis_graph, struct node* ir_node){
+	struct synthesisNode 	synthesis_node;
+	struct node* 			result;
+
+	synthesis_node.type 				= SYNTHESISNODETYPE_IR_NODE;
+	synthesis_node.node_type.ir_node 	= ir_node;
+
+	if ((result = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
+		log_err("unable to add node to graph");
+	}
+
+	return result;
+}
+
+static struct node* synthesisGraph_add_path(struct graph* synthesis_graph, uint32_t nb_node){
+	struct synthesisNode 	synthesis_node;
+	struct node* 			result;
+
+	synthesis_node.type 						= SYNTHESISNODETYPE_PATH;
+	synthesis_node.node_type.path.nb_node 		= nb_node;
+	synthesis_node.node_type.path.node_buffer 	= calloc(nb_node, sizeof(struct node*));
+
+	if (synthesis_node.node_type.path.node_buffer == NULL){
+		log_err("unable to allocate memory");
+		return NULL;
+	}
+
+	if ((result = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
+		log_err("unable to add node to graph");
+		free(synthesis_node.node_type.path.node_buffer);
+	}
+
+	return result;
+}
+
+static void synthesis_graph_collapse_node(struct graph* synthesis_graph, struct node* node_hi, struct node* node_lo){
+	uint32_t 				nb_node;
+	struct synthesisNode* 	syn_node_hi = synthesisGraph_get_synthesisNode(node_hi);
+	struct synthesisNode* 	syn_node_lo = synthesisGraph_get_synthesisNode(node_lo);
+	struct node* 			path;
+	uint32_t 				i;
+	struct synthesisNode* 	syn_path;
+
+	if (syn_node_hi->type == SYNTHESISNODETYPE_IR_NODE){
+		nb_node = 1;
+	}
+	else if (syn_node_hi->type == SYNTHESISNODETYPE_PATH){
+		nb_node = syn_node_hi->node_type.path.nb_node;
+	}
+	else{
+		log_err("incorrect node type");
+		return;
+	}
+
+	if (syn_node_lo->type == SYNTHESISNODETYPE_IR_NODE){
+		nb_node ++;
+	}
+	else if (syn_node_lo->type == SYNTHESISNODETYPE_PATH){
+		nb_node += syn_node_lo->node_type.path.nb_node;
+	}
+	else{
+		log_err("incorrect node type");
+		return;
+	}
+
+	if ((path = synthesisGraph_add_path(synthesis_graph, nb_node)) == NULL){
+		log_err("unable to add path to synthesisGraph");
+		return;
+	}
+
+	syn_path = synthesisGraph_get_synthesisNode(path);
+
+	if (syn_node_hi->type == SYNTHESISNODETYPE_IR_NODE){
+		syn_path->node_type.path.node_buffer[0] = syn_node_hi->node_type.ir_node;
+		i = 1;
+	}
+	else{
+		memcpy(syn_path->node_type.path.node_buffer, syn_node_hi->node_type.path.node_buffer, sizeof(struct node*) * syn_node_hi->node_type.path.nb_node);
+		i = syn_node_hi->node_type.path.nb_node;
+	}
+	if (syn_node_lo->type == SYNTHESISNODETYPE_IR_NODE){
+		syn_path->node_type.path.node_buffer[i] = syn_node_lo->node_type.ir_node;
+	}
+	else{
+		memcpy(syn_path->node_type.path.node_buffer + i, syn_node_lo->node_type.path.node_buffer, sizeof(struct node*) * syn_node_lo->node_type.path.nb_node);
+	}
+
+	graph_transfert_dst_edge(synthesis_graph, path, node_hi);
+	graph_transfert_src_edge(synthesis_graph, path, node_lo);
+
+	graph_remove_node(synthesis_graph, node_hi);
+	graph_remove_node(synthesis_graph, node_lo);
+}
+
 static void synthesisGraph_pack(struct graph* graph){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
@@ -210,6 +289,7 @@ static void synthesisGraph_pack(struct graph* graph){
 	struct synthesisNode* 	synthesis_node_cursor;
 	uint32_t 				i;
 	uint32_t 				j;
+	struct node* 			stable_cursor;
 
 	node_buffer = (struct node**)malloc(sizeof(struct node*) * graph->nb_node);
 	edge_buffer = (struct edge**)node_buffer;
@@ -239,27 +319,6 @@ static void synthesisGraph_pack(struct graph* graph){
 		}
 	}
 
-	for (node_cursor = graph_get_head_node(graph), nb_node = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
-
-		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_PATH){
-			node_buffer[nb_node ++] = node_cursor;
-		}
-	}
-
-	qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_path);
-
-	for (i = 1, j = 0; i < nb_node; i++){
-		if (synthesisGraph_compare_path(node_buffer + j, node_buffer + i) == 0){
-			graph_transfert_dst_edge(graph, node_buffer[j], node_buffer[i]);
-			graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
-			graph_remove_node(graph, node_buffer[i]);
-		}
-		else{
-			j = i;
-		}
-	}
-
 	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
@@ -279,264 +338,173 @@ static void synthesisGraph_pack(struct graph* graph){
 		}
 	}
 
-	free(node_buffer);
-}
+	for (node_cursor = graph_get_head_node(graph), stable_cursor = NULL; node_cursor != NULL; ){
+		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
-static inline struct node* synthesisGraph_add_ir_node(struct graph* synthesis_graph, struct node* ir_node){
-	struct synthesisNode 	synthesis_node;
-	struct node* 			result;
+		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE || synthesis_node_cursor->type == SYNTHESISNODETYPE_PATH){
+			if (node_cursor->nb_edge_src == 1){
+				struct node* node_dst = edge_get_dst(node_get_head_edge_src(node_cursor));
+				
+				if (node_dst->nb_edge_dst == 1 && (synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_PATH)){
+					synthesis_graph_collapse_node(graph, node_cursor, node_dst);
 
-	synthesis_node.type 				= SYNTHESISNODETYPE_IR_NODE;
-	synthesis_node.node_type.ir_node 	= ir_node;
-
-	if ((result = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
-		log_err("unable to add node to graph");
-	}
-
-	return result;
-}
-
-static inline struct node* synthesisGraph_add_path(struct graph* synthesis_graph, uint32_t nb_edge){
-	struct synthesisNode 	synthesis_node;
-	struct node* 			result;
-
-	synthesis_node.type 						= SYNTHESISNODETYPE_PATH;
-	synthesis_node.node_type.path.nb_edge 		= nb_edge;
-	synthesis_node.node_type.path.edge_buffer 	= calloc(nb_edge, sizeof(struct edge*));
-
-	if (synthesis_node.node_type.path.edge_buffer == NULL){
-		log_err("unable to allocate memory");
-		return NULL;
-	}
-
-	if ((result = graph_add_node(synthesis_graph, &synthesis_node)) == NULL){
-		log_err("unable to add node to graph");
-		free(synthesis_node.node_type.path.edge_buffer);
-	}
-
-	return result;
-}
-
-static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, struct node* node_src, uint32_t src_edge_tag, struct node* node_dst, uint32_t dst_edge_tag, struct dijkstraPath* path, uint32_t index_start, uint32_t index_stop){
-	uint32_t 					edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
-	struct node* 				new_node;
-	struct synthesisNode* 		new_path;
-	struct dijkstraPathStep* 	step;
-	uint32_t 					i;
-	enum dijkstraPathDirection 	current_dir;
-
-	if (index_stop == 0){
-		if (synthesisGraph_edge_is_input(src_edge_tag)){
-			if (synthesisGraph_edge_is_input(dst_edge_tag)){
-				if ((new_node = synthesisGraph_add_ir_node(synthesis_graph, path->reached_node)) == NULL){
-					log_err("unable to add IR node to synthesisGraph");
-					return -1;
-				}
-
-				if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL || graph_add_edge(synthesis_graph, new_node, node_dst, &dst_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
+					if (stable_cursor == NULL){
+						node_cursor = graph_get_head_node(graph);
+					}
+					else{
+						node_cursor = node_get_next(stable_cursor);
+					}
+					continue;
 				}
 			}
-			else{
-				log_warn("parameters overlap -> incomplete edge tag");
-				if (graph_add_edge(synthesis_graph, node_dst, node_src, &src_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
+			if (node_cursor->nb_edge_dst == 1){
+				struct node* node_src = edge_get_src(node_get_head_edge_dst(node_cursor));
+				
+				if (node_src->nb_edge_src == 1 && (synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_PATH)){
+					synthesis_graph_collapse_node(graph, node_src, node_cursor);
+
+					if (stable_cursor == NULL){
+						node_cursor = graph_get_head_node(graph);
+					}
+					else{
+						node_cursor = node_get_next(stable_cursor);
+					}
+					continue;
 				}
 			}
 		}
-		else if (synthesisGraph_edge_is_input(dst_edge_tag)){
-			log_warn("parameters overlap -> incomplete edge tag");
+		else{
+			stable_cursor = node_cursor;
+		}
+
+		node_cursor = node_get_next(node_cursor);
+	}
+
+	free(node_buffer);
+}
+
+static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, struct node* node_src, uint32_t src_edge_tag, struct node* node_dst, uint32_t dst_edge_tag, struct dijkstraPath* path){
+	uint32_t 					i;
+	struct node* 				new_node;
+	struct dijkstraPathStep* 	step;
+
+	/* Special cases */
+	if (array_get_length(path->step_array) == 0){
+		if (synthesisGraph_edge_is_input(src_edge_tag) && synthesisGraph_edge_is_output(dst_edge_tag)){
+			log_warn("get different tags for the same edge");
+			if (graph_add_edge(synthesis_graph, node_dst, node_src, &src_edge_tag) == NULL){
+				log_err("unable to add edge to synthesisGraph");
+				return -1;
+			}
+			else{
+				return 0;
+			}
+		}
+		if (synthesisGraph_edge_is_input(dst_edge_tag) && synthesisGraph_edge_is_output(src_edge_tag)){
+			log_warn("get different tags for the same edge");
 			if (graph_add_edge(synthesis_graph, node_src, node_dst, &dst_edge_tag) == NULL){
 				log_err("unable to add edge to synthesisGraph");
 				return -1;
 			}
+			else{
+				return 0;
+			}
 		}
-		else{
-			log_err("this case is not supposed to happen");
-			return -1;
-		}
-
-		return 0;
 	}
 
-	if (index_start + 1 == index_stop){
-		if (!synthesisGraph_edge_is_input(src_edge_tag) && !synthesisGraph_edge_is_input(dst_edge_tag)){
-			if (src_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW && dst_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW){
-				log_warn("get different tags for the same edge");
-			}
-			edge_tag = max(src_edge_tag, dst_edge_tag);
-
-			step = (struct dijkstraPathStep*)array_get(path->step_array, index_start);
+	/* Fetch IN */
+	if (synthesisGraph_edge_is_input(src_edge_tag)){
+		if (array_get_length(path->step_array) == 0){
+			new_node = synthesisGraph_add_ir_node(synthesis_graph, path->reached_node);
+		}
+		else{
+			step = (struct dijkstraPathStep*)array_get(path->step_array, array_get_length(path->step_array) - 1);
 			if (step->dir == PATH_SRC_TO_DST){
-				if (graph_add_edge(synthesis_graph, node_src, node_dst, &edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
+				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge));
 			}
 			else{
-				if (graph_add_edge(synthesis_graph, node_dst, node_src, &edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
+				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_dst(step->edge));
 			}
-		}
-		else if (synthesisGraph_edge_is_input(src_edge_tag)){
-			step = (struct dijkstraPathStep*)array_get(path->step_array, index_start);
-			if (step->dir == PATH_SRC_TO_DST){
-				if ((new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge))) == NULL){
-					log_err("unable to add IR node to synthesisGraph");
-					return -1;
-				}
-
-				if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
-
-				if (synthesisGraph_add_dijkstraPath(synthesis_graph, new_node, SYNTHESISGRAPH_EGDE_TAG_RAW, node_dst, dst_edge_tag, path, index_start, index_stop)){
-					return -1;
-				}
-			}
-			else if (synthesisGraph_edge_is_input(dst_edge_tag)){
-				step = (struct dijkstraPathStep*)array_get(path->step_array, index_start);
-				step->dir = PATH_SRC_TO_DST;
-				if (synthesisGraph_add_dijkstraPath(synthesis_graph, node_dst, dst_edge_tag, node_src, src_edge_tag, path, index_start, index_stop)){
-					return -1;
-				}
-			}
-			else{
-				if ((new_node = synthesisGraph_add_path(synthesis_graph, 1)) == NULL){
-					log_err("unable to add path to synthesisGraph");
-					return -1;
-				}
-
-				new_path = synthesisGraph_get_synthesisNode(new_node);
-				new_path->node_type.path.edge_buffer[0] = step->edge;
-
-				if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL || graph_add_edge(synthesis_graph, node_dst, new_node, &dst_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
-			}
-		}
-		else{
-			step = (struct dijkstraPathStep*)array_get(path->step_array, index_start);
-			step->dir = (step->dir == PATH_SRC_TO_DST) ? PATH_DST_TO_SRC : PATH_SRC_TO_DST;
-			if (synthesisGraph_add_dijkstraPath(synthesis_graph, node_dst, dst_edge_tag, node_src, src_edge_tag, path, index_start, index_stop)){
-				return -1;
-			}
-		}
-
-		return 0;
-	}
-
-	step = (struct dijkstraPathStep*)array_get(path->step_array, index_start);
-	current_dir = step->dir;
-
-	for (i = index_start + 1; i < index_stop; i++){
-		step = (struct dijkstraPathStep*)array_get(path->step_array, i);
-		if (step->dir != current_dir){
-			break;
-		}
-	}
-
-	if (i != index_stop){
-		if (current_dir == PATH_SRC_TO_DST){
-			new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge));
-		}
-		else{
-			new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_dst(step->edge));
 		}
 		if (new_node == NULL){
 			log_err("unable to add IR node to synthesisGraph");
 			return -1;
 		}
 
-		if (synthesisGraph_add_dijkstraPath(synthesis_graph, new_node, SYNTHESISGRAPH_EGDE_TAG_RAW, node_dst, dst_edge_tag, path, index_start, i) || synthesisGraph_add_dijkstraPath(synthesis_graph, node_src, src_edge_tag, new_node, SYNTHESISGRAPH_EGDE_TAG_RAW, path, i, index_stop)){
+		if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
+			log_err("unable to add edge to synthesisGraph");
 			return -1;
 		}
+
+		node_src = new_node;
+		src_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
 	}
-	else{
-		if (!synthesisGraph_edge_is_input(src_edge_tag) && !synthesisGraph_edge_is_input(dst_edge_tag)){
-			if ((new_node = synthesisGraph_add_path(synthesis_graph, index_stop - index_start - 1)) == NULL){
-				log_err("unable to add edge to synthesisGraph");
-				return -1;
-			}
 
-			new_path = synthesisGraph_get_synthesisNode(new_node);
-			if (current_dir == PATH_SRC_TO_DST){
-				for (i = 1; i < index_stop - index_start; i++){
-					step = (struct dijkstraPathStep*)array_get(path->step_array, i + index_start);
-					new_path->node_type.path.edge_buffer[index_stop - index_start - (i + 1)] = step->edge;
-				}
-
-				if (graph_add_edge(synthesis_graph, node_src, new_node, &src_edge_tag) == NULL || graph_add_edge(synthesis_graph, new_node, node_dst, &dst_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
-			}
-			else{
-				for (i = 0; i < index_stop - index_start - 1; i++){
-					step = (struct dijkstraPathStep*)array_get(path->step_array, i + index_start);
-					new_path->node_type.path.edge_buffer[i] = step->edge;
-				}
-
-				if (graph_add_edge(synthesis_graph, node_dst, new_node, &dst_edge_tag) == NULL || graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
-			}
+	/* Fetch OUT */
+	if (synthesisGraph_edge_is_input(dst_edge_tag)){
+		new_node = synthesisGraph_add_ir_node(synthesis_graph, path->reached_node);
+		if (new_node == NULL){
+			log_err("unable to add IR node to synthesisGraph");
+			return -1;
 		}
-		else if (synthesisGraph_edge_is_input(src_edge_tag) && synthesisGraph_edge_is_input(dst_edge_tag)){
-			log_warn("this case is not implemented yet");
+
+		if (graph_add_edge(synthesis_graph, new_node, node_dst, &dst_edge_tag) == NULL){
+			log_err("unable to add edge to synthesisGraph");
+			return -1;
 		}
-		else if (synthesisGraph_edge_is_input(src_edge_tag)){
-			if (current_dir == PATH_SRC_TO_DST){
-				step = (struct dijkstraPathStep*)array_get(path->step_array, index_stop - 1);
-				if ((new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge))) == NULL){
+
+		node_dst = new_node;
+		dst_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
+	}
+
+	/* Fill */
+	for (i = array_get_length(path->step_array); i > 0; i --){
+		step = (struct dijkstraPathStep*)array_get(path->step_array, i - 1);
+		if (step->dir == PATH_SRC_TO_DST){
+			if (i > 1){
+				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_dst(step->edge));
+				if (new_node == NULL){
 					log_err("unable to add IR node to synthesisGraph");
 					return -1;
 				}
-
-				if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
+			}
+			else{
+				new_node = node_dst;
+				if (dst_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW && src_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW){
+					log_warn("get different tags for the same edge");
 				}
+				src_edge_tag = max(dst_edge_tag, src_edge_tag);
+			}
 
-				if (synthesisGraph_add_dijkstraPath(synthesis_graph, new_node, SYNTHESISGRAPH_EGDE_TAG_RAW, node_dst, dst_edge_tag, path, index_start, index_stop)){
+			if (graph_add_edge(synthesis_graph, node_src, new_node, &src_edge_tag) == NULL){
+				log_err("unable to add edge to synthesisGraph");
+				return -1;
+			}
+		}
+		else{
+			if (i > 1){
+				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge));
+				if (new_node == NULL){
+					log_err("unable to add IR node to synthesisGraph");
 					return -1;
 				}
 			}
 			else{
-				if ((new_node = synthesisGraph_add_path(synthesis_graph, index_stop - index_start)) == NULL){
-					log_err("unable to add path to synthesisGraph");
-					return -1;
+				new_node = node_dst;
+				if (dst_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW && src_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW){
+					log_warn("get different tags for the same edge");
 				}
-
-				new_path = synthesisGraph_get_synthesisNode(new_node);
-				for (i = 0; i < index_stop - index_start; i++){
-					step = (struct dijkstraPathStep*)array_get(path->step_array, i + index_start);
-					new_path->node_type.path.edge_buffer[i] = step->edge;
-				}
-
-				if (graph_add_edge(synthesis_graph, node_dst, new_node, &dst_edge_tag) == NULL || graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
-					log_err("unable to add edge to synthesisGraph");
-					return -1;
-				}
+				src_edge_tag = max(dst_edge_tag, src_edge_tag);
 			}
-		}
-		else{
-			current_dir = (current_dir == PATH_SRC_TO_DST) ? PATH_DST_TO_SRC : PATH_SRC_TO_DST;
-			for (i = index_start; i < index_stop; i++){
-				step = (struct dijkstraPathStep*)array_get(path->step_array, i);
-				step->dir = current_dir;
-			}
-			if (synthesisGraph_add_dijkstraPath(synthesis_graph, node_dst, dst_edge_tag, node_src, src_edge_tag, path, index_start, index_stop)){
+
+			if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
+				log_err("unable to add edge to synthesisGraph");
 				return -1;
 			}
 		}
+
+		node_src = new_node;
+		src_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
 	}
 
 	return 0;
@@ -768,7 +736,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 						j++;
 						
 					}
-					if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, path, 0, array_get_length(path->step_array))){
+					if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, path)){
 						log_err("unable add path to synthesisGraph");
 					}
 				}
@@ -903,11 +871,8 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 		}
 		case SYNTHESISNODETYPE_PATH 	: {
 			fputs("[shape=plaintext,label=<", file);
-			for (i = 0, nb_element = 0; i < synthesis_node->node_type.path.nb_edge; i++){
-				if (synthesis_node->node_type.path.edge_buffer[i] == NULL){
-					continue;
-				}
-				operation = ir_node_get_operation(edge_get_dst(synthesis_node->node_type.path.edge_buffer[i]));
+			for (i = 0, nb_element = 0; i < synthesis_node->node_type.path.nb_node; i++){
+				operation = ir_node_get_operation(synthesis_node->node_type.path.node_buffer[i]);
 
 				switch(operation->type){
 					case IR_OPERATION_TYPE_INST 	: {
@@ -953,6 +918,6 @@ static void synthesisGraph_clean_node(struct node* node){
 
 	synthesis_node = synthesisGraph_get_synthesisNode(node);
 	if(synthesis_node->type == SYNTHESISNODETYPE_PATH){
-		free(synthesis_node->node_type.path.edge_buffer);
+		free(synthesis_node->node_type.path.node_buffer);
 	}
 }
