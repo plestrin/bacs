@@ -34,7 +34,7 @@ int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
 
 #ifdef VERBOSE
 
-#define INIT_TIMER																																			\
+#define timer_init()																																		\
 	struct timespec 			timer_start_time; 																											\
 	struct timespec 			timer_stop_time; 																											\
 	struct multiColumnPrinter* 	printer; 																													\
@@ -51,37 +51,71 @@ int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
 		return; 																																			\
 	}
 
-#define START_TIMER 																																		\
+#define timer_start() 																																		\
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start_time)){ 																						\
 		log_err("clock_gettime fails"); 																													\
 	}
 
-#define STOP_TIMER 																																			\
+#define timer_stop() 																																		\
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop_time)){ 																						\
 		log_err("clock_gettime fails"); 																													\
 	}
 
-#define PRINT_TIMER(ctx_string) 																															\
-	timer_elapsed_time = (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.; 			\
-	multiColumnPrinter_print(printer, (ctx_string), timer_elapsed_time, NULL);
+#define timer_inc(time) 																																	\
+	(time) = (time) + (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.
 
-#define CLEAN_TIMER 																																		\
-	multiColumnPrinter_delete(printer);
+#define timer_clean() multiColumnPrinter_delete(printer)
+
+#define ir_normalize_print_notification(name, round_counter) log_info_m("modification " name " @ %u", round_counter)
 
 #else
 
-#define INIT_TIMER
-#define START_TIMER
-#define STOP_TIMER
-#define PRINT_TIMER(ctx_string)
-#define CLEAN_TIMER
+#define timer_init()
+#define timer_start()
+#define timer_stop()
+#define timer_inc(time)
+#define timer_clean()
+
+#define ir_normalize_print_notification(name, round_counter)
+
+#endif
+
+#ifdef IR_FULL_CHECK
+
+#define ir_normalize_check_ir(ir) ir_check(ir)
+
+#else
+
+#define ir_normalize_check_ir(ir)
+
+#endif
+
+#if defined VERBOSE || defined IR_FULL_CHECK
+
+#define ir_normalize_apply_rule(func, name, time) 																											\
+	timer_start(); 																																			\
+	func(ir, &modification); 																																\
+	timer_stop(); 																																			\
+	timer_inc(time); 																																		\
+																																							\
+	if (modification){ 																																		\
+		ir_normalize_print_notification(name, round_counter); 																								\
+		ir_normalize_check_ir(ir); 																															\
+		modification = 0; 																																	\
+		modification_copy = 1; 																																\
+	}
+
+#else
+
+#define ir_normalize_apply_rule(func, name, time) func(ir, &modification)
 
 #endif
 
 void ir_normalize(struct ir* ir){
+	#if defined VERBOSE || defined IR_FULL_CHECK
+	uint8_t 	modification_copy;
 	#ifdef VERBOSE
 	uint32_t 	round_counter = 0;
-	uint8_t 	modification_copy;
 	double 		timer_1_elapsed_time = 0.0;
 	double 		timer_2_elapsed_time = 0.0;
 	double 		timer_3_elapsed_time = 0.0;
@@ -91,198 +125,94 @@ void ir_normalize(struct ir* ir){
 	double 		timer_7_elapsed_time = 0.0;
 	double 		timer_8_elapsed_time = 0.0;
 	#endif
+	#endif
 	uint8_t 	modification = 0;
 
-	INIT_TIMER
+	timer_init()
 
 	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
 	ir_normalize_remove_dead_code(ir, &modification);
-	#ifdef VERBOSE
+	#if defined VERBOSE || defined IR_FULL_CHECK
 	if (modification){
+		#ifdef VERBOSE
 		log_info("modification remove dead code @ START");
+		#endif
+		ir_normalize_check_ir(ir);
 	}
 	#endif
-	modification = 1;
-	#ifdef IR_FULL_CHECK
-	ir_check(ir);
-	#endif
-	#else
-	modification = 1;
 	#endif
 
-	while(modification){
-		/*char 	file_name[256];
+	do {
+		#ifdef IR_PRINT_STEP
+		char 	file_name[256];
 		snprintf(file_name, 256, "%u.dot", round_counter);
-		graphPrintDot_print(&(ir->graph), file_name, NULL);*/
+		graphPrintDot_print(&(ir->graph), file_name, NULL);
+		#endif
 
 		modification = 0;
 
+		#if defined VERBOSE || defined IR_FULL_CHECK
+		modification_copy = 0;
 		#ifdef VERBOSE
 		printf("*** ROUND %u ***\n", round_counter);
-		modification_copy = 0;
+		#endif
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-		START_TIMER
-		ir_normalize_simplify_instruction(ir, &modification, 0);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification simplify instruction @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_simplify_instruction_1, "simplify instruction", timer_1_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		START_TIMER
-		ir_normalize_remove_common_subexpression(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_2_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification remove subexpression @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_remove_common_subexpression, "remove subexpression", timer_2_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-		START_TIMER
-		ir_normalize_simplify_memory_access(ir, &modification, ALIASING_STRATEGY_CHECK);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_3_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification simplify memory @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_simplify_memory_access_, "simplify memory", timer_3_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_FACTOR_INSTRUCTION == 1
-		START_TIMER
-		ir_normalize_factor_instruction(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_4_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification factor instruction @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_factor_instruction, "factor instruction", timer_4_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_DISTRIBUTE_IMMEDIATE == 1
-		START_TIMER
-		ir_normalize_distribute_immediate(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_5_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification distribute immediate @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_distribute_immediate, "distribute immediate", timer_5_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_EXPAND_VARIABLE == 1
-		START_TIMER
-		ir_normalize_expand_variable(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_6_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification expand variable @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_expand_variable, "expand variable", timer_6_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_REGROUP_MEM_ACCESS == 1
-		START_TIMER
-		ir_normalize_regroup_mem_access(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_7_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification regroup mem access @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_regroup_mem_access, "regroup mem access", timer_7_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
-		START_TIMER
-		ir_normalize_affine_expression(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_8_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification affine expression @ %u", round_counter);
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_affine_expression, "affine expression", timer_8_elapsed_time);
 		#endif
 
-		#ifdef VERBOSE
+		#if defined VERBOSE || defined IR_FULL_CHECK
 		modification = modification_copy;
+		#ifdef VERBOSE
 		round_counter ++;
 		#endif
-	}
+		#endif
+	} while (modification);
 
 	#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
 	do {
 		modification = 0;
 
-		START_TIMER
-		ir_normalize_simplify_instruction(ir, &modification, 1);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
+		timer_start();
+		ir_normalize_simplify_instruction_2(ir, &modification);
+		timer_stop();
+		timer_inc(timer_1_elapsed_time);
 
+		#if defined VERBOSE || defined IR_FULL_CHECK
 		if (modification){
+			#ifdef VERBOSE
 			log_info("modification simplify instruction @ FINAL");
+			#endif
+			ir_normalize_check_ir(ir);
 		}
 		#endif
 	} while(modification);
@@ -301,78 +231,75 @@ void ir_normalize(struct ir* ir){
 	multiColumnPrinter_print(printer, "Affine expression", timer_8_elapsed_time, NULL);
 	#endif
 
-	CLEAN_TIMER
+	timer_clean();
 }
 
 void ir_normalize_concrete(struct ir* ir){
-	#ifdef VERBOSE
-	uint32_t 	round_counter = 0;
+	#if defined VERBOSE || defined IR_FULL_CHECK
 	uint8_t 	modification_copy;
-	double 		timer_1_elapsed_time = 0.0;
+	#ifdef VERBOSE
+	uint32_t 	round_counter 			= 0;
+	double 		timer_1_elapsed_time 	= 0.0;
 	#endif
-	uint8_t 	modification = 0;
+	#endif
+	uint8_t 	modification 			= 0;
 
-	INIT_TIMER
+	timer_init()
 
 	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
 	ir_normalize_remove_dead_code(ir, &modification);
-	#ifdef VERBOSE
+	#if defined VERBOSE || defined IR_FULL_CHECK
 	if (modification){
+		#ifdef VERBOSE
 		log_info("modification remove dead code @ START");
+		#endif
+		ir_normalize_check_ir(ir);
 	}
 	#endif
-	modification = 1;
-	#ifdef IR_FULL_CHECK
-	ir_check(ir);
-	#endif
-	#else
-	modification = 1;
+	modification = 0;
 	#endif
 
-	ir_simplify_concrete_memory_access(ir);
-
-	#ifdef IR_FULL_CHECK
-	ir_check(ir);
+	#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
+	ir_simplify_concrete_memory_access(ir, &modification);
+	#if defined VERBOSE || defined IR_FULL_CHECK
+	if (modification){
+		#ifdef VERBOSE
+		log_info("modification simplify concrete memory access @ START");
+		#endif
+		ir_normalize_check_ir(ir);
+	}
+	#endif
 	#endif
 
-	while(modification){
+	do {
 		modification = 0;
 
+		#if defined VERBOSE || defined IR_FULL_CHECK
+		modification_copy = 0;
 		#ifdef VERBOSE
 		printf("*** ROUND %u ***\n", round_counter);
-		modification_copy = 0;
+		#endif
 		#endif
 
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		START_TIMER
-		ir_normalize_remove_common_subexpression(ir, &modification);
-		STOP_TIMER
-		#ifdef VERBOSE
-		timer_1_elapsed_time += (timer_stop_time.tv_sec - timer_start_time.tv_sec) + (timer_stop_time.tv_nsec - timer_start_time.tv_nsec) / 1000000000.;
-
-		if (modification){
-			log_info_m("modification remove subexpression @ %u", round_counter);
-			modification = 0;
-			modification_copy = 1;
-		}
-		#endif
-		#ifdef IR_FULL_CHECK
-		ir_check(ir);
-		#endif
+		ir_normalize_apply_rule(ir_normalize_remove_common_subexpression, "remove subexpression", timer_1_elapsed_time);
 		#endif
 
-		#ifdef VERBOSE
+		#if defined VERBOSE || defined IR_FULL_CHECK
 		modification = modification_copy;
+		#ifdef VERBOSE
 		round_counter ++;
 		#endif
-	}
+		#endif
+	} while(modification);
 
 	#ifdef VERBOSE
 	multiColumnPrinter_print_header(printer);
+
 	multiColumnPrinter_print(printer, "Remove subexpression", timer_1_elapsed_time, NULL);
 	#endif
 
-	CLEAN_TIMER
+	timer_clean();
 }
 
 void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){

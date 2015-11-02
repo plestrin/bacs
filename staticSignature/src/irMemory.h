@@ -20,8 +20,9 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 
 void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy);
 
+#define ir_normalize_simplify_memory_access_(ir, modification) ir_normalize_simplify_memory_access(ir, modification, ALIASING_STRATEGY_CHECK)
 #define ir_print_aliasing(ir) ir_normalize_simplify_memory_access(ir, NULL, ALIASING_STRATEGY_PRINT)
 
-void ir_simplify_concrete_memory_access(struct ir* ir);
+void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification);
 
 #endif

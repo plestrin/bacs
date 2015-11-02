@@ -618,7 +618,7 @@ static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node
 
 static int32_t compare_address_memToken(const void* arg1, const void* arg2);
 
-void ir_simplify_concrete_memory_access(struct ir* ir){
+void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 	struct node* 			node_cursor;
 	struct node* 			next_node_cursor;
 	struct irOperation* 	operation_cursor;
@@ -686,9 +686,11 @@ void ir_simplify_concrete_memory_access(struct ir* ir){
 				switch(return_code){
 					case 0  : {
 						memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
+						*modification = 1;
 						break;
 					}
 					case 1  : {
+						*modification = 1;
 						break;
 					}
 					default : {
