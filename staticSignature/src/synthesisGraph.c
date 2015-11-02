@@ -8,7 +8,7 @@
 #include "arrayMinCoverage.h"
 #include "base.h"
 
-#define MIN_COVERAGE_STRATEGY 1 /* 0 is random, 1 is greedy, 2 is exact*/
+#define MIN_COVERAGE_STRATEGY 3 /* 0 is random, 1 is greedy, 2 is exact, 3 is split */
 
 static const uint32_t irEdge_distance_array_OI[NB_DEPENDENCE_TYPE] = {
 	0, 						/* DIRECT */
@@ -205,7 +205,7 @@ static struct node* synthesisGraph_add_path(struct graph* synthesis_graph, uint3
 
 	synthesis_node.type 						= SYNTHESISNODETYPE_PATH;
 	synthesis_node.node_type.path.nb_node 		= nb_node;
-	synthesis_node.node_type.path.node_buffer 	= calloc(nb_node, sizeof(struct node*));
+	synthesis_node.node_type.path.node_buffer 	= (struct node**)malloc(sizeof(struct node*) * nb_node);
 
 	if (synthesis_node.node_type.path.node_buffer == NULL){
 		log_err("unable to allocate memory");
@@ -279,6 +279,22 @@ static void synthesis_graph_collapse_node(struct graph* synthesis_graph, struct 
 	graph_remove_node(synthesis_graph, node_lo);
 }
 
+static void synthesis_graph_convert_ir_node_to_path(struct node* node){
+	struct node** 			node_buffer;
+	struct synthesisNode* 	syn_node = synthesisGraph_get_synthesisNode(node);
+
+	node_buffer = (struct node**)malloc(sizeof(struct node*));
+	if (node_buffer != NULL){
+		node_buffer[0] = syn_node->node_type.ir_node;
+		syn_node->type = SYNTHESISNODETYPE_PATH;
+		syn_node->node_type.path.nb_node = 1;
+		syn_node->node_type.path.node_buffer = node_buffer;
+	}
+	else{
+		log_err("unable to allocate memory");
+	}
+}
+
 static void synthesisGraph_pack(struct graph* graph){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
@@ -289,7 +305,6 @@ static void synthesisGraph_pack(struct graph* graph){
 	struct synthesisNode* 	synthesis_node_cursor;
 	uint32_t 				i;
 	uint32_t 				j;
-	struct node* 			stable_cursor;
 
 	node_buffer = (struct node**)malloc(sizeof(struct node*) * graph->nb_node);
 	edge_buffer = (struct edge**)node_buffer;
@@ -338,7 +353,7 @@ static void synthesisGraph_pack(struct graph* graph){
 		}
 	}
 
-	for (node_cursor = graph_get_head_node(graph), stable_cursor = NULL; node_cursor != NULL; ){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; ){
 		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE || synthesis_node_cursor->type == SYNTHESISNODETYPE_PATH){
@@ -347,13 +362,7 @@ static void synthesisGraph_pack(struct graph* graph){
 				
 				if (node_dst->nb_edge_dst == 1 && (synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_PATH)){
 					synthesis_graph_collapse_node(graph, node_cursor, node_dst);
-
-					if (stable_cursor == NULL){
-						node_cursor = graph_get_head_node(graph);
-					}
-					else{
-						node_cursor = node_get_next(stable_cursor);
-					}
+					node_cursor = graph_get_head_node(graph);
 					continue;
 				}
 			}
@@ -362,19 +371,14 @@ static void synthesisGraph_pack(struct graph* graph){
 				
 				if (node_src->nb_edge_src == 1 && (synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_PATH)){
 					synthesis_graph_collapse_node(graph, node_src, node_cursor);
-
-					if (stable_cursor == NULL){
-						node_cursor = graph_get_head_node(graph);
-					}
-					else{
-						node_cursor = node_get_next(stable_cursor);
-					}
+					node_cursor = graph_get_head_node(graph);
 					continue;
 				}
 			}
-		}
-		else{
-			stable_cursor = node_cursor;
+
+			if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE && node_cursor->nb_edge_src == 1 && node_cursor->nb_edge_dst == 1){
+				synthesis_graph_convert_ir_node_to_path(node_cursor);
+			}
 		}
 
 		node_cursor = node_get_next(node_cursor);
@@ -714,6 +718,8 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			result = arrayMinCoverage_greedy(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
 			#elif MIN_COVERAGE_STRATEGY == 2
 			result = arrayMinCoverage_exact(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 3
+			result = arrayMinCoverage_split(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare);
 			#else
 			#error Incorrect strategy number. Valid values are: 0, 1, 2
 			#endif

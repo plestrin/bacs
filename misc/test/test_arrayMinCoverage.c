@@ -5,10 +5,10 @@
 #include "../arrayMinCoverage.h"
 #include "../base.h"
 
-#define NB_CATEGORY 				6
-#define MAX_ARRAY_PER_CATEGORY 		8
-#define MAX_ELEMENT_PER_ARRAY		54
-#define MAX_ELEMENT_RANGE 			0x000000ff
+#define NB_CATEGORY 				24
+#define MAX_ARRAY_PER_CATEGORY 		4
+#define MAX_ELEMENT_PER_ARRAY		32
+#define MAX_ELEMENT_RANGE 			0x000001ff
 
 static int32_t compare_uint32_t(void* data1, void* data2){
 	uint32_t n1 = *(uint32_t*)data1;
@@ -59,7 +59,7 @@ static void test_array_print(struct array* array){
 }
 
 int32_t main(void){
-	uint32_t 				nb_category = 1 + (rand() % (NB_CATEGORY - 1));
+	uint32_t 				nb_category;
 	uint32_t 				i;
 	uint32_t 				j;
 	struct categoryDesc* 	desc;
@@ -71,6 +71,7 @@ int32_t main(void){
 	srand(time(NULL));
 	
 	/* INIT */
+	nb_category = 1 + (rand() % (NB_CATEGORY - 1));
 	desc = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
 	if (desc == NULL){
 		log_err("unable to allocate memory");
@@ -132,6 +133,23 @@ int32_t main(void){
 	}
 	else{
 		log_info_m("score of arrayMinCoverage_greedy is %u", score);
+		putchar('\t');
+		for (i = 0; i < nb_category; i++){
+			if (i + 1 == nb_category){
+				printf("%u", desc[i].choice);
+			}
+			else{
+				printf("%u, ", desc[i].choice);
+			}
+		}
+		putchar('\n');
+	}
+	if (arrayMinCoverage_split(&array, nb_category, desc, compare_uint32_t)){
+		log_err("arrayMinCoverage_split returned an error");
+	}
+	else{
+		score = arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t);
+		log_info_m("score of arrayMinCoverage_split is %u", score);
 		putchar('\t');
 		for (i = 0; i < nb_category; i++){
 			if (i + 1 == nb_category){
