@@ -18,10 +18,10 @@ enum aliasType{
 
 struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed);
 
-void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy);
+void ir_normalize_simplify_memory_access_(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy);
 
-#define ir_normalize_simplify_memory_access_(ir, modification) ir_normalize_simplify_memory_access(ir, modification, ALIASING_STRATEGY_CHECK)
-#define ir_print_aliasing(ir) ir_normalize_simplify_memory_access(ir, NULL, ALIASING_STRATEGY_PRINT)
+#define ir_normalize_simplify_memory_access(ir, modification) ir_normalize_simplify_memory_access_(ir, modification, ALIASING_STRATEGY_CHECK)
+#define ir_print_aliasing(ir) ir_normalize_simplify_memory_access_(ir, NULL, ALIASING_STRATEGY_PRINT)
 
 void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification);
 

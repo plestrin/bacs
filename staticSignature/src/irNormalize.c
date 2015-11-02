@@ -30,7 +30,7 @@ struct irOperand{
 	struct edge* 	edge;
 };
 
-int32_t compare_address_node_irOperand(const void* arg1, const void* arg2);
+int32_t irOperand_compare_node(const void* arg1, const void* arg2);
 
 #ifdef VERBOSE
 
@@ -159,7 +159,7 @@ void ir_normalize(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-		ir_normalize_apply_rule(ir_normalize_simplify_instruction_1, "simplify instruction", timer_1_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_simplify_instruction, "simplify instruction", timer_1_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
@@ -167,7 +167,7 @@ void ir_normalize(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule(ir_normalize_simplify_memory_access_, "simplify memory", timer_3_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_simplify_memory_access, "simplify memory", timer_3_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_FACTOR_INSTRUCTION == 1
@@ -203,7 +203,7 @@ void ir_normalize(struct ir* ir){
 		modification = 0;
 
 		timer_start();
-		ir_normalize_simplify_instruction_2(ir, &modification);
+		ir_normalize_simplify_final_instruction(ir, &modification);
 		timer_stop();
 		timer_inc(timer_1_elapsed_time);
 
@@ -240,6 +240,7 @@ void ir_normalize_concrete(struct ir* ir){
 	#ifdef VERBOSE
 	uint32_t 	round_counter 			= 0;
 	double 		timer_1_elapsed_time 	= 0.0;
+	double 		timer_2_elapsed_time 	= 0.0;
 	#endif
 	#endif
 	uint8_t 	modification 			= 0;
@@ -281,8 +282,12 @@ void ir_normalize_concrete(struct ir* ir){
 		#endif
 		#endif
 
+		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
+		ir_normalize_apply_rule(ir_normalize_simplify_concrete_instruction, "simplify instruction", timer_1_elapsed_time);
+		#endif
+
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		ir_normalize_apply_rule(ir_normalize_remove_common_subexpression, "remove subexpression", timer_1_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_remove_common_subexpression, "remove subexpression", timer_2_elapsed_time);
 		#endif
 
 		#if defined VERBOSE || defined IR_FULL_CHECK
@@ -296,7 +301,8 @@ void ir_normalize_concrete(struct ir* ir){
 	#ifdef VERBOSE
 	multiColumnPrinter_print_header(printer);
 
-	multiColumnPrinter_print(printer, "Remove subexpression", timer_1_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Simplify instruction", timer_1_elapsed_time, NULL);
+	multiColumnPrinter_print(printer, "Remove subexpression", timer_2_elapsed_time, NULL);
 	#endif
 
 	timer_clean();
@@ -489,7 +495,7 @@ static const simplify_rewrite_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 	NULL 															/* 29 IR_INVALID 		*/
 };
 
-void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uint8_t final){
+void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, uint8_t final){
 	struct node* 			node_cursor;
 	struct node* 			next_node_cursor;
 	struct irOperation* 	operation;
@@ -560,7 +566,28 @@ void ir_normalize_simplify_instruction(struct ir* ir, uint8_t* modification, uin
 	}
 }
 
-/* I would be good if I can use this stub for every numeric simplifciation. IMUL SHR */
+void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification){
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+
+	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
+		log_err("unable to sort ir node(s)");
+		return;
+	}
+
+	for(node_cursor = graph_get_tail_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_prev(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_XOR){
+			ir_normalize_simplify_instruction_symbolic_xor(ir, node_cursor, modification);
+		}
+	}
+
+	#ifdef IR_FULL_CHECK
+	ir_check_order(ir);
+	#endif
+}
+
+/* I would be good if I can use this stub for every numeric simplification. IMUL SHR */
 #define ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, identity_el, operation) 													\
 	{ 																																						\
 		uint32_t 			nb_imm_operand 		= 0; 																										\
@@ -683,7 +710,7 @@ static void ir_normalize_simplify_instruction_rewrite_add(struct ir* ir, struct 
 
 		if (operand_operation->type == IR_OPERATION_TYPE_INST && operand_operation->operation_type.inst.opcode == IR_ADD){
 			if (operand_operation->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN || ir_node_get_operation(node)->operation_type.inst.dst == IR_OPERATION_DST_UNKOWN){
-				log_warn("unkown instruction dst");
+				log_warn("unknown instruction dst");
 				diff = 0;
 			}
 			else{
@@ -1051,7 +1078,7 @@ static void ir_normalize_simplify_instruction_symbolic_or(struct ir* ir, struct 
 		}
 
 		nb_operand = node->nb_edge_dst;
-		qsort(operand_list, nb_operand, sizeof(struct irOperand), compare_address_node_irOperand);
+		qsort(operand_list, nb_operand, sizeof(struct irOperand), irOperand_compare_node);
 
 		for (i = 1; i < nb_operand; i++){
 			if (operand_list[i - 1].node == operand_list[i].node){
@@ -1684,34 +1711,39 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 	if (node->nb_edge_dst >= 2){
 		operand_list = (struct irOperand*)alloca(sizeof(struct irOperand) * node->nb_edge_dst);
 
-		for (edge_cursor = node_get_head_edge_dst(node), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor), i++){
-			operand_list[i].node = edge_get_src(edge_cursor);
-			operand_list[i].edge = edge_cursor;
+		for (edge_cursor = node_get_head_edge_dst(node), nb_operand = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			operand_list[nb_operand].node = edge_get_src(edge_cursor);
+			operand_list[nb_operand].edge = edge_cursor;
+
+			if (ir_node_get_operation(operand_list[nb_operand].node)->type != IR_OPERATION_TYPE_SYMBOL){
+				nb_operand ++;
+			}
 		}
 
-		nb_operand = node->nb_edge_dst;
-		qsort(operand_list, nb_operand, sizeof(struct irOperand), compare_address_node_irOperand);
+		if (nb_operand >= 2){
+			qsort(operand_list, nb_operand, sizeof(struct irOperand), irOperand_compare_node);
 
-		for (i = 1; i < nb_operand; i++){
-			if (operand_list[i - 1].node == operand_list[i].node){
-				struct node* 	imm_zero;
-				uint8_t 		size;
+			for (i = 1; i < nb_operand; i++){
+				if (operand_list[i - 1].node == operand_list[i].node){
+					struct node* 	imm_zero;
+					uint8_t 		size;
 
-				size = ir_node_get_operation(operand_list[i].node)->size;
-				ir_remove_dependence(ir, operand_list[i - 1].edge);
-				ir_remove_dependence(ir, operand_list[i].edge);
-				imm_zero = ir_add_immediate(ir, size, 0);
-				if (imm_zero != NULL){
-					if (ir_add_dependence(ir, imm_zero, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						log_err("unable to add dependency to IR");
+					size = ir_node_get_operation(operand_list[i].node)->size;
+					ir_remove_dependence(ir, operand_list[i - 1].edge);
+					ir_remove_dependence(ir, operand_list[i].edge);
+					imm_zero = ir_add_immediate(ir, size, 0);
+					if (imm_zero != NULL){
+						if (ir_add_dependence(ir, imm_zero, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependency to IR");
+						}
 					}
-				}
-				else{
-					log_err("unable to add immediate to IR");
-				}
+					else{
+						log_err("unable to add immediate to IR");
+					}
 
-				i++;
-				*modification = 1;
+					i++;
+					*modification = 1;
+				}
 			}
 		}
 	}
@@ -1779,13 +1811,6 @@ static void ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct 
 			}
 		}
 	}
-/*
-	if (*modification == 1 && final){
-		ir_normalize_simplify_instruction_symbolic_xor(ir, node, modification);
-		ir_normalize_simplify_instruction_numeric_xor(ir, node, modification);
-		ir_normalize_simplify_instruction_rewrite_xor(ir, node, modification, 0);
-	}
-*/
 }
 
 void ir_normalize_remove_common_subexpression(struct ir* ir, uint8_t* modification){
@@ -2279,7 +2304,7 @@ void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
 /* Sorting routines													     */
 /* ===================================================================== */
 
-int32_t compare_address_node_irOperand(const void* arg1, const void* arg2){
+int32_t irOperand_compare_node(const void* arg1, const void* arg2){
 	struct irOperand* operand1 = (struct irOperand*)arg1;
 	struct irOperand* operand2 = (struct irOperand*)arg2;
 

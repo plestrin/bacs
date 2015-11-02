@@ -309,7 +309,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2);
 static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct node* node2);
 
-void ir_normalize_simplify_memory_access(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
+void ir_normalize_simplify_memory_access_(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
 	uint32_t 				nb_mem_access;
