@@ -793,20 +793,26 @@
 			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph rijndael_ecb_encrypt"/>
+			<arg value="create ir 4"/>
+			<arg value="create ir 5"/>
+			<arg value="create ir 6"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
 			<arg value="export callGraph ctr_encrypt"/>
-			<arg value="create ir 0"/>
-			<arg value="normalize ir 0"/>
-			<arg value="search code signature 0"/>
-			<arg value="export result 0 aes128_v1"/>
-			<arg value="simplify concrete ir 0"/>
-			<arg value="create synthesis 0"/>
-			<arg value="search mode signature 0"/>
-			<arg value="printDot synthesis 0 fig/TOM_CTR_AES.dot"/>
+			<arg value="create compound ir 9"/>
+			<arg value="simplify concrete ir 9"/>
+			<arg value="create synthesis 9"/>
+			<arg value="search mode signature 9"/>
+			<arg value="printDot synthesis 9 fig/TOM_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="enc_ctr_cfb" number="3"/>
-			<algo name="dec_ctr_cfb" number="3"/>
+			<algo name="aes_t4" number="720"/>
+			<algo name="aes_r9" number="144"/>
+			<algo name="aes128_v1" number="18"/> <!-- the first block cipher call is done in ctr_start  3 x 6-->
+			<algo name="ctr_v2" number="6"/>
 		</result>
 	</recipe>
 
