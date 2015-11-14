@@ -198,11 +198,11 @@ struct asmRiscIns{
 	struct asmOperand 		output_operand;
 };
 
-static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static int32_t asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
 
-static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
-static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
-static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static int32_t asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static int32_t asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
+static int32_t asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst);
 
 struct asmCiscIns{
 	uint8_t 				valid;
@@ -222,6 +222,7 @@ static void cisc_decode_special_leave(struct instructionIterator* it, struct asm
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_ret(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc);
+static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 
 static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_generic_smid2(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
@@ -238,6 +239,7 @@ static void cisc_decode_special_punpckldq(struct assembly* assembly, struct inst
 static void irImporter_handle_instruction(struct assembly* assembly, struct irRenameEngine* engine, struct instructionIterator* it, struct memAddress* mem_addr){
 	struct asmCiscIns 	cisc;
 	uint32_t 			i;
+	int32_t 			error_code;
 
 	ASMCISCINS_SET_INVALID(cisc);
 
@@ -285,6 +287,7 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 		case XED_ICLASS_JNLE 		: {break;}
 		case XED_ICLASS_JNS 		: {break;}
 		case XED_ICLASS_JNZ 		: {break;}
+		case XED_ICLASS_JS 			: {break;}
 		case XED_ICLASS_JZ 			: {break;}
 		case XED_ICLASS_LEAVE 		: {
 			cisc_decode_special_leave(it, &cisc, mem_addr);
@@ -391,6 +394,10 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			break;
 		}
 		case XED_ICLASS_TEST 		: {break;}
+		case XED_ICLASS_XCHG 		: {
+			cisc_decode_special_xchg(it, &cisc, mem_addr);
+			break;
+		}
 		case XED_ICLASS_XORPS 		: {
 			cisc_decode_generic_smid4(it, &cisc, mem_addr);
 			break;
@@ -403,6 +410,9 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 				asmOperand_decode(it, cisc.ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc.ins[0].nb_input_operand), mem_addr);
 				asmOperand_decode(it, &(cisc.ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, mem_addr);
 			}
+			else{
+				log_err_m("unable to convert instruction @ %u", it->instruction_index);
+			}
 		}
 	}
 
@@ -410,20 +420,23 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 		for (i = 0; i < cisc.nb_ins; i++){
 			switch(cisc.ins[i].opcode){
 				case IR_CMOV 	: {
-					asmRisc_process_special_cmov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
+					error_code = asmRisc_process_special_cmov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				case IR_LEA 	: {
-					asmRisc_process_special_lea(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
+					error_code = asmRisc_process_special_lea(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				case IR_MOV 	: {
-					asmRisc_process_special_mov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
+					error_code = asmRisc_process_special_mov(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 					break;
 				}
 				default 				: {
-					asmRisc_process(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
+					error_code = asmRisc_process(engine, cisc.ins + i, irRenameEngine_get_call_id(engine));
 				}
+			}
+			if (error_code){
+				log_err_m("error code returned after processing risc %u @ %u", i, it->instruction_index);
 			}
 		}
 	}
@@ -1018,8 +1031,9 @@ static struct node* memOperand_build_address(struct irRenameEngine* engine, stru
 	return address;
 }
 
-static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
+static int32_t asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
 	uint8_t i;
+	int32_t error_code = 0;
 
 	if (sign_extand_table[risc->opcode]){
 		for (i = 0; i < risc->nb_input_operand; i++){
@@ -1037,18 +1051,23 @@ static void asmRisc_process(struct irRenameEngine* engine, struct asmRiscIns* ri
 			if (risc->input_operand[i].variable != NULL){
 				if (ir_add_dependence(engine->ir, risc->input_operand[i].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][i]) == NULL){
 					log_err("unable to add output to add dependence to IR");
+					error_code = -1;
 				}
 			}
 		}
 	}
+
+	return error_code;
 }
 
-static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
+static int32_t asmRisc_process_special_cmov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
+	int32_t error_code = 0;
+
 	log_warn("translating CMOVxx instruction into glue operation");
 
 	if (risc->nb_input_operand != 1){
 		log_err("incorrect number of input operand");
-		return;
+		return -1;
 	}
 
 	memcpy(risc->input_operand + 1, &(risc->output_operand), sizeof(struct asmOperand));
@@ -1059,118 +1078,138 @@ static void asmRisc_process_special_cmov(struct irRenameEngine* engine, struct a
 
 	asmOperand_fetch_output(engine, &(risc->output_operand), risc->opcode, dst);
 
-	if (risc->output_operand.variable != NULL){
-		if (risc->input_operand[0].variable != NULL){
-			if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
-				log_err("unable to add output to add dependence to IR");
-			}
-		}
-		else{
-			log_err("unable to fetch first input operand");
-		}
+	if (risc->output_operand.variable == NULL){
+		log_err("unable to fetch output operand");
+		return -1;
+	}
 
-		if (risc->input_operand[1].variable != NULL){
-			if (ir_add_dependence(engine->ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
-				log_err("unable to add output to add dependence to IR");
-			}
-		}
-		else{
-			log_err("unable to fetch second input operand");
+	if (risc->input_operand[0].variable != NULL){
+		if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
+			log_err("unable to add output to add dependence to IR");
+			error_code = -1;
 		}
 	}
 	else{
-		log_err("unable to fetch output operand");
+		log_err("unable to fetch first input operand");
+		error_code = -1;
 	}
+
+	if (risc->input_operand[1].variable != NULL){
+		if (ir_add_dependence(engine->ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
+			log_err("unable to add output to add dependence to IR");
+			error_code = -1;
+		}
+	}
+	else{
+		log_err("unable to fetch second input operand");
+		error_code = -1;
+	}
+
+	return error_code;
 }
 
-static void asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
-	struct node* address;
-	struct node* mem_write;
+static int32_t asmRisc_process_special_lea(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
+	struct node* 	address;
+	struct node* 	mem_write;
+	int32_t 		error_code = 0;
 
 	if (risc->nb_input_operand != 1 || risc->input_operand[0].type != ASM_OPERAND_MEM){
 		log_err("incorrect type or number of input operand");
-		return;
+		return -1;
 	}
 
 	risc->input_operand[0].variable = memOperand_build_address(engine, &(risc->input_operand[0].operand_type.mem), risc->input_operand[0].instruction_index, dst);
-	if (risc->input_operand[0].variable != NULL){
-		switch(risc->output_operand.type){
-			case ASM_OPERAND_REG 	: {
-				irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
-				break;
-			}
-			case ASM_OPERAND_MEM 	: {
-				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
-				if (address != NULL){
-					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
-					if (mem_write != NULL){
-						irRenameEngine_set_mem_order(engine, mem_write);
-						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							log_err("unable to add dependence to IR");
-						}
-					}
-					else{
-						log_err("unable to add memory write to IR");
+	if (risc->input_operand[0].variable == NULL){
+		log_err("unable to build memory address");
+		return -1;
+	}
+
+	switch(risc->output_operand.type){
+		case ASM_OPERAND_REG 	: {
+			irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
+			break;
+		}
+		case ASM_OPERAND_MEM 	: {
+			address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
+			if (address != NULL){
+				mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
+				if (mem_write != NULL){
+					irRenameEngine_set_mem_order(engine, mem_write);
+					if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+						error_code = -1;
 					}
 				}
 				else{
-					log_err("unable to build memory address");
+					log_err("unable to add memory write to IR");
+					error_code = -1;
 				}
-				break;
 			}
-			default 				: {
-				log_err("this case is not supposed to happen");
+			else{
+				log_err("unable to build memory address");
+				error_code = -1;
 			}
+			break;
+		}
+		default 				: {
+			log_err("this case is not supposed to happen");
+			error_code = -1;
 		}
 	}
-	else{
-		log_err("unable to build memory address");
-	}
+
+	return error_code;
 }
 
-static void asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
-	struct node* address;
-	struct node* mem_write;
+static int32_t asmRisc_process_special_mov(struct irRenameEngine* engine, struct asmRiscIns* risc, uint32_t dst){
+	struct node* 	address;
+	struct node* 	mem_write;
+	int32_t 		error_code = 0;
 
 	if (risc->nb_input_operand != 1){
 		log_err("incorrect number of input operand");
-		return;
+		return -1;
 	}
 
 	asmOperand_fetch_input(engine, risc->input_operand, dst);
-	if (risc->input_operand[0].variable != NULL){
-		switch(risc->output_operand.type){
-			case ASM_OPERAND_REG 	: {
-				irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
-				break;
-			}
-			case ASM_OPERAND_MEM 	: {
-				address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
-				if (address != NULL){
-					mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
-					if (mem_write != NULL){
-						irRenameEngine_set_mem_order(engine, mem_write);
-						if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							log_err("unable to add dependence to IR");
-						}
-					}
-					else{
-						log_err("unable to add memory write to IR");
+	if (risc->input_operand[0].variable == NULL){
+		log_err("input variable is NULL");
+		return -1;
+	}
+
+	switch(risc->output_operand.type){
+		case ASM_OPERAND_REG 	: {
+			irRenameEngine_set_register_ref(engine, risc->output_operand.operand_type.reg, risc->input_operand[0].variable);
+			break;
+		}
+		case ASM_OPERAND_MEM 	: {
+			address = memOperand_build_address(engine, &(risc->output_operand.operand_type.mem), risc->output_operand.instruction_index, dst);
+			if (address != NULL){
+				mem_write = ir_add_out_mem_(engine->ir, risc->output_operand.instruction_index, risc->output_operand.size, address, irRenameEngine_get_mem_order(engine), risc->output_operand.operand_type.mem.con_addr);
+				if (mem_write != NULL){
+					irRenameEngine_set_mem_order(engine, mem_write);
+					if (ir_add_dependence(engine->ir, risc->input_operand[0].variable, mem_write, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+						error_code = -1;
 					}
 				}
 				else{
-					log_err("unable to build memory address");
+					log_err("unable to add memory write to IR");
+					error_code = -1;
 				}
-				break;
 			}
-			default 				: {
-				log_err("this case is not supposed to happen");
+			else{
+				log_err("unable to build memory address");
+				error_code = -1;
 			}
+			break;
+		}
+		default 				: {
+			log_err("this case is not supposed to happen");
+			error_code = -1;
 		}
 	}
-	else{
-		log_err("input variable is NULL");
-	}
+
+	return error_code;
 }
 
 static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
@@ -1508,6 +1547,34 @@ static void cisc_decode_special_ret(struct assembly* assembly, struct instructio
 	cisc->ins[0].output_operand.variable 					= NULL;
 	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
 	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
+}
+
+static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+	cisc->valid 											= 1;
+	cisc->nb_ins 											= 3;
+
+	cisc->ins[0].opcode 									= IR_MOV;
+	cisc->ins[0].nb_input_operand 							= 1;
+	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
+	cisc->ins[0].output_operand.size 						= cisc->ins[0].input_operand[0].size;
+	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
+	cisc->ins[0].output_operand.variable 					= NULL;
+	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
+	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_TMP;
+
+	cisc->ins[1].opcode 									= IR_MOV;
+	cisc->ins[1].nb_input_operand 							= 1;
+	asmOperand_decode(it, cisc->ins[1].input_operand, 1, ASM_OPERAND_ROLE_WRITE_2, NULL, mem_addr);
+	memcpy(&(cisc->ins[1].output_operand), cisc->ins[0].input_operand, sizeof(struct asmOperand));
+
+	cisc->ins[2].opcode 									= IR_MOV;
+	cisc->ins[2].nb_input_operand 							= 1;
+	cisc->ins[2].input_operand[0].size 						= cisc->ins[0].input_operand[0].size;
+	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
+	cisc->ins[2].input_operand[0].variable 					= NULL;
+	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
+	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_TMP;
+	memcpy(&(cisc->ins[2].output_operand), cisc->ins[1].input_operand, sizeof(struct asmOperand));
 }
 
 static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
