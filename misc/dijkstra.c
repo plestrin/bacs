@@ -344,7 +344,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 
 	for (i = 0, curr_orbital = NULL; i < nb_src; i++){
 		internal_cursor = (struct dijkstraInternal*)buffer_src[i]->ptr;
-		if (internal_cursor->next != NULL){
+		if (internal_cursor->dst == 0){
 			log_warn_m("several instances of node %p in buffer_src", (void*)buffer_src[i]);
 			continue;
 		}
@@ -378,7 +378,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 					}
 					else{
 						internal_cursor->dst = dst;
-						internal_cursor->next = next_orbital;
+						internal_cursor->next = next_orbital; /* doit toujours être NULL, sinon je ne sais pas */
 						next_orbital = internal_cursor;
 					}
 				}
@@ -414,7 +414,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 					}
 					else{
 						internal_cursor->dst = dst;
-						internal_cursor->next = next_orbital;
+						internal_cursor->next = next_orbital; /* doit toujours être NULL */
 						next_orbital = internal_cursor;
 					}
 				}
