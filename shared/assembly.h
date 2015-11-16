@@ -102,6 +102,8 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 
 int32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const struct assembly* assembly_inn, struct instructionIterator* it);
 
+int32_t assembly_compare(const struct assembly* assembly1, const struct assembly* assembly2);
+
 void assembly_clean(struct assembly* assembly);
 
 #define assembly_delete(assembly) 				\

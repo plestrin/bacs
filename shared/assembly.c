@@ -1525,6 +1525,70 @@ int32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const 
 	return 1;
 }
 
+int32_t assembly_compare(const struct assembly* assembly1, const struct assembly* assembly2){
+	uint32_t 	offset1;
+	uint32_t 	offset2;
+	uint32_t 	i1;
+	uint32_t 	i2;
+	int32_t 	result;
+	uint32_t 	size;
+
+	if (assembly1->nb_dyn_instruction < assembly2->nb_dyn_instruction){
+		return -1;
+	}
+	else if (assembly1->nb_dyn_instruction > assembly2->nb_dyn_instruction){
+		return 1;
+	}
+
+	i1 		= 0;
+	i2 		= 0;
+	offset1 = 0;
+	offset2 = 0;
+
+	for ( ; i1 < assembly1->nb_dyn_block && i2 < assembly2->nb_dyn_block; ){
+		if (dynBlock_is_invalid(assembly1->dyn_blocks + i1)){
+			if (dynBlock_is_invalid(assembly2->dyn_blocks + i2)){
+				i1 ++;
+				i2 ++;
+			}
+			else{
+				return -1;
+			}
+		}
+		else if (dynBlock_is_invalid(assembly2->dyn_blocks + i2)){
+			return 1;
+		}
+
+		size = min(assembly1->dyn_blocks[i1].block->header.size - offset1, assembly2->dyn_blocks[i2].block->header.size - offset2);
+		result = memcmp(assembly1->dyn_blocks[i1].block->data + offset1, assembly2->dyn_blocks[i2].block->data + offset2, size);
+		if (result != 0){
+			return result;
+		}
+
+		offset1 += size;
+		offset2 += size;
+
+		if (assembly1->dyn_blocks[i1].block->header.size == offset1){
+			i1 ++;
+			offset1 = 0;
+		}
+
+		if (assembly2->dyn_blocks[i2].block->header.size == offset2){
+			i2 ++;
+			offset2 = 0;
+		}
+	}
+
+	if (i1 < assembly1->nb_dyn_block){
+		return -1;
+	}
+	if (i2 < assembly2->nb_dyn_block){
+		return -1;
+	}
+
+	return 0;
+}
+
 void assembly_clean(struct assembly* assembly){
 	if (assembly->dyn_blocks != NULL){
 		free(assembly->dyn_blocks);

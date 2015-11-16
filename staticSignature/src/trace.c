@@ -633,7 +633,7 @@ void trace_check(struct trace* trace){
 	}
 }
 
-void trace_print_location(struct trace* trace, struct codeMap* cm){
+void trace_print_location(const struct trace* trace, struct codeMap* cm){
 	uint32_t i;
 
 	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
@@ -798,6 +798,34 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	if (footprint != NULL){
 		free(footprint);
 	}
+}
+
+int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
+	int32_t result;
+
+	if (trace1->type < trace2->type){
+		return -1;
+	}
+	else if (trace1->type > trace2->type){
+		return 1;
+	}
+
+	if (trace1->mem_trace == NULL && trace2->mem_trace != NULL){
+		return -1;
+	}
+	else if (trace1->mem_trace != NULL && trace2->mem_trace == NULL){
+		return 1;
+	}
+
+	if ((result = assembly_compare(&(trace1->assembly), &(trace2->assembly))) != 0){
+		return result;
+	}
+
+	if (trace1->mem_trace != NULL && (result = memTrace_compare(trace1->mem_trace, trace2->mem_trace)) != 0){
+		return result;
+	}
+
+	return 0;
 }
 
 void trace_reset(struct trace* trace){

@@ -355,6 +355,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	uint32_t 		start = 0;
 	uint32_t 		stop = 0;
 	struct trace 	fragment;
+	uint32_t 		i;
 
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
@@ -365,6 +366,14 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 		log_err("unable to extract traceFragment");
 		return;
+	}
+
+	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
+		if (trace_compare(&fragment, (struct trace*)array_get(&(analysis->frag_array), i)) == 0){
+			log_info_m("an equivalent fragment (%u) has already been exported", i);
+			trace_clean(&fragment);
+			return;
+		}
 	}
 
 	if (array_add(&(analysis->frag_array), &fragment) < 0){

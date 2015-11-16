@@ -266,7 +266,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_init" number="1"/>
 		</result>
 	</recipe>
 

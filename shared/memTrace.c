@@ -201,6 +201,40 @@ uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struc
 	return 0;
 }
 
+int32_t memTrace_compare(const struct memTrace* mem_trace1, const struct memTrace* mem_trace2){
+	if (mem_trace1->file < mem_trace2->file){
+		return -1;
+	}
+	else if (mem_trace1->file > mem_trace2->file){
+		return 1;
+	}
+
+	if (mem_trace1->mem_addr_buffer == NULL){
+		if (mem_trace2->mem_addr_buffer == NULL){
+			return 0;
+		}
+		else{
+			return -1;
+		}
+	}
+	else{
+		if (mem_trace2->mem_addr_buffer == NULL){
+			return 1;
+		}
+		else{
+			if (mem_trace1->nb_mem_addr < mem_trace2->nb_mem_addr){
+				return -1;
+			}
+			else if (mem_trace1->nb_mem_addr > mem_trace2->nb_mem_addr){
+				return 1;
+			}
+			else{
+				return memAddress_buffer_compare(mem_trace1->mem_addr_buffer, mem_trace2->mem_addr_buffer, mem_trace1->nb_mem_addr);
+			}
+		}
+	}
+}
+
 void memTrace_clean(struct memTrace* mem_trace){
 	if (mem_trace->file != -1){
 		close(mem_trace->file);

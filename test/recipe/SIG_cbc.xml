@@ -974,7 +974,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="BOT_CBC_AES" active="yes">
+	<recipe name="BOT_CBC_AES" active="no"> <!-- where are not able to detect aes128 -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_aes">
 			<arg value="-m"/>

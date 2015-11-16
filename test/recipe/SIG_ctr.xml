@@ -801,11 +801,11 @@
 			<arg value="search code signature"/>
 			<arg value="export result aes128_v1"/>
 			<arg value="export callGraph ctr_encrypt"/>
-			<arg value="create compound ir 9"/>
-			<arg value="simplify concrete ir 9"/>
-			<arg value="create synthesis 9"/>
-			<arg value="search mode signature 9"/>
-			<arg value="printDot synthesis 9 fig/TOM_CTR_AES.dot"/>
+			<arg value="create compound ir 8"/>
+			<arg value="simplify concrete ir 8"/>
+			<arg value="create synthesis 8"/>
+			<arg value="search mode signature 8"/>
+			<arg value="printDot synthesis 8 fig/TOM_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>

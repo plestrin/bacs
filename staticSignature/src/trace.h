@@ -124,10 +124,12 @@ static inline void trace_printDot_synthesis(struct trace* trace, const char* nam
 
 void trace_check(struct trace* trace);
 
-void trace_print_location(struct trace* trace, struct codeMap* cm);
+void trace_print_location(const struct trace* trace, struct codeMap* cm);
 double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode);
 
 void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature);
+
+int32_t trace_compare(const struct trace* trace1, const struct trace* trace2);
 
 void trace_reset(struct trace* trace);
 void trace_clean(struct trace* trace);

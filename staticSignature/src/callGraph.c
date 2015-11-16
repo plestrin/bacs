@@ -710,6 +710,7 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 	uint32_t 					start_index;
 	uint32_t 					stop_index;
 	struct trace 				fragment;
+	uint32_t 					i;
 
 	for (node = graph_get_head_node(&(call_graph->graph)); node != NULL; node = node_get_next(node)){
 		func = callGraph_node_get_function(node);
@@ -741,7 +742,15 @@ int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* t
 				snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
 			}
 
-			if (array_add(frag_array, &fragment) < 0){
+			for (i = 0; i < array_get_length(frag_array); i++){
+				if (trace_compare(&fragment, (struct trace*)array_get(frag_array, i)) == 0){
+					log_info_m("an equivalent fragment (%u) has already been exported", i);
+					trace_clean(&fragment);
+					break;
+				}
+			}
+
+			if (i == array_get_length(frag_array) && array_add(frag_array, &fragment) < 0){
 				log_err("unable to add traceFragment to array");
 				trace_clean(&fragment);
 				return -1;

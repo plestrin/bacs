@@ -74,6 +74,8 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_mem_start, uint64_t index_mem_stop, struct array* extrude_array);
 struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, uint32_t nb_mem_trace_src);
 
+int32_t memTrace_compare(const struct memTrace* mem_trace1, const struct memTrace* mem_trace2);
+
 void memTrace_clean(struct memTrace* mem_trace);
 
 #define memTrace_delete(mem_trace) 					\
