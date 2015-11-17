@@ -51,7 +51,7 @@ void irRenameEngine_change_node(struct alias* alias_buffer, struct node* node_ol
 void irRenameEngine_propagate_alias(struct irRenameEngine* engine_dst, struct alias* alias_buffer_src);
 
 #define irRenameEngine_increment_call_stack(engine) 										\
-	if ((engine)->ir->stack_ptr + 1 == IR_CALL_STACK_PTR){ 									\
+	if ((engine)->ir->stack_ptr + 1 == IR_CALL_STACK_MAX_SIZE){ 							\
 		log_err("the top of the stack has been reached"); 									\
 	} 																						\
 	else{ 																					\
