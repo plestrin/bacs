@@ -57,18 +57,18 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
 	add_cmd_to_input_parser(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	add_cmd_to_input_parser(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
-	add_cmd_to_input_parser(parser, "check frag", 				"Check traceFragment: assembly and IR", 		"Frag indexes", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check)
+	add_cmd_to_input_parser(parser, "check frag", 				"Check traceFragment: assembly and IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check)
 	add_cmd_to_input_parser(parser, "print result", 			"Print code signature result in details", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
 	add_cmd_to_input_parser(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
 	add_cmd_to_input_parser(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
-	add_cmd_to_input_parser(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
+	add_cmd_to_input_parser(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
 	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
 	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
-	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
-	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
-	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
+	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
+	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
+	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
 
 	/* signature specific commands */
 	add_cmd_to_input_parser(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
@@ -88,7 +88,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
 
 	/* synthesisGraph specific commands */
-	add_cmd_to_input_parser(parser, "create synthesis", 		"Search for relation between results in IR", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_create)
+	add_cmd_to_input_parser(parser, "create synthesis", 		"Search for relation between results in IR", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_create)
 	add_cmd_to_input_parser(parser, "printDot synthesis", 		"Print the synthesis graph in dot format", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_printDot)
 
 	inputParser_exe(parser, argc - 1, argv + 1);
@@ -128,20 +128,19 @@ int main(int argc, char** argv){
 
 #define apply_to_multiple_frags(analysis, func, arg) 																					\
 	{ 																																	\
-		uint32_t index; 																												\
 		uint32_t start; 																												\
 		uint32_t stop; 																													\
 		uint32_t i; 																													\
 																																		\
 		if ((arg) != NULL){ 																											\
-			index = (uint32_t)atoi((arg)); 																								\
-			if (index < array_get_length(&((analysis)->frag_array))){ 																	\
-				start = index; 																											\
-				stop = index + 1; 																										\
-			} 																															\
-			else{ 																														\
-				log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&((analysis)->frag_array))); 			\
+			inputParser_extract_index(arg, &start, &stop); 																				\
+			if (start >= array_get_length(&((analysis)->frag_array))){ 																	\
+				log_err_m("incorrect fragment index %u (array size: %u)", start, array_get_length(&((analysis)->frag_array))); 			\
 				return; 																												\
+			} 																															\
+			if (stop > array_get_length(&((analysis)->frag_array))){ 																	\
+				log_warn_m("fragment range exceeds array size, cropping to %u", array_get_length(&((analysis)->frag_array))); 			\
+				stop = array_get_length(&((analysis)->frag_array)); 																	\
 			} 																															\
 		} 																																\
 		else{ 																															\

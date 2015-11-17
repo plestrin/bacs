@@ -169,8 +169,7 @@ void result_pop(struct result* result, struct ir* ir){
 }
 
 void result_get_node_footprint(struct result* result, uint32_t index, struct set* set){
-	uint32_t 		i;
-	/*struct edge* 	edge_cursor;*/
+	uint32_t i;
 
 	if (index >= result->nb_occurrence){
 		log_err_m("incorrect index %u (max is %u)", index, result->nb_occurrence);
@@ -187,18 +186,6 @@ void result_get_node_footprint(struct result* result, uint32_t index, struct set
 			}
 		}
 	}
-
-	/*for (i = 0; i < result->code_signature->nb_frag_tot_out; i++){
-		for (edge_cursor = node_get_head_edge_dst(result->ou_mapping_buffer[index * result->code_signature->nb_frag_tot_out + i].virtual_node.node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_MACRO){
-				continue;
-			}
-
-			if (set_add(set, &(edge_get_src(edge_cursor))) < 0){
-				log_err("unable to add element to set");
-			}
-		}
-	}*/
 }
 
 void result_remove_edge_footprint(struct result* result, struct ir* ir){
