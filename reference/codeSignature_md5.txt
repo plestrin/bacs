@@ -252,7 +252,7 @@
 104 -> (O1F1) 304 (ADD) [O:1:4]
 
 
-"md5_v1" (md5)
+"md5_v1" (compress)
 
 # INPUT: 2 [4 frag, 16 frag]
 # OUTPUT: 1 [4 frag]
@@ -599,7 +599,7 @@
 110 -> (O1F4) 68 (ADD) [O:1:2]
 
 
-"md5_v2" (md5)
+"md5_v2" (compress)
 
 # INPUT: 2 [4 frag, 16 frag]
 # OUTPUT: 1 [4 frag]

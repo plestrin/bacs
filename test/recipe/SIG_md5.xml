@@ -368,4 +368,27 @@
 			<algo name="md5_v1" number="2"/>
 		</result>
 	</recipe>
+
+	<recipe name="NET_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
+		<search>
+			<arg value="load trace traceNET_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="96"/>
+			<algo name="md5_p2_v1" number="96"/>
+			<algo name="md5_p3_v1" number="192"/>
+			<algo name="md5_p4_v1" number="96"/>
+			<algo name="md5_slice" number="64"/>
+			<algo name="md5_v1" number="2"/>
+		</result>
+	</recipe>
 </xml>
