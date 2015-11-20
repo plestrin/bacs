@@ -602,6 +602,8 @@ static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct no
 struct memAccessToken{
 	struct node* 	node;
 	ADDRESS 		address;
+	uint32_t 		offset;
+	uint32_t 		size;
 };
 
 static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node* current_node){
@@ -618,15 +620,316 @@ static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node
 
 static int32_t compare_address_memToken(const void* arg1, const void* arg2);
 
-void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
-	struct node* 			node_cursor;
-	struct node* 			next_node_cursor;
-	struct irOperation* 	operation_cursor;
-	struct irOperation* 	operation_prev;
-	void* 					binary_tree_root = NULL;
+#define CONCRETE_MEMORY_ACCESS_MAX_SIZE 		32
+#define CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT  (CONCRETE_MEMORY_ACCESS_MAX_SIZE / 8)
+
+struct memAccessFragment{
+	struct memAccessToken* 	token;
+	uint32_t 				offset;
+	uint32_t 				size;
+};
+
+static int32_t ir_memory_concrete_push_full_access(void** binary_tree_root, struct node* node){
 	struct memAccessToken* 	new_token;
-	struct memAccessToken** existing_token;
-	int32_t 				return_code;
+	struct memAccessToken** result;
+
+	if ((new_token = (struct memAccessToken*)malloc(sizeof(struct memAccessToken))) == NULL){
+		log_err("unable to allocate memory");
+		return -1;
+	}
+
+	new_token->node 	= node;
+	new_token->address 	= ir_node_get_operation(node)->operation_type.mem.con_addr;
+	new_token->offset 	= 0;
+	new_token->size 	= ir_node_get_operation(node)->size / 8;
+
+	result = (struct memAccessToken**)tsearch((void*)new_token, binary_tree_root, compare_address_memToken);
+	if (result == NULL){
+		log_err("unable to insert token in the binary tree");
+		free(new_token);
+		return -1;
+	}
+	else if (*result != new_token){
+		log_err("a token is already available at this address");
+		free(new_token);
+		return -1;
+	}
+
+	return 0;
+}
+
+static struct node* ir_memory_concrete_push_frag_access(struct ir* ir, void** binary_tree_root, struct node* node, uint32_t offset, uint32_t size){
+	struct node* addr;
+	struct node* access;
+
+	if (node->nb_edge_dst == 0){
+		log_err("memory access has not dst edge");
+		return NULL;
+	}
+
+	addr = edge_get_src(node_get_head_edge_dst(node));
+
+	if (offset){
+		struct node* off_val;
+		struct node* add;
+
+		off_val = ir_add_immediate(ir, 32, offset);
+		add = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_ADD, IR_OPERATION_DST_UNKOWN);
+
+		if (off_val != NULL && add != NULL){
+			if (ir_add_dependence(ir, off_val, add, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			if (ir_add_dependence(ir, addr, add, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			addr = add;
+		}
+		else{
+			log_err("unable to add nodes to IR");
+		}
+	}
+
+	access = ir_add_in_mem_(ir, ir_node_get_operation(node)->index, size*8, addr, node, ir_node_get_operation(node)->operation_type.mem.con_addr + offset);
+	if (access == NULL){
+		log_err("unable to add memory access to IR");
+		return NULL;
+	}
+
+	if (ir_memory_concrete_push_full_access(binary_tree_root, access)){
+		log_err("unable to push full memory access");
+	}
+
+	return access;
+}
+
+static int32_t ir_memory_concrete_shift_full_access(void** binary_tree_root, struct memAccessToken* token, uint32_t disp){
+	struct memAccessToken** result;
+
+	if (tdelete(token, binary_tree_root, compare_address_memToken) == NULL){
+		log_err("unable to delete token from the binary tree");
+		return -1;
+	}
+
+	token->address 	+= disp;
+	token->offset 	+= disp;
+	token->size 	-= disp;
+
+	result = (struct memAccessToken**)tsearch((void*)token, binary_tree_root, compare_address_memToken);
+	if (result == NULL){
+		log_err("unable to insert token in the binary tree");
+		free(token);
+		return -1;
+	}
+	else if (*result != token){
+		log_err("a token is already available at this address");
+		free(token);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int32_t ir_memory_concrete_split_full_access(void** binary_tree_root, struct memAccessToken* token, uint32_t l_bound, uint32_t h_bound){
+	struct memAccessToken* 	new_token;
+	struct memAccessToken** result;
+
+	token->size = l_bound;
+
+	if ((new_token = (struct memAccessToken*)malloc(sizeof(struct memAccessToken))) == NULL){
+		log_err("unable to allocate memory");
+		return -1;
+	}
+
+	new_token->node 	= token->node;
+	new_token->address 	= token->address + h_bound;
+	new_token->offset 	= h_bound;
+	new_token->size 	= token->size - h_bound;
+
+	result = (struct memAccessToken**)tsearch((void*)new_token, binary_tree_root, compare_address_memToken);
+	if (result == NULL){
+		log_err("unable to insert token in the binary tree");
+		free(new_token);
+		return -1;
+	}
+	else if (*result != new_token){
+		log_err("a token is already available at this address");
+		free(new_token);
+		return -1;
+	}
+
+	return 0;
+
+}
+
+static struct node* ir_memory_concrete_get_access_value(struct ir* ir, struct memAccessFragment* mem_access_fragment){
+	struct node* 		raw_value 	= NULL;
+	struct edge* 		edge_cursor;
+
+	if (ir_node_get_operation(mem_access_fragment->token->node)->type == IR_OPERATION_TYPE_IN_MEM){
+		raw_value = mem_access_fragment->token->node;
+	}
+	else if (ir_node_get_operation(mem_access_fragment->token->node)->type == IR_OPERATION_TYPE_OUT_MEM){
+		for (edge_cursor = node_get_head_edge_dst(mem_access_fragment->token->node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+				break;
+			}
+		}
+		if (edge_cursor == NULL){
+			log_err("unable to get data operand of a memory store");
+			return NULL;
+		}
+		else{
+			raw_value = edge_get_src(edge_cursor);
+		}
+	}
+	else{
+		log_err("incorrect operation type");
+		return NULL;
+	}
+
+	if (mem_access_fragment->offset + mem_access_fragment->token->offset){
+		struct node* disp_value;
+		struct node* shift;
+
+		disp_value = ir_add_immediate(ir, ir_node_get_operation(raw_value)->size, (mem_access_fragment->offset + mem_access_fragment->token->offset) * 8);
+		shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(raw_value)->size, IR_SHR, IR_OPERATION_DST_UNKOWN);
+
+		if (disp_value != NULL && shift != NULL){
+			if (ir_add_dependence(ir, disp_value, shift, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			if (ir_add_dependence(ir, raw_value, shift, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			raw_value = shift;
+		}
+		else{
+			log_err("unable to add nodes to IR");
+		}
+	}
+
+	if (mem_access_fragment->size != ir_node_get_operation(raw_value)->size / 8){
+		struct node* part = NULL;
+
+		if (mem_access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 32){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
+		}
+		else if (mem_access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 16){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
+		}
+		else if (mem_access_fragment->size == 2 && ir_node_get_operation(raw_value)->size == 32){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_PART1_16, IR_OPERATION_DST_UNKOWN);
+		}
+		else{
+			log_err_m("incorrect size selection %u byte(s) from %u", mem_access_fragment->size, ir_node_get_operation(raw_value)->size / 8);
+		}
+
+		if (part != NULL){
+			if (ir_add_dependence(ir, raw_value, part, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			raw_value = part;
+		}
+		else{
+			log_err("unable to add instruction to IR");
+		}
+	}
+
+	return raw_value;
+}
+
+static int32_t ir_memory_concrete_build_compound_value(struct ir* ir, struct node** current_value, struct node* new_value, uint32_t offset, uint32_t size){
+	struct node* or;
+	struct node* movzx;
+	struct node* disp_value;
+	struct node* shift;
+
+	if (new_value == NULL){
+		log_err("new value is NULL");
+		return -1;
+	}
+
+	if (*current_value == NULL){
+		*current_value = new_value;
+	}
+	else{
+		if (ir_node_get_operation(*current_value)->size < size){
+			movzx = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
+			if (movzx != NULL){
+				if (ir_add_dependence(ir, *current_value, movzx, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					log_err("unable to add new dependency to IR");
+				}
+				*current_value = movzx;
+			}
+			else{
+				log_err("unable to add instruction to IR");
+			}
+		}
+
+		if (ir_node_get_operation(new_value)->size < size){
+			movzx = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
+			if (movzx != NULL){
+				if (ir_add_dependence(ir, new_value, movzx, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					log_err("unable to add new dependency to IR");
+				}
+				new_value = movzx;
+			}
+			else{
+				log_err("unable to add instruction to IR");
+			}
+		}
+
+		if (offset){
+			disp_value = ir_add_immediate(ir, size, offset * 8);
+			shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_SHL, IR_OPERATION_DST_UNKOWN);
+
+			if (disp_value != NULL && shift != NULL){
+				if (ir_add_dependence(ir, disp_value, shift, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+					log_err("unable to add new dependency to IR");
+				}
+				if (ir_add_dependence(ir, new_value, shift, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					log_err("unable to add new dependency to IR");
+				}
+				new_value = shift;
+			}
+			else{
+				log_err("unable to add nodes to IR");
+			}
+		}
+
+		or = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_OR, IR_OPERATION_DST_UNKOWN);
+		if (or != NULL){
+			if (ir_add_dependence(ir, *current_value, or, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			if (ir_add_dependence(ir, new_value, or, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add new dependency to IR");
+			}
+			*current_value = or;
+		}
+		else{
+			log_err("unable to add instruction to IR");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
+	uint32_t 					i;
+	uint32_t 					j;
+	uint32_t 					k;
+	struct node* 				node_cursor;
+	struct node* 				next_node_cursor;
+	struct irOperation* 		operation_cursor;
+	void* 						binary_tree_root = NULL;
+	struct memAccessToken 		fetch_token;
+	struct memAccessToken** 	existing_token;
+	struct memAccessFragment 	access_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
+	uint32_t 					nb_mem_access_fragment;
+	uint8_t 					taken_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
 
 	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
@@ -650,66 +953,127 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 		next_node_cursor = operation_cursor->operation_type.mem.next;
 
 		if (operation_cursor->operation_type.mem.con_addr == MEMADDRESS_INVALID){
-			log_warn("a memory access has an incorrect concrete address, further simplications might be incorrect");
+			log_warn("a memory access has an incorrect concrete address, further simplifications might be incorrect");
 			continue;
 		}
 
-		if ((new_token = (struct memAccessToken*)malloc(sizeof(struct memAccessToken))) == NULL){
-			log_err("unable to allocate memory");
+		if (operation_cursor->size > CONCRETE_MEMORY_ACCESS_MAX_SIZE){
+			log_warn_m("memory access size (%u) exceeds max limit (%u), further simplification might be incorrect", operation_cursor->size, CONCRETE_MEMORY_ACCESS_MAX_SIZE);
 			continue;
 		}
 
-		new_token->node 	= node_cursor;
-		new_token->address 	= operation_cursor->operation_type.mem.con_addr;
+		fetch_token.node 	= NULL;
+		fetch_token.address 	= operation_cursor->operation_type.mem.con_addr;
 
-		existing_token = (struct memAccessToken**)tsearch((void*)new_token, &binary_tree_root, compare_address_memToken);
-		if (existing_token == NULL){
-			log_err("tsearch failed");
-			free(new_token);
-		}
-		else if (*existing_token != new_token){
-			if (memAccessToken_is_alive(*existing_token, node_cursor)){
-				operation_prev = ir_node_get_operation((*existing_token)->node);
-				if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
-					return_code = irMemory_simplify_WR(ir, (*existing_token)->node, node_cursor);
-				}
-				else if(operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
-					return_code = irMemory_simplify_RR(ir, (*existing_token)->node, node_cursor);
-				}
-				else if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
-					return_code = irMemory_simplify_WW(ir, (*existing_token)->node, node_cursor);
-				}
-				else{
-					return_code = 0;
-				}
+		memset(taken_fragment, 0, sizeof(uint8_t) * CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT);
 
-				switch(return_code){
-					case 0  : {
-						memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
-						*modification = 1;
-						break;
-					}
-					case 1  : {
-						*modification = 1;
-						break;
-					}
-					default : {
-						log_err_m("simplification failed, return code: %d", return_code);
-						break;
-					}
-				}
+		for (i = 0, j = 0, nb_mem_access_fragment = 0; i < operation_cursor->size / 8; ){
+			int32_t is_alive = 1;
+
+			existing_token = (struct memAccessToken**)tfind((void*)&fetch_token, &binary_tree_root, compare_address_memToken);
+			if (existing_token != NULL && (is_alive = memAccessToken_is_alive(*existing_token, node_cursor)) && (*existing_token)->size > j){
+				access_fragment[nb_mem_access_fragment].token 	= *existing_token;
+				access_fragment[nb_mem_access_fragment].offset 	= j;
+				access_fragment[nb_mem_access_fragment].size 	= min((*existing_token)->size - j, (operation_cursor->size / 8) - i);
+
+				memset(taken_fragment + i, 1, access_fragment[nb_mem_access_fragment].size);
+
+				i += access_fragment[nb_mem_access_fragment].size;
+				fetch_token.address += access_fragment[nb_mem_access_fragment].size + j;
+				nb_mem_access_fragment ++;
+				j = 0;
 			}
 			else{
-				memcpy(*existing_token, new_token, sizeof(struct memAccessToken));
+				if (!is_alive){
+					if (tdelete(*existing_token, &binary_tree_root, compare_address_memToken) == NULL){
+						log_err("unable to delete token from the binary tree");
+					}
+					free(*existing_token);
+				}
+				if (i == 0){
+					if (j + 1 == CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT){
+						i ++;
+						fetch_token.address += j + 1;
+						j = 0;
+					}
+					else{
+						j ++;
+						fetch_token.address --;
+					}
+				}
+				else{
+					i ++;
+					fetch_token.address ++;
+				}
 			}
+		}
 
-			free(new_token);
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM){
+			struct node* value = NULL;
+
+			for (i = 0, j = 0, k = 0; i < operation_cursor->size / 8; ){
+				if (taken_fragment[i]){
+					if (k){
+						if (ir_memory_concrete_build_compound_value(ir, &value, ir_memory_concrete_push_frag_access(ir, &binary_tree_root, node_cursor, i - k, k), i - k, operation_cursor->size)){
+							log_err_m("unable to get memory access fragment of size %u at offset %u", access_fragment[j].offset, access_fragment[j].offset);
+						}
+						k = 0;
+					}
+					if (ir_memory_concrete_build_compound_value(ir, &value, ir_memory_concrete_get_access_value(ir, access_fragment + j), i, operation_cursor->size)){
+						log_err_m("unable to get memory access fragment of size %u at offset %u", access_fragment[j].offset, access_fragment[j].offset);
+					}
+					
+					i += access_fragment[j].size;
+					j ++;
+				}
+				else{
+					k ++;
+					i ++;
+				}
+			}
+			if (k){
+				if (k == i){
+					ir_memory_concrete_push_full_access(&binary_tree_root, node_cursor);
+				}
+				else{
+					if (ir_memory_concrete_build_compound_value(ir, &value, ir_memory_concrete_push_frag_access(ir, &binary_tree_root, node_cursor, i - k, k), i - k, operation_cursor->size)){
+						log_err_m("unable to get memory access fragment of size %u at offset %u", access_fragment[j].offset, access_fragment[j].offset);
+					}
+				}
+			}
+			if (value != NULL){
+				ir_merge_equivalent_node(ir, value, node_cursor);
+				*modification = 1;
+			}
+		}
+		else{
+			for (i = 0; i < nb_mem_access_fragment; i++){
+				if (access_fragment[i].offset == 0 && access_fragment[i].size == access_fragment[i].token->size){
+					if (tdelete(access_fragment[i].token, &binary_tree_root, compare_address_memToken) == NULL){
+						log_err("unable to delete token from the binary tree");
+					}
+					free(access_fragment[i].token);
+				}
+				else if (access_fragment[i].offset != 0 && access_fragment[i].size + access_fragment[i].offset == access_fragment[i].token->size){
+					access_fragment[i].token->size = access_fragment[i].offset;
+				}
+				else if (access_fragment[i].offset == 0 && access_fragment[i].size < access_fragment[i].token->size){
+					if (ir_memory_concrete_shift_full_access(&binary_tree_root, access_fragment[i].token, access_fragment[i].size)){
+						log_err("unable to shit full memory access");
+					}
+				}
+				else{
+					if (ir_memory_concrete_split_full_access(&binary_tree_root, access_fragment[i].token, access_fragment[i].offset, access_fragment[i].offset + access_fragment[i].size)){
+						log_err("unable to split full memory access");
+					}
+				}
+			}
+			ir_memory_concrete_push_full_access(&binary_tree_root, node_cursor);
 		}
 	}
 
 	tdestroy(binary_tree_root, free);
 }
-
 
 /* ===================================================================== */
 /* Sorting routines						                                 */

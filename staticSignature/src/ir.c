@@ -119,11 +119,15 @@ struct node* ir_add_in_mem_(struct ir* ir, uint32_t index, uint8_t size, struct 
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_IN_MEM;
 		operation->operation_type.mem.prev 				= prev;
-		operation->operation_type.mem.next 				= NULL;
 		if (prev == NULL){
+			operation->operation_type.mem.next 			= NULL;
 			operation->operation_type.mem.order 		= 1;
 		}
 		else{
+			operation->operation_type.mem.next 			= ir_node_get_operation(prev)->operation_type.mem.next;
+			if (operation->operation_type.mem.next != NULL){
+				ir_node_get_operation(operation->operation_type.mem.next)->operation_type.mem.prev = node;
+			}
 			ir_node_get_operation(prev)->operation_type.mem.next = node;
 			operation->operation_type.mem.order 		= ir_node_get_operation(prev)->operation_type.mem.order + 1;
 		}
@@ -152,11 +156,15 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_OUT_MEM;
 		operation->operation_type.mem.prev 				= prev;
-		operation->operation_type.mem.next 				= NULL;
 		if (prev == NULL){
+			operation->operation_type.mem.next 			= NULL;
 			operation->operation_type.mem.order 		= 1;
 		}
 		else{
+			operation->operation_type.mem.next 			= ir_node_get_operation(prev)->operation_type.mem.next;
+			if (operation->operation_type.mem.next != NULL){
+				ir_node_get_operation(operation->operation_type.mem.next)->operation_type.mem.prev = node;
+			}
 			ir_node_get_operation(prev)->operation_type.mem.next = node;
 			operation->operation_type.mem.order 		= ir_node_get_operation(prev)->operation_type.mem.order + 1;
 		}
@@ -257,6 +265,28 @@ struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size,
 	return node;
 }
 
+struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst){
+	struct node* 			node;
+	struct irOperation* 	operation;
+
+	node = graph_insert_node_(&(ir->graph), root);
+	if (node == NULL){
+		log_err("unable to add node to the graph");
+	}
+	else{
+		operation = ir_node_get_operation(node);
+		operation->type 								= IR_OPERATION_TYPE_INST;
+		operation->operation_type.inst.opcode 			= opcode;
+		operation->operation_type.inst.dst 				= dst;
+		operation->operation_type.inst.seed 			= IR_INVALID_RANGE_SEED;
+		operation->size 								= size;
+		operation->index 								= index;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
+	}
+
+	return node;
+}
+
 void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value){
 	struct irOperation* operation = ir_node_get_operation(node);
 	struct edge* 		edge_cursor;
@@ -278,28 +308,6 @@ void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint
 	operation->size 						= size;
 	operation->index 						= IR_OPERATION_INDEX_IMMEDIATE;
 	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
-}
-
-struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst){
-	struct node* 			node;
-	struct irOperation* 	operation;
-
-	node = graph_insert_node_(&(ir->graph), root);
-	if (node == NULL){
-		log_err("unable to add node to the graph");
-	}
-	else{
-		operation = ir_node_get_operation(node);
-		operation->type 								= IR_OPERATION_TYPE_INST;
-		operation->operation_type.inst.opcode 			= opcode;
-		operation->operation_type.inst.dst 				= dst;
-		operation->operation_type.inst.seed 			= IR_INVALID_RANGE_SEED;
-		operation->size 								= size;
-		operation->index 								= index;
-		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
-	}
-
-	return node;
 }
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type){

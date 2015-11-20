@@ -355,7 +355,7 @@ void ir_print_node(struct irOperation* operation, FILE* file);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 
-#define ir_clean(ir) graph_clean(&(ir->graph));
+#define ir_clean(ir) graph_clean(&((ir)->graph));
 
 #define ir_delete(ir) 											\
 	ir_clean(ir); 												\
