@@ -628,7 +628,7 @@ void trace_check(struct trace* trace){
 	}
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
 		if (ir_check(trace->trace_type.frag.ir)){
-			log_info("error(s) have been found in IR");
+			log_info_m("error(s) have been found in IR for fragment \"%s\"", trace->trace_type.frag.tag);
 		}
 	}
 }

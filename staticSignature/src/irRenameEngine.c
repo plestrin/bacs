@@ -461,7 +461,7 @@ struct node* irRenameEngine_get_register_ref(struct irRenameEngine* engine, enum
 					if (list.nb_register){
 						log_err("this case is not implemented yet, more than two elements in the dependence list");
 					}
-					else if (alias_is_read(engine->ir->alias_buffer[reg1])){
+					else if (alias_is_read(engine->ir->alias_buffer[reg1]) && alias_is_read(engine->ir->alias_buffer[reg2])){
 						engine->ir->alias_buffer[reg].ir_node = ir_add_in_reg(engine->ir, min(ir_node_get_operation(engine->ir->alias_buffer[reg1].ir_node)->index, ir_node_get_operation(engine->ir->alias_buffer[reg2].ir_node)->index), reg, (alias_is_primer(engine->ir->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
 						engine->ir->alias_buffer[reg].order = engine->ir->alias_buffer[reg1].order;
 						alias_set_type(engine->ir->alias_buffer[reg], IRRENAMEENGINE_TYPE_READ);

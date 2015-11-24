@@ -404,6 +404,19 @@
 		</result>
 	</recipe>
 
+	<recipe name="OPEN_AES" active="no">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_aes"/>
+		<search>
+			<arg value="load trace traceOPEN_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+		</result>
+	</recipe>
+
 	<recipe name="GLAD_AES_V0_GO0" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
