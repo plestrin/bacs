@@ -7,6 +7,7 @@ CBC_TEA_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_cbc_tea
 CTR_TEA_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_ctr_tea
 AES_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_aes
 MD5_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_md5
+HMAC_MD5_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_hmac_md5
 RC4_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_rc4
 SERPENT_CRYPTOPP_EXAMPLE_NAME 	:= cryptopp_serpent
 DES_CRYPTOPP_EXAMPLE_NAME 		:= cryptopp_des
@@ -19,6 +20,7 @@ all: build/$(TEA_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(CTR_TEA_CRYPTOPP_EXAMPLE_NAME) \
 	 build/$(AES_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(MD5_CRYPTOPP_EXAMPLE_NAME) 	\
+	 build/$(HMAC_MD5_CRYPTOPP_EXAMPLE_NAME)\
 	 build/$(RC4_CRYPTOPP_EXAMPLE_NAME) 	\
 	 build/$(SERPENT_CRYPTOPP_EXAMPLE_NAME) \
 	 build/$(DES_CRYPTOPP_EXAMPLE_NAME) 	\
@@ -38,6 +40,9 @@ build/$(AES_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(MD5_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_md5.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+build/$(HMAC_MD5_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_hmac_md5.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/$(RC4_CRYPTOPP_EXAMPLE_NAME): build/cryptopp_rc4.o

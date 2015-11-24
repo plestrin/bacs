@@ -65,7 +65,8 @@ ckeck_list = [
 		r'tomCrypt/build/tom_hmac_md5',
 		r'botan/build/bot_hmac_md5',
 		r'openssl/build/openssl_hmac_md5',
-		r'nettle/build/net_hmac_md5'
+		r'nettle/build/net_hmac_md5',
+		r'cryptopp/build/cryptopp_hmac_md5'
 	],
 	
 	# RC4
