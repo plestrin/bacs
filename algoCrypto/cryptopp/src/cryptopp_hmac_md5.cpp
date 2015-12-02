@@ -15,7 +15,7 @@ int main(){
 	CryptoPP::HMAC<CryptoPP::Weak::MD5> hmac;
 
 	hmac.SetKey((unsigned char*)key, strlen(key));
-	hmac.CalculateDigest(hash, (unsigned char*)message, strlen(message));
+	hmac.CalculateDigest(hash, (unsigned char*)message, sizeof(message) - 1);
 
 	std::cout << "Plaintext: \"" << message << "\"" << std::endl;
 	std::cout << "Key:       \"" << key << "\"" << std::endl;

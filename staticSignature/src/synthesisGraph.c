@@ -514,6 +514,32 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 	return 0;
 }
 
+#define FALSE_POSITIVE_FILTER_HEURISTIC
+
+#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
+
+#define MAX_DIRECTION_CHANGE 4
+
+static int32_t synthesisGraph_false_positive_filter_heuristic(const struct dijkstraPath* path){
+	uint32_t i;
+	uint32_t nb_direction_change;
+
+	if (array_get_length(path->step_array) > MAX_DIRECTION_CHANGE){
+		for (i = 1, nb_direction_change = 0; i < array_get_length(path->step_array); i++){
+			if (((struct dijkstraPathStep*)array_get(path->step_array, i - 1))->dir != ((struct dijkstraPathStep*)array_get(path->step_array, i))->dir){
+				nb_direction_change ++;
+				if (nb_direction_change >= MAX_DIRECTION_CHANGE){
+					return -1;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+#endif
+
 static int32_t dijkstraPathStep_compare(void* arg1, void* arg2){
 	struct dijkstraPathStep* step1 = (struct dijkstraPathStep*)arg1;
 	struct dijkstraPathStep* step2 = (struct dijkstraPathStep*)arg2;
@@ -687,9 +713,25 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 	}
 
 	for (i = 0, nb_category = 0; i < array_get_length(&rrd_array); i++){
+		#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
+		struct relationResultDescriptor* 	rrd_ptr;
+		uint32_t 							nb_element;
+
+		rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
+		for (j = 0, nb_element = 0; j < rrd_ptr->nb_element; j++){
+			if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + j)) == 0){
+				nb_element ++;
+				if (nb_element > 1){
+					nb_category ++;
+					break;
+				}
+			}
+		}
+		#else
 		if (((struct relationResultDescriptor*)array_get(&rrd_array, i))->nb_element > 1){
 			nb_category ++;
 		}
+		#endif
 	}
 
 	if (nb_category > 0){
@@ -705,6 +747,35 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		else{
 			for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 				rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
+				
+				#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
+				{
+					uint32_t nb_element = rrd_ptr->nb_element;
+
+					for (k = 0; k < nb_element; ){
+						if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + k)) == 0){
+							k ++;
+						}
+						else{
+							struct dijkstraPath tmp_path;
+
+							if (k < nb_element - 1){
+								memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + nb_element - 1), sizeof(struct dijkstraPath));
+								memcpy(array_get(&path_array, rrd_ptr->offset + nb_element - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct dijkstraPath));
+								memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct dijkstraPath));
+							}
+
+							nb_element --;
+						}
+					}
+
+					if (nb_element < rrd_ptr->nb_element){
+						log_debug_m("filtering %u false positive path(s)", rrd_ptr->nb_element - nb_element);
+						rrd_ptr->nb_element = nb_element;
+					}
+				}
+
+				#endif
 				if (rrd_ptr->nb_element > 1){
 					desc_buffer[j].offset 		= rrd_ptr->offset;
 					desc_buffer[j].nb_element 	= rrd_ptr->nb_element;
@@ -883,6 +954,7 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				switch(operation->type){
 					case IR_OPERATION_TYPE_INST 	: {
 						fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
+						/*fprintf(file, "%s %u<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode), (uint32_t)(synthesis_node->node_type.path.node_buffer[i]));*/
 						nb_element ++;
 						break;
 					}
