@@ -41,9 +41,10 @@ uint32_t asmBlock_count_nb_ins(struct asmBlock* block){
 
 	disassembler_init();
 
+	xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+
 	for (offset = 0, result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(&xedd), result ++){
-		xed_decoded_inst_zero(&xedd);
-		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(&xedd);
 		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + offset), min(block->header.size - offset, 15))) != XED_ERROR_NONE){
 			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 			return -1;
@@ -58,9 +59,10 @@ uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_en
 	uint32_t 			result;
 	uint32_t 			i;
 
+	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+
 	for (result = 0; offset < block->header.size; offset += xed_decoded_inst_get_length(xedd), result ++){
-		xed_decoded_inst_zero(xedd);
-		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(xedd);
 		if ((xed_error = xed_decode(xedd, (const xed_uint8_t*)(block->data + offset), min(block->header.size - offset, 15))) != XED_ERROR_NONE){
 			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 			return NULL;
@@ -328,9 +330,10 @@ int32_t assembly_get_instruction(const struct assembly* assembly, struct instruc
 		return -1;
 	}
 
+	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
+
 	for (i = 0; i <= it->instruction_sub_index; i++){
-		xed_decoded_inst_zero(&(it->xedd));
-		xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(&(it->xedd));
 		if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset, 15))) != XED_ERROR_NONE){
 			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 			return -1;
@@ -368,8 +371,7 @@ int32_t assembly_get_next_instruction(const struct assembly* assembly, struct in
 		it->mem_access_index += assembly_get_instruction_nb_mem_access(&(it->xedd));
 	}
 
-	xed_decoded_inst_zero(&(it->xedd));
-	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
+	xed_decoded_inst_zero_keep_mode(&(it->xedd));
 	if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset, 15))) != XED_ERROR_NONE){
 		log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 		return -1;
@@ -422,8 +424,7 @@ int32_t assembly_get_next_block(const struct assembly* assembly, struct instruct
 		return -1;
 	}
 
-	xed_decoded_inst_zero(&(it->xedd));
-	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
+	xed_decoded_inst_zero_keep_mode(&(it->xedd));
 	if ((xed_error = xed_decode(&(it->xedd), (const xed_uint8_t*)(assembly->dyn_blocks[it->dyn_block_index].block->data), min(assembly->dyn_blocks[it->dyn_block_index].block->header.size, 15))) != XED_ERROR_NONE){
 		log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 		return -1;
@@ -438,9 +439,10 @@ int32_t assembly_get_next_block(const struct assembly* assembly, struct instruct
 int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
 	uint32_t instruction_offset;
 
+	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+
 	for (instruction_offset = 0; instruction_offset != block->header.size; ){
-		xed_decoded_inst_zero(xedd);
-		xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(xedd);
 		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) == XED_ERROR_NONE){
 			instruction_offset += xed_decoded_inst_get_length(xedd);
 		}
@@ -464,6 +466,8 @@ int32_t assembly_check(struct assembly* assembly){
 	uint32_t 			nb_mem_access;
 	int32_t 			result 				= 0;
 
+	xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+
 	for (block_offset = 0, block_count = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, block_count++){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
@@ -472,8 +476,7 @@ int32_t assembly_check(struct assembly* assembly){
 		}
 
 		for (nb_instruction = 0, nb_mem_access = 0, instruction_offset = 0; instruction_offset != block->header.size; nb_instruction ++, instruction_offset += xed_decoded_inst_get_length(&xedd)){
-			xed_decoded_inst_zero(&xedd);
-			xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+			xed_decoded_inst_zero_keep_mode(&xedd);
 			if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
 				log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 				result = -1;
@@ -575,9 +578,10 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		mem_access_start = UNTRACK_MEM_ACCESS;
 	}
 
+	xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+
 	for (i = 0, idx_ins_start = 0, size = assembly_src->dyn_blocks[idx_block_start].block->header.size; i < offset - assembly_src->dyn_blocks[idx_block_start].instruction_count; i++){
-		xed_decoded_inst_zero(&xedd);
-		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(&xedd);
 		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_start].block->data + idx_ins_start), min(assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start, 15))) != XED_ERROR_NONE){
 			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 			return -1;
@@ -623,8 +627,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 
 	for (i = 0, idx_ins_stop = 0; i < offset + length - assembly_src->dyn_blocks[idx_block_stop].instruction_count; i++){
-		xed_decoded_inst_zero(&xedd);
-		xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+		xed_decoded_inst_zero_keep_mode(&xedd);
 		if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(assembly_src->dyn_blocks[idx_block_stop].block->data + idx_ins_stop), min(assembly_src->dyn_blocks[idx_block_stop].block->header.size - idx_ins_stop, 15))) != XED_ERROR_NONE){
 			log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 			return -1;
@@ -1405,6 +1408,8 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 	xed_error_enum_t 	xed_error;
 	xed_decoded_inst_t 	xedd;
 
+	xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+
 	for (block_offset = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
@@ -1417,8 +1422,7 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 				offset = ptr - block->data;
 
 				for (instruction_offset = 0; ; instruction_offset += xed_decoded_inst_get_length(&xedd)){
-					xed_decoded_inst_zero(&xedd);
-					xed_decoded_inst_set_mode(&xedd, disas.mmode, disas.stack_addr_width);
+					xed_decoded_inst_zero_keep_mode(&xedd);
 					if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
 						log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
 						break;
