@@ -11,7 +11,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode);
 static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg);
 
 #define IRIMPORTERASM_MAX_INPUT_OPERAND 	3
-#define IRIMPORTERASM_MAX_RISC_INS 			4
+#define IRIMPORTERASM_MAX_RISC_INS 			64
 
 static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIMPORTERASM_MAX_INPUT_OPERAND] = {
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 0  IR_ADC 		*/
@@ -77,16 +77,16 @@ static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	0  /* 28 IR_JOKER 		*/
 };
 
-static int32_t xed_reg_get_smid_base(xed_reg_enum_t reg){
+static int32_t xed_reg_get_simd_base(xed_reg_enum_t reg){
 	switch(reg){
-		case XED_REG_MMX0 	: {return 16;}
-		case XED_REG_MMX1 	: {return 17;}
-		case XED_REG_MMX2 	: {return 18;}
-		case XED_REG_MMX3 	: {return 19;}
-		case XED_REG_MMX4 	: {return 20;}
-		case XED_REG_MMX5 	: {return 21;}
-		case XED_REG_MMX6 	: {return 22;}
-		case XED_REG_MMX7 	: {return 23;}
+		case XED_REG_MMX0 	: {return 8;}
+		case XED_REG_MMX1 	: {return 9;}
+		case XED_REG_MMX2 	: {return 10;}
+		case XED_REG_MMX3 	: {return 11;}
+		case XED_REG_MMX4 	: {return 12;}
+		case XED_REG_MMX5 	: {return 13;}
+		case XED_REG_MMX6 	: {return 14;}
+		case XED_REG_MMX7 	: {return 15;}
 		case XED_REG_XMM0 	: {return 0;}
 		case XED_REG_XMM1 	: {return 1;}
 		case XED_REG_XMM2 	: {return 2;}
@@ -95,48 +95,126 @@ static int32_t xed_reg_get_smid_base(xed_reg_enum_t reg){
 		case XED_REG_XMM5 	: {return 5;}
 		case XED_REG_XMM6 	: {return 6;}
 		case XED_REG_XMM7 	: {return 7;}
-		case XED_REG_XMM8 	: {return 8;}
-		case XED_REG_XMM9 	: {return 9;}
-		case XED_REG_XMM10 	: {return 10;}	
-		case XED_REG_XMM11 	: {return 11;}	
-		case XED_REG_XMM12 	: {return 12;}	
-		case XED_REG_XMM13 	: {return 13;}	
-		case XED_REG_XMM14 	: {return 14;}	
-		case XED_REG_XMM15 	: {return 15;}
+		case XED_REG_YMM0 	: {return 0;}
+		case XED_REG_YMM1 	: {return 1;}
+		case XED_REG_YMM2 	: {return 2;}
+		case XED_REG_YMM3 	: {return 3;}
+		case XED_REG_YMM4 	: {return 4;}
+		case XED_REG_YMM5 	: {return 5;}
+		case XED_REG_YMM6 	: {return 6;}
+		case XED_REG_YMM7 	: {return 7;}
 		default 			: {break;}
 	}
 
+	log_err_m("this SIMD register (%s) is not handled yet", xed_reg_enum_t2str(reg));
 	return -1;
 }
 
-#define IR_REGISTER_NB_SIMD_BASE 24
-#define IR_REGISTER_NB_MAX_ENTRY_PER_SMID_BASE 4
+static const uint32_t ir_register_simd_base[80] = {
+	0 , /* IR_REG_XMM1_1 */
+	0 , /* IR_REG_XMM1_2 */
+	0 , /* IR_REG_XMM1_3 */
+	0 , /* IR_REG_XMM1_4 */
+	1 , /* IR_REG_XMM2_1 */
+	1 , /* IR_REG_XMM2_2 */
+	1 , /* IR_REG_XMM2_3 */
+	1 , /* IR_REG_XMM2_4 */
+	2 , /* IR_REG_XMM3_1 */
+	2 , /* IR_REG_XMM3_2 */
+	2 , /* IR_REG_XMM3_3 */
+	2 , /* IR_REG_XMM3_4 */
+	3 , /* IR_REG_XMM4_1 */
+	3 , /* IR_REG_XMM4_2 */
+	3 , /* IR_REG_XMM4_3 */
+	3 , /* IR_REG_XMM4_4 */
+	4 , /* IR_REG_XMM5_1 */
+	4 , /* IR_REG_XMM5_2 */
+	4 , /* IR_REG_XMM5_3 */
+	4 , /* IR_REG_XMM5_4 */
+	5 , /* IR_REG_XMM6_1 */
+	5 , /* IR_REG_XMM6_2 */
+	5 , /* IR_REG_XMM6_3 */
+	5 , /* IR_REG_XMM6_4 */
+	6 , /* IR_REG_XMM7_1 */
+	6 , /* IR_REG_XMM7_2 */
+	6 , /* IR_REG_XMM7_3 */
+	6 , /* IR_REG_XMM7_4 */
+	7 , /* IR_REG_XMM8_1 */
+	7 , /* IR_REG_XMM8_2 */
+	7 , /* IR_REG_XMM8_3 */
+	7 , /* IR_REG_XMM8_4 */
+	8 , /* IR_REG_MMX1_1 */
+	8 , /* IR_REG_MMX1_2 */
+	9 , /* IR_REG_MMX2_1 */
+	9 , /* IR_REG_MMX2_2 */
+	10, /* IR_REG_MMX3_1 */
+	10, /* IR_REG_MMX3_2 */
+	11, /* IR_REG_MMX4_1 */
+	11, /* IR_REG_MMX4_2 */
+	12, /* IR_REG_MMX5_1 */
+	12, /* IR_REG_MMX5_2 */
+	13, /* IR_REG_MMX6_1 */
+	13, /* IR_REG_MMX6_2 */
+	14, /* IR_REG_MMX7_1 */
+	14, /* IR_REG_MMX7_2 */
+	15, /* IR_REG_MMX8_1 */
+	15, /* IR_REG_MMX8_2 */
+	0 , /* IR_REG_YMM1_5 */
+	0 , /* IR_REG_YMM1_6 */
+	0 , /* IR_REG_YMM1_7 */
+	0 , /* IR_REG_YMM1_8 */
+	1 , /* IR_REG_YMM2_5 */
+	1 , /* IR_REG_YMM2_6 */
+	1 , /* IR_REG_YMM2_7 */
+	1 , /* IR_REG_YMM2_8 */
+	2 , /* IR_REG_YMM3_5 */
+	2 , /* IR_REG_YMM3_6 */
+	2 , /* IR_REG_YMM3_7 */
+	2 , /* IR_REG_YMM3_8 */
+	3 , /* IR_REG_YMM4_5 */
+	3 , /* IR_REG_YMM4_6 */
+	3 , /* IR_REG_YMM4_7 */
+	3 , /* IR_REG_YMM4_8 */
+	4 , /* IR_REG_YMM5_5 */
+	4 , /* IR_REG_YMM5_6 */
+	4 , /* IR_REG_YMM5_7 */
+	4 , /* IR_REG_YMM5_8 */
+	5 , /* IR_REG_YMM6_5 */
+	5 , /* IR_REG_YMM6_6 */
+	5 , /* IR_REG_YMM6_7 */
+	5 , /* IR_REG_YMM6_8 */
+	6 , /* IR_REG_YMM7_5 */
+	6 , /* IR_REG_YMM7_6 */
+	6 , /* IR_REG_YMM7_7 */
+	6 , /* IR_REG_YMM7_8 */
+	7 , /* IR_REG_YMM8_5 */
+	7 , /* IR_REG_YMM8_6 */
+	7 , /* IR_REG_YMM8_7 */
+	7 , /* IR_REG_YMM8_8 */
+};
 
-static const enum irRegister ir_register_smid_frag[IR_REGISTER_NB_SIMD_BASE][IR_REGISTER_NB_MAX_ENTRY_PER_SMID_BASE] = {
-	{IR_REG_XMM1_1, 	IR_REG_XMM1_2, 	IR_REG_XMM1_3,	 IR_REG_XMM1_4}, 	/* 1  */
-	{IR_REG_XMM2_1, 	IR_REG_XMM2_2, 	IR_REG_XMM2_3,	 IR_REG_XMM2_4}, 	/* 2  */
-	{IR_REG_XMM3_1, 	IR_REG_XMM3_2, 	IR_REG_XMM3_3,	 IR_REG_XMM3_4}, 	/* 3  */
-	{IR_REG_XMM4_1, 	IR_REG_XMM4_2, 	IR_REG_XMM4_3,	 IR_REG_XMM4_4}, 	/* 4  */
-	{IR_REG_XMM5_1, 	IR_REG_XMM5_2, 	IR_REG_XMM5_3,	 IR_REG_XMM5_4}, 	/* 5  */
-	{IR_REG_XMM6_1, 	IR_REG_XMM6_2, 	IR_REG_XMM6_3,	 IR_REG_XMM6_4}, 	/* 6  */
-	{IR_REG_XMM7_1, 	IR_REG_XMM7_2, 	IR_REG_XMM7_3,	 IR_REG_XMM7_4}, 	/* 7  */
-	{IR_REG_XMM8_1, 	IR_REG_XMM8_2, 	IR_REG_XMM8_3,	 IR_REG_XMM8_4}, 	/* 8  */
-	{IR_REG_XMM9_1, 	IR_REG_XMM9_2, 	IR_REG_XMM9_3,	 IR_REG_XMM9_4}, 	/* 9  */
-	{IR_REG_XMM10_1, 	IR_REG_XMM10_2, IR_REG_XMM10_3,	 IR_REG_XMM10_4}, 	/* 10 */
-	{IR_REG_XMM11_1, 	IR_REG_XMM11_2, IR_REG_XMM11_3,	 IR_REG_XMM11_4}, 	/* 11 */
-	{IR_REG_XMM12_1, 	IR_REG_XMM12_2, IR_REG_XMM12_3,	 IR_REG_XMM12_4}, 	/* 12 */
-	{IR_REG_XMM13_1, 	IR_REG_XMM13_2, IR_REG_XMM13_3,	 IR_REG_XMM13_4}, 	/* 13 */
-	{IR_REG_XMM14_1, 	IR_REG_XMM14_2, IR_REG_XMM14_3,	 IR_REG_XMM14_4}, 	/* 14 */
-	{IR_REG_XMM15_1, 	IR_REG_XMM15_2, IR_REG_XMM15_3,	 IR_REG_XMM15_4}, 	/* 15 */
-	{IR_REG_XMM16_1, 	IR_REG_XMM16_2, IR_REG_XMM16_3,	 IR_REG_XMM16_4}, 	/* 16 */
-	{IR_REG_MMX1_1, 	IR_REG_MMX1_2, 	IR_REG_MMX1_2,	 IR_REG_MMX1_2}, 	/* 17 */
-	{IR_REG_MMX2_1, 	IR_REG_MMX2_2, 	IR_REG_MMX2_2,	 IR_REG_MMX2_2}, 	/* 18 */
-	{IR_REG_MMX3_1, 	IR_REG_MMX3_2, 	IR_REG_MMX3_2,	 IR_REG_MMX3_2}, 	/* 19 */
-	{IR_REG_MMX4_1, 	IR_REG_MMX4_2, 	IR_REG_MMX4_2,	 IR_REG_MMX4_2}, 	/* 20 */
-	{IR_REG_MMX5_1, 	IR_REG_MMX5_2, 	IR_REG_MMX5_2,	 IR_REG_MMX5_2}, 	/* 21 */
-	{IR_REG_MMX6_1, 	IR_REG_MMX6_2, 	IR_REG_MMX6_2,	 IR_REG_MMX6_2}, 	/* 22 */
-	{IR_REG_MMX7_1, 	IR_REG_MMX7_2, 	IR_REG_MMX7_2,	 IR_REG_MMX7_2}, 	/* 23 */
-	{IR_REG_MMX8_1, 	IR_REG_MMX8_2, 	IR_REG_MMX8_2,	 IR_REG_MMX8_2} 	/* 24 */
+#define ir_reg_get_simd_base(reg) ir_register_simd_base[(reg) - IR_REG_XMM1_1]
+
+#define IR_REGISTER_NB_SIMD_BASE 16
+#define IR_REGISTER_NB_MAX_ENTRY_PER_SIMD_BASE 8
+
+static const enum irRegister ir_register_simd_frag[IR_REGISTER_NB_SIMD_BASE][IR_REGISTER_NB_MAX_ENTRY_PER_SIMD_BASE] = {
+	{IR_REG_XMM1_1, IR_REG_XMM1_2, IR_REG_XMM1_3, IR_REG_XMM1_4, IR_REG_YMM1_5, IR_REG_YMM1_6, IR_REG_YMM1_7, IR_REG_YMM1_8}, 	/* 0  */
+	{IR_REG_XMM2_1, IR_REG_XMM2_2, IR_REG_XMM2_3, IR_REG_XMM2_4, IR_REG_YMM2_5, IR_REG_YMM2_6, IR_REG_YMM2_7, IR_REG_YMM2_8}, 	/* 1  */
+	{IR_REG_XMM3_1, IR_REG_XMM3_2, IR_REG_XMM3_3, IR_REG_XMM3_4, IR_REG_YMM3_5, IR_REG_YMM3_6, IR_REG_YMM3_7, IR_REG_YMM3_8}, 	/* 2  */
+	{IR_REG_XMM4_1, IR_REG_XMM4_2, IR_REG_XMM4_3, IR_REG_XMM4_4, IR_REG_YMM4_5, IR_REG_YMM4_6, IR_REG_YMM4_7, IR_REG_YMM4_8}, 	/* 3  */
+	{IR_REG_XMM5_1, IR_REG_XMM5_2, IR_REG_XMM5_3, IR_REG_XMM5_4, IR_REG_YMM5_5, IR_REG_YMM5_6, IR_REG_YMM5_7, IR_REG_YMM5_8}, 	/* 4  */
+	{IR_REG_XMM6_1, IR_REG_XMM6_2, IR_REG_XMM6_3, IR_REG_XMM6_4, IR_REG_YMM6_5, IR_REG_YMM6_6, IR_REG_YMM6_7, IR_REG_YMM6_8}, 	/* 5  */
+	{IR_REG_XMM7_1, IR_REG_XMM7_2, IR_REG_XMM7_3, IR_REG_XMM7_4, IR_REG_YMM7_5, IR_REG_YMM7_6, IR_REG_YMM7_7, IR_REG_YMM7_8}, 	/* 6  */
+	{IR_REG_XMM8_1, IR_REG_XMM8_2, IR_REG_XMM8_3, IR_REG_XMM8_4, IR_REG_YMM8_5, IR_REG_YMM8_6, IR_REG_YMM8_7, IR_REG_YMM8_8}, 	/* 7  */
+	{IR_REG_MMX1_1, IR_REG_MMX1_2, IR_REG_MMX1_2, IR_REG_MMX1_2, IR_REG_MMX1_2, IR_REG_MMX1_2, IR_REG_MMX1_2, IR_REG_MMX1_2}, 	/* 8  */
+	{IR_REG_MMX2_1, IR_REG_MMX2_2, IR_REG_MMX2_2, IR_REG_MMX2_2, IR_REG_MMX2_2, IR_REG_MMX2_2, IR_REG_MMX2_2, IR_REG_MMX2_2}, 	/* 9  */
+	{IR_REG_MMX3_1, IR_REG_MMX3_2, IR_REG_MMX3_2, IR_REG_MMX3_2, IR_REG_MMX3_2, IR_REG_MMX3_2, IR_REG_MMX3_2, IR_REG_MMX3_2}, 	/* 10 */
+	{IR_REG_MMX4_1, IR_REG_MMX4_2, IR_REG_MMX4_2, IR_REG_MMX4_2, IR_REG_MMX4_2, IR_REG_MMX4_2, IR_REG_MMX4_2, IR_REG_MMX4_2}, 	/* 11 */
+	{IR_REG_MMX5_1, IR_REG_MMX5_2, IR_REG_MMX5_2, IR_REG_MMX5_2, IR_REG_MMX5_2, IR_REG_MMX5_2, IR_REG_MMX5_2, IR_REG_MMX5_2}, 	/* 12 */
+	{IR_REG_MMX6_1, IR_REG_MMX6_2, IR_REG_MMX6_2, IR_REG_MMX6_2, IR_REG_MMX6_2, IR_REG_MMX6_2, IR_REG_MMX6_2, IR_REG_MMX6_2}, 	/* 13 */
+	{IR_REG_MMX7_1, IR_REG_MMX7_2, IR_REG_MMX7_2, IR_REG_MMX7_2, IR_REG_MMX7_2, IR_REG_MMX7_2, IR_REG_MMX7_2, IR_REG_MMX7_2}, 	/* 14 */
+	{IR_REG_MMX8_1, IR_REG_MMX8_2, IR_REG_MMX8_2, IR_REG_MMX8_2, IR_REG_MMX8_2, IR_REG_MMX8_2, IR_REG_MMX8_2, IR_REG_MMX8_2} 	/* 15 */
 };
 
 struct memOperand{
@@ -222,25 +300,36 @@ static void cisc_decode_special_leave(struct instructionIterator* it, struct asm
 static void cisc_decode_special_movsd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_ret(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc);
+static void cisc_decode_special_ret(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc);
 static void cisc_decode_special_setxx(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_stosd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 
-static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_generic_smid2(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_movd(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_movq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static inline uint32_t simd_get_nb_frag(const struct assembly* assembly, const struct instructionIterator* it){
+	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
+		return 4;
+	}
+	else{
+		return 2;
+	}
+}
+
+static void cisc_decode_generic_simd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr, uint32_t nb_frag);
+static void cisc_decode_special_movd(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_movq(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_movsd_xmm(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pinsrw(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
 static void cisc_decode_special_pshufd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_pslld(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_psrld(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
-static void cisc_decode_special_punpckldq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_pslld(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_psrld(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_punpckldq(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+
+static void cisc_decode_generic_vex(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr);
+static void cisc_decode_special_vzeroall(struct instructionIterator* it, struct asmCiscIns* cisc);
 
 #define irImporterAsm_get_mem_trace(trace, ins_it) (((trace) != NULL && instructionIterator_is_mem_addr_valid(ins_it)) ? ((trace)->mem_addr_buffer + instructionIterator_get_mem_addr_index(ins_it)) : NULL)
 
-static void irImporter_handle_instruction(struct assembly* assembly, struct irRenameEngine* engine, struct instructionIterator* it, struct memAddress* mem_addr){
+static void irImporter_handle_instruction(const struct assembly* assembly, struct irRenameEngine* engine, struct instructionIterator* it, struct memAddress* mem_addr){
 	struct asmCiscIns 	cisc;
 	uint32_t 			i;
 	int32_t 			error_code;
@@ -300,7 +389,7 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 		}
 		case XED_ICLASS_LFENCE 		: {break;}
 		case XED_ICLASS_MOVAPS 		: {
-			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			cisc_decode_generic_simd(it, &cisc, mem_addr, 4);
 			break;
 		}
 		case XED_ICLASS_MOVD 		: {
@@ -308,11 +397,11 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			break;
 		}
 		case XED_ICLASS_MOVDQA 		: {
-			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			cisc_decode_generic_simd(it, &cisc, mem_addr, 4);
 			break;
 		}
 		case XED_ICLASS_MOVDQU 		: {
-			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			cisc_decode_generic_simd(it, &cisc, mem_addr, 4);
 			break;
 		}
 		case XED_ICLASS_MOVQ 		: {
@@ -328,26 +417,16 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			break;
 		}
 		case XED_ICLASS_MOVUPS 		: {
-			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			cisc_decode_generic_simd(it, &cisc, mem_addr, 4);
 			break;
 		}
 		case XED_ICLASS_NOP 		: {break;}
 		case XED_ICLASS_PADDD 		: {
-			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
-				cisc_decode_generic_smid4(it, &cisc, mem_addr);
-			}
-			else{
-				cisc_decode_generic_smid2(it, &cisc, mem_addr);
-			}
+			cisc_decode_generic_simd(it, &cisc, mem_addr, simd_get_nb_frag(assembly, it));
 			break;
 		}
 		case XED_ICLASS_PAND 		: {
-			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
-				cisc_decode_generic_smid4(it, &cisc, mem_addr);
-			}
-			else{
-				cisc_decode_generic_smid2(it, &cisc, mem_addr);
-			}
+			cisc_decode_generic_simd(it, &cisc, mem_addr, simd_get_nb_frag(assembly, it));
 			break;
 		}
 		case XED_ICLASS_PINSRW 		: {
@@ -355,12 +434,7 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			break;
 		}
 		case XED_ICLASS_POR 		: {
-			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
-				cisc_decode_generic_smid4(it, &cisc, mem_addr);
-			}
-			else{
-				cisc_decode_generic_smid2(it, &cisc, mem_addr);
-			}
+			cisc_decode_generic_simd(it, &cisc, mem_addr, simd_get_nb_frag(assembly, it));
 			break;
 		}
 		case XED_ICLASS_POP 		: {
@@ -388,12 +462,7 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			break;
 		}
 		case XED_ICLASS_PXOR 		: {
-			if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
-				cisc_decode_generic_smid4(it, &cisc, mem_addr);
-			}
-			else{
-				cisc_decode_generic_smid2(it, &cisc, mem_addr);
-			}
+			cisc_decode_generic_simd(it, &cisc, mem_addr, simd_get_nb_frag(assembly, it));
 			break;
 		}
 		case XED_ICLASS_RET_FAR 	: {
@@ -434,8 +503,32 @@ static void irImporter_handle_instruction(struct assembly* assembly, struct irRe
 			cisc_decode_special_xchg(it, &cisc, mem_addr);
 			break;
 		}
+		case XED_ICLASS_VPADDD 		: {
+			cisc_decode_generic_vex(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_VMOVDQA 	: {
+			cisc_decode_generic_vex(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_VMOVDQU 	: {
+			cisc_decode_generic_vex(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_VPOR 		: {
+			cisc_decode_generic_vex(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_VPXOR 		: {
+			cisc_decode_generic_vex(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_VZEROALL 	: {
+			cisc_decode_special_vzeroall(it, &cisc);
+			break;
+		}
 		case XED_ICLASS_XORPS 		: {
-			cisc_decode_generic_smid4(it, &cisc, mem_addr);
+			cisc_decode_generic_simd(it, &cisc, mem_addr, 4);
 			break;
 		}
 		default :{
@@ -484,7 +577,7 @@ static void irImporter_handle_irComponent(struct ir* ir, struct irRenameEngine* 
 	}
 }
 
-int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
+int32_t irImporterAsm_import(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace){
 	struct instructionIterator 	it;
 	struct irRenameEngine 		engine;
 
@@ -513,7 +606,7 @@ int32_t irImporterAsm_import(struct ir* ir, struct assembly* assembly, struct me
 	return 0;
 }
 
-int32_t irImporterAsm_import_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+int32_t irImporterAsm_import_compound(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
 	struct instructionIterator 	it;
 	struct irRenameEngine 		engine;
 	uint32_t 					i;
@@ -774,7 +867,10 @@ static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOpe
 						memAddress_descriptor_set_write(mem_descriptor, nb_write_mem);
 					}
 
-					operand_buffer[nb_operand].operand_type.mem.con_addr 	= memAddress_get_and_check((mem_addr != NULL) ? (mem_addr + nb_read_mem + nb_write_mem) : NULL, mem_descriptor) + ASM_OPERAND_ROLE_GET_FRAG(selector) * 4;
+					operand_buffer[nb_operand].operand_type.mem.con_addr 	= memAddress_get_and_check((mem_addr != NULL) ? (mem_addr + nb_read_mem + nb_write_mem) : NULL, mem_descriptor);
+					if (operand_buffer[nb_operand].operand_type.mem.con_addr != MEMADDRESS_INVALID){
+						operand_buffer[nb_operand].operand_type.mem.con_addr += ASM_OPERAND_ROLE_GET_FRAG(selector) * 4;
+					}
 
 					nb_operand ++;
 					break;
@@ -793,7 +889,7 @@ static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOpe
 				case XED_OPERAND_REG7 	:
 				case XED_OPERAND_REG8 	: {
 					xed_reg_enum_t 	reg;
-					int32_t 		smid_base;
+					int32_t 		simd_base;
 
 					reg = xed_decoded_inst_get_reg(&(it->xedd), op_name);
 					if (reg == XED_REG_EFLAGS){
@@ -805,8 +901,8 @@ static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOpe
 						goto exit;
 					}
 
-					if ((smid_base = xed_reg_get_smid_base(reg)) == -1){
-						log_err_m("register %s is not an SMID register", xed_reg_enum_t2str(reg));
+					if ((simd_base = xed_reg_get_simd_base(reg)) == -1){
+						log_err_m("register %s is not an SIMD register", xed_reg_enum_t2str(reg));
 						goto exit;
 					}
 					
@@ -814,7 +910,7 @@ static void asmOperand_decode_simd(struct instructionIterator* it, struct asmOpe
 					operand_buffer[nb_operand].instruction_index 		= it->instruction_index;
 					operand_buffer[nb_operand].variable 				= NULL;
 					operand_buffer[nb_operand].type 					= ASM_OPERAND_REG;
-					operand_buffer[nb_operand].operand_type.reg 		= ir_register_smid_frag[smid_base][ASM_OPERAND_ROLE_GET_FRAG(selector)];
+					operand_buffer[nb_operand].operand_type.reg 		= ir_register_simd_frag[simd_base][ASM_OPERAND_ROLE_GET_FRAG(selector)];
 
 					nb_operand ++;
 					break;
@@ -1295,6 +1391,11 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_SHR 		: {return IR_SHR;}
 		case XED_ICLASS_SHRD 		: {return IR_SHRD;}
 		case XED_ICLASS_SUB 		: {return IR_SUB;}
+		case XED_ICLASS_VPADDD 		: {return IR_ADD;}
+		case XED_ICLASS_VMOVDQA 	: {return IR_MOV;}
+		case XED_ICLASS_VMOVDQU 	: {return IR_MOV;}
+		case XED_ICLASS_VPOR 		: {return IR_OR;}
+		case XED_ICLASS_VPXOR 		: {return IR_XOR;}
 		case XED_ICLASS_XOR 		: {return IR_XOR;}
 		case XED_ICLASS_XORPS 		: {return IR_XOR;}
 		default : {
@@ -1336,6 +1437,42 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 		}
 	}
 }
+
+#define asmRisc_set_reg_cst(risc, reg_, size_, imm_) 										\
+	{ 																						\
+		(risc)->opcode 										= IR_MOV; 						\
+		(risc)->nb_input_operand 							= 1; 							\
+		(risc)->input_operand[0].size 						= (size_); 						\
+		(risc)->input_operand[0].instruction_index 			= it->instruction_index; 		\
+		(risc)->input_operand[0].variable 					= NULL; 						\
+		(risc)->input_operand[0].type 						= ASM_OPERAND_IMM; 				\
+		(risc)->input_operand[0].operand_type.imm 			= (imm_); 						\
+		(risc)->output_operand.size 						= (size_); 						\
+		(risc)->output_operand.instruction_index 			= it->instruction_index; 		\
+		(risc)->output_operand.variable 					= NULL; 						\
+		(risc)->output_operand.type 						= ASM_OPERAND_REG; 				\
+		(risc)->output_operand.operand_type.reg 			= (reg_); 						\
+	}
+
+#define asmRisc_set_mem_cst(risc, base_, index_, scale_, disp_, con_addr_, size_, imm_) 	\
+	{ 																						\
+		(risc)->opcode 										= IR_MOV; 						\
+		(risc)->nb_input_operand 							= 1; 							\
+		(risc)->input_operand[0].size 						= (size_); 						\
+		(risc)->input_operand[0].instruction_index 			= it->instruction_index; 		\
+		(risc)->input_operand[0].variable 					= NULL; 						\
+		(risc)->input_operand[0].type 						= ASM_OPERAND_IMM; 				\
+		(risc)->input_operand[0].operand_type.imm 			= (imm_); 						\
+		(risc)->output_operand.size 						= (size_); 						\
+		(risc)->output_operand.instruction_index 			= it->instruction_index; 		\
+		(risc)->output_operand.variable 					= NULL; 						\
+		(risc)->output_operand.type 						= ASM_OPERAND_MEM; 				\
+		(risc)->output_operand.operand_type.mem.base 		= (base_); 						\
+		(risc)->output_operand.operand_type.mem.index 		= (index_); 					\
+		(risc)->output_operand.operand_type.mem.scale 		= (scale_); 					\
+		(risc)->output_operand.operand_type.mem.disp 		= (disp_); 						\
+		(risc)->output_operand.operand_type.mem.con_addr 	= (con_addr_); 					\
+	}
 
 static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	cisc->valid 											= 1;
@@ -1719,7 +1856,7 @@ static void cisc_decode_special_stosd(struct instructionIterator* it, struct asm
 	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_EDI;
 }
 
-static void cisc_decode_special_ret(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc){
+static void cisc_decode_special_ret(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc){
 	cisc->valid 											= 1;
 	cisc->nb_ins 											= 1;
 
@@ -1775,41 +1912,27 @@ static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmC
 	memcpy(&(cisc->ins[2].output_operand), cisc->ins[1].input_operand, sizeof(struct asmOperand));
 }
 
-static void cisc_decode_generic_smid4(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_generic_simd(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr, uint32_t nb_frag){
+	uint32_t 			i;
+	enum irOpcode 		opcode;
+	struct asmRiscIns* 	ins;
+
+	nb_frag = min(nb_frag, IRIMPORTERASM_MAX_RISC_INS);
+	opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
+
 	cisc->valid 											= 1;
-	cisc->nb_ins 											= 4;
+	cisc->nb_ins 											= nb_frag;
 
-	cisc->ins[0].opcode 									= xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
-	asmOperand_decode_simd(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 0), &(cisc->ins[0].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 0), NULL, mem_addr);
+	for (i = 0; i < nb_frag; i++){
+		ins = cisc->ins + i;
 
-	cisc->ins[1].opcode 									= cisc->ins[0].opcode;
-	asmOperand_decode_simd(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 1), &(cisc->ins[1].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[1].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 1), NULL, mem_addr);
-
-	cisc->ins[2].opcode 									= cisc->ins[0].opcode;
-	asmOperand_decode_simd(it, cisc->ins[2].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 2), &(cisc->ins[2].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[2].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 2), NULL, mem_addr);
-
-	cisc->ins[3].opcode 									= cisc->ins[0].opcode;
-	asmOperand_decode_simd(it, cisc->ins[3].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 3), &(cisc->ins[3].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[3].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 3), NULL, mem_addr);
+		ins->opcode = opcode;
+		asmOperand_decode_simd(it, ins->input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, i), &(ins->nb_input_operand), mem_addr);
+		asmOperand_decode_simd(it, &(ins->output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, i), NULL, mem_addr);
+	}
 }
 
-static void cisc_decode_generic_smid2(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
-	cisc->valid 											= 1;
-	cisc->nb_ins 											= 2;
-
-	cisc->ins[0].opcode 									= xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
-	asmOperand_decode_simd(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 0), &(cisc->ins[0].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 0), NULL, mem_addr);
-
-	cisc->ins[1].opcode 									= cisc->ins[0].opcode;
-	asmOperand_decode_simd(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_ALL, 1), &(cisc->ins[1].nb_input_operand), mem_addr);
-	asmOperand_decode_simd(it, &(cisc->ins[1].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 1), NULL, mem_addr);
-}
-
-static void cisc_decode_special_movd(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_special_movd(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66 && assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset + 2] == 0x6e){
 		cisc->valid 										= 1;
 		cisc->nb_ins 										= 4;
@@ -1875,9 +1998,9 @@ static void cisc_decode_special_movd(struct assembly* assembly, struct instructi
 	}
 }
 
-static void cisc_decode_special_movq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_special_movq(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x0f){
-		cisc_decode_generic_smid2(it, cisc, mem_addr);
+		cisc_decode_generic_simd(it, cisc, mem_addr, 2);
 	}
 	else{
 		cisc->valid 										= 1;
@@ -2055,7 +2178,7 @@ static void cisc_decode_special_pshufd(struct instructionIterator* it, struct as
 	asmOperand_decode_simd(it, &(cisc->ins[3].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 3), NULL, mem_addr);
 }
 
-static void cisc_decode_special_pslld(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_special_pslld(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
 		cisc->valid 										= 1;
 		cisc->nb_ins 										= 4;
@@ -2102,7 +2225,7 @@ static void cisc_decode_special_pslld(struct assembly* assembly, struct instruct
 	}
 }
 
-static void cisc_decode_special_psrld(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_special_psrld(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
 		cisc->valid 										= 1;
 		cisc->nb_ins 										= 4;
@@ -2149,7 +2272,7 @@ static void cisc_decode_special_psrld(struct assembly* assembly, struct instruct
 	}
 }
 
-static void cisc_decode_special_punpckldq(struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+static void cisc_decode_special_punpckldq(const struct assembly* assembly, struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
 	if (assembly->dyn_blocks[it->dyn_block_index].block->data[it->instruction_offset] == 0x66){
 		cisc->valid 										= 1;
 		cisc->nb_ins 										= 3;
@@ -2178,4 +2301,137 @@ static void cisc_decode_special_punpckldq(struct assembly* assembly, struct inst
 		asmOperand_decode_simd(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_READ_2, 0), NULL, mem_addr);
 		asmOperand_decode_simd(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_SET_FRAG(ASM_OPERAND_ROLE_WRITE_ALL, 1), NULL, mem_addr);
 	}
+}
+
+static void cisc_decode_generic_vex(struct instructionIterator* it, struct asmCiscIns* cisc, struct memAddress* mem_addr){
+	uint32_t length;
+
+	switch ((length = xed_decoded_inst_vector_length_bits(&(it->xedd)))){
+		case 128 	: {
+			cisc_decode_generic_simd(it, cisc, mem_addr, 4);
+
+			switch (cisc->ins[0].output_operand.type){
+				case ASM_OPERAND_IMM : {
+					log_err("this case is not supposed to happen");
+				}
+				case ASM_OPERAND_REG : {
+					int32_t simd_base;
+
+					if ((simd_base = ir_reg_get_simd_base(cisc->ins[0].output_operand.operand_type.reg)) != -1){
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins + 0, ir_register_simd_frag[simd_base][4], 32, 0x0000000000000000ULL)
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins + 1, ir_register_simd_frag[simd_base][5], 32, 0x0000000000000000ULL)
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins + 2, ir_register_simd_frag[simd_base][6], 32, 0x0000000000000000ULL)
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins + 3, ir_register_simd_frag[simd_base][7], 32, 0x0000000000000000ULL)
+
+						cisc->nb_ins += 4;
+					}
+					break;
+				}
+				case ASM_OPERAND_MEM : {
+					enum irRegister base 		= cisc->ins[cisc->nb_ins - 1].output_operand.operand_type.mem.base;
+					enum irRegister index 		= cisc->ins[cisc->nb_ins - 1].output_operand.operand_type.mem.index;
+					enum irRegister scale 		= cisc->ins[cisc->nb_ins - 1].output_operand.operand_type.mem.scale;
+					uint32_t 		disp 		= cisc->ins[cisc->nb_ins - 1].output_operand.operand_type.mem.disp;
+					ADDRESS 		con_addr 	= cisc->ins[cisc->nb_ins - 1].output_operand.operand_type.mem.con_addr;
+
+					if (con_addr == MEMADDRESS_INVALID){
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 0, base, index, scale, disp + 4 , MEMADDRESS_INVALID, 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 1, base, index, scale, disp + 8 , MEMADDRESS_INVALID, 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 2, base, index, scale, disp + 12, MEMADDRESS_INVALID, 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 3, base, index, scale, disp + 16, MEMADDRESS_INVALID, 32, 0)
+					}
+					else{
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 0, base, index, scale, disp + 4 , con_addr + 4 , 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 1, base, index, scale, disp + 8 , con_addr + 8 , 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 2, base, index, scale, disp + 12, con_addr + 12, 32, 0)
+						asmRisc_set_mem_cst(cisc->ins + cisc->nb_ins + 3, base, index, scale, disp + 16, con_addr + 16, 32, 0)
+					}
+
+					cisc->nb_ins += 4;
+
+					break;
+				}
+				
+			}
+
+			break;
+		}
+		case 256 	: {
+			cisc_decode_generic_simd(it, cisc, mem_addr, 8);
+			break;
+		}
+		default 	: {
+			log_err_m("incorrect VEX length: %u", length);
+		}
+	}
+}
+
+static void cisc_decode_special_vzeroall(struct instructionIterator* it, struct asmCiscIns* cisc){
+	cisc->valid 										= 1;
+	cisc->nb_ins 										= 64;
+
+	asmRisc_set_reg_cst(cisc->ins + 0 , IR_REG_XMM1_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 1 , IR_REG_XMM1_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 2 , IR_REG_XMM1_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 3 , IR_REG_XMM1_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 4 , IR_REG_XMM2_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 5 , IR_REG_XMM2_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 6 , IR_REG_XMM2_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 7 , IR_REG_XMM2_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 8 , IR_REG_XMM3_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 9 , IR_REG_XMM3_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 10, IR_REG_XMM3_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 11, IR_REG_XMM3_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 12, IR_REG_XMM4_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 13, IR_REG_XMM4_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 14, IR_REG_XMM4_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 15, IR_REG_XMM4_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 16, IR_REG_XMM5_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 17, IR_REG_XMM5_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 18, IR_REG_XMM5_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 19, IR_REG_XMM5_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 20, IR_REG_XMM6_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 21, IR_REG_XMM6_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 22, IR_REG_XMM6_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 23, IR_REG_XMM6_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 24, IR_REG_XMM7_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 25, IR_REG_XMM7_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 26, IR_REG_XMM7_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 27, IR_REG_XMM7_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 28, IR_REG_XMM8_1, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 29, IR_REG_XMM8_2, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 30, IR_REG_XMM8_3, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 31, IR_REG_XMM8_4, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 32, IR_REG_YMM1_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 33, IR_REG_YMM1_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 34, IR_REG_YMM1_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 35, IR_REG_YMM1_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 36, IR_REG_YMM2_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 37, IR_REG_YMM2_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 38, IR_REG_YMM2_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 39, IR_REG_YMM2_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 40, IR_REG_YMM3_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 41, IR_REG_YMM3_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 42, IR_REG_YMM3_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 43, IR_REG_YMM3_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 44, IR_REG_YMM4_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 45, IR_REG_YMM4_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 46, IR_REG_YMM4_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 47, IR_REG_YMM4_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 48, IR_REG_YMM5_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 49, IR_REG_YMM5_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 50, IR_REG_YMM5_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 51, IR_REG_YMM5_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 52, IR_REG_YMM6_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 53, IR_REG_YMM6_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 54, IR_REG_YMM6_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 55, IR_REG_YMM6_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 56, IR_REG_YMM7_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 57, IR_REG_YMM7_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 58, IR_REG_YMM7_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 59, IR_REG_YMM7_8, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 60, IR_REG_YMM8_5, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 61, IR_REG_YMM8_6, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 62, IR_REG_YMM8_7, 32, 0x0000000000000000ULL)
+	asmRisc_set_reg_cst(cisc->ins + 63, IR_REG_YMM8_8, 32, 0x0000000000000000ULL)
 }

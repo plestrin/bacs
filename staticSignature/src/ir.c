@@ -8,7 +8,7 @@
 #include "codeSignature.h"
 #include "base.h"
 
-struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
+struct ir* ir_create(const struct assembly* assembly, struct memTrace* mem_trace){
 	struct ir* ir;
 
 	ir = (struct ir*)malloc(sizeof(struct ir));
@@ -26,7 +26,7 @@ struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace){
 	return ir;
 }
 
-int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace){
+int32_t ir_init(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 
 	ir->range_seed = 1;
@@ -47,7 +47,7 @@ int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_t
 	return 0;
 }
 
-struct ir* ir_create_compound(struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+struct ir* ir_create_compound(const struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
 	struct ir* ir;
 
 	ir = (struct ir*)malloc(sizeof(struct ir));
@@ -65,7 +65,7 @@ struct ir* ir_create_compound(struct assembly* assembly, struct memTrace* mem_tr
 	return ir;
 }
 
-int32_t ir_init_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
+int32_t ir_init_compound(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component){
 	graph_init(&(ir->graph), sizeof(struct irOperation), sizeof(struct irDependence))
 
 	ir->range_seed = 1;
@@ -617,7 +617,7 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 	}
 }
 
-char* irOpcode_2_string(enum irOpcode opcode){
+const char* irOpcode_2_string(enum irOpcode opcode){
 	switch(opcode){
 		case IR_ADC 		: {return "adc";}
 		case IR_ADD 		: {return "add";}
@@ -654,7 +654,7 @@ char* irOpcode_2_string(enum irOpcode opcode){
 	return NULL;
 }
 
-char* irRegister_2_string(enum irRegister reg){
+const char* irRegister_2_string(enum irRegister reg){
 	switch(reg){
 		case IR_REG_EAX 	: {return "EAX";}
 		case IR_REG_AX 		: {return "AX";}
@@ -712,38 +712,6 @@ char* irRegister_2_string(enum irRegister reg){
 		case IR_REG_XMM8_2 	: {return "XMM7_2";}
 		case IR_REG_XMM8_3 	: {return "XMM7_3";}
 		case IR_REG_XMM8_4 	: {return "XMM7_4";}
-		case IR_REG_XMM9_1 	: {return "XMM8_1";}
-		case IR_REG_XMM9_2 	: {return "XMM8_2";}
-		case IR_REG_XMM9_3 	: {return "XMM8_3";}
-		case IR_REG_XMM9_4 	: {return "XMM8_4";}
-		case IR_REG_XMM10_1 : {return "XMM9_1";}
-		case IR_REG_XMM10_2 : {return "XMM9_2";}
-		case IR_REG_XMM10_3 : {return "XMM9_3";}
-		case IR_REG_XMM10_4 : {return "XMM9_4";}
-		case IR_REG_XMM11_1 : {return "XMM10_1";}
-		case IR_REG_XMM11_2 : {return "XMM10_2";}
-		case IR_REG_XMM11_3 : {return "XMM10_3";}
-		case IR_REG_XMM11_4 : {return "XMM10_4";}
-		case IR_REG_XMM12_1 : {return "XMM11_1";}
-		case IR_REG_XMM12_2 : {return "XMM11_2";}
-		case IR_REG_XMM12_3 : {return "XMM11_3";}
-		case IR_REG_XMM12_4 : {return "XMM11_4";}
-		case IR_REG_XMM13_1 : {return "XMM12_1";}
-		case IR_REG_XMM13_2 : {return "XMM12_2";}
-		case IR_REG_XMM13_3 : {return "XMM12_3";}
-		case IR_REG_XMM13_4 : {return "XMM12_4";}
-		case IR_REG_XMM14_1 : {return "XMM13_1";}
-		case IR_REG_XMM14_2 : {return "XMM13_2";}
-		case IR_REG_XMM14_3 : {return "XMM13_3";}
-		case IR_REG_XMM14_4 : {return "XMM13_4";}
-		case IR_REG_XMM15_1 : {return "XMM14_1";}
-		case IR_REG_XMM15_2 : {return "XMM14_2";}
-		case IR_REG_XMM15_3 : {return "XMM14_3";}
-		case IR_REG_XMM15_4 : {return "XMM14_4";}
-		case IR_REG_XMM16_1 : {return "XMM15_1";}
-		case IR_REG_XMM16_2 : {return "XMM15_2";}
-		case IR_REG_XMM16_3 : {return "XMM15_3";}
-		case IR_REG_XMM16_4 : {return "XMM15_4";}
 		case IR_REG_MMX1_1 	: {return "MMX0_1";}
 		case IR_REG_MMX1_2 	: {return "MMX0_2";}
 		case IR_REG_MMX2_1 	: {return "MMX1_1";}
@@ -760,6 +728,38 @@ char* irRegister_2_string(enum irRegister reg){
 		case IR_REG_MMX7_2 	: {return "MMX6_2";}
 		case IR_REG_MMX8_1 	: {return "MMX7_1";}
 		case IR_REG_MMX8_2 	: {return "MMX7_2";}
+		case IR_REG_YMM1_5 	: {return "YMM0_5";}
+		case IR_REG_YMM1_6 	: {return "YMM0_6";}
+		case IR_REG_YMM1_7 	: {return "YMM0_7";}
+		case IR_REG_YMM1_8 	: {return "YMM0_8";}
+		case IR_REG_YMM2_5 	: {return "YMM1_5";}
+		case IR_REG_YMM2_6 	: {return "YMM1_6";}
+		case IR_REG_YMM2_7 	: {return "YMM1_7";}
+		case IR_REG_YMM2_8 	: {return "YMM1_8";}
+		case IR_REG_YMM3_5 	: {return "YMM2_5";}
+		case IR_REG_YMM3_6 	: {return "YMM2_6";}
+		case IR_REG_YMM3_7 	: {return "YMM2_7";}
+		case IR_REG_YMM3_8 	: {return "YMM2_8";}
+		case IR_REG_YMM4_5 	: {return "YMM3_5";}
+		case IR_REG_YMM4_6 	: {return "YMM3_6";}
+		case IR_REG_YMM4_7 	: {return "YMM3_7";}
+		case IR_REG_YMM4_8 	: {return "YMM3_8";}
+		case IR_REG_YMM5_5 	: {return "YMM4_5";}
+		case IR_REG_YMM5_6 	: {return "YMM4_6";}
+		case IR_REG_YMM5_7 	: {return "YMM4_7";}
+		case IR_REG_YMM5_8 	: {return "YMM4_8";}
+		case IR_REG_YMM6_5 	: {return "YMM5_5";}
+		case IR_REG_YMM6_6 	: {return "YMM5_6";}
+		case IR_REG_YMM6_7 	: {return "YMM5_7";}
+		case IR_REG_YMM6_8 	: {return "YMM5_8";}
+		case IR_REG_YMM7_5 	: {return "YMM6_5";}
+		case IR_REG_YMM7_6 	: {return "YMM6_6";}
+		case IR_REG_YMM7_7 	: {return "YMM6_7";}
+		case IR_REG_YMM7_8 	: {return "YMM6_8";}
+		case IR_REG_YMM8_5 	: {return "YMM7_5";}
+		case IR_REG_YMM8_6 	: {return "YMM7_6";}
+		case IR_REG_YMM8_7 	: {return "YMM7_7";}
+		case IR_REG_YMM8_8 	: {return "YMM7_8";}
 		case IR_REG_TMP 	: {return "??";}
 	}
 

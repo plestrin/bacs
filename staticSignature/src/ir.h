@@ -47,7 +47,7 @@ enum irOpcode{
 
 #define NB_IR_OPCODE 30 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
 
-char* irOpcode_2_string(enum irOpcode opcode);
+const char* irOpcode_2_string(enum irOpcode opcode);
 
 enum irRegister{
 	IR_REG_EAX 		= 0,
@@ -106,60 +106,60 @@ enum irRegister{
 	IR_REG_XMM8_2 	= 53,
 	IR_REG_XMM8_3 	= 54,
 	IR_REG_XMM8_4 	= 55,
-	IR_REG_XMM9_1 	= 56,
-	IR_REG_XMM9_2 	= 57,
-	IR_REG_XMM9_3 	= 58,
-	IR_REG_XMM9_4 	= 59,
-	IR_REG_XMM10_1 	= 60,
-	IR_REG_XMM10_2 	= 61,
-	IR_REG_XMM10_3 	= 62,
-	IR_REG_XMM10_4 	= 63,
-	IR_REG_XMM11_1 	= 64,
-	IR_REG_XMM11_2 	= 65,
-	IR_REG_XMM11_3 	= 66,
-	IR_REG_XMM11_4 	= 67,
-	IR_REG_XMM12_1 	= 68,
-	IR_REG_XMM12_2 	= 69,
-	IR_REG_XMM12_3 	= 70,
-	IR_REG_XMM12_4 	= 71,
-	IR_REG_XMM13_1 	= 72,
-	IR_REG_XMM13_2 	= 73,
-	IR_REG_XMM13_3 	= 74,
-	IR_REG_XMM13_4 	= 75,
-	IR_REG_XMM14_1 	= 76,
-	IR_REG_XMM14_2 	= 77,
-	IR_REG_XMM14_3 	= 78,
-	IR_REG_XMM14_4 	= 79,
-	IR_REG_XMM15_1 	= 80,
-	IR_REG_XMM15_2 	= 81,
-	IR_REG_XMM15_3 	= 82,
-	IR_REG_XMM15_4 	= 83,
-	IR_REG_XMM16_1 	= 84,
-	IR_REG_XMM16_2 	= 85,
-	IR_REG_XMM16_3 	= 86,
-	IR_REG_XMM16_4 	= 87,
-	IR_REG_MMX1_1 	= 88,
-	IR_REG_MMX1_2 	= 89,
-	IR_REG_MMX2_1 	= 90,
-	IR_REG_MMX2_2 	= 91,
-	IR_REG_MMX3_1 	= 92,
-	IR_REG_MMX3_2 	= 93,
-	IR_REG_MMX4_1 	= 94,
-	IR_REG_MMX4_2 	= 95,
-	IR_REG_MMX5_1 	= 96,
-	IR_REG_MMX5_2 	= 97,
-	IR_REG_MMX6_1 	= 98,
-	IR_REG_MMX6_2 	= 99,
-	IR_REG_MMX7_1 	= 100,
-	IR_REG_MMX7_2 	= 101,
-	IR_REG_MMX8_1 	= 102,
-	IR_REG_MMX8_2 	= 103,
+	IR_REG_MMX1_1 	= 56,
+	IR_REG_MMX1_2 	= 57,
+	IR_REG_MMX2_1 	= 58,
+	IR_REG_MMX2_2 	= 59,
+	IR_REG_MMX3_1 	= 60,
+	IR_REG_MMX3_2 	= 61,
+	IR_REG_MMX4_1 	= 62,
+	IR_REG_MMX4_2 	= 63,
+	IR_REG_MMX5_1 	= 64,
+	IR_REG_MMX5_2 	= 65,
+	IR_REG_MMX6_1 	= 66,
+	IR_REG_MMX6_2 	= 67,
+	IR_REG_MMX7_1 	= 68,
+	IR_REG_MMX7_2 	= 69,
+	IR_REG_MMX8_1 	= 70,
+	IR_REG_MMX8_2 	= 71,
+	IR_REG_YMM1_5 	= 72,
+	IR_REG_YMM1_6 	= 73,
+	IR_REG_YMM1_7 	= 74,
+	IR_REG_YMM1_8 	= 75,
+	IR_REG_YMM2_5 	= 76,
+	IR_REG_YMM2_6 	= 77,
+	IR_REG_YMM2_7 	= 78,
+	IR_REG_YMM2_8 	= 79,
+	IR_REG_YMM3_5 	= 80,
+	IR_REG_YMM3_6 	= 81,
+	IR_REG_YMM3_7 	= 82,
+	IR_REG_YMM3_8 	= 83,
+	IR_REG_YMM4_5 	= 84,
+	IR_REG_YMM4_6 	= 85,
+	IR_REG_YMM4_7 	= 86,
+	IR_REG_YMM4_8 	= 87,
+	IR_REG_YMM5_5 	= 88,
+	IR_REG_YMM5_6 	= 89,
+	IR_REG_YMM5_7 	= 90,
+	IR_REG_YMM5_8 	= 91,
+	IR_REG_YMM6_5 	= 92,
+	IR_REG_YMM6_6 	= 93,
+	IR_REG_YMM6_7 	= 94,
+	IR_REG_YMM6_8 	= 95,
+	IR_REG_YMM7_5 	= 96,
+	IR_REG_YMM7_6 	= 97,
+	IR_REG_YMM7_7 	= 98,
+	IR_REG_YMM7_8 	= 99,
+	IR_REG_YMM8_5 	= 100,
+	IR_REG_YMM8_6 	= 101,
+	IR_REG_YMM8_7 	= 102,
+	IR_REG_YMM8_8 	= 103,
 	IR_REG_TMP 		= 104 	/* importer */
 };
 
 #define NB_IR_REGISTER 105 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
 
-char* irRegister_2_string(enum irRegister reg);
+const char* irRegister_2_string(enum irRegister reg);
 
 enum irOperationType{
 	IR_OPERATION_TYPE_IN_REG,
@@ -292,8 +292,8 @@ struct ir{
 #define IR_INVALID_RANGE_SEED 0
 #define ir_drop_range(ir) ((ir)->range_seed ++)
 
-struct ir* ir_create(struct assembly* assembly, struct memTrace* mem_trace);
-int32_t ir_init(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace);
+struct ir* ir_create(const struct assembly* assembly, struct memTrace* mem_trace);
+int32_t ir_init(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace);
 
 struct irComponent{
 	uint32_t 	instruction_start;
@@ -301,8 +301,8 @@ struct irComponent{
 	struct ir*	ir;
 };
 
-struct ir* ir_create_compound(struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
-int32_t ir_init_compound(struct ir* ir, struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
+struct ir* ir_create_compound(const struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
+int32_t ir_init_compound(struct ir* ir, const struct assembly* assembly, struct memTrace* mem_trace, struct irComponent** ir_component_buffer, uint32_t nb_ir_component);
 
 struct node* ir_add_in_reg(struct ir* ir, uint32_t index, enum irRegister reg, uint32_t primer);
 

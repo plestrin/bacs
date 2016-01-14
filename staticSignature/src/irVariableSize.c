@@ -64,38 +64,6 @@ const uint8_t irRegisterSize[NB_IR_REGISTER] = {
 	32, 	/* IR_REG_XMM8_2 	*/
 	32, 	/* IR_REG_XMM8_3 	*/
 	32, 	/* IR_REG_XMM8_4 	*/
-	32, 	/* IR_REG_XMM9_1 	*/
-	32, 	/* IR_REG_XMM9_2 	*/
-	32, 	/* IR_REG_XMM9_3 	*/
-	32, 	/* IR_REG_XMM9_4 	*/
-	32, 	/* IR_REG_XMM10_1 	*/
-	32, 	/* IR_REG_XMM10_2 	*/
-	32, 	/* IR_REG_XMM10_3 	*/
-	32, 	/* IR_REG_XMM10_4 	*/
-	32, 	/* IR_REG_XMM11_1 	*/
-	32, 	/* IR_REG_XMM11_2 	*/
-	32, 	/* IR_REG_XMM11_3 	*/
-	32, 	/* IR_REG_XMM11_4 	*/
-	32, 	/* IR_REG_XMM12_1 	*/
-	32, 	/* IR_REG_XMM12_2 	*/
-	32, 	/* IR_REG_XMM12_3 	*/
-	32, 	/* IR_REG_XMM12_4 	*/
-	32, 	/* IR_REG_XMM13_1 	*/
-	32, 	/* IR_REG_XMM13_2 	*/
-	32, 	/* IR_REG_XMM13_3 	*/
-	32, 	/* IR_REG_XMM13_4 	*/
-	32, 	/* IR_REG_XMM14_1 	*/
-	32, 	/* IR_REG_XMM14_2 	*/
-	32, 	/* IR_REG_XMM14_3 	*/
-	32, 	/* IR_REG_XMM14_4 	*/
-	32, 	/* IR_REG_XMM15_1 	*/
-	32, 	/* IR_REG_XMM15_2 	*/
-	32, 	/* IR_REG_XMM15_3 	*/
-	32, 	/* IR_REG_XMM15_4 	*/
-	32, 	/* IR_REG_XMM16_1 	*/
-	32, 	/* IR_REG_XMM16_2 	*/
-	32, 	/* IR_REG_XMM16_3 	*/
-	32, 	/* IR_REG_XMM16_4 	*/
 	32, 	/* IR_REG_MMX1_1 	*/
 	32, 	/* IR_REG_MMX1_2 	*/
 	32, 	/* IR_REG_MMX2_1 	*/
@@ -112,6 +80,38 @@ const uint8_t irRegisterSize[NB_IR_REGISTER] = {
 	32, 	/* IR_REG_MMX7_2  	*/
 	32, 	/* IR_REG_MMX8_1  	*/
 	32, 	/* IR_REG_MMX8_2  	*/
+	32, 	/* IR_REG_YMM1_5 	*/
+	32, 	/* IR_REG_YMM1_6 	*/
+	32, 	/* IR_REG_YMM1_7 	*/
+	32, 	/* IR_REG_YMM1_8 	*/
+	32, 	/* IR_REG_YMM2_5 	*/
+	32, 	/* IR_REG_YMM2_6 	*/
+	32, 	/* IR_REG_YMM2_7 	*/
+	32, 	/* IR_REG_YMM2_8 	*/
+	32, 	/* IR_REG_YMM3_5 	*/
+	32, 	/* IR_REG_YMM3_6 	*/
+	32, 	/* IR_REG_YMM3_7 	*/
+	32, 	/* IR_REG_YMM3_8 	*/
+	32, 	/* IR_REG_YMM4_5 	*/
+	32, 	/* IR_REG_YMM4_6 	*/
+	32, 	/* IR_REG_YMM4_7 	*/
+	32, 	/* IR_REG_YMM4_8 	*/
+	32, 	/* IR_REG_YMM5_5 	*/
+	32, 	/* IR_REG_YMM5_6 	*/
+	32, 	/* IR_REG_YMM5_7 	*/
+	32, 	/* IR_REG_YMM5_8 	*/
+	32, 	/* IR_REG_YMM6_5 	*/
+	32, 	/* IR_REG_YMM6_6 	*/
+	32, 	/* IR_REG_YMM6_7 	*/
+	32, 	/* IR_REG_YMM6_8 	*/
+	32, 	/* IR_REG_YMM7_5 	*/
+	32, 	/* IR_REG_YMM7_6 	*/
+	32, 	/* IR_REG_YMM7_7 	*/
+	32, 	/* IR_REG_YMM7_8 	*/
+	32, 	/* IR_REG_YMM8_5 	*/
+	32, 	/* IR_REG_YMM8_6 	*/
+	32, 	/* IR_REG_YMM8_7 	*/
+	32, 	/* IR_REG_YMM8_8 	*/
 	0 		/* IR_REG_TMP 		*/
 };
 
