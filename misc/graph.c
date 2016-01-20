@@ -345,7 +345,7 @@ void graph_remove_edge(struct graph* graph, struct edge* edge){
 	graph_free_edge(graph, edge);
 }
 
-int32_t graph_copy(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
+int32_t graph_copy(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
 	struct node* node_cursor;
 	struct edge* edge_cursor;
 	struct node* new_node;
@@ -411,7 +411,7 @@ int32_t graph_copy(struct graph* graph_dst, struct graph* graph_src, int32_t(*no
 	return 0;
 }
 
-struct graph* graph_clone(struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
+struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
 	struct graph* graph;
 
 	graph = (struct graph*)malloc(sizeof(struct graph));
@@ -435,7 +435,7 @@ struct graph* graph_clone(struct graph* graph_src, int32_t(*node_copy)(void*,con
 	return graph;
 }
 
-int32_t graph_concat(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
+int32_t graph_concat(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
 	if (graph_dst->node_data_size != graph_src->node_data_size){
 		log_err("unable to concat graphs with different node size");
 		return -1;

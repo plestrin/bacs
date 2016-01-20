@@ -22,13 +22,21 @@ static const xed_iclass_enum_t crypto_instruction[] = {
 
 static const xed_iclass_enum_t bitwise_instruction[] = {
 	XED_ICLASS_AND,
+	XED_ICLASS_PAND,
+	XED_ICLASS_VPAND,
 	XED_ICLASS_NOT,
 	XED_ICLASS_OR,
+	XED_ICLASS_POR,
+	XED_ICLASS_VPOR,
 	XED_ICLASS_ROL,
 	XED_ICLASS_ROR,
 	XED_ICLASS_SHR,
 	XED_ICLASS_SHL,
-	XED_ICLASS_XOR
+	XED_ICLASS_XOR,
+	XED_ICLASS_PXOR,
+	XED_ICLASS_VPXOR,
+	XED_ICLASS_XORPS,
+	XED_ICLASS_VXORPS
 };
 
 #define nb_bitwise_instruction (sizeof(bitwise_instruction) / sizeof(xed_iclass_enum_t))

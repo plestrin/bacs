@@ -30,7 +30,7 @@ uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struc
 
 void memAddress_print(struct memAddress* address);
 
-static inline ADDRESS memAddress_get_and_check(struct memAddress* mem_addr, uint32_t descriptor){
+static inline ADDRESS memAddress_get_and_check(const struct memAddress* mem_addr, uint32_t descriptor){
 	if (mem_addr == NULL){
 		return MEMADDRESS_INVALID;
 	}
@@ -43,7 +43,7 @@ static inline ADDRESS memAddress_get_and_check(struct memAddress* mem_addr, uint
 	return MEMADDRESS_INVALID;
 }
 
-static inline ADDRESS memAddress_search_and_get(struct memAddress* mem_addr, uint32_t descriptor, uint32_t length){
+static inline ADDRESS memAddress_search_and_get(const struct memAddress* mem_addr, uint32_t descriptor, uint32_t length){
 	uint32_t i;
 
 	if (mem_addr == NULL){

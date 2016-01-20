@@ -113,10 +113,10 @@ void graph_remove_edge(struct graph* graph, struct edge* edge);
 #define edge_get_prev_src(edge) 		((edge)->src_prev)
 #define edge_get_prev_dst(edge) 		((edge)->dst_prev)
 
-int32_t graph_copy(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
+int32_t graph_copy(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
 
-struct graph* graph_clone(struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
-int32_t graph_concat(struct graph* graph_dst, struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
+struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
+int32_t graph_concat(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
 
 #define graph_clean(graph) 																												\
 	while((graph)->node_linkedList_head != NULL){ 																						\
