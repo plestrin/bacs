@@ -3,9 +3,16 @@
 
 #include "ir.h"
 
-extern const uint8_t irRegisterSize[NB_IR_REGISTER];
+extern const uint8_t irRegisterSize[NB_IR_STD_REGISTER];
 
-#define irRegister_get_size(reg) irRegisterSize[reg]
+static inline uint8_t irRegister_get_size(enum irRegister reg){
+	if (irRegister_is_std(reg)){
+		return irRegisterSize[reg];
+	}
+	else{
+		return irRegister_simd_get_size(reg);
+	}
+}
 
 void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification);
 

@@ -5,7 +5,7 @@
 
 #include "irMemory.h"
 #include "irVariableRange.h"
-#include "irRenameEngine.h"
+#include "irBuilder.h"
 #include "dagPartialOrder.h"
 #include "base.h"
 
@@ -506,7 +506,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 					log_err("unable to copy edge(s)");
 				}
 				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
-					irRenameEngine_change_node(ir->alias_buffer, node2, new_inst);
+					irBuilder_chg_final_node(&(ir->builder), node2, new_inst);
 				}
 
 				result = 1;
@@ -519,7 +519,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 					log_err("unable to copy edge(s)");
 				}
 				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
-					irRenameEngine_change_node(ir->alias_buffer, node2, edge_get_src(edge_cursor));
+					irBuilder_chg_final_node(&(ir->builder), node2, edge_get_src(edge_cursor));
 				}
 
 				result = 1;

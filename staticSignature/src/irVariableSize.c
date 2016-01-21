@@ -7,7 +7,7 @@
 #include "dagPartialOrder.h"
 #include "base.h"
 
-const uint8_t irRegisterSize[NB_IR_REGISTER] = {
+const uint8_t irRegisterSize[NB_IR_STD_REGISTER] = {
 	32, 	/* IR_REG_EAX 		*/
 	16, 	/* IR_REG_AX 		*/
 	8, 		/* IR_REG_AH 		*/
@@ -32,86 +32,6 @@ const uint8_t irRegisterSize[NB_IR_REGISTER] = {
 	16, 	/* IR_REG_SI 		*/
 	32, 	/* IR_REG_EDI 		*/
 	16, 	/* IR_REG_DI 		*/
-	32, 	/* IR_REG_XMM1_1 	*/
-	32, 	/* IR_REG_XMM1_2 	*/
-	32, 	/* IR_REG_XMM1_3 	*/
-	32, 	/* IR_REG_XMM1_4 	*/
-	32, 	/* IR_REG_XMM2_1 	*/
-	32, 	/* IR_REG_XMM2_2 	*/
-	32, 	/* IR_REG_XMM2_3 	*/
-	32, 	/* IR_REG_XMM2_4 	*/
-	32, 	/* IR_REG_XMM3_1 	*/
-	32, 	/* IR_REG_XMM3_2 	*/
-	32, 	/* IR_REG_XMM3_3 	*/
-	32, 	/* IR_REG_XMM3_4 	*/
-	32, 	/* IR_REG_XMM4_1 	*/
-	32, 	/* IR_REG_XMM4_2 	*/
-	32, 	/* IR_REG_XMM4_3 	*/
-	32, 	/* IR_REG_XMM4_4 	*/
-	32, 	/* IR_REG_XMM5_1 	*/
-	32, 	/* IR_REG_XMM5_2 	*/
-	32, 	/* IR_REG_XMM5_3 	*/
-	32, 	/* IR_REG_XMM5_4 	*/
-	32, 	/* IR_REG_XMM6_1 	*/
-	32, 	/* IR_REG_XMM6_2 	*/
-	32, 	/* IR_REG_XMM6_3 	*/
-	32, 	/* IR_REG_XMM6_4 	*/
-	32, 	/* IR_REG_XMM7_1 	*/
-	32, 	/* IR_REG_XMM7_2 	*/
-	32, 	/* IR_REG_XMM7_3 	*/
-	32, 	/* IR_REG_XMM7_4 	*/
-	32, 	/* IR_REG_XMM8_1 	*/
-	32, 	/* IR_REG_XMM8_2 	*/
-	32, 	/* IR_REG_XMM8_3 	*/
-	32, 	/* IR_REG_XMM8_4 	*/
-	32, 	/* IR_REG_MMX1_1 	*/
-	32, 	/* IR_REG_MMX1_2 	*/
-	32, 	/* IR_REG_MMX2_1 	*/
-	32, 	/* IR_REG_MMX2_2 	*/
-	32, 	/* IR_REG_MMX3_1 	*/
-	32, 	/* IR_REG_MMX3_2 	*/
-	32, 	/* IR_REG_MMX4_1 	*/
-	32, 	/* IR_REG_MMX4_2 	*/
-	32, 	/* IR_REG_MMX5_1 	*/
-	32, 	/* IR_REG_MMX5_2 	*/
-	32, 	/* IR_REG_MMX6_1 	*/
-	32, 	/* IR_REG_MMX6_2 	*/
-	32, 	/* IR_REG_MMX7_1  	*/
-	32, 	/* IR_REG_MMX7_2  	*/
-	32, 	/* IR_REG_MMX8_1  	*/
-	32, 	/* IR_REG_MMX8_2  	*/
-	32, 	/* IR_REG_YMM1_5 	*/
-	32, 	/* IR_REG_YMM1_6 	*/
-	32, 	/* IR_REG_YMM1_7 	*/
-	32, 	/* IR_REG_YMM1_8 	*/
-	32, 	/* IR_REG_YMM2_5 	*/
-	32, 	/* IR_REG_YMM2_6 	*/
-	32, 	/* IR_REG_YMM2_7 	*/
-	32, 	/* IR_REG_YMM2_8 	*/
-	32, 	/* IR_REG_YMM3_5 	*/
-	32, 	/* IR_REG_YMM3_6 	*/
-	32, 	/* IR_REG_YMM3_7 	*/
-	32, 	/* IR_REG_YMM3_8 	*/
-	32, 	/* IR_REG_YMM4_5 	*/
-	32, 	/* IR_REG_YMM4_6 	*/
-	32, 	/* IR_REG_YMM4_7 	*/
-	32, 	/* IR_REG_YMM4_8 	*/
-	32, 	/* IR_REG_YMM5_5 	*/
-	32, 	/* IR_REG_YMM5_6 	*/
-	32, 	/* IR_REG_YMM5_7 	*/
-	32, 	/* IR_REG_YMM5_8 	*/
-	32, 	/* IR_REG_YMM6_5 	*/
-	32, 	/* IR_REG_YMM6_6 	*/
-	32, 	/* IR_REG_YMM6_7 	*/
-	32, 	/* IR_REG_YMM6_8 	*/
-	32, 	/* IR_REG_YMM7_5 	*/
-	32, 	/* IR_REG_YMM7_6 	*/
-	32, 	/* IR_REG_YMM7_7 	*/
-	32, 	/* IR_REG_YMM7_8 	*/
-	32, 	/* IR_REG_YMM8_5 	*/
-	32, 	/* IR_REG_YMM8_6 	*/
-	32, 	/* IR_REG_YMM8_7 	*/
-	32, 	/* IR_REG_YMM8_8 	*/
 	0 		/* IR_REG_TMP 		*/
 };
 

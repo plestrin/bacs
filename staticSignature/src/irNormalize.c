@@ -509,8 +509,9 @@ void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, ui
 		return;
 	}
 
-	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL;){
+	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL; ){
 		operation = ir_node_get_operation(node_cursor);
+
 		if (operation->type == IR_OPERATION_TYPE_INST){
 			#ifdef IR_FULL_CHECK
 			local_opcode = operation->operation_type.inst.opcode;
@@ -568,17 +569,46 @@ void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, ui
 
 void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification){
 	struct node* 		node_cursor;
+	struct node* 		next_node_cursor;
 	struct irOperation* operation_cursor;
+	struct node* 		node_operand;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
 		return;
 	}
 
-	for(node_cursor = graph_get_tail_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_prev(node_cursor)){
+	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL; ){
 		operation_cursor = ir_node_get_operation(node_cursor);
+
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_XOR){
 			ir_normalize_simplify_instruction_symbolic_xor(ir, node_cursor, modification);
+			if (node_cursor->nb_edge_dst == 1){
+				node_operand = edge_get_src(node_get_head_edge_dst(node_cursor));
+				if (ir_node_get_operation(node_operand)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_operand)) == 0){
+					ir_merge_equivalent_node(ir, node_operand, node_cursor);
+					*modification = 1;
+				}
+			}
+		}
+
+		if (next_node_cursor != NULL){
+			if (node_get_prev(next_node_cursor) != node_cursor){
+				node_cursor = node_get_prev(next_node_cursor);
+			}
+			else{
+				next_node_cursor = node_cursor;
+				node_cursor = node_get_prev(node_cursor);
+			}
+		}
+		else{
+			if (graph_get_tail_node(&(ir->graph)) != node_cursor){
+				node_cursor = graph_get_tail_node(&(ir->graph));
+			}
+			else{
+				next_node_cursor = node_cursor;
+				node_cursor = node_get_prev(node_cursor);
+			}
 		}
 	}
 

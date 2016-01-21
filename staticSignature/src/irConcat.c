@@ -3,18 +3,17 @@
 #include <string.h>
 
 #include "irConcat.h"
-#include "irImporterAsm.h"
+#include "irBuilder.h"
 #include "base.h"
 
 struct irCopyArg{
-	uint32_t 				seed;
-	uint32_t 				order;
-	struct node* 			prev_mem_access;
-	struct node* 			next_mem_access;
-	int32_t 				off_dst;
-	uint32_t* 				stack;
-	uint32_t 				stack_ptr;
-	uint32_t 				max_dst;
+	uint32_t 		seed;
+	uint32_t 		order;
+	struct node* 	prev_mem_access;
+	struct node* 	next_mem_access;
+	int32_t 		off_dst;
+	uint32_t* 		stack;
+	uint32_t 		stack_ptr;
 };
 
 int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
@@ -54,7 +53,6 @@ int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 	: {
-			copy_arg->max_dst = max(copy_arg->max_dst, op_dst->operation_type.inst.dst);
 			if (op_dst->operation_type.inst.dst <= IR_CALL_STACK_PTR){
 				if (IR_CALL_STACK_PTR - op_dst->operation_type.inst.dst > copy_arg->stack_ptr){
 					log_err("the bottom of the stack has been reached");
@@ -87,25 +85,24 @@ int32_t irDependence_copy(void* data_dst, const void* data_src, void* arg){
 	return 0;
 }
 
-int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* engine){
+int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src){
 	struct irCopyArg 	copy_arg;
 	struct node* 		node_cursor;
 	struct irOperation* operation_cursor;
 	struct node* 		ref;
 
 	copy_arg.seed 				= ir_dst->range_seed;
-	copy_arg.prev_mem_access 	= irRenameEngine_get_mem_order(engine);
-	copy_arg.next_mem_access 	= irRenameEngine_get_mem_order(engine);
+	copy_arg.prev_mem_access 	= irBuilder_get_mem_order(&(ir_dst->builder));
+	copy_arg.next_mem_access 	= irBuilder_get_mem_order(&(ir_dst->builder));
 	if (copy_arg.prev_mem_access != NULL){
 		copy_arg.order 			= ir_node_get_operation(copy_arg.prev_mem_access)->operation_type.mem.order;
 	}
 	else{
 		copy_arg.order 			= 1;
 	}
-	copy_arg.off_dst 			= irRenameEngine_get_call_id(engine) - IR_CALL_STACK_PTR;
-	copy_arg.stack 				= engine->ir->stack;
-	copy_arg.stack_ptr 			= engine->ir->stack_ptr;
-	copy_arg.max_dst 			= 0;
+	copy_arg.off_dst 			= irBuilder_get_call_id(&(ir_dst->builder)) - IR_CALL_STACK_PTR;
+	copy_arg.stack 				= ir_dst->builder.stack;
+	copy_arg.stack_ptr 			= ir_dst->builder.stack_ptr;
 
 	if (graph_concat(&(ir_dst->graph), &(ir_src->graph), irOperation_copy, irDependence_copy, &copy_arg)){
 		log_err("unable to concat graph");
@@ -116,9 +113,9 @@ int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* e
 		operation_cursor = ir_node_get_operation(node_cursor->ptr);
 
 		if ((operation_cursor->type == IR_OPERATION_TYPE_IN_REG) && (operation_cursor->operation_type.in_reg.primer == IR_IN_REG_IS_PRIMER)){
-			ref = irRenameEngine_get_register_ref(engine, operation_cursor->operation_type.in_reg.reg, operation_cursor->index, IR_OPERATION_DST_UNKOWN);
+			ref = irBuilder_get_std_register_ref(&(ir_dst->builder), ir_dst, operation_cursor->operation_type.in_reg.reg, operation_cursor->index);
 			if (ref == NULL){
-				log_err("unable to register reference from the renaming engine");
+				log_err("unable to register reference from the builder");
 			}
 			else{
 				graph_transfert_src_edge(&(ir_dst->graph), ref, (struct node*)node_cursor->ptr);
@@ -128,10 +125,9 @@ int32_t ir_concat(struct ir* ir_dst, struct ir* ir_src, struct irRenameEngine* e
 		}
 	}
 
-	irRenameEngine_propagate_alias(engine, ir_src->alias_buffer);
-	irRenameEngine_set_mem_order(engine, copy_arg.next_mem_access);
-	irRenameEngine_update_call_stack(engine, ir_src->stack, ir_src->stack_ptr);
-	engine->func_id += copy_arg.max_dst - IR_CALL_STACK_PTR;
+	irBuilder_propagate_alias(&(ir_dst->builder), &(ir_src->builder));
+	irBuilder_set_mem_order(&(ir_dst->builder), copy_arg.next_mem_access);
+	irBuilder_update_call_stack(&(ir_dst->builder), &(ir_src->builder));
 
 	ir_drop_range(ir_dst);
 

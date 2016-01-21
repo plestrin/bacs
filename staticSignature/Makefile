@@ -30,7 +30,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)cmReaderJSON.o 			\
 					$(BUILD_DIR)ir.o 					\
 					$(BUILD_DIR)irImporterAsm.o 		\
-					$(BUILD_DIR)irRenameEngine.o 		\
+					$(BUILD_DIR)irBuilder.o 			\
 					$(BUILD_DIR)irConcat.o 				\
 					$(BUILD_DIR)irNormalize.o 			\
 					$(BUILD_DIR)irMemory.o 				\
@@ -64,7 +64,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)arrayMinCoverage.o
 
 ifeq ($(DEBUG),1)
-CFLAGS			:= $(CFLAGS) -g3 -DIR_FULL_CHECK
+CFLAGS			:= $(CFLAGS) -g3 -DIR_FULL_CHECK -DEXTRA_CHECK
 else
 CFLAGS			:= $(CFLAGS) -O2
 endif
