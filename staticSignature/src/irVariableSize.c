@@ -133,15 +133,14 @@ static void irVariableSize_remove_size_convertor(struct ir* ir){
 								else{
 									log_err("unable to add immediate to IR");
 								}
+								if (ir_add_dependence(ir, operand, shift, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+									log_err("unable to add dependency to IR");
+								}
 							}
 							else{
 								log_err("unable to add instruction to IR");
 								break;
 							}
-						}
-
-						if (ir_add_dependence(ir, operand, shift, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-							log_err("unable to add dependency to IR");
 						}
 
 						if (ir_add_dependence(ir, shift, edge_get_dst(edge_cursor), ir_edge_get_dependence(edge_cursor)->type) == NULL){
@@ -327,7 +326,6 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 		if (operation_cursor->size < 32){
 			switch (operation_cursor->type){
 				case IR_OPERATION_TYPE_IN_REG 	: {
-					log_warn_m("register of size: %u, this case is not implemented", operation_cursor->size);
 					break;
 				}
 				case IR_OPERATION_TYPE_IN_MEM 	: {
