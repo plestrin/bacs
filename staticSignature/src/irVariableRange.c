@@ -51,12 +51,13 @@ static void irVariableRange_apply_shift(struct node* node, void(*func)(struct va
 
 	operation = ir_node_get_operation(node);
 
-	edge_cursor = node_get_head_edge_dst(node);
-	if (edge_cursor == NULL){
+	if (node->nb_edge_dst != 2){
 		log_err("incorrect instruction format, run check");
 		variableRange_init_size(&(operation->operation_type.inst.range), operation->size);
 		return;
 	}
+
+	edge_cursor = node_get_head_edge_dst(node);
 	node_cursor = edge_get_src(edge_cursor);
 
 	if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
@@ -115,7 +116,6 @@ static void irVariableRange_apply_shift(struct node* node, void(*func)(struct va
 		irVariableRange_compute(node_cursor, ptr, seed);
 		func(&(operation->operation_type.inst.range), ptr, operation->size);
 	}
-
 }
 
 void irVariableRange_compute(struct node* node, struct variableRange* range_dst, uint32_t seed){
