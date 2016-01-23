@@ -69,19 +69,14 @@ class recipe(object):
 			cmd_l = [pin_path, "-t", tool_path, "-o", folder, "-w", whiteList_path + self.name + ".lst"]
 			cmd_l.extend(self.trace_arg)
 			cmd_l.extend(["--", self.trace])
-			process = subprocess.Popen(cmd_l, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+			process = subprocess.Popen(cmd_l, stdout = self.log, stderr = subprocess.STDOUT)
 			process.wait()
 			time_stop = time.time()
-
-			output_val = process.communicate()
-			self.log.write(output_val[0])
-			self.log.write(output_val[1])
 
 			if process.returncode == 0:
 				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
 			else:
 				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-				print(output_val[1])
 		else:
 			sys.stdout.write("\x1b[36mSKIP\x1b[0m\n")
 
@@ -108,13 +103,12 @@ class recipe(object):
 		cmd.extend(self.arg)
 
 		time_start = time.time()
-		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		output_val = process.communicate()
 		process.wait()
 		time_stop = time.time()
 			
 		self.log.write(output_val[0])
-		self.log.write(output_val[1])
 
 		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
@@ -150,7 +144,7 @@ class recipe(object):
 
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-			print(output_val[1])
+			print(output_val[0])
 
 	def __del__(self):
 		if self.log != None:

@@ -533,11 +533,11 @@ void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, ui
 				local_modification = 0;
 			}
 			#else
-			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
-				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification);
-			}
 			if (symbolic_simplify[operation->operation_type.inst.opcode] != NULL){
 				symbolic_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification);
+			}
+			if (numeric_simplify[operation->operation_type.inst.opcode] != NULL){
+				numeric_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification);
 			}
 			if (rewrite_simplify[operation->operation_type.inst.opcode] != NULL){
 				rewrite_simplify[operation->operation_type.inst.opcode](ir, node_cursor, modification, final);
@@ -567,46 +567,26 @@ void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, ui
 }
 
 void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification){
-	struct node* 		node_cursor;
-	struct node* 		next_node_cursor;
-	struct irOperation* operation_cursor;
-	struct node* 		node_operand;
+	struct irNodeIterator 	it;
+	struct irOperation* 	operation_cursor;
+	struct node* 			node_operand;
 
 	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
 		return;
 	}
 
-	for(node_cursor = graph_get_tail_node(&(ir->graph)), next_node_cursor = NULL; node_cursor != NULL; ){
-		operation_cursor = ir_node_get_operation(node_cursor);
+	for(irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
 
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_XOR){
-			ir_normalize_simplify_instruction_symbolic_xor(ir, node_cursor, modification);
-			if (node_cursor->nb_edge_dst == 1){
-				node_operand = edge_get_src(node_get_head_edge_dst(node_cursor));
+			ir_normalize_simplify_instruction_symbolic_xor(ir, irNodeIterator_get_node(it), modification);
+			if (irNodeIterator_get_node(it)->nb_edge_dst == 1){
+				node_operand = edge_get_src(node_get_head_edge_dst(irNodeIterator_get_node(it)));
 				if (ir_node_get_operation(node_operand)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_operand)) == 0){
-					ir_merge_equivalent_node(ir, node_operand, node_cursor);
+					ir_merge_equivalent_node(ir, node_operand, irNodeIterator_get_node(it));
 					*modification = 1;
 				}
-			}
-		}
-
-		if (next_node_cursor != NULL){
-			if (node_get_prev(next_node_cursor) != node_cursor){
-				node_cursor = node_get_prev(next_node_cursor);
-			}
-			else{
-				next_node_cursor = node_cursor;
-				node_cursor = node_get_prev(node_cursor);
-			}
-		}
-		else{
-			if (graph_get_tail_node(&(ir->graph)) != node_cursor){
-				node_cursor = graph_get_tail_node(&(ir->graph));
-			}
-			else{
-				next_node_cursor = node_cursor;
-				node_cursor = node_get_prev(node_cursor);
 			}
 		}
 	}
@@ -1760,7 +1740,7 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 					size = ir_node_get_operation(operand_list[i].node)->size;
 					ir_remove_dependence(ir, operand_list[i - 1].edge);
 					ir_remove_dependence(ir, operand_list[i].edge);
-					imm_zero = ir_add_immediate(ir, size, 0);
+					imm_zero = ir_insert_immediate(ir, node, size, 0);
 					if (imm_zero != NULL){
 						if (ir_add_dependence(ir, imm_zero, node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 							log_err("unable to add dependency to IR");
