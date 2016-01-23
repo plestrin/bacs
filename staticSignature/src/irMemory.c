@@ -6,7 +6,6 @@
 #include "irMemory.h"
 #include "irVariableRange.h"
 #include "irBuilder.h"
-#include "dagPartialOrder.h"
 #include "base.h"
 
 #define IRMEMORY_ALIAS_HEURISTIC_ESP 		1

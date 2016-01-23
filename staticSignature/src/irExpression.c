@@ -18,7 +18,7 @@ struct irAffineTerm{
 #define irAffineTerm_is_signed(affine_term) 		((affine_term)->sign == 1)
 #define irAffineTerm_get_coef(affine_term, size)	((affine_term)->coef & (0xffffffffffffffffULL >> (64 - (size))))
 
-static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir, uint32_t size){
+static struct node* irAffineTerm_export(struct node* root, const struct irAffineTerm* term, struct ir* ir, uint32_t size){
 	uint64_t 		coef;
 	struct node*	new_op = NULL;
 	struct node* 	new_im;
@@ -26,14 +26,14 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 	coef = irAffineTerm_get_coef(term, size);
 
 	if (term->variable == NULL || coef == 0){
-		return ir_add_immediate(ir, size, term->coef);
+		return ir_insert_immediate(ir, root, size, term->coef);
 	}
 
 	if (coef == 1){
 		return term->variable;
 	}
 	else if ((coef & (0xffffffffffffffffULL >> (64 - size))) == (0xffffffffffffffffULL >> (64 - size)) && irAffineTerm_is_signed(term)){
-		if ((new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_NEG, IR_OPERATION_DST_UNKOWN)) != NULL){
+		if ((new_op = ir_insert_inst(ir, root, IR_OPERATION_INDEX_UNKOWN, size, IR_NEG, IR_OPERATION_DST_UNKOWN)) != NULL){
 			if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 				log_err("unable to add depedence to IR");
 			}
@@ -44,28 +44,29 @@ static struct node* irAffineTerm_export(struct irAffineTerm* term, struct ir* ir
 		return new_op;
 	}
 	else{
-		if ((new_im = ir_add_immediate(ir, size, term->coef)) != NULL){
-			if (irAffineTerm_is_signed(term)){
-				new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_IMUL, IR_OPERATION_DST_UNKOWN);
+		if (irAffineTerm_is_signed(term)){
+			new_op = ir_insert_inst(ir, root, IR_OPERATION_INDEX_UNKOWN, size, IR_IMUL, IR_OPERATION_DST_UNKOWN);
+		}
+		else{
+			new_op = ir_insert_inst(ir, root, IR_OPERATION_INDEX_UNKOWN, size, IR_MUL, IR_OPERATION_DST_UNKOWN);
+		}
+		if (new_op != NULL){
+			if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add depedence to IR");
 			}
-			else{
-				new_op = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, size, IR_MUL, IR_OPERATION_DST_UNKOWN);
-			}
-			if (new_op != NULL){
-				if (ir_add_dependence(ir, term->variable, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					log_err("unable to add depedence to IR");
-				}
+			if ((new_im = ir_insert_immediate(ir, new_op, size, term->coef)) != NULL){
 				if (ir_add_dependence(ir, new_im, new_op, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
 					log_err("unable to add depedence to IR");
 				}
 			}
 			else{
-				log_err("unable to add operation to IR");
+				log_err("unable to add immediate to IR");
 			}
 		}
 		else{
-			log_err("unable to add immediate to IR");
+			log_err("unable to add operation to IR");
 		}
+
 		return new_op;
 	}
 }
@@ -105,7 +106,7 @@ static int32_t irAffineForm_is_affine_root(struct node* node){
 	if (operation->type != IR_OPERATION_TYPE_INST){
 		return 1;
 	}
-	
+
 	switch(operation->operation_type.inst.opcode){
 		case IR_ADD : {
 			return 0;
@@ -122,9 +123,6 @@ static int32_t irAffineForm_is_affine_root(struct node* node){
 			}
 
 			return (nb_var < 2) ? 0 : 1;
-		}
-		case IR_NEG : {
-			return 1;
 		}
 		case IR_SHL : {
 			struct edge* 	edge_cursor;
@@ -173,7 +171,7 @@ static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affi
 	}
 
 	switch(ir_node_get_operation(node)->type){
-		case IR_OPERATION_TYPE_IN_REG 	: 
+		case IR_OPERATION_TYPE_IN_REG 	:
 		case IR_OPERATION_TYPE_IN_MEM 	:
 		case IR_OPERATION_TYPE_OUT_MEM 	: {
 			irAffineForm_import_var(node, affine_form, coef, sign);
@@ -396,33 +394,49 @@ static int32_t irAffineForm_simplify(struct irAffineForm* affine_form){
 static void irAffineForm_export(struct irAffineForm* affine_form, struct ir* ir){
 	struct setIterator 		iterator;
 	struct irAffineTerm* 	term;
-	struct edge* 			edge_cursor;
-	struct edge** 			edge_buffer;
-	uint32_t 				i;
-	uint32_t 				nb_edge;
 	struct node* 			term_node;
 
-	nb_edge = affine_form->root->nb_edge_dst;
-	edge_buffer = (struct edge**)alloca(sizeof(struct edge*) * nb_edge);
-
-	for (edge_cursor = node_get_head_edge_dst(affine_form->root), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		edge_buffer[i ++] = edge_cursor;
-	}
-
-	ir_node_get_operation(affine_form->root)->operation_type.inst.opcode = IR_ADD;
-	ir_node_get_operation(affine_form->root)->size = affine_form->size;
-
-	for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form)->term_set, &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
-		term_node = irAffineTerm_export(term, ir, affine_form->size);
-		if (term_node != NULL){
-			if (ir_add_dependence(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-				log_err("unable to add dependence to IR");
-			}
+	switch (set_get_length(&(affine_form->term_set))){
+		case 0 : {
+			ir_convert_node_to_imm(ir, affine_form->root, affine_form->size, 0);
+			break;
 		}
-	}
+		case 1 : {
+			term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator);
+			term_node = irAffineTerm_export(affine_form->root, term, ir, affine_form->size);
+			ir_merge_equivalent_node(ir, term_node, affine_form->root);
+			break;
+		}
+		default : {
+			struct edge* 	edge_cursor;
+			struct edge** 	edge_buffer;
+			uint32_t 		i;
+			uint32_t 		nb_edge;
 
-	for (i = 0; i < nb_edge; i++){
-		ir_remove_dependence(ir, edge_buffer[i]);
+			nb_edge = affine_form->root->nb_edge_dst;
+			edge_buffer = (struct edge**)alloca(sizeof(struct edge*) * nb_edge);
+
+			for (edge_cursor = node_get_head_edge_dst(affine_form->root), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				edge_buffer[i ++] = edge_cursor;
+			}
+
+			ir_node_get_operation(affine_form->root)->operation_type.inst.opcode = IR_ADD;
+			ir_node_get_operation(affine_form->root)->size = affine_form->size;
+
+			for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
+				term_node = irAffineTerm_export(affine_form->root, term, ir, affine_form->size);
+				if (term_node != NULL){
+					if (ir_add_dependence(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
+				}
+			}
+
+			for (i = 0; i < nb_edge; i++){
+				ir_remove_dependence(ir, edge_buffer[i]);
+			}
+			break;
+		}
 	}
 }
 
@@ -430,7 +444,7 @@ void irAffineForm_print(struct irAffineForm* affine_form){
 	struct setIterator 		iterator;
 	struct irAffineTerm* 	term;
 
-	for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form)->term_set, &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
+	for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
 		if (term->sign){
 			printf("%lld x %p ", (int64_t)(term->coef), (void*)(term->variable));
 		}
@@ -446,17 +460,18 @@ void irAffineForm_print(struct irAffineForm* affine_form){
 	free(affine_form);
 
 void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification){
-	struct node* node_cursor;
+	struct irNodeIterator it;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort DAG");
+		return;
 	}
 
-	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (!irAffineForm_is_affine_root(node_cursor)){
+	for(irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		if (!irAffineForm_is_affine_root(irNodeIterator_get_node(it))){
 			struct irAffineForm* affine_form = NULL;
 
-			if (!irAffineForm_import(node_cursor, &affine_form, 0, 1, 0)){
+			if (!irAffineForm_import(irNodeIterator_get_node(it), &affine_form, 0, 1, 0)){
 				if (irAffineForm_simplify(affine_form)){
 					irAffineForm_export(affine_form, ir);
 					*modification = 1;
@@ -468,4 +483,8 @@ void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification){
 			}
 		}
 	}
+
+	#ifdef IR_FULL_CHECK
+	ir_check_order(ir);
+	#endif
 }

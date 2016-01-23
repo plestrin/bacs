@@ -924,6 +924,8 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, uint8_t size, enum irOpcode opcode){
 	struct irOperation* operation = ir_node_get_operation(node);
 
+	/* Warning: it migth not be a good idea to discard the status flag without anymore check */
+
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_remove(operation);
 	}
@@ -956,6 +958,49 @@ void ir_print_location_node(struct node* node, struct assembly* assembly);
 void ir_print_node(struct irOperation* operation, FILE* file);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
+
+/* Node Iterator - Required condition if one wants to delete node(s) while using the iterator
+	- previously sorted form dst to src (respectively src to dst)
+	- do not delete any node that is strictly lower (respectively strictly higher) than the current node
+	- while adding new nodes minds the order. Once the order is broken, there is no guarantee anymore.
+*/
+
+struct irNodeIterator{
+	struct node* curr_node;
+	struct node* prev_node;
+};
+
+static inline struct node* irNodeIterator_get_first(struct ir* ir, struct irNodeIterator* it){
+	it->curr_node = graph_get_head_node(&(ir->graph));
+	it->prev_node = NULL;
+
+	return it->curr_node;
+}
+
+static inline struct node* irNodeIterator_get_next(struct ir* ir, struct irNodeIterator* it){
+	if (it->prev_node != NULL){
+		if (node_get_next(it->prev_node) != it->curr_node){
+			it->curr_node = node_get_next(it->prev_node);
+		}
+		else{
+			it->prev_node = it->curr_node;
+			it->curr_node = node_get_next(it->curr_node);
+		}
+	}
+	else{
+		if (graph_get_head_node(&(ir->graph)) != it->curr_node){
+			it->curr_node = graph_get_head_node(&(ir->graph));
+		}
+		else{
+			it->prev_node = it->curr_node;
+			it->curr_node = node_get_next(it->curr_node);
+		}
+	}
+
+	return it->curr_node;
+}
+
+#define irNodeIterator_get_node(it) ((it).curr_node)
 
 #define ir_clean(ir) graph_clean(&((ir)->graph));
 

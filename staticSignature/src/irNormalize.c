@@ -309,30 +309,29 @@ void ir_normalize_concrete(struct ir* ir){
 }
 
 void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
-	struct node* 			node_cursor;
-	struct node* 			next_cursor;
+	struct irNodeIterator 	it;
 	struct irOperation* 	operation_cursor;
 	uint8_t 				local_modification = 0;
 
-	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
+	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort DAG");
+		return;
 	}
 
-	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = next_cursor){
-		next_cursor = node_get_next(node_cursor);
-		operation_cursor = ir_node_get_operation(node_cursor);
+	for (irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
 
 		switch (operation_cursor->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
-					ir_remove_node(ir, node_cursor);
+				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
-					ir_remove_node(ir, node_cursor);
+				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;
@@ -341,15 +340,15 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 				break;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
-					ir_remove_node(ir, node_cursor);
+				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
-					ir_remove_node(ir, node_cursor);
+				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;

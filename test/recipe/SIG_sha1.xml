@@ -89,7 +89,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO0" active="yes">
+	<recipe name="TEST_SHA1_CO0" active="no">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
 		<search>
@@ -179,7 +179,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_WD" active="yes">
+	<recipe name="TEST_SHA1_WD" active="no">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
