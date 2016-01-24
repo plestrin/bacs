@@ -157,7 +157,7 @@ void irVariableRange_compute(struct node* node, struct variableRange* range_dst,
 					break;
 				}
 				case IR_OR	: {
-					irVariableRange_apply_all_operand(node, variableRange_bitwise_heuristic, seed);
+					irVariableRange_apply_all_operand(node, variableRange_or, seed);
 					break;
 				}
 				case IR_SHL 	: {
@@ -166,10 +166,6 @@ void irVariableRange_compute(struct node* node, struct variableRange* range_dst,
 				}
 				case IR_SHR 	: {
 					irVariableRange_apply_shift(node, variableRange_shr, seed);
-					break;
-				}
-				case IR_XOR	: {
-					irVariableRange_apply_all_operand(node, variableRange_bitwise_heuristic, seed);
 					break;
 				}
 				default 		: {

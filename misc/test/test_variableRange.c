@@ -11,13 +11,14 @@
 #define NB_TEST 		10000000
 #define MAX_SIZE 		8
 #define MASK 			(0xffffffffffffffff >> (64 - MAX_SIZE))
-/*#define SEED 			10347*/ 				/* comment this line to start to used a different SEED */
-#define TEST_ADD
+#define SEED 			10347 				/* comment this line to start with a different SEED */
+/*#define TEST_ADD
 #define TEST_AND
 #define TEST_SHL 
-#define TEST_SHR
-#define TEST_INCLUDE
-#define TEST_INTERSECT
+#define TEST_SHR*/
+#define TEST_OR
+/*#define TEST_INCLUDE
+#define TEST_INTERSECT*/
 /*#define TEST_CUSTOM*/
 #define NO_PRINT 								/* comment this line to print successful test */
 
@@ -93,7 +94,7 @@ static int32_t test_add(void){
 					return -1;
 				}
 			}
-		 }
+		}
 
 		if (nb_test_performed != nb_test_predicted){
 			log_err_m("TEST ADD %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
@@ -170,7 +171,7 @@ static int32_t test_and(void){
 				printf("\n");
 				return -1;
 			}
-		 }
+		}
 
 		if (nb_test_performed != nb_test_predicted){
 			log_err_m("TEST AND %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
@@ -253,7 +254,7 @@ static int32_t test_shl(void){
 				printf("\n");
 				return -1;
 			}
-		 }
+		}
 
 		if (nb_test_performed != nb_test_predicted){
 			log_err_m("TEST SHL %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
@@ -336,7 +337,7 @@ static int32_t test_shr(void){
 				printf("\n");
 				return -1;
 			}
-		 }
+		}
 
 		if (nb_test_performed != nb_test_predicted){
 			log_err_m("TEST SHR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
@@ -346,6 +347,93 @@ static int32_t test_shr(void){
 		#ifndef NO_PRINT
 		else{
 			log_info_m("TEST SHR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
+		}
+		#endif
+	}
+
+	return 0;
+} 
+#endif
+
+#ifdef TEST_OR
+static int32_t test_or(void){
+	uint32_t 				i;
+	uint64_t 				j;
+	uint64_t 				k;
+	struct variableRange 	range[3];
+	uint64_t 				value;
+	struct variableRange 	cst;
+	uint64_t 				nb_test_predicted;
+	uint64_t 				nb_test_performed;
+
+	log_info_m("starting %u TEST OR", NB_TEST);
+
+	for (i = 0; i < NB_TEST; i++){
+		nb_test_predicted = 1;
+		nb_test_performed = 0;
+
+		range[0].index_lo 	= (uint64_t)rand();
+		range[0].index_up 	= (uint64_t)rand();
+		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[0].disp 		= (uint64_t)rand();
+		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
+
+		range[1].index_lo 	= (uint64_t)rand();
+		range[1].index_up 	= (uint64_t)rand();
+		range[1].scale 		= (uint64_t)rand() % MAX_SIZE;
+		range[1].disp 		= (uint64_t)rand();
+		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
+
+		variableRange_pack(range + 0);
+		variableRange_pack(range + 1);
+
+		nb_test_predicted = variableRange_get_nb_value(range + 0) * variableRange_get_nb_value(range + 1);
+
+		memcpy(range + 2, range + 0, sizeof(struct variableRange));
+		variableRange_or(range + 2, range + 1, MAX_SIZE);
+
+		for (j = 0; j <= range[0].size_mask; j++){
+			variableRange_init_cst(&cst, j, MAX_SIZE);
+			cst.size_mask 	= range[0].size_mask;
+			cst.disp 		= cst.disp & cst.size_mask;
+			if (!variableRange_include(range + 0, &cst)){
+				continue;
+			}
+
+			for (k = 0; k <= range[1].size_mask; k++){
+				variableRange_init_cst(&cst, k, MAX_SIZE);
+				cst.size_mask 	= range[1].size_mask;
+				cst.disp 		= cst.disp & cst.size_mask;
+				if (!variableRange_include(range + 1, &cst)){
+					continue;
+				}
+				nb_test_performed ++;
+
+				value = j | k;
+				variableRange_init_cst(&cst, value, MAX_SIZE);
+				cst.size_mask 	= range[2].size_mask;
+				cst.disp 		= cst.disp & cst.size_mask;
+				if (!variableRange_include(range + 2, &cst)){
+					log_err_m("incorrect range @ %u, seed=%u", i, SEED);
+					printf("\t-0x%llx | 0x%llx = 0x%llx not in ",  j, k, value);
+					variableRange_print(range + 2);
+					printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
+					printf("\n\t\t-0x%llx is in ", k); variableRange_print(range + 1);
+					printf("\n");
+					return -1;
+				}
+			}
+		}
+
+		if (nb_test_performed != nb_test_predicted){
+			log_err_m("TEST OR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
+			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
+			printf("\t-"); variableRange_print(range + 1); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 1));
+			return -1;
+		}
+		#ifndef NO_PRINT
+		else{
+			log_info_m("TEST OR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
 		}
 		#endif
 	}
@@ -566,6 +654,11 @@ int main(void){
 	#endif
 	#ifdef TEST_SHR
 	if (test_shr()){
+		return 0;
+	}
+	#endif
+	#ifdef TEST_OR
+	if (test_or()){
 		return 0;
 	}
 	#endif

@@ -97,7 +97,9 @@ void variableRange_add(struct variableRange* range_dst, const struct variableRan
 void variableRange_and(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size);
 void variableRange_shl(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size);
 void variableRange_shr(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size);
+void variableRange_or(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size);
 
+/* This method seems very weird, it'll be better to avoid using it */
 void variableRange_bitwise_heuristic(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size);
 
 int32_t variableRange_intersect(const struct variableRange* range1, const struct variableRange* range2);

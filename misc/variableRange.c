@@ -270,6 +270,43 @@ void variableRange_shr(struct variableRange* range_dst, const struct variableRan
 	variableRange_pack(range_dst);
 }
 
+void variableRange_or(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size){
+	uint64_t over_range_src;
+	uint64_t over_range_dst;
+
+	over_range_src = variableRange_get_index_mask(range_src);
+	if (range_src->index_lo <= range_src->index_up){
+		over_range_src &= (0xffffffffffffffff >> __builtin_clzll(range_src->index_up));
+	}
+
+	over_range_dst = variableRange_get_index_mask(range_dst);
+	if (range_dst->index_lo <= range_dst->index_up){
+		over_range_dst &= (0xffffffffffffffff >> __builtin_clzll(range_dst->index_up));
+	}
+
+	if (range_src->scale > range_dst->scale){
+		over_range_src = over_range_src << (range_src->scale - range_dst->scale);
+		range_dst->index_lo = 0;
+		range_dst->index_up = over_range_src | over_range_dst;
+	}
+	else if (range_src->scale < range_dst->scale){
+		over_range_dst = over_range_dst << (range_dst->scale - range_src->scale);
+		range_dst->index_lo = 0;
+		range_dst->index_up = over_range_src | over_range_dst;
+		range_dst->scale = range_src->scale;
+	}
+	else{
+		range_dst->index_lo = 0;
+		range_dst->index_up = over_range_src | over_range_dst;
+	}
+
+	range_dst->disp = (range_src->disp | range_dst->disp) & (~(range_dst->index_up << range_dst->scale));
+
+	range_dst->size_mask = variableRange_get_size_mask(size);
+
+	variableRange_pack(range_dst);
+}
+
 void variableRange_bitwise_heuristic(struct variableRange* range_dst, const struct variableRange* range_src, uint32_t size){
 	if (range_src->disp != 0 || range_dst->disp != 0){
 		#ifdef DEBUG_RANGE
