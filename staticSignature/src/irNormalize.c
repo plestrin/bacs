@@ -381,6 +381,7 @@ static void ir_normalize_simplify_instruction_numeric_or(struct ir* ir, struct n
 static void ir_normalize_simplify_instruction_symbolic_or(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_part2_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
@@ -478,7 +479,7 @@ static const simplify_rewrite_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 	NULL, 															/* 13 IR_NOT 			*/
 	ir_normalize_simplify_instruction_rewrite_or, 					/* 14 IR_OR 			*/
 	ir_normalize_simplify_instruction_rewrite_part1_8, 				/* 15 IR_PART1_8 		*/
-	NULL, 															/* 16 IR_PART2_8 		*/
+	ir_normalize_simplify_instruction_rewrite_part2_8, 				/* 16 IR_PART2_8 		*/
 	NULL, 															/* 17 IR_PART1_16 		*/
 	ir_normalize_simplify_instruction_rewrite_rol, 					/* 18 IR_ROL 			*/
 	NULL, 															/* 19 IR_ROR 			*/
@@ -595,6 +596,17 @@ void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modific
 	ir_check_order(ir);
 	#endif
 }
+
+#ifdef EXTRA_CHECK
+#define assert_nb_dst_edge(node, value, node_desc) 																											\
+	if ((node)->nb_edge_dst != (value)){ 																													\
+		log_err_m("incorrect " node_desc " format (%u dst edge(s))", (node)->nb_edge_dst); 																	\
+		return; 																																			\
+	}
+
+#else
+#define assert_nb_dst_edge(node, value, node_desc)
+#endif
 
 /* I would be good if I can use this stub for every numeric simplification. IMUL SHR */
 #define ir_normalize_simplify_instruction_numeric_generic(ir, node, modification, identity_el, operation) 													\
@@ -1163,33 +1175,76 @@ static void ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struct n
 }
 
 static void ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct edge* 		operand_edge;
 	struct node* 		operand;
 	struct irOperation*	operand_operation;
 
-	if (node->nb_edge_dst == 1){
-		operand = edge_get_src(node_get_head_edge_dst(node));
-		operand_operation = ir_node_get_operation(operand);
-		if (operand_operation->type == IR_OPERATION_TYPE_INST){
-			if (operand_operation->operation_type.inst.opcode == IR_MOVZX){
-				if (operand->nb_edge_dst == 1){
-					if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size == ir_node_get_operation(node)->size){
-						graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(operand)), node);
+	assert_nb_dst_edge(node, 1, "PART1_8")
 
-						ir_remove_node(ir, node);
+	operand_edge 		= node_get_head_edge_dst(node);
+	operand 			= edge_get_src(operand_edge);
+	operand_operation 	= ir_node_get_operation(operand);
 
-						*modification = 1;
-					}
-				}
-				else{
-					log_err_m("MOVZX instruction has %u operand(s)", operand->nb_edge_dst);
-				}
+	if (operand_operation->type == IR_OPERATION_TYPE_INST){
+		if (operand_operation->operation_type.inst.opcode == IR_MOVZX){
+			assert_nb_dst_edge(operand, 1, "MOVZX")
+
+			if (ir_node_get_operation(edge_get_src(node_get_head_edge_dst(operand)))->size == ir_node_get_operation(node)->size){
+				graph_transfert_src_edge(&(ir->graph), edge_get_src(node_get_head_edge_dst(operand)), node);
+				ir_remove_node(ir, node);
+
+				*modification = 1;
 			}
 		}
-		else if (operand_operation->type == IR_OPERATION_TYPE_IMM){
-			ir_convert_node_to_imm(ir, node, 8, operand_operation->operation_type.imm.value);
+		else if (operand_operation->operation_type.inst.opcode == IR_PART1_16){
+			assert_nb_dst_edge(operand, 1, "PART1_16")
 
-			*modification = 1;
+			if (ir_add_dependence(ir, edge_get_src(node_get_head_edge_dst(operand)), node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add dependency to IR");
+			}
+			else{
+				ir_remove_dependence(ir, operand_edge);
+
+				*modification = 1;
+			}
 		}
+	}
+	else if (operand_operation->type == IR_OPERATION_TYPE_IMM){
+		ir_convert_node_to_imm(ir, node, 8, operand_operation->operation_type.imm.value);
+
+		*modification = 1;
+	}
+}
+
+static void ir_normalize_simplify_instruction_rewrite_part2_8(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct edge* 		operand_edge;
+	struct node* 		operand;
+	struct irOperation*	operand_operation;
+
+	assert_nb_dst_edge(node, 1, "PART2_8")
+
+	operand_edge 		= node_get_head_edge_dst(node);
+	operand 			= edge_get_src(operand_edge);
+	operand_operation 	= ir_node_get_operation(operand);
+
+	if (operand_operation->type == IR_OPERATION_TYPE_INST){
+		if (operand_operation->operation_type.inst.opcode == IR_PART1_16){
+			assert_nb_dst_edge(operand, 1, "PART1_16")
+
+			if (ir_add_dependence(ir, edge_get_src(node_get_head_edge_dst(operand)), node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+				log_err("unable to add dependency to IR");
+			}
+			else{
+				ir_remove_dependence(ir, operand_edge);
+
+				*modification = 1;
+			}
+		}
+	}
+	else if (operand_operation->type == IR_OPERATION_TYPE_IMM){
+		ir_convert_node_to_imm(ir, node, 8, operand_operation->operation_type.imm.value >> 8);
+
+		*modification = 1;
 	}
 }
 
