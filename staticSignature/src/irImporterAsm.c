@@ -143,8 +143,18 @@ static inline int32_t asmRisc_process(struct ir* ir, struct asmRiscIns* risc){
 	return -1;
 }
 
-static int32_t asmRisc_process_special_cmov(struct ir* ir, struct asmRiscIns* risc);
+static int32_t asmRisc_process_special_cmov_part1(struct ir* ir, struct asmRiscIns* risc);
+static int32_t asmRisc_process_special_cmov_part2(struct ir* ir, struct asmRiscIns* risc);
+
+static inline int32_t asmRisc_process_special_cmov(struct ir* ir, struct asmRiscIns* risc){
+	if (!asmRisc_process_special_cmov_part1(ir, risc)){
+		return asmRisc_process_special_cmov_part2(ir, risc);
+	}
+	return -1;
+}
+
 static int32_t asmRisc_process_special_lea(struct ir* ir, struct asmRiscIns* risc);
+
 static int32_t asmRisc_process_special_mov_part1(struct ir* ir, struct asmRiscIns* risc);
 static int32_t asmRisc_process_special_mov_part2(struct ir* ir, struct asmRiscIns* risc);
 
@@ -194,8 +204,9 @@ static void simd_decode_generic(struct ir* ir, struct instructionIterator* it, s
 static void simd_decode_generic_vex(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
 
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_pcmpgt(struct instructionIterator* it,  struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
 static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
-static void simd_decode_special_pshufd(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_pshuf(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_punpckldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_vzeroall(struct instructionIterator* it, struct asmCiscIns* cisc);
@@ -263,7 +274,7 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		}
 		case XED_ICLASS_LFENCE 		: {break;}
 		case XED_ICLASS_MOVAPS 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
-		case XED_ICLASS_MOVD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
+		case XED_ICLASS_MOVD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_DWORD); break;}
 		case XED_ICLASS_MOVDQA 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_MOVDQU 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_MOVQ 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
@@ -281,6 +292,18 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_PADDD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_DWORD); break;}
 		case XED_ICLASS_PADDW 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_WORD); break;}
 		case XED_ICLASS_PAND 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
+		case XED_ICLASS_PCMPGTB 	: {
+			simd_decode_special_pcmpgt(it, &cisc, mem_addr, SIMD_TYPE_BYTE);
+			break;
+		}
+		case XED_ICLASS_PCMPGTD 	: {
+			simd_decode_special_pcmpgt(it, &cisc, mem_addr, SIMD_TYPE_DWORD);
+			break;
+		}
+		case XED_ICLASS_PCMPGTW 	: {
+			simd_decode_special_pcmpgt(it, &cisc, mem_addr, SIMD_TYPE_WORD);
+			break;
+		}
 		case XED_ICLASS_PINSRW 		: {
 			simd_decode_special_pinsrw(ir, it, &cisc, mem_addr);
 			break;
@@ -291,7 +314,11 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			break;
 		}
 		case XED_ICLASS_PSHUFD 		: {
-			simd_decode_special_pshufd(ir, it, &cisc, mem_addr);
+			simd_decode_special_pshuf(ir, it, &cisc, mem_addr, 32);
+			break;
+		}
+		case XED_ICLASS_PSHUFW 		: {
+			simd_decode_special_pshuf(ir, it, &cisc, mem_addr, 16);
 			break;
 		}
 		case XED_ICLASS_PSLLD 		: {
@@ -361,11 +388,13 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_VPAND 		: {simd_decode_generic_vex(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_VPOR 		: {simd_decode_generic_vex(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_VPXOR 		: {simd_decode_generic_vex(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
+		case XED_ICLASS_VXORPD 		: {simd_decode_generic_vex(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_VXORPS 		: {simd_decode_generic_vex(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_VZEROALL 	: {
 			simd_decode_special_vzeroall(it, &cisc);
 			break;
 		}
+		case XED_ICLASS_XORPD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_XORPS 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		default :{
 			cisc.nb_ins = 1;
@@ -400,8 +429,8 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case CISC_TYPE_PARA 	: {
 			for (i = 0; i < cisc.nb_ins; i++){
 				switch(cisc.ins[i].opcode){
-					case IR_CMOV 	: {log_err("CMOV instruction is not handled yet"); break;}
-					case IR_LEA 	: {log_err("LEA instruction is not handled yet"); break;}
+					case IR_CMOV 	: {error_code = asmRisc_process_special_cmov_part1(ir, cisc.ins + i); break;}
+					case IR_LEA 	: {log_err("LEA instruction is not handled yet"); error_code = -1; break;}
 					case IR_MOV 	: {error_code = asmRisc_process_special_mov_part1(ir, cisc.ins + i); break;}
 					default 		: {error_code = asmRisc_process_part1(ir, cisc.ins + i); break;}
 				}
@@ -412,8 +441,8 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			}
 			for ( ; i; i--){
 				switch(cisc.ins[i - 1].opcode){
-					case IR_CMOV 	: {break;}
-					case IR_LEA 	: {break;}
+					case IR_CMOV 	: {error_code = asmRisc_process_special_cmov_part2(ir, cisc.ins + i - 1); break;}
+					case IR_LEA 	: {error_code = -1; break;}
 					case IR_MOV 	: {error_code = asmRisc_process_special_mov_part2(ir, cisc.ins + i - 1); break;}
 					default 		: {error_code = asmRisc_process_part2(ir, cisc.ins + i - 1); break;}
 				}
@@ -910,9 +939,7 @@ static int32_t asmRisc_process_part2(struct ir* ir, struct asmRiscIns* risc){
 	return error_code;
 }
 
-static int32_t asmRisc_process_special_cmov(struct ir* ir, struct asmRiscIns* risc){
-	int32_t error_code = 0;
-
+static int32_t asmRisc_process_special_cmov_part1(struct ir* ir, struct asmRiscIns* risc){
 	log_warn("using CMOV glue instruction since runtime behavior is unknown");
 
 	if (risc->nb_input_operand == 1){
@@ -929,32 +956,35 @@ static int32_t asmRisc_process_special_cmov(struct ir* ir, struct asmRiscIns* ri
 	asmOperand_fetch_input(ir, risc->input_operand + 0);
 	asmOperand_fetch_input(ir, risc->input_operand + 1);
 
-	asmOperand_fetch_output(ir, &(risc->output_operand), risc->opcode);
+	if (risc->input_operand[0].variable == NULL){
+		log_err("unable to fetch first input operand");
+		return -1;
+	}
 
+	if (risc->input_operand[1].variable == NULL){
+		log_err("unable to fetch second input operand");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int32_t asmRisc_process_special_cmov_part2(struct ir* ir, struct asmRiscIns* risc){
+	int32_t error_code = 0;
+
+	asmOperand_fetch_output(ir, &(risc->output_operand), risc->opcode);
 	if (risc->output_operand.variable == NULL){
 		log_err("unable to fetch output operand");
 		return -1;
 	}
 
-	if (risc->input_operand[0].variable != NULL){
-		if (ir_add_dependence(ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
-			log_err("unable to add output to add dependence to IR");
-			error_code = -1;
-		}
-	}
-	else{
-		log_err("unable to fetch first input operand");
+	if (ir_add_dependence(ir, risc->input_operand[0].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][0]) == NULL){
+		log_err("unable to add output to add dependence to IR");
 		error_code = -1;
 	}
 
-	if (risc->input_operand[1].variable != NULL){
-		if (ir_add_dependence(ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
-			log_err("unable to add output to add dependence to IR");
-			error_code = -1;
-		}
-	}
-	else{
-		log_err("unable to fetch second input operand");
+	if (ir_add_dependence(ir, risc->input_operand[1].variable, risc->output_operand.variable, dependence_label_table[risc->opcode][1]) == NULL){
+		log_err("unable to add output to add dependence to IR");
 		error_code = -1;
 	}
 
@@ -1134,8 +1164,10 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_VPAND 		: {return IR_AND;}
 		case XED_ICLASS_VPOR 		: {return IR_OR;}
 		case XED_ICLASS_VPXOR 		: {return IR_XOR;}
+		case XED_ICLASS_VXORPD 		: {return IR_XOR;}
 		case XED_ICLASS_VXORPS  	: {return IR_XOR;}
 		case XED_ICLASS_XOR 		: {return IR_XOR;}
+		case XED_ICLASS_XORPD 		: {return IR_XOR;}
 		case XED_ICLASS_XORPS 		: {return IR_XOR;}
 		default : {
 			log_err_m("this instruction (%s) cannot be translated into IR Opcode", xed_iclass_enum_t2str(xed_opcode));
@@ -1207,16 +1239,27 @@ static enum irRegister xedRegister_2_irRegister(xed_reg_enum_t xed_reg){
 	(operand).type 				= ASM_OPERAND_IMM; 											\
 	(operand).operand_type.imm 	= imm_;
 
-#define asmRisc_set_reg_cst(risc, reg_, size_, imm_) 										\
+#define asmOperand_set_reg(operand, size_, instruction_index_, reg_) 						\
+	(operand).size 				= size_; 													\
+	(operand).instruction_index = instruction_index_; 										\
+	(operand).variable 			= NULL; 													\
+	(operand).type 				= ASM_OPERAND_REG; 											\
+	(operand).operand_type.imm 	= reg_;
+
+#define asmRisc_set_reg_cst(risc, size_, instruction_index_, imm_, reg_) 					\
 	{ 																						\
 		(risc)->opcode 								= IR_MOV; 								\
 		(risc)->nb_input_operand 					= 1; 									\
 		asmOperand_set_imm((risc)->input_operand[0], size_, imm_)							\
-		(risc)->output_operand.size 				= (size_); 								\
-		(risc)->output_operand.instruction_index 	= it->instruction_index; 				\
-		(risc)->output_operand.variable 			= NULL; 								\
-		(risc)->output_operand.type 				= ASM_OPERAND_REG; 						\
-		(risc)->output_operand.operand_type.reg 	= (reg_); 								\
+		asmOperand_set_reg((risc)->output_operand, size_, instruction_index_, reg_) 		\
+	}
+
+#define asmRisc_set_reg_reg(risc, size_, instruction_index_ ,reg1_, reg2_) 					\
+	{ 																						\
+		(risc)->opcode 								= IR_MOV; 								\
+		(risc)->nb_input_operand 					= 1; 									\
+		asmOperand_set_reg((risc)->input_operand[0], size_, instruction_index_, reg1_)		\
+		asmOperand_set_reg((risc)->output_operand, size_, instruction_index_, reg2_) 		\
 	}
 
 #define asmOperand_copy(operand_dst, operand_src) memcpy(operand_dst, operand_src, sizeof(struct asmOperand))
@@ -1227,17 +1270,9 @@ static void cisc_decode_special_call(struct instructionIterator* it, struct asmC
 
 	cisc->ins[0].opcode 									= IR_SUB;
 	cisc->ins[0].nb_input_operand 							= 2;
-	cisc->ins[0].input_operand[0].size 						= 32;
-	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[0].variable 					= NULL;
-	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	asmOperand_set_imm(cisc->ins[0].input_operand[1], 32, 4)
-	cisc->ins[0].output_operand.size 						= 32;
-	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[0].output_operand.variable 					= NULL;
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_ESP)
 
 	cisc->ins[1].opcode 									= IR_MOV;
 	cisc->ins[1].nb_input_operand 							= 1;
@@ -1281,11 +1316,7 @@ static void cisc_decode_special_div(struct instructionIterator* it, struct asmCi
 
 	cisc->ins[2].opcode 									= IR_MOV;
 	cisc->ins[2].nb_input_operand 							= 1;
-	cisc->ins[2].input_operand[0].size 						= cisc->ins[0].output_operand.size;
-	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[0].variable 					= NULL;
-	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_TMP;
+	asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[0].output_operand));
 	asmOperand_decode(it, &(cisc->ins[2].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
@@ -1301,21 +1332,10 @@ static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCi
 }
 
 static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
-	cisc->type 											= CISC_TYPE_SEQ;
+	cisc->type 												= CISC_TYPE_SEQ;
 	cisc->nb_ins 											= 3;
 
-	cisc->ins[0].opcode 									= IR_MOV;
-	cisc->ins[0].nb_input_operand 							= 1;
-	cisc->ins[0].input_operand[0].size 						= 32;
-	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[0].variable 					= NULL;
-	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_EBP;
-	cisc->ins[0].output_operand.size 						= 32;
-	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[0].output_operand.variable 					= NULL;
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmRisc_set_reg_reg(cisc->ins, 32, it->instruction_index, IR_REG_EBP, IR_REG_ESP)
 
 	cisc->ins[1].opcode 									= IR_MOV;
 	cisc->ins[1].nb_input_operand 							= 1;
@@ -1328,25 +1348,13 @@ static void cisc_decode_special_leave(struct instructionIterator* it, struct asm
 	cisc->ins[1].input_operand[0].operand_type.mem.scale 	= 1;
 	cisc->ins[1].input_operand[0].operand_type.mem.disp 	= 0;
 	cisc->ins[1].input_operand[0].operand_type.mem.con_addr = memAddress_get_and_check(mem_addr, MEMADDRESS_DESCRIPTOR_READ_0);
-	cisc->ins[1].output_operand.size 						= 32;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_EBP;
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_EBP)
 
 	cisc->ins[2].opcode 									= IR_ADD;
 	cisc->ins[2].nb_input_operand 							= 2;
-	cisc->ins[2].input_operand[0].size 						= 32;
-	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[0].variable 					= NULL;
-	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[2].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	asmOperand_set_imm(cisc->ins[2].input_operand[1], 32, 4)
-	cisc->ins[2].output_operand.size 						= 32;
-	cisc->ins[2].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[2].output_operand.variable 					= NULL;
-	cisc->ins[2].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_ESP)
 }
 
 static void cisc_decode_special_movsd(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1380,47 +1388,19 @@ static void cisc_decode_special_movsd(struct instructionIterator* it, struct asm
 	cisc->ins[1].nb_input_operand 							= 2;
 	asmOperand_set_imm(cisc->ins[1].input_operand[0], 32, 4)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, 0xfffffffffffffffcULL)
-	cisc->ins[1].output_operand.size 						= 32;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_TMP;
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP)
 
 	cisc->ins[2].opcode 									= IR_ADD;
 	cisc->ins[2].nb_input_operand 							= 2;
-	cisc->ins[2].input_operand[0].size 						= 32;
-	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[0].variable 					= NULL;
-	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_ESI;
-	cisc->ins[2].input_operand[1].size 						= 32;
-	cisc->ins[2].input_operand[1].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[1].variable 					= NULL;
-	cisc->ins[2].input_operand[1].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[1].operand_type.reg 			= IR_REG_TMP;
-	cisc->ins[2].output_operand.size 						= 32;
-	cisc->ins[2].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[2].output_operand.variable 					= NULL;
-	cisc->ins[2].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_ESI;
+	asmOperand_set_reg(cisc->ins[2].input_operand[0], 32, it->instruction_index, IR_REG_ESI)
+	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_ESI)
 
 	cisc->ins[3].opcode 									= IR_ADD;
 	cisc->ins[3].nb_input_operand 							= 2;
-	cisc->ins[3].input_operand[0].size 						= 32;
-	cisc->ins[3].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[3].input_operand[0].variable 					= NULL;
-	cisc->ins[3].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[3].input_operand[0].operand_type.reg 			= IR_REG_EDI;
-	cisc->ins[3].input_operand[1].size 						= 32;
-	cisc->ins[3].input_operand[1].instruction_index 		= it->instruction_index;
-	cisc->ins[3].input_operand[1].variable 					= NULL;
-	cisc->ins[3].input_operand[1].type 						= ASM_OPERAND_REG;
-	cisc->ins[3].input_operand[1].operand_type.reg 			= IR_REG_TMP;
-	cisc->ins[3].output_operand.size 						= 32;
-	cisc->ins[3].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[3].output_operand.variable 					= NULL;
-	cisc->ins[3].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[3].output_operand.operand_type.reg 			= IR_REG_EDI;
+	asmOperand_set_reg(cisc->ins[3].input_operand[0], 32, it->instruction_index, IR_REG_EDI)
+	asmOperand_set_reg(cisc->ins[3].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[3].output_operand, 32, it->instruction_index, IR_REG_EDI)
 }
 
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1442,17 +1422,9 @@ static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCi
 
 	cisc->ins[1].opcode 									= IR_ADD;
 	cisc->ins[1].nb_input_operand 							= 2;
-	cisc->ins[1].input_operand[0].size 						= 32;
-	cisc->ins[1].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[1].input_operand[0].variable 					= NULL;
-	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[1].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[1].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, cisc->ins[0].output_operand.size / 8)
-	cisc->ins[1].output_operand.size 						= 32;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_ESP)
 }
 
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1475,17 +1447,10 @@ static void cisc_decode_special_push(struct instructionIterator* it, struct asmC
 
 	cisc->ins[1].opcode 									= IR_SUB;
 	cisc->ins[1].nb_input_operand 							= 2;
-	cisc->ins[1].input_operand[0].size 						= 32;
-	cisc->ins[1].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[1].input_operand[0].variable 					= NULL;
-	cisc->ins[1].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[1].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[1].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, cisc->ins[0].input_operand[0].size / 8)
-	cisc->ins[1].output_operand.size 						= 32;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_ESP)
+
 }
 
 static void cisc_decode_special_setxx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1507,11 +1472,7 @@ static void cisc_decode_special_stosd(struct instructionIterator* it, struct asm
 
 	cisc->ins[0].opcode 									= IR_MOV;
 	cisc->ins[0].nb_input_operand 							= 1;
-	cisc->ins[0].input_operand[0].size 						= 32;
-	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[0].variable 					= NULL;
-	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_EAX;
+	asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_EAX)
 	cisc->ins[0].output_operand.size 						= 32;
 	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
 	cisc->ins[0].output_operand.variable 					= NULL;
@@ -1526,29 +1487,13 @@ static void cisc_decode_special_stosd(struct instructionIterator* it, struct asm
 	cisc->ins[1].nb_input_operand 							= 2;
 	asmOperand_set_imm(cisc->ins[1].input_operand[0], 32, 4)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, 0xfffffffffffffffcULL)
-	cisc->ins[1].output_operand.size 						= 32;
-	cisc->ins[1].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[1].output_operand.variable 					= NULL;
-	cisc->ins[1].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[1].output_operand.operand_type.reg 			= IR_REG_TMP;
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP)
 
 	cisc->ins[2].opcode 									= IR_ADD;
 	cisc->ins[2].nb_input_operand 							= 2;
-	cisc->ins[2].input_operand[0].size 						= 32;
-	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[0].variable 					= NULL;
-	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_EDI;
-	cisc->ins[2].input_operand[1].size 						= 32;
-	cisc->ins[2].input_operand[1].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[1].variable 					= NULL;
-	cisc->ins[2].input_operand[1].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[1].operand_type.reg 			= IR_REG_TMP;
-	cisc->ins[2].output_operand.size 						= 32;
-	cisc->ins[2].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[2].output_operand.variable 					= NULL;
-	cisc->ins[2].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[2].output_operand.operand_type.reg 			= IR_REG_EDI;
+	asmOperand_set_reg(cisc->ins[2].input_operand[0], 32, it->instruction_index, IR_REG_EDI)
+	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_EDI)
 }
 
 static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc){
@@ -1557,11 +1502,7 @@ static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCi
 
 	cisc->ins[0].opcode 									= IR_ADD;
 	cisc->ins[0].nb_input_operand 							= 2;
-	cisc->ins[0].input_operand[0].size 						= 32;
-	cisc->ins[0].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[0].input_operand[0].variable 					= NULL;
-	cisc->ins[0].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[0].input_operand[0].operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	cisc->ins[0].input_operand[1].size 						= 32;
 	cisc->ins[0].input_operand[1].instruction_index 		= it->instruction_index;
 	cisc->ins[0].input_operand[1].variable 					= NULL;
@@ -1572,11 +1513,7 @@ static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCi
 	else{
 		cisc->ins[0].input_operand[1].operand_type.imm 		= 4;
 	}
-	cisc->ins[0].output_operand.size 						= 32;
-	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[0].output_operand.variable 					= NULL;
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_ESP;
+	asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_ESP)
 }
 
 static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1586,11 +1523,7 @@ static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmC
 	cisc->ins[0].opcode 									= IR_MOV;
 	cisc->ins[0].nb_input_operand 							= 1;
 	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
-	cisc->ins[0].output_operand.size 						= cisc->ins[0].input_operand[0].size;
-	cisc->ins[0].output_operand.instruction_index 			= it->instruction_index;
-	cisc->ins[0].output_operand.variable 					= NULL;
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_TMP;
+	asmOperand_set_reg(cisc->ins[0].output_operand, cisc->ins[0].input_operand[0].size, it->instruction_index, IR_REG_TMP)
 
 	cisc->ins[1].opcode 									= IR_MOV;
 	cisc->ins[1].nb_input_operand 							= 1;
@@ -1599,11 +1532,7 @@ static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmC
 
 	cisc->ins[2].opcode 									= IR_MOV;
 	cisc->ins[2].nb_input_operand 							= 1;
-	cisc->ins[2].input_operand[0].size 						= cisc->ins[0].input_operand[0].size;
-	cisc->ins[2].input_operand[0].instruction_index 		= it->instruction_index;
-	cisc->ins[2].input_operand[0].variable 					= NULL;
-	cisc->ins[2].input_operand[0].type 						= ASM_OPERAND_REG;
-	cisc->ins[2].input_operand[0].operand_type.reg 			= IR_REG_TMP;
+	asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[0].output_operand));
 	asmOperand_copy(&(cisc->ins[2].output_operand), cisc->ins[1].input_operand);
 }
 
@@ -1671,7 +1600,7 @@ static void asmOperand_frag(struct asmOperand* op_dst, const struct asmOperand* 
 	}
 }
 
-static uint32_t asmSimd_frag_all(struct asmRiscIns* risc_dst, uint32_t nb_risc, const struct asmRiscIns* simd, uint32_t frag_size){
+static uint32_t asmSimd_frag(struct asmRiscIns* risc_dst, uint32_t nb_risc, const struct asmRiscIns* simd, uint32_t frag_size, uint32_t nb_input_operand_to_frag){
 	uint32_t i;
 	uint32_t j;
 
@@ -1685,46 +1614,18 @@ static uint32_t asmSimd_frag_all(struct asmRiscIns* risc_dst, uint32_t nb_risc, 
 		risc_dst[i].opcode 				= simd->opcode;
 		risc_dst[i].nb_input_operand 	= simd->nb_input_operand;
 		for (j = 0; j < simd->nb_input_operand; j++){
-			if (simd->input_operand[j].size >= (i + 1) * frag_size){
-				asmOperand_frag(risc_dst[i].input_operand + j, simd->input_operand + j, frag_size, i);
+			if (j < nb_input_operand_to_frag){
+				if (simd->input_operand[j].size >= (i + 1) * frag_size){
+					asmOperand_frag(risc_dst[i].input_operand + j, simd->input_operand + j, frag_size, i);
+				}
+				else{
+					asmOperand_set_imm(risc_dst[i].input_operand[j], frag_size, 0)
+				}
 			}
 			else{
-				asmOperand_set_imm(risc_dst[i].input_operand[j], frag_size, 0)
+				asmOperand_copy(risc_dst[i].input_operand + j, simd->input_operand + j);
 			}
 		}
-		asmOperand_frag(&(risc_dst[i].output_operand), &(simd->output_operand), frag_size, i);
-		if ((i + 1) * frag_size >= simd->output_operand.size){
-			break;
-		}
-	}
-
-	if (i == nb_risc){
-		log_err("the maximum of risc instruction(s) has been reached, SIMD frag is likely to be incomplete");
-	}
-	else{
-		i ++;
-	}
-
-	return i;
-}
-
-static uint32_t asmSimd_frag_first(struct asmRiscIns* risc_dst, uint32_t nb_risc, const struct asmRiscIns* simd, uint32_t frag_size){
-	uint32_t i;
-
-	#ifdef EXTRA_CHECK
-	if (simd->nb_input_operand < 2){
-		log_err("this function expects a SIMD instruction with at least two inputs");
-	}
-	if (simd->output_operand.size != simd->input_operand[0].size){
-		log_err("this function expects a SIMD instruction with I1 and O1 of the same size");
-	}
-	#endif
-
-	for (i = 0; i < nb_risc; i++){
-		risc_dst[i].opcode 				= simd->opcode;
-		risc_dst[i].nb_input_operand 	= simd->nb_input_operand;
-		asmOperand_frag(risc_dst[i].input_operand, simd->input_operand, frag_size, i);
-		memcpy(risc_dst[i].input_operand + 1, simd->input_operand + 1, sizeof(struct asmOperand) * simd->nb_input_operand - 1);
 		asmOperand_frag(&(risc_dst[i].output_operand), &(simd->output_operand), frag_size, i);
 		if ((i + 1) * frag_size >= simd->output_operand.size){
 			break;
@@ -1770,7 +1671,7 @@ static void simd_decode_generic(struct ir* ir, struct instructionIterator* it, s
 		}
 
 		cisc->type 		= CISC_TYPE_PARA;
-		cisc->nb_ins 	= asmSimd_frag_all(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size);
+		cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, local_simd.nb_input_operand);
 	}
 	else{
 		log_err_m("unable to convert instruction @ %u", it->instruction_index);
@@ -1796,10 +1697,10 @@ static void simd_decode_generic_vex(struct ir* ir, struct instructionIterator* i
 						break;
 					}
 					if (i < 128){
-						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, IR_REGISTER_SIMD_XMM | (reg_dst_index << 12) | (frag_dst_size << 5) | (i / frag_dst_size), frag_dst_size, 0)
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_dst_size, it->instruction_index, 0, IR_REGISTER_SIMD_XMM | (reg_dst_index << 12) | (frag_dst_size << 5) | (i / frag_dst_size))
 					}
 					else{
-						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, IR_REGISTER_SIMD_YMM | (reg_dst_index << 12) | (frag_dst_size << 5) | ((i - 128) / frag_dst_size), frag_dst_size, 0)
+						asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_dst_size, it->instruction_index, 0, IR_REGISTER_SIMD_YMM | (reg_dst_index << 12) | (frag_dst_size << 5) | ((i - 128) / frag_dst_size))
 					}
 					cisc->nb_ins ++;
 				}
@@ -1831,7 +1732,51 @@ static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionItera
 	}
 
 	cisc->type 		= CISC_TYPE_PARA;
-	cisc->nb_ins 	= asmSimd_frag_all(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size);
+	cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, local_simd.nb_input_operand);
+}
+
+static void simd_decode_special_pcmpgt(struct instructionIterator* it,  struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type){
+	struct asmRiscIns 	local_simd;
+	struct asmOperand 	operand_buffer[2];
+	uint8_t 			nb_operand;
+	uint32_t 			frag_size = SIMD_DEFAULT_FRAG_SIZE;
+
+	asmOperand_decode(it, operand_buffer, 2, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 2){
+		log_err_m("incorrect PINSRW format (%u input arg(s))", nb_operand);
+		return;
+	}
+	#endif
+
+	switch(type){
+		case SIMD_TYPE_BYTE 	: {
+			frag_size = 8;
+			break;
+		}
+		case SIMD_TYPE_WORD 	: {
+			frag_size = 16;
+			break;
+		}
+		case SIMD_TYPE_DWORD 	: {
+			frag_size = 32;
+			break;
+		}
+		default 				: {
+			log_err("this case is not supposed to happen");
+			return;
+		}
+	}
+
+	local_simd.opcode 										= IR_CMOV;
+	local_simd.nb_input_operand 							= 2;
+	asmOperand_set_imm(local_simd.input_operand[0], frag_size, 0x0000000000000000ULL)
+	asmOperand_set_imm(local_simd.input_operand[1], frag_size, 0xFFFFFFFFFFFFFFFFULL)
+	asmOperand_copy(&(local_simd.output_operand), operand_buffer);
+
+	cisc->type = CISC_TYPE_PARA;
+	cisc->nb_ins = asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, 0);
 }
 
 static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1994,7 +1939,7 @@ static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator
 	}
 }
 
-static void simd_decode_special_pshufd(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+static void simd_decode_special_pshuf(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size){
 	struct asmOperand 	in_operand_buffer[2];
 	struct asmOperand 	ou_operand_buffer[1];
 	uint8_t 			nb_operand;
@@ -2005,11 +1950,11 @@ static void simd_decode_special_pshufd(struct ir* ir, struct instructionIterator
 
 	#ifdef EXTRA_CHECK
 	if (nb_operand != 2){
-		log_err_m("incorrect PSHUFD format (%u input arg(s))", nb_operand);
+		log_err_m("incorrect PSHUF* format (%u input arg(s))", nb_operand);
 		return;
 	}
 	if (in_operand_buffer[1].type != ASM_OPERAND_IMM){
-		log_err("incorrect PSHUFD format (last operand is not IMM)");
+		log_err("incorrect PSHUF* format (last operand is not IMM)");
 		return;
 	}
 	#endif
@@ -2018,7 +1963,7 @@ static void simd_decode_special_pshufd(struct ir* ir, struct instructionIterator
 
 	#ifdef EXTRA_CHECK
 	if (nb_operand != 1){
-		log_err_m("incorrect PSHUFD format (%u output arg(s))", nb_operand);
+		log_err_m("incorrect PSHUF* format (%u output arg(s))", nb_operand);
 		return;
 	}
 	#endif
@@ -2027,34 +1972,37 @@ static void simd_decode_special_pshufd(struct ir* ir, struct instructionIterator
 	cisc->nb_ins 	= 0;
 
 	if (in_operand_buffer[0].type == ASM_OPERAND_REG){
-		frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg);
+		frag_size = min(irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg), size);
 	}
 
-	local_simd.opcode 				= IR_MOV;
-	local_simd.nb_input_operand 	= 1;
-	asmOperand_frag(local_simd.input_operand, in_operand_buffer, 32, (in_operand_buffer[1].operand_type.imm >> 0) & 0x0000000000000003ULL);
-	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, 32, 0);
+	local_simd.opcode 			= IR_MOV;
+	local_simd.nb_input_operand = 1;
 
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size);
+	asmOperand_frag(local_simd.input_operand, in_operand_buffer, size, (in_operand_buffer[1].operand_type.imm >> 0) & 0x0000000000000003ULL);
+	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, size, 0);
 
-	asmOperand_frag(local_simd.input_operand, in_operand_buffer, 32, (in_operand_buffer[1].operand_type.imm >> 2) & 0x0000000000000003ULL);
-	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, 32, 1);
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size, local_simd.nb_input_operand);
 
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size);
+	asmOperand_frag(local_simd.input_operand, in_operand_buffer, size, (in_operand_buffer[1].operand_type.imm >> 2) & 0x0000000000000003ULL);
+	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, size, 1);
 
-	asmOperand_frag(local_simd.input_operand, in_operand_buffer, 32, (in_operand_buffer[1].operand_type.imm >> 4) & 0x0000000000000003ULL);
-	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, 32, 2);
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size, local_simd.nb_input_operand);
 
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size);
+	asmOperand_frag(local_simd.input_operand, in_operand_buffer, size, (in_operand_buffer[1].operand_type.imm >> 4) & 0x0000000000000003ULL);
+	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, size, 2);
 
-	asmOperand_frag(local_simd.input_operand, in_operand_buffer, 32, (in_operand_buffer[1].operand_type.imm >> 6) & 0x0000000000000003ULL);
-	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, 32, 3);
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size, local_simd.nb_input_operand);
 
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size);
+	asmOperand_frag(local_simd.input_operand, in_operand_buffer, size, (in_operand_buffer[1].operand_type.imm >> 6) & 0x0000000000000003ULL);
+	asmOperand_frag(&(local_simd.output_operand), ou_operand_buffer, size, 3);
+
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size, local_simd.nb_input_operand);
 }
 
 static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
-	struct asmRiscIns local_simd;
+	struct asmRiscIns 	local_simd;
+	uint32_t 			frag_size;
+	uint32_t 			i;
 
 	local_simd.opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
 	asmOperand_decode(it, local_simd.input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(local_simd.nb_input_operand), mem_addr);
@@ -2069,19 +2017,58 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 	}
 	#endif
 
-	if (irBuilder_get_vir_register_frag_size(&(ir->builder), local_simd.input_operand[0].operand_type.reg) != 32 && local_simd.input_operand[1].type == ASM_OPERAND_IMM){
-		log_warn_m("possible simplification: shift %llu -> to be implemented", local_simd.input_operand[1].operand_type.imm);
-	}
-
-	if (local_simd.input_operand[1].type == ASM_OPERAND_MEM || local_simd.input_operand[1].type == ASM_OPERAND_REG){
+	if (local_simd.input_operand[1].type != ASM_OPERAND_IMM){
 		log_err("this case is not implemented yet: PS*LD second operand is not an IMM -> skip instruction");
 		return;
 	}
 
-	asmOperand_decode(it, &(local_simd.output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, mem_addr);
+	frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), local_simd.input_operand[0].operand_type.reg);
+
+	if (local_simd.input_operand[1].operand_type.imm >= 32){
+		enum irRegister reg = local_simd.input_operand[0].operand_type.reg;
+		uint32_t 		size = local_simd.input_operand[0].size;
+
+		asmRisc_set_reg_cst(&local_simd, size, it->instruction_index, 0, reg)
+
+		cisc->type 		= CISC_TYPE_PARA;
+		cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, 1);
+
+		return;
+	}
+
+	if (local_simd.input_operand[1].operand_type.imm % frag_size == 0){
+		enum irRegister reg = local_simd.input_operand[0].operand_type.reg;
+		
+		cisc->type 		= CISC_TYPE_PARA;
+		cisc->nb_ins 	= 0;
+
+		for (i = 0; i < local_simd.input_operand[0].size / frag_size; i++){
+			if (local_simd.opcode == IR_SHL){
+				if ((i % (32 / frag_size)) < local_simd.input_operand[1].operand_type.imm / frag_size){
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(reg, frag_size, i))
+				}
+				else{
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(reg, frag_size, i - (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(reg, frag_size, i))
+				}
+			}
+			else{
+				if ((i % (32 / frag_size)) >= (32 - local_simd.input_operand[1].operand_type.imm) / frag_size){
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(reg, frag_size, i))
+				}
+				else{
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(reg, frag_size, i + (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(reg, frag_size, i))
+				}
+			}
+			cisc->nb_ins ++;
+		}
+
+		return;
+	}
+
+	asmOperand_copy(&(local_simd.output_operand), local_simd.input_operand);
 
 	cisc->type 		= CISC_TYPE_PARA;
-	cisc->nb_ins 	= asmSimd_frag_first(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, 32);
+	cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, 32, 1);
 }
 
 static void simd_decode_special_punpckldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -2120,14 +2107,14 @@ static void simd_decode_special_punpckldq(struct ir* ir, struct instructionItera
 			asmOperand_frag(local_simd.input_operand, operand_buffer + 1, 32, i2);
 			asmOperand_frag(&(local_simd.output_operand), operand_buffer, 32, i1 + i2);
 
-			cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size2);
+			cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size2, local_simd.nb_input_operand);
 			i2 ++;
 		}
 		else{
 			asmOperand_frag(local_simd.input_operand, operand_buffer, 32, i1);
 			asmOperand_frag(&(local_simd.output_operand), operand_buffer, 32, i1 + i2);
 
-			cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size1);
+			cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size1, local_simd.nb_input_operand);
 			i1 ++;
 		}
 	}
@@ -2139,20 +2126,20 @@ static void simd_decode_special_vzeroall(struct instructionIterator* it, struct 
 	cisc->type 		= CISC_TYPE_PARA;
 	cisc->nb_ins 	= 0;
 
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM1, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM2, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM3, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM4, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM5, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM6, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM7, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
-	asmRisc_set_reg_cst(&local_simd, IR_VREG_YMM8, 256, 0)
-	cisc->nb_ins += asmSimd_frag_all(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, 32);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM1)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM2)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM3)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM4)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM5)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM6)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM7)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
+	asmRisc_set_reg_cst(&local_simd, 256, it->instruction_index, 0, IR_VREG_YMM8)
+	cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, SIMD_DEFAULT_FRAG_SIZE, local_simd.nb_input_operand);
 }

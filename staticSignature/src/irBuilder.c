@@ -634,10 +634,13 @@ static const uint32_t irVirtualRegister_size[NB_IR_VIR_REGISTER] = {
 };
 
 int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enum irVirtualRegister vreg, uint8_t frag_size, uint32_t instruction_index){
-	uint32_t i;
-	uint32_t old_frag_size;
+	uint32_t 			i;
+	uint32_t 			j;
+	uint32_t 			old_frag_size;
+	struct simdAlias* 	alias; 
 
-	old_frag_size = builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].frag_size;
+	alias = builder->simdAlias_buffer + (vreg - IR_VIR_REGISTER_OFFSET);
+	old_frag_size = alias->frag_size;
 
 	if (old_frag_size > frag_size){
 		struct node* new_node_buffer[IR_VIR_REGISTER_NB_FRAG_MAX] = {NULL};
@@ -647,7 +650,7 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 				struct node* shr;
 				struct node* dis;
 
-				if (builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node == NULL){
+				if (alias->fragAlias_buffer[i].ir_node == NULL){
 					continue;
 				}
 
@@ -657,23 +660,29 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 				dis = ir_add_immediate(ir, 32, 16);
 
 				if (new_node_buffer[2*i + 0] != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 0], IR_DEPENDENCE_TYPE_DIRECT);
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 0], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
 				}
 				else{
 					log_err("unable to add operation to IR");
 				}
 
 				if (shr != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, shr, IR_DEPENDENCE_TYPE_DIRECT);
+					ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, shr, IR_DEPENDENCE_TYPE_DIRECT);
 					if (dis != NULL){
-						ir_add_dependence(ir, dis, shr, IR_DEPENDENCE_TYPE_SHIFT_DISP);
+						if (ir_add_dependence(ir, dis, shr, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+							log_err("unable to add dependence to IR");
+						}
 					}
 					else{
 						log_err("unable to add operation to IR");
 					}
 
 					if (new_node_buffer[2*i + 1] != NULL){
-						ir_add_dependence(ir, shr, new_node_buffer[2*i + 1], IR_DEPENDENCE_TYPE_DIRECT);
+						if (ir_add_dependence(ir, shr, new_node_buffer[2*i + 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependence to IR");
+						}
 					}
 					else{
 						log_err("unable to add operation to IR");
@@ -689,7 +698,7 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 				struct node* shr;
 				struct node* dis;
 
-				if (builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node == NULL){
+				if (alias->fragAlias_buffer[i].ir_node == NULL){
 					continue;
 				}
 
@@ -701,35 +710,45 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 				dis = ir_add_immediate(ir, 32, 16);
 
 				if (new_node_buffer[4*i + 0] != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, new_node_buffer[4*i + 0], IR_DEPENDENCE_TYPE_DIRECT);
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, new_node_buffer[4*i + 0], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
 				}
 				else{
 					log_err("unable to add operation to IR");
 				}
 				if (new_node_buffer[4*i + 1] != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, new_node_buffer[4*i + 1], IR_DEPENDENCE_TYPE_DIRECT);
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, new_node_buffer[4*i + 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
 				}
 				else{
 					log_err("unable to add operation to IR");
 				}
 
 				if (shr != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, shr, IR_DEPENDENCE_TYPE_DIRECT);
+					ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, shr, IR_DEPENDENCE_TYPE_DIRECT);
 					if (dis != NULL){
-						ir_add_dependence(ir, dis, shr, IR_DEPENDENCE_TYPE_SHIFT_DISP);
+						if (ir_add_dependence(ir, dis, shr, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+							log_err("unable to add dependence to IR");
+						}
 					}
 					else{
 						log_err("unable to add operation to IR");
 					}
 
 					if (new_node_buffer[4*i + 2] != NULL){
-						ir_add_dependence(ir, shr, new_node_buffer[4*i + 2], IR_DEPENDENCE_TYPE_DIRECT);
+						if (ir_add_dependence(ir, shr, new_node_buffer[4*i + 2], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependence to IR");
+						}
 					}
 					else{
 						log_err("unable to add operation to IR");
 					}
 					if (new_node_buffer[4*i + 3] != NULL){
-						ir_add_dependence(ir, shr, new_node_buffer[4*i + 3], IR_DEPENDENCE_TYPE_DIRECT);
+						if (ir_add_dependence(ir, shr, new_node_buffer[4*i + 3], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependence to IR");
+						}
 					}
 					else{
 						log_err("unable to add operation to IR");
@@ -742,7 +761,7 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 		}
 		else if (old_frag_size == 16 && frag_size == 8){
 			for (i = 0; i < irVirtualRegister_size[vreg - IR_VIR_REGISTER_OFFSET] >> 4; i++){
-				if (builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node == NULL){
+				if (alias->fragAlias_buffer[i].ir_node == NULL){
 					continue;
 				}
 
@@ -750,32 +769,136 @@ int32_t irBuilder_change_simd_frag(struct irBuilder* builder, struct ir* ir, enu
 				new_node_buffer[2*i + 1] = ir_add_inst(ir, instruction_index, frag_size, IR_PART2_8, irBuilder_get_call_id(builder));
 
 				if (new_node_buffer[2*i + 0] != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 0], IR_DEPENDENCE_TYPE_DIRECT);
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 0], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
 				}
 				else{
 					log_err("unable to add operation to IR");
 				}
 
 				if (new_node_buffer[2*i + 1] != NULL){
-					ir_add_dependence(ir, builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 1], IR_DEPENDENCE_TYPE_DIRECT);
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, new_node_buffer[2*i + 1], IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
 				}
 				else{
 					log_err("unable to add operation to IR");
 				}
 			}
 		}
+		#ifdef EXTRA_CHECK
+		else{
+			log_err_m("this case %u -> %u  is not handled yet", old_frag_size, frag_size);
+			return -1;
+		}
+		#endif
 
 		for (i = irVirtualRegister_size[vreg - IR_VIR_REGISTER_OFFSET] / frag_size; i; i--){
-			builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i - 1].ir_node = new_node_buffer[i - 1];
-			builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i - 1].type = builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].fragAlias_buffer[i / (old_frag_size / frag_size) - 1].type;
+			alias->fragAlias_buffer[i - 1].ir_node = new_node_buffer[i - 1];
+			alias->fragAlias_buffer[i - 1].type = alias->fragAlias_buffer[i / (old_frag_size / frag_size) - 1].type;
 		}
 	}
 	else if (old_frag_size < frag_size){
-		log_err_m("this case %u -> %u  is not handled yet", old_frag_size, frag_size);
-		return -1;
+		for (i = 0; i < irVirtualRegister_size[vreg - IR_VIR_REGISTER_OFFSET] / frag_size; i++){
+			uint32_t nb_frag;
+			uint32_t frag;
+
+			for (j = 0, nb_frag = 0; j < (frag_size / old_frag_size); j++){
+				frag = i * (frag_size / old_frag_size) + j;
+				if (alias->fragAlias_buffer[frag].ir_node != NULL){
+					nb_frag ++;
+				}
+			}
+			if (nb_frag){
+				for (j = 0; j < (frag_size / old_frag_size); j++){
+					frag = i * (frag_size / old_frag_size) + j;
+					if (alias->fragAlias_buffer[frag].ir_node == NULL){
+						struct node* reg;
+
+						reg = ir_add_in_reg(ir, instruction_index, irRegister_virtual_get_simd(vreg, old_frag_size, frag), (alias_is_primer(alias->fragAlias_buffer[frag])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
+						if (reg != NULL){
+							alias->fragAlias_buffer[frag].ir_node = reg;
+							alias_set_type(alias->fragAlias_buffer[frag], IRBUILDER_TYPE_READ);
+						}
+						else{
+							log_err("unable to add input to IR");
+						}
+					}
+				}
+			}
+		}
+
+		for (i = 0; i < irVirtualRegister_size[vreg - IR_VIR_REGISTER_OFFSET] / old_frag_size; i++){
+			if (alias->fragAlias_buffer[i].ir_node != NULL){
+				struct node* movzx;
+
+				movzx = ir_add_inst(ir, instruction_index, frag_size, IR_MOVZX, irBuilder_get_call_id(builder));
+				if (movzx != NULL){
+					if (ir_add_dependence(ir, alias->fragAlias_buffer[i].ir_node, movzx, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add dependence to IR");
+					}
+					alias->fragAlias_buffer[i].ir_node = movzx;
+				}
+				else{
+					log_err("unable to add operation to IR");
+				}
+
+				if (i % (frag_size / old_frag_size)){
+					struct node* shl;
+					struct node* dis;
+
+					shl = ir_add_inst(ir, instruction_index, frag_size, IR_SHL, irBuilder_get_call_id(builder));
+					dis = ir_add_immediate(ir, frag_size, (i % (frag_size / old_frag_size)) * old_frag_size);
+					if (shl != NULL){
+						if (dis != NULL){
+							if (ir_add_dependence(ir, dis, shl, IR_DEPENDENCE_TYPE_SHIFT_DISP) == NULL){
+								log_err("unable to add dependence to IR");
+							}
+						}
+						else{
+							log_err("unable to add operation to IR");
+						}
+						if (ir_add_dependence(ir, movzx, shl, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependence to IR");
+						}
+						alias->fragAlias_buffer[i].ir_node = shl;
+					}
+					else{
+						log_err("unable to add operation to IR");
+					}
+				}
+			}
+		}
+
+		for (i = 0; i < irVirtualRegister_size[vreg - IR_VIR_REGISTER_OFFSET] / frag_size; i++){
+			struct node* 	or;
+			uint32_t 		frag;
+
+			or = ir_add_inst(ir, instruction_index, frag_size, IR_OR, irBuilder_get_call_id(builder));
+			if (or != NULL){
+				frag = i * (frag_size / old_frag_size);
+				if (ir_add_dependence(ir, alias->fragAlias_buffer[frag].ir_node, or, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+					log_err("unable to add dependence to IR");
+				}
+				alias->fragAlias_buffer[i].ir_node = or;
+
+				for (j = 1; j < (frag_size / old_frag_size); j++){
+					frag = i * (frag_size / old_frag_size) + j;
+					if (alias->fragAlias_buffer[frag].ir_node != NULL){
+						if (ir_add_dependence(ir, alias->fragAlias_buffer[frag].ir_node, or, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+							log_err("unable to add dependence to IR");
+						}
+					}
+				}
+			}
+			else{
+				log_err("unable to add operation to IR");
+			}
+		}
 	}
 
-	builder->simdAlias_buffer[vreg - IR_VIR_REGISTER_OFFSET].frag_size = frag_size;
+	alias->frag_size = frag_size;
 
 	return 0;
 }
