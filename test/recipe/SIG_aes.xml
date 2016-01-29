@@ -404,16 +404,30 @@
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_AES" active="no">
+	<recipe name="OPEN_AES" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_aes"/>
 		<search>
 			<arg value="load trace traceOPEN_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph AES_encrypt"/> <!-- function boundary is not correctly detected by PIN, hence it also exports the decryption routine -->
+			<arg value="create ir 1"/>
+			<arg value="create ir 3"/>
+			<arg value="create ir 5"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
+			<algo name="aes_open_128" number="1"/>
+			<algo name="aes_open_196" number="1"/>
+			<algo name="aes_open_256" number="1"/>
+			<algo name="aes_open_r1" number="66"/>
+			<algo name="aes_open_r9" number="18"/>
+			<algo name="aes_open_r11" number="8"/>
+			<algo name="aes_open_r13" number="2"/>
+			<algo name="aes_open_mixColumn" number="132"/>
 		</result>
 	</recipe>
 
