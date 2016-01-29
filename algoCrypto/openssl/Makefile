@@ -5,6 +5,11 @@ CFLAGS						:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2
 LDFLAGS						:= -lcrypto
 
 AES_OPENSSL_EXAMPLE_NAME 		:= openssl_aes
+ECB_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_ecb_aes
+CBC_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_cbc_aes
+OFB_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_ofb_aes
+CFB_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_cfb_aes
+CTR_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_ctr_aes
 MD5_OPENSSL_EXAMPLE_NAME 		:= openssl_md5
 RC4_OPENSSL_EXAMPLE_NAME 		:= openssl_rc4
 DES_OPENSSL_EXAMPLE_NAME 		:= openssl_des
@@ -12,6 +17,11 @@ SHA1_OPENSSL_EXAMPLE_NAME 		:= openssl_sha1
 HMAC_MD5_OPENSSL_EXAMPLE_NAME 	:= openssl_hmac_md5
 
 all: 	build/$(AES_OPENSSL_EXAMPLE_NAME) 		\
+		build/$(ECB_AES_OPENSSL_EXAMPLE_NAME) 	\
+		build/$(CBC_AES_OPENSSL_EXAMPLE_NAME) 	\
+		build/$(OFB_AES_OPENSSL_EXAMPLE_NAME) 	\
+		build/$(CFB_AES_OPENSSL_EXAMPLE_NAME) 	\
+		build/$(CTR_AES_OPENSSL_EXAMPLE_NAME) 	\
 		build/$(MD5_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(RC4_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(DES_OPENSSL_EXAMPLE_NAME) 		\
@@ -19,6 +29,21 @@ all: 	build/$(AES_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(HMAC_MD5_OPENSSL_EXAMPLE_NAME)
 
 build/$(AES_OPENSSL_EXAMPLE_NAME): build/openssl_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(ECB_AES_OPENSSL_EXAMPLE_NAME): build/openssl_ecb_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(CBC_AES_OPENSSL_EXAMPLE_NAME): build/openssl_cbc_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(OFB_AES_OPENSSL_EXAMPLE_NAME): build/openssl_ofb_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(CFB_AES_OPENSSL_EXAMPLE_NAME): build/openssl_cfb_aes.o build/printBuffer.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+build/$(CTR_AES_OPENSSL_EXAMPLE_NAME): build/openssl_ctr_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/$(MD5_OPENSSL_EXAMPLE_NAME): build/openssl_md5.o build/printBuffer.o

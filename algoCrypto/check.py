@@ -92,6 +92,7 @@ ckeck_list = [
 	# AES ECB
 	[
 		r'test/build/test_ecb_aes_[gc]o[0-9sz]',
+		r'openssl/build/openssl_ecb_aes',
 		r'tomCrypt/build/tom_ecb_aes',
 		r'botan/build/bot_ecb_aes'
 	],
@@ -99,6 +100,7 @@ ckeck_list = [
 	# AES CBC
 	[
 		r'test/build/test_cbc_aes_[gc]o[0-9sz]',
+		r'openssl/build/openssl_cbc_aes',
 		r'tomCrypt/build/tom_cbc_aes',
 		r'botan/build/bot_cbc_aes',
 		r'nettle/build/net_cbc_aes'
@@ -107,6 +109,7 @@ ckeck_list = [
 	# AES OFB
 	[
 		r'test/build/test_ofb_aes_[gc]o[0-9sz]',
+		r'openssl/build/openssl_ofb_aes',
 		r'tomCrypt/build/tom_ofb_aes',
 		r'botan/build/bot_ofb_aes'
 	],
@@ -114,14 +117,21 @@ ckeck_list = [
 	# AES CFB
 	[
 		r'test/build/test_cfb_aes_[gc]o[0-9sz]',
+		r'openssl/build/openssl_cfb_aes',
 		r'tomCrypt/build/tom_cfb_aes',
 		r'botan/build/bot_cfb_aes'
 	],
 
-	# AES CTR
+	# AES CTR (endianess 1)
 	[
 		r'test/build/test_ctr_aes_[gc]o[0-9sz]',
 		r'tomCrypt/build/tom_ctr_aes'
+	],
+
+	# AES CTR (endianess 2)
+	[
+		r'openssl/build/openssl_ctr_aes',
+		r'botan/build/bot_ctr_aes'
 	],
 
 	# SHA1
