@@ -94,6 +94,8 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address);
 #define CODEMAP_IS_ADDRESS_IN_SECTION(sec, addr) 	((sec)->address_start <= (addr) && (sec)->address_stop >= (addr))
 #define CODEMAP_IS_ADDRESS_IN_IMAGE(img, addr) 		((img)->address_start <= (addr) && (img)->address_stop >= (addr))
 
-void codeMap_print_address_info(struct codeMap* cm, ADDRESS address, FILE* file);
+void codeMap_fprint_address_info(struct codeMap* cm, ADDRESS address, FILE* file);
+
+struct cm_routine* codeMap_search_symbol(struct codeMap* cm, struct cm_routine* last, const char* symbol);
 
 #endif

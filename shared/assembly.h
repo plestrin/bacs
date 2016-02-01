@@ -75,9 +75,11 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block);
 
 int32_t assembly_get_first_instruction(const struct assembly* assembly, struct instructionIterator* it);
+int32_t assembly_get_first_pc(const struct assembly* assembly, struct instructionIterator* it, ADDRESS pc);
 int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index);
 int32_t assembly_get_next_instruction(const struct assembly* assembly, struct instructionIterator* it);
 int32_t assembly_get_next_block(const struct assembly* assembly, struct instructionIterator* it);
+int32_t assembly_get_next_pc(const struct assembly* assembly, struct instructionIterator* it);
 
 int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
 

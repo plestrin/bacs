@@ -875,7 +875,7 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 	return CODEMAP_NOT_WHITELISTED;
 }
 
-void codeMap_print_address_info(struct codeMap* cm, ADDRESS address, FILE* file){
+void codeMap_fprint_address_info(struct codeMap* cm, ADDRESS address, FILE* file){
 	struct cm_routine* rtn;
 
 	if (cm != NULL && (rtn = codeMap_search_routine(cm, address)) != NULL){
@@ -891,4 +891,33 @@ void codeMap_print_address_info(struct codeMap* cm, ADDRESS address, FILE* file)
 		#error Please specify an architecture {ARCH_32 or ARCH_64}
 		#endif
 	}
+}
+
+struct cm_routine* codeMap_search_symbol(struct codeMap* cm, struct cm_routine* last, const char* symbol){
+	struct cm_image* 	image_cursor;
+	struct cm_section* 	section_cursor;
+	struct cm_routine* 	routine_cursor;
+
+	if (last == NULL){
+		image_cursor 	= NULL;
+		section_cursor 	= NULL;
+		routine_cursor 	= NULL;
+	}
+	else{
+		routine_cursor 	= last->next;
+		section_cursor 	= last->parent;
+		image_cursor 	= section_cursor->parent; 
+	}
+
+	for (image_cursor = (image_cursor != NULL) ? image_cursor : cm->images; image_cursor; image_cursor = image_cursor->next, section_cursor = NULL){
+		for (section_cursor = (section_cursor != NULL) ? section_cursor : image_cursor->sections; section_cursor; section_cursor = section_cursor->next, routine_cursor = NULL){
+			for (routine_cursor = (routine_cursor != NULL) ? routine_cursor : section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
+				if (!strncmp(symbol, routine_cursor->name, CODEMAP_DEFAULT_NAME_SIZE)){
+					return routine_cursor;
+				}
+			}
+		}
+	}
+
+	return NULL;
 }

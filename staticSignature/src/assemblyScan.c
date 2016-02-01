@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "assemblyScan.h"
+#include "callGraph.h"
 #include "set.h"
 #include "array.h"
 #include "base.h"
@@ -15,10 +16,13 @@ static const xed_iclass_enum_t crypto_instruction[] = {
 	XED_ICLASS_AESENC,
 	XED_ICLASS_AESENCLAST,
 	XED_ICLASS_AESIMC,
-	XED_ICLASS_AESKEYGENASSIST
+	XED_ICLASS_AESKEYGENASSIST,
+	XED_ICLASS_PCLMULQDQ
 };
 
 #define nb_crypto_instruction (sizeof(crypto_instruction) / sizeof(xed_iclass_enum_t))
+
+#define ASSEMBLYSCAN_MIN_BIT_WISE_RATIO 25.0
 
 static const xed_iclass_enum_t bitwise_instruction[] = {
 	XED_ICLASS_AND,
@@ -32,16 +36,20 @@ static const xed_iclass_enum_t bitwise_instruction[] = {
 	XED_ICLASS_ROR,
 	XED_ICLASS_SHR,
 	XED_ICLASS_SHL,
+	XED_ICLASS_PSLLD,
+	XED_ICLASS_PSRLD,
 	XED_ICLASS_XOR,
 	XED_ICLASS_PXOR,
 	XED_ICLASS_VPXOR,
+	XED_ICLASS_XORPD,
 	XED_ICLASS_XORPS,
+	XED_ICLASS_VXORPD,
 	XED_ICLASS_VXORPS
 };
 
 #define nb_bitwise_instruction (sizeof(bitwise_instruction) / sizeof(xed_iclass_enum_t))
 
-static struct array* assemblyScan_create_bbl_array(struct assembly* assembly){
+static struct array* assemblyScan_create_bbl_array(const struct assembly* assembly){
 	struct array* 		bbl_array;
 	struct asmBlock* 	block;
 	uint32_t 			block_offset;
@@ -102,7 +110,7 @@ static uint32_t assemblyScan_count_specific_instruction(struct asmBlock* block, 
 	return result;
 }
 
-static uint32_t assemblyScan_is_executed(struct assembly* assembly, struct asmBlock* block){
+static uint32_t assemblyScan_is_executed(const struct assembly* assembly, const struct asmBlock* block){
 	uint32_t i;
 
 	for (i = 0; i < assembly->nb_dyn_block; i++){
@@ -116,16 +124,54 @@ static uint32_t assemblyScan_is_executed(struct assembly* assembly, struct asmBl
 	return 0;
 }
 
-void assemblyScan_scan(struct assembly* assembly){
+static void assemblyScan_get_function(const struct assembly* assembly, const struct asmBlock* block, struct callGraph* call_graph, struct set* function_set){
+	uint32_t 		i;
+	struct node* 	function;
+
+	for (i = 0; i < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
+			if (assembly->dyn_blocks[i].block == block){
+				function = callGraph_get_index(call_graph, assembly->dyn_blocks[i].instruction_count);
+				if (function != NULL){
+					if (set_add_unique(function_set, &function) < 0){
+						log_err("unable to add element to set");
+					}
+				}
+				else{
+					log_err_m("no function for index: %u", assembly->dyn_blocks[i].instruction_count);
+				}
+			}
+		}
+	}
+}
+
+/*
+ * List of heuristics
+ *	- Special opcode (refer to crypto_instruction)
+ * 	1 Large basic blocks (refer to ASSEMBLYSCAN_NB_MIN_INSTRUCTION)
+ * 	2 High ratio of bitwise instruction (refer to bitwise_instruction and ASSEMBLYSCAN_MIN_BIT_WISE_RATIO)
+ * 	3 Leaf in the callGraph if provided
+ */
+
+void assemblyScan_scan(const struct assembly* assembly, void* call_graph){
 	struct asmBlock* 	block;
 	xed_decoded_inst_t 	xedd;
 	uint32_t 			i;
 	struct array* 		bbl_array;
 	uint32_t* 			address_mapping;
+	struct set 			function_set;
+	struct setIterator 	it;
+	struct node** 		func_ptr;
+
+	set_init(&function_set, sizeof(struct node*), 16);
+
+	if (call_graph != NULL){
+		log_info("using callGraph to apply function heuristic(s)");
+	}
 
 	bbl_array = assemblyScan_create_bbl_array(assembly);
 	if (bbl_array == NULL){
-		log_err("unable to craete bbl array");
+		log_err("unable to create bbl array");
 		return;
 	}
 
@@ -191,16 +237,25 @@ void assemblyScan_scan(struct assembly* assembly){
 				else{
 					printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
 				}
-				if (assemblyScan_is_executed(assembly, block)){
-					puts(" " "\x1b[1;32m" "Y" ANSI_COLOR_RESET);
-				}
-				else{
-					puts(" " "\x1b[1;31m" "N" ANSI_COLOR_RESET);
-				}
-
+				
 				#else
 				printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%% %c\n", nb_bbl, nb_ins, block->header.address, address, ratio, (assemblyScan_is_executed(assembly, block)) ? 'Y' : 'N');
 				#endif
+
+				if (call_graph == NULL){
+					if (assemblyScan_is_executed(assembly, block)){
+						puts(" " ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET);
+					}
+					else{
+						puts(" " ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET);
+					}
+				}
+				else{
+					 if (ratio >= ASSEMBLYSCAN_MIN_BIT_WISE_RATIO){
+						assemblyScan_get_function(assembly, block, call_graph, &function_set);
+					}
+					putchar('\n');
+				}
 			}
 			else{
 				i ++;
@@ -212,5 +267,17 @@ void assemblyScan_scan(struct assembly* assembly){
 
 	log_info_m("%d block(s) have been scanned", array_get_length(bbl_array));
 
+	for (func_ptr = setIterator_get_first(&function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
+		if (callGraphNode_is_leaf(*func_ptr)){
+			fputs(" - leaf:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " ", stdout);
+		}
+		else{
+			fputs(" - leaf:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " ", stdout);
+		}
+		callGraph_fprint_node(call_graph, *func_ptr, stdout);
+		putchar('\n');
+	}
+
 	array_delete(bbl_array);
+	set_clean(&function_set);
 }

@@ -645,7 +645,7 @@ void trace_print_location(const struct trace* trace, struct codeMap* cm){
 			#else
 			#error Please specify an architecture {ARCH_32 or ARCH_64}
 			#endif
-			codeMap_print_address_info(cm, trace->assembly.dyn_blocks[i].block->header.address, stdout);
+			codeMap_fprint_address_info(cm, trace->assembly.dyn_blocks[i].block->header.address, stdout);
 			printf("\n");
 		}
 		else{

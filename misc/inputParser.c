@@ -297,7 +297,7 @@ static char* inputParser_get_argument(char* cmd, char* line){
 	return result;
 }
 
-void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop){
+void inputParser_extract_index(const char* input, uint32_t* start, uint32_t* stop){
 	uint32_t 	length;
 	char* 		offset1;
 	char* 		offset2;

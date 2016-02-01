@@ -243,7 +243,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 }
 
 int32_t assembly_get_first_instruction(const struct assembly* assembly, struct instructionIterator* it){
-	xed_error_enum_t 	xed_error;
+	xed_error_enum_t xed_error;
 
 	it->instruction_index 			= 0;
 	it->dyn_block_index 			= 0;
@@ -273,6 +273,34 @@ int32_t assembly_get_first_instruction(const struct assembly* assembly, struct i
 	it->instruction_address = assembly->dyn_blocks[it->dyn_block_index].block->header.address;
 
 	return 0;
+}
+
+int32_t assembly_get_first_pc(const struct assembly* assembly, struct instructionIterator* it, ADDRESS pc){
+	uint32_t i;
+
+	for (i = 0; i < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
+			if (pc >= assembly->dyn_blocks[i].block->header.address && assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size > pc){
+				if (assembly_get_instruction(assembly, it, assembly->dyn_blocks[i].instruction_count)){
+					log_err("unable to fetch first instruction from the assembly");
+					return -1;
+				}
+
+				for (; it->instruction_address < pc && it->instruction_sub_index < assembly->dyn_blocks[i].block->header.nb_ins; ){
+					if (assembly_get_next_instruction(assembly, it)){
+						log_err("unable to fetch next instruction from the assembly");
+						return -1;
+					}
+				}
+
+				if (it->instruction_address == pc){
+					return 0;
+				}
+			}
+		}
+	}
+
+	return 1;
 }
 
 int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index){
@@ -434,6 +462,35 @@ int32_t assembly_get_next_block(const struct assembly* assembly, struct instruct
 	it->instruction_address = assembly->dyn_blocks[it->dyn_block_index].block->header.address;
 
 	return 0;
+}
+
+int32_t assembly_get_next_pc(const struct assembly* assembly, struct instructionIterator* it){
+	uint32_t 	i;
+	ADDRESS 	pc = it->instruction_address;
+
+	for (i = it->dyn_block_index + 1; i < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
+			if (pc >= assembly->dyn_blocks[i].block->header.address && assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size > pc){
+				if (assembly_get_instruction(assembly, it, assembly->dyn_blocks[i].instruction_count)){
+					log_err("unable to fetch first instruction from the assembly");
+					return -1;
+				}
+
+				for (; it->instruction_address < pc && it->instruction_sub_index < assembly->dyn_blocks[i].block->header.nb_ins; ){
+					if (assembly_get_next_instruction(assembly, it)){
+						log_err("unable to fetch next instruction from the assembly");
+						return -1;
+					}
+				}
+
+				if (it->instruction_address == pc){
+					return 0;
+				}
+			}
+		}
+	}
+
+	return 1;
 }
 
 int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){

@@ -17,7 +17,7 @@ enum blockLabel{
 
 #define CALLGRAPH_ENABLE_LABEL_CHECK 1
 
-static enum blockLabel* callGraph_label_blocks(struct assembly* assembly);
+static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly);
 
 static int32_t function_add_snippet(struct callGraph* call_graph, struct function* func, uint32_t start, uint32_t stop, ADDRESS expected_next_address);
 static int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func);
@@ -49,7 +49,7 @@ void callGraph_dotPrint_edge(void* data, FILE* file, void* arg){
 	}
 }
 
-struct callGraph* callGraph_create(struct trace* trace, uint32_t start, uint32_t stop){
+struct callGraph* callGraph_create(const struct trace* trace, uint32_t start, uint32_t stop){
 	struct callGraph* call_graph;
 
 	call_graph = (struct callGraph*)malloc(sizeof(struct callGraph));
@@ -63,7 +63,7 @@ struct callGraph* callGraph_create(struct trace* trace, uint32_t start, uint32_t
 	return call_graph;
 }
 
-int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32_t start, uint32_t stop){
+int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, uint32_t start, uint32_t stop){
 	struct node** 				call_graph_stack 	= NULL;
 	uint32_t 					stack_index			= CALLGRAPH_START_DEPTH;
 	enum blockLabel* 			label_buffer 		= NULL;
@@ -97,12 +97,10 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 	graph_init(&(call_graph->graph), sizeof(struct function), sizeof(struct callGraphEdge))
 	graph_register_dotPrint_callback(&(call_graph->graph), NULL, callGraph_dotPrint_node, callGraph_dotPrint_edge, NULL)
 
-	call_graph->assembly_ref = &(trace->assembly);
-
 	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
 		if (trace->assembly.dyn_blocks[i].instruction_count < start){
 			if (dynBlock_is_valid(trace->assembly.dyn_blocks + i) && trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins > start){
-				log_warn_m("index %u is not at a the begining of a basic block, rounding", start);
+				log_warn_m("index %u is not at a the beginning of a basic block, rounding", start);
 			}
 			else{
 				continue;
@@ -298,7 +296,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct trace* trace, uint32
 	return result;
 }
 
-static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
+static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
 	uint32_t 			nb_block;
@@ -432,7 +430,7 @@ static int32_t function_get_first_snippet(struct callGraph* call_graph, struct f
 	return index;
 }
 
-void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map){
+void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map){
 	struct node* 				node_cursor;
 	struct function* 			function_cursor;
 	int32_t 					snippet_index;
@@ -480,7 +478,7 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, struct trac
 	}
 }
 
-void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct trace* trace, struct codeMap* code_map){
+void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map){
 	struct node* 				node;
 	struct function* 			func;
 	int32_t 					snippet_index;
@@ -526,7 +524,7 @@ void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, struct tr
 	}
 }
 
-void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
+void callGraph_check(struct callGraph* call_graph, const struct assembly* assembly, struct codeMap* code_map){
 	struct node* 				node_cursor;
 	struct function* 			function_cursor;
 	int32_t 					index;
@@ -547,7 +545,7 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), index);
 
 			if (prev_snippet != NULL){
-				if (assembly_get_instruction(call_graph->assembly_ref, &it, prev_snippet->offset)){
+				if (assembly_get_instruction(assembly, &it, prev_snippet->offset)){
 					log_err_m("unable to fetch instruction @ %u", prev_snippet->offset);
 				}
 				else{
@@ -623,7 +621,7 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 			for (index = function_cursor->last_snippet_offset; index >= 0; index = snippet->prev_snippet_offset){
 				snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), index);
 
-				if (assembly_get_instruction(call_graph->assembly_ref, &it, snippet->offset)){
+				if (assembly_get_instruction(assembly, &it, snippet->offset)){
 					log_err_m("unable to fetch instruction @ %u", snippet->offset);
 				}
 				else{
@@ -634,11 +632,11 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 
 					if (routine != NULL && function_cursor->routine != NULL){
 						if (strncmp(routine->name, function_cursor->routine->name, CODEMAP_DEFAULT_NAME_SIZE)){
-							log_warn_m("snippet of function %s, appars to be in %s", function_cursor->routine->name, routine->name);
+							log_warn_m("snippet of function %s, appears to be in %s", function_cursor->routine->name, routine->name);
 						}
 					}
 					else if (routine != NULL && function_cursor->routine == NULL){
-						log_warn_m("snippet of function NULL, appars to be in %s", routine->name);
+						log_warn_m("snippet of function NULL, appears to be in %s", routine->name);
 					}
 				}
 			}
@@ -647,14 +645,11 @@ void callGraph_check(struct callGraph* call_graph, struct codeMap* code_map){
 	#endif
 }
 
-void callGraph_print_stack(struct callGraph* call_graph, uint32_t index){
-	struct node* 				node_cursor;
-	struct edge*				edge_cursor;
-	struct node*				caller_node;
-	struct function*			caller_function;
-	struct function* 			function_cursor;
-	int32_t 					cursor;
-	struct assemblySnippet* 	snippet;
+struct node* callGraph_get_index(struct callGraph* call_graph, uint32_t index){
+	struct node* 			node_cursor;
+	struct function* 		function_cursor;
+	int32_t 				cursor;
+	struct assemblySnippet* snippet;
 
 	for (node_cursor = graph_get_head_node(&(call_graph->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		function_cursor = callGraph_node_get_function(node_cursor);
@@ -663,99 +658,131 @@ void callGraph_print_stack(struct callGraph* call_graph, uint32_t index){
 			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), cursor);
 
 			if (snippet->offset <= index && snippet->offset + snippet->length > index){
-				if (function_cursor->routine != NULL){
-					log_info_m("found index in %s", function_cursor->routine->name);
-				}
-				else{
-					log_info_m("found index in %p", (void*)function_cursor);
-				}
+				return node_cursor;
+			}
+		}
+	}
 
-				for (caller_node = node_cursor; ; ){
-					for (edge_cursor = node_get_head_edge_dst(caller_node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-						if (callGraph_edge_get_data(edge_cursor)->type == CALLGRAPH_EDGE_CALL){
-							break;
-						}
-					}
+	log_err_m("unable to find a callGraph node associated to index %u", index);
 
-					if (edge_cursor != NULL){
-						caller_node = edge_get_src(edge_cursor);
-						caller_function = callGraph_node_get_function(caller_node);
+	return NULL;
+}
 
-						if (function_is_valid(caller_function)){
-							if (caller_function->routine != NULL){
-								printf("\t%s\n", caller_function->routine->name);
-							}
-							else{
-								printf("\t%p\n", (void*)caller_function);
-							}
-						}
-						else{
-							fputs("\t-\n", stdout);
-						}
-					}
-					else{
-						break;
-					}
-				}
+void callGraph_fprint_stack(struct callGraph* call_graph, struct node* node, FILE* file){
+	struct edge* edge_cursor;
+	struct node* node_cursor;
+
+	for (node_cursor = node; node_cursor != NULL; ){
+		fputs("\t-", file); callGraph_fprint_node(call_graph, node_cursor, file); fputc('\n', file);
+
+		for (edge_cursor = node_get_head_edge_dst(node_cursor), node_cursor = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (callGraph_edge_get_data(edge_cursor)->type == CALLGRAPH_EDGE_CALL){
+				node_cursor = edge_get_src(edge_cursor);
+				break;
 			}
 		}
 	}
 }
 
-int32_t callGraph_export_inclusive(struct callGraph* call_graph, struct trace* trace, struct array* frag_array, char* name_filter){
-	struct node* 				node;
-	struct function* 			func;
-	int32_t 					first_snippet_index;
+void callGraph_fprint_node(struct callGraph* call_graph, const struct node* node, FILE* file){
+	struct function* 			function;
+	int32_t 					snippet_index;
 	struct assemblySnippet* 	snippet;
-	uint32_t 					start_index;
-	uint32_t 					stop_index;
-	struct trace 				fragment;
-	uint32_t 					i;
 
-	for (node = graph_get_head_node(&(call_graph->graph)); node != NULL; node = node_get_next(node)){
-		func = callGraph_node_get_function(node);
-		if (name_filter == NULL || (name_filter != NULL && func->routine != NULL && !strncmp(name_filter, func->routine->name, CODEMAP_DEFAULT_NAME_SIZE))){
-			if (func->last_snippet_offset < 0){
-				log_err("no code snippet for the current callGraph node");
-				continue;
-			}
-
-			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), func->last_snippet_offset);
-			stop_index = snippet->offset + snippet->length;
-
-			first_snippet_index = function_get_first_snippet(call_graph, func);
-			if (first_snippet_index < 0){
-				log_err("unable to get first snippet for a callGraph node");
-				continue;
-			}
-
-			snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
-			start_index = snippet->offset;
-
-			if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
-				log_err("unable to extract traceFragment");
-				return -1;
-			}
-			
-			log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
-			if (func->routine != NULL){
-				snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", func->routine->name);
-			}
-
-			for (i = 0; i < array_get_length(frag_array); i++){
-				if (trace_compare(&fragment, (struct trace*)array_get(frag_array, i)) == 0){
-					log_info_m("an equivalent fragment (%u) has already been exported", i);
-					trace_clean(&fragment);
-					break;
-				}
-			}
-
-			if (i == array_get_length(frag_array) && array_add(frag_array, &fragment) < 0){
-				log_err("unable to add traceFragment to array");
-				trace_clean(&fragment);
-				return -1;
-			}
+	function = callGraph_node_get_function(node);
+	if (function_is_valid(function)){
+		snippet_index = function_get_first_snippet(call_graph, function);
+		if (snippet_index < 0){
+			log_err("unable to get first snippet for a callGraph node");
+			return;
 		}
+
+		snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), snippet_index);
+		fprintf(file, "%9u", snippet->offset);
+
+		if (function->routine != NULL){
+			fprintf(file, " (%s)", function->routine->name);
+		}
+	}
+	else{
+		fputs("inv", file);
+	}
+}
+
+int32_t callGraphNode_is_leaf(const struct node* node){
+	struct edge* 			edge_cursor;
+	struct callGraphEdge* 	call_graph_edge;
+
+	for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+		call_graph_edge = callGraph_edge_get_data(edge_cursor);
+		if (call_graph_edge->type == CALLGRAPH_EDGE_CALL){
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct array* frag_array){
+	struct function* 		function;
+	int32_t 				first_snippet_index;
+	struct assemblySnippet* snippet;
+	uint32_t 				start_index;
+	uint32_t 				stop_index;
+	struct trace 			fragment;
+	uint32_t 				i;
+
+	if (node == NULL){
+		log_err("callGraph node is NULL");
+		return -1;
+	}
+
+	function = callGraph_node_get_function(node);
+
+	if (function_is_invalid(function)){
+		log_err("callGraph node is invalid");
+		return -1;
+	}
+
+	if (function->last_snippet_offset < 0){
+		log_err("no code snippet for this callGraph node");
+		return -1;
+	}
+
+	snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), function->last_snippet_offset);
+	stop_index = snippet->offset + snippet->length;
+
+	first_snippet_index = function_get_first_snippet(call_graph, function);
+	if (first_snippet_index < 0){
+		log_err("unable to get first snippet");
+		return -1;
+	}
+
+	snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
+	start_index = snippet->offset;
+
+	if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
+		log_err("unable to extract traceFragment");
+		return -1;
+	}
+
+	log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
+	if (function->routine != NULL){
+		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", function->routine->name);
+	}
+
+	for (i = 0; i < array_get_length(frag_array); i++){
+		if (trace_compare(&fragment, (struct trace*)array_get(frag_array, i)) == 0){
+			log_info_m("an equivalent fragment (%u) has already been exported", i);
+			trace_clean(&fragment);
+			return 0;
+		}
+	}
+
+	if (array_add(frag_array, &fragment) < 0){
+		log_err("unable to add traceFragment to array");
+		trace_clean(&fragment);
+		return -1;
 	}
 
 	return 0;

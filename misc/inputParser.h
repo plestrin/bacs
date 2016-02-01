@@ -48,6 +48,6 @@ void inputParser_clean(struct inputParser* parser);
 	inputParser_clean(parser); 					\
 	free(parser);
 
-void inputParser_extract_index(char* input, uint32_t* start, uint32_t* stop);
+void inputParser_extract_index(const char* input, uint32_t* start, uint32_t* stop);
 
 #endif
