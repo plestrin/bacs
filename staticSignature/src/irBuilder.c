@@ -1052,24 +1052,39 @@ void irBuilder_chg_final_node(struct irBuilder* builder, struct node* node_old, 
 	}
 }
 
-void irBuilder_propagate_alias(struct irBuilder* builder_dst, const struct irBuilder* builder_src){
+void irBuilder_propagate_alias(struct irBuilder* builder_dst, struct ir* ir_dst, const struct irBuilder* builder_src){
 	uint32_t i;
+	uint32_t j;
 
 	for (i = 0; i < NB_IR_STD_REGISTER; i++){
 		if (i == IR_REG_TMP){
 			continue;
 		}
 
-		if (builder_src->alias_buffer[i].ir_node != NULL){
-			if (alias_is_write(builder_src->alias_buffer[i])){
-				builder_dst->alias_buffer[i].ir_node 	= builder_src->alias_buffer[i].ir_node->ptr;
-				builder_dst->alias_buffer[i].order 		= builder_src->alias_buffer[i].order + builder_dst->reg_op_order;
-				builder_dst->alias_buffer[i].type 		= builder_src->alias_buffer[i].type;
-			}
+		if (builder_src->alias_buffer[i].ir_node != NULL && alias_is_write(builder_src->alias_buffer[i])){
+			builder_dst->alias_buffer[i].ir_node 	= builder_src->alias_buffer[i].ir_node->ptr;
+			builder_dst->alias_buffer[i].order 		= builder_src->alias_buffer[i].order + builder_dst->reg_op_order;
+			builder_dst->alias_buffer[i].type 		= builder_src->alias_buffer[i].type;
 		}
 	}
 
 	builder_dst->reg_op_order += builder_src->reg_op_order;
+
+	for (i = 0; i < NB_IR_VIR_REGISTER; i++){
+		if (builder_dst->simdAlias_buffer[i].frag_size != builder_src->simdAlias_buffer[i].frag_size){
+			if (irBuilder_change_simd_frag(builder_dst, ir_dst, IR_VIR_REGISTER_OFFSET + i, builder_src->simdAlias_buffer[i].frag_size, IR_OPERATION_INDEX_UNKOWN)){
+				log_err_m("unable to change SIMD frag from %u to %u", builder_dst->simdAlias_buffer[i].frag_size, builder_src->simdAlias_buffer[i].frag_size);
+				continue;
+			}
+		}
+
+		for (j = 0; j < irVirtualRegister_size[i] / builder_src->simdAlias_buffer[i].frag_size; j++){
+			if (builder_src->simdAlias_buffer[i].fragAlias_buffer[j].ir_node != NULL  && alias_is_write(builder_src->simdAlias_buffer[i].fragAlias_buffer[j])){
+				builder_dst->simdAlias_buffer[i].fragAlias_buffer[j].ir_node 	= builder_src->simdAlias_buffer[i].fragAlias_buffer[j].ir_node->ptr;
+				builder_dst->simdAlias_buffer[i].fragAlias_buffer[j].type 		= builder_src->simdAlias_buffer[i].fragAlias_buffer[j].type;
+			}
+		}
+	}
 }
 
 void irBuilder_update_call_stack(struct irBuilder* dst_builder, const struct irBuilder* src_builder){

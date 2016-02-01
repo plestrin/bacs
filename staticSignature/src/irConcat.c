@@ -125,7 +125,7 @@ int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src){
 		}
 	}
 
-	irBuilder_propagate_alias(&(ir_dst->builder), &(ir_src->builder));
+	irBuilder_propagate_alias(&(ir_dst->builder), ir_dst, &(ir_src->builder));
 	irBuilder_set_mem_order(&(ir_dst->builder), copy_arg.next_mem_access);
 	irBuilder_update_call_stack(&(ir_dst->builder), &(ir_src->builder));
 

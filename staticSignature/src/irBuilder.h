@@ -67,7 +67,7 @@ void irBuilder_chg_final_node(struct irBuilder* builder, struct node* node_old, 
 	log_warn("deleting final node, this fragment should not be used to build compound IR"); \
 	irBuilder_chg_final_node(builder, node, NULL);
 
-void irBuilder_propagate_alias(struct irBuilder* builder_dst, const struct irBuilder* builder_src);
+void irBuilder_propagate_alias(struct irBuilder* builder_dst, struct ir* ir_dst, const struct irBuilder* builder_src);
 
 #define irBuilder_increment_call_stack(builder) 											\
 	if ((builder)->stack_ptr + 1 == IR_CALL_STACK_MAX_SIZE){ 								\
