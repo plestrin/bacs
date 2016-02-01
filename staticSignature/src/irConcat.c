@@ -113,7 +113,7 @@ int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src){
 		operation_cursor = ir_node_get_operation(node_cursor->ptr);
 
 		if ((operation_cursor->type == IR_OPERATION_TYPE_IN_REG) && (operation_cursor->operation_type.in_reg.primer == IR_IN_REG_IS_PRIMER)){
-			ref = irBuilder_get_std_register_ref(&(ir_dst->builder), ir_dst, operation_cursor->operation_type.in_reg.reg, operation_cursor->index);
+			ref = irBuilder_get_register_ref(&(ir_dst->builder), ir_dst, operation_cursor->operation_type.in_reg.reg, operation_cursor->index);
 			if (ref == NULL){
 				log_err("unable to register reference from the builder");
 			}

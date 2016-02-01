@@ -55,7 +55,7 @@ int main(){
 
 	graph = create_graph();
 	if (graph != NULL){
-		printf("Printing node in intial order:\n");
+		printf("Printing node in intial order (starting from head using next):\n");
 		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}
@@ -64,7 +64,7 @@ int main(){
 			log_err("unable to sort DAG");
 		}
 
-		printf("Printing node in partial order:\n");
+		printf("Printing node in partial order DST_SRC (starting from head using next):\n");
 		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}

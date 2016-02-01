@@ -572,7 +572,7 @@ void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modific
 	struct irOperation* 	operation_cursor;
 	struct node* 			node_operand;
 
-	if (dagPartialOrder_sort_src_dst(&(ir->graph))){
+	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
 		return;
 	}
