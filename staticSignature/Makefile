@@ -49,7 +49,6 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)callGraph.o 			\
 					$(BUILD_DIR)multiColumn.o 			\
 					$(BUILD_DIR)array.o 				\
-					$(BUILD_DIR)printBuffer.o			\
 					$(BUILD_DIR)readBuffer.o			\
 					$(BUILD_DIR)inputParser.o			\
 					$(BUILD_DIR)mapFile.o				\

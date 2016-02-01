@@ -123,18 +123,10 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 		if (cmd_counter < argc){
 			strncpy(line, argv[cmd_counter], INPUTPARSER_LINE_SIZE);
 			cmd_counter ++;
-			#ifdef COLOR
 			printf(ANSI_COLOR_CYAN ">>> %s" ANSI_COLOR_RESET "\n", line);
-			#else
-			printf(">>> %s\n", line);
-			#endif
 		}
 		else{
-			#ifdef COLOR
 			printf(ANSI_COLOR_CYAN ">>> ");
-			#else
-			printf(">>> ");
-			#endif
 			fflush(stdout);
 
 			#ifdef INTERACTIVE
