@@ -307,7 +307,7 @@
 			<arg value="load trace traceOPEN_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph MD5"/>
+			<arg value="export callGraph MD5_Update"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

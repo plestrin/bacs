@@ -411,10 +411,8 @@
 			<arg value="load trace traceOPEN_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph AES_encrypt"/> <!-- function boundary is not correctly detected by PIN, hence it also exports the decryption routine -->
-			<arg value="create ir 1"/>
-			<arg value="create ir 3"/>
-			<arg value="create ir 5"/>
+			<arg value="export callGraph AES_encrypt"/>
+			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="exit"/>
@@ -1333,7 +1331,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_CO0" active="yes">
+	<recipe name="GLAD_AES_V3_CO0" active="no"> <!-- disable due to rotation -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co0"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co0"/>
 		<search>
@@ -1377,7 +1375,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_CO2" active="yes">
+	<recipe name="GLAD_AES_V3_CO2" active="no"> <!-- disable due to rotation -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co2"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co2"/>
 		<search>
@@ -1399,7 +1397,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_CO3" active="yes">
+	<recipe name="GLAD_AES_V3_CO3" active="no"> <!-- disable due to rotation -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co3"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co3"/>
 		<search>
@@ -1421,7 +1419,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_COz" active="yes">
+	<recipe name="GLAD_AES_V3_COz" active="no"> <!-- disable due to rotation -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_coz"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_coz"/>
 		<search>
@@ -1443,7 +1441,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_WD" active="yes">
+	<recipe name="GLAD_AES_V3_WD" active="no"> <!-- disable due to rotation -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -1465,7 +1463,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_WR" active="yes">
+	<recipe name="GLAD_AES_V3_WR" active="no"> <!-- disable due to rotation -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>

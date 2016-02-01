@@ -974,7 +974,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="BOT_CBC_AES" active="no"> <!-- where are not able to detect aes128 -->
+	<recipe name="BOT_CBC_AES" active="no"> <!-- we are not able to detect aes128 -->
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_cbc_aes"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_cbc_aes">
 			<arg value="-m"/>
@@ -1001,6 +1001,41 @@
 		<result>
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_CBC_AES" active="yes"> <!-- only enc (we have no signatures for OPEN_AES dec) -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_cbc_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_cbc_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_CBC_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph 1693"/>
+			<arg value="export callGraph 2951"/>
+			<arg value="export callGraph 4209"/>
+			<arg value="export callGraph 5467"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes_open_128"/>
+			<arg value="export callGraph AES_cbc_encrypt"/>
+			<arg value="create compound ir 4"/>
+			<arg value="simplify concrete ir 4"/>
+			<arg value="create synthesis 4"/>
+			<arg value="search mode signature 4"/>
+			<arg value="printDot synthesis 4 fig/OPEN_CBC_AES.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_open_mixColumn" number="144"/>
+			<algo name="aes_open_r1" number="72"/>
+			<algo name="aes_open_r9" number="8"/>
+			<algo name="aes_open_128" number="4"/>
+			<algo name="enc_cbc_cfb" number="3"/>
 		</result>
 	</recipe>
 </xml>
