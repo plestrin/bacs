@@ -12,7 +12,8 @@ struct asmWriter{
 	uint32_t 				blockId_generator;
 };
 
-#define asmWriter_init(writer) 			(writer)->blockId_generator = 1
+#define FIRST_BLOCK_ID 					1
+#define asmWriter_init(writer) 			(writer)->blockId_generator = FIRST_BLOCK_ID
 #define asmWrite_get_BlockId(writer) 	(writer)->blockId_generator++
 #define BLACK_LISTED_ID 				0x00000000
 #define UNTRACK_MEM_ACCESS 				0xffffffff

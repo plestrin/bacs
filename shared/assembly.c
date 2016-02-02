@@ -113,6 +113,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	struct asmBlock* 	current_ptr;
 	size_t 				current_offset;
 	struct dynBlock* 	dyn_blocks_realloc;
+	uint32_t 			is_array_init = 0;
 
 	disassembler_init()
 
@@ -123,66 +124,44 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	assembly->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
 	if (assembly->dyn_blocks == NULL){
 		log_err("unable to allocate memory");
-		switch(buffer_alloc_block){
-			case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
-			case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
-		}
-		return -1;
+		goto error;
 	}
 
 	if (array_init(&asmBlock_array, sizeof(struct asmBlock*))){
 		log_err("unable to init array");
-		free(assembly->dyn_blocks);
-		switch(buffer_alloc_block){
-			case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
-			case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
-		}
-		return -1;
+		goto error;
+	}
+	else{
+		is_array_init = 1;
 	}
 
-	current_offset = 0;
-	current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset);
-	while (current_offset != buffer_size_block){
-		if (current_offset + current_ptr->header.size + sizeof(struct asmBlockHeader) > buffer_size_block){
+	for (current_ptr = (struct asmBlock*)buffer_block, current_offset = 0; current_offset != buffer_size_block; current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset)){
+		current_offset += sizeof(struct asmBlockHeader) + current_ptr->header.size;
+		if (current_offset > buffer_size_block){
 			log_err("the last asmBlock is incomplete");
-			break;
+			goto error;
 		}
-		else{
-			if (array_add(&asmBlock_array, &current_ptr) < 0){
-				log_err("unable to add asmBlock pointer to array");
-			}
 
-			current_offset += sizeof(struct asmBlockHeader) + current_ptr->header.size;
-			current_ptr = (struct asmBlock*)((char*)buffer_block + current_offset);
+		if (current_ptr->header.id != array_get_length(&asmBlock_array) + FIRST_BLOCK_ID){
+			log_err_m("basic blocks are in disorder: expected block %u, but instead get block %u", array_get_length(&asmBlock_array) + FIRST_BLOCK_ID, current_ptr->header.id);
+			goto error;
+		}
+
+		if (array_add(&asmBlock_array, &current_ptr) < 0){
+			log_err("unable to add asmBlock pointer to array");
+			goto error;
 		}
 	}
+
+	#ifdef VERBOSE
+	log_info_m("found %u basic block(s) and %u dynamic block(s)", array_get_length(&asmBlock_array), assembly->nb_dyn_block);
+	#endif
 
 	for (i = 0, j = 0; i < assembly->nb_dyn_block; i++){
-		uint32_t 			up = array_get_length(&asmBlock_array);
-		uint32_t 			down = 0;
-		uint32_t 			idx;
-		struct asmBlock* 	idx_block;
-
 		if (buffer_id[i] != BLACK_LISTED_ID){
-			current_ptr = NULL;
-			while(down < up){
-				idx  = (up + down) / 2;
-				idx_block = *(struct asmBlock**)array_get(&asmBlock_array, idx);
-				if (buffer_id[i] > idx_block->header.id){
-					down = idx + 1;
-				}
-				else if (buffer_id[i] < idx_block->header.id){
-					up = idx;
-				}
-				else{
-					current_ptr = idx_block;
-					break;
-				}
-			}
-
-			if (current_ptr == NULL){
-				log_err_m("unable to locate asmBlock %u", buffer_id[i]);
-				break;
+			if (buffer_id[i] >= array_get_length(&asmBlock_array) + FIRST_BLOCK_ID){
+				log_err_m("incorrect block id: %u", buffer_id[i]);
+				goto error;
 			}
 
 			if (j == 0){
@@ -201,7 +180,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 				assembly->dyn_blocks[j].instruction_count = 0;
 				assembly->dyn_blocks[j].mem_access_count = 0;
 			}
-			assembly->dyn_blocks[j].block = current_ptr;
+			assembly->dyn_blocks[j].block = *(struct asmBlock**)array_get(&asmBlock_array, buffer_id[i] - FIRST_BLOCK_ID);
 			j ++;
 		}
 		else if (i == 0 || (i != 0 && buffer_id[i - 1] != BLACK_LISTED_ID)){
@@ -240,6 +219,21 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	array_clean(&asmBlock_array);
 
 	return 0;
+
+	error:
+
+	if (is_array_init){
+		array_clean(&asmBlock_array);
+	}
+	if (assembly->dyn_blocks != NULL){
+		free(assembly->dyn_blocks);
+	}
+	switch(buffer_alloc_block){
+		case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
+		case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+	}
+
+	return -1;
 }
 
 int32_t assembly_get_first_instruction(const struct assembly* assembly, struct instructionIterator* it){

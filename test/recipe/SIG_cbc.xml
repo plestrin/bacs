@@ -1027,7 +1027,7 @@
 			<arg value="simplify concrete ir 4"/>
 			<arg value="create synthesis 4"/>
 			<arg value="search mode signature 4"/>
-			<arg value="printDot synthesis 4 fig/OPEN_CBC_AES.dot"/>
+			<arg value="printDot synthesis 4 fig/OPEN_CBC_AES_ENC.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
