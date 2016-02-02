@@ -464,7 +464,7 @@ void analysis_trace_scan(struct analysis* analysis, char* arg){
 		}
 	}
 
-	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, filters);
+	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, analysis->code_map, filters);
 }
 
 void analysis_trace_delete(struct analysis* analysis){

@@ -153,7 +153,7 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
  * 	3 Leaf in the callGraph if provided
  */
 
-void assemblyScan_scan(const struct assembly* assembly, void* call_graph, uint32_t filters){
+void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
 	struct asmBlock* 	block;
 	xed_decoded_inst_t 	xedd;
 	uint32_t 			i;
@@ -233,25 +233,33 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, uint32
 					if (is_executed || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
 						#ifdef COLOR
 						if (ratio < 25){
-							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						else if (ratio < 50){
-							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						else{
-							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						#else
-						printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+						printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
 						#endif
-
 						
 						if (is_executed){
-							puts(" " ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET);
+							fputs(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET, stdout);
 						}
 						else{
-							puts(" " ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET);
+							fputs(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET, stdout);
 						}
+
+						if (cm != NULL){
+							struct cm_routine* rtn;
+
+							if ((rtn = codeMap_search_routine(cm, block->header.address)) != NULL){
+								printf(", Rtn:%s", rtn->name);
+							}
+						}
+						fputc('\n', stdout);
 
 						if (call_graph != NULL){
 							assemblyScan_get_function(assembly, block, call_graph, &function_set);
@@ -271,10 +279,10 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, uint32
 
 	for (func_ptr = setIterator_get_first(&function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
 		if (callGraphNode_is_leaf(*func_ptr)){
-			fputs(" - leaf:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " ", stdout);
+			fputs("L:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET ", ", stdout);
 		}
 		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){
-			fputs(" - leaf:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " ", stdout);
+			fputs("L:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET ", ", stdout);
 		}
 		callGraph_fprint_node(call_graph, *func_ptr, stdout);
 		putchar('\n');
