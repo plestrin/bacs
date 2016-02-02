@@ -25,6 +25,7 @@ void analysis_trace_print(struct analysis* analysis, char* arg);
 void analysis_trace_check(struct analysis* analysis);
 void analysis_trace_check_codeMap(struct analysis* analysis);
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
+void analysis_trace_search_codeMap(struct analysis* analysis, char* arg);
 void analysis_trace_export(struct analysis* analysis, char* arg);
 void analysis_trace_locate_pc(struct analysis* analysis, char* arg);
 void analysis_trace_locate_opcode(struct analysis* analysis, char* arg);

@@ -97,5 +97,8 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address);
 void codeMap_fprint_address_info(struct codeMap* cm, ADDRESS address, FILE* file);
 
 struct cm_routine* codeMap_search_symbol(struct codeMap* cm, struct cm_routine* last, const char* symbol);
+struct cm_routine* codeMap_search_approx_symbol(struct codeMap* cm, struct cm_routine* last, const char* symbol);
+
+void codeMap_search_and_print_symbol(struct codeMap* cm, const char* symbol);
 
 #endif

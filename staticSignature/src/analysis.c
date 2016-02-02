@@ -45,6 +45,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "check trace", 				"Check the current trace for format errors", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check)
 	add_cmd_to_input_parser(parser, "check codeMap", 			"Perform basic checks on the codeMap address", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_check_codeMap)
 	add_cmd_to_input_parser(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
+	add_cmd_to_input_parser(parser, "search codeMap", 			"Search a symbol in the codeMap", 				"Symbol", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_codeMap)
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
@@ -343,6 +344,15 @@ void analysis_trace_check_codeMap(struct analysis* analysis){
 void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 	if (analysis->code_map != NULL){
 		codeMap_print(analysis->code_map, arg);
+	}
+	else{
+		log_err("codeMap is NULL");
+	}
+}
+
+void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
+	if (analysis->code_map != NULL){
+		codeMap_search_and_print_symbol(analysis->code_map, arg);
 	}
 	else{
 		log_err("codeMap is NULL");
