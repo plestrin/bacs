@@ -153,10 +153,6 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 		}
 	}
 
-	#ifdef VERBOSE
-	log_info_m("found %u basic block(s) and %u dynamic block(s)", array_get_length(&asmBlock_array), assembly->nb_dyn_block);
-	#endif
-
 	for (i = 0, j = 0; i < assembly->nb_dyn_block; i++){
 		if (buffer_id[i] != BLACK_LISTED_ID){
 			if (buffer_id[i] >= array_get_length(&asmBlock_array) + FIRST_BLOCK_ID){
@@ -215,6 +211,10 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	else{
 		assembly->nb_dyn_instruction = 0;
 	}
+
+	#ifdef VERBOSE
+	log_info_m("found %u basic block(s), %u dynamic block(s), %u dynamic instruction(s)", array_get_length(&asmBlock_array), assembly->nb_dyn_block, assembly->nb_dyn_instruction);
+	#endif
 
 	array_clean(&asmBlock_array);
 
@@ -550,6 +550,18 @@ int32_t assembly_check(struct assembly* assembly){
 
 	#ifdef VERBOSE
 	log_info_m("%u basic blocks have been checked", block_count);
+	#endif
+
+	#ifdef EXTRA_CHECK
+	{
+		uint32_t i;
+
+		for (i = 1; i < assembly->nb_dyn_block; i++){
+			if (assembly->dyn_blocks[i].instruction_count < assembly->dyn_blocks[i - 1].instruction_count){
+				log_err("we have an overflow");
+			}
+		}
+	}
 	#endif
 
 	return result;

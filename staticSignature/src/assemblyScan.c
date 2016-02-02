@@ -153,7 +153,7 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
  * 	3 Leaf in the callGraph if provided
  */
 
-void assemblyScan_scan(const struct assembly* assembly, void* call_graph){
+void assemblyScan_scan(const struct assembly* assembly, void* call_graph, uint32_t filters){
 	struct asmBlock* 	block;
 	xed_decoded_inst_t 	xedd;
 	uint32_t 			i;
@@ -195,11 +195,12 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph){
 		struct asmBlock* 	next_block;
 		ADDRESS 			address;
 		double 				ratio;
+		uint32_t 			is_executed;
 
 		for (i = 0; i < array_get_length(bbl_array); ){
 			block = *(struct asmBlock**)array_get(bbl_array, address_mapping[i]);
 
-			if (block->header.nb_ins > ASSEMBLYSCAN_NB_MIN_INSTRUCTION){
+			if (block->header.nb_ins > ASSEMBLYSCAN_NB_MIN_INSTRUCTION || !(filters & ASSEMBLYSCAN_FILTER_BBL_SIZE)){
 				nb_bbl 		= 1;
 				nb_ins 		= block->header.nb_ins;
 				address 	=  block->header.address + block->header.size;
@@ -227,34 +228,35 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph){
 
 				ratio = 100 * (double)nb_bitwise / (double)nb_ins;
 
-				#ifdef COLOR
-				if (ratio < 25){
-					printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
-				}
-				else if (ratio < 50){
-					printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
-				}
-				else{
-					printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
-				}
-				
-				#else
-				printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%% %c\n", nb_bbl, nb_ins, block->header.address, address, ratio, (assemblyScan_is_executed(assembly, block)) ? 'Y' : 'N');
-				#endif
+				if (ratio >= ASSEMBLYSCAN_MIN_BIT_WISE_RATIO || !(filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
+					is_executed = assemblyScan_is_executed(assembly, block);
+					if (is_executed || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
+						#ifdef COLOR
+						if (ratio < 25){
+							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+						}
+						else if (ratio < 50){
+							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+						}
+						else{
+							printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x " "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+						}
+						#else
+						printf(" - Super block: %3u bbl(s), %4u instruction(s) @ 0x%08x -> 0x%08x %5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+						#endif
 
-				if (call_graph == NULL){
-					if (assemblyScan_is_executed(assembly, block)){
-						puts(" " ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET);
+						
+						if (is_executed){
+							puts(" " ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET);
+						}
+						else{
+							puts(" " ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET);
+						}
+
+						if (call_graph != NULL){
+							assemblyScan_get_function(assembly, block, call_graph, &function_set);
+						}
 					}
-					else{
-						puts(" " ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET);
-					}
-				}
-				else{
-					 if (ratio >= ASSEMBLYSCAN_MIN_BIT_WISE_RATIO){
-						assemblyScan_get_function(assembly, block, call_graph, &function_set);
-					}
-					putchar('\n');
 				}
 			}
 			else{
@@ -271,7 +273,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph){
 		if (callGraphNode_is_leaf(*func_ptr)){
 			fputs(" - leaf:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " ", stdout);
 		}
-		else{
+		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){
 			fputs(" - leaf:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " ", stdout);
 		}
 		callGraph_fprint_node(call_graph, *func_ptr, stdout);

@@ -24,20 +24,27 @@ enum traceType{
 #define TRACE_NB_MAX_PROCESS 	16
 #define TRACE_NB_MAX_THREAD 	32
 
+struct threadIdentifier{
+	uint32_t 					id;
+};
+
+struct processIdentifier{
+	uint32_t 					id;
+	uint32_t 					nb_thread;
+	struct threadIdentifier 	thread[TRACE_NB_MAX_THREAD];
+};
+
 struct traceIdentifier{
-	uint32_t 		nb_process;
-	struct {
-		uint32_t 	id;
-		uint32_t 	thread_id[TRACE_NB_MAX_THREAD];
-		uint32_t 	nb_thread;
-	} 				process[TRACE_NB_MAX_PROCESS];
-	uint32_t 		current_pid;
-	uint32_t 		current_tid;
+	uint32_t 					nb_process;
+	struct processIdentifier 	process[TRACE_NB_MAX_PROCESS];
+	uint32_t 					current_pid;
+	uint32_t 					current_tid;
 };
 
 #define traceIdentifier_init(identifier) (identifier)->nb_process = 0
 
 int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, uint32_t tid);
+void traceIdentifier_sort(struct traceIdentifier* identifier);
 int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_index, uint32_t t_index);
 
 struct trace{

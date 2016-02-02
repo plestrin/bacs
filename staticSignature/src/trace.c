@@ -18,24 +18,63 @@ int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, ui
 				return -1;
 			}
 
-			identifier->process[i].thread_id[identifier->process[i].nb_thread] = tid;
+			identifier->process[i].thread[identifier->process[i].nb_thread].id = tid;
 			identifier->process[i].nb_thread ++;
-			break;
+			return 0;
 		}
-	}
-	if (i == identifier->nb_process){
-		if (identifier->nb_process == TRACE_NB_MAX_PROCESS){
-			log_err("the max number of process has been reached, increment TRACE_NB_MAX_PROCESS");
-			return -1;
-		}
-			
-		identifier->process[i].id = pid;
-		identifier->process[i].thread_id[0] = tid;
-		identifier->process[i].nb_thread = 1;
-		identifier->nb_process ++;
 	}
 
+	if (identifier->nb_process == TRACE_NB_MAX_PROCESS){
+		log_err("the max number of process has been reached, increment TRACE_NB_MAX_PROCESS");
+		return -1;
+	}
+			
+	identifier->process[i].id = pid;
+	identifier->process[i].thread[0].id = tid;
+	identifier->process[i].nb_thread = 1;
+	identifier->nb_process ++;
+
 	return 0;
+}
+
+static int32_t threadIdentifier_compare(const void* arg1, const void* arg2){
+	struct threadIdentifier* t_id1 = (struct threadIdentifier*)arg1;
+	struct threadIdentifier* t_id2 = (struct threadIdentifier*)arg2;
+
+	if (t_id1->id < t_id2->id){
+		return -1;
+	}
+	else if (t_id1->id > t_id2->id){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static int32_t processIdentifier_compare(const void* arg1, const void* arg2){
+	struct processIdentifier* p_id1 = (struct processIdentifier*)arg1;
+	struct processIdentifier* p_id2 = (struct processIdentifier*)arg2;
+
+	if (p_id1->id < p_id2->id){
+		return -1;
+	}
+	else if (p_id1->id > p_id2->id){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+void traceIdentifier_sort(struct traceIdentifier* identifier){
+	uint32_t i;
+
+	qsort(identifier->process, identifier->nb_process, sizeof(struct processIdentifier), processIdentifier_compare);
+
+	for (i = 0; i < identifier->nb_process; i++){
+		qsort(identifier->process[i].thread, identifier->process[i].nb_thread, sizeof(struct threadIdentifier), threadIdentifier_compare);
+	}
 }
 
 int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_index, uint32_t t_index){
@@ -55,10 +94,10 @@ int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_in
 		log_info_m("several processes have been found, loading %u:", p_index);
 		for (i = 0; i < identifier->nb_process; i++){
 			if (i == p_index){
-				printf("\t- process: %u; pid=%u. %u thread(s) (loaded)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
+				printf("\t- process: %4u; pid=%u. %3u thread(s) (loaded)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
 			}
 			else{
-				printf("\t- process: %u; pid=%u; %u thread(s)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
+				printf("\t- process: %4u; pid=%u; %3u thread(s)\n", i, identifier->process[i].id, identifier->process[i].nb_thread);
 			}
 		}
 		printf("Use: \"change trace\" command to load a different process/tread\n");
@@ -68,17 +107,17 @@ int32_t traceIdentifier_select(struct traceIdentifier* identifier, uint32_t p_in
 		log_info_m("several threads have been found for process %u, loading %u:", identifier->process[p_index].id, t_index);
 		for (i = 0; i < identifier->process[p_index].nb_thread; i++){
 			if (i == t_index){
-				printf("\t- thread: %u; tid=%u (loaded)\n", i, identifier->process[p_index].thread_id[i]);
+				printf("\t- thread: %3u; tid=%3u (loaded)\n", i, identifier->process[p_index].thread[i].id);
 			}
 			else{
-				printf("\t- thread: %u; tid=%u\n", i, identifier->process[p_index].thread_id[i]);
+				printf("\t- thread: %3u; tid=%3u\n", i, identifier->process[p_index].thread[i].id);
 			}
 		}
 		printf("Use: \"change trace\" command to load a different process/thread\n");
 	}
 
 	identifier->current_pid = identifier->process[p_index].id;
-	identifier->current_tid = identifier->process[p_index].thread_id[t_index];
+	identifier->current_tid = identifier->process[p_index].thread[t_index].id;
 
 	return 0;
 }
@@ -163,6 +202,7 @@ struct trace* trace_load_exe(const char* directory_path){
 	}
 	closedir(directory);
 
+	traceIdentifier_sort(&(trace->trace_type.exe.identifier));
 	if (traceIdentifier_select(&(trace->trace_type.exe.identifier), 0, 0)){
 		log_err("unable to load default trace identifier");
 		goto error;

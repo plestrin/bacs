@@ -48,7 +48,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
 	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
 	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
-	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting basic block", NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_scan)
+	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting fragments", 	"Filters", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_scan)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -384,6 +384,7 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	ADDRESS 					pc;
 	struct instructionIterator 	it;
 	int32_t 					return_code;
+	uint32_t 					last_index = 0;
 
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
@@ -404,7 +405,8 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	putchar('\n');
 
 	for (return_code = assembly_get_first_pc(&(analysis->trace->assembly), &it, pc); return_code == 0; return_code = assembly_get_next_pc(&(analysis->trace->assembly), &it)){
-		printf("\t- Found EIP in trace at offset: %u\n", it.instruction_index);
+		printf("\t- Found EIP in trace at offset: %u (last occurence is %u instruction(s) back)\n", it.instruction_index, it.instruction_index - last_index);
+		last_index = it.instruction_index;
 	}
 	if (return_code < 0){
 		log_err_m("assembly PC iterator returned code: %d", return_code);
@@ -431,13 +433,28 @@ void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
 	free(opcode);
 }
 
-void analysis_trace_scan(struct analysis* analysis){
+void analysis_trace_scan(struct analysis* analysis, char* arg){
+	uint32_t 	filters = 0;
+	size_t 		i;
+
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 		return;
 	}
 
-	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph);
+	if (arg != NULL){
+		for (i = 0; i < strlen(arg); i++){
+			switch(arg[i]){
+				case 'E' : {filters |= ASSEMBLYSCAN_FILTER_BBL_EXEC; 	break;}
+				case 'L' : {filters |= ASSEMBLYSCAN_FILTER_FUNC_LEAF; 	break;}
+				case 'R' : {filters |= ASSEMBLYSCAN_FILTER_BBL_RATIO; 	break;}
+				case 'S' : {filters |= ASSEMBLYSCAN_FILTER_BBL_SIZE; 	break;}
+				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {E, L, R, S}", arg[i]); break;}
+			}
+		}
+	}
+
+	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, filters);
 }
 
 void analysis_trace_delete(struct analysis* analysis){
