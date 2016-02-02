@@ -76,7 +76,7 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 	}
 
 	if (sb.st_size != nb_mem_access * sizeof(struct memAddress)){
-		log_err("incorrect file size");
+		log_err_m("incorrect file size (theoretical size: %lld, practical size: %lld)", nb_mem_access * sizeof(struct memAddress), sb.st_size);
 		memTrace_delete(mem_trace);
 		return NULL;
 	}

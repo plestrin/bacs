@@ -12,7 +12,7 @@ INCLUDE_MISC 	:=
 INCLUDE_SHARED 	:= -I$(MISC_DIR)
 TOOL_ROOTS 		:= lightTracer
 OBJECT_ROOTS 	:= whiteList codeMap multiColumn traceFile
-ADD_DEFINE		:= -DARCH_32
+ADD_DEFINE		:= -DARCH_32 -D_FILE_OFFSET_BITS=64
 
 ifeq ($(OS),Windows_NT)
 	# Add custom code when the time'll come
