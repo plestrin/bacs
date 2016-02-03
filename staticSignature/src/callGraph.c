@@ -17,7 +17,8 @@ enum blockLabel{
 
 #define CALLGRAPH_ENABLE_LABEL_CHECK 1
 
-static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly);
+static enum blockLabel callGraph_label_block(struct asmBlock* block);
+static enum blockLabel* callGraph_label_blocks(struct assembly* assembly);
 
 static int32_t function_add_snippet(struct callGraph* call_graph, struct function* func, uint32_t start, uint32_t stop, ADDRESS expected_next_address);
 static int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func);
@@ -49,21 +50,25 @@ void callGraph_dotPrint_edge(void* data, FILE* file, void* arg){
 	}
 }
 
-struct callGraph* callGraph_create(const struct trace* trace, uint32_t start, uint32_t stop){
+struct callGraph* callGraph_create(struct assembly* assembly, uint32_t start, uint32_t stop){
 	struct callGraph* call_graph;
 
 	call_graph = (struct callGraph*)malloc(sizeof(struct callGraph));
 	if (call_graph != NULL){
-		if (callGraph_init(call_graph, trace, start, stop)){
+		if (callGraph_init(call_graph, assembly, start, stop)){
+			log_err("unable to init callGraph");
 			free(call_graph);
 			call_graph = NULL;
 		}
+	}
+	else{
+		log_err("unable to allocate memory");
 	}
 
 	return call_graph;
 }
 
-int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, uint32_t start, uint32_t stop){
+int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, uint32_t start, uint32_t stop){
 	struct node** 				call_graph_stack 	= NULL;
 	uint32_t 					stack_index			= CALLGRAPH_START_DEPTH;
 	enum blockLabel* 			label_buffer 		= NULL;
@@ -81,7 +86,7 @@ int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, 
 		goto exit;
 	}
 
-	label_buffer = callGraph_label_blocks(&(trace->assembly));
+	label_buffer = callGraph_label_blocks(assembly);
 	if (label_buffer == NULL){
 		log_err("unable to label assembly blocks");
 		result = -1;
@@ -97,24 +102,74 @@ int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, 
 	graph_init(&(call_graph->graph), sizeof(struct function), sizeof(struct callGraphEdge))
 	graph_register_dotPrint_callback(&(call_graph->graph), NULL, callGraph_dotPrint_node, callGraph_dotPrint_edge, NULL)
 
-	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
-		if (trace->assembly.dyn_blocks[i].instruction_count < start){
-			if (dynBlock_is_valid(trace->assembly.dyn_blocks + i) && trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins > start){
+#define callGraph_is_last_dyn_block(assembly, i, stop) ((assembly)->dyn_blocks[i].instruction_count + (assembly)->dyn_blocks[i].block->header.nb_ins >= (stop))
+
+#define callGraph_stack_call() 																															\
+	{ 																																					\
+		if (++ stack_index == CALLGRAPH_MAX_DEPTH){ 																									\
+			log_err("the top of the stack has been reached"); 																							\
+			result = -1; 																																\
+			goto exit; 																																	\
+		} 																																				\
+																																						\
+		if ((call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph))) == NULL){ 															\
+			log_err("unable to create node"); 																											\
+			result = -1; 																																\
+			goto exit; 																																	\
+		} 																																				\
+																																						\
+		current_func = callGraph_node_get_function(call_graph_stack[stack_index]); 																		\
+		function_init_valid(current_func) 																												\
+																																						\
+		call_graph_edge.type = CALLGRAPH_EDGE_CALL; 																									\
+		if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){ 			\
+			log_err("unable to add edge to callGraph"); 																								\
+		} 																																				\
+	}
+
+#define callGraph_stack_ret() 																															\
+	{ 																																					\
+		if (stack_index-- == 0){ 																														\
+			log_err("the bottom of the stack has been reached"); 																						\
+			result = -1; 																																\
+			goto exit; 																																	\
+		} 																																				\
+																																						\
+		if (call_graph_stack[stack_index] == NULL){ 																									\
+			if ((call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph))) == NULL){ 														\
+				log_err("unable to create node"); 																										\
+				result = -1; 																															\
+				goto exit; 																																\
+			} 																																			\
+																																						\
+			current_func = callGraph_node_get_function(call_graph_stack[stack_index]); 																	\
+			function_init_valid(current_func) 																											\
+		} 																																				\
+																																						\
+		call_graph_edge.type = CALLGRAPH_EDGE_RET; 																										\
+		if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index + 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){ 			\
+			log_err("unable to add edge to callGraph"); 																								\
+		} 																																				\
+	}
+
+	for (i = 0; i < assembly->nb_dyn_block; i++){
+		if (assembly->dyn_blocks[i].instruction_count < start){
+			if (dynBlock_is_valid(assembly->dyn_blocks + i) && assembly->dyn_blocks[i].instruction_count + assembly->dyn_blocks[i].block->header.nb_ins > start){
 				log_warn_m("index %u is not at a the beginning of a basic block, rounding", start);
 			}
 			else{
 				continue;
 			}
 		}
-		if (trace->assembly.dyn_blocks[i].instruction_count >= stop){
+		if (assembly->dyn_blocks[i].instruction_count >= stop){
 			break;
 		}
 
-		if (dynBlock_is_invalid(trace->assembly.dyn_blocks + i)){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
 			if (call_graph_stack[stack_index] != NULL){
 				current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
 				if (function_is_valid(current_func)){
-					function_add_snippet(call_graph, current_func, snippet_start, trace->assembly.dyn_blocks[i].instruction_count, 0);
+					function_add_snippet(call_graph, current_func, snippet_start, assembly->dyn_blocks[i].instruction_count, 0);
 					function_set_invalid(current_func);
 				}
 			}
@@ -122,76 +177,42 @@ int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, 
 				call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 				if (call_graph_stack[stack_index] == NULL){
 					log_err("unable to create node");
+					result= -1;
+					goto exit;
 				}
-				else{
-					current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-					function_init_invalid(current_func)
-					snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
-				}
+
+				current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
+				function_init_invalid(current_func)
+				snippet_start = assembly->dyn_blocks[i].instruction_count;
 			}
 		}
 		else{
-			snippet_stop = trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins;
+			snippet_stop = assembly->dyn_blocks[i].instruction_count + assembly->dyn_blocks[i].block->header.nb_ins;
 
 			if (call_graph_stack[stack_index] != NULL){
 				current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
 				if (function_is_invalid(current_func)){
 					if (stack_index > 0 && call_graph_stack[stack_index - 1] != NULL){
 						if (callGraph_node_get_function(call_graph_stack[stack_index - 1])->last_snippet_offset >= 0){
-							if (((struct assemblySnippet*)array_get(&(call_graph->snippet_array), callGraph_node_get_function(call_graph_stack[stack_index - 1])->last_snippet_offset))->expected_next_address == trace->assembly.dyn_blocks[i].block->header.address){
-								snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
-								stack_index --;
-
-								call_graph_edge.type = CALLGRAPH_EDGE_RET;
-
-								if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index + 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-									log_err("unable to add edge to callGraph");
-								}
+							if (((struct assemblySnippet*)array_get(&(call_graph->snippet_array), callGraph_node_get_function(call_graph_stack[stack_index - 1])->last_snippet_offset))->expected_next_address == assembly->dyn_blocks[i].block->header.address){
+								callGraph_stack_ret()
+								snippet_start = assembly->dyn_blocks[i].instruction_count;
 							}
 							else{
-								snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
-								stack_index ++;
-
-								call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
-								if (call_graph_stack[stack_index] == NULL){
-									log_err("unable to create node");
-								}
-								else{
-									current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-									function_init_valid(current_func)
-
-									call_graph_edge.type = CALLGRAPH_EDGE_CALL;
-
-									if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-										log_err("unable to add edge to callGraph");
-									}
-								}
+								callGraph_stack_call()
+								snippet_start = assembly->dyn_blocks[i].instruction_count;
 							}
 						}
 						else{
 							log_err("the previous function call on the stack is empty");
+							result = -1;
+							goto exit;
 						}
 					}
 					else{
 						log_warn_m("unable to classify current basic block %u as a RET or a CALL", i);
-
-						snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
-						stack_index ++;
-
-						call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
-						if (call_graph_stack[stack_index] == NULL){
-							log_err("unable to create node");
-						}
-						else{
-							current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-							function_init_valid(current_func)
-
-							call_graph_edge.type = CALLGRAPH_EDGE_CALL;
-
-							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								log_err("unable to add edge to callGraph");
-							}
-						}
+						callGraph_stack_call()
+						snippet_start = assembly->dyn_blocks[i].instruction_count;
 					}
 				}
 			}
@@ -199,85 +220,36 @@ int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, 
 				call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
 				if (call_graph_stack[stack_index] == NULL){
 					log_err("unable to create node");
-					continue;
+					result = -1;
+					goto exit;
 				}
-				else{
-					current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-					function_init_valid(current_func)
-					snippet_start = trace->assembly.dyn_blocks[i].instruction_count;
-				}
+
+				current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
+				function_init_valid(current_func)
+				snippet_start = assembly->dyn_blocks[i].instruction_count;
 			}
 
 			current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-			switch(label_buffer[trace->assembly.dyn_blocks[i].block->header.id - 1]){
+			switch(label_buffer[assembly->dyn_blocks[i].block->header.id - 1]){
 				case BLOCK_LABEL_CALL 	: {
-					function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, trace->assembly.dyn_blocks[i].block->header.address + trace->assembly.dyn_blocks[i].block->header.size);
-
-					if (trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins < stop){
-						stack_index ++;
-
-						if (stack_index == CALLGRAPH_MAX_DEPTH){
-							log_err("the top of the stack has been reached");
-							result = -1;
-							goto exit;
-						}
-
-						call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
-						if (call_graph_stack[stack_index] == NULL){
-							log_err("unable to create node");
-						}
-						else{
-							current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-							function_init_valid(current_func)
-							snippet_start = snippet_stop;
-
-							call_graph_edge.type = CALLGRAPH_EDGE_CALL;
-
-							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index - 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								log_err("unable to add edge to callGraph");
-							}
-						}
+					function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size);
+					if (!callGraph_is_last_dyn_block(assembly, i, stop)){
+						callGraph_stack_call()
+						snippet_start = snippet_stop;
 					}
 					break;
 				}
 				case BLOCK_LABEL_RET 	: {
-					function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, trace->assembly.dyn_blocks[i].block->header.address + trace->assembly.dyn_blocks[i].block->header.size);
-
-					if (trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins < stop){
-						if (stack_index == 0){
-							log_err("the bottom of the stack has been reached");
-							result = -1;
-							goto exit;
-						}
-
-						stack_index --;
-
-						if (call_graph_stack[stack_index] == NULL){
-							call_graph_stack[stack_index] = graph_add_node_(&(call_graph->graph));
-							if (call_graph_stack[stack_index] == NULL){
-								log_err("unable to create node");
-							}
-							else{
-								current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-								function_init_valid(current_func)
-							}
-						}
-
+					function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size);
+					if (!callGraph_is_last_dyn_block(assembly, i, stop)){
+						callGraph_stack_ret()
 						snippet_start = snippet_stop;
-
-						if (call_graph_stack[stack_index] != NULL){
-							call_graph_edge.type = CALLGRAPH_EDGE_RET;
-
-							if (graph_add_edge(&(call_graph->graph), call_graph_stack[stack_index + 1], call_graph_stack[stack_index], &call_graph_edge) == NULL){
-								log_err("unable to add edge to callGraph");
-							}
-						}
 					}
 					break;
 				}
 				case BLOCK_LABEL_NONE 	: {
-					if (trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins >= stop){
-						function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, trace->assembly.dyn_blocks[i].block->header.address + trace->assembly.dyn_blocks[i].block->header.size);
+					if (callGraph_is_last_dyn_block(assembly, i, stop)){
+						function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size);
 					}
 					break;
 				}
@@ -296,12 +268,50 @@ int32_t callGraph_init(struct callGraph* call_graph, const struct trace* trace, 
 	return result;
 }
 
-static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly){
+static enum blockLabel callGraph_label_block(struct asmBlock* block){
+	xed_decoded_inst_t 	xedd;
+
+	if (asmBlock_get_last_instruction(block, &xedd)){
+		log_err_m("unable to get last instruction of block %u", block->header.id);
+		return BLOCK_LABEL_NONE;
+	}
+
+	switch(xed_decoded_inst_get_iclass(&xedd)){
+		case XED_ICLASS_CALL_FAR 	:
+		case XED_ICLASS_CALL_NEAR 	: {
+			const xed_inst_t* 		xi = xed_decoded_inst_inst(&xedd);
+			const xed_operand_t* 	xed_op;
+			xed_operand_enum_t 		op_name;
+			uint32_t 				i;
+
+			for (i = 0; i < xed_inst_noperands(xi); i++){
+				xed_op = xed_inst_operand(xi, i);
+				if (xed_operand_read_only(xed_op)){
+					op_name = xed_operand_name(xed_op);
+
+					if (op_name == XED_OPERAND_RELBR && (xed_decoded_inst_get_branch_displacement(&xedd) & (0xffffffff >> (32 - 8 * xed_decoded_inst_get_branch_displacement_width(&xedd)))) == 0){
+						return BLOCK_LABEL_NONE;
+					}
+				}
+			}
+		
+			return BLOCK_LABEL_CALL;
+		}
+		case XED_ICLASS_RET_FAR 	:
+		case XED_ICLASS_RET_NEAR 	: {
+			return BLOCK_LABEL_RET;
+		}
+		default 					: {
+			return BLOCK_LABEL_NONE;
+		}
+	}
+}
+
+static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
 	uint32_t 			nb_block;
 	enum blockLabel* 	result;
-	xed_decoded_inst_t 	xedd;
 	uint8_t 			request_write_permission = 0;
 
 	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; ){
@@ -321,16 +331,15 @@ static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly){
 		return NULL;
 	}
 
-	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; ){
+	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
 			log_err("the last asmBlock is incomplete");
 			break;
 		}
 
-		result[nb_block] = BLOCK_LABEL_NONE;
-		if (block->header.id != nb_block + 1){
-			log_warn_m("resetting block id %u -> %u", block->header.id, nb_block + 1);
+		if (block->header.id != nb_block + FIRST_BLOCK_ID){
+			log_warn_m("resetting block id %u -> %u", block->header.id, nb_block + FIRST_BLOCK_ID);
 			if (assembly->allocation_type == ALLOCATION_MMAP && !request_write_permission){
 				if (mprotect(assembly->mapping_block, assembly->mapping_size_block, PROT_READ | PROT_WRITE)){
 					log_err("unable to change memory protection");
@@ -339,51 +348,10 @@ static enum blockLabel* callGraph_label_blocks(const struct assembly* assembly){
 					request_write_permission = 1;
 				}
 			}
-			block->header.id = nb_block + 1;
+			block->header.id = nb_block + FIRST_BLOCK_ID;
 		}
 
-
-		if (assembly_get_last_instruction(block, &xedd)){
-			log_err_m("unable to get last instruction of block %u", nb_block);
-		}
-		else{
-			switch(xed_decoded_inst_get_iclass(&xedd)){
-				case XED_ICLASS_CALL_FAR 	:
-				case XED_ICLASS_CALL_NEAR 	: {
-					const xed_inst_t* 		xi = xed_decoded_inst_inst(&xedd);
-					const xed_operand_t* 	xed_op;
-					xed_operand_enum_t 		op_name;
-					uint32_t 				i;
-
-					result[nb_block] = BLOCK_LABEL_CALL;
-
-					for (i = 0; i < xed_inst_noperands(xi); i++){
-						xed_op = xed_inst_operand(xi, i);
-						if (xed_operand_read_only(xed_op)){
-							op_name = xed_operand_name(xed_op);
-
-							if (op_name == XED_OPERAND_RELBR && (xed_decoded_inst_get_branch_displacement(&xedd) & (0xffffffff >> (32 - 8 * xed_decoded_inst_get_branch_displacement_width(&xedd)))) == 0){
-								result[nb_block] = BLOCK_LABEL_NONE;
-								break;
-							}
-						}
-					}
-					
-					break;
-				}
-				case XED_ICLASS_RET_FAR 	:
-				case XED_ICLASS_RET_NEAR 	: {
-					result[nb_block] = BLOCK_LABEL_RET;
-					break;
-				}
-				default 					: {
-					break;
-				}
-			}
-		}
-
-		block_offset += sizeof(struct asmBlockHeader) + block->header.size;
-		nb_block ++;
+		result[nb_block ++] = callGraph_label_block(block);
 	}
 
 	return result;

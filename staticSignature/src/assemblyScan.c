@@ -256,7 +256,13 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 							struct cm_routine* rtn;
 
 							if ((rtn = codeMap_search_routine(cm, block->header.address)) != NULL){
-								printf(", Rtn:%s", rtn->name);
+								#if defined ARCH_32
+								printf(", RTN:%s+0x%x", rtn->name, block->header.address - rtn->address_start);
+								#elif defined ARCH_64
+								printf(", RTN:%s+0x%llx", rtn->name, block->header.address - rtn->address_start);
+								#else
+								#error Please specify an architecture {ARCH_32 or ARCH_64}
+								#endif
 							}
 						}
 						fputc('\n', stdout);

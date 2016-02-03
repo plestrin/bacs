@@ -1059,7 +1059,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 		stop = trace_get_nb_instruction(analysis->trace);
 		inputParser_extract_index(arg, &start, &stop);
 
-		analysis->call_graph = callGraph_create(analysis->trace, start, stop);
+		analysis->call_graph = callGraph_create(&(analysis->trace->assembly), start, stop);
 		if (analysis->call_graph == NULL){
 			log_err("unable to create callGraph");
 		}

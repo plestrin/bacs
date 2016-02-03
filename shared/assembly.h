@@ -31,6 +31,10 @@ struct asmBlock{
 	uint8_t 				data[1];
 };
 
+uint32_t asmBlock_count_nb_ins(struct asmBlock* block);
+uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length, xed_decoded_inst_t* xedd, uint32_t offset);
+int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
+
 struct dynBlock{
 	uint32_t 				instruction_count;
 	uint64_t 				mem_access_count;
@@ -40,9 +44,6 @@ struct dynBlock{
 #define dynBlock_is_valid(dyn_block) ((dyn_block)->block != NULL)
 #define dynBlock_is_invalid(dyn_block) ((dyn_block)->block == NULL)
 #define dynBlock_set_invalid(dyn_block) (dyn_block)->block = NULL
-
-uint32_t asmBlock_count_nb_ins(struct asmBlock* block);
-uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length, xed_decoded_inst_t* xedd, uint32_t offset);
 
 struct assembly{
 	uint32_t 				nb_dyn_instruction;
@@ -82,7 +83,7 @@ int32_t assembly_get_next_instruction(const struct assembly* assembly, struct in
 int32_t assembly_get_next_block(const struct assembly* assembly, struct instructionIterator* it);
 int32_t assembly_get_next_pc(const struct assembly* assembly, struct instructionIterator* it);
 
-int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
+int32_t assembly_get_dyn_block(const struct assembly* assembly, uint32_t index, uint32_t* result);
 
 int32_t assembly_check(struct assembly* assembly);
 

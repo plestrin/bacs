@@ -8,7 +8,6 @@
 #include "memTrace.h"
 #include "mapFile.h"
 #include "array.h"
-#include "printBuffer.h"
 #include "base.h"
 
 struct disassembler{
@@ -17,7 +16,7 @@ struct disassembler{
     xed_address_width_enum_t 	stack_addr_width;
 };
 
-static int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2);
+static int32_t asmBlock_compare_id(const struct asmBlock* b1, const struct asmBlock* b2);
 static void assembly_clean_tree_node(void* data);
 static uint32_t assembly_get_instruction_nb_mem_access(xed_decoded_inst_t* xedd);
 
@@ -76,6 +75,25 @@ uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_en
 	}
 
 	return NULL;
+}
+
+int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
+	uint32_t instruction_offset;
+
+	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+
+	for (instruction_offset = 0; instruction_offset != block->header.size; ){
+		xed_decoded_inst_zero_keep_mode(xedd);
+		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) == XED_ERROR_NONE){
+			instruction_offset += xed_decoded_inst_get_length(xedd);
+		}
+		else{
+			log_err_m("unable to decode instruction in block %u. Run \"Check trace\" for more information", block->header.id);
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
 int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id, const char* file_name_block){
@@ -298,59 +316,33 @@ int32_t assembly_get_first_pc(const struct assembly* assembly, struct instructio
 }
 
 int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index){
-	uint32_t 			up 		= assembly->nb_dyn_block;
-	uint32_t 			down 	= 0;
 	uint32_t 			idx;
-	uint32_t 			found 	= 0;
 	uint32_t 			i;
 	xed_error_enum_t 	xed_error;
 
-	while(down < up){
-		idx  = (up + down) / 2;
-		if (dynBlock_is_invalid(assembly->dyn_blocks + idx)){
-			if (idx != down){
-				idx --;
-			}
-			else if (idx + 1 != assembly->nb_dyn_block){
-				idx ++;
-			}
-			else{
-				break;
-			}
-		}
-		if (index >= assembly->dyn_blocks[idx].instruction_count + assembly->dyn_blocks[idx].block->header.nb_ins){
-			down = idx + 1;
-		}
-		else if (index < assembly->dyn_blocks[idx].instruction_count){
-			up = idx;
-		}
-		else{
-			it->instruction_index 		= index;
-			it->dyn_block_index 		= idx;
-			it->instruction_sub_index 	= index - assembly->dyn_blocks[idx].instruction_count;
-			it->instruction_offset 		= 0;
-			if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
-				it->prev_black_listed 	= 1;
-			}
-			else{
-				it->prev_black_listed 	= 0;
-			}
-			if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
-				it->mem_access_valid 	= 0;
-			}
-			else{
-				it->mem_access_valid 	= 1;
-			}
-			it->mem_access_index 		= assembly->dyn_blocks[idx].mem_access_count;
-			found = 1;
-			break;
-		}
-	}
-
-	if (!found){
+	
+	if (assembly_get_dyn_block(assembly, index, &idx)){
 		log_err_m("unable to locate the dyn block containing the index %u (tot nb instruction: %u)", index, assembly->nb_dyn_instruction);
 		return -1;
 	}
+
+	it->instruction_index 		= index;
+	it->dyn_block_index 		= idx;
+	it->instruction_sub_index 	= index - assembly->dyn_blocks[idx].instruction_count;
+	it->instruction_offset 		= 0;
+	if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
+		it->prev_black_listed 	= 1;
+	}
+	else{
+		it->prev_black_listed 	= 0;
+	}
+	if (assembly->dyn_blocks[it->dyn_block_index].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
+		it->mem_access_valid 	= 0;
+	}
+	else{
+		it->mem_access_valid 	= 1;
+	}
+	it->mem_access_index 		= assembly->dyn_blocks[idx].mem_access_count;
 
 	xed_decoded_inst_set_mode(&(it->xedd), disas.mmode, disas.stack_addr_width);
 
@@ -487,23 +479,37 @@ int32_t assembly_get_next_pc(const struct assembly* assembly, struct instruction
 	return 1;
 }
 
-int32_t assembly_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
-	uint32_t instruction_offset;
+int32_t assembly_get_dyn_block(const struct assembly* assembly, uint32_t index, uint32_t* result){
+	uint32_t up 	= assembly->nb_dyn_block;
+	uint32_t down 	= 0;
+	uint32_t idx;
 
-	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
-
-	for (instruction_offset = 0; instruction_offset != block->header.size; ){
-		xed_decoded_inst_zero_keep_mode(xedd);
-		if (xed_decode(xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15)) == XED_ERROR_NONE){
-			instruction_offset += xed_decoded_inst_get_length(xedd);
+	while(down < up){
+		idx  = (up + down) / 2;
+		if (dynBlock_is_invalid(assembly->dyn_blocks + idx)){
+			if (idx != down){
+				idx --;
+			}
+			else if (idx + 1 != assembly->nb_dyn_block){
+				idx ++;
+			}
+			else{
+				break;
+			}
+		}
+		if (index >= assembly->dyn_blocks[idx].instruction_count + assembly->dyn_blocks[idx].block->header.nb_ins){
+			down = idx + 1;
+		}
+		else if (index < assembly->dyn_blocks[idx].instruction_count){
+			up = idx;
 		}
 		else{
-			log_err_m("unable to decode instruction in block %u. Run \"Check trace\" for more information", block->header.id);
-			return -1;
+			*result = idx;
+			return 0;
 		}
 	}
 
-	return 0;
+	return -1;
 }
 
 int32_t assembly_check(struct assembly* assembly){
@@ -567,7 +573,7 @@ int32_t assembly_check(struct assembly* assembly){
 	return result;
 }
 
-static int32_t assembly_compare_asmBlock_id(const struct asmBlock* b1, const struct asmBlock* b2){
+static int32_t asmBlock_compare_id(const struct asmBlock* b1, const struct asmBlock* b2){
 	if (b1->header.id > b2->header.id){
 		return 1;
 	}
@@ -584,15 +590,12 @@ static void assembly_clean_tree_node(void* data){
 }
 
 int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly* assembly_dst, uint32_t offset, uint32_t length, uint64_t* index_mem_access_start, uint64_t* index_mem_access_stop){
-	uint32_t 			up 					= assembly_src->nb_dyn_block;
-	uint32_t 			down 				= 0;
 	uint32_t 			idx_block_start;
 	uint32_t 			idx_block_stop;
 	uint32_t 			idx_ins_start;
 	uint32_t 			idx_ins_stop;
 	uint32_t 			mem_access_start;
 	uint32_t 			mem_access_stop;
-	uint8_t 			found 				= 0;
 	uint32_t 			i;
 	uint32_t 			size;
 	xed_decoded_inst_t 	xedd;
@@ -603,33 +606,11 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	void* 				realloc_mapping;
 
 	if (length == 0){
-		log_err("Unable to export 0 length segment");
+		log_err("unable to export 0 length segment");
 		return -1;
 	}
 
-	while(down < up){
-		idx_block_start  = (up + down) / 2;
-		if (!dynBlock_is_valid(assembly_src->dyn_blocks + idx_block_start)){
-			if (idx_block_start != down){
-				idx_block_start --;
-			}
-			else{
-				idx_block_start ++;
-			}
-		}
-		if (offset >= assembly_src->dyn_blocks[idx_block_start].instruction_count + assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins){
-			down = idx_block_start + 1;
-		}
-		else if (offset < assembly_src->dyn_blocks[idx_block_start].instruction_count){
-			up = idx_block_start;
-		}
-		else{
-			found = 1;
-			break;
-		}
-	}
-
-	if (!found){
+	if (assembly_get_dyn_block(assembly_src, offset, &idx_block_start)){
 		log_err_m("unable to locate the dyn block containing the index %u", offset);
 		return -1;
 	}
@@ -754,7 +735,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 			memcpy(new_block, assembly_src->dyn_blocks[idx_block_start].block, sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size);
 			size = sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size;
 
-			tsearch(new_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
+			tsearch(new_block, &bintree_root, (int(*)(const void*,const void*))asmBlock_compare_id);
 		}
 		else{
 			new_block->header.id 				= possible_new_id ++;
@@ -813,7 +794,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 			compare_block.header.nb_mem_access 	= assembly_src->dyn_blocks[i].block->header.nb_mem_access;
 			compare_block.header.address 		= assembly_src->dyn_blocks[i].block->header.address;
 
-			result_block = (struct asmBlock**)tsearch(&compare_block, &bintree_root, (int(*)(const void*,const void*))assembly_compare_asmBlock_id);
+			result_block = (struct asmBlock**)tsearch(&compare_block, &bintree_root, (int(*)(const void*,const void*))asmBlock_compare_id);
 			if (result_block == NULL){
 				log_err("unable to search the bin tree");
 				return -1;
@@ -1039,7 +1020,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop, vo
 	print_info.syntax 					= XED_SYNTAX_INTEL;
 
 	if (xed_format_generic(&print_info)){
-		printf("0x%08x * %-" ASSEMBLY_PRINT_PADDING_INDEX "u", it.instruction_address, it.instruction_index);
+		printf("0x%08x * %-" ASSEMBLY_PRINT_PADDING_INDEX "u ", it.instruction_address, it.instruction_index);
 		assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, ASSEMBLY_PRINT_PADDING_OPCODE);
 		printf("%-" ASSEMBLY_PRINT_PADDING_STRING "s", buffer);
 
@@ -1081,7 +1062,7 @@ void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop, vo
 		print_info.syntax 					= XED_SYNTAX_INTEL;
 
 		if (xed_format_generic(&print_info)){
-			printf("0x%08x %c %-" ASSEMBLY_PRINT_PADDING_INDEX "u", it.instruction_address, (prev_dyn_block_index != it.dyn_block_index) ? '*' : ' ', it.instruction_index);
+			printf("0x%08x %c %-" ASSEMBLY_PRINT_PADDING_INDEX "u ", it.instruction_address, (prev_dyn_block_index != it.dyn_block_index) ? '*' : ' ', it.instruction_index);
 			assembly_print_opcode_hex(assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset, it.instruction_size, ASSEMBLY_PRINT_PADDING_OPCODE);
 			printf("%-" ASSEMBLY_PRINT_PADDING_STRING "s", buffer);
 
@@ -1150,7 +1131,7 @@ static uint32_t assembly_search_return_blacklisted_func(struct assembly* assembl
 
 	for (i = offset + 1; i + 1 < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_invalid(assembly->dyn_blocks + i) && dynBlock_is_valid(assembly->dyn_blocks + i - 1) && dynBlock_is_valid(assembly->dyn_blocks + i + 1)){
-			if (!assembly_get_last_instruction(assembly->dyn_blocks[i - 1].block, &xedd)){
+			if (!asmBlock_get_last_instruction(assembly->dyn_blocks[i - 1].block, &xedd)){
 				if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_RET_FAR || xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_RET_NEAR){
 					return i;
 				}
@@ -1202,7 +1183,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 			if (i - offset >= 4){
 				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 3) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 4)){
 					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 2 && assembly->dyn_blocks[i - offset - 2].block->header.nb_ins == 2 && assembly->dyn_blocks[i - offset - 3].block->header.nb_ins == 1){
-						assembly_get_last_instruction(assembly->dyn_blocks[i - offset - 4].block, &xedd);
+						asmBlock_get_last_instruction(assembly->dyn_blocks[i - offset - 4].block, &xedd);
 						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
 							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_1, valid_bbl_1_linux_1, SIZE_BBL_1_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 2].block, buffer_bbl_2_linux_1, valid_bbl_2_linux_1, SIZE_BBL_2_LINUX_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 3].block, buffer_bbl_3_linux_1, valid_bbl_3_linux_1, SIZE_BBL_3_LINUX_1)){
 								
@@ -1292,7 +1273,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 			if (i - offset >= 2){
 				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2)){
 					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 1){
-						assembly_get_last_instruction(assembly->dyn_blocks[i - offset - 2].block, &xedd);
+						asmBlock_get_last_instruction(assembly->dyn_blocks[i - offset - 2].block, &xedd);
 						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
 							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_2, valid_bbl_1_linux_2, SIZE_BBL_1_LINUX_2)){
 								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 1].instruction_count - 1);
