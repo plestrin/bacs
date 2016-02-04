@@ -233,16 +233,16 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 					if (is_executed || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
 						#ifdef COLOR
 						if (ratio < 25){
-							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						else if (ratio < 50){
-							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						else{
-							printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
+							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
 						}
 						#else
-						printf("%3u bbl, %4u ins, [0x%08x : 0x%08x], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
+						printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
 						#endif
 						
 						if (is_executed){
@@ -256,13 +256,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 							struct cm_routine* rtn;
 
 							if ((rtn = codeMap_search_routine(cm, block->header.address)) != NULL){
-								#if defined ARCH_32
-								printf(", RTN:%s+0x%x", rtn->name, block->header.address - rtn->address_start);
-								#elif defined ARCH_64
-								printf(", RTN:%s+0x%llx", rtn->name, block->header.address - rtn->address_start);
-								#else
-								#error Please specify an architecture {ARCH_32 or ARCH_64}
-								#endif
+								printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, block->header.address - rtn->address_start);
 							}
 						}
 						fputc('\n', stdout);

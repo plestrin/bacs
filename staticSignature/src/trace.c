@@ -678,13 +678,7 @@ void trace_print_location(const struct trace* trace, struct codeMap* cm){
 
 	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
 		if (dynBlock_is_valid(trace->assembly.dyn_blocks + i)){
-			#if defined ARCH_32
-			printf("\t-BBL %u [%u:%u] 0x%08x:", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
-			#elif defined ARCH_64
-			printf("\t-BBL %u [%u:%u] 0x%0llx:", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
+			printf("\t-BBL %u [%u:%u] " PRINTF_ADDR ":", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
 			codeMap_fprint_address_info(cm, trace->assembly.dyn_blocks[i].block->header.address, stdout);
 			printf("\n");
 		}

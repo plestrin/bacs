@@ -86,6 +86,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "check callGraph", 			"Perform some check on the callGraph", 			NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_call_check)
 	add_cmd_to_input_parser(parser, "export callGraph", 		"Export callGraph's routine as traceFragments", "Routine name or Index", 	INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_export)
 	add_cmd_to_input_parser(parser, "print callGraph stack", 	"Print the call stack for a given instruction", "Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_stack)
+	add_cmd_to_input_parser(parser, "print callGraph frame", 	"Print function bounds", 						"Index", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_print_frame)
 
 	/* synthesisGraph specific commands */
 	add_cmd_to_input_parser(parser, "create synthesis", 		"Search for relation between results in IR", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_synthesis_create)
@@ -403,13 +404,7 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 
 	pc = strtoul((const char*)arg, NULL, 16);
 
-	#if defined ARCH_32
-	printf("Instance of EIP: 0x%08x:\n", pc);
-	#elif defined ARCH_64
-	printf("Instance of EIP: 0x%llx:\n", pc);
-	#else
-	#error Please specify an architecture {ARCH_32 or ARCH_64}
-	#endif
+	printf("Instance of EIP " PRINTF_ADDR ":\n", pc);
 
 	codeMap_fprint_address_info(analysis->code_map, pc, stdout);
 	putchar('\n');
@@ -1135,6 +1130,15 @@ void analysis_call_print_stack(struct analysis* analysis, char* arg){
 	}
 	else{
 		callGraph_fprint_stack(analysis->call_graph, callGraph_get_index(analysis->call_graph, atoi(arg)), stdout);
+	}
+}
+
+void analysis_call_print_frame(struct analysis* analysis, char* arg){
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+	}
+	else{
+		callGraph_print_frame(&(analysis->trace->assembly), atoi(arg), analysis->code_map);
 	}
 }
 

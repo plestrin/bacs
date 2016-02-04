@@ -60,6 +60,8 @@ struct callGraph{
 struct callGraph* callGraph_create(struct assembly* assembly, uint32_t index_start, uint32_t index_stop);
 int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, uint32_t start, uint32_t stop);
 
+void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct codeMap* code_map);
+
 void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map);
 void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map);
 

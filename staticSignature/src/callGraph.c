@@ -7,9 +7,10 @@
 #include "base.h"
 
 enum blockLabel{
-	BLOCK_LABEL_CALL,
-	BLOCK_LABEL_RET,
-	BLOCK_LABEL_NONE
+	BLOCK_LABEL_UNKOWN 	= 0,
+	BLOCK_LABEL_CALL 	= 1,
+	BLOCK_LABEL_RET 	= 2,
+	BLOCK_LABEL_NONE 	= 3
 };
 
 #define CALLGRAPH_MAX_DEPTH 	4096
@@ -18,7 +19,8 @@ enum blockLabel{
 #define CALLGRAPH_ENABLE_LABEL_CHECK 1
 
 static enum blockLabel callGraph_label_block(struct asmBlock* block);
-static enum blockLabel* callGraph_label_blocks(struct assembly* assembly);
+static enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly);
+static enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly);
 
 static int32_t function_add_snippet(struct callGraph* call_graph, struct function* func, uint32_t start, uint32_t stop, ADDRESS expected_next_address);
 static int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func);
@@ -86,7 +88,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, 
 		goto exit;
 	}
 
-	label_buffer = callGraph_label_blocks(assembly);
+	label_buffer = callGraph_fill_label_buffer(assembly);
 	if (label_buffer == NULL){
 		log_err("unable to label assembly blocks");
 		result = -1;
@@ -230,7 +232,12 @@ int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, 
 			}
 
 			current_func = callGraph_node_get_function(call_graph_stack[stack_index]);
-			switch(label_buffer[assembly->dyn_blocks[i].block->header.id - 1]){
+			switch(label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID]){
+				case BLOCK_LABEL_UNKOWN : {
+					log_err("this case is not supposed to happen");
+					result = -1;
+					goto exit;
+				}
 				case BLOCK_LABEL_CALL 	: {
 					function_add_snippet(call_graph, current_func, snippet_start, snippet_stop, assembly->dyn_blocks[i].block->header.address + assembly->dyn_blocks[i].block->header.size);
 					if (!callGraph_is_last_dyn_block(assembly, i, stop)){
@@ -268,6 +275,93 @@ int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, 
 	return result;
 }
 
+void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct codeMap* code_map){
+	uint32_t 			index_start;
+	uint32_t 			index_stop;
+	uint32_t 			base_block_index;
+	uint32_t 			i;
+	enum blockLabel* 	label_buffer 	= NULL;
+	uint32_t 			stack;
+	uint32_t 			is_not_leaf 	= 0;
+
+	if (assembly_get_dyn_block(assembly, index, &base_block_index)){
+		log_err_m("unable to locate the dyn block containing the index %u", index);
+		return;
+	}
+
+	if ((label_buffer = callGraph_alloc_label_buffer(assembly)) == NULL){
+		log_err("alloc of label buffer failed");
+		return;
+	}
+
+	for (i = base_block_index, stack = 0; i + 1 < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
+			log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i].instruction_count);
+		}
+		else{
+			if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_UNKOWN){
+				label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] = callGraph_label_block(assembly->dyn_blocks[i].block);
+			}
+
+			if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_CALL){
+				stack ++;
+				is_not_leaf ++;
+			}
+			else if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_RET){
+				if (stack-- == 0){
+					break;
+				}
+			}
+		}
+	}
+
+	index_stop = i;
+
+	for (i = base_block_index, stack = 0; i; i--){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i - 1)){
+			log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i - 1].instruction_count);
+		}
+		else{
+			if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_UNKOWN){
+				label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] = callGraph_label_block(assembly->dyn_blocks[i - 1].block);
+			}
+
+			if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_CALL){
+				if (stack -- == 0){
+					break;
+				}
+			}
+			else if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_RET){
+				stack ++;
+				is_not_leaf ++;
+			}
+		}
+	}
+
+	index_start = i;
+
+	if (dynBlock_is_invalid(assembly->dyn_blocks + index_start) || dynBlock_is_invalid(assembly->dyn_blocks + index_stop)){
+		log_err("frame boundary is a black listed block");
+	}
+	else{
+		printf("Frame: index = %u, leaf = %s, size = %u", index, (is_not_leaf) ? (ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET) : (ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET), assembly->dyn_blocks[index_stop].instruction_count + assembly->dyn_blocks[index_stop].block->header.nb_ins - assembly->dyn_blocks[index_start].instruction_count);
+		if (code_map != NULL){
+			struct cm_routine* rtn;
+
+			if ((rtn = codeMap_search_routine(code_map, assembly->dyn_blocks[index_start].block->header.address)) != NULL){
+				printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, assembly->dyn_blocks[index_start].block->header.address - rtn->address_start);
+			}
+		}
+
+		printf("\n\t- Start: index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[index_start].instruction_count, assembly->dyn_blocks[index_start].block->header.address);
+		printf("\t- Stop : index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[index_stop].instruction_count + assembly->dyn_blocks[index_stop].block->header.nb_ins, assembly->dyn_blocks[index_stop].block->header.address + assembly->dyn_blocks[index_stop].block->header.size);
+	}
+
+	free(label_buffer);
+
+	return;
+}
+
 static enum blockLabel callGraph_label_block(struct asmBlock* block){
 	xed_decoded_inst_t 	xedd;
 
@@ -294,7 +388,7 @@ static enum blockLabel callGraph_label_block(struct asmBlock* block){
 					}
 				}
 			}
-		
+
 			return BLOCK_LABEL_CALL;
 		}
 		case XED_ICLASS_RET_FAR 	:
@@ -307,29 +401,12 @@ static enum blockLabel callGraph_label_block(struct asmBlock* block){
 	}
 }
 
-static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
+static enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
 	uint32_t 			nb_block;
-	enum blockLabel* 	result;
+	enum blockLabel* 	label_buffer;
 	uint8_t 			request_write_permission = 0;
-
-	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; ){
-		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
-		if (block_offset + block->header.size + sizeof(struct asmBlockHeader) > assembly->mapping_size_block){
-			log_err("the last asmBlock is incomplete");
-			break;
-		}
-
-		block_offset += sizeof(struct asmBlockHeader) + block->header.size;
-		nb_block ++;
-	}
-
-	result = (enum blockLabel*)malloc(sizeof(enum blockLabel) * nb_block);
-	if (result == NULL){
-		log_err("unable to allocate memory");
-		return NULL;
-	}
 
 	for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
@@ -350,11 +427,33 @@ static enum blockLabel* callGraph_label_blocks(struct assembly* assembly){
 			}
 			block->header.id = nb_block + FIRST_BLOCK_ID;
 		}
-
-		result[nb_block ++] = callGraph_label_block(block);
+		nb_block ++;
 	}
 
-	return result;
+	if ((label_buffer = (enum blockLabel*)calloc(nb_block, sizeof(enum blockLabel))) == NULL){
+		log_err("unable to allocate memory");
+	}
+
+	return label_buffer;
+}
+
+static enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly){
+	uint32_t 			block_offset;
+	struct asmBlock* 	block;
+	uint32_t 			nb_block;
+	enum blockLabel* 	label_buffer;
+
+	if ((label_buffer = callGraph_alloc_label_buffer(assembly))){
+		log_err("alloc of label buffer failed");
+	}
+	else{
+		for (block_offset = 0, nb_block = 0; block_offset != assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size){
+			block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
+			label_buffer[nb_block ++] = callGraph_label_block(block);
+		}
+	}
+
+	return label_buffer;
 }
 
 static int32_t function_add_snippet(struct callGraph* call_graph, struct function* func, uint32_t start, uint32_t stop, ADDRESS expected_next_address){
@@ -518,23 +617,12 @@ void callGraph_check(struct callGraph* call_graph, const struct assembly* assemb
 				}
 				else{
 					if (it.instruction_address != snippet->expected_next_address){
-						#if defined ARCH_32
 						if (function_cursor->routine){
-							log_err_m("address mismatch for func %s, snippet %u: 0x%08x vs 0x%08x", function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %s, snippet %u: " PRINTF_ADDR " vs " PRINTF_ADDR, function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
 						}
 						else{
-							log_err_m("address mismatch for func %p, snippet %u: 0x%08x vs 0x%08x", (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
+							log_err_m("address mismatch for func %p, snippet %u: " PRINTF_ADDR " vs " PRINTF_ADDR, (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
 						}
-						#elif defined ARCH_64
-						if (function_cursor->routine){
-							log_err_m("address mismatch for func %s, snippet %u: 0x%llx vs 0x%llx", function_cursor->routine->name, i, snippet->expected_next_address, it.instruction_address);
-						}
-						else{
-							log_err_m("address mismatch for func %p, snippet %u: 0x%llx vs 0x%llx", (void*)function_cursor, i, snippet->expected_next_address, it.instruction_address);
-						}
-						#else
-						#error Please specify an architecture {ARCH_32 or ARCH_64}
-						#endif
 					}
 				}
 			}

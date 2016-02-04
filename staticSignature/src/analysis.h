@@ -57,6 +57,7 @@ void analysis_call_printDot(struct analysis* analysis);
 void analysis_call_check(struct analysis* analysis);
 void analysis_call_export(struct analysis* analysis, char* arg);
 void analysis_call_print_stack(struct analysis* analysis, char* arg);
+void analysis_call_print_frame(struct analysis* analysis, char* arg);
 
 void analysis_synthesis_create(struct analysis* analysis, char* arg);
 void analysis_synthesis_printDot(struct analysis* analysis, char* arg);
