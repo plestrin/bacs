@@ -443,7 +443,7 @@ static enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly){
 	uint32_t 			nb_block;
 	enum blockLabel* 	label_buffer;
 
-	if ((label_buffer = callGraph_alloc_label_buffer(assembly))){
+	if ((label_buffer = callGraph_alloc_label_buffer(assembly)) == NULL){
 		log_err("alloc of label buffer failed");
 	}
 	else{

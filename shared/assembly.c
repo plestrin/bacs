@@ -1195,7 +1195,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 									for (prev_offset = 0, next_offset = i + 1; next_offset > prev_offset; ){
 										prev_offset = next_offset;
 										next_offset = assembly_search_return_blacklisted_func(assembly, prev_offset);
-										if (assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size == assembly->dyn_blocks[next_offset + 1].block->header.address){
+										if (next_offset > prev_offset && assembly->dyn_blocks[i - offset - 4].block->header.address + assembly->dyn_blocks[i - offset - 4].block->header.size == assembly->dyn_blocks[next_offset + 1].block->header.address){
 											break;
 										}
 									}
