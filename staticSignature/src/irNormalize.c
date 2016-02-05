@@ -385,8 +385,10 @@ static void ir_normalize_simplify_instruction_rewrite_part2_8(struct ir* ir, str
 static void ir_normalize_simplify_instruction_rewrite_rol(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_numeric_shl(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_shld(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
+static void ir_normalize_simplify_instruction_rewrite_shrd(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final);
 static void ir_normalize_simplify_instruction_numeric_xor(struct ir* ir, struct node* node, uint8_t* modification);
 static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification);
@@ -484,9 +486,9 @@ static const simplify_rewrite_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 	ir_normalize_simplify_instruction_rewrite_rol, 					/* 18 IR_ROL 			*/
 	NULL, 															/* 19 IR_ROR 			*/
 	ir_normalize_simplify_instruction_rewrite_shl, 					/* 20 IR_SHL 			*/
-	NULL, 															/* 21 IR_SHLD 			*/
+	ir_normalize_simplify_instruction_rewrite_shld, 				/* 21 IR_SHLD 			*/
 	ir_normalize_simplify_instruction_rewrite_shr, 					/* 22 IR_SHR 			*/
-	NULL, 															/* 23 IR_SHRD 			*/
+	ir_normalize_simplify_instruction_rewrite_shrd, 				/* 23 IR_SHRD 			*/
 	ir_normalize_simplify_instruction_rewrite_sub, 					/* 24 IR_SUB 			*/
 	ir_normalize_simplify_instruction_rewrite_xor, 					/* 25 IR_XOR 			*/
 	NULL, 															/* 26 IR_LOAD 			*/
@@ -1536,6 +1538,30 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 	}
 }
 
+static void ir_normalize_simplify_instruction_rewrite_shld(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct node* arg1 			= NULL;
+	struct node* arg2 			= NULL;
+	struct edge* edge_arg2 		= NULL;
+	struct edge* edge_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+			arg1 = edge_get_src(edge_cursor);
+		}
+		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ROUND_OFF){
+			arg2 = edge_get_src(edge_cursor);
+			edge_arg2 = edge_cursor;
+		}
+	}
+
+	if (arg1 != NULL && arg1 == arg2){
+		ir_node_get_operation(node)->operation_type.inst.opcode = IR_ROL;
+		ir_remove_dependence(ir, edge_arg2);
+
+		*modification = 1;
+	}
+}
+
 static void ir_normalize_simplify_instruction_numeric_shr(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 	edge_cursor;
 	struct node* 	operand;
@@ -1666,8 +1692,30 @@ static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct 
 			}
 		}
 	}
+}
 
+static void ir_normalize_simplify_instruction_rewrite_shrd(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
+	struct node* arg1 			= NULL;
+	struct node* arg2 			= NULL;
+	struct edge* edge_arg2 		= NULL;
+	struct edge* edge_cursor;
 
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+			arg1 = edge_get_src(edge_cursor);
+		}
+		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ROUND_OFF){
+			arg2 = edge_get_src(edge_cursor);
+			edge_arg2 = edge_cursor;
+		}
+	}
+
+	if (arg1 != NULL && arg1 == arg2){
+		ir_node_get_operation(node)->operation_type.inst.opcode = IR_ROR;
+		ir_remove_dependence(ir, edge_arg2);
+
+		*modification = 1;
+	}
 }
 
 static void ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, struct node* node, uint8_t* modification, uint8_t final){
