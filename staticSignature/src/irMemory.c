@@ -962,7 +962,7 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 		}
 
 		fetch_token.node 	= NULL;
-		fetch_token.address 	= operation_cursor->operation_type.mem.con_addr;
+		fetch_token.address = operation_cursor->operation_type.mem.con_addr;
 
 		memset(taken_fragment, 0, sizeof(uint8_t) * CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT);
 

@@ -817,7 +817,7 @@ const char* irRegister_2_string(enum irRegister reg){
 	if (irRegister_is_std(reg)){
 		return irRegister_name_std[reg];
 	}
-	if (irRegister_is_mmx(reg)){
+	else if (irRegister_is_mmx(reg)){
 		switch(irRegister_simd_get_size(reg)){
 			case 8  : {return irRegister_name_mmx[irRegister_simd_get_index(reg)][0][irRegister_simd_get_frag(reg)];}
 			case 16 : {return irRegister_name_mmx[irRegister_simd_get_index(reg)][1][irRegister_simd_get_frag(reg)];}
