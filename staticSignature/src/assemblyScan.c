@@ -39,7 +39,7 @@ static const xed_iclass_enum_t bitwise_instruction[] = {
 	XED_ICLASS_PSRLD,
 	XED_ICLASS_VPSRLD,
 	XED_ICLASS_SHL,
-	XED_ICLASS_SHRD,
+	XED_ICLASS_SHLD,
 	XED_ICLASS_PSLLD,
 	XED_ICLASS_VPSLLD,
 	XED_ICLASS_XOR,

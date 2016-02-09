@@ -103,12 +103,13 @@ class recipe(object):
 		cmd.extend(self.arg)
 
 		time_start = time.time()
-		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		output_val = process.communicate()
 		process.wait()
 		time_stop = time.time()
 			
 		self.log.write(output_val[0])
+		self.log.write(output_val[1])
 
 		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
@@ -135,7 +136,7 @@ class recipe(object):
 						print("\t" + i + " \x1b[31mFAIL " + str(detected_signature.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
 					else:
 						print("\t" + i + " \x1b[32mOK " + str(self.algo.get(i)) + "/" + str(self.algo.get(i)) + "\x1b[0m")
-				else:
+				elif self.algo.get(i) > 0:
 					print("\t" + i + " \x1b[31mFAIL 0/" + str(self.algo.get(i)) + "\x1b[0m")
 
 			for i in detected_signature:
@@ -144,7 +145,7 @@ class recipe(object):
 
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
-			print(output_val[0])
+			print(output_val[1])
 
 	def __del__(self):
 		if self.log != None:
