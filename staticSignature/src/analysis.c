@@ -69,6 +69,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
+	add_cmd_to_input_parser(parser, "search buffer ir", 		"Search for highly dependent buffers", 			"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_search_buffer_ir)
 
 	/* signature specific commands */
 	add_cmd_to_input_parser(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
@@ -888,6 +889,10 @@ void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
 
 void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_normalize_concrete_ir, arg)
+}
+
+void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg){
+	apply_to_multiple_frags(analysis, trace_search_buffer_ir, arg)
 }
 
 /* ===================================================================== */

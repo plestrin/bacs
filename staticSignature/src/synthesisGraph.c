@@ -28,7 +28,7 @@ static uint32_t irEdge_get_distance(void* arg){
 		return DIJKSTRA_INVALID_DST;
 	}
 	else{
-		return irEdge_distance_array_OI[dependence->type];	
+		return irEdge_distance_array_OI[dependence->type];
 	}
 }
 
@@ -359,7 +359,7 @@ static void synthesisGraph_pack(struct graph* graph){
 		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_IR_NODE || synthesis_node_cursor->type == SYNTHESISNODETYPE_PATH){
 			if (node_cursor->nb_edge_src == 1){
 				struct node* node_dst = edge_get_dst(node_get_head_edge_src(node_cursor));
-				
+
 				if (node_dst->nb_edge_dst == 1 && (synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_dst)->type == SYNTHESISNODETYPE_PATH)){
 					synthesis_graph_collapse_node(graph, node_cursor, node_dst);
 					node_cursor = graph_get_head_node(graph);
@@ -368,7 +368,7 @@ static void synthesisGraph_pack(struct graph* graph){
 			}
 			if (node_cursor->nb_edge_dst == 1){
 				struct node* node_src = edge_get_src(node_get_head_edge_dst(node_cursor));
-				
+
 				if (node_src->nb_edge_src == 1 && (synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_IR_NODE || synthesisGraph_get_synthesisNode(node_src)->type == SYNTHESISNODETYPE_PATH)){
 					synthesis_graph_collapse_node(graph, node_src, node_cursor);
 					node_cursor = graph_get_head_node(graph);
@@ -747,7 +747,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		else{
 			for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 				rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-				
+
 				#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
 				{
 					uint32_t nb_element = rrd_ptr->nb_element;
@@ -811,7 +811,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 					else{
 						path = (struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice);
 						j++;
-						
+
 					}
 					if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, path)){
 						log_err("unable add path to synthesisGraph");

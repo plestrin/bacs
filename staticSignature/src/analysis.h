@@ -47,6 +47,7 @@ void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
 void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
+void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg);
 
 void analysis_code_signature_search(struct analysis* analysis, char* arg);
 void analysis_code_signature_clean(struct analysis* analysis);

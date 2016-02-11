@@ -377,7 +377,7 @@ static void signatureCollection_dotPrint_node(void* data, FILE* file, void* arg)
 
 void signatureCollection_clean(struct signatureCollection* collection){
 	struct node* node_cursor;
-	
+
 	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		signature_clean(signatureCollection_node_get_signature(node_cursor));
 	}

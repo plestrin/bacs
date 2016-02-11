@@ -29,7 +29,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->symbol_node_buffer == NULL){
 		log_err("unable to allocate memory");
-	
+
 		if (result->in_mapping_buffer != NULL){
 			free(result->in_mapping_buffer);
 		}
@@ -154,7 +154,7 @@ void result_pop(struct result* result, struct ir* ir){
 
 	for (i = 0; i < result->nb_occurrence; i++){
 		if (result->symbol_node_buffer[i] != NULL){
-			ir_remove_node(ir, result->symbol_node_buffer[i]);	
+			ir_remove_node(ir, result->symbol_node_buffer[i]);
 		}
 		result->symbol_node_buffer[i] = NULL;
 
@@ -293,10 +293,10 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 								buffer[buffer_start_offset / (buffer_access_size /8)] = 1;
 								buffer_start_offset = 0;
 							}
-							
+
 						}
 						else{
-							offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2)); 
+							offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2));
 							if (buffer_start_offset <= offset && offset < buffer_start_offset + 2 * parameter->nb_fragment * (buffer_access_size / 8)){
 								if ((offset - buffer_start_offset) % (buffer_access_size / 8) == 0){
 									if (buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)] == 0){
@@ -336,7 +336,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 		for (i = 0; i < 2 * parameter->nb_fragment - 1; i++){
 			if (buffer[i]){
 				offset = buffer_start_offset + i * (buffer_access_size / 8);
-				break;  
+				break;
 			}
 		}
 
@@ -359,7 +359,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 		if (i != parameter->nb_fragment - 1){
 			printf(" ");
 		}
-		
+
 	}
 	printf("}\n");
 }
@@ -410,7 +410,7 @@ void result_print(struct result* result){
 
 	for (i = 0; i < array_get_length(class_array); i++){
 		class = (struct parameterMapping*)array_get(class_array, i);
-		
+
 		printf("CLUSTER %u/%u:\n", i + 1, array_get_length(class_array));
 		for (j = 0; j < code_signature->nb_parameter_in; j++){
 			if (class[j].similarity == PARAMETER_EQUAL){

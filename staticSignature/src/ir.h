@@ -1012,5 +1012,6 @@ static inline struct node* irNodeIterator_get_next(struct ir* ir, struct irNodeI
 #include "irMemory.h"
 #include "irCheck.h"
 #include "irVariableSize.h"
+#include "irBuffer.h"
 
 #endif

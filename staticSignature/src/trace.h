@@ -114,6 +114,15 @@ static inline void trace_print_aliasing_ir(struct trace* trace){
 	}
 }
 
+static inline void trace_search_buffer_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		ir_search_buffer(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg);
 void trace_push_code_signature_result(int32_t idx, void* arg);
 void trace_pop_code_signature_result(int32_t idx, void* arg);

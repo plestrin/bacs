@@ -34,7 +34,7 @@ int32_t ir_init(struct ir* ir, const struct assembly* assembly, const struct mem
 	ir->range_seed = 1;
 
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
-	
+
 	#ifdef VERBOSE
 	if (mem_trace != NULL){
 		log_info("found memory concrete values");
@@ -73,7 +73,7 @@ int32_t ir_init_compound(struct ir* ir, const struct assembly* assembly, const s
 	ir->range_seed = 1;
 
 	graph_register_dotPrint_callback(&(ir->graph), NULL, ir_dotPrint_node, ir_dotPrint_edge, NULL)
-	
+
 	#ifdef VERBOSE
 	if (mem_trace != NULL){
 		log_info("found memory concrete values");
@@ -431,8 +431,8 @@ void ir_print_location_node(struct node* node, struct assembly* assembly){
 			printf("IMM=%llx", ir_imm_operation_get_unsigned_value(operation));
 			break;
 		}
-		case IR_OPERATION_INDEX_ADDRESS 		: 
-		case IR_OPERATION_INDEX_UNKOWN 		: {
+		case IR_OPERATION_INDEX_ADDRESS 		:
+		case IR_OPERATION_INDEX_UNKOWN 			: {
 			switch(operation->type){
 				case IR_OPERATION_TYPE_IN_REG 	: {
 					printf("%s@??", irRegister_2_string(operation->operation_type.in_reg.reg));

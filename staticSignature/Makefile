@@ -38,6 +38,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)irVariableSize.o 		\
 					$(BUILD_DIR)irVariableRange.o 		\
 					$(BUILD_DIR)irExpression.o 			\
+					$(BUILD_DIR)irBuffer.o 				\
 					$(BUILD_DIR)synthesisGraph.o 		\
 					$(BUILD_DIR)signatureCollection.o 	\
 					$(BUILD_DIR)codeSignature.o 		\
