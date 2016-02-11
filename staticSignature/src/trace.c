@@ -688,55 +688,6 @@ void trace_print_location(const struct trace* trace, struct codeMap* cm){
 	}
 }
 
-double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode){
-	uint32_t 					j;
-	uint32_t 					nb_effective_instruction = 0;
-	uint32_t 					nb_found_instruction = 0;
-	uint8_t 					excluded;
-	struct instructionIterator 	it;
-
-	if (assembly_get_instruction(&(trace->assembly), &it, 0)){
-		log_err("unable to fetch first instruction from the assembly");
-		return 0.0;
-	}
-
-	for (;;){
-		excluded = 0;
-		if (excluded_opcode != NULL){
-			for (j = 0; j < nb_excluded_opcode; j++){
-				if (xed_decoded_inst_get_iclass(&(it.xedd)) == excluded_opcode[j]){
-					excluded = 1;
-					break;
-				}
-			}
-		}
-
-		if (!excluded){
-			nb_effective_instruction++;
-			if (opcode != NULL){
-				for (j = 0; j < nb_opcode; j++){
-					if (xed_decoded_inst_get_iclass(&(it.xedd)) == opcode[j]){
-						nb_found_instruction ++;
-						break;
-					}
-				}
-			}
-		}
-
-		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(&(trace->assembly)) - 1){
-			break;
-		}
-		else{
-			if (assembly_get_next_instruction(&(trace->assembly), &it)){
-				log_err("unable to fetch next instruction from the assembly");
-				break;
-			}
-		}
-	}
-
-	return (double)nb_found_instruction / (double)((nb_effective_instruction == 0) ? 1 : nb_effective_instruction);
-}
-
 void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature){
 	uint32_t 		i;
 	uint32_t 		j;

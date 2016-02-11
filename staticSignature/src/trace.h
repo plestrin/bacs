@@ -74,6 +74,7 @@ struct trace* trace_load_elf(const char* file_path);
 int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, uint32_t offset, uint32_t length);
 
 #define trace_print(trace, start, stop) assembly_print(&((trace)->assembly), start, stop, (trace)->mem_trace)
+#define trace_print_all(trace) 			assembly_print(&((trace)->assembly), 0, trace_get_nb_instruction(trace), (trace)->mem_trace)
 
 int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, struct trace* trace_dst);
 
@@ -141,7 +142,6 @@ static inline void trace_printDot_synthesis(struct trace* trace, const char* nam
 void trace_check(struct trace* trace);
 
 void trace_print_location(const struct trace* trace, struct codeMap* cm);
-double trace_opcode_percent(struct trace* trace, uint32_t nb_opcode, uint32_t* opcode, uint32_t nb_excluded_opcode, uint32_t* excluded_opcode);
 
 void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature);
 

@@ -2,10 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "analysis.h"
+#include "array.h"
+#include "codeMap.h"
+#include "trace.h"
+#include "signatureCollection.h"
+#include "callGraph.h"
 #include "inputParser.h"
 #include "readBuffer.h"
-#include "result.h"
 #include "codeSignature.h"
 #include "codeSignatureReader.h"
 #include "modeSignature.h"
@@ -13,6 +16,63 @@
 #include "cmReaderJSON.h"
 #include "multiColumn.h"
 #include "base.h"
+
+struct analysis{
+	struct trace* 				trace;
+	struct codeMap* 			code_map;
+	struct signatureCollection 	code_signature_collection;
+	struct signatureCollection 	mode_signature_collection;
+	struct callGraph* 			call_graph;
+	struct array				frag_array;
+};
+
+static struct analysis* analysis_create();
+
+static void analysis_trace_load(struct analysis* analysis, char* arg);
+static void analysis_trace_change(struct analysis* analysis, char* arg);
+static void analysis_trace_load_elf(struct analysis* analysis, char* arg);
+static void analysis_trace_print(struct analysis* analysis, char* arg);
+static void analysis_trace_check(struct analysis* analysis);
+static void analysis_trace_check_codeMap(struct analysis* analysis);
+static void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
+static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg);
+static void analysis_trace_export(struct analysis* analysis, char* arg);
+static void analysis_trace_search_pc(struct analysis* analysis, char* arg);
+static void analysis_trace_search_opcode(struct analysis* analysis, char* arg);
+static void analysis_trace_scan(struct analysis* analysis, char* arg);
+static void analysis_trace_delete(struct analysis* analysis);
+
+static void analysis_frag_print(struct analysis* analysis, char* arg);
+static void analysis_frag_locate(struct analysis* analysis, char* arg);
+static void analysis_frag_concat(struct analysis* analysis, char* arg);
+static void analysis_frag_check(struct analysis* analysis, char* arg);
+static void analysis_frag_print_result(struct analysis* analysis, char* arg);
+static void analysis_frag_export_result(struct analysis* analysis, char* arg);
+static void analysis_frag_clean(struct analysis* analysis);
+
+static void analysis_frag_create_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg);
+
+static void analysis_code_signature_search(struct analysis* analysis, char* arg);
+static void analysis_code_signature_clean(struct analysis* analysis);
+static void analysis_mode_signature_search(struct analysis* analysis, char* arg);
+
+static void analysis_call_create(struct analysis* analysis, char* arg);
+static void analysis_call_printDot(struct analysis* analysis);
+static void analysis_call_check(struct analysis* analysis);
+static void analysis_call_export(struct analysis* analysis, char* arg);
+static void analysis_call_print_stack(struct analysis* analysis, char* arg);
+static void analysis_call_print_frame(struct analysis* analysis, char* arg);
+
+static void analysis_synthesis_create(struct analysis* analysis, char* arg);
+static void analysis_synthesis_printDot(struct analysis* analysis, char* arg);
+
+static void analysis_delete(struct analysis* analysis);
 
 #define add_cmd_to_input_parser(parser, cmd, cmd_desc, arg_desc, type, arg, func)														\
 	{																																	\
@@ -22,17 +82,15 @@
 	}
 
 int main(int argc, char** argv){
-	struct analysis* 			analysis = NULL;
-	struct inputParser* 		parser = NULL;
+	struct analysis* 	analysis 	= NULL;
+	struct inputParser* parser 		= NULL;
 
-	parser = inputParser_create();
-	if (parser == NULL){
+	if ((parser = inputParser_create()) == NULL){
 		log_err("unable to create inputParser");
 		goto exit;
 	}
 
-	analysis = analysis_create();
-	if (analysis == NULL){
+	if ((analysis = analysis_create()) == NULL){
 		log_err("unable to create the analysis structure");
 		goto exit;
 	}
@@ -47,14 +105,13 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "print codeMap", 			"Print the codeMap", 							"Specific filter", 			INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_print_codeMap)
 	add_cmd_to_input_parser(parser, "search codeMap", 			"Search a symbol in the codeMap", 				"Symbol", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_codeMap)
 	add_cmd_to_input_parser(parser, "export trace", 			"Export a trace segment as a traceFragment", 	"Range", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_export)
-	add_cmd_to_input_parser(parser, "locate pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_pc)
-	add_cmd_to_input_parser(parser, "locate opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_locate_opcode)
+	add_cmd_to_input_parser(parser, "search pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_pc)
+	add_cmd_to_input_parser(parser, "search opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_opcode)
 	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting fragments", 	"Filters", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_scan)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
 	add_cmd_to_input_parser(parser, "print frag", 				"Print traceFragment (assembly or list)", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print)
-	add_cmd_to_input_parser(parser, "set frag tag", 			"Set tag value for a given traceFragment", 		"Frag index and tag value", INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_set_tag)
 	add_cmd_to_input_parser(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	add_cmd_to_input_parser(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
 	add_cmd_to_input_parser(parser, "check frag", 				"Check traceFragment: assembly and IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check)
@@ -97,10 +154,14 @@ int main(int argc, char** argv){
 
 	exit:
 
-	analysis_delete(analysis);
-	inputParser_delete(parser);
+	if (analysis != NULL){
+		analysis_delete(analysis);
+	}
+	if (parser != NULL){
+		inputParser_delete(parser);
+	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 #define apply_to_one_frag(analysis, func, arg) 																							\
@@ -160,7 +221,7 @@ int main(int argc, char** argv){
 /* Analysis functions						                             */
 /* ===================================================================== */
 
-struct analysis* analysis_create(){
+static struct analysis* analysis_create(){
 	struct analysis* 			analysis;
 	struct signatureCallback 	callback;
 
@@ -194,7 +255,7 @@ struct analysis* analysis_create(){
 	return analysis;
 }
 
-void analysis_delete(struct analysis* analysis){
+static void analysis_delete(struct analysis* analysis){
 	if (analysis->call_graph != NULL){
 		callGraph_delete(analysis->call_graph);
 		analysis->call_graph = NULL;
@@ -223,7 +284,7 @@ void analysis_delete(struct analysis* analysis){
 /* Trace functions						                                 */
 /* ===================================================================== */
 
-void analysis_trace_load(struct analysis* analysis, char* arg){
+static void analysis_trace_load(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
@@ -252,7 +313,7 @@ void analysis_trace_load(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_change(struct analysis* analysis, char* arg){
+static void analysis_trace_change(struct analysis* analysis, char* arg){
 	char* 		t_index_ptr;
 	uint32_t 	prev_pid;
 
@@ -284,7 +345,7 @@ void analysis_trace_change(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_load_elf(struct analysis* analysis, char* arg){
+static void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	if (analysis->trace != NULL){
 		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
@@ -307,7 +368,7 @@ void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_print(struct analysis* analysis, char* arg){
+static void analysis_trace_print(struct analysis* analysis, char* arg){
 	uint32_t start = 0;
 	uint32_t stop = 0;
 
@@ -325,7 +386,7 @@ void analysis_trace_print(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_check(struct analysis* analysis){
+static void analysis_trace_check(struct analysis* analysis){
 	if (analysis->trace != NULL){
 		trace_check(analysis->trace);
 	}
@@ -334,7 +395,7 @@ void analysis_trace_check(struct analysis* analysis){
 	}
 }
 
-void analysis_trace_check_codeMap(struct analysis* analysis){
+static void analysis_trace_check_codeMap(struct analysis* analysis){
 	if (analysis->code_map != NULL){
 		codeMap_check_address(analysis->code_map);
 	}
@@ -343,7 +404,7 @@ void analysis_trace_check_codeMap(struct analysis* analysis){
 	}
 }
 
-void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
+static void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 	if (analysis->code_map != NULL){
 		codeMap_print(analysis->code_map, arg);
 	}
@@ -352,7 +413,7 @@ void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
+static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
 	if (analysis->code_map != NULL){
 		codeMap_search_and_print_symbol(analysis->code_map, arg);
 	}
@@ -361,7 +422,7 @@ void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_export(struct analysis* analysis, char* arg){
+static void analysis_trace_export(struct analysis* analysis, char* arg){
 	uint32_t 		start = 0;
 	uint32_t 		stop = 0;
 	struct trace 	fragment;
@@ -392,7 +453,7 @@ void analysis_trace_export(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
+static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
 	ADDRESS 					pc;
 	struct instructionIterator 	it;
 	int32_t 					return_code;
@@ -419,9 +480,9 @@ void analysis_trace_locate_pc(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
-	uint8_t* 			opcode;
-	size_t 				opcode_length = 0;
+static void analysis_trace_search_opcode(struct analysis* analysis, char* arg){
+	uint8_t* 	opcode;
+	size_t 		opcode_length = 0;
 
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
@@ -439,7 +500,7 @@ void analysis_trace_locate_opcode(struct analysis* analysis, char* arg){
 	free(opcode);
 }
 
-void analysis_trace_scan(struct analysis* analysis, char* arg){
+static void analysis_trace_scan(struct analysis* analysis, char* arg){
 	uint32_t 	filters = 0;
 	size_t 		i;
 
@@ -463,13 +524,13 @@ void analysis_trace_scan(struct analysis* analysis, char* arg){
 	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, analysis->code_map, filters);
 }
 
-void analysis_trace_delete(struct analysis* analysis){
+static void analysis_trace_delete(struct analysis* analysis){
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
 		analysis->trace = NULL;
 	}
 	else{
-		log_err("trace is NULL");
+		log_warn("trace is NULL");
 	}
 
 	if (analysis->code_map != NULL){
@@ -477,7 +538,7 @@ void analysis_trace_delete(struct analysis* analysis){
 		analysis->code_map = NULL;
 	}
 	else{
-		log_err("codeMap is NULL");
+		log_warn("codeMap is NULL");
 	}
 }
 
@@ -485,16 +546,11 @@ void analysis_trace_delete(struct analysis* analysis){
 /* frag functions						                                 */
 /* ===================================================================== */
 
-void analysis_frag_print(struct analysis* analysis, char* arg){
+static void analysis_frag_print(struct analysis* analysis, char* arg){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					index;
 	struct trace*				fragment;
-	double 						percent;
-	uint32_t 					nb_opcode = 10;
-	uint32_t 					opcode[10] = {XED_ICLASS_XOR, XED_ICLASS_SHL, XED_ICLASS_SHLD, XED_ICLASS_SHR, XED_ICLASS_SHRD, XED_ICLASS_NOT, XED_ICLASS_OR, XED_ICLASS_AND, XED_ICLASS_ROL, XED_ICLASS_ROR};
-	uint32_t 					nb_excluded_opcode = 3;
-	uint32_t 					excluded_opcode[3] = {XED_ICLASS_MOV, XED_ICLASS_PUSH, XED_ICLASS_POP};
 	#define IRDESCRIPTOR_MAX_LENGTH 32
 	char 						ir_descriptor[IRDESCRIPTOR_MAX_LENGTH];
 
@@ -502,116 +558,57 @@ void analysis_frag_print(struct analysis* analysis, char* arg){
 		index = (uint32_t)atoi(arg);
 
 		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
-			trace_print(fragment, 0, trace_get_nb_instruction(fragment));
+			trace_print_all((struct trace*)array_get(&(analysis->frag_array), index));
 			return;
 		}
 		else{
-			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
+			log_err_m("incorrect index value %u (array size: %u)", index, array_get_length(&(analysis->frag_array)));
 		}
 	}
 
-	#ifdef VERBOSE
-	printf("Included opcode(s): ");
-	for (i = 0; i < nb_opcode; i++){
-		if (i == nb_opcode - 1){
-			printf("%s\n", xed_iclass_enum_t2str(opcode[i]));
-		}
-		else{
-			printf("%s, ", xed_iclass_enum_t2str(opcode[i]));
-		}
-	}
-	printf("Excluded opcode(s): ");
-	for (i = 0; i < nb_excluded_opcode; i++){
-		if (i == nb_excluded_opcode - 1){
-			printf("%s\n", xed_iclass_enum_t2str(excluded_opcode[i]));
-		}
-		else{
-			printf("%s, ", xed_iclass_enum_t2str(excluded_opcode[i]));
-		}
-	}
-	#endif
-
-	printer = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL);
-	if (printer != NULL){
-		multiColumnPrinter_set_column_size(printer, 0, 5);
-		multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
-		multiColumnPrinter_set_column_size(printer, 2, 8);
-		multiColumnPrinter_set_column_size(printer, 3, 16);
-		multiColumnPrinter_set_column_size(printer, 4, IRDESCRIPTOR_MAX_LENGTH);
-		multiColumnPrinter_set_column_size(printer, 5, 9);
-		multiColumnPrinter_set_column_size(printer, 6, 9);
-
-		multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
-		multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT32);
-		multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_DOUBLE);
-
-		multiColumnPrinter_set_title(printer, 0, "Index");
-		multiColumnPrinter_set_title(printer, 1, "Tag");
-		multiColumnPrinter_set_title(printer, 2, "Ins");
-		multiColumnPrinter_set_title(printer, 3, "Percent (%)");
-		multiColumnPrinter_set_title(printer, 4, "IR");
-		multiColumnPrinter_set_title(printer, 5, "Mem Trace");
-		multiColumnPrinter_set_title(printer, 6, "Synthesis");
-
-		multiColumnPrinter_print_header(printer);
-
-		for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-			fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-			percent = trace_opcode_percent(fragment, nb_opcode, opcode, nb_excluded_opcode, excluded_opcode);
-			if (fragment->type != FRAGMENT_TRACE || fragment->trace_type.frag.ir == NULL){
-				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "NULL");
-			}
-			else{
-				snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->trace_type.frag.ir->graph.nb_node, fragment->trace_type.frag.ir->graph.nb_edge);
-			}
-
-			multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), percent*100, ir_descriptor, (fragment->mem_trace != NULL) ? "yes" : "no", (fragment->type == FRAGMENT_TRACE && fragment->trace_type.frag.synthesis_graph != NULL) ? "yes" : "no", NULL);
-		}
-
-		multiColumnPrinter_delete(printer);
-	}
-	else{
+	if ((printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL)) == NULL){
 		log_err("unable to create multiColumnPrinter");
+		return;
 	}
+
+	multiColumnPrinter_set_column_size(printer, 0, 5);
+	multiColumnPrinter_set_column_size(printer, 1, TRACE_TAG_LENGTH);
+	multiColumnPrinter_set_column_size(printer, 2, 8);
+	multiColumnPrinter_set_column_size(printer, 3, IRDESCRIPTOR_MAX_LENGTH);
+	multiColumnPrinter_set_column_size(printer, 4, 3);
+	multiColumnPrinter_set_column_size(printer, 5, 3);
+
+	multiColumnPrinter_set_column_type(printer, 0, MULTICOLUMN_TYPE_INT32);
+	multiColumnPrinter_set_column_type(printer, 2, MULTICOLUMN_TYPE_INT32);
+	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_BOOL);
+	multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_BOOL);
+
+	multiColumnPrinter_set_title(printer, 0, "Index");
+	multiColumnPrinter_set_title(printer, 1, "Tag");
+	multiColumnPrinter_set_title(printer, 2, "Ins");
+	multiColumnPrinter_set_title(printer, 3, "IR");
+	multiColumnPrinter_set_title(printer, 4, "Mem");
+	multiColumnPrinter_set_title(printer, 5, "Syn");
+
+	multiColumnPrinter_print_header(printer);
+
+	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
+		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
+		if (fragment->type != FRAGMENT_TRACE || fragment->trace_type.frag.ir == NULL){
+			snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "NULL");
+		}
+		else{
+			snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->trace_type.frag.ir->graph.nb_node, fragment->trace_type.frag.ir->graph.nb_edge);
+		}
+
+		multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), ir_descriptor, (fragment->mem_trace != NULL), (fragment->type == FRAGMENT_TRACE && fragment->trace_type.frag.synthesis_graph != NULL), NULL);
+	}
+
+	multiColumnPrinter_delete(printer);
 	#undef IRDESCRIPTOR_MAX_LENGTH
 }
 
-void analysis_frag_set_tag(struct analysis* analysis, char* arg){
-	uint32_t 		i;
-	uint32_t 		index;
-	struct trace* 	fragment;
-	uint8_t 		found_space = 0;
-
-	for (i = 0; i < strlen(arg) - 1; i++){
-		if (arg[i] == ' '){
-			found_space = 1;
-			break;
-		}
-	}
-	if (found_space){
-		index = (uint32_t)atoi(arg);
-
-		if (index < array_get_length(&(analysis->frag_array))){
-			fragment = (struct trace*)array_get(&(analysis->frag_array), index);
-			if (fragment->type == FRAGMENT_TRACE){
-				#ifdef VERBOSE
-				log_info_m("setting tag value for frag %u: old tag: \"%s\", new tag: \"%s\"", index, fragment->trace_type.frag.tag, arg + i + 1);
-				#endif
-
-				strncpy(fragment->trace_type.frag.tag, arg + i + 1, TRACE_TAG_LENGTH);
-			}
-		}
-		else{
-			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
-		}
-	}
-	else{
-		log_err("the index and the tag must separated by a space char");
-	}
-}
-
-void analysis_frag_locate(struct analysis* analysis, char* arg){
+static void analysis_frag_locate(struct analysis* analysis, char* arg){
 	uint32_t 		i;
 	uint32_t 		index;
 	uint32_t 		start;
@@ -652,7 +649,7 @@ void analysis_frag_locate(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_concat(struct analysis* analysis, char* arg){
+static void analysis_frag_concat(struct analysis* analysis, char* arg){
 	uint32_t 		i;
 	uint32_t 		nb_index;
 	uint8_t 		start_index;
@@ -715,11 +712,11 @@ void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_check(struct analysis* analysis, char* arg){
+static void analysis_frag_check(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_check, arg)
 }
 
-void analysis_frag_print_result(struct analysis* analysis, char* arg){
+static void analysis_frag_print_result(struct analysis* analysis, char* arg){
 	uint32_t 		index;
 	uint32_t 		start;
 	uint32_t 		stop;
@@ -755,7 +752,7 @@ void analysis_frag_print_result(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_export_result(struct analysis* analysis, char* arg){
+static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
@@ -813,7 +810,7 @@ void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	free(signature_buffer);
 }
 
-void analysis_frag_clean(struct analysis* analysis){
+static void analysis_frag_clean(struct analysis* analysis){
 	uint32_t i;
 
 	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
@@ -826,11 +823,11 @@ void analysis_frag_clean(struct analysis* analysis){
 /* ir functions						                                	 */
 /* ===================================================================== */
 
-void analysis_frag_create_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_create_ir, arg)
 }
 
-void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 	uint32_t 		index;
 	uint32_t 		start;
 	uint32_t 		stop;
@@ -875,23 +872,23 @@ void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
 	apply_to_one_frag(analysis, trace_printDot_ir, arg)
 }
 
-void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_normalize_ir, arg)
 }
 
-void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_print_aliasing_ir, arg)
 }
 
-void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_normalize_concrete_ir, arg)
 }
 
-void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_search_buffer_ir, arg)
 }
 
@@ -899,7 +896,7 @@ void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg){
 /* signature functions										             */
 /* ===================================================================== */
 
-void analysis_code_signature_search(struct analysis* analysis, char* arg){
+static void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
@@ -954,7 +951,7 @@ void analysis_code_signature_search(struct analysis* analysis, char* arg){
 	free(graph_searcher_buffer);
 }
 
-void analysis_code_signature_clean(struct analysis* analysis){
+static void analysis_code_signature_clean(struct analysis* analysis){
 	struct trace* 	fragment;
 	uint32_t 		i;
 	uint32_t 		j;
@@ -983,7 +980,7 @@ void analysis_code_signature_clean(struct analysis* analysis){
 	signatureCollection_clean(&(analysis->code_signature_collection));
 }
 
-void analysis_mode_signature_search(struct analysis* analysis, char* arg){
+static void analysis_mode_signature_search(struct analysis* analysis, char* arg){
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
@@ -1042,7 +1039,7 @@ void analysis_mode_signature_search(struct analysis* analysis, char* arg){
 /* call graph functions						    	                     */
 /* ===================================================================== */
 
-void analysis_call_create(struct analysis* analysis, char* arg){
+static void analysis_call_create(struct analysis* analysis, char* arg){
 	uint32_t start = 0;
 	uint32_t stop;
 
@@ -1077,7 +1074,7 @@ void analysis_call_create(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_call_printDot(struct analysis* analysis){
+static void analysis_call_printDot(struct analysis* analysis){
 	if (analysis->call_graph == NULL){
 		log_err("callGraph is NULL cannot print");
 	}
@@ -1086,7 +1083,7 @@ void analysis_call_printDot(struct analysis* analysis){
 	}
 }
 
-void analysis_call_check(struct analysis* analysis){
+static void analysis_call_check(struct analysis* analysis){
 	if (analysis->call_graph == NULL){
 		log_err("callGraph is NULL cannot check");
 	}
@@ -1095,7 +1092,7 @@ void analysis_call_check(struct analysis* analysis){
 	}
 }
 
-void analysis_call_export(struct analysis* analysis, char* arg){
+static void analysis_call_export(struct analysis* analysis, char* arg){
 	struct cm_routine* 			rtn;
 	struct instructionIterator 	it;
 	int32_t 					return_code;
@@ -1129,7 +1126,7 @@ void analysis_call_export(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_call_print_stack(struct analysis* analysis, char* arg){
+static void analysis_call_print_stack(struct analysis* analysis, char* arg){
 	if (analysis->call_graph == NULL){
 		log_err("callGraph is NULL cannot print stack");
 	}
@@ -1138,7 +1135,7 @@ void analysis_call_print_stack(struct analysis* analysis, char* arg){
 	}
 }
 
-void analysis_call_print_frame(struct analysis* analysis, char* arg){
+static void analysis_call_print_frame(struct analysis* analysis, char* arg){
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 	}
@@ -1151,11 +1148,11 @@ void analysis_call_print_frame(struct analysis* analysis, char* arg){
 /* synthesis graph functions								             */
 /* ===================================================================== */
 
-void analysis_synthesis_create(struct analysis* analysis, char* arg){
+static void analysis_synthesis_create(struct analysis* analysis, char* arg){
 	apply_to_multiple_frags(analysis, trace_create_synthesis, arg)
 }
 
-void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
+static void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
 	uint32_t 	index;
 	char* 		name = NULL;
 	size_t 		offset;
