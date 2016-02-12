@@ -45,6 +45,6 @@ struct codeSignature{
 
 void codeSignature_init(struct codeSignature* code_signature);
 
-#define signatureCollection_node_get_codeSignature(node) 	((struct codeSignature*)node_get_data(node))
+#define signatureCollection_node_get_codeSignature(node) ((struct codeSignature*)node_get_data(node))
 
 #endif

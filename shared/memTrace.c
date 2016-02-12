@@ -21,7 +21,7 @@ void memAddress_print(struct memAddress* address){
 		printf("??:");
 	}
 
-	printf("0x%08x", address->address);
+	printf(PRINTF_ADDR, address->address);
 }
 
 int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t pid, uint32_t tid){
@@ -128,7 +128,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 
 		for (i = 0, size = 0, start = 0; i < array_get_length(extrude_array); i++){
 			extrude = (struct memAccessExtrude*)array_get(extrude_array, i);
-			
+
 			memcpy(new_mem_addr_buffer + size, mem_trace->mem_addr_buffer + start, sizeof(struct memAddress) * (extrude->index_start - start));
 			size += extrude->index_start - start;
 			start = extrude->index_stop;
@@ -136,7 +136,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 
 		memcpy(new_mem_addr_buffer + size, mem_trace->mem_addr_buffer + start, sizeof(struct memAddress) * (mem_trace->nb_mem_addr - start));
 		size += mem_trace->nb_mem_addr - start;
-	
+
 		mappingDesc_free_mapping(mem_trace->mapping);
 		mem_trace->allocation_type 	= ALLOCATION_MALLOC;
 		mem_trace->nb_mem_addr 		= size;
