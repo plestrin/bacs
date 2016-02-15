@@ -284,7 +284,7 @@ void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct cod
 	uint32_t 			stack;
 	uint32_t 			is_not_leaf 	= 0;
 
-	if (assembly_get_dyn_block(assembly, index, &base_block_index)){
+	if (assembly_get_dyn_block_ins(assembly, index, &base_block_index)){
 		log_err_m("unable to locate the dyn block containing the index %u", index);
 		return;
 	}

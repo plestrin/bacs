@@ -10,11 +10,11 @@
 #include "memTrace.h"
 #include "base.h"
 
-void memAddress_print(struct memAddress* address){
-	if (address->descriptor & 0x00000001){
+void memAddress_print(const struct memAddress* address){
+	if (memAddress_descriptor_is_read(address->descriptor)){
 		printf("R:%u:", (address->descriptor >> 8) & 0x000000ff);
 	}
-	else if (address->descriptor & 0x00010000){
+	else if (memAddress_descriptor_is_write(address->descriptor)){
 		printf("W:%u:", (address->descriptor >> 24) & 0x000000ff);
 	}
 	else{
@@ -42,8 +42,6 @@ int32_t memTrace_is_trace_exist(const char* directory_path, uint32_t pid, uint32
 struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid, uint32_t tid, struct assembly* assembly){
 	struct memTrace* 	mem_trace;
 	char 				file_path[PATH_MAX];
-	uint32_t 			i;
-	int64_t 			nb_mem_access;
 	struct stat 		sb;
 
 	mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace));
@@ -52,21 +50,18 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 		return NULL;
 	}
 
-	mem_trace->mem_addr_buffer = NULL;
-	mem_trace->allocation_type = ALLOCATION_MMAP;
+	mem_trace->mapping.buffer 	= NULL;
+	mem_trace->mem_addr_buffer 	= NULL;
+	mem_trace->nb_mem_addr 		= assembly->dyn_blocks[assembly->nb_dyn_block - 1].mem_access_count;
+	mem_trace->allocation_type  = ALLOCATION_MMAP;
 
 	snprintf(file_path, PATH_MAX, "%s/memAddr%u_%u.bin", directory_path, pid, tid);
+
 	mem_trace->file = open(file_path, O_RDONLY);
 	if (mem_trace->file == -1){
 		log_err_m("unable to open file: \"%s\"", file_path);
-		free(mem_trace);
+		memTrace_delete(mem_trace);
 		return NULL;
-	}
-
-	for (i = 0, nb_mem_access = 0; i < assembly->nb_dyn_block; i++){
-		if (dynBlock_is_valid(assembly->dyn_blocks + i) && assembly->dyn_blocks[i].block->header.nb_mem_access != UNTRACK_MEM_ACCESS){
-			nb_mem_access += assembly->dyn_blocks[i].block->header.nb_mem_access;
-		}
 	}
 
 	if (fstat(mem_trace->file, &sb) < 0){
@@ -75,8 +70,8 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 		return NULL;
 	}
 
-	if (sb.st_size != nb_mem_access * sizeof(struct memAddress)){
-		log_err_m("incorrect file size (theoretical size: %lld, practical size: %lld)", nb_mem_access * sizeof(struct memAddress), sb.st_size);
+	if ((uint64_t)sb.st_size != mem_trace->nb_mem_addr * sizeof(struct memAddress)){
+		log_err_m("incorrect file size (theoretical size: %lld, practical size: %lld)", mem_trace->nb_mem_addr * sizeof(struct memAddress), sb.st_size);
 		memTrace_delete(mem_trace);
 		return NULL;
 	}
@@ -97,8 +92,22 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 		return NULL;
 	}
 
-	mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace));
-	if (mem_trace == NULL){
+	if (index_mem_start > master->nb_mem_addr){
+		log_warn("memory index is out of bound");
+		index_mem_start = master->nb_mem_addr;
+	}
+
+	if (index_mem_stop > master->nb_mem_addr){
+		log_warn("memory index is out of bound");
+		index_mem_stop = master->nb_mem_addr;
+	}
+
+	if (index_mem_start >= index_mem_stop){
+		log_err("incorrect memory range");
+		return NULL;
+	}
+
+	if ((mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -180,8 +189,8 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 	return mem_trace;
 }
 
-uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint32_t nb_mem_addr){
-	uint32_t i;
+int32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint64_t nb_mem_addr){
+	uint64_t i;
 
 	for (i = 0; i < nb_mem_addr; i++){
 		if (buffer1[i].descriptor < buffer2[i].descriptor){
@@ -245,4 +254,89 @@ void memTrace_clean(struct memTrace* mem_trace){
 			case ALLOCATION_MMAP 	: {mappingDesc_free_mapping(mem_trace->mapping); break;}
 		}
 	}
+}
+
+#define DEFAULT_NB_ADDR_MAP 32768
+
+int32_t memTraceIterator_init(struct memTraceIterator* it, struct memTrace* master, uint64_t mem_addr_index){
+	it->mapping.buffer = NULL;
+
+	if (master->file == -1){
+		log_err("incorrect argument, iterating through a fragment is not implemented yet");
+		return -1;
+	}
+
+	it->master 			= master;
+	it->mem_addr_buffer = NULL;
+	it->mem_addr_index 	= mem_addr_index;
+
+	return 0;
+}
+
+int32_t memTraceIterator_get_prev_addr(struct memTraceIterator* it, ADDRESS addr){
+	if (it->mem_addr_index == 0){
+		return 1;
+	}
+
+	it->mem_addr_index --;
+
+	restart:
+
+	if (it->mem_addr_buffer == NULL){
+		it->nb_mem_addr 		= min(it->mem_addr_index + 1, DEFAULT_NB_ADDR_MAP);
+		it->mem_addr_sub_index 	= it->nb_mem_addr;
+
+		if ((it->mem_addr_buffer = mapFile_part(it->master->file, (it->mem_addr_index + 1 - it->nb_mem_addr) * sizeof(struct memAddress), it->nb_mem_addr * sizeof(struct memAddress), &(it->mapping))) == NULL){
+			log_err("unable to map file part");
+			return -1;
+		}
+	}
+
+	while (it->mem_addr_sub_index != 0){
+		it->mem_addr_sub_index --;
+		if (it->mem_addr_buffer[it->mem_addr_sub_index].address == addr){
+			return 0;
+		}
+		it->mem_addr_index --;
+	}
+
+	mappingDesc_free_mapping(it->mapping);
+	it->mem_addr_buffer = NULL;
+	it->mapping.buffer = NULL;
+
+	goto restart;
+}
+
+int32_t memTraceIterator_get_next_addr(struct memTraceIterator* it, ADDRESS addr){
+	if (it->mem_addr_index >= it->master->nb_mem_addr){
+		return 1;
+	}
+
+	it->mem_addr_index ++;
+
+	restart:
+
+	if (it->mem_addr_buffer == NULL){
+		it->nb_mem_addr 		= min(it->mem_addr_index + DEFAULT_NB_ADDR_MAP, it->master->nb_mem_addr) - it->mem_addr_index;
+		it->mem_addr_sub_index 	= 0xffffffff;
+
+		if ((it->mem_addr_buffer = mapFile_part(it->master->file, it->mem_addr_index * sizeof(struct memAddress), it->nb_mem_addr * sizeof(struct memAddress), &(it->mapping))) == NULL){
+			log_err("unable to map file part");
+			return -1;
+		}
+	}
+
+	while (it->mem_addr_sub_index + 1 < it->nb_mem_addr){
+		it->mem_addr_sub_index ++;
+		if (it->mem_addr_buffer[it->mem_addr_sub_index].address == addr){
+			return 0;
+		}
+		it->mem_addr_index ++;
+	}
+
+	mappingDesc_free_mapping(it->mapping);
+	it->mem_addr_buffer = NULL;
+	it->mapping.buffer = NULL;
+
+	goto restart;
 }

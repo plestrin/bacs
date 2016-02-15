@@ -40,6 +40,7 @@ static void analysis_trace_export(struct analysis* analysis, char* arg);
 static void analysis_trace_search_pc(struct analysis* analysis, char* arg);
 static void analysis_trace_search_opcode(struct analysis* analysis, char* arg);
 static void analysis_trace_scan(struct analysis* analysis, char* arg);
+static void analysis_trace_search_mem(struct analysis* analysis, char* arg);
 static void analysis_trace_delete(struct analysis* analysis);
 
 static void analysis_frag_print(struct analysis* analysis, char* arg);
@@ -108,6 +109,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "search pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_pc)
 	add_cmd_to_input_parser(parser, "search opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_opcode)
 	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting fragments", 	"Filters", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_scan)
+	add_cmd_to_input_parser(parser, "search memory", 			"Search memory address", 						"Index & Address", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_mem)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -464,7 +466,7 @@ static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
 		return;
 	}
 
-	pc = strtoul((const char*)arg, NULL, 16);
+	pc = strtoul(arg, NULL, 16);
 
 	printf("Instance of EIP " PRINTF_ADDR ":\n", pc);
 
@@ -522,6 +524,23 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 	}
 
 	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, analysis->code_map, filters);
+}
+
+static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
+	char* address_str;
+
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+		return;
+	}
+
+	address_str = strchr(arg, ' ');
+	if (address_str == NULL){
+		log_err("incorrect argument value");
+		return;
+	}
+
+	trace_search_memory(analysis->trace, atoi(arg), strtoul(address_str, NULL, 16));
 }
 
 static void analysis_trace_delete(struct analysis* analysis){

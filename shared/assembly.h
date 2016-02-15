@@ -61,10 +61,10 @@ struct instructionIterator{
 	uint32_t 				dyn_block_index;
 	uint32_t 				instruction_sub_index;
 	uint32_t 				instruction_offset;
-	uint8_t 				instruction_size;
+	uint32_t 				instruction_size;
 	uint8_t 				prev_black_listed;
 	uint8_t 				mem_access_valid;
-	uint32_t 				mem_access_index;
+	uint64_t 				mem_access_index;
 	ADDRESS 				instruction_address;
 };
 
@@ -78,12 +78,14 @@ int32_t assembly_load_trace(struct assembly* assembly, const char* file_name_id,
 
 int32_t assembly_get_first_instruction(const struct assembly* assembly, struct instructionIterator* it);
 int32_t assembly_get_first_pc(const struct assembly* assembly, struct instructionIterator* it, ADDRESS pc);
-int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t index);
+int32_t assembly_get_instruction(const struct assembly* assembly, struct instructionIterator* it, uint32_t ins_index);
+int32_t assembly_get_address(const struct assembly* assembly, struct instructionIterator* it, uint64_t mem_index);
 int32_t assembly_get_next_instruction(const struct assembly* assembly, struct instructionIterator* it);
 int32_t assembly_get_next_block(const struct assembly* assembly, struct instructionIterator* it);
 int32_t assembly_get_next_pc(const struct assembly* assembly, struct instructionIterator* it);
 
-int32_t assembly_get_dyn_block(const struct assembly* assembly, uint32_t index, uint32_t* result);
+int32_t assembly_get_dyn_block_ins(const struct assembly* assembly, uint32_t ins_index, uint32_t* result);
+int32_t assembly_get_dyn_block_mem(const struct assembly* assembly, uint64_t mem_index, uint32_t* result);
 
 int32_t assembly_check(struct assembly* assembly);
 
@@ -93,7 +95,8 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 
 #define assembly_get_nb_instruction(assembly) ((assembly)->nb_dyn_instruction)
 
-void assembly_print(struct assembly* assembly, uint32_t start, uint32_t stop, void* mem_trace);
+void assembly_print_all(struct assembly* assembly, uint32_t start, uint32_t stop, void* mem_trace);
+void assembly_print_ins(struct assembly* assembly, struct instructionIterator* it, void* mem_access_buffer);
 
 struct memAccessExtrude{
 	uint64_t index_start;

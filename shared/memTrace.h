@@ -15,7 +15,7 @@ struct memAddress{
 	ADDRESS 	address;
 };
 
-uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint32_t nb_mem_addr);
+int32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint64_t nb_mem_addr);
 
 #define MEMADDRESS_DESCRIPTOR_CLEAN 	0x00000000
 #define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
@@ -26,9 +26,12 @@ uint32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struc
 #define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
 #define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
 
+#define memAddress_descriptor_is_read(desc) 	((desc) & 0x00000001)
+#define memAddress_descriptor_is_write(desc) 	((desc) & 0x00010000)
+
 #define MEMADDRESS_INVALID 0x00000000
 
-void memAddress_print(struct memAddress* address);
+void memAddress_print(const struct memAddress* address);
 
 static inline ADDRESS memAddress_get_and_check(const struct memAddress* mem_addr, uint32_t descriptor){
 	if (mem_addr == NULL){
@@ -64,7 +67,7 @@ struct memTrace{
 	int 				file;
 	struct mappingDesc 	mapping;
 	struct memAddress* 	mem_addr_buffer;
-	uint32_t 			nb_mem_addr;
+	uint64_t 			nb_mem_addr;
 	enum allocationType allocation_type;
 };
 
@@ -81,5 +84,23 @@ void memTrace_clean(struct memTrace* mem_trace);
 #define memTrace_delete(mem_trace) 					\
 	memTrace_clean(mem_trace); 						\
 	free(mem_trace);
+
+struct memTraceIterator{
+	struct memTrace* 	master;
+	struct mappingDesc 	mapping;
+	struct memAddress* 	mem_addr_buffer;
+	uint32_t 			nb_mem_addr;
+	uint64_t 			mem_addr_index;
+	uint32_t 			mem_addr_sub_index;
+};
+
+int32_t memTraceIterator_init(struct memTraceIterator* it, struct memTrace* master, uint64_t mem_addr_index);
+int32_t memTraceIterator_get_prev_addr(struct memTraceIterator* it, ADDRESS addr);
+int32_t memTraceIterator_get_next_addr(struct memTraceIterator* it, ADDRESS addr);
+
+#define memTraceIterator_clean(it) 					\
+	if ((it)->mapping.buffer != NULL){ 				\
+		mappingDesc_free_mapping((it)->mapping); 	\
+	}
 
 #endif

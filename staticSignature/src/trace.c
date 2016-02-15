@@ -28,7 +28,7 @@ int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, ui
 		log_err("the max number of process has been reached, increment TRACE_NB_MAX_PROCESS");
 		return -1;
 	}
-			
+
 	identifier->process[i].id = pid;
 	identifier->process[i].thread[0].id = tid;
 	identifier->process[i].nb_thread = 1;
@@ -38,8 +38,8 @@ int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, ui
 }
 
 static int32_t threadIdentifier_compare(const void* arg1, const void* arg2){
-	struct threadIdentifier* t_id1 = (struct threadIdentifier*)arg1;
-	struct threadIdentifier* t_id2 = (struct threadIdentifier*)arg2;
+	const struct threadIdentifier* t_id1 = (const struct threadIdentifier*)arg1;
+	const struct threadIdentifier* t_id2 = (const struct threadIdentifier*)arg2;
 
 	if (t_id1->id < t_id2->id){
 		return -1;
@@ -53,8 +53,8 @@ static int32_t threadIdentifier_compare(const void* arg1, const void* arg2){
 }
 
 static int32_t processIdentifier_compare(const void* arg1, const void* arg2){
-	struct processIdentifier* p_id1 = (struct processIdentifier*)arg1;
-	struct processIdentifier* p_id2 = (struct processIdentifier*)arg2;
+	const struct processIdentifier* p_id1 = (const struct processIdentifier*)arg1;
+	const struct processIdentifier* p_id2 = (const struct processIdentifier*)arg2;
 
 	if (p_id1->id < p_id2->id){
 		return -1;
@@ -186,8 +186,8 @@ struct trace* trace_load_exe(const char* directory_path){
 				continue;
 			}
 
-			pid = atoi(entry->d_name + 7);
-			tid = atoi(entry->d_name + offset);
+			pid = (uint32_t)atoi(entry->d_name + 7);
+			tid = (uint32_t)atoi(entry->d_name + offset);
 
 			offset += strspn(entry->d_name + offset, "0123456789");
 
@@ -207,12 +207,12 @@ struct trace* trace_load_exe(const char* directory_path){
 		log_err("unable to load default trace identifier");
 		goto error;
 	}
-		
+
 	strncpy(trace->trace_type.exe.directory_path, directory_path, TRACE_PATH_MAX_LENGTH);
 
 	snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u_%u.bin", directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid);
 	snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/block%u.bin", directory_path, trace->trace_type.exe.identifier.current_pid);
-			
+
 	if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 		log_err("unable to init assembly structure");
 		goto error;
@@ -246,7 +246,7 @@ int32_t trace_change(struct trace* trace, uint32_t p_index, uint32_t t_index){
 
 		snprintf(file1_path, TRACE_PATH_MAX_LENGTH, "%s/blockId%u_%u.bin", trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid, trace->trace_type.exe.identifier.current_tid);
 		snprintf(file2_path, TRACE_PATH_MAX_LENGTH, "%s/block%u.bin", trace->trace_type.exe.directory_path, trace->trace_type.exe.identifier.current_pid);
-			
+
 		if (assembly_load_trace(&(trace->assembly), file1_path, file2_path)){
 			log_err("unable to init assembly structure");
 			return -1;
@@ -275,7 +275,7 @@ struct trace* trace_load_elf(const char* file_path){
 			free(trace);
 			return NULL;
 		}
-		
+
 		if (trace_init(trace, ELF_TRACE)){
 			log_err("unable to init elfTrace");
 			assembly_clean(&(trace->assembly));
@@ -346,7 +346,7 @@ void trace_create_ir(struct trace* trace){
 			array_empty(&(trace->trace_type.frag.result_array));
 		}
 	}
-	
+
 	if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
 		trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
 	}
@@ -354,7 +354,7 @@ void trace_create_ir(struct trace* trace){
 		trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
 	}
 
-	
+
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
@@ -418,7 +418,7 @@ void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, 
 			return;
 		}
 	}
-	
+
 	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it);  status == 0 && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
 		ir_component.instruction_start 	= it.instruction_index;
 		ir_component.instruction_stop 	= ir_component.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
@@ -429,7 +429,7 @@ void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, 
 				goto next;
 			}
 		}
-		
+
 		log_info_m("found component [%u:%u] fragment \"%s\"", ir_component.instruction_start, ir_component.instruction_stop, trace_inn->trace_type.frag.tag);
 
 		if (array_add(ir_component_array, &ir_component) < 0){
@@ -640,7 +640,7 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 		log_err("unable to concat assembly");
 		return -1;
 	}
-	
+
 	if (trace_init(trace_dst, FRAGMENT_TRACE)){
 		log_err("unable to init traceFragment");
 		assembly_clean(&(trace_dst->assembly));
@@ -720,7 +720,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->code_signature->signature.name);
 			goto exit;
 		}
-		
+
 		for (j = 0; j < nb_signature; j++){
 			if (signature_buffer[j] == result->code_signature){
 				#ifdef VERBOSE
@@ -746,7 +746,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	for (i = 0; i < nb_exported_result; i++){
 		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]);
 		result_push(result, trace->trace_type.frag.ir);
-		
+
 		for (j = 0; j < result->nb_occurrence; j++){
 			result_get_node_footprint(result, j, node_set);
 		}
@@ -811,6 +811,95 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
 	}
 
 	return 0;
+}
+
+void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
+	struct instructionIterator 	ins_it;
+	struct memTraceIterator 	mem_it;
+	int32_t 					return_code;
+	uint64_t 					mem_access_index;
+
+	if (trace->mem_trace == NULL){
+		log_err("mem trace is NULL");
+		return;
+	}
+
+	if (assembly_get_instruction(&(trace->assembly), &ins_it, offset)){
+		log_err_m("unable to get instruction %u from assembly", offset);
+		return;
+	}
+
+	mem_access_index = ins_it.mem_access_index;
+
+	log_info("Backward search");
+
+	if (memTraceIterator_init(&mem_it, trace->mem_trace, mem_access_index)){
+		log_err("unable to init memTraceIterator");
+		return;
+	}
+
+	for (return_code = memTraceIterator_get_prev_addr(&mem_it, addr); return_code == 0; return_code = memTraceIterator_get_prev_addr(&mem_it, addr)){
+		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
+			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
+			break;
+		}
+
+		if (ins_it.instruction_address != mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].pc){
+			log_err_m("program counter inconsistency: run check " PRINTF_ADDR " vs " PRINTF_ADDR, ins_it.instruction_address, mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].pc);
+			break;
+		}
+
+		if (ins_it.mem_access_index != mem_it.mem_addr_index){
+			log_err_m("memory access index inconsistency: run check %llu vs %llu", ins_it.mem_access_index, mem_it.mem_addr_index);
+			break;
+		}
+
+		assembly_print_ins(&(trace->assembly), &ins_it, mem_it.mem_addr_buffer + mem_it.mem_addr_sub_index);
+
+		if (memAddress_descriptor_is_write(mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].descriptor)){
+			break;
+		}
+	}
+	if (return_code < 0){
+		log_err("unable to to fetch memory access from mem trace");
+	}
+
+	memTraceIterator_clean(&mem_it);
+
+	log_info("Forward search");
+
+	if (memTraceIterator_init(&mem_it, trace->mem_trace, mem_access_index)){
+		log_err("unable to init memTraceIterator");
+		return;
+	}
+
+	for (return_code = memTraceIterator_get_next_addr(&mem_it, addr); return_code == 0; return_code = memTraceIterator_get_next_addr(&mem_it, addr)){
+		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
+			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
+			break;
+		}
+
+		if (ins_it.instruction_address != mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].pc){
+			log_err_m("program counter inconsistency: run check " PRINTF_ADDR " vs " PRINTF_ADDR, ins_it.instruction_address, mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].pc);
+			break;
+		}
+
+		if (ins_it.mem_access_index != mem_it.mem_addr_index){
+			log_err_m("memory access index inconsistency: run check %llu vs %llu", ins_it.mem_access_index, mem_it.mem_addr_index);
+			break;
+		}
+
+		assembly_print_ins(&(trace->assembly), &ins_it, mem_it.mem_addr_buffer + mem_it.mem_addr_sub_index);
+
+		if (memAddress_descriptor_is_write(mem_it.mem_addr_buffer[mem_it.mem_addr_sub_index].descriptor)){
+			break;
+		}
+	}
+	if (return_code < 0){
+		log_err("unable to to fetch memory access from mem trace");
+	}
+
+	memTraceIterator_clean(&mem_it);
 }
 
 void trace_reset(struct trace* trace){
