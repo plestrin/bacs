@@ -16,7 +16,7 @@ struct nameEngine{
 	uint32_t 			ref_count;
 };
 
-struct nameEngine engine = {
+static struct nameEngine engine = {
 	.nb_entry = 0,
 	.ref_count = 0,
 };

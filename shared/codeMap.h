@@ -55,7 +55,7 @@ struct cm_routine{
 	struct cm_section*	parent;
 };
 
-struct codeMap* codeMap_create();
+struct codeMap* codeMap_create(void);
 
 int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name, char white_listed);
 int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS address_stop, const char* name);

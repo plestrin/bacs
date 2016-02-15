@@ -14,7 +14,7 @@ uint32_t ir_check_memory(struct ir* ir);
 
 void ir_check_clean_error_flag(struct ir* ir);
 
-static inline int32_t ir_check(struct ir* ir){
+static inline uint32_t ir_check(struct ir* ir){
 	ir_check_clean_error_flag(ir);
 	return ir_check_connectivity(ir) | ir_check_size(ir) | ir_check_acyclic(ir);
 }

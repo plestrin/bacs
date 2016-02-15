@@ -21,16 +21,16 @@ static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter);
 static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter);
 
-static int codeMap_filter_routine_executed(struct cm_routine* routine);
+#define codeMap_filter_routine_executed(routine) ((routine)->nb_execution != 0)
 static int codeMap_filter_section_executed(struct cm_section* section);
 static int codeMap_filter_image_executed(struct cm_image* image);
 
-static int codeMap_filter_routine_whitelisted(struct cm_routine* routine);
+#define codeMap_filter_routine_whitelisted(routine) ((routine)->white_listed == CODEMAP_WHITELISTED)
 static int codeMap_filter_section_whitelisted(struct cm_section* section);
 static int codeMap_filter_image_whitelisted(struct cm_image* image);
 
 
-struct codeMap* codeMap_create(){
+struct codeMap* codeMap_create(void){
 	struct codeMap* cm = (struct codeMap*)malloc(sizeof(struct codeMap));
 	if (cm == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
@@ -648,10 +648,6 @@ void codeMap_clean_routine(struct cm_routine* routine){
 	routine->parent 		= NULL;
 }
 
-static int codeMap_filter_routine_executed(struct cm_routine* routine){
-	return routine->nb_execution;
-}
-
 static int codeMap_filter_section_executed(struct cm_section* section){
 	struct cm_routine* cursor = section->routines;
 
@@ -676,10 +672,6 @@ static int codeMap_filter_image_executed(struct cm_image* image){
 	}
 
 	return 0;
-}
-
-static int codeMap_filter_routine_whitelisted(struct cm_routine* routine){
-	return (routine->white_listed == CODEMAP_WHITELISTED);
 }
 
 static int codeMap_filter_section_whitelisted(struct cm_section* section){
@@ -839,36 +831,27 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 	struct cm_section* 	section_cursor;
 	struct cm_routine* 	routine_cursor;
 
-	if (cm != NULL){
-		image_cursor = cm->images;
+	if (cm == NULL){
+		return CODEMAP_NOT_WHITELISTED;
+	}
 
-		while(image_cursor != NULL){
-			if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
-				if (image_cursor->white_listed == CODEMAP_WHITELISTED){
-					return CODEMAP_WHITELISTED;
-				}
-
-				section_cursor = image_cursor->sections;
-				while(section_cursor != NULL){
-					if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
-						routine_cursor = section_cursor->routines;
-
-						while(routine_cursor != NULL){
-							if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
-								return routine_cursor->white_listed;
-							}
-
-							routine_cursor = routine_cursor->next;
-						}
-					}
-					break;
-
-					section_cursor = section_cursor->next;
-				}
-				break;
+	for (image_cursor = cm->images; image_cursor != NULL; image_cursor = image_cursor->next){
+		if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
+			if (image_cursor->white_listed == CODEMAP_WHITELISTED){
+				return CODEMAP_WHITELISTED;
 			}
 
-			image_cursor = image_cursor->next;
+			for (section_cursor = image_cursor->sections; section_cursor != NULL; section_cursor = section_cursor->next){
+				if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
+					for (routine_cursor = section_cursor->routines; routine_cursor != NULL; routine_cursor = routine_cursor->next){
+						if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
+							return routine_cursor->white_listed;
+						}						
+					}
+					break;
+				}
+			}
+			break;
 		}
 	}
 

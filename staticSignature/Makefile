@@ -6,7 +6,7 @@ ifeq ($(VERBOSE),)
 VERBOSE 		:= 1
 endif
 ARCHI			:= ARCH_32
-CC				:= gcc
+CC 				:= gcc
 SRC_DIR 		:= src/
 ifeq ($(BUILD_DIR),)
 BUILD_DIR 		:= build/
@@ -21,6 +21,7 @@ INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
 LDFLAGS			:= -lyajl -lelf $(XED_DIR)lib/libxed.a
 CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI) -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+# CFLAGS			:= -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -Wno-documentation -Wno-padded -std=gnu99 -D_GNU_SOURCE -D$(ARCHI) -D_FILE_OFFSET_BITS=64
 OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)assembly.o 				\
 					$(BUILD_DIR)memTrace.o 				\

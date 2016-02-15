@@ -60,7 +60,7 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 		if (!strcmp(name, ".text")){
 			uint32_t 			buffer_id 			= 1;
 			struct asmBlock* 	buffer_block;
-			uint64_t 			buffer_size_block 	= sizeof(struct asmBlockHeader) + section_header.sh_size;
+			size_t 				buffer_size_block 	= sizeof(struct asmBlockHeader) + (size_t)section_header.sh_size;
 			uint32_t 			offset 				= 0;
 
 			buffer_block = (struct asmBlock*)malloc(buffer_size_block);
@@ -69,7 +69,7 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 				goto exit;
 			}
 
-			while (offset < section_header.sh_size && (data = elf_getdata(section, data)) != NULL){
+			while (offset < (size_t)section_header.sh_size && (data = elf_getdata(section, data)) != NULL){
 				memcpy(buffer_block->data + offset, data->d_buf, data->d_size);
 				offset += data->d_size;
 			}
@@ -78,7 +78,7 @@ int32_t assembly_load_elf(struct assembly* assembly, const char* file_path){
 			buffer_block->header.size 			= offset;
 			buffer_block->header.nb_ins 		= asmBlock_count_nb_ins(buffer_block);
 			buffer_block->header.nb_mem_access 	= UNTRACK_MEM_ACCESS;
-			buffer_block->header.address 		= section_header.sh_addr;
+			buffer_block->header.address 		= (ADDRESS)section_header.sh_addr;
 
 			result = assembly_init(assembly, &buffer_id, sizeof(uint32_t), (uint32_t*)buffer_block, buffer_size_block, ALLOCATION_MALLOC);
 			break;
