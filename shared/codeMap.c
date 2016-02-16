@@ -874,21 +874,27 @@ struct cm_routine* codeMap_search_symbol(struct codeMap* cm, struct cm_routine* 
 	struct cm_routine* 	routine_cursor;
 
 	if (last == NULL){
-		image_cursor 	= NULL;
-		section_cursor 	= NULL;
-		routine_cursor 	= NULL;
+		for (image_cursor = cm->images; image_cursor; image_cursor = image_cursor->next){
+			for (section_cursor = image_cursor->sections; section_cursor; section_cursor = section_cursor->next){
+				for (routine_cursor = section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
+					if (!strncmp(symbol, routine_cursor->name, CODEMAP_DEFAULT_NAME_SIZE)){
+						return routine_cursor;
+					}
+				}
+			}
+		}
 	}
 	else{
 		routine_cursor 	= last->next;
 		section_cursor 	= last->parent;
-		image_cursor 	= section_cursor->parent; 
-	}
+		image_cursor 	= section_cursor->parent;
 
-	for (image_cursor = (image_cursor != NULL) ? image_cursor : cm->images; image_cursor; image_cursor = image_cursor->next, section_cursor = NULL){
-		for (section_cursor = (section_cursor != NULL) ? section_cursor : image_cursor->sections; section_cursor; section_cursor = section_cursor->next, routine_cursor = NULL){
-			for (routine_cursor = (routine_cursor != NULL) ? routine_cursor : section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
-				if (!strncmp(symbol, routine_cursor->name, CODEMAP_DEFAULT_NAME_SIZE)){
-					return routine_cursor;
+		for ( ; image_cursor; image_cursor = image_cursor->next, section_cursor = (image_cursor != NULL) ? image_cursor->sections : NULL){
+			for ( ; section_cursor; section_cursor = section_cursor->next, routine_cursor = (section_cursor != NULL) ? section_cursor->routines : NULL){
+				for ( ; routine_cursor; routine_cursor = routine_cursor->next){
+					if (!strncmp(symbol, routine_cursor->name, CODEMAP_DEFAULT_NAME_SIZE)){
+						return routine_cursor;
+					}
 				}
 			}
 		}
@@ -903,21 +909,27 @@ struct cm_routine* codeMap_search_approx_symbol(struct codeMap* cm, struct cm_ro
 	struct cm_routine* 	routine_cursor;
 
 	if (last == NULL){
-		image_cursor 	= NULL;
-		section_cursor 	= NULL;
-		routine_cursor 	= NULL;
+		for (image_cursor = cm->images; image_cursor; image_cursor = image_cursor->next){
+			for (section_cursor = image_cursor->sections; section_cursor; section_cursor = section_cursor->next){
+				for (routine_cursor = section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
+					if (strcasestr(routine_cursor->name, symbol) != NULL){
+						return routine_cursor;
+					}
+				}
+			}
+		}
 	}
 	else{
 		routine_cursor 	= last->next;
 		section_cursor 	= last->parent;
-		image_cursor 	= section_cursor->parent; 
-	}
+		image_cursor 	= section_cursor->parent;
 
-	for (image_cursor = (image_cursor != NULL) ? image_cursor : cm->images; image_cursor; image_cursor = image_cursor->next, section_cursor = NULL){
-		for (section_cursor = (section_cursor != NULL) ? section_cursor : image_cursor->sections; section_cursor; section_cursor = section_cursor->next, routine_cursor = NULL){
-			for (routine_cursor = (routine_cursor != NULL) ? routine_cursor : section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
-				if (strcasestr(routine_cursor->name, symbol) != NULL){
-					return routine_cursor;
+		for ( ; image_cursor; image_cursor = image_cursor->next, section_cursor = (image_cursor != NULL) ? image_cursor->sections : NULL){
+			for ( ; section_cursor; section_cursor = section_cursor->next, routine_cursor = (section_cursor != NULL) ? section_cursor->routines : NULL){
+				for ( ; routine_cursor; routine_cursor = routine_cursor->next){
+					if (strcasestr(routine_cursor->name, symbol) != NULL){
+						return routine_cursor;
+					}
 				}
 			}
 		}
