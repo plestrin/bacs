@@ -259,16 +259,23 @@ void memTrace_clean(struct memTrace* mem_trace){
 #define DEFAULT_NB_ADDR_MAP 32768
 
 int32_t memTraceIterator_init(struct memTraceIterator* it, struct memTrace* master, uint64_t mem_addr_index){
-	it->mapping.buffer = NULL;
-
-	if (master->file == -1){
-		log_err("incorrect argument, iterating through a fragment is not implemented yet");
+	if (mem_addr_index >= master->nb_mem_addr){
+		log_err("memory access out of bound");
 		return -1;
 	}
 
 	it->master 			= master;
-	it->mem_addr_buffer = NULL;
+	it->mapping.buffer 	= NULL;
 	it->mem_addr_index 	= mem_addr_index;
+
+	if (master->file == -1){
+		it->mem_addr_buffer 	= master->mem_addr_buffer;
+		it->nb_mem_addr 		= (uint32_t)master->nb_mem_addr;
+		it->mem_addr_sub_index 	= (uint32_t)mem_addr_index;
+	}
+	else{
+		it->mem_addr_buffer 	= NULL;
+	}
 
 	return 0;
 }
@@ -296,6 +303,9 @@ int32_t memTraceIterator_get_prev_addr(struct memTraceIterator* it, ADDRESS addr
 		it->mem_addr_sub_index --;
 		if (it->mem_addr_buffer[it->mem_addr_sub_index].address == addr){
 			return 0;
+		}
+		if (it->mem_addr_index == 0){
+			return 1;
 		}
 		it->mem_addr_index --;
 	}
@@ -330,6 +340,9 @@ int32_t memTraceIterator_get_next_addr(struct memTraceIterator* it, ADDRESS addr
 		it->mem_addr_sub_index ++;
 		if (it->mem_addr_buffer[it->mem_addr_sub_index].address == addr){
 			return 0;
+		}
+		if (it->mem_addr_index + 1 == it->master->nb_mem_addr){
+			return 1;
 		}
 		it->mem_addr_index ++;
 	}

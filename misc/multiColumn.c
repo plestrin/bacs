@@ -150,7 +150,7 @@ void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* pr
 }
 
 void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
-	char* 		value_str = NULL;
+	const char* value_str = NULL;
 	int8_t 		value_int8;
 	int32_t 	value_int32;
 	uint32_t 	value_uint32;

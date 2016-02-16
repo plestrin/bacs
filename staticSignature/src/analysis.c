@@ -109,7 +109,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "search pc", 				"Return trace offset that match a given pc", 	"PC (hexa)", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_pc)
 	add_cmd_to_input_parser(parser, "search opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_opcode)
 	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting fragments", 	"Filters", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_scan)
-	add_cmd_to_input_parser(parser, "search memory", 			"Search memory address", 						"Index & Address", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_mem)
+	add_cmd_to_input_parser(parser, "search memory", 			"Search memory address", 						"Frag [opt] & Index & Addr",INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_mem)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -527,20 +527,37 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 }
 
 static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
-	char* address_str;
+	char* 			token1;
+	char* 			token2;
+	struct trace* 	trace;
+	uint32_t 		index;
 
-	if (analysis->trace == NULL){
+	if ((trace = analysis->trace) == NULL){
 		log_err("trace is NULL");
 		return;
 	}
 
-	address_str = strchr(arg, ' ');
-	if (address_str == NULL){
+	if ((token1 = strchr(arg, ' ')) == NULL){
 		log_err("incorrect argument value");
 		return;
 	}
+	token1 ++;
 
-	trace_search_memory(analysis->trace, atoi(arg), strtoul(address_str, NULL, 16));
+	if ((token2 = strchr(token1, ' ')) != NULL){
+		index = (uint32_t)atoi(arg);
+		if (index < array_get_length(&(analysis->frag_array))){
+			trace = (struct trace*)array_get(&(analysis->frag_array), index);
+			log_info_m("running the research on fragment %u", index);
+		}
+		else{
+			log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&(analysis->frag_array)));
+			return;
+		}
+		arg = token1;
+		token1 = ++ token2;
+	}
+
+	trace_search_memory(trace, (uint32_t)atoi(arg), strtoul(token1, NULL, 16));
 }
 
 static void analysis_trace_delete(struct analysis* analysis){

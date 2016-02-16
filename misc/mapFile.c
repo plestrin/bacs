@@ -52,6 +52,7 @@ void* mapFile_part(int file, off_t offset, size_t size, struct mappingDesc* desc
 	desc->buffer = mmap(NULL, size + align, PROT_READ, MAP_PRIVATE, file, offset - (off_t)align);
 	if (desc->buffer == MAP_FAILED){
 		log_err_m("unable to map file (size=%u, off=%lld): %s", desc->size, offset - (off_t)align, strerror(errno));
+		desc->buffer = NULL;
 		return NULL;
 	}
 
