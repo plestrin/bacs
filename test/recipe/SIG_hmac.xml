@@ -1,0 +1,502 @@
+<xml>
+	<recipe name="TEST_HMAC_MD5_GO0" active="no"> <!-- since the MD5 signature is not correctly detected, we skip this case -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_GO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/> <!-- only 4 distinct fragments -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_GO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 3"/>
+			<arg value="simplify concrete ir 3"/>
+			<arg value="create synthesis 3"/>
+			<arg value="search mode signature 3"/>
+			<arg value="printDot synthesis 3 fig/TEST_HMAC_MD5_GO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="288"/> <!-- only 3 distinct fragments -->
+			<algo name="md5_p2_v1" number="288"/>
+			<algo name="md5_p3_v1" number="576"/>
+			<algo name="md5_p4_v1" number="288"/>
+			<algo name="md5_slice" number="192"/>
+			<algo name="md5_v1" number="6"/>
+			<algo name="md5_compress" number="3"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_GO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 3"/>
+			<arg value="simplify concrete ir 3"/>
+			<arg value="create synthesis 3"/>
+			<arg value="search mode signature 3"/>
+			<arg value="printDot synthesis 3 fig/TEST_HMAC_MD5_GO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="288"/> <!-- only 3 distinct fragments -->
+			<algo name="md5_p2_v1" number="288"/>
+			<algo name="md5_p3_v1" number="576"/>
+			<algo name="md5_p4_v1" number="288"/>
+			<algo name="md5_slice" number="192"/>
+			<algo name="md5_v1" number="6"/>
+			<algo name="md5_compress" number="3"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_GO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="export callGraph md5_feed"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 4"/>
+			<arg value="simplify concrete ir 4"/>
+			<arg value="create synthesis 4"/>
+			<arg value="search mode signature 4"/>
+			<arg value="printDot synthesis 4 fig/TEST_HMAC_MD5_GO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="384"/> <!-- only 4 distinct fragments -->
+			<algo name="md5_p2_v1" number="384"/>
+			<algo name="md5_p3_v1" number="768"/>
+			<algo name="md5_p4_v1" number="384"/>
+			<algo name="md5_slice" number="256"/>
+			<algo name="md5_v1" number="8"/>
+			<algo name="md5_compress" number="4"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_GOs" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_gos"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 3"/>
+			<arg value="simplify concrete ir 3"/>
+			<arg value="create synthesis 3"/>
+			<arg value="search mode signature 3"/>
+			<arg value="printDot synthesis 3 fig/TEST_HMAC_MD5_GOs.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="288"/> <!-- only 3 distinct fragments -->
+			<algo name="md5_p2_v1" number="288"/>
+			<algo name="md5_p3_v1" number="576"/>
+			<algo name="md5_p4_v1" number="288"/>
+			<algo name="md5_slice" number="192"/>
+			<algo name="md5_v1" number="6"/>
+			<algo name="md5_compress" number="3"/>
+			<algo name="hmac_v2" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_CO0" active="no"> <!-- since the MD5 signature is not correctly detected, we skip this case -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co0"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_CO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_CO1" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_CO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/> <!-- only 2 distinct fragments -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_CO2" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co2"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_CO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/> <!-- only 2 distinct fragments -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_CO3" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co3"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_CO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/> <!-- only 2 distinct fragments -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_HMAC_MD5_COz" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_coz"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_hmac_md5_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_HMAC_MD5_COz"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac"/>
+			<arg value="create compound ir 2"/>
+			<arg value="simplify concrete ir 2"/>
+			<arg value="create synthesis 2"/>
+			<arg value="search mode signature 2"/>
+			<arg value="printDot synthesis 2 fig/TEST_HMAC_MD5_COz.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/> <!-- only 2 distinct fragments -->
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_HMAC_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_hmac_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_hmac_md5">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_HMAC_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_process"/>
+			<arg value="export callGraph md5_done"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph hmac_init"/>
+			<arg value="export callGraph hmac_process"/>
+			<arg value="export callGraph hmac_done"/>
+			<arg value="concat frag 6 7 8"/>
+			<arg value="create compound ir 9"/>
+			<arg value="simplify concrete ir 9"/>
+			<arg value="create synthesis 9"/>
+			<arg value="search mode signature 9"/>
+			<arg value="printDot synthesis 9 fig/TOM_HMAC_MD5.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="480"/>
+			<algo name="md5_p2_v1" number="480"/>
+			<algo name="md5_p3_v1" number="960"/>
+			<algo name="md5_p4_v1" number="480"/>
+			<algo name="md5_slice" number="320"/>
+			<algo name="md5_v1" number="10"/>
+			<algo name="md5_compress" number="5"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_HMAC_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_hmac_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_hmac_md5">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_HMAC_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph MD5_Update"/>
+			<arg value="export callGraph MD5_Final"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph HMAC"/>
+			<arg value="create compound ir 6"/>
+			<arg value="simplify concrete ir 6"/>
+			<arg value="create synthesis 6"/>
+			<arg value="search mode signature 6"/>
+			<arg value="printDot synthesis 6 fig/OPEN_HMAC_MD5.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="480"/>
+			<algo name="md5_p2_v1" number="480"/>
+			<algo name="md5_p3_v1" number="960"/>
+			<algo name="md5_p4_v1" number="480"/>
+			<algo name="md5_slice" number="320"/>
+			<algo name="md5_v1" number="10"/>
+			<algo name="md5_compress" number="5"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_HMAC_MD5" active="yes"> <!-- must be investigated -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_hmac_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_hmac_md5">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_HMAC_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_md5_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph nettle_hmac_md5_set_key"/>
+			<arg value="export callGraph nettle_hmac_md5_update"/>
+			<arg value="export callGraph nettle_hmac_md5_digest"/>
+			<arg value="concat frag 4 5 6"/>
+			<arg value="create compound ir 7"/>
+			<arg value="simplify concrete ir 7"/>
+			<arg value="create synthesis 7"/>
+			<arg value="search mode signature 7"/>
+			<arg value="printDot synthesis 7 fig/NET_HMAC_MD5.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="384"/> <!-- only 4 distinct fragments -->
+			<algo name="md5_p2_v1" number="384"/>
+			<algo name="md5_p3_v1" number="768"/>
+			<algo name="md5_p4_v1" number="384"/>
+			<algo name="md5_slice" number="256"/>
+			<algo name="md5_v1" number="8"/>
+			<algo name="md5_compress" number="4"/>
+			<algo name="hmac_v2" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_HMAC_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_hmac_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_hmac_md5">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_HMAC_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP5Weak13MD59TransformEPjPKj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+			<arg value="export callGraph _ZN8CryptoPP21SimpleKeyingInterface6SetKeyEPKhjRKNS_14NameValuePairsE"/>
+			<arg value="export callGraph _ZN8CryptoPP18HashTransformation15CalculateDigestEPhPKhj"/>
+			<arg value="concat frag 4 5"/>
+			<arg value="create compound ir 6"/>
+			<arg value="simplify concrete ir 6"/>
+			<arg value="create synthesis 6"/>
+			<arg value="search mode signature 6"/>
+			<arg value="printDot synthesis 6 fig/PP_HMAC_MD5.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="384"/> <!-- only 4 distinct fragments -->
+			<algo name="md5_p2_v1" number="384"/>
+			<algo name="md5_p3_v1" number="768"/>
+			<algo name="md5_p4_v1" number="384"/>
+			<algo name="md5_slice" number="256"/>
+			<algo name="md5_v1" number="8"/>
+			<algo name="md5_compress" number="4"/>
+			<algo name="hmac_v1" number="1"/>
+		</result>
+	</recipe>
+</xml>

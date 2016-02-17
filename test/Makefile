@@ -3,7 +3,7 @@ SRC_DIR 	:= ../staticSignature/
 LOG_DIR 	:= log/
 FIG_DIR 	:= fig/
 RECIPE_DIR 	:= recipe/
-RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml SIG_ctr.xml
+RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml SIG_ctr.xml SIG_hmac.xml
 EXE 		:= signature
 
 define TRACE_template
