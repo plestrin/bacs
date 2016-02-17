@@ -10,26 +10,228 @@
 
 #define MIN_COVERAGE_STRATEGY 3 /* 0 is random, 1 is greedy, 2 is exact, 3 is split */
 
-static const uint32_t irEdge_distance_array_OI[NB_DEPENDENCE_TYPE] = {
-	0, 						/* DIRECT */
-	DIJKSTRA_INVALID_DST, 	/* ADDRESS */
-	0, 						/* SHIFT_DISP */
-	0, 						/* DIVISOR */
-	0, 						/* ROUND_OFF */
-	0, 						/* SUBSTITUTE */
-	DIJKSTRA_INVALID_DST 	/* MACRO */
+static const uint32_t irEdge_distance_array[NB_DEPENDENCE_TYPE] = {
+	0, 						/* DIRECT 		*/
+	DIJKSTRA_INVALID_DST, 	/* ADDRESS 		*/
+	0, 						/* SHIFT_DISP 	*/
+	0, 						/* DIVISOR 		*/
+	0, 						/* ROUND_OFF 	*/
+	0, 						/* SUBSTITUTE 	*/
+	DIJKSTRA_INVALID_DST 	/* MACRO 		*/
 };
 
-static uint32_t irEdge_get_distance(void* arg){
-	struct irDependence* dependence = (struct irDependence*)arg;
-	struct edge* edge = irDependence_get_edge(arg);
+static const uint32_t irNode_distance_array[NB_OPERATION_TYPE] = {
+	0, 						/* IN_REG 	*/
+	0, 						/* IN_MEM 	*/
+	DIJKSTRA_INVALID_DST, 	/* OUT_MEM 	*/
+	DIJKSTRA_INVALID_DST, 	/* IMM 		*/
+	0, 						/* INST 	*/
+	0, 						/* SYMBOL 	*/
+};
 
-	if (ir_node_get_operation(edge_get_src(edge))->type == IR_OPERATION_TYPE_IMM || ir_node_get_operation(edge_get_dst(edge))->type == IR_OPERATION_TYPE_IMM){
-		return DIJKSTRA_INVALID_DST;
+static inline uint64_t irInstruction_and_get_mask(struct node* node_dst, uint64_t mask){
+	uint64_t 			result = 0xffffffffffffffffULL;
+	struct edge* 		edge_cursor;
+	struct irOperation* operand;
+
+	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		operand = ir_node_get_operation(edge_get_src(edge_cursor));
+		if (operand->type == IR_OPERATION_TYPE_IMM){
+			result &= ir_imm_operation_get_unsigned_value(operand);
+		}
+	}
+
+	return result & mask;
+}
+
+static inline uint64_t irInstruction_movzx_get_mask(struct node* node_src, uint64_t mask, enum dijkstraPathDirection dir){
+	if (dir == PATH_SRC_TO_DST){
+		return mask;
 	}
 	else{
-		return irEdge_distance_array_OI[dependence->type];
+		return mask & variableRange_get_size_mask(ir_node_get_operation(node_src)->size);
 	}
+}
+
+static inline uint64_t irInstruction_or_get_mask(struct node* node_dst, uint64_t mask){
+	uint64_t 			result = 0;
+	struct edge* 		edge_cursor;
+	struct irOperation* operand;
+
+	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		operand = ir_node_get_operation(edge_get_src(edge_cursor));
+		if (operand->type == IR_OPERATION_TYPE_IMM){
+			result |= ir_imm_operation_get_unsigned_value(operand);
+		}
+	}
+
+	return (~result) & mask;
+}
+
+static inline uint64_t irInstruction_part1_x_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
+	if (dir == PATH_SRC_TO_DST){
+		return mask & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+	}
+	else{
+		return mask;
+	}
+}
+
+static inline uint64_t irInstruction_part2_8_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
+	if (dir == PATH_SRC_TO_DST){
+		return (mask >> 8) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+	}
+	else{
+		return mask << 8;
+	}
+}
+
+static inline uint64_t irInstruction_shl_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
+	uint32_t 			disp = 0;
+	struct edge* 		edge_cursor;
+	struct irOperation* operand;
+
+	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			operand = ir_node_get_operation(edge_get_src(edge_cursor));
+			if (operand->type == IR_OPERATION_TYPE_IMM){
+				disp = ir_imm_operation_get_unsigned_value(operand);
+			}
+			break;
+		}
+	}
+
+	if (dir == PATH_SRC_TO_DST){
+		return (mask << disp) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+	}
+	else{
+		return mask >> disp;
+	}
+}
+
+static inline uint64_t irInstruction_rol_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
+	uint32_t 			disp = 0;
+	struct edge* 		edge_cursor;
+	struct irOperation* operand;
+
+	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			operand = ir_node_get_operation(edge_get_src(edge_cursor));
+			if (operand->type == IR_OPERATION_TYPE_IMM){
+				disp = ir_imm_operation_get_unsigned_value(operand);
+			}
+			break;
+		}
+	}
+
+	if (dir == PATH_SRC_TO_DST){
+		return ((mask << disp) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size)) | (mask >> (ir_node_get_operation(node_dst)->size - disp));
+	}
+	else{
+		return (mask >> disp) | ((mask << (ir_node_get_operation(node_dst)->size - disp)) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size));
+	}
+}
+
+static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct edge* edge, enum dijkstraPathDirection dir){
+	struct node* 			node_src;
+	struct node* 			node_dst;
+	struct irOperation* 	operation;
+	struct irDependence* 	dependence;
+
+	dependence = ir_edge_get_dependence(edge);
+	if (irEdge_distance_array[dependence->type] == DIJKSTRA_INVALID_DST){
+		return 0;
+	}
+
+	switch(dir){
+		case PATH_SRC_TO_DST : {
+			if (irNode_distance_array[ir_node_get_operation(edge_get_dst(edge))->type] == DIJKSTRA_INVALID_DST){
+				return 0;
+			}
+			node_src = node;
+			node_dst = edge_get_dst(edge);
+			break;
+		}
+		case PATH_DST_TO_SRC : {
+			if (irNode_distance_array[ir_node_get_operation(edge_get_src(edge))->type] == DIJKSTRA_INVALID_DST){
+				return 0;
+			}
+			node_src = edge_get_src(edge);
+			node_dst = node;
+			break;
+		}
+		default : {
+			log_err("this case is not supposed to happen");
+			return 0;
+		}
+	}
+
+	operation = ir_node_get_operation(node_dst);
+	switch (operation->type){
+		case IR_OPERATION_TYPE_INST : {
+			switch (operation->operation_type.inst.opcode){
+				case IR_ADC 		: {break;}
+				case IR_ADD 		: {break;}
+				case IR_AND 		: {
+					return irInstruction_and_get_mask(node_dst, mask);
+				}
+				case IR_CMOV 		: {
+					return mask;
+				}
+				case IR_DIVQ 		: {break;}
+				case IR_DIVR 		: {break;}
+				case IR_IDIV 		: {break;}
+				case IR_IMUL 		: {break;}
+				case IR_MOVZX 		: {
+					return irInstruction_movzx_get_mask(node_src, mask, dir);
+				}
+				case IR_MUL 		: {break;}
+				case IR_NEG 		: {break;}
+				case IR_NOT 		: {
+					return mask;
+				}
+				case IR_OR 			: {
+					return irInstruction_or_get_mask(node_dst, mask);
+				}
+				case IR_PART1_8 	: {
+					return irInstruction_part1_x_get_mask(node_dst, mask, dir);
+				}
+				case IR_PART2_8 	: {
+					return irInstruction_part2_8_get_mask(node_dst, mask, dir);
+				}
+				case IR_PART1_16 	: {
+					return irInstruction_part1_x_get_mask(node_dst, mask, dir);
+				}
+				case IR_ROL 		: {
+					return irInstruction_rol_get_mask(node_dst, mask, dir);
+				}
+				case IR_ROR 		: {
+					return irInstruction_rol_get_mask(node_dst, mask, dijkstraPathDirection_invert(dir));
+				}
+				case IR_SHL 		: {
+					return irInstruction_shl_get_mask(node_dst, mask, dir);
+				}
+				case IR_SHLD 		: {break;}
+				case IR_SHR 		: {
+					return irInstruction_shl_get_mask(node_dst, mask, dijkstraPathDirection_invert(dir));
+				}
+				case IR_SHRD 		: {break;}
+				case IR_SUB 		: {break;}
+				case IR_XOR 		: {
+					return mask;
+				}
+				default 			: {
+					break;
+				}
+			}
+			break;
+		}
+		default : {
+			break;
+		}
+	}
+
+	return variableRange_get_size_mask(operation->size);
 }
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, const struct codeSignature* code_signature, struct node* node){
@@ -597,12 +799,12 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		rrd.node_dst 	= node_dst_; 																																\
 		rrd.tag_dst 	= tag_dst_; 																																\
 																																									\
-		if (dijkstra_min_path(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, irEdge_get_distance)){ 											\
+		if (dijkstra_min_path(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, irOperation_get_mask)){ 											\
 			log_err("Dijkstra min path returned an error code"); 																									\
 		} 																																							\
 		else{ 																																						\
 			rrd.nb_element = array_get_length(&path_array) - rrd.offset; 																							\
-			if (array_add(&rrd_array, &rrd) < 0){ 																														\
+			if (array_add(&rrd_array, &rrd) < 0){ 																													\
 				log_err("unable to add element to array"); 																											\
 			} 																																						\
 		} 																																							\
@@ -954,7 +1156,6 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				switch(operation->type){
 					case IR_OPERATION_TYPE_INST 	: {
 						fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
-						/*fprintf(file, "%s %u<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode), (uint32_t)(synthesis_node->node_type.path.node_buffer[i]));*/
 						nb_element ++;
 						break;
 					}

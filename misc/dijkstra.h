@@ -2,7 +2,6 @@
 #define DIJKSTRA_H
 
 #include <stdint.h>
-#include <string.h>
 
 #include "graph.h"
 #include "array.h"
@@ -19,6 +18,8 @@ enum dijkstraPathDirection{
 	PATH_INVALID
 };
 
+#define dijkstraPathDirection_invert(dir) ((dir == PATH_SRC_TO_DST) ? PATH_DST_TO_SRC : PATH_SRC_TO_DST)
+
 struct dijkstraPathStep{
 	struct edge* 				edge;
 	enum dijkstraPathDirection 	dir;
@@ -29,6 +30,6 @@ struct dijkstraPath{
 	struct node* 	reached_node;
 };
 
-int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t(*edge_get_distance)(void*));
+int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint64_t(*get_mask)(uint64_t,struct node*,struct edge*,enum dijkstraPathDirection));
 
 #endif
