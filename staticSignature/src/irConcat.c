@@ -14,12 +14,13 @@ struct irCopyArg{
 	int32_t 		off_dst;
 	uint32_t* 		stack;
 	uint32_t 		stack_ptr;
+	uint32_t 		index;
 };
 
-int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
-	struct irOperation* op_dst = (struct irOperation*)data_dst;
-	struct irOperation* op_src = (struct irOperation*)data_src;
-	struct irCopyArg* 	copy_arg = (struct irCopyArg*)arg;
+static int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
+	struct irOperation* 		op_dst = (struct irOperation*)data_dst;
+	const struct irOperation* 	op_src = (const struct irOperation*)data_src;
+	struct irCopyArg* 			copy_arg = (struct irCopyArg*)arg;
 
 	memcpy(op_dst, op_src, sizeof(struct irOperation));
 
@@ -74,18 +75,22 @@ int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg){
 		}
 	}
 
+	if (op_dst->index != IR_OPERATION_INDEX_ADDRESS && op_dst->index != IR_OPERATION_INDEX_IMMEDIATE && op_dst->index != IR_OPERATION_INDEX_UNKOWN){
+		op_dst->index += copy_arg->index;
+	}
+
 	op_dst->status_flag &= ~IR_OPERATION_STATUS_FLAG_FINAL;
 
 	return 0;
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-int32_t irDependence_copy(void* data_dst, const void* data_src, void* arg){
+static int32_t irDependence_copy(void* data_dst, const void* data_src, void* arg){
 	memcpy(data_dst, data_src, sizeof(struct irDependence));
 	return 0;
 }
 
-int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src){
+int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src, uint32_t index){
 	struct irCopyArg 	copy_arg;
 	struct node* 		node_cursor;
 	struct irOperation* operation_cursor;
@@ -103,6 +108,7 @@ int32_t ir_concat(struct ir* ir_dst, const struct ir* ir_src){
 	copy_arg.off_dst 			= irBuilder_get_call_id(&(ir_dst->builder)) - IR_CALL_STACK_PTR;
 	copy_arg.stack 				= ir_dst->builder.stack;
 	copy_arg.stack_ptr 			= ir_dst->builder.stack_ptr;
+	copy_arg.index 				= index;
 
 	if (graph_concat(&(ir_dst->graph), &(ir_src->graph), irOperation_copy, irDependence_copy, &copy_arg)){
 		log_err("unable to concat graph");

@@ -1096,8 +1096,8 @@ static int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
 }
 
 static int32_t compare_address_memToken(const void* arg1, const void* arg2){
-	struct memAccessToken* token1 = (struct memAccessToken*)arg1;
-	struct memAccessToken* token2 = (struct memAccessToken*)arg2;
+	const struct memAccessToken* token1 = (const struct memAccessToken*)arg1;
+	const struct memAccessToken* token2 = (const struct memAccessToken*)arg2;
 
 	if (token1->address < token2->address){
 		return -1;

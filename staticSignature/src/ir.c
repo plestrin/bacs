@@ -312,11 +312,11 @@ void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint
 	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
 }
 
-struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type){
+struct edge* ir_add_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, enum irDependenceType type){
 	struct edge* 			edge;
 	struct irDependence* 	dependence;
 
-	edge = graph_add_edge_(&(ir->graph), operation_src, operation_dst);
+	edge = graph_add_edge_(&(ir->graph), node_src, node_dst);
 	if (edge == NULL){
 		log_err("unable to add edge to the graph");
 	}
@@ -328,11 +328,11 @@ struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct
 	return edge;
 }
 
-struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc){
+struct edge* ir_add_macro_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, uint32_t desc){
 	struct edge* 			edge;
 	struct irDependence* 	dependence;
 
-	edge = graph_add_edge_(&(ir->graph), operation_src, operation_dst);
+	edge = graph_add_edge_(&(ir->graph), node_src, node_dst);
 	if (edge == NULL){
 		log_err("unable to add edge to the graph");
 	}

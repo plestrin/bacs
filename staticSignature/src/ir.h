@@ -744,13 +744,15 @@ static inline enum irRegister irRegister_virtual_get_simd(enum irVirtualRegister
 }
 
 enum irOperationType{
-	IR_OPERATION_TYPE_IN_REG,
-	IR_OPERATION_TYPE_IN_MEM,
-	IR_OPERATION_TYPE_OUT_MEM,
-	IR_OPERATION_TYPE_IMM,
-	IR_OPERATION_TYPE_INST,
-	IR_OPERATION_TYPE_SYMBOL
+	IR_OPERATION_TYPE_IN_REG 	= 0,
+	IR_OPERATION_TYPE_IN_MEM 	= 1,
+	IR_OPERATION_TYPE_OUT_MEM 	= 2,
+	IR_OPERATION_TYPE_IMM 		= 3,
+	IR_OPERATION_TYPE_INST 		= 4,
+	IR_OPERATION_TYPE_SYMBOL 	= 5
 };
+
+#define NB_OPERATION_TYPE 6
 
 #define IR_OPERATION_STATUS_FLAG_NONE 		0x00000000
 #define IR_OPERATION_STATUS_FLAG_FINAL 		0x00000001
@@ -941,8 +943,8 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 
 void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value);
 
-struct edge* ir_add_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, enum irDependenceType type);
-struct edge* ir_add_macro_dependence(struct ir* ir, struct node* operation_src, struct node* operation_dst, uint32_t desc);
+struct edge* ir_add_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, enum irDependenceType type);
+struct edge* ir_add_macro_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, uint32_t desc);
 
 void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node* node_src);
 
