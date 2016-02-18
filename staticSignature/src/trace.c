@@ -670,6 +670,11 @@ void trace_check(struct trace* trace){
 		if (ir_check(trace->trace_type.frag.ir)){
 			log_info_m("error(s) have been found in IR for fragment \"%s\"", trace->trace_type.frag.tag);
 		}
+		#ifdef VERBOSE
+		else{
+			log_info("IR has been checked");
+		}
+		#endif
 	}
 }
 

@@ -1000,6 +1000,12 @@ void irBuilder_tag_final_node(struct irBuilder* builder){
 		if (builder->alias_buffer[i].ir_node != NULL  && alias_is_write(builder->alias_buffer[i])){
 			operation = ir_node_get_operation(builder->alias_buffer[i].ir_node);
 			operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
+
+			#ifdef EXTRA_CHECK
+			if (operation->type == IR_OPERATION_TYPE_OUT_MEM || operation->type == IR_OPERATION_TYPE_IMM){
+				log_err("wrong operation type");
+			}
+			#endif
 		}
 	}
 
@@ -1008,6 +1014,12 @@ void irBuilder_tag_final_node(struct irBuilder* builder){
 			if (builder->simdAlias_buffer[i].fragAlias_buffer[j].ir_node != NULL  && alias_is_write(builder->simdAlias_buffer[i].fragAlias_buffer[j])){
 				operation = ir_node_get_operation(builder->simdAlias_buffer[i].fragAlias_buffer[j].ir_node);
 				operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
+
+				#ifdef EXTRA_CHECK
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM || operation->type == IR_OPERATION_TYPE_IMM){
+					log_err("wrong operation type");
+				}
+				#endif
 			}
 		}
 	}
@@ -1018,6 +1030,12 @@ void irBuilder_chg_final_node(struct irBuilder* builder, struct node* node_old, 
 	uint32_t j;
 	#ifdef EXTRA_CHECK
 	uint32_t found = 0;
+	#endif
+
+	#ifdef EXTRA_CHECK
+	if (!(ir_node_get_operation(node_old)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL)){
+		log_err_m("node %p is not a final node", (void*)node_old);
+	}
 	#endif
 
 	for (i = 0; i < NB_IR_STD_REGISTER; i++){

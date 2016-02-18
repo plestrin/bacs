@@ -44,6 +44,12 @@ void irBuilder_set_std_register_ref(struct irBuilder* builder, enum irRegister r
 void irBuilder_set_simd_register_ref(struct irBuilder* builder, enum irRegister reg, struct node* node);
 
 static inline void irBuilder_set_register_ref(struct irBuilder* builder, enum irRegister reg, struct node* node){
+	#ifdef EXTRA_CHECK
+	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IMM){
+		log_err("wrong operation type");
+	}
+	#endif
+
 	if (irRegister_is_std(reg)){
 		irBuilder_set_std_register_ref(builder, reg, node);
 	}

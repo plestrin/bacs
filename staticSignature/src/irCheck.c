@@ -275,7 +275,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				}
 
 				/* Check output edge(s) */
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					log_err("input register has no src edge");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -300,7 +300,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				}
 
 				/* Check output edge(s) */
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					log_err("memory load has no src edge but neither is flagged as final");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -354,7 +354,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				}
 
 				/* Check output edge(s) */
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					log_err("immediate has no src edge but neither is flagged as final");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -375,7 +375,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
 				}
-				if (!node_cursor->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!node_cursor->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					log_err_m("inst %s has no src edge but neither is flagged as final", irOpcode_2_string(operation_cursor->operation_type.inst.opcode));
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;

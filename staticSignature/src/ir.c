@@ -173,7 +173,7 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 		operation->operation_type.mem.con_addr 			= concrete_address;
 		operation->size 								= size;
 		operation->index 								= index;
-		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_FINAL;
+		operation->status_flag 							= IR_OPERATION_STATUS_FLAG_NONE;
 
 		if (ir_add_dependence(ir, address, node, IR_DEPENDENCE_TYPE_ADDRESS) == NULL){
 			log_err("unable to add address dependence");
@@ -302,7 +302,7 @@ void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint
 	}
 
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
-		ir_mem_remove(operation);
+		ir_mem_operation_remove(operation);
 	}
 
 	operation->type 						= IR_OPERATION_TYPE_IMM;
@@ -347,7 +347,7 @@ struct edge* ir_add_macro_dependence(struct ir* ir, struct node* node_src, struc
 
 void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node* node_src){
 	graph_transfert_src_edge(&(ir->graph), node_dst, node_src);
-	if (ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+	if (irOperation_is_final(ir_node_get_operation(node_src))){
 		irBuilder_chg_final_node(&(ir->builder), node_src, node_dst);
 	}
 	ir_remove_node(ir, node_src);
@@ -358,10 +358,10 @@ void ir_remove_node(struct ir* ir, struct node* node){
 	struct edge* 	edge_next;
 
 	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
-		ir_mem_remove(ir_node_get_operation(node));
+		ir_mem_operation_remove(ir_node_get_operation(node));
 	}
 
-	if (ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+	if (irOperation_is_final(ir_node_get_operation(node))){
 		irBuilder_del_final_node(&(ir->builder), node);
 	}
 
@@ -396,10 +396,10 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 		}
 
 		if (ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_OUT_MEM){
-			ir_mem_remove(ir_node_get_operation(node_buffer[i]));
+			ir_mem_operation_remove(ir_node_get_operation(node_buffer[i]));
 		}
 
-		if (ir_node_get_operation(node_buffer[i])->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+		if (irOperation_is_final(ir_node_get_operation(node_buffer[i]))){
 			irBuilder_del_final_node(&(ir->builder), node_buffer[i]);
 		}
 
@@ -412,7 +412,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 
 	node_src = edge_get_src(edge);
 	graph_remove_edge(&(ir->graph), edge);
-	if (!(ir_node_get_operation(node_src)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) && node_src->nb_edge_src == 0){
+	if (!irOperation_is_final(ir_node_get_operation(node_src)) && node_src->nb_edge_src == 0){
 		ir_remove_node(ir, node_src);
 	}
 }
@@ -421,7 +421,7 @@ void ir_remove_dependence(struct ir* ir, struct edge* edge){
 /* Printing functions						                             */
 /* ===================================================================== */
 
-void ir_print_location_node(struct node* node, struct assembly* assembly){
+void ir_print_location_node(struct node* node){
 	struct irOperation* operation;
 	struct edge* 		edge_cursor;
 
@@ -449,7 +449,7 @@ void ir_print_location_node(struct node* node, struct assembly* assembly){
 				case IR_OPERATION_TYPE_INST 	: {
 					printf("%s(", irOpcode_2_string(operation->operation_type.inst.opcode));
 					for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-						ir_print_location_node(edge_get_src(edge_cursor), assembly);
+						ir_print_location_node(edge_get_src(edge_cursor));
 						fputs(",", stdout);
 					}
 					fputs("\b)", stdout);
@@ -534,7 +534,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
-			if (operation->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+			if (irOperation_is_final(operation)){
 				fputs("[shape=\"Mdiamond\"", file);
 			}
 			else{
@@ -561,7 +561,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_INST 		: {
-			if (operation->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+			if (irOperation_is_final(operation)){
 				fprintf(file, "[shape=\"octagon\",label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
 			}
 			else{
@@ -578,7 +578,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		fputs(",color=\"red\"]", file);
 	}
 	else{
-		fputs("]", file);
+		fputc(']', file);
 	}
 }
 

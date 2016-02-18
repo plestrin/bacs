@@ -804,13 +804,15 @@ struct irOperation{
 #define ir_node_get_operation(node) 	((struct irOperation*)node_get_data(node))
 #define irOperation_get_node(operation) (((struct node*)(operation)) - 1)
 
+#define irOperation_is_final(operation) ((operation)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL)
+
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)(((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))) | ((((op)->operation_type.imm.value >> ((op)->size - 1)) & 0x0000000000000001ULL) ? (0xffffffffffffffffULL << (op)->size) : 0)))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
 
-#define ir_mem_get_next(op) ((op).operation_type.mem.next);
-#define ir_mem_get_prev(op) ((op).operation_type.mem.prev);
+#define ir_mem_operation_get_next(op) ((op).operation_type.mem.next);
+#define ir_mem_operation_get_prev(op) ((op).operation_type.mem.prev);
 
-static inline void ir_mem_remove(struct irOperation* operation){
+static inline void ir_mem_operation_remove(struct irOperation* operation){
 	if (operation->operation_type.mem.next != NULL){
 		ir_node_get_operation(operation->operation_type.mem.next)->operation_type.mem.prev = operation->operation_type.mem.prev;
 	}
@@ -929,7 +931,7 @@ static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, ui
 	/* Warning: it migth not be a good idea to discard the status flag without anymore check */
 
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
-		ir_mem_remove(operation);
+		ir_mem_operation_remove(operation);
 	}
 
 	operation->type 						= IR_OPERATION_TYPE_INST;
@@ -955,7 +957,7 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
-void ir_print_location_node(struct node* node, struct assembly* assembly);
+void ir_print_location_node(struct node* node);
 
 void ir_print_node(struct irOperation* operation, FILE* file);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);

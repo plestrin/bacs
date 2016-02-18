@@ -323,14 +323,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 
 		switch (operation_cursor->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
@@ -340,14 +340,14 @@ void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
 				break;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
 				break;
 			}
 			case IR_OPERATION_TYPE_INST 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && (operation_cursor->status_flag & IR_OPERATION_STATUS_FLAG_FINAL) == 0){
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
 					ir_remove_node(ir, irNodeIterator_get_node(it));
 					local_modification = 1;
 				}
@@ -1500,9 +1500,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 			}
 
 			if (ir_node_get_operation(node1)->operation_type.inst.opcode == IR_SHL){
-				graph_transfert_src_edge(&(ir->graph), node1, node);
-				ir_node_get_operation(node1)->status_flag = ir_node_get_operation(node)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL;
-				ir_remove_node(ir, node);
+				ir_merge_equivalent_node(ir, node1, node);
 			}
 			else{
 				if (value2 > value3){

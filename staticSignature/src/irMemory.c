@@ -35,9 +35,9 @@ static void ir_normalize_print_alias_conflict(struct node* node1, struct node* n
 
 	if (addr1 && addr2){
 		printf("Aliasing conflict %s: ", type);
-		ir_print_location_node(addr1, NULL);
+		ir_print_location_node(addr1);
 		printf(", ");
-		ir_print_location_node(addr2, NULL);
+		ir_print_location_node(addr2);
 		putchar('\n');
 	}
 	else{
@@ -504,7 +504,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				if (graph_copy_src_edge(&(ir->graph), new_inst, node2)){
 					log_err("unable to copy edge(s)");
 				}
-				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+				if (irOperation_is_final(operation2)){
 					irBuilder_chg_final_node(&(ir->builder), node2, new_inst);
 				}
 
@@ -517,7 +517,7 @@ static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct no
 				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2)){
 					log_err("unable to copy edge(s)");
 				}
-				if (operation2->status_flag & IR_OPERATION_STATUS_FLAG_FINAL){
+				if (irOperation_is_final(operation2)){
 					irBuilder_chg_final_node(&(ir->builder), node2, edge_get_src(edge_cursor));
 				}
 

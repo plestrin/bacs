@@ -347,7 +347,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 		}
 
 		if ((buffer_start_offset + i * (buffer_access_size / 8)) - offset == parameter->nb_fragment * (buffer_access_size / 8)){
-			ir_print_location_node(base, NULL);
+			ir_print_location_node(base);
 			printf("[%llu:%llu]\n", offset, buffer_start_offset + i * (buffer_access_size / 8));
 			return;
 		}
@@ -355,7 +355,7 @@ static void signatureOccurence_print_location(struct parameterMapping* parameter
 
 	printf("{");
 	for (i = 0; i < parameter->nb_fragment; i++){
-		ir_print_location_node(parameterMapping_get_node_buffer(parameter)[i], NULL);
+		ir_print_location_node(parameterMapping_get_node_buffer(parameter)[i]);
 		if (i != parameter->nb_fragment - 1){
 			printf(" ");
 		}
