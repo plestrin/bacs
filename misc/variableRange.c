@@ -5,7 +5,7 @@
 #include "variableRange.h"
 #include "base.h"
 
-/*#define DEBUG_RANGE*/
+/* #define DEBUG_RANGE */
 
 static int32_t variableRange_seg_include_pt(uint64_t seg_lo, uint64_t seg_up, uint64_t pt){
 	if (seg_lo <= seg_up){

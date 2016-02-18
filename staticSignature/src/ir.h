@@ -806,6 +806,8 @@ struct irOperation{
 
 #define irOperation_is_final(operation) ((operation)->status_flag & IR_OPERATION_STATUS_FLAG_FINAL)
 
+void irOperation_fprint(struct irOperation* operation, FILE* file);
+
 #define ir_imm_operation_get_signed_value(op) 		((int64_t)(((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size))) | ((((op)->operation_type.imm.value >> ((op)->size - 1)) & 0x0000000000000001ULL) ? (0xffffffffffffffffULL << (op)->size) : 0)))
 #define ir_imm_operation_get_unsigned_value(op) 	((op)->operation_type.imm.value & (0xffffffffffffffffULL >> (64 - (op)->size)))
 
@@ -959,7 +961,6 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 
 void ir_print_location_node(struct node* node);
 
-void ir_print_node(struct irOperation* operation, FILE* file);
 void ir_dotPrint_node(void* data, FILE* file, void* arg);
 void ir_dotPrint_edge(void* data, FILE* file, void* arg);
 

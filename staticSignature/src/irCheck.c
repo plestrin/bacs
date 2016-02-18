@@ -19,7 +19,7 @@ uint32_t ir_check_size(struct ir* ir){
 
 		if (operation_cursor->size % 8 && operation_cursor->type != IR_OPERATION_TYPE_SYMBOL){
 			log_err_m("incorrect size: %u is not a multiple of 8", operation_cursor->size);
-			fputs("\t", stderr); ir_print_node(operation_cursor, stderr); fputs("\n", stderr);
+			fputs("\t", stderr); irOperation_fprint(operation_cursor, stderr); fputs("\n", stderr);
 			operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 			result = 1;
 			continue;
@@ -159,7 +159,7 @@ uint32_t ir_check_size(struct ir* ir){
 						case IR_MUL 	: {
 							if (operand->size * 2 != operation_cursor->size && operand->size != operation_cursor->size){
 								log_err_m("incorrect operand size for multiply: %u -> %u", operand->size, operation_cursor->size);
-								putchar('\t'); ir_print_node(operation_cursor, stdout); putchar('\n');
+								putchar('\t'); irOperation_fprint(operation_cursor, stdout); putchar('\n');
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}

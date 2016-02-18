@@ -486,7 +486,7 @@ void ir_print_location_node(struct node* node){
 	}
 }
 
-void ir_print_node(struct irOperation* operation, FILE* file){
+void irOperation_fprint(struct irOperation* operation, FILE* file){
 	switch(operation->type){
 		case IR_OPERATION_TYPE_IN_REG 		: {
 			fputs(irRegister_2_string(operation->operation_type.in_reg.reg), file);

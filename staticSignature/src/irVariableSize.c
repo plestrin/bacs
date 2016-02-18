@@ -741,8 +741,8 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 			if (address1 != MEMADDRESS_INVALID && address2 != MEMADDRESS_INVALID){ 																					\
 				if (address1 + size != address2){ 																													\
 					log_err_m("found group with concrete address incoherence, expected 0x%08x but get 0x%08x", address1 + size, address2); 							\
-					printf("  - %p ", (void*)node_mem_access1); ir_print_node(op_mem_access1, stdout); putchar('\n'); 												\
-					printf("  - %p ", (void*)node_mem_access2); ir_print_node(op_mem_access2, stdout); putchar('\n'); 												\
+					printf("  - %p ", (void*)node_mem_access1); irOperation_fprint(op_mem_access1, stdout); putchar('\n'); 											\
+					printf("  - %p ", (void*)node_mem_access2); irOperation_fprint(op_mem_access2, stdout); putchar('\n'); 											\
 																																									\
 					op_mem_access1->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\
 					op_mem_access2->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\

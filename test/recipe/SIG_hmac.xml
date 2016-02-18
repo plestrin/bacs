@@ -499,4 +499,43 @@
 			<algo name="hmac_v1" number="1"/>
 		</result>
 	</recipe>
+
+	<recipe name="BOT_HMAC_MD5" active="yes">
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_hmac_md5"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_hmac_md5">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_HMAC_MD5"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result md5_compress"/>
+
+			<arg value="export callGraph _ZN5Botan18SymmetricAlgorithm7set_keyEPKhj"/>
+			<arg value="export callGraph _ZN5Botan20Buffered_Computation6updateEPKhj"/>
+			<arg value="export callGraph _ZN5Botan4HMAC12final_resultEPh"/>
+			<arg value="concat frag 5 6 7"/>
+			<arg value="create compound ir 8"/>
+			<arg value="simplify concrete ir 8"/>
+			<arg value="create synthesis 8"/>
+			<arg value="search mode signature 8"/>
+			<arg value="printDot synthesis 8 fig/BOT_HMAC_MD5.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="480"/>
+			<algo name="md5_p2_v1" number="480"/>
+			<algo name="md5_p3_v1" number="960"/>
+			<algo name="md5_p4_v1" number="480"/>
+			<algo name="md5_slice" number="320"/>
+			<algo name="md5_v1" number="10"/>
+			<algo name="md5_compress" number="5"/>
+			<algo name="hmac_v2" number="1"/>
+		</result>
+	</recipe>
 </xml>

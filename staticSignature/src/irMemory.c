@@ -359,8 +359,8 @@ void ir_normalize_simplify_memory_access_(struct ir* ir, uint8_t* modification, 
 					if (operation_prev->operation_type.mem.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.con_addr != MEMADDRESS_INVALID){
 						if (operation_prev->operation_type.mem.con_addr != operation_next->operation_type.mem.con_addr){
 							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.con_addr, operation_next->operation_type.mem.con_addr);
-							printf("  - %p ", (void*)access_list[i - 1]); ir_print_node(operation_prev, stdout); putchar('\n');
-							printf("  - %p ", (void*)access_list[i - 0]); ir_print_node(operation_next, stdout); putchar('\n');
+							printf("  - %p ", (void*)access_list[i - 1]); irOperation_fprint(operation_prev, stdout); putchar('\n');
+							printf("  - %p ", (void*)access_list[i - 0]); irOperation_fprint(operation_next, stdout); putchar('\n');
 
 							operation_prev->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							operation_next->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
