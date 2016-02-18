@@ -168,6 +168,10 @@ void* set_export_buffer(struct set* set){
 	struct setBlock* 	block_cursor;
 	uint32_t 			offset;
 
+	if (set->nb_element_tot == 0){
+		return NULL;
+	}
+
 	buffer = (uint8_t*)malloc(set->nb_element_tot * set->element_size);
 	if (buffer != NULL){
 		for (block_cursor = &(set->block), offset = 0; block_cursor != NULL; block_cursor = block_cursor->next){
@@ -186,6 +190,11 @@ void* set_export_buffer_unique(struct set* set, uint32_t* nb_element){
 	void* 		buffer;
 	uint32_t 	i;
 	uint32_t 	offset;
+
+	if (set->nb_element_tot == 0){
+		*nb_element = 0;
+		return NULL;
+	}
 
 	buffer = set_export_buffer(set);
 	if (buffer != NULL){

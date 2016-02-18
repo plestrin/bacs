@@ -757,10 +757,16 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		}
 	}
 
-	footprint = (struct node**)set_export_buffer_unique(node_set, &nb_node_footprint);
-	if (footprint == NULL){
-		log_err("unable to export set");
-		goto exit;
+	if (set_get_length(node_set)){
+		footprint = (struct node**)set_export_buffer_unique(node_set, &nb_node_footprint);
+		if (footprint == NULL){
+			log_err("unable to export set");
+			goto exit;
+		}
+	}
+	else{
+		footprint = NULL;
+		nb_node_footprint = 0;
 	}
 
 	set_delete(node_set);

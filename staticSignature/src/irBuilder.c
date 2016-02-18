@@ -1002,7 +1002,7 @@ void irBuilder_tag_final_node(struct irBuilder* builder){
 			operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
 
 			#ifdef EXTRA_CHECK
-			if (operation->type == IR_OPERATION_TYPE_OUT_MEM || operation->type == IR_OPERATION_TYPE_IMM){
+			if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
 				log_err("wrong operation type");
 			}
 			#endif
@@ -1016,7 +1016,7 @@ void irBuilder_tag_final_node(struct irBuilder* builder){
 				operation->status_flag |= IR_OPERATION_STATUS_FLAG_FINAL;
 
 				#ifdef EXTRA_CHECK
-				if (operation->type == IR_OPERATION_TYPE_OUT_MEM || operation->type == IR_OPERATION_TYPE_IMM){
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
 					log_err("wrong operation type");
 				}
 				#endif

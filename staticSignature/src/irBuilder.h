@@ -45,7 +45,7 @@ void irBuilder_set_simd_register_ref(struct irBuilder* builder, enum irRegister 
 
 static inline void irBuilder_set_register_ref(struct irBuilder* builder, enum irRegister reg, struct node* node){
 	#ifdef EXTRA_CHECK
-	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IMM){
+	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
 		log_err("wrong operation type");
 	}
 	#endif
