@@ -32,4 +32,6 @@ struct dijkstraPath{
 
 int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint64_t(*get_mask)(uint64_t,struct node*,struct edge*,enum dijkstraPathDirection));
 
+#define dijkstraPath_clean(path) array_delete((path)->step_array)
+
 #endif

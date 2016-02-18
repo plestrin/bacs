@@ -767,16 +767,17 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		uint32_t 		tag_dst;
 	};
 
-	struct signatureCluster* 	cluster_i;
-	struct signatureCluster* 	cluster_j;
-	uint32_t 					i;
-	uint32_t 					j;
-	uint32_t 					k;
-	uint32_t 					l;
-	struct synthesisNode 		synthesis_node;
-	struct array 				path_array;
-	struct array 				rrd_array;
-	uint32_t 					nb_category;
+	struct signatureCluster* 			cluster_i;
+	struct signatureCluster* 			cluster_j;
+	uint32_t 							i;
+	uint32_t 							j;
+	uint32_t 							k;
+	uint32_t 							l;
+	struct synthesisNode 				synthesis_node;
+	struct array 						path_array;
+	struct array 						rrd_array;
+	struct relationResultDescriptor* 	rrd_ptr;
+	uint32_t 							nb_category;
 
 	if (array_init(&path_array, sizeof(struct dijkstraPath))){
 		log_err("unable to init array");
@@ -803,7 +804,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			log_err("Dijkstra min path returned an error code"); 																									\
 		} 																																							\
 		else{ 																																						\
-			rrd.nb_element = array_get_length(&path_array) - rrd.offset; 																							\
+			rrd.nb_element = array_get_length(&path_array) - rrd.offset; log_debug_m("found %u elements", rrd.nb_element);																							\
 			if (array_add(&rrd_array, &rrd) < 0){ 																													\
 				log_err("unable to add element to array"); 																											\
 			} 																																						\
@@ -915,32 +916,48 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 	}
 
 	for (i = 0, nb_category = 0; i < array_get_length(&rrd_array); i++){
-		#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
-		struct relationResultDescriptor* 	rrd_ptr;
-		uint32_t 							nb_element;
-
 		rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-		for (j = 0, nb_element = 0; j < rrd_ptr->nb_element; j++){
-			if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + j)) == 0){
-				nb_element ++;
-				if (nb_element > 1){
-					nb_category ++;
-					break;
+
+		#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
+		{
+			uint32_t 			nb_element = rrd_ptr->nb_element;
+			struct dijkstraPath tmp_path;
+
+			for (k = 0; k < nb_element; ){
+				if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + k)) == 0){
+					k ++;
+				}
+				else{
+					if (k < nb_element - 1){
+						memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + nb_element - 1), sizeof(struct dijkstraPath));
+						memcpy(array_get(&path_array, rrd_ptr->offset + nb_element - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct dijkstraPath));
+						memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct dijkstraPath));
+					}
+
+					nb_element --;
 				}
 			}
-		}
-		#else
-		if (((struct relationResultDescriptor*)array_get(&rrd_array, i))->nb_element > 1){
-			nb_category ++;
+
+			if (nb_element < rrd_ptr->nb_element){
+				log_debug_m("filtering %u false positive path(s)", rrd_ptr->nb_element - nb_element);
+				rrd_ptr->nb_element = nb_element;
+			}
 		}
 		#endif
+
+		if (rrd_ptr->nb_element == 1){
+			if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset))){
+				log_err("unable add path to synthesisGraph");
+			}
+		}
+		else if (rrd_ptr->nb_element > 1){
+			nb_category ++;
+		}
 	}
 
 	if (nb_category > 0){
-		struct categoryDesc* 				desc_buffer;
-		struct relationResultDescriptor* 	rrd_ptr;
-		int32_t 							result;
-		struct dijkstraPath* 				path;
+		struct categoryDesc* 	desc_buffer;
+		int32_t 				result;
 
 		desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
 		if (desc_buffer == NULL){
@@ -949,35 +966,6 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		else{
 			for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 				rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-
-				#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
-				{
-					uint32_t nb_element = rrd_ptr->nb_element;
-
-					for (k = 0; k < nb_element; ){
-						if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + k)) == 0){
-							k ++;
-						}
-						else{
-							struct dijkstraPath tmp_path;
-
-							if (k < nb_element - 1){
-								memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + nb_element - 1), sizeof(struct dijkstraPath));
-								memcpy(array_get(&path_array, rrd_ptr->offset + nb_element - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct dijkstraPath));
-								memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct dijkstraPath));
-							}
-
-							nb_element --;
-						}
-					}
-
-					if (nb_element < rrd_ptr->nb_element){
-						log_debug_m("filtering %u false positive path(s)", rrd_ptr->nb_element - nb_element);
-						rrd_ptr->nb_element = nb_element;
-					}
-				}
-
-				#endif
 				if (rrd_ptr->nb_element > 1){
 					desc_buffer[j].offset 		= rrd_ptr->offset;
 					desc_buffer[j].nb_element 	= rrd_ptr->nb_element;
@@ -1003,30 +991,21 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			else{
 				for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 					rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-
-					if (rrd_ptr->nb_element == 0){
-						continue;
-					}
-					else if (rrd_ptr->nb_element == 1){
-						path = (struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset);
-					}
-					else{
-						path = (struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice);
+					if (rrd_ptr->nb_element > 1){
+						if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice))){
+							log_err("unable add path to synthesisGraph");
+						}
 						j++;
-
-					}
-					if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, path)){
-						log_err("unable add path to synthesisGraph");
 					}
 				}
 			}
-		}
 
-		free(desc_buffer);
+			free(desc_buffer);
+		}
 	}
 
 	for (i = 0; i < array_get_length(&path_array); i++){
-		array_delete(((struct dijkstraPath*)array_get(&path_array, i))->step_array);
+		dijkstraPath_clean((struct dijkstraPath*)array_get(&path_array, i));
 	}
 
 	array_clean(&path_array);
