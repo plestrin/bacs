@@ -108,7 +108,7 @@ int32_t array_init(struct array* array, uint32_t element_size){
 	return 0;
 }
 
-int32_t array_add(struct array* array, void* element){
+int32_t array_add(struct array* array, const void* element){
 	int32_t 			result;
 	char* 				buffer;
 	uint32_t 			nb_allocated_byte;
@@ -253,12 +253,12 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 
 
 	if (array_src->element_size != array_dst->element_size || array_src->nb_element_per_page != array_dst->nb_element_per_page){
-		log_err("copy between arrays of different element size is a dangerous thing -> aborting");
+		log_err("copy between arrays of different element size is a dangerous thing -> abort");
 		return result;
 	}
 
 	if (array_src->nb_element < offset + nb_element){
-		log_err("source array does not contain required elements -> aborting");
+		log_err("source array does not contain required elements -> abort");
 		return result;
 	}
 

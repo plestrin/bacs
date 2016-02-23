@@ -5,14 +5,14 @@
 #include "../arrayMinCoverage.h"
 #include "../base.h"
 
-#define NB_CATEGORY 				24
-#define MAX_ARRAY_PER_CATEGORY 		4
+#define NB_CATEGORY 				16
+#define MAX_ARRAY_PER_CATEGORY 		5
 #define MAX_ELEMENT_PER_ARRAY		32
-#define MAX_ELEMENT_RANGE 			0x000001ff
+#define MAX_ELEMENT_RANGE 			0x00000fff
 
-static int32_t compare_uint32_t(void* data1, void* data2){
-	uint32_t n1 = *(uint32_t*)data1;
-	uint32_t n2 = *(uint32_t*)data2;
+static int32_t compare_uint32_t(const void* arg1, const void* arg2){
+	uint32_t n1 = *(uint32_t*)cmp_get_element(arg1);
+	uint32_t n2 = *(uint32_t*)cmp_get_element(arg2);
 
 	if (n1 < n2){
 		return -1;
@@ -58,6 +58,20 @@ static void test_array_print(struct array* array){
 	fputs("}\n", stdout);
 }
 
+static uint64_t estimate_complexity(struct categoryDesc* desc_buffer, uint32_t nb_category){
+	uint64_t result = 1;
+	uint32_t i;
+
+	for (i = 0; i < nb_category; i++){
+		result = result * (uint64_t)desc_buffer[i].nb_element;
+		if (result & 0xffffffff00000000ULL){
+			return result;
+		}
+	}
+
+	return result;
+}
+
 int32_t main(void){
 	uint32_t 				nb_category;
 	uint32_t 				i;
@@ -66,12 +80,22 @@ int32_t main(void){
 	struct array 			array;
 	struct array* 			sub_array;
 	uint32_t 				nb_element;
-	uint32_t 				score;
+	uint32_t 				rand_score;
+	uint32_t 				greedy_score;
+	uint32_t 				split_score;
+	uint32_t 				reshape_score;
+	uint32_t 				exact_score;
+	time_t 					seed;
+	struct timespec 		start_time;
+	struct timespec 		stop_time;
 
-	srand(time(NULL));
-	
+	seed = time(NULL);
+	// seed = 1456226126;
+	srand(seed);
+	log_debug_m("Seed is equal to %ld", seed);
+
 	/* INIT */
-	nb_category = 1 + (rand() % (NB_CATEGORY - 1));
+	nb_category = NB_CATEGORY;
 	desc = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
 	if (desc == NULL){
 		log_err("unable to allocate memory");
@@ -112,11 +136,15 @@ int32_t main(void){
 	}
 
 	/* COMPUTE */
-	if (arrayMinCoverage_rand(&array, nb_category, desc, compare_uint32_t, &score)){
+	if (arrayMinCoverage_rand_wrapper(&array, nb_category, desc, compare_uint32_t, &rand_score)){
 		log_err("arrayMinCoverage_greedy returned an error");
 	}
 	else{
-		log_info_m("score of arrayMinCoverage_rand is %u", score);
+		if (rand_score != arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t)){
+			log_err_m("unable to verify rand score, get %u", arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t));
+		}
+
+		log_info_m("score of arrayMinCoverage_rand is %u", rand_score);
 		putchar('\t');
 		for (i = 0; i < nb_category; i++){
 			if (i + 1 == nb_category){
@@ -128,11 +156,16 @@ int32_t main(void){
 		}
 		putchar('\n');
 	}
-	if (arrayMinCoverage_greedy(&array, nb_category, desc, compare_uint32_t, &score)){
+
+	if (arrayMinCoverage_greedy_wrapper(&array, nb_category, desc, compare_uint32_t, &greedy_score)){
 		log_err("arrayMinCoverage_greedy returned an error");
 	}
 	else{
-		log_info_m("score of arrayMinCoverage_greedy is %u", score);
+		if (greedy_score != arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t)){
+			log_err_m("unable to verify greedy score, get %u", arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t));
+		}
+
+		log_info_m("score of arrayMinCoverage_greedy is %u", greedy_score);
 		putchar('\t');
 		for (i = 0; i < nb_category; i++){
 			if (i + 1 == nb_category){
@@ -144,28 +177,23 @@ int32_t main(void){
 		}
 		putchar('\n');
 	}
-	if (arrayMinCoverage_split(&array, nb_category, desc, compare_uint32_t)){
-		log_err("arrayMinCoverage_split returned an error");
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time)){
+		log_err("clock_gettime fails");
 	}
-	else{
-		score = arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t);
-		log_info_m("score of arrayMinCoverage_split is %u", score);
-		putchar('\t');
-		for (i = 0; i < nb_category; i++){
-			if (i + 1 == nb_category){
-				printf("%u", desc[i].choice);
-			}
-			else{
-				printf("%u, ", desc[i].choice);
-			}
-		}
-		putchar('\n');
-	}
-	if (arrayMinCoverage_exact(&array, nb_category, desc, compare_uint32_t, &score)){
+	if (arrayMinCoverage_reshape_wrapper(&array, nb_category, desc, compare_uint32_t, &reshape_score)){
 		log_err("arrayMinCoverage_exact returned an error");
 	}
 	else{
-		log_info_m("score of arrayMinCoverage_exact is %u", score);
+		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
+			log_err("clock_gettime fails");
+		}
+
+		if (reshape_score != arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t)){
+			log_err_m("unable to verify reshape score, get %u", arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t));
+		}
+
+		log_info_m("score of arrayMinCoverage_reshape is %u (runtime: %.3fs)", reshape_score, stop_time.tv_sec - start_time.tv_sec + (float)(stop_time.tv_nsec - start_time.tv_nsec) / 1000000000);
 		putchar('\t');
 		for (i = 0; i < nb_category; i++){
 			if (i + 1 == nb_category){
@@ -176,6 +204,72 @@ int32_t main(void){
 			}
 		}
 		putchar('\n');
+	}
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time)){
+		log_err("clock_gettime fails");
+	}
+	if (arrayMinCoverage_split_wrapper(&array, nb_category, desc, compare_uint32_t, &split_score)){
+		log_err("arrayMinCoverage_split returned an error");
+	}
+	else{
+		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
+			log_err("clock_gettime fails");
+		}
+
+		if (split_score != arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t)){
+			log_err_m("unable to verify split score, get %u", arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t));
+		}
+
+		log_info_m("score of arrayMinCoverage_split is %u (runtime: %.3fs)", split_score, stop_time.tv_sec - start_time.tv_sec + (float)(stop_time.tv_nsec - start_time.tv_nsec) / 1000000000);
+		putchar('\t');
+		for (i = 0; i < nb_category; i++){
+			if (i + 1 == nb_category){
+				printf("%u", desc[i].choice);
+			}
+			else{
+				printf("%u, ", desc[i].choice);
+			}
+		}
+		putchar('\n');
+	}
+
+	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time)){
+		log_err("clock_gettime fails");
+	}
+	if (arrayMinCoverage_exact_wrapper(&array, nb_category, desc, compare_uint32_t, &exact_score)){
+		log_err("arrayMinCoverage_exact returned an error");
+	}
+	else{
+		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
+			log_err("clock_gettime fails");
+		}
+
+		if (exact_score != arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t)){
+			log_err_m("unable to verify exact score, get %u", arrayMinCoverage_eval(&array, nb_category, desc, compare_uint32_t));
+		}
+
+		log_info_m("score of arrayMinCoverage_exact is %u (runtime: %.3fs ; complexity: %llu)", exact_score, stop_time.tv_sec - start_time.tv_sec + (float)(stop_time.tv_nsec - start_time.tv_nsec) / 1000000000, estimate_complexity(desc, nb_category));
+		putchar('\t');
+		for (i = 0; i < nb_category; i++){
+			if (i + 1 == nb_category){
+				printf("%u", desc[i].choice);
+			}
+			else{
+				printf("%u, ", desc[i].choice);
+			}
+		}
+		putchar('\n');
+	}
+
+	if (exact_score > greedy_score || exact_score > split_score || exact_score > reshape_score || exact_score > rand_score){
+		log_err("something is wrong with the exact score");
+	}
+	if (split_score > greedy_score || split_score > reshape_score){
+		log_warn("something is disappointing with the split score");
+	}
+	if (reshape_score > greedy_score){
+		log_warn("something is disappointing with the reshape score");
 	}
 
 	/* CLEAN */

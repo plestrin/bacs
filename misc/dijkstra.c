@@ -330,9 +330,8 @@ static uint32_t dijkstraPath_add(struct array* path_array, struct dijkstraIntern
 	struct dijkstraPath dijkstra_path;
 
 	if (nb_path < DIJKSTRA_MAX_MIN_PATH){
-		dijkstra_path.step_array = array_create(sizeof(struct dijkstraPathStep));
-		if (dijkstra_path.step_array == NULL){
-			log_err("unable to create array");
+		if (dijkstraPath_init(&dijkstra_path) == NULL){
+			log_err("unable to init dijkstraPath");
 			return nb_path;
 		}
 
@@ -479,3 +478,57 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 
 	return 0;
 }
+
+int32_t dijkstraPath_check(struct dijkstraPath* path){
+	uint32_t 					i;
+	struct node* 				next_node;
+	struct dijkstraPathStep* 	step;
+
+	for (i = array_get_length(path->step_array), next_node = NULL; i > 0; i--){
+		step = (struct dijkstraPathStep*)array_get(path->step_array, i - 1);
+		switch (step->dir){
+			case PATH_SRC_TO_DST 	: {
+				if (next_node != NULL){
+					if (edge_get_src(step->edge) != next_node){
+						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
+					}
+				}
+
+				next_node = edge_get_dst(step->edge);
+
+				break;
+			}
+			case PATH_DST_TO_SRC 	: {
+				if (next_node != NULL){
+					if (edge_get_dst(step->edge) != next_node){
+						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
+					}
+				}
+
+				next_node = edge_get_src(step->edge);
+
+				break;
+			}
+			case PATH_INVALID 		: {
+				log_err("step direction is invalid");
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+uint32_t dijkstraPath_get_nb_dir_change(struct dijkstraPath* path){
+	uint32_t i;
+	uint32_t nb_dir_change;
+
+	for (i = 1, nb_dir_change = 0; i < array_get_length(path->step_array); i++){
+		if (((struct dijkstraPathStep*)array_get(path->step_array, i - 1))->dir != ((struct dijkstraPathStep*)array_get(path->step_array, i))->dir){
+			nb_dir_change ++;
+		}
+	}
+
+	return nb_dir_change;
+}
+

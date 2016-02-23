@@ -37,12 +37,18 @@ struct synthesisNode{
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)node_get_data(node))
 #define synthesisGraph_get_edgeTag(edge) (*(uint32_t*)edge_get_data(edge))
 
+/* Bit map description of the edgeTag (there is not anymore the fragment notion)
+	- [0 :29] 	parameter index
+	- [30] 		1 for input and 0 for output
+	- [31] 		1 for a paremter and 0 for a raw edge
+*/
+
 #define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
 
-#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0x80000000)
-#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0xc0000000)
-#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0x80000000)
-#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0xc0000000)
+#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0xc0000000)
+#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0x80000000)
+#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0xc0000000)
+#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0x80000000)
 #define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
 struct synthesisGraph{

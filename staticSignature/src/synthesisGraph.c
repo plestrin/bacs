@@ -8,7 +8,7 @@
 #include "arrayMinCoverage.h"
 #include "base.h"
 
-#define MIN_COVERAGE_STRATEGY 3 /* 0 is random, 1 is greedy, 2 is exact, 3 is split */
+#define MIN_COVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split */
 
 static const uint32_t irEdge_distance_array[NB_DEPENDENCE_TYPE] = {
 	0, 						/* DIRECT 		*/
@@ -594,76 +594,6 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 	struct node* 				new_node;
 	struct dijkstraPathStep* 	step;
 
-	/* Special cases */
-	if (array_get_length(path->step_array) == 0){
-		if (synthesisGraph_edge_is_input(src_edge_tag) && synthesisGraph_edge_is_output(dst_edge_tag)){
-			log_warn("get different tags for the same edge");
-			if (graph_add_edge(synthesis_graph, node_dst, node_src, &src_edge_tag) == NULL){
-				log_err("unable to add edge to synthesisGraph");
-				return -1;
-			}
-			else{
-				return 0;
-			}
-		}
-		if (synthesisGraph_edge_is_input(dst_edge_tag) && synthesisGraph_edge_is_output(src_edge_tag)){
-			log_warn("get different tags for the same edge");
-			if (graph_add_edge(synthesis_graph, node_src, node_dst, &dst_edge_tag) == NULL){
-				log_err("unable to add edge to synthesisGraph");
-				return -1;
-			}
-			else{
-				return 0;
-			}
-		}
-	}
-
-	/* Fetch IN */
-	if (synthesisGraph_edge_is_input(src_edge_tag)){
-		if (array_get_length(path->step_array) == 0){
-			new_node = synthesisGraph_add_ir_node(synthesis_graph, path->reached_node);
-		}
-		else{
-			step = (struct dijkstraPathStep*)array_get(path->step_array, array_get_length(path->step_array) - 1);
-			if (step->dir == PATH_SRC_TO_DST){
-				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_src(step->edge));
-			}
-			else{
-				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_dst(step->edge));
-			}
-		}
-		if (new_node == NULL){
-			log_err("unable to add IR node to synthesisGraph");
-			return -1;
-		}
-
-		if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
-			log_err("unable to add edge to synthesisGraph");
-			return -1;
-		}
-
-		node_src = new_node;
-		src_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
-	}
-
-	/* Fetch OUT */
-	if (synthesisGraph_edge_is_input(dst_edge_tag)){
-		new_node = synthesisGraph_add_ir_node(synthesis_graph, path->reached_node);
-		if (new_node == NULL){
-			log_err("unable to add IR node to synthesisGraph");
-			return -1;
-		}
-
-		if (graph_add_edge(synthesis_graph, new_node, node_dst, &dst_edge_tag) == NULL){
-			log_err("unable to add edge to synthesisGraph");
-			return -1;
-		}
-
-		node_dst = new_node;
-		dst_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
-	}
-
-	/* Fill */
 	for (i = array_get_length(path->step_array); i > 0; i --){
 		step = (struct dijkstraPathStep*)array_get(path->step_array, i - 1);
 		if (step->dir == PATH_SRC_TO_DST){
@@ -719,32 +649,13 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 #define FALSE_POSITIVE_FILTER_HEURISTIC
 
 #ifdef FALSE_POSITIVE_FILTER_HEURISTIC
-
-#define MAX_DIRECTION_CHANGE 4
-
-static int32_t synthesisGraph_false_positive_filter_heuristic(const struct dijkstraPath* path){
-	uint32_t i;
-	uint32_t nb_direction_change;
-
-	if (array_get_length(path->step_array) > MAX_DIRECTION_CHANGE){
-		for (i = 1, nb_direction_change = 0; i < array_get_length(path->step_array); i++){
-			if (((struct dijkstraPathStep*)array_get(path->step_array, i - 1))->dir != ((struct dijkstraPathStep*)array_get(path->step_array, i))->dir){
-				nb_direction_change ++;
-				if (nb_direction_change >= MAX_DIRECTION_CHANGE){
-					return -1;
-				}
-			}
-		}
-	}
-
-	return 0;
-}
-
+#define MAX_DIRECTION_CHANGE 5
+#define synthesisGraph_false_positive_filter_heuristic(path) (dijkstraPath_get_nb_dir_change(path) > MAX_DIRECTION_CHANGE)
 #endif
 
-static int32_t dijkstraPathStep_compare(void* arg1, void* arg2){
-	struct dijkstraPathStep* step1 = (struct dijkstraPathStep*)arg1;
-	struct dijkstraPathStep* step2 = (struct dijkstraPathStep*)arg2;
+static int32_t dijkstraPathStep_compare(const void* arg1, const void* arg2){
+	const struct dijkstraPathStep* step1 = (const struct dijkstraPathStep*)cmp_get_element(arg1);
+	const struct dijkstraPathStep* step2 = (const struct dijkstraPathStep*)cmp_get_element(arg2);
 
 	if (step1->edge < step2->edge){
 		return -1;
@@ -757,14 +668,134 @@ static int32_t dijkstraPathStep_compare(void* arg1, void* arg2){
 	}
 }
 
+static void dijkstraPath_add_input_start(struct array* path_array, uint32_t offset, uint32_t length, struct signatureCluster* cluster, uint32_t parameter){
+	uint32_t 					i;
+	uint32_t 					j;
+	struct dijkstraPath* 		path;
+	struct edge* 				edge_cursor;
+	struct node* 				symbol;
+	struct irDependence* 		dependence;
+	struct dijkstraPathStep 	step;
+	struct dijkstraPathStep* 	first_step;
+	struct node* 				starting_node;
+
+	for (i = offset; i < offset + length; i++){
+		path = (struct dijkstraPath*)array_get(path_array, i);
+
+		if (array_get_length(path->step_array) == 0){
+			starting_node = path->reached_node;
+		}
+		else{
+			first_step = (struct dijkstraPathStep*)array_get(path->step_array, array_get_length(path->step_array) - 1);
+			if (first_step->dir == PATH_SRC_TO_DST){
+				starting_node = edge_get_src(first_step->edge);
+			}
+			else{
+				starting_node = edge_get_dst(first_step->edge);
+			}
+		}
+
+		for (j = 0; j < array_get_length(&(cluster->instance_array)); j++){
+			symbol = *(struct node**)array_get(&(cluster->instance_array), j);
+			for (edge_cursor = node_get_head_edge_dst(symbol); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				dependence = ir_edge_get_dependence(edge_cursor);
+				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) != parameter + 1){
+					continue;
+				}
+				if (edge_get_src(edge_cursor) == starting_node){
+					goto found;
+				}
+			}
+		}
+
+		log_err("unable to find the first edge between the symbol and the path");
+		continue;
+
+		found:
+		step.edge = edge_cursor;
+		step.dir = PATH_DST_TO_SRC;
+
+		if (array_add(path->step_array, &step) < 0){
+			log_err("unable to add element to array");
+		}
+
+		#ifdef EXTRA_CHECK
+		if (dijkstraPath_check(path)){
+			log_err("incorrect path");
+		}
+		#endif
+	}
+}
+
+static void dijkstraPath_add_input_stop(struct array* path_array, uint32_t offset, uint32_t length, struct signatureCluster* cluster, uint32_t parameter){
+	uint32_t 					i;
+	uint32_t 					j;
+	struct dijkstraPath* 		path;
+	struct array* 				step_array;
+	struct edge* 				edge_cursor;
+	struct node* 				symbol;
+	struct irDependence* 		dependence;
+	struct dijkstraPathStep 	step;
+
+	for (i = offset; i < offset + length; i++){
+		path = (struct dijkstraPath*)array_get(path_array, i);
+		for (j = 0; j < array_get_length(&(cluster->instance_array)); j++){
+			symbol = *(struct node**)array_get(&(cluster->instance_array), j);
+			for (edge_cursor = node_get_head_edge_dst(symbol); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+				dependence = ir_edge_get_dependence(edge_cursor);
+				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) != parameter + 1){
+					continue;
+				}
+				if (edge_get_src(edge_cursor) == path->reached_node){
+					goto found;
+				}
+			}
+		}
+
+		log_err("unable to find the last edge between the reached node and the symbol");
+		continue;
+
+		found:
+
+		if ((step_array = array_create(sizeof(struct dijkstraPathStep))) == NULL){
+			log_err("unable to create array");
+			continue;
+		}
+
+		step.edge = edge_cursor;
+		step.dir = PATH_SRC_TO_DST;
+
+		if (array_add(step_array, &step) < 0){
+			log_err("unable to add element to array");
+			array_delete(step_array);
+			continue;
+		}
+
+		if (array_copy(path->step_array, step_array, 0, array_get_length(path->step_array)) < 0){
+			log_err("unable to copy array");
+			array_delete(step_array);
+			continue;
+		}
+
+		array_delete(path->step_array);
+		path->step_array = step_array;
+
+		#ifdef EXTRA_CHECK
+		if (dijkstraPath_check(path)){
+			log_err("incorrect path");
+		}
+		#endif
+	}
+}
+
 static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesis_graph, struct ir* ir){
 	struct relationResultDescriptor{
-		uint32_t 		offset;
-		uint32_t 		nb_element;
-		struct node* 	node_src;
-		uint32_t 		tag_src;
-		struct node* 	node_dst;
-		uint32_t 		tag_dst;
+		uint32_t 					offset;
+		uint32_t 					length;
+		struct signatureCluster* 	cluster_src;
+		uint32_t 					tag_src;
+		struct signatureCluster* 	cluster_dst;
+		uint32_t 					tag_dst;
 	};
 
 	struct signatureCluster* 			cluster_i;
@@ -790,25 +821,30 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		return;
 	}
 
-	#define traceMine_search_path(buffer_src, nb_src, node_src_, tag_src_, buffer_dst, nb_dst, node_dst_, tag_dst_) 												\
-	{ 																																								\
-		struct relationResultDescriptor rrd; 																														\
-																																									\
-		rrd.offset 		= array_get_length(&path_array); 																											\
-		rrd.node_src 	= node_src_; 																																\
-		rrd.tag_src 	= tag_src_; 																																\
-		rrd.node_dst 	= node_dst_; 																																\
-		rrd.tag_dst 	= tag_dst_; 																																\
-																																									\
-		if (dijkstra_min_path(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, irOperation_get_mask)){ 											\
-			log_err("Dijkstra min path returned an error code"); 																									\
-		} 																																							\
-		else{ 																																						\
-			rrd.nb_element = array_get_length(&path_array) - rrd.offset; log_debug_m("found %u elements", rrd.nb_element);																							\
-			if (array_add(&rrd_array, &rrd) < 0){ 																													\
-				log_err("unable to add element to array"); 																											\
-			} 																																						\
-		} 																																							\
+	#define traceMine_search_path(buffer_src, nb_src, cluster_src_, tag_src_, buffer_dst, nb_dst, cluster_dst_, tag_dst_) 						\
+	{ 																																			\
+		struct relationResultDescriptor rrd; 																									\
+																																				\
+		rrd.offset 		= array_get_length(&path_array); 																						\
+		rrd.cluster_src = cluster_src_; 																										\
+		rrd.tag_src 	= tag_src_; 																											\
+		rrd.cluster_dst = cluster_dst_; 																										\
+		rrd.tag_dst 	= tag_dst_; 																											\
+																																				\
+		if (dijkstra_min_path(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, irOperation_get_mask)){ 						\
+			log_err("Dijkstra min path returned an error code"); 																				\
+		} 																																		\
+		else if ((rrd.length = array_get_length(&path_array) - rrd.offset) > 0){ 																\
+			if (array_add(&rrd_array, &rrd) < 0){ 																								\
+				log_err("unable to add element to array"); 																						\
+			} 																																	\
+			if (synthesisGraph_edge_is_input(tag_src_)){ 																						\
+				dijkstraPath_add_input_start(&path_array, rrd.offset, rrd.length, cluster_src_, synthesisGraph_edge_get_parameter(tag_src_)); 	\
+			} 																																	\
+			if (synthesisGraph_edge_is_input(tag_dst_)){ 																						\
+				dijkstraPath_add_input_stop(&path_array, rrd.offset, rrd.length, cluster_dst_, synthesisGraph_edge_get_parameter(tag_dst_)); 	\
+			} 																																	\
+		} 																																		\
 	}
 
 	for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
@@ -826,11 +862,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			for (k = j + 1; k < cluster->nb_in_parameter; k++){
 				traceMine_search_path( 	signatureCluster_get_in_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_in(cluster, j), 		/* nb_src 		*/
-										cluster->synthesis_graph_node, 						/* node_src 	*/
+										cluster, 											/* cluster_src 	*/
 										synthesisGraph_get_edge_tag_input(j), 				/* tag_src 		*/
 										signatureCluster_get_in_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_in(cluster, k), 		/* nb_dst 		*/
-										cluster->synthesis_graph_node, 						/* node_dst 	*/
+										cluster, 											/* cluster_dst 	*/
 										synthesisGraph_get_edge_tag_input(k)) 				/* tag_dst 		*/
 			}
 		}
@@ -839,11 +875,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			for (k = j + 1; k < cluster->nb_ou_parameter; k++){
 				traceMine_search_path( 	signatureCluster_get_ou_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_ou(cluster, j), 		/* nb_src 		*/
-										cluster->synthesis_graph_node, 						/* node_src 	*/
+										cluster, 											/* cluster_src 	*/
 										synthesisGraph_get_edge_tag_output(j), 				/* tag_src 		*/
 										signatureCluster_get_ou_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_ou(cluster, k), 		/* nb_dst 		*/
-										cluster->synthesis_graph_node, 						/* node_dst 	*/
+										cluster, 											/* cluster_dst 	*/
 										synthesisGraph_get_edge_tag_output(k)) 				/* tag_dst 		*/
 			}
 		}
@@ -852,11 +888,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			for (k = 0; k < cluster->nb_ou_parameter; k++){
 				traceMine_search_path( 	signatureCluster_get_in_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_in(cluster, j), 		/* nb_src 		*/
-										cluster->synthesis_graph_node, 						/* node_src 	*/
+										cluster, 											/* cluster_src 	*/
 										synthesisGraph_get_edge_tag_input(j), 				/* tag_src 		*/
 										signatureCluster_get_ou_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_ou(cluster, k), 		/* nb_dst 		*/
-										cluster->synthesis_graph_node, 						/* node_dst 	*/
+										cluster, 											/* cluster_dst 	*/
 										synthesisGraph_get_edge_tag_output(k)) 				/* tag_dst 		*/
 			}
 		}
@@ -875,11 +911,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
 					traceMine_search_path( 	signatureCluster_get_in_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_in(cluster_i, k), 		/* nb_src 		*/
-											cluster_i->synthesis_graph_node, 					/* node_src 	*/
+											cluster_i, 											/* cluster_src 	*/
 											synthesisGraph_get_edge_tag_input(k), 				/* tag_src 		*/
 											signatureCluster_get_ou_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_ou(cluster_j, l), 		/* nb_dst 		*/
-											cluster_j->synthesis_graph_node, 					/* node_dst 	*/
+											cluster_j, 											/* cluster_dst 	*/
 											synthesisGraph_get_edge_tag_output(l)) 				/* tag_dst 		*/
 				}
 			}
@@ -891,11 +927,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 				for (l = 0; l < cluster_j->nb_in_parameter; l++){
 					traceMine_search_path( 	signatureCluster_get_in_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_in(cluster_i, k), 		/* nb_src 		*/
-											cluster_i->synthesis_graph_node, 					/* node_src 	*/
+											cluster_i, 											/* cluster_src 	*/
 											synthesisGraph_get_edge_tag_input(k), 				/* tag_src 		*/
 											signatureCluster_get_in_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_in(cluster_j, l), 		/* nb_dst 		*/
-											cluster_j->synthesis_graph_node, 					/* node_dst 	*/
+											cluster_j, 											/* cluster_dst 	*/
 											synthesisGraph_get_edge_tag_input(l)) 				/* tag_dst 		*/
 				}
 			}
@@ -904,11 +940,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
 					traceMine_search_path( 	signatureCluster_get_ou_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_ou(cluster_i, k), 		/* nb_src 		*/
-											cluster_i->synthesis_graph_node, 					/* node_src 	*/
+											cluster_i, 											/* cluster_src 	*/
 											synthesisGraph_get_edge_tag_output(k), 				/* tag_src 		*/
 											signatureCluster_get_ou_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_ou(cluster_j, l), 		/* nb_dst 		*/
-											cluster_j->synthesis_graph_node, 					/* node_dst 	*/
+											cluster_j, 											/* cluster_dst 	*/
 											synthesisGraph_get_edge_tag_output(l)) 				/* tag_dst 		*/
 				}
 			}
@@ -920,37 +956,37 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 
 		#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
 		{
-			uint32_t 			nb_element = rrd_ptr->nb_element;
+			uint32_t 			length = rrd_ptr->length;
 			struct dijkstraPath tmp_path;
 
-			for (k = 0; k < nb_element; ){
-				if (synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + k)) == 0){
+			for (k = 0; k < length; ){
+				if (!synthesisGraph_false_positive_filter_heuristic((struct dijkstraPath*)array_get(&path_array, rrd_ptr->offset + k))){
 					k ++;
 				}
 				else{
-					if (k < nb_element - 1){
-						memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + nb_element - 1), sizeof(struct dijkstraPath));
-						memcpy(array_get(&path_array, rrd_ptr->offset + nb_element - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct dijkstraPath));
+					if (k < length - 1){
+						memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + length - 1), sizeof(struct dijkstraPath));
+						memcpy(array_get(&path_array, rrd_ptr->offset + length - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct dijkstraPath));
 						memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct dijkstraPath));
 					}
 
-					nb_element --;
+					length --;
 				}
 			}
 
-			if (nb_element < rrd_ptr->nb_element){
-				log_debug_m("filtering %u false positive path(s)", rrd_ptr->nb_element - nb_element);
-				rrd_ptr->nb_element = nb_element;
+			if (length < rrd_ptr->length){
+				log_debug_m("filtering %u false positive path(s)", rrd_ptr->length - length);
+				rrd_ptr->length = length;
 			}
 		}
 		#endif
 
-		if (rrd_ptr->nb_element == 1){
-			if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset))){
+		if (rrd_ptr->length == 1){
+			if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->cluster_src->synthesis_graph_node, rrd_ptr->tag_src, rrd_ptr->cluster_dst->synthesis_graph_node, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset))){
 				log_err("unable add path to synthesisGraph");
 			}
 		}
-		else if (rrd_ptr->nb_element > 1){
+		else if (rrd_ptr->length > 1){
 			nb_category ++;
 		}
 	}
@@ -958,6 +994,9 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 	if (nb_category > 0){
 		struct categoryDesc* 	desc_buffer;
 		int32_t 				result;
+		#ifdef VERBOSE
+		uint32_t 				score;
+		#endif
 
 		desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
 		if (desc_buffer == NULL){
@@ -966,33 +1005,55 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		else{
 			for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 				rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-				if (rrd_ptr->nb_element > 1){
+				if (rrd_ptr->length > 1){
 					desc_buffer[j].offset 		= rrd_ptr->offset;
-					desc_buffer[j].nb_element 	= rrd_ptr->nb_element;
+					desc_buffer[j].nb_element 	= rrd_ptr->length;
 					j ++;
 				}
 			}
 
+			#ifdef VERBOSE
 			#if MIN_COVERAGE_STRATEGY == 0
-			result = arrayMinCoverage_rand(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#elif MIN_COVERAGE_STRATEGY == 1
-			result = arrayMinCoverage_greedy(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			result = arrayMinCoverage_greedy_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#elif MIN_COVERAGE_STRATEGY == 2
-			result = arrayMinCoverage_exact(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			result = arrayMinCoverage_reshape_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#elif MIN_COVERAGE_STRATEGY == 3
-			result = arrayMinCoverage_split(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare);
+			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
+			#elif MIN_COVERAGE_STRATEGY == 4
+			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#else
-			#error Incorrect strategy number. Valid values are: 0, 1, 2
+			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4
+			#endif
+			#else
+			#if MIN_COVERAGE_STRATEGY == 0
+			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 1
+			result = arrayMinCoverage_greedy_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 2
+			result = arrayMinCoverage_reshape_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 3
+			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 4
+			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#else
+			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4
+			#endif
 			#endif
 
 			if (result){
 				log_err("minCoverage function returned an error code");
 			}
 			else{
+				#ifdef VERBOSE
+				log_info_m("min coverage score is %u", score);
+				#endif
+
 				for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 					rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-					if (rrd_ptr->nb_element > 1){
-						if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->node_src, rrd_ptr->tag_src, rrd_ptr->node_dst, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice))){
+					if (rrd_ptr->length > 1){
+						if (synthesisGraph_add_dijkstraPath(&(synthesis_graph->graph), rrd_ptr->cluster_src->synthesis_graph_node, rrd_ptr->tag_src, rrd_ptr->cluster_dst->synthesis_graph_node, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice))){
 							log_err("unable add path to synthesisGraph");
 						}
 						j++;
@@ -1122,7 +1183,7 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 					fprintf(file, "\\n%s", ((struct codeSignature*)(ir_node_get_operation(symbol)->operation_type.symbol.code_signature))->signature.name);
 				}
 				if (i + 1 == array_get_length(&(synthesis_node->node_type.cluster->instance_array))){
-					fprintf(file, "\"]");
+					fputs("\"]", file);
 				}
 			}
 			break;

@@ -1,13 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <search.h>
 
 #include "arrayMinCoverage.h"
 #include "base.h"
 
 static int32_t categoryDesc_compare_nb_element(const void* arg1, const void* arg2){
-	struct categoryDesc* desc1 = (struct categoryDesc*)arg1;
-	struct categoryDesc* desc2 = (struct categoryDesc*)arg2;
+	const struct categoryDesc* desc1 = (const struct categoryDesc*)arg1;
+	const struct categoryDesc* desc2 = (const struct categoryDesc*)arg2;
 
 	if (desc1->nb_element < desc2->nb_element){
 		return -1;
@@ -35,208 +36,657 @@ static uint64_t categoryDesc_get_complexity_est(struct categoryDesc* desc_buffer
 
 }
 
-struct selection{
-	uint32_t 	nb_element;
-	void** 		buffer;
-};
+static struct tagMap* tagMap_create(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*)){
+	uint32_t 					i;
+	uint32_t 					j;
+	uint32_t 					k;
+	struct array* 				element_array;
+	uint32_t 					nb_tag 			= 0;
+	void* 						tree_root 		= NULL;
+	struct tagMapTreeToken* 	new_token 		= NULL;
+	struct tagMapTreeToken** 	result;
+	struct tagMap* 				tag_map 		= NULL;
 
-#define selection_init(selection) 									\
-	(selection).nb_element = 0; 									\
-	(selection).buffer = NULL;
+	for (i = 0; i < nb_category; i++){
+		if ((desc_buffer[i].tagMap_gateway = (void***)malloc(sizeof(void**) * desc_buffer[i].nb_element)) == NULL){
+			log_err("unable to allocate memory");
+			goto exit;
+		}
 
-static int32_t selection_clone(struct selection* selection_dst, struct selection* selection_src){
-	selection_dst->nb_element = selection_src->nb_element;
-	selection_dst->buffer = (void**)malloc(sizeof(void*) * selection_dst->nb_element);
-	if (selection_dst->buffer == NULL){
-		log_err("unable to allocate memory");
-		return -1;
-	}
-
-	memcpy(selection_dst->buffer, selection_src->buffer, sizeof(void*) * selection_dst->nb_element);
-
-	return 0;
-}
-
-static int32_t selection_add(struct selection* selection, struct array* array, int32_t(*compare)(void*,void*)){
-	uint32_t* 	mapping;
-	uint32_t 	i;
-	void** 		new_buffer;
-	uint32_t 	ptr1;
-	uint32_t 	ptr2;
-	int32_t 	diff;
-
-	new_buffer = (void**)malloc(sizeof(void*) * (array_get_length(array) + selection->nb_element));
-	if (new_buffer == NULL){
-		log_err("unable to allocate memory");
-		return -1;
-	}
-		
-	mapping = array_create_mapping(array, compare);
-	if (mapping == NULL){
-		log_err("unable to create mapping");
-		free(new_buffer);
-		return -1;
-	}
-
-	for (i = 0, ptr1 = 0, ptr2 = 0; ptr1 < selection->nb_element || ptr2 < array_get_length(array); ){
-		if (ptr1 < selection->nb_element){
-			if (ptr2 < array_get_length(array)){
-				diff = compare(selection->buffer[ptr1], array_get(array, mapping[ptr2]));
-				if (diff < 0){
-					new_buffer[i ++] = selection->buffer[ptr1 ++];
+		for (j = 0; j < desc_buffer[i].nb_element; j++){
+			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+			if (array_get_length(element_array) == 0){
+				desc_buffer[i].tagMap_gateway[j] = NULL;
+			}
+			else{
+				if ((desc_buffer[i].tagMap_gateway[j] = (void**)malloc(sizeof(void**) * array_get_length(element_array))) == NULL){
+					log_err("unable to allocate memory");
+					goto exit;
 				}
-				else if (diff > 0){
-					if (i == 0 || compare(new_buffer[i - 1], array_get(array, mapping[ptr2])) != 0){
-						new_buffer[i ++] = array_get(array, mapping[ptr2]);
+				for (k = 0; k < array_get_length(element_array); k++){
+					if (new_token == NULL){
+						if ((new_token = (struct tagMapTreeToken*)malloc(sizeof(struct tagMapTreeToken))) == NULL){
+							log_err("unable to allocate memory");
+							goto exit;
+						}
 					}
-					ptr2 ++;
-				}
-				else{
-					new_buffer[i ++] = selection->buffer[ptr1];
 
-					ptr1 ++;
-					ptr2 ++;
+					new_token->element = array_get(element_array, k);
+					new_token->idx = nb_tag;
+
+					result = tsearch(new_token, &tree_root, compare);
+					if (result == NULL){
+						log_err("tsearch failed to insert new item");
+						goto exit;
+					}
+					else if (*result == new_token){
+						new_token = NULL;
+						nb_tag ++;
+					}
+					desc_buffer[i].tagMap_gateway[j][k] = *result;
 				}
-			}
-			else{
-				new_buffer[i ++] = selection->buffer[ptr1 ++];
 			}
 		}
-		else{
-			if (i == 0 || compare(new_buffer[i - 1], array_get(array, mapping[ptr2])) != 0){
-				new_buffer[i ++] = array_get(array, mapping[ptr2]);
+	}
+
+
+	if (nb_tag){
+		if ((tag_map = (struct tagMap*)malloc(sizeof(struct tagMap) + nb_tag * sizeof(uint32_t))) == NULL){
+			log_err("unable to allocate memory");
+			goto exit;
+		}
+
+		tag_map->nb_element = nb_tag;
+		tag_map->map = (uint32_t*)(tag_map + 1);
+
+		for (i = 0; i < nb_category; i++){
+			for (j = 0; j < desc_buffer[i].nb_element; j++){
+				element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+				for (k = 0; k < array_get_length(element_array); k++){
+					desc_buffer[i].tagMap_gateway[j][k] = tag_map->map + ((struct tagMapTreeToken*)(desc_buffer[i].tagMap_gateway[j][k]))->idx;
+				}
 			}
-			ptr2 ++;
 		}
 	}
-	
-	if (selection->buffer != NULL){
-		free(selection->buffer);
+
+	exit:
+	if (new_token != NULL){
+		free(new_token);
 	}
+	tdestroy(tree_root, free);
 
-	free(mapping);
-
-	selection->nb_element = i;
-	selection->buffer = new_buffer;
-
-	return 0;
+	return tag_map;
 }
 
-static int32_t selection_nb_new_element(const struct selection* selection, struct array* array, int32_t(*compare)(void*,void*)){
-	uint32_t* 	mapping;
-	uint32_t 	i;
-	uint32_t 	ptr1;
-	uint32_t 	ptr2;
-	int32_t 	diff;
+#define tagMap_deselect_all(tag_map) memset((tag_map)->map, 0, sizeof(uint32_t) * (tag_map)->nb_element)
+
+static void tagMap_deselect(struct tagMap* tag_map, uint32_t selection_value){
+	uint32_t i;
+
+	for (i = 0; i < tag_map->nb_element; i++){
+		if (tag_map->map[i] == selection_value){
+			tag_map->map[i] = 0;
+		}
+	}
+}
+
+static void tagMap_delete(struct tagMap* tag_map, uint32_t nb_category, struct categoryDesc* desc_buffer){
+	uint32_t i;
+	uint32_t j;
+
+	free(tag_map);
+
+	for (i = 0; i < nb_category; i++){
+		for (j = 0; j < desc_buffer[i].nb_element; j++){
+			if (desc_buffer[i].tagMap_gateway[j] != NULL){
+				free(desc_buffer[i].tagMap_gateway[j]);
+			}
+		}
+		free(desc_buffer[i].tagMap_gateway);
+	}
+}
+
+uint32_t arrayMinCoverage_rand(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t selection_value){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct array* 	element_array;
+	uint32_t 		score;
+
+	for (i = 0, score = 0; i < nb_category; i++){
+		desc_buffer[i].choice = rand() % desc_buffer[i].nb_element;
+
+		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
+		for (j = 0; j < array_get_length(element_array); j++){
+			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+				*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = selection_value;
+				score ++;
+			}
+		}
+	}
+
+	return score;
+}
+
+uint32_t arrayMinCoverage_greedy(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t selection_value){
+	uint32_t 		i;
+	uint32_t 		j;
+	uint32_t 		k;
+	uint32_t 		min_size;
+	uint32_t 		size;
+	struct array* 	element_array;
+	uint32_t 		score;
+
+	for (i = 0, score = 0; i < nb_category; i++){
+		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
+			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+			if (array_get_length(element_array) == 0){
+				continue;
+			}
+
+			for (k = 0, size = 0; k < array_get_length(element_array); k++){
+				if (*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] == 0){
+					size ++;
+				}
+			}
+			if (size < min_size){
+				min_size = size;
+				desc_buffer[i].choice = j;
+			}
+		}
 		
-	mapping = array_create_mapping(array, compare);
-	if (mapping == NULL){
-		log_err("unable to create mapping");
-		return -1;
+		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
+		for (j = 0; j < array_get_length(element_array); j++){
+			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+				*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = selection_value;
+				score ++;
+			}
+		}
 	}
 
-	for (i = 0, ptr1 = 0, ptr2 = 0; ptr2 < array_get_length(array); ){
-		if (ptr1 < selection->nb_element){
-			diff = compare(selection->buffer[ptr1], array_get(array, mapping[ptr2]));
-			if (diff < 0){
-				ptr1 ++;
+	return score;
+}
+
+uint32_t arrayMinCoverage_exact(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t selection_value, uint32_t best_score){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct array* 	element_array;
+	uint32_t 		score;
+
+	for (i = 0; i < desc_buffer[0].nb_element; i++){
+		element_array = *(struct array**)array_get(array, desc_buffer[0].offset + i);
+		for (j = 0, score = 0; j < array_get_length(element_array); j++){
+			if (*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] == 0){
+				*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] = selection_value;
+				score ++;
 			}
-			else if (diff > 0){
-				if (ptr2 == 0 || compare(array_get(array, mapping[ptr2 - 1]), array_get(array, mapping[ptr2])) != 0){
-					i++;
+		}
+		if (score <= best_score){
+			if (nb_category > 1){
+				score += arrayMinCoverage_exact(array, nb_category - 1, desc_buffer + 1, selection_value + 1, best_score - score);
+			}
+			if (score < best_score){
+				desc_buffer[0].choice = i;
+				best_score = score;
+			}
+		}
+		for (j = 0; j < array_get_length(element_array); j++){
+			if (*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] == selection_value){
+				*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] = 0;
+			}
+		}
+	}
+
+	return best_score;
+}
+
+uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t* selection_value, struct tagMap* tag_map){
+	uint32_t 		i;
+	uint32_t 		j;
+	uint32_t 		k;
+	uint32_t 		l;
+	uint32_t 		min_size;
+	uint32_t 		size;
+	struct array* 	element_array;
+	uint32_t 		score;
+	uint64_t 		complexity;
+	uint32_t 		local_score;
+
+	for (i = 0, l = 0, score = 0, local_score = 0, complexity = 1; i < nb_category; i++){
+		complexity = complexity * (uint64_t)desc_buffer[i].nb_element;
+		if (complexity > ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD){
+			if (i - l >= 2){
+				tagMap_deselect(tag_map, *selection_value);
+				local_score = arrayMinCoverage_exact(array, i - l, desc_buffer + l, *selection_value, local_score);
+				for (j = l; j < i; j++){
+					element_array = *(struct array**)array_get(array, desc_buffer[j].offset + desc_buffer[j].choice);
+					for (k = 0; k < array_get_length(element_array); k++){
+						if (*(uint32_t*)desc_buffer[j].tagMap_gateway[desc_buffer[j].choice][k] == 0){
+							*(uint32_t*)desc_buffer[j].tagMap_gateway[desc_buffer[j].choice][k] = *selection_value;
+						}
+					}
 				}
-				ptr2 ++;
 			}
-			else{
-				ptr1 ++;
-				ptr2 ++;
+			score += local_score;
+			complexity = (uint64_t)desc_buffer[i].nb_element;
+			*selection_value += 1;
+			local_score = 0;
+			l = i;
+		}
+
+		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
+			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+			if (array_get_length(element_array) == 0){
+				continue;
+			}
+
+			for (k = 0, size = 0; k < array_get_length(element_array); k++){
+				if (*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] == 0){
+					size ++;
+				}
+			}
+			if (size < min_size){
+				min_size = size;
+				desc_buffer[i].choice = j;
 			}
 		}
-		else{
-			if (ptr2 == 0 || compare(array_get(array, mapping[ptr2 - 1]), array_get(array, mapping[ptr2])) != 0){
-				i++;
+		
+		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
+		for (j = 0; j < array_get_length(element_array); j++){
+			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+				*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = *selection_value;
+				local_score ++;
 			}
-			ptr2 ++;
 		}
 	}
+
+	if (nb_category - l >= 2){
+		tagMap_deselect(tag_map, *selection_value);
+		local_score = arrayMinCoverage_exact(array, nb_category - l, desc_buffer + l, *selection_value, local_score);
+		for (j = l; j < nb_category; j++){
+			element_array = *(struct array**)array_get(array, desc_buffer[j].offset + desc_buffer[j].choice);
+			for (k = 0; k < array_get_length(element_array); k++){
+				if (*(uint32_t*)desc_buffer[j].tagMap_gateway[desc_buffer[j].choice][k] == 0){
+					*(uint32_t*)desc_buffer[j].tagMap_gateway[desc_buffer[j].choice][k] = *selection_value;
+				}
+			}
+		}
+	}
+	*selection_value += 1;
+	score += local_score;
+
+	return score;
+}
+
+uint32_t arrayMinCoverage_auto(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t* selection_value, struct tagMap* tag_map){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct array* 	element_array;
+	uint32_t 		score;
+	uint64_t 		complexity;
 	
-	free(mapping);
+	if ((complexity = categoryDesc_get_complexity_est(desc_buffer, nb_category)) <= ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD){
+		#ifdef VERBOSE
+		log_info_m("exact solution for %u categories", nb_category);
+		#endif
 
-	return i;
+		score = arrayMinCoverage_greedy(array, nb_category, desc_buffer, *selection_value);
+		tagMap_deselect(tag_map, *selection_value);
+		score = arrayMinCoverage_exact(array, nb_category, desc_buffer, *selection_value, score);
+		for (i = 0; i < nb_category; i++){
+			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
+			for (j = 0; j < array_get_length(element_array); j++){
+				if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+					*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = *selection_value;
+				}
+			}
+		}
+		*selection_value += 1;
+	}
+	else{
+		#ifdef VERBOSE
+		log_info_m("reshape solution for %u categories (complexity is at least %llu)", nb_category, complexity);
+		#endif
+
+		score = arrayMinCoverage_reshape(array, nb_category, desc_buffer, selection_value, tag_map);
+	}
+
+	return score;
 }
 
-static int32_t selection_intersect(const struct selection* selection1, struct selection* selection2, int32_t(*compare)(void*,void*)){
-	uint32_t 	ptr1;
-	uint32_t 	ptr2;
-	int32_t 	diff;
+uint32_t arrayMinCoverage_split(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, uint32_t* selection_value, struct tagMap* tag_map){
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				k;
+	uint32_t 				l;
+	struct array* 			element_array;
+	struct categoryDesc 	tmp;
+	uint32_t 				score;
 
-	for (ptr1 = 0, ptr2 = 0; ptr1 < selection1->nb_element && ptr2 < selection2->nb_element; ){
-		diff = compare(selection1->buffer[ptr1], selection2->buffer[ptr2]);
-		if (diff < 0){
-			ptr1 ++;
+	for (i = 0, score = 0; i < nb_category; i++){
+		if (desc_buffer[i].nb_element == 0){
+			continue;
 		}
-		else if (diff > 0){
-			ptr2 ++;
+		else if (desc_buffer[i].nb_element == 1){
+			desc_buffer[i].choice = 0;
+			element_array = *(struct array**)array_get(array, desc_buffer[i].offset);
+			for (j = 0; j < array_get_length(element_array); j++){
+				if (*(uint32_t*)desc_buffer[i].tagMap_gateway[0][j] == 0){
+					*(uint32_t*)desc_buffer[i].tagMap_gateway[0][j] = *selection_value;
+					score ++;
+				}
+			}
 		}
 		else{
-			return 1;
+			break;
 		}
 	}
 
-	return 0;
+	nb_category -= i;
+	desc_buffer += i;
+	*selection_value += 1;
+
+	while (nb_category){
+		for (i = 0; i < desc_buffer[0].nb_element; i++){
+			element_array = *(struct array**)array_get(array, desc_buffer[0].offset + i);
+			for (j = 0; j < array_get_length(element_array); j++){
+				if (*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] == 0){
+					*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] = *selection_value;
+				}
+			}
+		}
+
+		for (i = 1, l = 0; i < nb_category && l < nb_category - i; ){
+			for (j = 0; j < desc_buffer[i].nb_element; j++){
+				element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+				for (k = 0; k < array_get_length(element_array); k++){
+					if (*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] == *selection_value){
+						goto add_category;
+					}
+				}
+			}
+
+			l ++;
+			if (i < nb_category - l){
+				memcpy(&tmp, desc_buffer + i, sizeof(struct categoryDesc));
+				memcpy(desc_buffer + i, desc_buffer + nb_category - l, sizeof(struct categoryDesc));
+				memcpy(desc_buffer + nb_category - l, &tmp, sizeof(struct categoryDesc));
+			}
+			continue;
+
+			add_category:
+			for (j = 0; j < desc_buffer[i].nb_element; j++){
+				element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
+				for (k = 0; k < array_get_length(element_array); k++){
+					if (*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] == 0){
+						*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] = *selection_value;
+					}
+				}
+			}
+			i ++;
+			l = 0;
+		}
+
+		qsort(desc_buffer, i, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
+		tagMap_deselect(tag_map, *selection_value);
+		score += arrayMinCoverage_auto(array, i, desc_buffer, selection_value, tag_map);
+
+		nb_category -= i;
+		desc_buffer += i;
+	}
+
+	return score;
 }
 
-static void selection_remove(struct selection* selection_dst, const struct selection* selection_src, int32_t(*compare)(void*,void*)){
-	uint32_t 	ptr_dst;
-	uint32_t 	ptr_src;
-	int32_t 	diff;
-	uint32_t 	rewrite_ptr_dst;
+static uint32_t* arrayMinCoverage_save_order(struct categoryDesc* desc_buffer, uint32_t nb_category);
+static void arrayMinCoverage_restore_order(struct categoryDesc* desc_buffer, uint32_t nb_category, uint32_t* order);
 
-	for (ptr_dst = 0, ptr_src = 0, rewrite_ptr_dst = 0; ptr_dst < selection_dst->nb_element && ptr_src < selection_src->nb_element; ){
-		diff = compare(selection_dst->buffer[ptr_dst], selection_src->buffer[ptr_src]);
-		if (diff < 0){
-			selection_dst->buffer[rewrite_ptr_dst ++] = selection_dst->buffer[ptr_dst ++];
+int32_t arrayMinCoverage_rand_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
+	struct tagMap* 	tag_map = NULL;
+	int32_t 		result 	= -1;
+	uint32_t 		local_score;
+
+	if (nb_category == 0){
+		local_score = 0;
+		result = 0;
+	}
+	else{
+		if ((tag_map = tagMap_create(array, nb_category, desc_buffer, compare)) == NULL){
+			log_err("unable to create tagMap");
+			goto exit;
 		}
-		else if (diff > 0){
-			ptr_src ++;
-		}
-		else{
-			ptr_src ++;
-			ptr_dst ++;
-		}
+
+		tagMap_deselect_all(tag_map);
+
+		local_score = arrayMinCoverage_rand(array, nb_category, desc_buffer, 1);
+		result = 0;
 	}
 
-	memmove(selection_dst->buffer + rewrite_ptr_dst, selection_dst->buffer + ptr_dst, sizeof(void*) * (selection_dst->nb_element - ptr_dst));
-
-	selection_dst->nb_element = rewrite_ptr_dst + (selection_dst->nb_element - ptr_dst);
-}
-
-#define selection_clean(selection) 									\
-	if ((selection).buffer != NULL){ 								\
-		free((selection).buffer); 									\
+	exit:
+	if (score != NULL){
+		*score = local_score;
 	}
-
-static uint32_t arrayMinCoverage_get_array_nb_element(struct array* array, int32_t(*compare)(void*,void*)){
-	uint32_t* 	mapping;
-	uint32_t 	i;
-	uint32_t 	result;
-
-	mapping = array_create_mapping(array, compare);
-	if (mapping == NULL){
-		log_err("unable to create mapping");
-		return array_get_length(array);
+	if (tag_map != NULL){
+		tagMap_delete(tag_map, nb_category, desc_buffer);
 	}
-
-	for (i = 1, result = min(1, array_get_length(array)); i < array_get_length(array); i++){
-		if (compare(array_get(array, mapping[i]), array_get(array, mapping[i - 1])) != 0)
-		{
-			result ++;
-		}
-	}
-
-	free(mapping);
 
 	return result;
+}
+
+int32_t arrayMinCoverage_greedy_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
+	struct tagMap* 	tag_map = NULL;
+	uint32_t* 		order 	= NULL;
+	int32_t 		result 	= -1;
+	uint32_t 		local_score;
+
+	if (nb_category == 0){
+		local_score = 0;
+		result = 0;
+	}
+	else{
+		if ((tag_map = tagMap_create(array, nb_category, desc_buffer, compare)) == NULL){
+			log_err("unable to create tagMap");
+			goto exit;
+		}
+
+		tagMap_deselect_all(tag_map);
+
+		if ((order = arrayMinCoverage_save_order(desc_buffer, nb_category)) == NULL){
+			log_err("unable to save order");
+			goto exit;
+		}
+
+		qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
+		local_score = arrayMinCoverage_greedy(array, nb_category, desc_buffer, 1);
+		result = 0;
+	}
+
+	exit:
+	if (score != NULL){
+		*score = local_score;
+	}
+	if (order != NULL){
+		arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
+	}
+	if (tag_map != NULL){
+		tagMap_delete(tag_map, nb_category, desc_buffer);
+	}
+
+	return result;
+}
+
+int32_t arrayMinCoverage_exact_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
+	struct tagMap* 	tag_map = NULL;
+	uint32_t* 		order 	= NULL;
+	int32_t 		result 	= -1;
+	uint32_t 		local_score;
+
+	if (nb_category == 0){
+		local_score = 0;
+		result = 0;
+	}
+	else{
+		if ((tag_map = tagMap_create(array, nb_category, desc_buffer, compare)) == NULL){
+			log_err("unable to create tagMap");
+			goto exit;
+		}
+
+		tagMap_deselect_all(tag_map);
+
+		if ((order = arrayMinCoverage_save_order(desc_buffer, nb_category)) == NULL){
+			log_err("unable to save order");
+			goto exit;
+		}
+
+		qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
+		local_score = arrayMinCoverage_greedy(array, nb_category, desc_buffer, 1);
+
+		tagMap_deselect_all(tag_map);
+
+		local_score = arrayMinCoverage_exact(array, nb_category, desc_buffer, 1, local_score);
+		result = 0;
+	}
+
+	exit:
+	if (score != NULL){
+		*score = local_score;
+	}
+	if (order != NULL){
+		arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
+	}
+	if (tag_map != NULL){
+		tagMap_delete(tag_map, nb_category, desc_buffer);
+	}
+
+	return result;
+}
+
+int32_t arrayMinCoverage_reshape_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
+	struct tagMap* 	tag_map 		= NULL;
+	uint32_t* 		order 			= NULL;
+	int32_t 		result 			= -1;
+	uint32_t 		local_score;
+	uint32_t 		selection_value = 1;
+
+	if (nb_category == 0){
+		local_score = 0;
+		result = 0;
+	}
+	else{
+		if ((tag_map = tagMap_create(array, nb_category, desc_buffer, compare)) == NULL){
+			log_err("unable to create tagMap");
+			goto exit;
+		}
+
+		tagMap_deselect_all(tag_map);
+
+		if ((order = arrayMinCoverage_save_order(desc_buffer, nb_category)) == NULL){
+			log_err("unable to save order");
+			goto exit;
+		}
+
+		qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
+		local_score = arrayMinCoverage_reshape(array, nb_category, desc_buffer, &selection_value, tag_map);
+		result = 0;
+	}
+
+	exit:
+	if (score != NULL){
+		*score = local_score;
+	}
+	if (order != NULL){
+		arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
+	}
+	if (tag_map != NULL){
+		tagMap_delete(tag_map, nb_category, desc_buffer);
+	}
+
+	return result;
+}
+
+int32_t arrayMinCoverage_split_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
+	struct tagMap* 	tag_map = NULL;
+	uint32_t* 		order 	= NULL;
+	int32_t 		result 	= -1;
+	uint32_t 		local_score;
+	uint32_t 		selection_value = 1;
+
+	if (nb_category == 0){
+		local_score = 0;
+		result = 0;
+	}
+	else{
+		if ((tag_map = tagMap_create(array, nb_category, desc_buffer, compare)) == NULL){
+			log_err("unable to create tagMap");
+			goto exit;
+		}
+
+		tagMap_deselect_all(tag_map);
+
+		if ((order = arrayMinCoverage_save_order(desc_buffer, nb_category)) == NULL){
+			log_err("unable to save order");
+			goto exit;
+		}
+
+		qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
+		local_score = arrayMinCoverage_split(array, nb_category, desc_buffer, &selection_value, tag_map);
+		result = 0;
+	}
+
+	exit:
+	if (score != NULL){
+		*score = local_score;
+	}
+	if (order != NULL){
+		arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
+	}
+	if (tag_map != NULL){
+		tagMap_delete(tag_map, nb_category, desc_buffer);
+	}
+
+	return result;
+}
+
+uint32_t arrayMinCoverage_eval(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*)){
+	uint32_t 					i;
+	uint32_t 					j;
+	struct array* 				element_array;
+	uint32_t 					nb_tag 			= 0;
+	void* 						tree_root 		= NULL;
+	struct tagMapTreeToken* 	new_token 		= NULL;
+	struct tagMapTreeToken** 	result;
+
+	for (i = 0; i < nb_category; i++){
+		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
+		for (j = 0; j < array_get_length(element_array); j++){
+			if (new_token == NULL){
+				if ((new_token = (struct tagMapTreeToken*)malloc(sizeof(struct tagMapTreeToken))) == NULL){
+					log_err("unable to allocate memory");
+					goto exit;
+				}
+			}
+
+			new_token->element = array_get(element_array, j);
+			new_token->idx = nb_tag;
+
+			result = tsearch(new_token, &tree_root, compare);
+			if (result == NULL){
+				log_err("tsearch failed to insert new item");
+				goto exit;
+			}
+			else if (*result == new_token){
+				new_token = NULL;
+				nb_tag ++;
+			}
+		}
+	}
+
+	exit:
+	if (new_token != NULL){
+		free(new_token);
+	}
+	tdestroy(tree_root, free);
+
+	return nb_tag;
 }
 
 static uint32_t* arrayMinCoverage_save_order(struct categoryDesc* desc_buffer, uint32_t nb_category){
@@ -261,11 +711,6 @@ static void arrayMinCoverage_restore_order(struct categoryDesc* desc_buffer, uin
 	uint32_t 				j;
 	struct categoryDesc 	tmp_desc;
 
-	if (order == NULL){
-		log_err("empty order record");
-		return;
-	}
-
 	for (i = 0; i < nb_category; i++){
 		for (j = i; j < nb_category; j++){
 			if (desc_buffer[j].offset == order[i]){
@@ -283,341 +728,4 @@ static void arrayMinCoverage_restore_order(struct categoryDesc* desc_buffer, uin
 	}
 
 	free(order);
-}
-
-
-
-int32_t arrayMinCoverage_rand(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*), uint32_t* score){
-	uint32_t 			i;
-	struct selection 	selection;
-
-	selection_init(selection)
-
-	for (i = 0; i < nb_category; i++){
-		desc_buffer[i].choice = rand() % desc_buffer[i].nb_element;
-		if (selection_add(&selection, *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice), compare)){
-			log_err("unable to add array to selection");
-		}
-	}
-
-	if (score != NULL){
-		*score = selection.nb_element;
-	}
-
-	selection_clean(selection)
-
-	return 0;
-}
-
-int32_t arrayMinCoverage_greedy(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*), uint32_t* score){
-	uint32_t 			i;
-	uint32_t 			j;
-	uint32_t 			min_size;
-	int32_t 			size;
-	struct selection 	selection;
-	uint32_t* 			order;
-
-	selection_init(selection)
-
-	order = arrayMinCoverage_save_order(desc_buffer, nb_category);
-
-	qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
-
-	for (i = 0; i < nb_category; i++){
-		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
-			size = selection_nb_new_element(&selection, *(struct array**)array_get(array, desc_buffer[i].offset + j), compare);
-			if (size < 0){
-				log_err("unable to compare array to selection");
-				continue;
-			}
-
-			if ((uint32_t)size < min_size){
-				min_size = (uint32_t)size;
-				desc_buffer[i].choice = j;
-			}
-		}
-		
-		if (selection_add(&selection, *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice), compare)){
-			log_err("unable to add array to selection");
-		}
-	}
-
-	arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
-
-	if (score != NULL){
-		*score = selection.nb_element;
-	}
-
-	selection_clean(selection)
-
-	return 0;
-}
-
-int32_t arrayMinCoverage_exact(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*), uint32_t* score){
-	struct selectionStack{
-		uint32_t 			choice;
-		struct selection 	selection;
-	};
-
-	uint32_t 				i;
-	uint32_t 				j;
-	struct selectionStack* 	selection_stack;
-	uint32_t 				best_score = 0xffffffff;
-	int32_t 				size;
-
-	if (nb_category == 0){
-		if (score != NULL){
-			*score = 0;
-		}
-
-		return 0;
-	}
-	else if (nb_category == 1){
-		for (i = 0; i < desc_buffer[0].nb_element; i++){
-			size = arrayMinCoverage_get_array_nb_element(*(struct array**)array_get(array, desc_buffer[0].offset + i), compare);
-			if ((uint32_t)size < best_score){
-				desc_buffer[0].choice = i;
-				best_score = size;
-			}
-		}
-
-		if (score != NULL){
-			*score = best_score;
-		}
-
-		return 0;
-	}
-	else{
-		selection_stack = (struct selectionStack*)malloc(sizeof(struct selectionStack) * nb_category);
-		if (selection_stack == NULL){
-			log_err("unable to allocate memory");
-			return -1;
-		}
-
-		for (i = 0, selection_stack[0].choice = 0; ; ){
-			if (selection_stack[i].choice < desc_buffer[i].nb_element){
-				if (i + 1 >= nb_category){
-					size = selection_nb_new_element(&(selection_stack[i - 1].selection), *(struct array**)array_get(array, desc_buffer[i].offset + selection_stack[i].choice), compare);
-					if (size < 0){
-						log_err_m("unable to process choice %u for category %u", selection_stack[i].choice, i);
-					}
-					else if (selection_stack[i - 1].selection.nb_element + (uint32_t)size < best_score){
-						best_score = selection_stack[i - 1].selection.nb_element + (uint32_t)size;
-						for (j = 0; j < nb_category; j++){
-							desc_buffer[j].choice = selection_stack[j].choice;
-						}
-					}
-					selection_stack[i].choice ++;
-				}
-				else if (i > 0){
-					if (selection_clone(&(selection_stack[i].selection), &(selection_stack[i - 1].selection)) || selection_add(&(selection_stack[i].selection), *(struct array**)array_get(array, desc_buffer[i].offset + selection_stack[i].choice), compare)){
-						log_err_m("unable to process choice %u for category %u", selection_stack[i].choice, i);
-						selection_clean(selection_stack[i].selection)
-						selection_stack[i].choice ++;
-					}
-					else if (selection_stack[i].selection.nb_element > best_score){
-						selection_clean(selection_stack[i].selection)
-						selection_stack[i].choice ++;
-					}
-					else{
-						selection_stack[++ i].choice = 0;
-					}
-				}
-				else{
-					selection_init(selection_stack[i].selection)
-					if (selection_add(&(selection_stack[i].selection), *(struct array**)array_get(array, desc_buffer[i].offset + selection_stack[i].choice), compare)){
-						log_err_m("unable to process choice %u for category %u", selection_stack[i].choice, i);
-						selection_clean(selection_stack[i].selection)
-						selection_stack[i].choice ++;
-					}
-					else if (selection_stack[i].selection.nb_element > best_score){
-						selection_clean(selection_stack[i].selection)
-						selection_stack[i].choice ++;
-					}
-					else{
-						selection_stack[++ i].choice = 0;
-						continue;
-					}
-				}
-			}
-			else{
-				if (i + 1 >= nb_category){
-					i --;
-					selection_clean(selection_stack[i].selection)
-					selection_stack[i].choice ++;
-				}
-				else if (i > 0){
-					i --;
-					selection_clean(selection_stack[i].selection)
-					selection_stack[i].choice ++;
-				}
-				else{
-					break;
-				}
-			}
-		}
-
-		if (score != NULL){
-			*score = best_score;
-		}
-
-		free(selection_stack);
-
-		return 0;
-	}
-}
-
-int32_t arrayMinCoverage_auto(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*)){
-	if (categoryDesc_get_complexity_est(desc_buffer, nb_category) <= ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD){
-		#ifdef VERBOSE
-		log_info_m("exact solution for %u categories", nb_category);
-		#endif
-		return arrayMinCoverage_exact(array, nb_category, desc_buffer, compare, NULL);
-	}
-	else{
-		#ifdef VERBOSE
-		log_info_m("greedy solution for %u categories", nb_category);
-		#endif
-		return arrayMinCoverage_greedy(array, nb_category, desc_buffer, compare, NULL);
-	}
-}
-
-struct categoryClusteringData{
-	struct selection 	selection;
-	uint32_t 			state;
-};
-
-#define CATEGORY_CLUSTER_STATE_IDLE 0
-#define CATEGORY_CLUSTER_STATE_CURR 1
-#define CATEGORY_CLUSTER_STATE_DONE 2
-
-static uint32_t arrayMinCoverage_find_intersect_recursive(struct categoryClusteringData* ccd_buffer, uint32_t nb_category, uint32_t element, int32_t(*compare)(void*,void*)){
-	uint32_t i;
-	uint32_t result;
-
-	ccd_buffer[element].state = CATEGORY_CLUSTER_STATE_CURR;
-
-	for (i = 0, result = 1; i < nb_category; i++){
-		if (ccd_buffer[i].state == CATEGORY_CLUSTER_STATE_IDLE && selection_intersect(&(ccd_buffer[element].selection), &(ccd_buffer[i].selection), compare)){
-			result += arrayMinCoverage_find_intersect_recursive(ccd_buffer, nb_category, i, compare);
-		}
-	}
-
-	return result;
-}
-
-int32_t arrayMinCoverage_split(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*)){
-	struct categoryClusteringData* 	ccd_buffer;
-	uint32_t 						i;
-	uint32_t 						j;
-	uint32_t 						k;
-	uint32_t 						cluster_nb_category;
-	struct categoryDesc* 			cluster_desc_buffer;
-	uint32_t 						nb_remaining_category;
-	struct selection 				one_choice_selection;
-	struct categoryDesc* 			remaining_desc_buffer;
-	uint32_t* 						order;
-
-	selection_init(one_choice_selection)
-
-	order = arrayMinCoverage_save_order(desc_buffer, nb_category);
-
-	qsort(desc_buffer, nb_category, sizeof(struct categoryDesc), categoryDesc_compare_nb_element);
-
-	for (i = 0; i < nb_category; i++){
-		if (desc_buffer[i].nb_element == 1){
-			desc_buffer[i].choice = 0;
-			if (selection_add(&one_choice_selection, *(struct array**)array_get(array, desc_buffer[i].offset), compare)){
-				log_err("unable to add array to selection");
-			}
-		}
-		else if (desc_buffer[i].nb_element > 1){
-			break;
-		}
-	}
-
-	nb_remaining_category = nb_category - i;
-	remaining_desc_buffer = desc_buffer + i;
-
-	if (nb_remaining_category){
-		ccd_buffer = calloc(nb_remaining_category, sizeof(struct categoryClusteringData));
-		if (ccd_buffer == NULL){
-			log_err("unable to allocate memory");
-			return -1;
-		}
-
-		for (i = 0; i < nb_remaining_category; i++){
-			for (j = 0; j < remaining_desc_buffer[i].nb_element; j++){
-				if (selection_add(&(ccd_buffer[i].selection), *(struct array**)array_get(array, remaining_desc_buffer[i].offset + j), compare)){
-					log_err("unable to add array to selection");
-				}
-			}
-			selection_remove(&(ccd_buffer[i].selection), &one_choice_selection, compare);
-		}
-
-		selection_clean(one_choice_selection)
-
-		for (i = 0; i < nb_remaining_category; i++){
-			if (ccd_buffer[i].state == CATEGORY_CLUSTER_STATE_IDLE){
-				cluster_nb_category = arrayMinCoverage_find_intersect_recursive(ccd_buffer + i, nb_remaining_category - i, 0, compare) + (nb_category - nb_remaining_category);
-
-				cluster_desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * cluster_nb_category);
-				if (cluster_desc_buffer == NULL){
-					log_err("unable to allocate memory");
-				}
-				else{
-					memcpy(cluster_desc_buffer, desc_buffer, sizeof(struct categoryDesc) * (nb_category - nb_remaining_category));
-					k = nb_category - nb_remaining_category;
-
-					for (j = i; j < nb_remaining_category; j++){
-						if (ccd_buffer[j].state == CATEGORY_CLUSTER_STATE_CURR){
-							memcpy(cluster_desc_buffer + k, remaining_desc_buffer + j, sizeof(struct categoryDesc));
-							k ++;
-						}
-					}
-
-					if (arrayMinCoverage_auto(array, cluster_nb_category, cluster_desc_buffer, compare)){
-						log_err("arrayMinCoverage_auto returned an error code");
-					}
-
-					for (j = i, k = nb_category - nb_remaining_category; j < nb_remaining_category; j++){
-						if (ccd_buffer[j].state == CATEGORY_CLUSTER_STATE_CURR){
-							remaining_desc_buffer[j].choice = cluster_desc_buffer[k ++].choice;
-							ccd_buffer[j].state = CATEGORY_CLUSTER_STATE_DONE;
-						}
-					}
-
-					free(cluster_desc_buffer);
-				}
-			}
-
-			selection_clean(ccd_buffer[i].selection);
-		}
-
-		free(ccd_buffer);
-	}
-
-	arrayMinCoverage_restore_order(desc_buffer, nb_category, order);
-
-	return 0;
-}
-
-uint32_t arrayMinCoverage_eval(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(void*,void*)){
-	struct selection 	selection;
-	uint32_t 			result;
-	uint32_t 			i;
-
-	selection_init(selection)
-
-	for (i = 0; i < nb_category; i++){
-		if (selection_add(&selection, *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice), compare)){
-			log_err("unable to add array to selection");
-		}
-	}
-
-	result = selection.nb_element;
-
-	selection_clean(selection);
-
-	return result;
 }

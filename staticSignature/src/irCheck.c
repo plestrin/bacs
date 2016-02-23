@@ -787,7 +787,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
 						}
-						else if (!IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro) && IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_in){
+						else if (!IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_in + 1){
 							log_err("symbol has an incorrect macro dependence descriptor");
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
@@ -810,7 +810,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
 						}
-						else if (!IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) && IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_out){
+						else if (!IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_out + 1){
 							log_err("symbol has an incorrect macro dependence descriptor");
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
