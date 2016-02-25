@@ -300,14 +300,19 @@ static struct codeSignature sha1_compress = {
 		.result_index 	= 0,
 		.state 			= 0,
 	},
-	.nb_parameter_in 	= 1,
-	.nb_parameter_out 	= 1,
-	.nb_frag_tot_in 	= 16,
-	.nb_frag_tot_out 	= 5
+	.nb_para_in = 1,
+	.nb_para_ou = 1,
+	.nb_frag_in = {16},
+	.nb_frag_ou = {5}
 };
 
-static uint32_t sha_is_init = 0;
+static const struct codeSignature* irBufferSignature[] = {
+	&sha1_compress,
+};
 
+#define IRBUFFER_NB_SIGNATURE (sizeof(irBufferSignature) / sizeof(struct codeSignature*))
+
+/* why do we do that exactly?? */
 static void push_sha1_signature(struct bufferCouple* couple, struct ir* ir){
 	struct node* 	symbol;
 	uint32_t 		i;
@@ -315,166 +320,6 @@ static void push_sha1_signature(struct bufferCouple* couple, struct ir* ir){
 	struct edge* 	cur_edge;
 	struct edge* 	nex_edge;
 	struct node* 	parameter;
-
-	if (!sha_is_init){
-		struct codeSignatureNode node;
-
-
-		node.type = CODESIGNATURE_NODE_TYPE_OPCODE;
-		node.node_type.opcode = IR_INVALID;
-
-		graph_init(&(sha1_compress.signature.graph), sizeof(struct codeSignatureNode), sizeof(struct codeSignatureEdge));
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 1;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 2;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 3;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 4;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 5;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 6;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 7;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 8;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 9;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 10;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 11;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 12;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 13;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 14;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 15;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 1;
-		node.input_frag_order 	= 16;
-		node.output_number 		= 0;
-		node.output_frag_order 	= 0;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 0;
-		node.input_frag_order 	= 0;
-		node.output_number 		= 1;
-		node.output_frag_order 	= 1;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 0;
-		node.input_frag_order 	= 0;
-		node.output_number 		= 1;
-		node.output_frag_order 	= 2;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 0;
-		node.input_frag_order 	= 0;
-		node.output_number 		= 1;
-		node.output_frag_order 	= 3;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 0;
-		node.input_frag_order 	= 0;
-		node.output_number 		= 1;
-		node.output_frag_order 	= 4;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		node.input_number 		= 0;
-		node.input_frag_order 	= 0;
-		node.output_number 		= 1;
-		node.output_frag_order 	= 5;
-
-		graph_add_node(&(sha1_compress.signature.graph), &node);
-
-		sha1_compress.signature.sub_graph_handle = graphIso_create_sub_graph_handle(&(sha1_compress.signature.graph), codeSignatureNode_get_label, codeSignatureEdge_get_label);
-		sha_is_init = 1;
-	}
 
 	symbol = ir_add_symbol(ir, &sha1_compress, NULL, 0);
 	if (symbol != NULL){

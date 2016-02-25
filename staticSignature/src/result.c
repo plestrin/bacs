@@ -19,12 +19,15 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	struct codeSignatureNode* 	sig_node;
 	struct irOperation* 		operation;
 
-	result->state 				= RESULTSTATE_IDLE;
 	result->code_signature 		= code_signature;
 	result->nb_occurrence 		= array_get_length(assignement_array);
-	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_in);
-	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * code_signature->nb_frag_tot_out);
-	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * result_get_nb_internal_node(result));
+	result->nb_node_in 			= codeSignature_get_nb_frag_in(code_signature);
+	result->nb_node_ou 			= codeSignature_get_nb_frag_ou(code_signature);
+	result->nb_node_intern 		= code_signature->signature.graph.nb_node - (result->nb_node_in + result->nb_node_ou);
+
+	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_in);
+	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_ou);
+	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * result->nb_node_intern);
 	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurrence, sizeof(struct node*));
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->symbol_node_buffer == NULL){
@@ -58,50 +61,62 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 
 			if (operation->type == IR_OPERATION_TYPE_SYMBOL && operation->operation_type.symbol.result != NULL){
 				if (sig_node->input_number > 0){
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.node 		= NULL;
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= operation->operation_type.symbol.result;
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.index 	= operation->operation_type.symbol.index;
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.node 		= NULL;
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.result 	= operation->operation_type.symbol.result;
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.index 	= operation->operation_type.symbol.index;
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 					nb_input ++;
 				}
 
 				if (sig_node->output_number > 0){
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.node 	= NULL;
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= operation->operation_type.symbol.result;
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.index 	= operation->operation_type.symbol.index;
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.node 	= NULL;
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.result 	= operation->operation_type.symbol.result;
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.index 	= operation->operation_type.symbol.index;
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
 					nb_output ++;
 				}
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].node 			= NULL;
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= operation->operation_type.symbol.result;
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].index 			= operation->operation_type.symbol.index;
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= NULL;
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].result 			= operation->operation_type.symbol.result;
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].index 			= operation->operation_type.symbol.index;
 					nb_intern ++;
 				}
 			}
 			else{
 				if (sig_node->input_number > 0){
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.node 		= assignement[j];
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].virtual_node.result 	= NULL;
-					result->in_mapping_buffer[i * code_signature->nb_frag_tot_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.node 		= assignement[j];
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.result 	= NULL;
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 					nb_input ++;
 				}
 
 				if (sig_node->output_number > 0){
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.node 	= assignement[j];
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].virtual_node.result 	= NULL;
-					result->ou_mapping_buffer[i * code_signature->nb_frag_tot_out + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.node 	= assignement[j];
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.result 	= NULL;
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
 					nb_output ++;
 				}
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].node 			= assignement[j];
-					result->intern_node_buffer[i * result_get_nb_internal_node(result) + nb_intern].result 			= NULL;
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= assignement[j];
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].result 			= NULL;
 					nb_intern ++;
 				}
 			}
 		}
+
+		#ifdef EXTRA_CHECK
+		if (nb_input != result->nb_node_in){
+			log_err("wrong number of input nodes");
+		}
+		if (nb_output != result->nb_node_ou){
+			log_err("wrong number of output nodes");
+		}
+		if (nb_intern != result->nb_node_intern){
+			log_err("wrong number of intern nodes");
+		}
+		#endif
 	}
 
 	return 0;
@@ -111,8 +126,6 @@ void result_push(struct result* result, struct ir* ir){
 	uint32_t i;
 	uint32_t j;
 
-	result->state = RESULTSTATE_PUSH;
-
 	for (i = 0; i < result->nb_occurrence; i++){
 		result->symbol_node_buffer[i] = ir_add_symbol(ir, result->code_signature, result, i);
 		if (result->symbol_node_buffer[i] == NULL){
@@ -120,26 +133,26 @@ void result_push(struct result* result, struct ir* ir){
 			continue;
 		}
 
-		for (j = 0; j < result->code_signature->nb_frag_tot_in; j++){
-			virtualNode_push(result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node)
-			if (result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node == NULL){
+		for (j = 0; j < result->nb_node_in; j++){
+			virtualNode_push(result->in_mapping_buffer[i * result->nb_node_in + j].virtual_node)
+			if (result->in_mapping_buffer[i * result->nb_node_in + j].virtual_node.node == NULL){
 				log_err("unsatisfied input dependence");
 				continue;
 			}
 
-			if (ir_add_macro_dependence(ir, result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node.node, result->symbol_node_buffer[i], result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].edge_desc) == NULL){
+			if (ir_add_macro_dependence(ir, result->in_mapping_buffer[i * result->nb_node_in + j].virtual_node.node, result->symbol_node_buffer[i], result->in_mapping_buffer[i * result->nb_node_in + j].edge_desc) == NULL){
 				log_err("unable to add dependence to IR");
 			}
 		}
 
-		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
-			virtualNode_push(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node)
-			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node == NULL){
+		for (j = 0; j < result->nb_node_ou; j++){
+			virtualNode_push(result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node)
+			if (result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node.node == NULL){
 				log_err("unsatisfied input dependence");
 				continue;
 			}
 
-			if (ir_add_macro_dependence(ir, result->symbol_node_buffer[i], result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node, result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].edge_desc) == NULL){
+			if (ir_add_macro_dependence(ir, result->symbol_node_buffer[i], result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node.node, result->ou_mapping_buffer[i * result->nb_node_ou + j].edge_desc) == NULL){
 				log_err("unable to add dependence to IR");
 			}
 		}
@@ -150,20 +163,18 @@ void result_pop(struct result* result, struct ir* ir){
 	uint32_t i;
 	uint32_t j;
 
-	result->state = RESULTSTATE_IDLE;
-
 	for (i = 0; i < result->nb_occurrence; i++){
 		if (result->symbol_node_buffer[i] != NULL){
 			ir_remove_node(ir, result->symbol_node_buffer[i]);
 		}
 		result->symbol_node_buffer[i] = NULL;
 
-		for (j = 0; j < result->code_signature->nb_frag_tot_in; j++){
-			virtualNode_pop(result->in_mapping_buffer[i * result->code_signature->nb_frag_tot_in + j].virtual_node)
+		for (j = 0; j < result->nb_node_in; j++){
+			virtualNode_pop(result->in_mapping_buffer[i * result->nb_node_in + j].virtual_node)
 		}
 
-		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
-			virtualNode_pop(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node)
+		for (j = 0; j < result->nb_node_ou; j++){
+			virtualNode_pop(result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node)
 		}
 	}
 }
@@ -176,12 +187,12 @@ void result_get_node_footprint(struct result* result, uint32_t index, struct set
 		return;
 	}
 
-	for (i = 0; i < result_get_nb_internal_node(result); i++){
-		if (result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node == NULL){
-			result_get_node_footprint(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].result, result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].index, set);
+	for (i = 0; i < result->nb_node_intern; i++){
+		if (result->intern_node_buffer[index * result->nb_node_intern + i].node == NULL){
+			result_get_node_footprint(result->intern_node_buffer[index * result->nb_node_intern + i].result, result->intern_node_buffer[index * result->nb_node_intern + i].index, set);
 		}
 		else{
-			if (set_add(set, &(result->intern_node_buffer[index * result_get_nb_internal_node(result) + i].node)) < 0){
+			if (set_add(set, &(result->intern_node_buffer[index * result->nb_node_intern + i].node)) < 0){
 				log_err("unable to add element to set");
 			}
 		}
@@ -195,13 +206,13 @@ void result_remove_edge_footprint(struct result* result, struct ir* ir){
 	struct edge* 	edge_next;
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		for (j = 0; j < result->code_signature->nb_frag_tot_out; j++){
-			if (result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node == NULL){
+		for (j = 0; j < result->nb_node_ou; j++){
+			if (result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node.node == NULL){
 				log_err("unsatisfied input dependence");
 				continue;
 			}
 
-			for (edge_curr = node_get_head_edge_dst(result->ou_mapping_buffer[i * result->code_signature->nb_frag_tot_out + j].virtual_node.node); edge_curr != NULL; edge_curr = edge_next){
+			for (edge_curr = node_get_head_edge_dst(result->ou_mapping_buffer[i * result->nb_node_ou + j].virtual_node.node); edge_curr != NULL; edge_curr = edge_next){
 				edge_next = edge_get_next_dst(edge_curr);
 
 				if (ir_edge_get_dependence(edge_curr)->type != IR_DEPENDENCE_TYPE_MACRO){
@@ -385,14 +396,11 @@ void result_print(struct result* result){
 	}
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		if (parameterMapping_fill_from_result(parameter_mapping, result, i)){
-			log_err_m("unable to fetch occurrence %u", i);
-			continue;
-		}
+		parameterMapping_fill_from_result(parameter_mapping, result, i);
 
 		for (j = 0; j < array_get_length(class_array); j++){
 			class = (struct parameterMapping*)array_get(class_array, j);
-			if (signatureOccurence_try_append_to_class(class, parameter_mapping, code_signature->nb_parameter_in, code_signature->nb_parameter_out) == 0){
+			if (signatureOccurence_try_append_to_class(class, parameter_mapping, code_signature->nb_para_in, code_signature->nb_para_ou) == 0){
 				break;
 			}
 		}
@@ -412,7 +420,7 @@ void result_print(struct result* result){
 		class = (struct parameterMapping*)array_get(class_array, i);
 
 		printf("CLUSTER %u/%u:\n", i + 1, array_get_length(class_array));
-		for (j = 0; j < code_signature->nb_parameter_in; j++){
+		for (j = 0; j < code_signature->nb_para_in; j++){
 			if (class[j].similarity == PARAMETER_EQUAL){
 				printf("\t Parameter I%u EQUAL = ", j);
 			}
@@ -424,17 +432,17 @@ void result_print(struct result* result){
 			}
 			signatureOccurence_print_location(class + j);
 		}
-		for (j = 0; j < code_signature->nb_parameter_out; j++){
-			if (class[code_signature->nb_parameter_in + j].similarity == PARAMETER_EQUAL){
+		for (j = 0; j < code_signature->nb_para_ou; j++){
+			if (class[code_signature->nb_para_in + j].similarity == PARAMETER_EQUAL){
 				printf("\t Parameter O%u EQUAL = ", j);
 			}
-			else if (class[code_signature->nb_parameter_in + j].similarity == PARAMETER_PERMUT){
+			else if (class[code_signature->nb_para_in + j].similarity == PARAMETER_PERMUT){
 				printf("\t Parameter O%u PERMUT = ", j);
 			}
 			else{
 				printf("\t Parameter O%u UNKNOWN = ", j);
 			}
-			signatureOccurence_print_location(class + code_signature->nb_parameter_in + j);
+			signatureOccurence_print_location(class + code_signature->nb_para_in + j);
 		}
 	}
 
@@ -450,110 +458,101 @@ void result_print(struct result* result){
 /* parameterMapping routines											 */
 /* ===================================================================== */
 
-struct parameterMapping* parameterMapping_create(struct codeSignature* signature){
-	struct parameterMapping* mapping;
+struct parameterMapping* parameterMapping_create(const struct codeSignature* code_signature){
+	struct parameterMapping* 	mapping;
+	struct parameterMapping* 	mapping_cursor;
+	uint32_t					i;
+	size_t						offset;
 
-	mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(signature));
-	if (mapping != NULL){
-		if (parameterMapping_init(mapping, signature)){
-			log_err("unable to init parameterMapping");
-			free(mapping);
-			mapping = NULL;
-		}
-	}
-	else{
+	if ((mapping = (struct parameterMapping*)malloc(parameterMapping_get_size(code_signature))) == NULL){
 		log_err("unable to allocate memory");
+		return NULL;
+	}
+
+	for (i = 0, offset = 0, mapping_cursor = mapping; i < code_signature->nb_para_in; i++, offset += mapping_cursor->nb_fragment * sizeof(struct node*), mapping_cursor ++){
+		mapping_cursor->nb_fragment 		= code_signature->nb_frag_in[i];
+		mapping_cursor->node_buffer_offset 	= (code_signature->nb_para_in - i + code_signature->nb_para_ou) * sizeof(struct parameterMapping) + offset;
+		mapping_cursor->similarity 			= PARAMETER_EQUAL;
+	}
+
+	for (i = 0; i < code_signature->nb_para_ou; i++, offset += mapping_cursor->nb_fragment * sizeof(struct node*), mapping_cursor ++){
+		mapping_cursor->nb_fragment 		= code_signature->nb_frag_ou[i];
+		mapping_cursor->node_buffer_offset 	= (code_signature->nb_para_ou - i) * sizeof(struct parameterMapping) + offset;
+		mapping_cursor->similarity 			= PARAMETER_EQUAL;
 	}
 
 	return mapping;
 }
 
-int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSignature* code_signature){
-	uint32_t 					i;
-	uint32_t 					j;
-	struct codeSignatureNode* 	sig_node;
-
-	memset(mapping, 0, parameterMapping_get_size(code_signature));
-
-	for (i = 0; i < code_signature->signature.graph.nb_node; i++){
-		sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[i].node);
-
-		if (sig_node->input_number > 0){
-			mapping[sig_node->input_number - 1].nb_fragment ++;
-		}
-		if (sig_node->output_number > 0){
-			mapping[code_signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment ++;
-		}
-	}
-
-	for (i = 0; i < code_signature->signature.graph.nb_node; i++){
-		sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[i].node);
-
-		if (sig_node->input_number > 0){
-			if (sig_node->input_frag_order > mapping[sig_node->input_number - 1].nb_fragment){
-				log_err_m("input frag number %u is out of range %u", sig_node->input_frag_order, mapping[sig_node->input_number - 1].nb_fragment);
-				return -1;
-			}
-		}
-		if (sig_node->output_number > 0){
-			if (sig_node->output_frag_order > mapping[code_signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment){
-				log_err_m("output frag number %u is out of range %u", sig_node->output_frag_order, mapping[code_signature->nb_parameter_in + sig_node->output_number - 1].nb_fragment);
-				return -1;
-			}
-		}
-	}
-
-	for (i = 0, j = 0; i < code_signature->nb_parameter_in; i++){
-		mapping[i].node_buffer_offset 	= (code_signature->nb_parameter_in - i + code_signature->nb_parameter_out) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
-		mapping[i].similarity 			= PARAMETER_EQUAL;
-		j += mapping[i].nb_fragment;
-	}
-
-	for (i = 0; i < code_signature->nb_parameter_out; i++){
-		mapping[code_signature->nb_parameter_in + i].node_buffer_offset 	= (code_signature->nb_parameter_out - i) * sizeof(struct parameterMapping) + j * sizeof(struct node*);
-		mapping[code_signature->nb_parameter_in + i].similarity 			= PARAMETER_EQUAL;
-		j += mapping[code_signature->nb_parameter_in + i].nb_fragment;
-	}
-
-	return 0;
+static void parameterMapping_reset(struct parameterMapping* mapping, const struct codeSignature* code_signature){
+	memset(mapping + code_signature->nb_para_in + code_signature->nb_para_ou, 0, sizeof(struct node*) * (codeSignature_get_nb_frag_in(code_signature) + codeSignature_get_nb_frag_ou(code_signature)));
 }
 
-int32_t parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index){
+static void parameterMapping_adjust(struct parameterMapping* mapping, const struct codeSignature* code_signature){
+	uint32_t i;
+	uint32_t j;
+	uint32_t k;
+
+	for (i = 0; i < code_signature->nb_para_in; i ++, mapping ++){
+		for (j = 0, k = 0; j < mapping->nb_fragment; j++){
+			if (parameterMapping_get_node_buffer(mapping)[j] == NULL){
+				log_warn_m("missing I%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+			}
+			else{
+				parameterMapping_get_node_buffer(mapping)[k] = parameterMapping_get_node_buffer(mapping)[j];
+				k ++;
+			}
+		}
+		mapping->nb_fragment = k;
+	}
+
+	for (i = 0; i < code_signature->nb_para_ou; i ++, mapping ++){
+		for (j = 0, k = 0; j < mapping->nb_fragment; j++){
+			if (parameterMapping_get_node_buffer(mapping)[j] == NULL){
+				log_warn_m("missing O%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
+			}
+			else{
+				parameterMapping_get_node_buffer(mapping)[k] = parameterMapping_get_node_buffer(mapping)[j];
+				k ++;
+			}
+		}
+		mapping->nb_fragment = k;
+	}
+}
+
+void parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index){
 	uint32_t 				i;
 	struct signatureLink* 	link;
 
-	for (i = 0; i < result->code_signature->nb_frag_tot_in; i++){
-		link = result->in_mapping_buffer + (index * result->code_signature->nb_frag_tot_in) + i;
+	parameterMapping_reset(mapping, result->code_signature);
+
+	for (i = 0; i < result->nb_node_in; i++){
+		link = result->in_mapping_buffer + (index * result->nb_node_in) + i;
 		if (link->virtual_node.node == NULL){
 			log_err("input node is virtual, I don't kown how to handle that case");
-			return -1;
 		}
-
 		parameterMapping_get_node_buffer(mapping + (IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
 	}
 
-	for (i = 0; i < result->code_signature->nb_frag_tot_out; i++){
-		link = result->ou_mapping_buffer + (index * result->code_signature->nb_frag_tot_out) + i;
+	for (i = 0; i < result->nb_node_ou; i++){
+		link = result->ou_mapping_buffer + (index * result->nb_node_ou) + i;
 		if (link->virtual_node.node == NULL){
 			log_err("output node is virtual, I don't kown how to handle that case");
-			return -1;
 		}
-
-		parameterMapping_get_node_buffer(mapping + (result->code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
+		parameterMapping_get_node_buffer(mapping + (result->code_signature->nb_para_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(link->edge_desc) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(link->edge_desc) - 1] = link->virtual_node.node;
 	}
 
-	return 0;
+	parameterMapping_adjust(mapping, result->code_signature);
 }
 
-int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node){
+void parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node){
 	struct edge* 			edge_cursor;
 	struct irDependence* 	dependence_cursor;
 	struct codeSignature*	code_signature;
-	uint32_t 				i;
-	uint32_t 				j;
-	uint32_t 				k;
 
 	code_signature = (struct codeSignature*)(ir_node_get_operation(node)->operation_type.symbol.code_signature);
+
+	parameterMapping_reset(mapping, code_signature);
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		dependence_cursor = ir_edge_get_dependence(edge_cursor);
@@ -567,39 +566,13 @@ int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct n
 		dependence_cursor = ir_edge_get_dependence(edge_cursor);
 
 		if (dependence_cursor->type == IR_DEPENDENCE_TYPE_MACRO){
-			parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence_cursor->dependence_type.macro) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence_cursor->dependence_type.macro) - 1] = edge_get_dst(edge_cursor);
+			parameterMapping_get_node_buffer(mapping + (code_signature->nb_para_in + IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence_cursor->dependence_type.macro) - 1))[IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence_cursor->dependence_type.macro) - 1] = edge_get_dst(edge_cursor);
 		}
 	}
 
-	for (i = 0; i < code_signature->nb_parameter_in; i++){
-		for (j = 0, k = 0; j < mapping[i].nb_fragment; j++){
-			if (parameterMapping_get_node_buffer(mapping + i)[j] == NULL){
-				log_warn_m("missing I%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
-			}
-			else{
-				parameterMapping_get_node_buffer(mapping + i)[k] = parameterMapping_get_node_buffer(mapping + i)[j];
-				k ++;
-			}
-		}
-		mapping[i].nb_fragment = k;
-	}
-
-	for (i = 0; i < code_signature->nb_parameter_out; i++){
-		for (j = 0, k = 0; j < mapping[code_signature->nb_parameter_in + i].nb_fragment; j++){
-			if (parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[j] == NULL){
-				log_warn_m("missing O%uF%u for instance of %s", i + 1, j + 1, code_signature->signature.name);
-			}
-			else{
-				parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[k] = parameterMapping_get_node_buffer(mapping + (code_signature->nb_parameter_in + i))[j];
-				k ++;
-			}
-		}
-		mapping[code_signature->nb_parameter_in + i].nb_fragment = k;
-	}
-
-
-	return 0;
+	parameterMapping_adjust(mapping, code_signature);
 }
+
 
 enum parameterSimilarity parameterSimilarity_get(struct node** parameter_list1, uint32_t size1, struct node** parameter_list2, uint32_t size2){
 	uint32_t 					i;

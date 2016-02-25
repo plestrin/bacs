@@ -236,8 +236,8 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, const struct codeSignature* code_signature, struct node* node){
 	cluster->synthesis_graph_node = NULL;
-	cluster->nb_in_parameter = code_signature->nb_parameter_in;
-	cluster->nb_ou_parameter = code_signature->nb_parameter_out;
+	cluster->nb_in_parameter = code_signature->nb_para_in;
+	cluster->nb_ou_parameter = code_signature->nb_para_ou;
 	cluster->parameter_mapping = mapping;
 
 	if (array_init(&(cluster->instance_array), sizeof(struct node*))){
@@ -320,15 +320,11 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 				continue;
 			}
 
-			if (parameterMapping_fill_from_ir(mapping, node_cursor)){
-				log_err("unable to fill mapping");
-				free(mapping);
-				continue;
-			}
+			parameterMapping_fill_from_ir(mapping, node_cursor);
 
 			for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
 				cluster_cursor = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
-				if (!signatureCluster_may_append(cluster_cursor, mapping, code_signature->nb_parameter_in, code_signature->nb_parameter_out)){
+				if (!signatureCluster_may_append(cluster_cursor, mapping, code_signature->nb_para_in, code_signature->nb_para_ou)){
 					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
 						log_err("unable to add element to signatureCluster");
 					}

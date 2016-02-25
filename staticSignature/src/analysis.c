@@ -969,6 +969,8 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 			continue;
 		}
 
+		trace_reset_result(fragment);
+
 		if (fragment->trace_type.frag.ir != NULL){
 			graph_searcher_buffer[nb_graph_searcher].graph 				= &(fragment->trace_type.frag.ir->graph);
 			graph_searcher_buffer[nb_graph_searcher].result_register 	= trace_register_code_signature_result;
@@ -988,29 +990,10 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 }
 
 static void analysis_code_signature_clean(struct analysis* analysis){
-	struct trace* 	fragment;
-	uint32_t 		i;
-	uint32_t 		j;
-	struct result* 	result;
+	uint32_t i;
 
 	for (i = 0; i < array_get_length(&(analysis->frag_array)); i++){
-		fragment = (struct trace*)array_get(&(analysis->frag_array), i);
-		if (fragment->type != FRAGMENT_TRACE){
-			continue;
-		}
-
-		if (array_get_length(&(fragment->trace_type.frag.result_array))){
-			for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
-				result = (struct result*)array_get(&(fragment->trace_type.frag.result_array), j);
-				if (result->state == RESULTSTATE_PUSH && fragment->trace_type.frag.ir != NULL){
-					log_warn_m("deleting IR of fragment \"%s\" because it depends on signature \"%s\"", fragment->trace_type.frag.tag, result->code_signature->signature.name);
-					ir_delete(fragment->trace_type.frag.ir)
-					fragment->trace_type.frag.ir = NULL;
-				}
-				result_clean(result)
-			}
-			array_empty(&(fragment->trace_type.frag.result_array));
-		}
+		trace_reset_ir(array_get(&(analysis->frag_array), i));
 	}
 
 	signatureCollection_clean(&(analysis->code_signature_collection));

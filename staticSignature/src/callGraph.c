@@ -523,7 +523,7 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struc
 				break;
 			}
 
-			while(routine == NULL || (routine != NULL && !strncmp(routine->name, ".plt", CODEMAP_DEFAULT_NAME_SIZE))){
+			while(routine == NULL || (routine != NULL && !strncmp(routine->name, ".plt", CODEMAP_DEFAULT_NAME_SIZE) && !strncmp(routine->name, ".text", CODEMAP_DEFAULT_NAME_SIZE))){
 				routine = codeMap_search_routine(code_map, it.instruction_address);
 
 				if (instructionIterator_get_instruction_index(&it) <  snippet->offset + snippet->length){
@@ -537,7 +537,7 @@ void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struc
 				}
 			}
 
-			if (routine != NULL && strncmp(routine->name, ".plt", CODEMAP_DEFAULT_NAME_SIZE)){
+			if (routine != NULL && strncmp(routine->name, ".plt", CODEMAP_DEFAULT_NAME_SIZE) && strncmp(routine->name, ".text", CODEMAP_DEFAULT_NAME_SIZE)){
 				function_cursor->routine = routine;
 				break;
 			}
@@ -825,6 +825,9 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 	log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
 	if (function->routine != NULL){
 		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", function->routine->name);
+	}
+	else{
+		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
 	}
 
 	for (i = 0; i < array_get_length(frag_array); i++){

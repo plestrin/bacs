@@ -773,7 +773,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				struct codeSignature* code_signature = (struct codeSignature*)operation_cursor->operation_type.symbol.code_signature;
 
 				/* Check input edge(s) */
-				if (node_cursor->nb_edge_dst != code_signature->nb_frag_tot_in){
+				if (node_cursor->nb_edge_dst != codeSignature_get_nb_frag_in(code_signature)){
 					log_err_m("symbol %s has %u dst edge(s)", code_signature->signature.name, node_cursor->nb_edge_dst);
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -787,7 +787,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
 						}
-						else if (!IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_in + 1){
+						else if (!codeSignature_check_macro_dependence_in(code_signature, dependence->dependence_type.macro)){
 							log_err("symbol has an incorrect macro dependence descriptor");
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
@@ -796,7 +796,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				}
 
 				/* Check output edge(s) */
-				if (node_cursor->nb_edge_src != code_signature->nb_frag_tot_out){
+				if (node_cursor->nb_edge_src != codeSignature_get_nb_frag_ou(code_signature)){
 					log_err_m("symbol %s has %u src edge(s)", code_signature->signature.name, node_cursor->nb_edge_src);
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -810,7 +810,7 @@ uint32_t ir_check_connectivity(struct ir* ir){
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
 						}
-						else if (!IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) >= code_signature->nb_parameter_out + 1){
+						else if (!codeSignature_check_macro_dependence_ou(code_signature, dependence->dependence_type.macro)){
 							log_err("symbol has an incorrect macro dependence descriptor");
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;

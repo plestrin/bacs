@@ -28,15 +28,12 @@ struct signatureLink{
 	uint32_t 				edge_desc;
 };
 
-enum resultState{
-	RESULTSTATE_IDLE,
-	RESULTSTATE_PUSH,
-};
-
 struct result{
-	enum resultState 		state;
 	struct codeSignature* 	code_signature;
 	uint32_t 				nb_occurrence;
+	uint32_t 				nb_node_in;
+	uint32_t 				nb_node_ou;
+	uint32_t 				nb_node_intern;
 	struct signatureLink* 	in_mapping_buffer;
 	struct signatureLink* 	ou_mapping_buffer;
 	struct virtualNode*		intern_node_buffer;
@@ -44,8 +41,6 @@ struct result{
 };
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
-
-#define result_get_nb_internal_node(result) ((result)->code_signature->signature.graph.nb_node - ((result)->code_signature->nb_frag_tot_in + (result)->code_signature->nb_frag_tot_out))
 
 void result_push(struct result* result, struct ir* ir);
 void result_pop(struct result* result, struct ir* ir);
@@ -76,14 +71,13 @@ struct parameterMapping{
 	enum parameterSimilarity 	similarity;
 };
 
-struct parameterMapping* parameterMapping_create(struct codeSignature* signature);
-int32_t parameterMapping_init(struct parameterMapping* mapping, struct codeSignature* signature);
+struct parameterMapping* parameterMapping_create(const struct codeSignature* code_signature);
 
-#define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_parameter_in + (code_signature)->nb_parameter_out) + sizeof(struct node*) * ((code_signature)->nb_frag_tot_in + (code_signature)->nb_frag_tot_out))
+#define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_para_in + (code_signature)->nb_para_ou) + sizeof(struct node*) * (codeSignature_get_nb_frag_in(code_signature) + codeSignature_get_nb_frag_ou(code_signature)))
 #define parameterMapping_get_node_buffer(mapping) ((struct node**)((char*)(mapping) + (mapping)->node_buffer_offset))
 
-int32_t parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index);
-int32_t parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node);
+void parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index);
+void parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node);
 
 
 #endif

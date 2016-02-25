@@ -81,21 +81,14 @@ int32_t trace_concat(struct trace** trace_src_buffer, uint32_t nb_trace_src, str
 #define trace_get_nb_instruction(trace) assembly_get_nb_instruction(&((trace)->assembly))
 
 void trace_create_ir(struct trace* trace);
-void trace_normalize_ir(struct trace* trace);
 
 void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, struct array* ir_component_array);
 void trace_create_compound_ir(struct trace* trace, struct array* ir_component_array);
 
 #define componentFrag_clean_array(array) array_clean(array)
 
-static inline void trace_normalize_concrete_ir(struct trace* trace){
-	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
-		ir_normalize_concrete(trace->trace_type.frag.ir);
-	}
-	else{
-		log_err_m("the IR is NULL or no concrete address for fragment \"%s\"", trace->trace_type.frag.tag);
-	}
-}
+void trace_normalize_ir(struct trace* trace);
+void trace_normalize_concrete_ir(struct trace* trace);
 
 static inline void trace_printDot_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
@@ -117,6 +110,7 @@ static inline void trace_print_aliasing_ir(struct trace* trace){
 
 static inline void trace_search_buffer_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		/* add somthing */
 		ir_search_buffer(trace->trace_type.frag.ir);
 	}
 	else{
@@ -149,7 +143,11 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2);
 
 void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr);
 
+void trace_reset_ir(struct trace* trace);
+void trace_reset_result(struct trace* trace);
+void trace_reset_synthesis(struct trace* trace);
 void trace_reset(struct trace* trace);
+
 void trace_clean(struct trace* trace);
 
 #define trace_delete(trace) 	\

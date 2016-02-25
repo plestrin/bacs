@@ -183,6 +183,10 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 					#pragma GCC diagnostic ignored "-Wunused-result"
 					write(STDIN_FILENO, &character, 1);
 				}
+				else{
+					#pragma GCC diagnostic ignored "-Wunused-result"
+					write(STDOUT_FILENO, &character, 1);
+				}
 				break;
 			}
 			case TERMREADER_SPECIAL_CHAR_TAB : {
@@ -216,6 +220,10 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 					if (term->is_tty){
 						#pragma GCC diagnostic ignored "-Wunused-result"
 						write(STDIN_FILENO, &character, 1);
+					}
+					else{
+						#pragma GCC diagnostic ignored "-Wunused-result"
+						write(STDOUT_FILENO, &character, 1);
 					}
 					buffer[i ++] = (char)character;
 				}

@@ -13,30 +13,80 @@ void codeSignature_init(struct codeSignature* code_signature){
 
 	graph_register_dotPrint_callback(&(code_signature->signature.graph), NULL, codeSignature_dotPrint_node, codeSignature_dotPrint_edge, NULL);
 
-	code_signature->nb_parameter_in 	= 0;
-	code_signature->nb_parameter_out 	= 0;
-	code_signature->nb_frag_tot_in 		= 0;
-	code_signature->nb_frag_tot_out 	= 0;
+	code_signature->nb_para_in = 0;
+	code_signature->nb_para_ou = 0;
+
+	memset(code_signature->nb_frag_in, 0, sizeof(code_signature->nb_frag_in));
+	memset(code_signature->nb_frag_ou, 0, sizeof(code_signature->nb_frag_ou));
 
 	for (node_cursor = graph_get_head_node(&(code_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		sig_node_cursor = (struct codeSignatureNode*)node_get_data(node_cursor);
-		if (sig_node_cursor->input_number > 0){
-			code_signature->nb_frag_tot_in ++;
-			if (sig_node_cursor->input_number > code_signature->nb_parameter_in){
-				code_signature->nb_parameter_in = sig_node_cursor->input_number;
-			}
+
+		if (sig_node_cursor->input_number > CODESIGNATURE_NB_PARA_MAX){
+			log_warn_m("signature \"%s\" has too many input parameter: %u -> limiting to %u", code_signature->signature.name, sig_node_cursor->input_number, CODESIGNATURE_NB_PARA_MAX);
+			sig_node_cursor->input_number = CODESIGNATURE_NB_PARA_MAX;
 		}
+
+		code_signature->nb_para_in = max(sig_node_cursor->input_number, code_signature->nb_para_in);
+		if (sig_node_cursor->input_number > 0){
+			code_signature->nb_frag_in[sig_node_cursor->input_number - 1] ++;
+		}
+
+		if (sig_node_cursor->output_number > CODESIGNATURE_NB_PARA_MAX){
+			log_warn_m("signature \"%s\" has too many output parameter: %u -> limiting to %u", code_signature->signature.name, sig_node_cursor->output_number, CODESIGNATURE_NB_PARA_MAX);
+			sig_node_cursor->output_number = CODESIGNATURE_NB_PARA_MAX;
+		}
+
+		code_signature->nb_para_ou = max(sig_node_cursor->output_number, code_signature->nb_para_ou);
 		if (sig_node_cursor->output_number > 0){
-			code_signature->nb_frag_tot_out ++;
-			if (sig_node_cursor->output_number > code_signature->nb_parameter_out){
-				code_signature->nb_parameter_out = sig_node_cursor->output_number;
-			}
+			code_signature->nb_frag_ou[sig_node_cursor->output_number - 1] ++;
 		}
 	}
 
-	if (code_signature->nb_parameter_in == 0 || code_signature->nb_parameter_out == 0){
-		log_warn_m("signature \"%s\" has an incorrect number of parameter", code_signature->signature.name);
+	#ifdef EXTRA_CHECK
+	{
+		uint32_t i;
+
+		if (code_signature->nb_para_in == 0){
+			log_warn_m("signature \"%s\" has no input parameter", code_signature->signature.name);
+		}
+		else{
+			for (i = 0; i < code_signature->nb_para_in; i++){
+				if (code_signature->nb_frag_in[i] == 0){
+					log_warn_m("signature \"%s\", input parameter %u has no fragment", code_signature->signature.name, i);
+				}
+			}
+		}
+		if (code_signature->nb_para_ou == 0){
+			log_warn_m("signature \"%s\" has no output parameter", code_signature->signature.name);
+		}
+		else{
+			for (i = 0; i < code_signature->nb_para_ou; i++){
+				if (code_signature->nb_frag_ou[i] == 0){
+					log_warn_m("signature \"%s\", output parameter %u has no fragment", code_signature->signature.name, i);
+				}
+			}
+		}
+
+		for (node_cursor = graph_get_head_node(&(code_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+			sig_node_cursor = (struct codeSignatureNode*)node_get_data(node_cursor);
+
+			code_signature->nb_para_in = max(sig_node_cursor->input_number, code_signature->nb_para_in);
+			if (sig_node_cursor->input_number > 0){
+				if ((uint32_t)sig_node_cursor->input_frag_order - 1 >= code_signature->nb_frag_in[sig_node_cursor->input_number - 1]){
+					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.name, sig_node_cursor->input_number - 1, sig_node_cursor->input_frag_order - 1);
+				}
+			}
+
+			code_signature->nb_para_ou = max(sig_node_cursor->output_number, code_signature->nb_para_ou);
+			if (sig_node_cursor->output_number > 0){
+				if ((uint32_t)sig_node_cursor->output_frag_order - 1 >= code_signature->nb_frag_ou[sig_node_cursor->output_number - 1]){
+					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.name, sig_node_cursor->output_number - 1, sig_node_cursor->output_frag_order - 1);
+				}
+			}
+		}
 	}
+	#endif
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"

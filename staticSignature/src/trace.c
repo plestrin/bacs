@@ -325,27 +325,12 @@ int32_t trace_extract_segment(struct trace* trace_src, struct trace* trace_dst, 
 }
 
 void trace_create_ir(struct trace* trace){
-	uint32_t 		i;
-	struct result* 	result;
-
 	if (trace->type != FRAGMENT_TRACE){
 		log_err("wrong trace type");
 		return;
 	}
 
-	if (trace->trace_type.frag.ir != NULL){
-		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
-		ir_delete(trace->trace_type.frag.ir);
-
-		if(array_get_length(&(trace->trace_type.frag.result_array))){
-			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
-			for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
-				result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
-				result_clean(result)
-			}
-			array_empty(&(trace->trace_type.frag.result_array));
-		}
-	}
+	trace_reset_ir(trace);
 
 	if (trace->mem_trace != NULL && trace->mem_trace->mem_addr_buffer != NULL){
 		trace->trace_type.frag.ir = ir_create(&(trace->assembly), trace->mem_trace);
@@ -354,44 +339,9 @@ void trace_create_ir(struct trace* trace){
 		trace->trace_type.frag.ir = ir_create(&(trace->assembly), NULL);
 	}
 
-
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
-}
-
-void trace_normalize_ir(struct trace* trace){
-	uint32_t 		i;
-	struct result* 	result;
-
-	if (trace->type != FRAGMENT_TRACE){
-		log_err("wrong trace type");
-		return;
-	}
-
-	if (trace->trace_type.frag.ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
-		return;
-	}
-
-	for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
-		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
-		if (result->state != RESULTSTATE_IDLE){
-			log_err_m("cannot normalize IR of fragment \"%s\" results have been exported", trace->trace_type.frag.tag);
-			return;
-		}
-	}
-
-	if(array_get_length(&(trace->trace_type.frag.result_array))){
-		log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
-		for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
-			result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
-			result_clean(result)
-		}
-		array_empty(&(trace->trace_type.frag.result_array));
-	}
-
-	ir_normalize(trace->trace_type.frag.ir);
 }
 
 void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, struct array* ir_component_array){
@@ -471,7 +421,6 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 	uint32_t* 				mapping;
 	uint32_t 				i;
 	uint32_t 				nb_component;
-	struct result* 			result;
 	struct irComponent* 	component1;
 	struct irComponent* 	component2;
 	struct irComponent** 	component_buffer;
@@ -481,19 +430,7 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 		return;
 	}
 
-	if (trace->trace_type.frag.ir != NULL){
-		log_warn_m("an IR has already been built for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
-		ir_delete(trace->trace_type.frag.ir);
-
-		if(array_get_length(&(trace->trace_type.frag.result_array))){
-			log_warn_m("discarding outdated result(s) for fragment \"%s\"", trace->trace_type.frag.tag);
-			for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
-				result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
-				result_clean(result)
-			}
-			array_empty(&(trace->trace_type.frag.result_array));
-		}
-	}
+	trace_reset_ir(trace);
 
 	if ((mapping = array_create_mapping(ir_component_array, irComponent_compare)) == NULL){
 		log_err("unable to create array mappping");
@@ -551,6 +488,28 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 	free(mapping);
 }
 
+void trace_normalize_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		trace_reset_synthesis(trace);
+		trace_reset_result(trace);
+		ir_normalize(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
+void trace_normalize_concrete_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
+		trace_reset_synthesis(trace);
+		trace_reset_result(trace);
+		ir_normalize_concrete(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("the IR is NULL or no concrete address for fragment \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){
 	struct result 	result;
 	int32_t 		return_value;
@@ -602,28 +561,6 @@ void trace_pop_code_signature_result(int32_t idx, void* arg){
 	}
 	else{
 		log_err_m("incorrect index value %d", idx);
-	}
-}
-
-void trace_create_synthesis(struct trace* trace){
-	if (trace->type != FRAGMENT_TRACE){
-		log_err("wrong trace type");
-		return;
-	}
-
-	if (trace->trace_type.frag.synthesis_graph != NULL){
-		log_warn_m("an synthesis has already been create for fragment \"%s\" - deleting", trace->trace_type.frag.tag);
-		synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
-		trace->trace_type.frag.synthesis_graph = NULL;
-	}
-
-	if (trace->trace_type.frag.ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
-		return;
-	}
-
-	if((trace->trace_type.frag.synthesis_graph = synthesisGraph_create(trace->trace_type.frag.ir)) == NULL){
-		log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->trace_type.frag.tag);
 	}
 }
 
@@ -703,13 +640,12 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	struct node** 	footprint 			= NULL;
 	uint32_t 		nb_node_footprint;
 
-	if (trace->type != FRAGMENT_TRACE){
-		log_err("wrong trace type");
+	if (trace->type != FRAGMENT_TRACE || trace->trace_type.frag.ir == NULL){
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
 		return;
 	}
 
-	if (trace->trace_type.frag.ir == NULL){
-		log_err_m("the IR is NULL for fragment \"%s\"", trace->trace_type.frag.tag);
+	if (array_get_length(&(trace->trace_type.frag.result_array)) == 0){
 		return;
 	}
 
@@ -721,11 +657,6 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 
 	for (i = 0, nb_exported_result = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
 		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
-		if (result->state != RESULTSTATE_IDLE){
-			log_err_m("results have already been exported (%s), unable to export twice - rebuild IR", result->code_signature->signature.name);
-			goto exit;
-		}
-
 		for (j = 0; j < nb_signature; j++){
 			if (signature_buffer[j] == result->code_signature){
 				#ifdef VERBOSE
@@ -747,6 +678,8 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		log_err("unable to create set");
 		goto exit;
 	}
+
+	trace_reset_synthesis(trace);
 
 	for (i = 0; i < nb_exported_result; i++){
 		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]);
@@ -779,6 +712,8 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	}
 
 	ir_normalize_remove_dead_code(trace->trace_type.frag.ir, NULL);
+
+	trace_reset_result(trace);
 
 	#ifdef IR_FULL_CHECK
 	ir_check(trace->trace_type.frag.ir);
@@ -822,6 +757,18 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
 	}
 
 	return 0;
+}
+
+void trace_create_synthesis(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		trace_reset_synthesis(trace);
+		if((trace->trace_type.frag.synthesis_graph = synthesisGraph_create(trace->trace_type.frag.ir)) == NULL){
+			log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->trace_type.frag.tag);
+		}
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+	}
 }
 
 void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
@@ -913,27 +860,52 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 	memTraceIterator_clean(&mem_it);
 }
 
-void trace_reset(struct trace* trace){
+void trace_reset_ir(struct trace* trace){
+	trace_reset_synthesis(trace);
+	trace_reset_result(trace);
+
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		#ifdef VERBOSE
+		log_warn_m("deleting IR of trace \"%s\"", trace->trace_type.frag.tag);
+		#endif
+
+		ir_delete(trace->trace_type.frag.ir)
+		trace->trace_type.frag.ir = NULL;
+	}
+}
+
+void trace_reset_result(struct trace* trace){
 	struct result* 	result;
 	uint32_t 		i;
 
 	if (trace->type == FRAGMENT_TRACE){
-		if (trace->trace_type.frag.synthesis_graph != NULL){
-			synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
-			trace->trace_type.frag.synthesis_graph = NULL;
+		#ifdef VERBOSE
+		if (array_get_length(&(trace->trace_type.frag.result_array))){
+			log_warn_m("deleting result(s) of trace \"%s\"", trace->trace_type.frag.tag);
 		}
+		#endif
 
 		for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
 			result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
 			result_clean(result)
 		}
 		array_empty(&(trace->trace_type.frag.result_array));
-
-		if (trace->trace_type.frag.ir != NULL){
-			ir_delete(trace->trace_type.frag.ir)
-			trace->trace_type.frag.ir = NULL;
-		}
 	}
+}
+
+void trace_reset_synthesis(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.synthesis_graph != NULL){
+		#ifdef VERBOSE
+		log_warn_m("deleting synthesis graph of trace \"%s\"", trace->trace_type.frag.tag);
+		#endif
+
+		synthesisGraph_delete(trace->trace_type.frag.synthesis_graph);
+		trace->trace_type.frag.synthesis_graph = NULL;
+	}
+}
+
+void trace_reset(struct trace* trace){
+	trace_reset_ir(trace);
 
 	assembly_clean(&(trace->assembly));
 	if (trace->mem_trace != NULL){
