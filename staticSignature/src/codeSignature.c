@@ -5,7 +5,7 @@
 #include "base.h"
 
 static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg);
-static void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg);
+#define codeSignature_dotPrint_edge ir_dotPrint_edge
 
 void codeSignature_init(struct codeSignature* code_signature){
 	struct node* 				node_cursor;
@@ -23,7 +23,7 @@ void codeSignature_init(struct codeSignature* code_signature){
 		sig_node_cursor = (struct codeSignatureNode*)node_get_data(node_cursor);
 
 		if (sig_node_cursor->input_number > CODESIGNATURE_NB_PARA_MAX){
-			log_warn_m("signature \"%s\" has too many input parameter: %u -> limiting to %u", code_signature->signature.name, sig_node_cursor->input_number, CODESIGNATURE_NB_PARA_MAX);
+			log_warn_m("signature \"%s\" has too many input parameter: %u -> limiting to %u", code_signature->signature.symbol.name, sig_node_cursor->input_number, CODESIGNATURE_NB_PARA_MAX);
 			sig_node_cursor->input_number = CODESIGNATURE_NB_PARA_MAX;
 		}
 
@@ -33,7 +33,7 @@ void codeSignature_init(struct codeSignature* code_signature){
 		}
 
 		if (sig_node_cursor->output_number > CODESIGNATURE_NB_PARA_MAX){
-			log_warn_m("signature \"%s\" has too many output parameter: %u -> limiting to %u", code_signature->signature.name, sig_node_cursor->output_number, CODESIGNATURE_NB_PARA_MAX);
+			log_warn_m("signature \"%s\" has too many output parameter: %u -> limiting to %u", code_signature->signature.symbol.name, sig_node_cursor->output_number, CODESIGNATURE_NB_PARA_MAX);
 			sig_node_cursor->output_number = CODESIGNATURE_NB_PARA_MAX;
 		}
 
@@ -48,22 +48,22 @@ void codeSignature_init(struct codeSignature* code_signature){
 		uint32_t i;
 
 		if (code_signature->nb_para_in == 0){
-			log_warn_m("signature \"%s\" has no input parameter", code_signature->signature.name);
+			log_warn_m("signature \"%s\" has no input parameter", code_signature->signature.symbol.name);
 		}
 		else{
 			for (i = 0; i < code_signature->nb_para_in; i++){
 				if (code_signature->nb_frag_in[i] == 0){
-					log_warn_m("signature \"%s\", input parameter %u has no fragment", code_signature->signature.name, i);
+					log_warn_m("signature \"%s\", input parameter %u has no fragment", code_signature->signature.symbol.name, i);
 				}
 			}
 		}
 		if (code_signature->nb_para_ou == 0){
-			log_warn_m("signature \"%s\" has no output parameter", code_signature->signature.name);
+			log_warn_m("signature \"%s\" has no output parameter", code_signature->signature.symbol.name);
 		}
 		else{
 			for (i = 0; i < code_signature->nb_para_ou; i++){
 				if (code_signature->nb_frag_ou[i] == 0){
-					log_warn_m("signature \"%s\", output parameter %u has no fragment", code_signature->signature.name, i);
+					log_warn_m("signature \"%s\", output parameter %u has no fragment", code_signature->signature.symbol.name, i);
 				}
 			}
 		}
@@ -74,14 +74,14 @@ void codeSignature_init(struct codeSignature* code_signature){
 			code_signature->nb_para_in = max(sig_node_cursor->input_number, code_signature->nb_para_in);
 			if (sig_node_cursor->input_number > 0){
 				if ((uint32_t)sig_node_cursor->input_frag_order - 1 >= code_signature->nb_frag_in[sig_node_cursor->input_number - 1]){
-					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.name, sig_node_cursor->input_number - 1, sig_node_cursor->input_frag_order - 1);
+					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.symbol.name, sig_node_cursor->input_number - 1, sig_node_cursor->input_frag_order - 1);
 				}
 			}
 
 			code_signature->nb_para_ou = max(sig_node_cursor->output_number, code_signature->nb_para_ou);
 			if (sig_node_cursor->output_number > 0){
 				if ((uint32_t)sig_node_cursor->output_frag_order - 1 >= code_signature->nb_frag_ou[sig_node_cursor->output_number - 1]){
-					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.name, sig_node_cursor->output_number - 1, sig_node_cursor->output_frag_order - 1);
+					log_warn_m("signature \"%s\", input parameter %u, fragment out of bound: %u", code_signature->signature.symbol.name, sig_node_cursor->output_number - 1, sig_node_cursor->output_frag_order - 1);
 				}
 			}
 		}
@@ -125,43 +125,6 @@ static void codeSignature_dotPrint_node(void* data, FILE* file, void* arg){
 	}
 }
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void codeSignature_dotPrint_edge(void* data, FILE* file, void* arg){
-	struct codeSignatureEdge* edge = (struct codeSignatureEdge*)data;
-
-	switch(edge->type){
-		case IR_DEPENDENCE_TYPE_DIRECT 		: {
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
-			fprintf(file, "[label=\"@\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
-			fprintf(file, "[label=\"disp\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
-			fprintf(file, "[label=\"/\"]");
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_ROUND_OFF 	:
-		case IR_DEPENDENCE_TYPE_SUBSTITUTE 	: {
-			fprintf(file, "[label=\"s\"]"); 		/* the s is used to tag special operands */
-			break;
-		}
-		case IR_DEPENDENCE_TYPE_MACRO 		: {
-			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(edge->macro_desc)){
-				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(edge->macro_desc), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(edge->macro_desc));
-			}
-			else{
-				fprintf(file, "[label=\"O%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(edge->macro_desc), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(edge->macro_desc));
-			}
-			break;
-		}
-	}
-}
-
 uint32_t irNode_get_label(struct node* node){
 	struct irOperation* operation = ir_node_get_operation(node);
 
@@ -182,7 +145,7 @@ uint32_t irNode_get_label(struct node* node){
 			return 0xfffffffe;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 	: {
-			return 0x0000ffff | (((struct codeSignature*)operation->operation_type.symbol.code_signature)->signature.id << 16);
+			return 0x0000ffff | (operation->operation_type.symbol.sym_sig->id << 16);
 		}
 	}
 
@@ -208,7 +171,7 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 				return SUBGRAPHISOMORPHISM_JOKER_LABEL;
 			}
 			else{
-				return (signatureSymbol_get_id(signature_node->node_type.symbol) << 16 ) | 0x0000ffff;
+				return (signature_node->node_type.symbol->id << 16 ) | 0x0000ffff;
 			}
 		}
 		case CODESIGNATURE_NODE_TYPE_INVALID : {
@@ -225,12 +188,6 @@ uint32_t irEdge_get_label(struct edge* edge){
 	struct irDependence* dependence = ir_edge_get_dependence(edge);
 
 	switch(dependence->type){
-		case IR_DEPENDENCE_TYPE_DIRECT 		: {
-			return IR_DEPENDENCE_TYPE_DIRECT;
-		}
-		case IR_DEPENDENCE_TYPE_ADDRESS 	: {
-			return IR_DEPENDENCE_TYPE_ADDRESS;
-		}
 		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
 			return IR_DEPENDENCE_TYPE_DIRECT;
 		}
@@ -244,15 +201,10 @@ uint32_t irEdge_get_label(struct edge* edge){
 			return IR_DEPENDENCE_TYPE_DIRECT;
 		}
 		case IR_DEPENDENCE_TYPE_MACRO 		: {
-			return IR_DEPENDENCE_TYPE_MACRO | dependence->dependence_type.macro;
+			return dependence->type | dependence->dependence_type.macro;
+		}
+		default 							: {
+			return dependence->type;
 		}
 	}
-
-	return IR_DEPENDENCE_TYPE_DIRECT;
-}
-
-uint32_t codeSignatureEdge_get_label(struct edge* edge){
-	struct codeSignatureEdge* signature_edge = (struct codeSignatureEdge*)edge_get_data(edge);
-
-	return signature_edge->type | signature_edge->macro_desc;
 }

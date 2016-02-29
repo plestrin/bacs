@@ -225,7 +225,7 @@ struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpc
 	return node;
 }
 
-struct node* ir_add_symbol(struct ir* ir, void* code_signature, void* result, uint32_t index){
+struct node* ir_add_symbol_(struct ir* ir, struct signatureSymbol* sym_sig, void* result, uint32_t index){
 	struct node* 			node;
 	struct irOperation* 	operation;
 
@@ -236,7 +236,7 @@ struct node* ir_add_symbol(struct ir* ir, void* code_signature, void* result, ui
 	else{
 		operation = ir_node_get_operation(node);
 		operation->type 								= IR_OPERATION_TYPE_SYMBOL;
-		operation->operation_type.symbol.code_signature = code_signature;
+		operation->operation_type.symbol.sym_sig 		= sym_sig;
 		operation->operation_type.symbol.result 		= result;
 		operation->operation_type.symbol.index 			= index;
 		operation->size 								= 1;
@@ -509,7 +509,7 @@ void irOperation_fprint(struct irOperation* operation, FILE* file){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fputs(((struct codeSignature*)(operation->operation_type.symbol.code_signature))->signature.name, file);
+			fputs(operation->operation_type.symbol.sym_sig->name, file);
 			break;
 		}
 	}
@@ -570,7 +570,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
-			fprintf(file, "[label=\"%s\"", ((struct codeSignature*)(operation->operation_type.symbol.code_signature))->signature.name);
+			fprintf(file, "[label=\"%s\"", operation->operation_type.symbol.sym_sig->name);
 			break;
 		}
 	}
@@ -609,10 +609,10 @@ void ir_dotPrint_edge(void* data, FILE* file, void* arg){
 		}
 		case IR_DEPENDENCE_TYPE_MACRO 		: {
 			if (IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro)){
-				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
+				fprintf(file, "[label=\"I%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_PARA(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
 			}
 			else{
-				fprintf(file, "[label=\"O%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
+				fprintf(file, "[label=\"O%uF%u\"]", IR_DEPENDENCE_MACRO_DESC_GET_PARA(dependence->dependence_type.macro), IR_DEPENDENCE_MACRO_DESC_GET_FRAG(dependence->dependence_type.macro));
 			}
 			break;
 		}

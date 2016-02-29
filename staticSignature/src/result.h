@@ -63,21 +63,23 @@ enum parameterSimilarity{
 	PARAMETER_DISJOINT 	= 0x0000001f
 };
 
-enum parameterSimilarity parameterSimilarity_get(struct node** parameter_list1, uint32_t size1, struct node** parameter_list2, uint32_t size2);
-
 struct parameterMapping{
 	uint32_t 					nb_fragment;
-	size_t 						node_buffer_offset;
+	struct node**				ptr_buffer;
 	enum parameterSimilarity 	similarity;
 };
 
-struct parameterMapping* parameterMapping_create(const struct codeSignature* code_signature);
+enum parameterSimilarity parameterMapping_get_similarity(const struct parameterMapping* parameter_mapping1, const struct parameterMapping* parameter_mapping2);
+void parameterMapping_print_location(const struct parameterMapping* mapping);
 
-#define parameterMapping_get_size(code_signature) (sizeof(struct parameterMapping) * ((code_signature)->nb_para_in + (code_signature)->nb_para_ou) + sizeof(struct node*) * (codeSignature_get_nb_frag_in(code_signature) + codeSignature_get_nb_frag_ou(code_signature)))
-#define parameterMapping_get_node_buffer(mapping) ((struct node**)((char*)(mapping) + (mapping)->node_buffer_offset))
+struct symbolMapping{
+	uint32_t 					nb_parameter;
+	struct parameterMapping* 	mapping_buffer;
+};
 
-void parameterMapping_fill_from_result(struct parameterMapping* mapping, struct result* result, uint32_t index);
-void parameterMapping_fill_from_ir(struct parameterMapping* mapping, struct node* node);
+struct symbolMapping* symbolMapping_create_from_result(struct result* result, uint32_t index);
+struct symbolMapping* symbolMapping_create_from_ir(struct node* node);
 
+int32_t symbolMapping_may_append(struct symbolMapping* mapping_dst, struct symbolMapping* mapping_src);
 
 #endif

@@ -12,6 +12,7 @@
 
 struct codeSignatureBuilder{
 	struct codeSignature 		code_signature;
+	char 						export_name[SIGNATURE_NAME_MAX_SIZE];
 	struct set* 				symbol_set;
 	uint32_t 					is_name_set;
 	struct signatureCollection* collection;
@@ -41,11 +42,11 @@ static int32_t codeSignatureBuilder_init(struct codeSignatureBuilder* builder, s
 static void codeSignatureReader_handle_graph_name(const char* str, size_t str_len, void* arg){
 	struct codeSignatureBuilder* builder = (struct codeSignatureBuilder*)arg;
 
-	memset(builder->code_signature.signature.name, 0, SIGNATURE_NAME_MAX_SIZE);
-	memcpy(builder->code_signature.signature.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
+	memset(builder->code_signature.signature.symbol.name, 0, SIGNATURE_NAME_MAX_SIZE);
+	memcpy(builder->code_signature.signature.symbol.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
 
-	memset(builder->code_signature.signature.symbol, 0, SIGNATURE_NAME_MAX_SIZE);
-	memcpy(builder->code_signature.signature.symbol, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
+	memset(builder->export_name, 0, SIGNATURE_NAME_MAX_SIZE);
+	memcpy(builder->export_name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
 
 	builder->is_name_set = 1;
 }
@@ -53,8 +54,8 @@ static void codeSignatureReader_handle_graph_name(const char* str, size_t str_le
 static void codeSignatureReader_handle_graph_label(const char* str, size_t str_len, void* arg){
 	struct codeSignatureBuilder* builder = (struct codeSignatureBuilder*)arg;
 
-	memset(builder->code_signature.signature.symbol, 0, SIGNATURE_NAME_MAX_SIZE);
-	memcpy(builder->code_signature.signature.symbol, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
+	memset(builder->export_name, 0, SIGNATURE_NAME_MAX_SIZE);
+	memcpy(builder->export_name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
 }
 
 static void* codeSignatureReader_handle_new_node(void* arg){
@@ -84,7 +85,7 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 	char 							symbol[SIGNATURE_NAME_MAX_SIZE];
 
 	if (code_signature_node->type != CODESIGNATURE_NODE_TYPE_INVALID){
-		log_warn_m("the label has already been set for this node %s (signature: %s)", (code_signature_node->type == CODESIGNATURE_NODE_TYPE_OPCODE) ? irOpcode_2_string(code_signature_node->node_type.opcode): "", builder->is_name_set ? builder->code_signature.signature.name : "?");
+		log_warn_m("the label has already been set for this node %s (signature: %s)", (code_signature_node->type == CODESIGNATURE_NODE_TYPE_OPCODE) ? irOpcode_2_string(code_signature_node->node_type.opcode): "", builder->is_name_set ? builder->code_signature.signature.symbol.name : "?");
 	}
 
 	if (!strncmp(str, "ADD", str_len)){
@@ -229,7 +230,7 @@ static void* codeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 	else{
 		code_signature_edge = (struct codeSignatureEdge*)edge_get_data(edge);
 		code_signature_edge->type = IR_DEPENDENCE_TYPE_DIRECT;
-		code_signature_edge->macro_desc = 0;
+		code_signature_edge->dependence_type.macro = 0;
 	}
 
 	return edge;
@@ -264,11 +265,11 @@ static void codeSignatureReader_handle_edge_label(const char* str, size_t str_le
 			if (nb_digit2 > 0){
 				if (str[0] == 'I'){
 					code_signature_edge->type = IR_DEPENDENCE_TYPE_MACRO;
-					code_signature_edge->macro_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(atoi(str + 2 + nb_digit1), atoi(str + 1));
+					code_signature_edge->dependence_type.macro = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(atoi(str + 2 + nb_digit1), atoi(str + 1));
 				}
 				else{
 					code_signature_edge->type = IR_DEPENDENCE_TYPE_MACRO;
-					code_signature_edge->macro_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(atoi(str + 2 + nb_digit1), atoi(str + 1));
+					code_signature_edge->dependence_type.macro = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(atoi(str + 2 + nb_digit1), atoi(str + 1));
 				}
 				return;
 			}
@@ -323,7 +324,7 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 	builder->code_signature.signature.symbol_table 		= symbol_table;
 
 	codeSignature_init(&(builder->code_signature));
-	if (signatureCollection_add(builder->collection, &(builder->code_signature))){
+	if (signatureCollection_add(builder->collection, &(builder->code_signature), builder->export_name)){
 		log_err("unable to add signature to collection");
 	}
 

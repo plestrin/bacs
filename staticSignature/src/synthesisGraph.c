@@ -234,11 +234,9 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 	return variableRange_get_size_mask(operation->size);
 }
 
-static int32_t signatureCluster_init(struct signatureCluster* cluster, struct parameterMapping* mapping, const struct codeSignature* code_signature, struct node* node){
-	cluster->synthesis_graph_node = NULL;
-	cluster->nb_in_parameter = code_signature->nb_para_in;
-	cluster->nb_ou_parameter = code_signature->nb_para_ou;
-	cluster->parameter_mapping = mapping;
+static int32_t signatureCluster_init(struct signatureCluster* cluster, struct symbolMapping* mapping, struct node* node){
+	cluster->synthesis_graph_node 	= NULL;
+	cluster->symbol_mapping 		= mapping;
 
 	if (array_init(&(cluster->instance_array), sizeof(struct node*))){
 		log_err("unable to init array");
@@ -254,57 +252,31 @@ static int32_t signatureCluster_init(struct signatureCluster* cluster, struct pa
 	return 0;
 }
 
-#define signatureCluster_get_nb_frag_in(cluster, parameter) ((cluster)->parameter_mapping[parameter].nb_fragment)
-#define signatureCluster_get_nb_frag_ou(cluster, parameter) ((cluster)->parameter_mapping[(cluster)->nb_in_parameter + (parameter)].nb_fragment)
+#define signatureCluster_get_nb_para_in(cluster) ((cluster)->symbol_mapping[0].nb_parameter)
+#define signatureCluster_get_nb_para_ou(cluster) ((cluster)->symbol_mapping[1].nb_parameter)
 
-#define signatureCluster_get_in_parameter(cluster, parameter) parameterMapping_get_node_buffer((cluster)->parameter_mapping + (parameter))
-#define signatureCluster_get_ou_parameter(cluster, parameter) parameterMapping_get_node_buffer((cluster)->parameter_mapping + (cluster)->nb_in_parameter + (parameter))
+#define signatureCluster_get_nb_frag_in(cluster, parameter) ((cluster)->symbol_mapping[0].mapping_buffer[parameter].nb_fragment)
+#define signatureCluster_get_nb_frag_ou(cluster, parameter) ((cluster)->symbol_mapping[1].mapping_buffer[parameter].nb_fragment)
 
-static int32_t signatureCluster_may_append(struct signatureCluster* cluster, struct parameterMapping* mapping, uint32_t nb_in, uint32_t nb_ou){
-	uint32_t 					i;
-	enum parameterSimilarity 	similarity;
-
-	if (cluster->nb_in_parameter != nb_in || cluster->nb_ou_parameter != nb_ou){
-		return -1;
-	}
-
-	for (i = 0; i < nb_in; i++){
-		similarity = parameterSimilarity_get(signatureCluster_get_in_parameter(cluster, i), signatureCluster_get_nb_frag_in(cluster, i), parameterMapping_get_node_buffer(mapping + i), mapping[i].nb_fragment);
-		if (similarity == PARAMETER_OVERLAP || similarity == PARAMETER_DISJOINT){
-			return -1;
-		}
-	}
-
-	for (i = 0; i < nb_ou; i++){
-		similarity = parameterSimilarity_get(signatureCluster_get_ou_parameter(cluster, i), signatureCluster_get_nb_frag_ou(cluster, i), parameterMapping_get_node_buffer(mapping + nb_in + i), mapping[nb_in + i].nb_fragment);
-		if (similarity == PARAMETER_OVERLAP || similarity == PARAMETER_DISJOINT){
-			return -1;
-		}
-	}
-
-	return 0;
-}
+#define signatureCluster_get_in_parameter(cluster, parameter) ((cluster)->symbol_mapping[0].mapping_buffer[parameter].ptr_buffer)
+#define signatureCluster_get_ou_parameter(cluster, parameter) ((cluster)->symbol_mapping[1].mapping_buffer[parameter].ptr_buffer)
 
 #define signatureCluster_add(cluster, node) array_add(&((cluster)->instance_array), &(node))
 
 static inline void signatureCluster_clean(struct signatureCluster* cluster){
-	if (cluster->parameter_mapping != NULL){
-		free(cluster->parameter_mapping);
+	if (cluster->symbol_mapping != NULL){
+		free(cluster->symbol_mapping);
 	}
 	array_clean(&(cluster->instance_array));
 }
 
-static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
-static void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
-
 static void synthesisGraph_clean_node(struct node* node);
 
 static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_graph, struct ir* ir){
-	struct codeSignature* 		code_signature;
 	uint32_t 					i;
 	struct node*				node_cursor;
 	struct irOperation* 		operation_cursor;
-	struct parameterMapping* 	mapping;
+	struct symbolMapping* 		mapping;
 	struct signatureCluster* 	cluster_cursor;
 	struct signatureCluster 	new_cluster;
 
@@ -312,19 +284,14 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 		operation_cursor = ir_node_get_operation(node_cursor);
 
 		if (operation_cursor->type == IR_OPERATION_TYPE_SYMBOL){
-			code_signature = (struct codeSignature*)operation_cursor->operation_type.symbol.code_signature;
-
-			mapping = parameterMapping_create(code_signature);
-			if (mapping == NULL){
+			if ((mapping = symbolMapping_create_from_ir(node_cursor)) == NULL){
 				log_err("unable to create parameterMapping");
 				continue;
 			}
 
-			parameterMapping_fill_from_ir(mapping, node_cursor);
-
 			for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
 				cluster_cursor = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
-				if (!signatureCluster_may_append(cluster_cursor, mapping, code_signature->nb_para_in, code_signature->nb_para_ou)){
+				if (symbolMapping_may_append(cluster_cursor->symbol_mapping, mapping) == 0){
 					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
 						log_err("unable to add element to signatureCluster");
 					}
@@ -334,7 +301,7 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 			}
 
 			if (i == array_get_length(&(synthesis_graph->cluster_array))){
-				if (signatureCluster_init(&new_cluster, mapping, code_signature, node_cursor)){
+				if (signatureCluster_init(&new_cluster, mapping, node_cursor)){
 					log_err("unable to init signatureCluster");
 					free(mapping);
 					continue;
@@ -379,7 +346,7 @@ static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2)
 		return 1;
 	}
 	else{
-		return memcmp(edge_get_data(edge1), edge_get_data(edge2), sizeof(uint32_t));
+		return memcmp(edge_get_data(edge1), edge_get_data(edge2), sizeof(struct synthesisEdge));
 	}
 }
 
@@ -589,6 +556,7 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 	uint32_t 					i;
 	struct node* 				new_node;
 	struct dijkstraPathStep* 	step;
+	struct synthesisEdge 		synthesis_edge;
 
 	for (i = array_get_length(path->step_array); i > 0; i --){
 		step = (struct dijkstraPathStep*)array_get(path->step_array, i - 1);
@@ -602,13 +570,14 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 			}
 			else{
 				new_node = node_dst;
-				if (dst_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW && src_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW){
+				if (dst_edge_tag != SYNTHESISEGDE_TAG_RAW && src_edge_tag != SYNTHESISEGDE_TAG_RAW){
 					log_warn("get different tags for the same edge");
 				}
 				src_edge_tag = max(dst_edge_tag, src_edge_tag);
 			}
 
-			if (graph_add_edge(synthesis_graph, node_src, new_node, &src_edge_tag) == NULL){
+			synthesis_edge.tag = src_edge_tag;
+			if (graph_add_edge(synthesis_graph, node_src, new_node, &synthesis_edge) == NULL){
 				log_err("unable to add edge to synthesisGraph");
 				return -1;
 			}
@@ -623,20 +592,21 @@ static int32_t synthesisGraph_add_dijkstraPath(struct graph* synthesis_graph, st
 			}
 			else{
 				new_node = node_dst;
-				if (dst_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW && src_edge_tag != SYNTHESISGRAPH_EGDE_TAG_RAW){
+				if (dst_edge_tag != SYNTHESISEGDE_TAG_RAW && src_edge_tag != SYNTHESISEGDE_TAG_RAW){
 					log_warn("get different tags for the same edge");
 				}
 				src_edge_tag = max(dst_edge_tag, src_edge_tag);
 			}
 
-			if (graph_add_edge(synthesis_graph, new_node, node_src, &src_edge_tag) == NULL){
+			synthesis_edge.tag = src_edge_tag;
+			if (graph_add_edge(synthesis_graph, new_node, node_src, &synthesis_edge) == NULL){
 				log_err("unable to add edge to synthesisGraph");
 				return -1;
 			}
 		}
 
 		node_src = new_node;
-		src_edge_tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
+		src_edge_tag = SYNTHESISEGDE_TAG_RAW;
 	}
 
 	return 0;
@@ -695,7 +665,7 @@ static void dijkstraPath_add_input_start(struct array* path_array, uint32_t offs
 			symbol = *(struct node**)array_get(&(cluster->instance_array), j);
 			for (edge_cursor = node_get_head_edge_dst(symbol); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				dependence = ir_edge_get_dependence(edge_cursor);
-				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) != parameter + 1){
+				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_PARA(dependence->dependence_type.macro) != parameter + 1){
 					continue;
 				}
 				if (edge_get_src(edge_cursor) == starting_node){
@@ -739,7 +709,7 @@ static void dijkstraPath_add_input_stop(struct array* path_array, uint32_t offse
 			symbol = *(struct node**)array_get(&(cluster->instance_array), j);
 			for (edge_cursor = node_get_head_edge_dst(symbol); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				dependence = ir_edge_get_dependence(edge_cursor);
-				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_ARG(dependence->dependence_type.macro) != parameter + 1){
+				if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro) || IR_DEPENDENCE_MACRO_DESC_GET_PARA(dependence->dependence_type.macro) != parameter + 1){
 					continue;
 				}
 				if (edge_get_src(edge_cursor) == path->reached_node){
@@ -834,11 +804,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			if (array_add(&rrd_array, &rrd) < 0){ 																								\
 				log_err("unable to add element to array"); 																						\
 			} 																																	\
-			if (synthesisGraph_edge_is_input(tag_src_)){ 																						\
-				dijkstraPath_add_input_start(&path_array, rrd.offset, rrd.length, cluster_src_, synthesisGraph_edge_get_parameter(tag_src_)); 	\
+			if (synthesisEdge_is_input(tag_src_)){ 																								\
+				dijkstraPath_add_input_start(&path_array, rrd.offset, rrd.length, cluster_src_, synthesisEdge_get_parameter(tag_src_)); 		\
 			} 																																	\
-			if (synthesisGraph_edge_is_input(tag_dst_)){ 																						\
-				dijkstraPath_add_input_stop(&path_array, rrd.offset, rrd.length, cluster_dst_, synthesisGraph_edge_get_parameter(tag_dst_)); 	\
+			if (synthesisEdge_is_input(tag_dst_)){ 																								\
+				dijkstraPath_add_input_stop(&path_array, rrd.offset, rrd.length, cluster_dst_, synthesisEdge_get_parameter(tag_dst_)); 			\
 			} 																																	\
 		} 																																		\
 	}
@@ -854,42 +824,42 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			continue;
 		}
 
-		for (j = 0; j < cluster->nb_in_parameter; j++){
-			for (k = j + 1; k < cluster->nb_in_parameter; k++){
+		for (j = 0; j < signatureCluster_get_nb_para_in(cluster); j++){
+			for (k = j + 1; k < signatureCluster_get_nb_para_in(cluster); k++){
 				traceMine_search_path( 	signatureCluster_get_in_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_in(cluster, j), 		/* nb_src 		*/
 										cluster, 											/* cluster_src 	*/
-										synthesisGraph_get_edge_tag_input(j), 				/* tag_src 		*/
+										synthesisEdge_get_tag_input(j), 					/* tag_src 		*/
 										signatureCluster_get_in_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_in(cluster, k), 		/* nb_dst 		*/
 										cluster, 											/* cluster_dst 	*/
-										synthesisGraph_get_edge_tag_input(k)) 				/* tag_dst 		*/
+										synthesisEdge_get_tag_input(k)) 					/* tag_dst 		*/
 			}
 		}
 
-		for (j = 0; j < cluster->nb_ou_parameter; j++){
-			for (k = j + 1; k < cluster->nb_ou_parameter; k++){
+		for (j = 0; j < signatureCluster_get_nb_para_ou(cluster); j++){
+			for (k = j + 1; k < signatureCluster_get_nb_para_ou(cluster); k++){
 				traceMine_search_path( 	signatureCluster_get_ou_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_ou(cluster, j), 		/* nb_src 		*/
 										cluster, 											/* cluster_src 	*/
-										synthesisGraph_get_edge_tag_output(j), 				/* tag_src 		*/
+										synthesisEdge_get_tag_output(j), 					/* tag_src 		*/
 										signatureCluster_get_ou_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_ou(cluster, k), 		/* nb_dst 		*/
 										cluster, 											/* cluster_dst 	*/
-										synthesisGraph_get_edge_tag_output(k)) 				/* tag_dst 		*/
+										synthesisEdge_get_tag_output(k)) 					/* tag_dst 		*/
 			}
 		}
 
-		for (j = 0; j < cluster->nb_in_parameter; j++){
-			for (k = 0; k < cluster->nb_ou_parameter; k++){
+		for (j = 0; j < signatureCluster_get_nb_para_in(cluster); j++){
+			for (k = 0; k < signatureCluster_get_nb_para_ou(cluster); k++){
 				traceMine_search_path( 	signatureCluster_get_in_parameter(cluster, j), 		/* buffer_src 	*/
 										signatureCluster_get_nb_frag_in(cluster, j), 		/* nb_src 		*/
 										cluster, 											/* cluster_src 	*/
-										synthesisGraph_get_edge_tag_input(j), 				/* tag_src 		*/
+										synthesisEdge_get_tag_input(j), 					/* tag_src 		*/
 										signatureCluster_get_ou_parameter(cluster, k), 		/* buffer_dst 	*/
 										signatureCluster_get_nb_frag_ou(cluster, k), 		/* nb_dst 		*/
 										cluster, 											/* cluster_dst 	*/
-										synthesisGraph_get_edge_tag_output(k)) 				/* tag_dst 		*/
+										synthesisEdge_get_tag_output(k)) 					/* tag_dst 		*/
 			}
 		}
 	}
@@ -903,45 +873,45 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 
 			cluster_j = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), j);
 
-			for (k = 0; k < cluster_i->nb_in_parameter; k++){
-				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
+			for (k = 0; k < signatureCluster_get_nb_para_in(cluster_i); k++){
+				for (l = 0; l < signatureCluster_get_nb_para_ou(cluster_j); l++){
 					traceMine_search_path( 	signatureCluster_get_in_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_in(cluster_i, k), 		/* nb_src 		*/
 											cluster_i, 											/* cluster_src 	*/
-											synthesisGraph_get_edge_tag_input(k), 				/* tag_src 		*/
+											synthesisEdge_get_tag_input(k), 					/* tag_src 		*/
 											signatureCluster_get_ou_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_ou(cluster_j, l), 		/* nb_dst 		*/
 											cluster_j, 											/* cluster_dst 	*/
-											synthesisGraph_get_edge_tag_output(l)) 				/* tag_dst 		*/
+											synthesisEdge_get_tag_output(l)) 					/* tag_dst 		*/
 				}
 			}
 		}
 		for (j = i + 1; j < array_get_length(&(synthesis_graph->cluster_array)); j++){
 			cluster_j = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), j);
 
-			for (k = 0; k < cluster_i->nb_in_parameter; k++){
-				for (l = 0; l < cluster_j->nb_in_parameter; l++){
+			for (k = 0; k < signatureCluster_get_nb_para_in(cluster_i); k++){
+				for (l = 0; l < signatureCluster_get_nb_para_in(cluster_j); l++){
 					traceMine_search_path( 	signatureCluster_get_in_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_in(cluster_i, k), 		/* nb_src 		*/
 											cluster_i, 											/* cluster_src 	*/
-											synthesisGraph_get_edge_tag_input(k), 				/* tag_src 		*/
+											synthesisEdge_get_tag_input(k), 					/* tag_src 		*/
 											signatureCluster_get_in_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_in(cluster_j, l), 		/* nb_dst 		*/
 											cluster_j, 											/* cluster_dst 	*/
-											synthesisGraph_get_edge_tag_input(l)) 				/* tag_dst 		*/
+											synthesisEdge_get_tag_input(l)) 					/* tag_dst 		*/
 				}
 			}
 
-			for (k = 0; k < cluster_i->nb_ou_parameter; k++){
-				for (l = 0; l < cluster_j->nb_ou_parameter; l++){
+			for (k = 0; k < signatureCluster_get_nb_para_ou(cluster_i); k++){
+				for (l = 0; l < signatureCluster_get_nb_para_ou(cluster_j); l++){
 					traceMine_search_path( 	signatureCluster_get_ou_parameter(cluster_i, k), 	/* buffer_src 	*/
 											signatureCluster_get_nb_frag_ou(cluster_i, k), 		/* nb_src 		*/
 											cluster_i, 											/* cluster_src 	*/
-											synthesisGraph_get_edge_tag_output(k), 				/* tag_src 		*/
+											synthesisEdge_get_tag_output(k), 					/* tag_src 		*/
 											signatureCluster_get_ou_parameter(cluster_j, l), 	/* buffer_dst 	*/
 											signatureCluster_get_nb_frag_ou(cluster_j, l), 		/* nb_dst 		*/
 											cluster_j, 											/* cluster_dst 	*/
-											synthesisGraph_get_edge_tag_output(l)) 				/* tag_dst 		*/
+											synthesisEdge_get_tag_output(l)) 					/* tag_dst 		*/
 				}
 			}
 		}
@@ -1093,7 +1063,7 @@ int32_t synthesisGraph_init(struct synthesisGraph* synthesis_graph, struct ir* i
 		return -1;
 	}
 
-	graph_init(&(synthesis_graph->graph), sizeof(struct synthesisNode), sizeof(uint32_t));
+	graph_init(&(synthesis_graph->graph), sizeof(struct synthesisNode), sizeof(struct synthesisEdge));
 	graph_register_dotPrint_callback(&(synthesis_graph->graph), NULL, synthesisGraph_printDot_node, synthesisGraph_printDot_edge, NULL);
 	graph_register_node_clean_call_back(&(synthesis_graph->graph), synthesisGraph_clean_node);
 
@@ -1159,7 +1129,7 @@ void synthesisGraph_clean(struct synthesisGraph* synthesis_graph){
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
+void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 	struct synthesisNode*	synthesis_node;
 	uint32_t 				i;
 	struct node* 			symbol;
@@ -1173,10 +1143,10 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 				symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i);
 
 				if (i == 0){
-					fprintf(file, "[shape=box,label=\"%s", ((struct codeSignature*)(ir_node_get_operation(symbol)->operation_type.symbol.code_signature))->signature.name);
+					fprintf(file, "[shape=box,label=\"%s", ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->name);
 				}
-				else if (ir_node_get_operation(symbol)->operation_type.symbol.code_signature != ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.code_signature){
-					fprintf(file, "\\n%s", ((struct codeSignature*)(ir_node_get_operation(symbol)->operation_type.symbol.code_signature))->signature.name);
+				else if (ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->id != ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.sym_sig->id){
+					fprintf(file, "\\n%s", ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->name);
 				}
 				if (i + 1 == array_get_length(&(synthesis_node->node_type.cluster->instance_array))){
 					fputs("\"]", file);
@@ -1217,14 +1187,14 @@ static void synthesisGraph_printDot_node(void* data, FILE* file, void* arg){
 }
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
-	uint32_t tag = *(uint32_t*)data;
+void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg){
+	struct synthesisEdge* synthesis_edge = (struct synthesisEdge*)data;
 
-	if (synthesisGraph_edge_is_input(tag)){
-		fprintf(file, "[label=\"I%u\"]", synthesisGraph_edge_get_parameter(tag));
+	if (synthesisEdge_is_input(synthesis_edge->tag)){
+		fprintf(file, "[label=\"I%u\"]", synthesisEdge_get_parameter(synthesis_edge->tag));
 	}
-	else if (synthesisGraph_edge_is_output(tag)){
-		fprintf(file, "[label=\"O%u\"]", synthesisGraph_edge_get_parameter(tag));
+	else if (synthesisEdge_is_output(synthesis_edge->tag)){
+		fprintf(file, "[label=\"O%u\"]", synthesisEdge_get_parameter(synthesis_edge->tag));
 	}
 }
 

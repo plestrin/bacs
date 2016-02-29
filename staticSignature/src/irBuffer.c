@@ -289,11 +289,21 @@ void bufferCouple_print(struct bufferCouple* couple){
 #include "codeSignature.h"
 #include "irNormalize.h"
 
+/* cette structure n'est pas adaptée:
+	tout ce qui est dans dans la signature à part les string on s'en fout (à part les strings)
+	les infos sur les fragments on s'en fout également 
+
+
+*/
+
+/* export compress */
+
 static struct codeSignature sha1_compress = {
 	.signature 			= {
-		.id 			= 42, /*lol*/
-		.name 			= "sha1_compress",
-		.symbol 		= "compress",
+		.symbol 		= { /* use constructor to build structure */
+			.id 		= 42,
+			.name 		= "sha1_compress",
+		},
 		.graph 			= {0},
 		.sub_graph_handle = NULL,
 		.symbol_table 	= NULL,
@@ -306,12 +316,6 @@ static struct codeSignature sha1_compress = {
 	.nb_frag_ou = {5}
 };
 
-static const struct codeSignature* irBufferSignature[] = {
-	&sha1_compress,
-};
-
-#define IRBUFFER_NB_SIGNATURE (sizeof(irBufferSignature) / sizeof(struct codeSignature*))
-
 /* why do we do that exactly?? */
 static void push_sha1_signature(struct bufferCouple* couple, struct ir* ir){
 	struct node* 	symbol;
@@ -321,7 +325,7 @@ static void push_sha1_signature(struct bufferCouple* couple, struct ir* ir){
 	struct edge* 	nex_edge;
 	struct node* 	parameter;
 
-	symbol = ir_add_symbol(ir, &sha1_compress, NULL, 0);
+	symbol = ir_add_symbol(ir, &(sha1_compress.signature.symbol));
 	if (symbol != NULL){
 		for (i = 0; i < couple->in.length; i++){
 			parameter = couple->in.buffer->access[couple->in.offset + i].node;

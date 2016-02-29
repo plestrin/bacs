@@ -19,10 +19,9 @@ struct signatureSymbol{
 	uint32_t 	id;
 	char 		name[SIGNATURE_NAME_MAX_SIZE];
 };
+
 #define SIGNATURESYMBOL_RAW_ID 0
-#define signatureSymbol_is_resolved(symbol) ((symbol)->id & 0x00000001)
-#define signatureSymbol_set_id(sym, index) (sym)->id = 0x00000001 | ((index) << 1)
-#define signatureSymbol_get_id(sym) ((sym)->id >> 1)
+#define signatureSymbol_is_resolved(symbol) ((symbol)->id != SIGNATURESYMBOL_RAW_ID)
 
 struct signatureSymbolTable{
 	uint32_t 				nb_symbol;
@@ -32,9 +31,7 @@ struct signatureSymbolTable{
 #define signatureSymbolTable_get_size(nb_symbol) (sizeof(struct signatureSymbolTable) + ((nb_symbol) - 1) * sizeof(struct signatureSymbol))
 
 struct signature{
-	uint32_t 						id;
-	char  							name[SIGNATURE_NAME_MAX_SIZE];
-	char 							symbol[SIGNATURE_NAME_MAX_SIZE];
+	struct signatureSymbol 			symbol;
 	struct graph					graph;
 	struct subGraphIsoHandle* 		sub_graph_handle;
 	struct signatureSymbolTable* 	symbol_table;
@@ -67,23 +64,17 @@ struct signatureCallback{
 };
 
 struct signatureCollection{
-	uint32_t 					signature_id_generator;
 	struct graph 				syntax_graph;
 	struct signatureCallback 	callback;
 };
 
 struct signatureCollection* signatureCollection_create(size_t custom_signature_size, struct signatureCallback* callback);
+void signatureCollection_init(struct signatureCollection* collection, size_t custom_signature_size, struct signatureCallback* callback);
 
-#define signatureCollection_init(collection, custom_signature_size, callback_) 										\
-	graph_init(&((collection)->syntax_graph), custom_signature_size, sizeof(uint32_t)); 							\
-	(collection)->signature_id_generator = 0; 																		\
-	memcpy(&((collection)->callback), callback_, sizeof(struct signatureCallback));
-
-#define signatureCollection_get_new_id(collection) ((collection)->signature_id_generator ++)
 #define signatureCollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
 
 void signatureCollection_printDot(struct signatureCollection* collection);
-int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature);
+int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, char* export_name);
 
 struct graphSearcher{
 	struct graph* 	graph;
@@ -101,5 +92,7 @@ void signatureCollection_clean(struct signatureCollection* collection);
 	signatureCollection_clean(collection); 																			\
 	free(collection);
 
+void signatureSymbol_register(struct signatureSymbol* symbol, char* export_name, struct signatureCollection* collection);
+void signatureSymbol_fetch(struct signatureSymbol* symbol, struct signatureCollection* collection);
 
 #endif

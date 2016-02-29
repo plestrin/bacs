@@ -660,7 +660,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		for (j = 0; j < nb_signature; j++){
 			if (signature_buffer[j] == result->code_signature){
 				#ifdef VERBOSE
-				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.name, trace->trace_type.frag.tag);
+				log_info_m("export %u occurrence(s) of %s in fragment %s", result->nb_occurrence, result->code_signature->signature.symbol.name, trace->trace_type.frag.tag);
 				#endif
 				exported_result[nb_exported_result ++] = i;
 				continue;

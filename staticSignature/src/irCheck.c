@@ -770,51 +770,27 @@ uint32_t ir_check_connectivity(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
-				struct codeSignature* code_signature = (struct codeSignature*)operation_cursor->operation_type.symbol.code_signature;
-
 				/* Check input edge(s) */
-				if (node_cursor->nb_edge_dst != codeSignature_get_nb_frag_in(code_signature)){
-					log_err_m("symbol %s has %u dst edge(s)", code_signature->signature.name, node_cursor->nb_edge_dst);
-					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-					result = 1;
-				}
-				else{
-					for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-						dependence = ir_edge_get_dependence(edge_cursor);
+				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					dependence = ir_edge_get_dependence(edge_cursor);
 
-						if (dependence->type != IR_DEPENDENCE_TYPE_MACRO){
-							log_err("symbol has an incorrect type of dst dependence");
-							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-							result = 1;
-						}
-						else if (!codeSignature_check_macro_dependence_in(code_signature, dependence->dependence_type.macro)){
-							log_err("symbol has an incorrect macro dependence descriptor");
-							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-							result = 1;
-						}
+					if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || !IR_DEPENDENCE_MACRO_DESC_IS_INPUT(dependence->dependence_type.macro)){
+						log_err("symbol has an incorrect type of dst dependence");
+						operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+						result = 1;
+						break;
 					}
 				}
 
 				/* Check output edge(s) */
-				if (node_cursor->nb_edge_src != codeSignature_get_nb_frag_ou(code_signature)){
-					log_err_m("symbol %s has %u src edge(s)", code_signature->signature.name, node_cursor->nb_edge_src);
-					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-					result = 1;
-				}
-				else{
-					for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-						dependence = ir_edge_get_dependence(edge_cursor);
+				for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+					dependence = ir_edge_get_dependence(edge_cursor);
 
-						if (dependence->type != IR_DEPENDENCE_TYPE_MACRO){
-							log_err("symbol has an incorrect type of src dependence");
-							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-							result = 1;
-						}
-						else if (!codeSignature_check_macro_dependence_ou(code_signature, dependence->dependence_type.macro)){
-							log_err("symbol has an incorrect macro dependence descriptor");
-							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-							result = 1;
-						}
+					if (dependence->type != IR_DEPENDENCE_TYPE_MACRO || !IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(dependence->dependence_type.macro)){
+						log_err("symbol has an incorrect type of src dependence");
+						operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+						result = 1;
+						break;
 					}
 				}
 

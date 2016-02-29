@@ -4,10 +4,7 @@
 #include <stdint.h>
 
 #include "signatureCollection.h"
-
-void nameEngine_get(void);
-uint32_t nameEngine_search(char* name);
-void nameEngine_release(void);
+#include "synthesisGraph.h"
 
 enum modeSignatureNodeType{
 	MODESIGNATURE_NODE_TYPE_PATH,
@@ -19,16 +16,17 @@ enum modeSignatureNodeType{
 struct modeSignatureNode{
 	enum modeSignatureNodeType 	type;
 	union{
-		char 					name[SIGNATURE_NAME_MAX_SIZE];
+		struct signatureSymbol 	symbol;
 	} 							node_type;
 };
 
-struct modeSignatureEdge{
-	uint32_t tag;
-};
+#define modeSignatureEdge synthesisEdge
+
+void modeSignature_printDot_node(void* data, FILE* file, void* arg);
+#define modeSignature_printDot_edge synthesisGraph_printDot_edge
 
 uint32_t modeSignatureNode_get_label(struct node* node);
-uint32_t modeSignatureEdge_get_label(struct edge* edge);
+#define modeSignatureEdge_get_label synthesisGraphEdge_get_label
 
 uint32_t synthesisGraphNode_get_label(struct node* node);
 uint32_t synthesisGraphEdge_get_label(struct edge* edge);
@@ -40,6 +38,5 @@ struct modeSignature{
 #define signatureCollection_node_get_modeSignature(node) ((struct modeSignature*)node_get_data(node))
 
 void modeSignature_init(struct modeSignature* mode_signature);
-#define modeSignature_clean (void(*)(struct node*))nameEngine_release
 
 #endif

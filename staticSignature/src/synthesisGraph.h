@@ -15,12 +15,9 @@ enum synthesisNodeType{
 
 struct signatureCluster{
 	struct node* 				synthesis_graph_node;
-	uint32_t 					nb_in_parameter;
-	uint32_t 					nb_ou_parameter;
-	struct parameterMapping* 	parameter_mapping;
+	struct symbolMapping* 		symbol_mapping;
 	struct array 				instance_array;
 };
-
 
 struct synthesisNode{
 	enum synthesisNodeType 			type;
@@ -34,8 +31,15 @@ struct synthesisNode{
 	}								node_type;
 };
 
+struct synthesisEdge{
+	uint32_t 						tag;
+};
+
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)node_get_data(node))
-#define synthesisGraph_get_edgeTag(edge) (*(uint32_t*)edge_get_data(edge))
+#define synthesisGraph_get_synthesisEdge(edge) ((struct synthesisEdge*)edge_get_data(edge))
+
+void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
+void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
 
 /* Bit map description of the edgeTag (there is not anymore the fragment notion)
 	- [0 :29] 	parameter index
@@ -43,13 +47,13 @@ struct synthesisNode{
 	- [31] 		1 for a paremter and 0 for a raw edge
 */
 
-#define SYNTHESISGRAPH_EGDE_TAG_RAW 0x00000000
+#define SYNTHESISEGDE_TAG_RAW 0x00000000
 
-#define synthesisGraph_get_edge_tag_input(index) 	(((index) & 0x3fffffff) | 0xc0000000)
-#define synthesisGraph_get_edge_tag_output(index) 	(((index) & 0x3fffffff) | 0x80000000)
-#define synthesisGraph_edge_is_input(tag)			(((tag) & 0xc0000000) == 0xc0000000)
-#define synthesisGraph_edge_is_output(tag) 			(((tag) & 0xc0000000) == 0x80000000)
-#define synthesisGraph_edge_get_parameter(tag) 		((tag) & 0x3fffffff)
+#define synthesisEdge_get_tag_input(index) 		(((index) & 0x3fffffff) | 0xc0000000)
+#define synthesisEdge_get_tag_output(index) 	(((index) & 0x3fffffff) | 0x80000000)
+#define synthesisEdge_is_input(tag)				(((tag) & 0xc0000000) == 0xc0000000)
+#define synthesisEdge_is_output(tag) 			(((tag) & 0xc0000000) == 0x80000000)
+#define synthesisEdge_get_parameter(tag) 		((tag) & 0x3fffffff)
 
 struct synthesisGraph{
 	struct graph 		graph;

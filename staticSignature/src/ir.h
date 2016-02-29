@@ -6,6 +6,7 @@
 #include "assembly.h"
 #include "memTrace.h"
 #include "variableRange.h"
+#include "signatureCollection.h"
 #include "graph.h"
 #include "graphPrintDot.h"
 #include "array.h"
@@ -791,7 +792,7 @@ struct irOperation{
 			uint32_t 				seed;
 		} 							inst;
 		struct {
-			void* 					code_signature;
+			struct signatureSymbol*	sym_sig;
 			void* 					result;
 			uint32_t 				index;
 		} 							symbol;
@@ -846,19 +847,19 @@ struct irDependence{
 #define irDependence_get_edge(dependence) 	(((struct edge*)(dependence)) - 1)
 
 /* Bit map description of the macro parameter (read the edge labeling prior to modify this mapping)
-	- [0 :6 ] 	reserved
+	- [0 :6 ] 	reserved (refer to edge labeling)
 	- [7] 		0 for input and 1 for output
 	- [8 :15] 	fragment index 0 to 255
 	- [16:23] 	argument index 0 to 255
 	- [24:31] 	reserved
 */
 
-#define IR_DEPENDENCE_MACRO_DESC_SET_INPUT(nf, na) 		((((nf) & 0x000000ff) << 8) | (((na) & 0x000000ff) << 16))
-#define IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(nf, na) 	((((nf) & 0x000000ff) << 8) | (((na) & 0x000000ff) << 16) | 0x00000080)
+#define IR_DEPENDENCE_MACRO_DESC_SET_INPUT(nf, np) 		((((nf) & 0x000000ff) << 8) | (((np) & 0x000000ff) << 16))
+#define IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(nf, np) 	((((nf) & 0x000000ff) << 8) | (((np) & 0x000000ff) << 16) | 0x00000080)
 #define IR_DEPENDENCE_MACRO_DESC_IS_INPUT(desc) 		(((desc) & 0x00000080) == 0x00000000)
 #define IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(desc) 		(((desc) & 0x00000080) == 0x00000080)
 #define IR_DEPENDENCE_MACRO_DESC_GET_FRAG(desc) 		(((desc) >> 8) & 0x000000ff)
-#define IR_DEPENDENCE_MACRO_DESC_GET_ARG(desc) 			(((desc) >> 16) & 0x00000ff)
+#define IR_DEPENDENCE_MACRO_DESC_GET_PARA(desc) 		(((desc) >> 16) & 0x00000ff)
 
 struct alias{
 	struct node* 		ir_node;
@@ -922,7 +923,9 @@ struct node* ir_add_out_mem_(struct ir* ir, uint32_t index, uint8_t size, struct
 
 struct node* ir_add_immediate(struct ir* ir, uint8_t size, uint64_t value);
 struct node* ir_add_inst(struct ir* ir, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);
-struct node* ir_add_symbol(struct ir* ir, void* code_signature, void* result, uint32_t index);
+
+struct node* ir_add_symbol_(struct ir* ir, struct signatureSymbol* sym_sig, void* result, uint32_t index);
+#define ir_add_symbol(ir, sym_sig) ir_add_symbol_(ir, sym_sig, NULL, 0)
 
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
 struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);

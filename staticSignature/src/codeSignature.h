@@ -24,13 +24,10 @@ struct codeSignatureNode{
 	uint16_t 					output_frag_order;
 };
 
-struct codeSignatureEdge{
-	enum irDependenceType 		type;
-	uint32_t 					macro_desc;
-};
+#define codeSignatureEdge irDependence
 
 uint32_t codeSignatureNode_get_label(struct node* node);
-uint32_t codeSignatureEdge_get_label(struct edge* edge);
+#define codeSignatureEdge_get_label irEdge_get_label
 
 uint32_t irNode_get_label(struct node* node);
 uint32_t irEdge_get_label(struct edge* edge);

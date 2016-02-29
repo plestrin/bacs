@@ -248,7 +248,6 @@ static struct analysis* analysis_create(){
 	callback.signatureEdge_get_label = modeSignatureEdge_get_label;
 
 	signatureCollection_init(&(analysis->mode_signature_collection), sizeof(struct modeSignature), &callback);
-	graph_register_node_clean_call_back(&(analysis->mode_signature_collection.syntax_graph), modeSignature_clean);
 
 	analysis->trace 		= NULL;
 	analysis->code_map 		= NULL;
@@ -827,9 +826,9 @@ static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 			signature_buffer[nb_signature ++] = signature_cursor;
 		}
 		else{
-			ptr = strstr(arg, signature_cursor->signature.name);
+			ptr = strstr(arg, signature_cursor->signature.symbol.name);
 			if (ptr != NULL){
-				if (strlen(ptr) == strlen(signature_cursor->signature.name) || ptr[strlen(signature_cursor->signature.name)] == ' '){
+				if (strlen(ptr) == strlen(signature_cursor->signature.symbol.name) || ptr[strlen(signature_cursor->signature.symbol.name)] == ' '){
 					if (ptr == arg || ptr[-1] == ' '){
 						signature_buffer[nb_signature ++] = signature_cursor;
 					}

@@ -42,11 +42,8 @@ static int32_t modeSignatureBuilder_init(struct modeSignatureBuilder* builder, s
 static void modeSignatureReader_handle_graph_name(const char* str, size_t str_len, void* arg){
 	struct modeSignatureBuilder* builder = (struct modeSignatureBuilder*)arg;
 
-	memset(builder->mode_signature.signature.name, 0, SIGNATURE_NAME_MAX_SIZE);
-	memcpy(builder->mode_signature.signature.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
-
-	memset(builder->mode_signature.signature.symbol, 0, SIGNATURE_NAME_MAX_SIZE);
-	memcpy(builder->mode_signature.signature.symbol, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
+	memset(builder->mode_signature.signature.symbol.name, 0, SIGNATURE_NAME_MAX_SIZE);
+	memcpy(builder->mode_signature.signature.symbol.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
 
 	builder->is_name_set = 1;
 }
@@ -79,8 +76,8 @@ static void modeSignatureReader_handle_node_label(const char* str, size_t str_le
 		if (str_len >= SIGNATURE_NAME_MAX_SIZE){
 			log_warn("node label is too long");
 		}
-		memset(mode_signature_node->node_type.name, 0, SIGNATURE_NAME_MAX_SIZE);
-		memcpy(mode_signature_node->node_type.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
+		memset(mode_signature_node->node_type.symbol.name, 0, SIGNATURE_NAME_MAX_SIZE);
+		memcpy(mode_signature_node->node_type.symbol.name, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
 		mode_signature_node->type = MODESIGNATURE_NODE_TYPE_SYMBOL;
 	}
 }
@@ -95,7 +92,7 @@ static void* modeSignatureReader_handle_new_edge(void* src, void* dst, void* arg
 	}
 	else{
 		mode_signature_edge = (struct modeSignatureEdge*)edge_get_data(edge);
-		mode_signature_edge->tag = SYNTHESISGRAPH_EGDE_TAG_RAW;
+		mode_signature_edge->tag = SYNTHESISEGDE_TAG_RAW;
 	}
 
 	return edge;
@@ -109,10 +106,10 @@ static void modeSignatureReader_handle_edge_label(const char* str, size_t str_le
 	if (str_len > 1 && (str[0] == 'I' || str[0] == 'O')){
 		if (str[1] >= 48 && str[1] <= 57){
 			if (str[0] == 'I'){
-				mode_signature_edge->tag = synthesisGraph_get_edge_tag_input(atoi(str + 1));
+				mode_signature_edge->tag = synthesisEdge_get_tag_input(atoi(str + 1));
 			}
 			else{
-				mode_signature_edge->tag = synthesisGraph_get_edge_tag_output(atoi(str + 1));
+				mode_signature_edge->tag = synthesisEdge_get_tag_output(atoi(str + 1));
 			}
 			return;
 		}
@@ -132,7 +129,7 @@ static void modeSignatureReader_handle_flush_graph(void* arg){
 	builder->mode_signature.signature.symbol_table 		= NULL;
 
 	modeSignature_init(&(builder->mode_signature));
-	if (signatureCollection_add(builder->collection, &(builder->mode_signature))){
+	if (signatureCollection_add(builder->collection, &(builder->mode_signature), builder->mode_signature.signature.symbol.name)){
 		log_err("unable to add signature to collection");
 	}
 

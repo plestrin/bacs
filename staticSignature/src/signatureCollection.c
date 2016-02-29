@@ -1,11 +1,132 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <time.h>
+#include <search.h>
 
 #include "signatureCollection.h"
 #include "graphPrintDot.h"
 #include "multiColumn.h"
 #include "base.h"
+
+#define SIGNATURE_NAMEENGINE_MAX_ENTRY 512
+
+struct nameEngineData{
+	uint32_t 					id;
+	char 						name[SIGNATURE_NAME_MAX_SIZE];
+	struct signatureCollection* collection;
+};
+
+struct nameEngine{
+	struct hsearch_data 	hashtable;
+	uint32_t 				nb_entry;
+	uint32_t 				ref_count;
+	struct nameEngineData 	entry_buffer[SIGNATURE_NAMEENGINE_MAX_ENTRY];
+};
+
+static struct nameEngine engine;
+
+static void nameEngine_get(void){
+	if (engine.ref_count == 0){
+		if (hcreate_r(SIGNATURE_NAMEENGINE_MAX_ENTRY, &(engine.hashtable)) == 0){
+			log_err("unable to create hashTable");
+			return;
+		}
+	}
+	engine.ref_count ++;
+}
+
+static uint32_t nameEngine_register_symbol(char* name, struct signatureCollection* collection){
+	ENTRY 					item;
+	ENTRY* 					result;
+	struct nameEngineData* 	data;
+
+	if (engine.ref_count == 0){
+		log_err("reference counter is equal to 0");
+		return SIGNATURESYMBOL_RAW_ID;
+	}
+
+	if (engine.nb_entry == SIGNATURE_NAMEENGINE_MAX_ENTRY){
+		log_err("the max number of entry has been reached");
+		return SIGNATURESYMBOL_RAW_ID;
+	}
+
+	strncpy(engine.entry_buffer[engine.nb_entry].name, name, SIGNATURE_NAME_MAX_SIZE);
+
+	data = engine.entry_buffer + engine.nb_entry;
+	data->id = engine.nb_entry + 1;
+	data->collection = collection;
+
+	item.key = data->name;
+	item.data = data;
+
+	if (hsearch_r(item, ENTER, &result, &(engine.hashtable)) == 0){
+		log_err("something went wrong with hsearch_r");
+		return SIGNATURESYMBOL_RAW_ID;
+	}
+
+	if (result->data == item.data){
+		engine.nb_entry ++;
+	}
+
+	data = (struct nameEngineData*)(result->data);
+
+	if (data->collection != collection){
+		log_warn_m("symbol: \"%s\" has been registered with a different collection", name);
+	}
+
+	return data->id;
+}
+
+static uint32_t nameEngine_search_symbol(char* name, struct signatureCollection* collection){
+	ENTRY 					item;
+	ENTRY* 					result;
+	struct nameEngineData* 	data;
+
+	if (engine.ref_count == 0){
+		log_err("reference counter is equal to 0");
+		return SIGNATURESYMBOL_RAW_ID;
+	}
+
+	item.key = name;
+
+	if (hsearch_r(item, FIND, &result, &(engine.hashtable)) != 0){
+		data = (struct nameEngineData*)(result->data);
+		if (collection == NULL || data->collection == collection){
+			return data->id;
+		}
+		else{
+			log_warn_m("symbol: \"%s\" has been registered with a different collection", name);
+		}
+	}
+	else if (errno != ESRCH){
+		log_err("something went wrong with hsearch_r");
+		return SIGNATURESYMBOL_RAW_ID;
+	}
+
+	return SIGNATURESYMBOL_RAW_ID;
+}
+
+static void nameEngine_release(void){
+	if (engine.ref_count == 0){
+		log_err("reference counter is equal to 0");
+		return;
+	}
+
+	engine.ref_count --;
+	if (engine.ref_count == 0){
+		hdestroy_r(&(engine.hashtable));
+		engine.nb_entry = 0;
+	}
+}
+
+void signatureSymbol_register(struct signatureSymbol* symbol, char* export_name, struct signatureCollection* collection){
+	symbol->id = nameEngine_register_symbol(export_name, collection);
+}
+
+void signatureSymbol_fetch(struct signatureSymbol* symbol, struct signatureCollection* collection){
+	symbol->id = nameEngine_search_symbol(symbol->name, collection);
+}
 
 static void signatureCollection_dotPrint_node(void* data, FILE* file, void* arg);
 
@@ -23,13 +144,19 @@ struct signatureCollection* signatureCollection_create(size_t signature_size, st
 	return collection;
 }
 
-int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature){
+void signatureCollection_init(struct signatureCollection* collection, size_t custom_signature_size, struct signatureCallback* callback){
+	graph_init(&(collection->syntax_graph), custom_signature_size, sizeof(uint32_t));
+	memcpy(&(collection->callback), callback, sizeof(struct signatureCallback));
+	nameEngine_get();
+}
+
+int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, char* export_name){
 	struct node* 		syntax_node;
 	struct node* 		node_cursor;
 	struct signature* 	signature;
 	struct signature* 	signature_cursor;
 	uint32_t 			i;
-	uint32_t 			nb_unresolved_symbol;
+	uint32_t 			nb_unresolved_symbol 	= 0;
 
 	syntax_node = graph_add_node(&(collection->syntax_graph), custom_signature);
 	if (syntax_node == NULL){
@@ -38,41 +165,32 @@ int32_t signatureCollection_add(struct signatureCollection* collection, void* cu
 	}
 
 	signature = signatureCollection_node_get_signature(syntax_node);
-
-	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (node_cursor != syntax_node){
-			signature_cursor = signatureCollection_node_get_signature(node_cursor);
-
-			if (!strncmp(signature->symbol, signature_cursor->symbol, SIGNATURE_NAME_MAX_SIZE)){
-				signature->id = signature_cursor->id;
-				break;
-			}
-		}
-	}
-	if (node_cursor == NULL){
-		signature->id = signatureCollection_get_new_id(collection);
+	signatureSymbol_register(&(signature->symbol), export_name, collection);
+	if (!signatureSymbol_is_resolved(&(signature->symbol))){
+		log_err_m("unable to register signature: \"%s\" with the export name: \"%s\"", signature->symbol.name, export_name);
+		graph_remove_node(&(collection->syntax_graph), syntax_node);
+		return -1;
 	}
 
 	if (signature->symbol_table != NULL){
-		for (i = 0, nb_unresolved_symbol = 0; i < signature->symbol_table->nb_symbol; i++){
-			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-				signature_cursor = signatureCollection_node_get_signature(node_cursor);
+		for (i = 0; i < signature->symbol_table->nb_symbol; i++){
+			signatureSymbol_fetch(signature->symbol_table->symbols + i, collection);
 
-				if (!strncmp(signature->symbol_table->symbols[i].name, signature_cursor->symbol, SIGNATURE_NAME_MAX_SIZE)){
-					signatureSymbol_set_id(signature->symbol_table->symbols + i, signature_cursor->id);
+			if (signatureSymbol_is_resolved(signature->symbol_table->symbols + i)){
+				for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+					signature_cursor = signatureCollection_node_get_signature(node_cursor);
 
-					if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
-						log_err("unable to add edge to the syntax tree");
+					if (signature != signature_cursor && signature->symbol_table->symbols[i].id == signature_cursor->symbol.id){
+						if (graph_add_edge(&(collection->syntax_graph), node_cursor, syntax_node, &i) == NULL){
+							log_err("unable to add edge to the syntax tree");
+						}
 					}
 				}
 			}
-			if (node_cursor == NULL){
+			else{
 				nb_unresolved_symbol ++;
 			}
 		}
-	}
-	else{
-		nb_unresolved_symbol = 0;
 	}
 
 	if (signature->sub_graph_handle == NULL){
@@ -88,16 +206,23 @@ int32_t signatureCollection_add(struct signatureCollection* collection, void* cu
 	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		signature_cursor = signatureCollection_node_get_signature(node_cursor);
 
-		if (signature_cursor->symbol_table != NULL){
+		if (signature != signature_cursor && signature_cursor->symbol_table != NULL){
 			for (i = 0, nb_unresolved_symbol = 0; i < signature_cursor->symbol_table->nb_symbol; i++){
-				if (!strncmp(signature_cursor->symbol_table->symbols[i].name, signature->symbol, SIGNATURE_NAME_MAX_SIZE)){
-					signatureSymbol_set_id(signature_cursor->symbol_table->symbols + i, signature->id);
+				if (signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + i)){
+					if (signature_cursor->symbol_table->symbols[i].id == signature->symbol.id){
+						if (graph_add_edge(&(collection->syntax_graph), syntax_node, node_cursor, &i) == NULL){
+							log_err("unable to add edge to the syntax tree");
+						}
+					}
+				}
+				else if (!strncmp(signature_cursor->symbol_table->symbols[i].name, export_name, SIGNATURE_NAME_MAX_SIZE)){
+					signature_cursor->symbol_table->symbols[i].id = signature->symbol.id;
 
 					if (graph_add_edge(&(collection->syntax_graph), syntax_node, node_cursor, &i) == NULL){
 						log_err("unable to add edge to the syntax tree");
 					}
 				}
-				else if (!signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + i)){
+				else{
 					nb_unresolved_symbol ++;
 				}
 			}
@@ -187,7 +312,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 							for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 								child = signatureCollection_node_get_signature(edge_get_src(edge_cursor));
 
-								if (child->id == signatureSymbol_get_id(signature_cursor->symbol_table->symbols + j) && signature_state_is_found(child)){
+								if (child->symbol.id == signature_cursor->symbol_table->symbols[j].id && signature_state_is_found(child)){
 									break;
 								}
 							}
@@ -197,7 +322,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 							}
 						}
 						else{
-							log_warn_m("unresolved symbol(s) for signature %s", signature_cursor->name);
+							log_warn_m("unresolved symbol(s) for signature %s", signature_cursor->symbol.name);
 							signature_state_set_search(signature_cursor);
 							goto next1;
 						}
@@ -205,7 +330,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 				}
 
 				if (signature_cursor->sub_graph_handle == NULL){
-					log_warn_m("sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)", signature_cursor->name);
+					log_warn_m("sub_graph_handle is still NULL for %s. It may be due to unresolved symbol(s)", signature_cursor->symbol.name);
 					signature_state_set_search(signature_cursor);
 					goto next1;
 				}
@@ -260,7 +385,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 						}
 
 						signature_state_set_found(signature_buffer[j]);
-						multiColumnPrinter_print(printer, signature_buffer[j]->name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
+						multiColumnPrinter_print(printer, signature_buffer[j]->symbol.name, array_get_length(assignement_array), timer2_elapsed_time, NULL);
 						array_delete(assignement_array);
 					}
 					else{
@@ -326,21 +451,23 @@ void signatureCollection_printDot(struct signatureCollection* collection){
 	}
 
 	multiColumnPrinter_set_column_size(printer, 0, SIGNATURE_NAME_MAX_SIZE);
-	multiColumnPrinter_set_column_size(printer, 1, SIGNATURE_NAME_MAX_SIZE);
+	multiColumnPrinter_set_column_size(printer, 1, 3);
 	multiColumnPrinter_set_column_size(printer, 2, sizeof(file_name) - 1);
 	multiColumnPrinter_set_column_size(printer, 3, sizeof(symbol_str) - 1);
 
 	multiColumnPrinter_set_title(printer, 0, "NAME");
-	multiColumnPrinter_set_title(printer, 1, "SYMBOL");
+	multiColumnPrinter_set_title(printer, 1, "ID");
 	multiColumnPrinter_set_title(printer, 2, "FILE_NAME");
 	multiColumnPrinter_set_title(printer, 3, "RESOLVE");
+
+	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_INT32);
 
 	multiColumnPrinter_print_header(printer);
 
 	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		signature_cursor = signatureCollection_node_get_signature(node_cursor);
 
-		snprintf(file_name, sizeof(file_name), "%s.dot", signature_cursor->name);
+		snprintf(file_name, sizeof(file_name), "%s.dot", signature_cursor->symbol.name);
 
 		if (signature_cursor->symbol_table == NULL){
 			symbol_str[0] = '\0';
@@ -362,7 +489,7 @@ void signatureCollection_printDot(struct signatureCollection* collection){
 			log_err("graph printDot returned error code");
 		}
 
-		multiColumnPrinter_print(printer, signature_cursor->name, signature_cursor->symbol, file_name, symbol_str, NULL);
+		multiColumnPrinter_print(printer, signature_cursor->symbol.name, signature_cursor->symbol.id, file_name, symbol_str, NULL);
 	}
 
 	multiColumnPrinter_delete(printer);
@@ -372,7 +499,7 @@ void signatureCollection_printDot(struct signatureCollection* collection){
 static void signatureCollection_dotPrint_node(void* data, FILE* file, void* arg){
 	struct signature* signature = (struct signature*)data;
 
-	fprintf(file, "[label=\"%s\"]", signature->name);
+	fprintf(file, "[label=\"%s\"]", signature->symbol.name);
 }
 
 void signatureCollection_clean(struct signatureCollection* collection){
@@ -383,4 +510,5 @@ void signatureCollection_clean(struct signatureCollection* collection){
 	}
 
 	graph_clean(&(collection->syntax_graph));
+	nameEngine_release();
 }
