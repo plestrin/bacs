@@ -5,7 +5,6 @@
 #include "ir.h"
 #include "irImporterAsm.h"
 #include "irBuilder.h"
-#include "codeSignature.h"
 #include "base.h"
 
 const uint32_t irRegister_simd_virt_base[4] = {0, 0, 8, 16};

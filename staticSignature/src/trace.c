@@ -510,6 +510,17 @@ void trace_normalize_concrete_ir(struct trace* trace){
 	}
 }
 
+void trace_search_buffer_signature(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
+		trace_reset_synthesis(trace);
+		trace_reset_result(trace);
+		ir_search_buffer_signature(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg){
 	struct result 	result;
 	int32_t 		return_value;

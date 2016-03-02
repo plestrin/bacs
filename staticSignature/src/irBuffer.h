@@ -3,6 +3,8 @@
 
 #include "ir.h"
 
-void ir_search_buffer(struct ir* ir);
+void ir_search_buffer_signature(struct ir* ir);
+
+void bufferSignature_print_buffer(void);
 
 #endif

@@ -10,11 +10,6 @@
 
 #define SIGNATURE_NAME_MAX_SIZE 32
 
-/* Status bitmap description:
-	- bit 1 : has the symbol been resolved
-	- bit 2 : has the symbol been found
-*/
-
 struct signatureSymbol{
 	uint32_t 	id;
 	char 		name[SIGNATURE_NAME_MAX_SIZE];
@@ -74,7 +69,7 @@ void signatureCollection_init(struct signatureCollection* collection, size_t cus
 #define signatureCollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
 
 void signatureCollection_printDot(struct signatureCollection* collection);
-int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, char* export_name);
+int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, const char* export_name);
 
 struct graphSearcher{
 	struct graph* 	graph;
@@ -92,7 +87,7 @@ void signatureCollection_clean(struct signatureCollection* collection);
 	signatureCollection_clean(collection); 																			\
 	free(collection);
 
-void signatureSymbol_register(struct signatureSymbol* symbol, char* export_name, struct signatureCollection* collection);
+void signatureSymbol_register(struct signatureSymbol* symbol, const char* export_name, struct signatureCollection* collection);
 void signatureSymbol_fetch(struct signatureSymbol* symbol, struct signatureCollection* collection);
 
 #endif

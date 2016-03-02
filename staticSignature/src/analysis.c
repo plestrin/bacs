@@ -57,11 +57,11 @@ static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
 static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
 static void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
 static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg);
 
 static void analysis_code_signature_search(struct analysis* analysis, char* arg);
 static void analysis_code_signature_clean(struct analysis* analysis);
 static void analysis_mode_signature_search(struct analysis* analysis, char* arg);
+static void analysis_buffer_signature_search(struct analysis* analysis, char* arg);
 
 static void analysis_call_create(struct analysis* analysis, char* arg);
 static void analysis_call_printDot(struct analysis* analysis);
@@ -128,7 +128,6 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
-	add_cmd_to_input_parser(parser, "search buffer ir", 		"Search for highly dependent buffers", 			"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_search_buffer_ir)
 
 	/* signature specific commands */
 	add_cmd_to_input_parser(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
@@ -139,6 +138,8 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "search mode signature", 	"Search mode signature for a given synthesis", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_mode_signature_search)
 	add_cmd_to_input_parser(parser, "printDot mode signature", 	"Print every mode signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_printDot)
 	add_cmd_to_input_parser(parser, "clean mode signature", 	"Remove every mode signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_clean)
+	add_cmd_to_input_parser(parser, "search buffer signature", 	"Search for highly dependent buffers", 			"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_buffer_signature_search)
+	add_cmd_to_input_parser(parser, "print buffer signature", 	"Search for highly dependent buffers", 			NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	NULL, 									bufferSignature_print_buffer)
 
 	/* callGraph specific commands */
 	add_cmd_to_input_parser(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 		INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)
@@ -923,10 +924,6 @@ static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* 
 	apply_to_multiple_frags(analysis, trace_normalize_concrete_ir, arg)
 }
 
-static void analysis_frag_search_buffer_ir(struct analysis* analysis, char* arg){
-	apply_to_multiple_frags(analysis, trace_search_buffer_ir, arg)
-}
-
 /* ===================================================================== */
 /* signature functions										             */
 /* ===================================================================== */
@@ -1051,6 +1048,10 @@ static void analysis_mode_signature_search(struct analysis* analysis, char* arg)
 
 	signatureCollection_search(&(analysis->mode_signature_collection), graph_searcher_buffer, nb_graph_searcher, synthesisGraphNode_get_label, synthesisGraphEdge_get_label);
 	free(graph_searcher_buffer);
+}
+
+static void analysis_buffer_signature_search(struct analysis* analysis, char* arg){
+	apply_to_multiple_frags(analysis, trace_search_buffer_signature, arg)
 }
 
 /* ===================================================================== */

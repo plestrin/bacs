@@ -36,7 +36,7 @@ static void nameEngine_get(void){
 	engine.ref_count ++;
 }
 
-static uint32_t nameEngine_register_symbol(char* name, struct signatureCollection* collection){
+static uint32_t nameEngine_register_symbol(const char* name, struct signatureCollection* collection){
 	ENTRY 					item;
 	ENTRY* 					result;
 	struct nameEngineData* 	data;
@@ -120,7 +120,7 @@ static void nameEngine_release(void){
 	}
 }
 
-void signatureSymbol_register(struct signatureSymbol* symbol, char* export_name, struct signatureCollection* collection){
+void signatureSymbol_register(struct signatureSymbol* symbol, const char* export_name, struct signatureCollection* collection){
 	symbol->id = nameEngine_register_symbol(export_name, collection);
 }
 
@@ -150,7 +150,7 @@ void signatureCollection_init(struct signatureCollection* collection, size_t cus
 	nameEngine_get();
 }
 
-int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, char* export_name){
+int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, const char* export_name){
 	struct node* 		syntax_node;
 	struct node* 		node_cursor;
 	struct signature* 	signature;

@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "irCheck.h"
-#include "codeSignature.h"
 #include "base.h"
 
 uint32_t ir_check_size(struct ir* ir){
