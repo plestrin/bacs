@@ -3,9 +3,8 @@
 #	- aes_last_v2 	: specific last aes round. Lookup results are merged before the add round key using a OR
 #	- aes_last_v3 	: specific last aes round. Lookup results are merged before the add round key using a OR. Shifting and merging are done together.
 #	- aes_last_v4 	: specific last aes round. Another version: this one uses mask to get select the right byte after the table lookup
-#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). No key binding for the last round: the offset might depend on the number of rounds.
+#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). This is only difference with the aes128_v2. No key binding for the last round: the offset might depend on the number of rounds.
 #	- aes128_v2 	: full aes128 encryption /decryption. No key binding for the last round: the offset might depend on the number of rounds.
-
 
 # INPUT: 2 [4 frag, 4 frag]
 # OUTPUT: 1 [4 frag]
@@ -486,7 +485,7 @@
 3 (*) [I:1:3] -> 1003 (XOR)
 4 (*) [I:1:4] -> 1004 (XOR)
 
-5 (*) [I:2:1] -> 202 (ADD)
+5 (*) -> 202 (ADD)
 5 -> 203 (ADD)
 5 -> 204 (ADD)
 5 -> 205 (ADD)
@@ -526,46 +525,46 @@
 5 -> 239 (ADD)
 5 -> 240 (ADD)
 
-5   -> (@) 301 (LOAD)
-202 -> (@) 302 (LOAD)
-203 -> (@) 303 (LOAD)
-204 -> (@) 304 (LOAD)
-205 -> (@) 305 (LOAD)
-206 -> (@) 306 (LOAD)
-207 -> (@) 307 (LOAD)
-208 -> (@) 308 (LOAD)
-209 -> (@) 309 (LOAD)
-210 -> (@) 310 (LOAD)
-211 -> (@) 311 (LOAD)
-212 -> (@) 312 (LOAD)
-213 -> (@) 313 (LOAD)
-214 -> (@) 314 (LOAD)
-215 -> (@) 315 (LOAD)
-216 -> (@) 316 (LOAD)
-217 -> (@) 317 (LOAD)
-218 -> (@) 318 (LOAD)
-219 -> (@) 319 (LOAD)
-220 -> (@) 320 (LOAD)
-221 -> (@) 321 (LOAD)
-222 -> (@) 322 (LOAD)
-223 -> (@) 323 (LOAD)
-224 -> (@) 324 (LOAD)
-225 -> (@) 325 (LOAD)
-226 -> (@) 326 (LOAD)
-227 -> (@) 327 (LOAD)
-228 -> (@) 328 (LOAD)
-229 -> (@) 329 (LOAD)
-230 -> (@) 330 (LOAD)
-231 -> (@) 331 (LOAD)
-232 -> (@) 332 (LOAD)
-233 -> (@) 333 (LOAD)
-234 -> (@) 334 (LOAD)
-235 -> (@) 335 (LOAD)
-236 -> (@) 336 (LOAD)
-237 -> (@) 337 (LOAD)
-238 -> (@) 338 (LOAD)
-239 -> (@) 339 (LOAD)
-240 -> (@) 340 (LOAD)
+5   -> (@) 301 (LOAD) [I:2:1]
+202 -> (@) 302 (LOAD) [I:2:2]
+203 -> (@) 303 (LOAD) [I:2:3]
+204 -> (@) 304 (LOAD) [I:2:4]
+205 -> (@) 305 (LOAD) [I:2:5]
+206 -> (@) 306 (LOAD) [I:2:6]
+207 -> (@) 307 (LOAD) [I:2:7]
+208 -> (@) 308 (LOAD) [I:2:8]
+209 -> (@) 309 (LOAD) [I:2:9]
+210 -> (@) 310 (LOAD) [I:2:10]
+211 -> (@) 311 (LOAD) [I:2:11]
+212 -> (@) 312 (LOAD) [I:2:12]
+213 -> (@) 313 (LOAD) [I:2:13]
+214 -> (@) 314 (LOAD) [I:2:14]
+215 -> (@) 315 (LOAD) [I:2:15]
+216 -> (@) 316 (LOAD) [I:2:16]
+217 -> (@) 317 (LOAD) [I:2:17]
+218 -> (@) 318 (LOAD) [I:2:18]
+219 -> (@) 319 (LOAD) [I:2:19]
+220 -> (@) 320 (LOAD) [I:2:20]
+221 -> (@) 321 (LOAD) [I:2:21]
+222 -> (@) 322 (LOAD) [I:2:22]
+223 -> (@) 323 (LOAD) [I:2:23]
+224 -> (@) 324 (LOAD) [I:2:24]
+225 -> (@) 325 (LOAD) [I:2:25]
+226 -> (@) 326 (LOAD) [I:2:26]
+227 -> (@) 327 (LOAD) [I:2:27]
+228 -> (@) 328 (LOAD) [I:2:28]
+229 -> (@) 329 (LOAD) [I:2:29]
+230 -> (@) 330 (LOAD) [I:2:30]
+231 -> (@) 331 (LOAD) [I:2:31]
+232 -> (@) 332 (LOAD) [I:2:32]
+233 -> (@) 333 (LOAD) [I:2:33]
+234 -> (@) 334 (LOAD) [I:2:34]
+235 -> (@) 335 (LOAD) [I:2:35]
+236 -> (@) 336 (LOAD) [I:2:36]
+237 -> (@) 337 (LOAD) [I:2:37]
+238 -> (@) 338 (LOAD) [I:2:38]
+239 -> (@) 339 (LOAD) [I:2:39]
+240 -> (@) 340 (LOAD) [I:2:40]
 
 301 -> 1001
 302 -> 1002
@@ -624,13 +623,18 @@
 1008 -> (I1F3) 1010
 1009 -> (I1F4) 1010
 
+341 (*) [I:2:41] -> (I2F1) 1010
+342 (*) [I:2:42] -> (I2F2) 1010
+343 (*) [I:2:43] -> (I2F3) 1010
+344 (*) [I:2:44] -> (I2F4) 1010
+
 1010 -> (O1F1) 1011 (XOR) [O:1:1]
 1010 -> (O1F2) 1012 (XOR) [O:1:2]
 1010 -> (O1F3) 1013 (XOR) [O:1:3]
 1010 -> (O1F4) 1014 (XOR) [O:1:4]
 
 
-# INPUT: 2 [4 frag, 1 frag]
+# INPUT: 2 [4 frag, 40 frag]
 # OUTPUT: 1 [4 frag]
 # Remark: each of this subgraph occurrence counts for 1 / 4 / 24 depending on the first / last round implementation
 
@@ -641,7 +645,7 @@
 3 (*) [I:1:3] -> 1003 (XOR)
 4 (*) [I:1:4] -> 1004 (XOR)
 
-5 (*) [I:2:1] -> 201 (ADD)
+5 (*) -> 201 (ADD)
 5 -> 202 (ADD)
 5 -> 203 (ADD)
 5 -> 204 (ADD)
@@ -682,46 +686,46 @@
 5 -> 239 (ADD)
 5 -> 240 (ADD)
 
-201 -> (@) 301 (LOAD)
-202 -> (@) 302 (LOAD)
-203 -> (@) 303 (LOAD)
-204 -> (@) 304 (LOAD)
-205 -> (@) 305 (LOAD)
-206 -> (@) 306 (LOAD)
-207 -> (@) 307 (LOAD)
-208 -> (@) 308 (LOAD)
-209 -> (@) 309 (LOAD)
-210 -> (@) 310 (LOAD)
-211 -> (@) 311 (LOAD)
-212 -> (@) 312 (LOAD)
-213 -> (@) 313 (LOAD)
-214 -> (@) 314 (LOAD)
-215 -> (@) 315 (LOAD)
-216 -> (@) 316 (LOAD)
-217 -> (@) 317 (LOAD)
-218 -> (@) 318 (LOAD)
-219 -> (@) 319 (LOAD)
-220 -> (@) 320 (LOAD)
-221 -> (@) 321 (LOAD)
-222 -> (@) 322 (LOAD)
-223 -> (@) 323 (LOAD)
-224 -> (@) 324 (LOAD)
-225 -> (@) 325 (LOAD)
-226 -> (@) 326 (LOAD)
-227 -> (@) 327 (LOAD)
-228 -> (@) 328 (LOAD)
-229 -> (@) 329 (LOAD)
-230 -> (@) 330 (LOAD)
-231 -> (@) 331 (LOAD)
-232 -> (@) 332 (LOAD)
-233 -> (@) 333 (LOAD)
-234 -> (@) 334 (LOAD)
-235 -> (@) 335 (LOAD)
-236 -> (@) 336 (LOAD)
-237 -> (@) 337 (LOAD)
-238 -> (@) 338 (LOAD)
-239 -> (@) 339 (LOAD)
-240 -> (@) 340 (LOAD)
+201 -> (@) 301 (LOAD) [I:2:1]
+202 -> (@) 302 (LOAD) [I:2:2]
+203 -> (@) 303 (LOAD) [I:2:3]
+204 -> (@) 304 (LOAD) [I:2:4]
+205 -> (@) 305 (LOAD) [I:2:5]
+206 -> (@) 306 (LOAD) [I:2:6]
+207 -> (@) 307 (LOAD) [I:2:7]
+208 -> (@) 308 (LOAD) [I:2:8]
+209 -> (@) 309 (LOAD) [I:2:9]
+210 -> (@) 310 (LOAD) [I:2:10]
+211 -> (@) 311 (LOAD) [I:2:11]
+212 -> (@) 312 (LOAD) [I:2:12]
+213 -> (@) 313 (LOAD) [I:2:13]
+214 -> (@) 314 (LOAD) [I:2:14]
+215 -> (@) 315 (LOAD) [I:2:15]
+216 -> (@) 316 (LOAD) [I:2:16]
+217 -> (@) 317 (LOAD) [I:2:17]
+218 -> (@) 318 (LOAD) [I:2:18]
+219 -> (@) 319 (LOAD) [I:2:19]
+220 -> (@) 320 (LOAD) [I:2:20]
+221 -> (@) 321 (LOAD) [I:2:21]
+222 -> (@) 322 (LOAD) [I:2:22]
+223 -> (@) 323 (LOAD) [I:2:23]
+224 -> (@) 324 (LOAD) [I:2:24]
+225 -> (@) 325 (LOAD) [I:2:25]
+226 -> (@) 326 (LOAD) [I:2:26]
+227 -> (@) 327 (LOAD) [I:2:27]
+228 -> (@) 328 (LOAD) [I:2:28]
+229 -> (@) 329 (LOAD) [I:2:29]
+230 -> (@) 330 (LOAD) [I:2:30]
+231 -> (@) 331 (LOAD) [I:2:31]
+232 -> (@) 332 (LOAD) [I:2:32]
+233 -> (@) 333 (LOAD) [I:2:33]
+234 -> (@) 334 (LOAD) [I:2:34]
+235 -> (@) 335 (LOAD) [I:2:35]
+236 -> (@) 336 (LOAD) [I:2:36]
+237 -> (@) 337 (LOAD) [I:2:37]
+238 -> (@) 338 (LOAD) [I:2:38]
+239 -> (@) 339 (LOAD) [I:2:39]
+240 -> (@) 340 (LOAD) [I:2:40]
 
 301 -> 1001
 302 -> 1002
@@ -779,6 +783,11 @@
 1007 -> (I1F2) 1010
 1008 -> (I1F3) 1010
 1009 -> (I1F4) 1010
+
+341 (*) [I:2:41] -> (I2F1) 1010
+342 (*) [I:2:42] -> (I2F2) 1010
+343 (*) [I:2:43] -> (I2F3) 1010
+344 (*) [I:2:44] -> (I2F4) 1010
 
 1010 -> (O1F1) 1011 (XOR) [O:1:1]
 1010 -> (O1F2) 1012 (XOR) [O:1:2]
