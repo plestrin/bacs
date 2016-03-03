@@ -60,7 +60,7 @@ struct callGraph{
 struct callGraph* callGraph_create(struct assembly* assembly, uint32_t index_start, uint32_t index_stop);
 int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, uint32_t start, uint32_t stop);
 
-void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct codeMap* code_map);
+void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assembly, uint32_t index, struct codeMap* code_map);
 
 void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map);
 void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map);
@@ -73,7 +73,7 @@ struct node* callGraph_get_index(struct callGraph* call_graph, uint32_t index);
 void callGraph_fprint_node(struct callGraph* call_graph, const struct node* node, FILE* file);
 void callGraph_fprint_stack(struct callGraph* call_graph, struct node* node, FILE* file);
 
-int32_t callGraphNode_is_leaf(const struct node* node);
+int32_t callGraphNode_is_leaf(struct callGraph* call_graph, struct node* node, const struct assembly* assembly);
 
 int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct array* frag_array);
 

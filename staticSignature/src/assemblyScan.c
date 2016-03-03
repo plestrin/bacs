@@ -282,7 +282,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 	log_info_m("%d block(s) have been scanned", array_get_length(bbl_array));
 
 	for (func_ptr = setIterator_get_first(&function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
-		if (callGraphNode_is_leaf(*func_ptr)){
+		if (callGraphNode_is_leaf(call_graph, *func_ptr, assembly)){
 			fputs("L:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET ", ", stdout);
 		}
 		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){

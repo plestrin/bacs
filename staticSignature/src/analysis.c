@@ -1159,7 +1159,7 @@ static void analysis_call_print_frame(struct analysis* analysis, char* arg){
 		log_err("trace is NULL");
 	}
 	else{
-		callGraph_print_frame(&(analysis->trace->assembly), atoi(arg), analysis->code_map);
+		callGraph_print_frame(analysis->call_graph, &(analysis->trace->assembly), atoi(arg), analysis->code_map);
 	}
 }
 

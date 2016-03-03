@@ -275,7 +275,7 @@ int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, 
 	return result;
 }
 
-void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct codeMap* code_map){
+static void callGraph_print_frame_est(struct assembly* assembly, uint32_t index, struct codeMap* code_map){
 	uint32_t 			index_start;
 	uint32_t 			index_stop;
 	uint32_t 			base_block_index;
@@ -360,6 +360,78 @@ void callGraph_print_frame(struct assembly* assembly, uint32_t index, struct cod
 	free(label_buffer);
 
 	return;
+}
+
+void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assembly, uint32_t index, struct codeMap* code_map){
+	struct node* 				node;
+	struct function* 			function;
+	struct assemblySnippet* 	snippet;
+	uint32_t 					offset_start;
+	uint32_t 					offset_stop;
+	ADDRESS 					addr_start;
+	ADDRESS 					addr_stop;
+	struct instructionIterator 	it;
+	int32_t 					first_snippet_index;
+
+	if (call_graph == NULL){
+		log_warn("callGraph is NULL, using a fast estimation");
+		callGraph_print_frame_est(assembly, index, code_map);
+		return;
+	}
+
+	if ((node = callGraph_get_index(call_graph, index)) == NULL){
+		log_err("callGraph node is NULL");
+		return;
+	}
+
+	function = callGraph_node_get_function(node);
+	if (function_is_invalid(function)){
+		log_err("callGraph node is invalid");
+		return;
+	}
+
+	if (function->last_snippet_offset < 0){
+		log_err("no code snippet for this callGraph node");
+		return;
+	}
+
+	snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), function->last_snippet_offset);
+	offset_stop = snippet->offset + snippet->length;
+
+	if (assembly_get_instruction(assembly, &it, offset_stop)){
+		log_err_m("unable to fetch instruction @ %u", offset_stop);
+		return;
+	}
+
+	addr_stop = it.instruction_address;
+
+	first_snippet_index = function_get_first_snippet(call_graph, function);
+	if (first_snippet_index < 0){
+		log_err("unable to get first snippet");
+		return;
+	}
+
+	snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
+	offset_start = snippet->offset;
+
+	if (assembly_get_instruction(assembly, &it, offset_start)){
+		log_err_m("unable to fetch instruction @ %u", offset_start);
+		return;
+	}
+
+	addr_start = it.instruction_address;
+
+	printf("Frame: index = %u, leaf = %s, size = %u", index, callGraphNode_is_leaf(call_graph, node, assembly) ? (ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET) : (ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET), offset_stop - offset_start);
+	if (code_map != NULL){
+		struct cm_routine* rtn;
+
+		if ((rtn = codeMap_search_routine(code_map, addr_start)) != NULL){
+			printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, addr_start - rtn->address_start);
+		}
+	}
+
+	printf("\n\t- Start: index = %u , addr = " PRINTF_ADDR "\n", offset_start, addr_start);
+	printf("\t- Stop : index = %u , addr = " PRINTF_ADDR "\n", offset_stop, addr_stop);
 }
 
 static enum blockLabel callGraph_label_block(struct asmBlock* block){
@@ -566,7 +638,6 @@ void callGraph_locate_in_codeMap_windows(struct callGraph* call_graph, const str
 			continue;
 		}
 
-		/* same question as above + why here it is not mandatory to iterate over the code snippets? */
 		snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), snippet_index);
 		if (assembly_get_instruction(&(trace->assembly), &it, snippet->offset)){
 			log_err_m("unable to fetch first instruction of snippet: start @ %u, stop @ %u", snippet->offset, snippet->offset + snippet->length);
@@ -765,14 +836,65 @@ void callGraph_fprint_node(struct callGraph* call_graph, const struct node* node
 	}
 }
 
-int32_t callGraphNode_is_leaf(const struct node* node){
+/*
+ *	mov ebx, dword ptr [esp]
+ *	ret
+ */
+
+static const uint8_t trick1[] = {0x8b, 0x1c, 0x24, 0xc3};
+
+struct trickEntry{
+	const uint8_t* 	trick;
+	size_t 			size;
+};
+
+static const struct trickEntry trick_buffer[] = {
+	{
+		.trick 	= trick1,
+		.size 	= sizeof(trick1),
+	}
+};
+
+static int32_t callGraphNode_is_trick_to_get_esp(struct callGraph* call_graph, struct node* node, const struct assembly* assembly){
+	struct function* 			function;
+	uint32_t 					i;
+	struct instructionIterator 	it;
+	struct assemblySnippet* 	snippet;
+
+	function = callGraph_node_get_function(node);
+	if (function_is_valid(function) && function->last_snippet_offset >= 0){
+		snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), function->last_snippet_offset);
+		if (snippet->next_snippet_offset == -1){
+			if (assembly_get_instruction(assembly, &it, snippet->offset)){
+				log_err_m("unable to fetch instruction @ %u", snippet->offset);
+				return 0;
+			}
+
+			if (assembly->dyn_blocks[it.dyn_block_index].block->header.nb_ins == snippet->length){
+				for (i = 0; i < sizeof(trick_buffer) / sizeof(struct trickEntry); i++){
+					if (assembly->dyn_blocks[it.dyn_block_index].block->header.size == trick_buffer[i].size){
+						if (asmBlock_search_opcode(assembly->dyn_blocks[it.dyn_block_index].block, trick_buffer[i].trick, trick_buffer[i].size, it.instruction_offset) == assembly->dyn_blocks[it.dyn_block_index].block->data + it.instruction_offset){
+							return 1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+int32_t callGraphNode_is_leaf(struct callGraph* call_graph, struct node* node, const struct assembly* assembly){
 	struct edge* 			edge_cursor;
 	struct callGraphEdge* 	call_graph_edge;
 
 	for (edge_cursor = node_get_head_edge_src(node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 		call_graph_edge = callGraph_edge_get_data(edge_cursor);
 		if (call_graph_edge->type == CALLGRAPH_EDGE_CALL){
-			return 0;
+			if (!callGraphNode_is_trick_to_get_esp(call_graph, edge_get_dst(edge_cursor), assembly)){
+				return 0;
+			}
 		}
 	}
 

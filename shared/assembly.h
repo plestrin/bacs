@@ -33,6 +33,7 @@ struct asmBlock{
 
 uint32_t asmBlock_count_nb_ins(struct asmBlock* block);
 uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length, xed_decoded_inst_t* xedd, uint32_t offset);
+uint8_t* asmBlock_search_opcode(struct asmBlock* block, const uint8_t* opcode, size_t opcode_length, size_t offset);
 int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd);
 
 struct dynBlock{

@@ -77,6 +77,14 @@ uint8_t* asmBlock_search_instruction(struct asmBlock* block, const xed_iclass_en
 	return NULL;
 }
 
+uint8_t* asmBlock_search_opcode(struct asmBlock* block, const uint8_t* opcode, size_t opcode_length, size_t offset){
+	if (block->header.size >= opcode_length + offset){
+		return memmem(block->data + offset, block->header.size - offset, opcode, opcode_length);
+	}
+
+	return NULL;
+}
+
 int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
 	uint32_t instruction_offset;
 
@@ -1522,7 +1530,7 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 	struct asmBlock* 	block;
 	uint8_t* 			ptr;
 	size_t 				offset;
-	uint32_t 			instruction_offset;
+	size_t 				instruction_offset;
 	xed_error_enum_t 	xed_error;
 	xed_decoded_inst_t 	xedd;
 
@@ -1534,26 +1542,19 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 			log_err("the last asmBlock is incomplete");
 			break;
 		}
+		
+		for (offset = 0, instruction_offset = 0; (ptr = asmBlock_search_opcode(block, opcode, opcode_length, offset)) != NULL; offset += opcode_length){
+			offset = ptr - block->data;
 
-		if (block->header.size >= opcode_length){
-			if ((ptr = memmem(block->data, block->header.size, opcode, opcode_length)) != NULL){
-				offset = ptr - block->data;
-
-				for (instruction_offset = 0; ; instruction_offset += xed_decoded_inst_get_length(&xedd)){
-					xed_decoded_inst_zero_keep_mode(&xedd);
-					if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
-						log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
-						break;
-					}
-
-
-					if (instruction_offset + xed_decoded_inst_get_length(&xedd) > offset){
-						break;
-					}
+			for ( ; instruction_offset < offset; instruction_offset += xed_decoded_inst_get_length(&xedd)){
+				xed_decoded_inst_zero_keep_mode(&xedd);
+				if ((xed_error = xed_decode(&xedd, (const xed_uint8_t*)(block->data + instruction_offset), min(block->header.size - instruction_offset, 15))) != XED_ERROR_NONE){
+					log_err_m("xed decode error: %s", xed_error_enum_t2str(xed_error));
+					break;
 				}
-
-				printf("  - found opcode in trace @ address: " PRINTF_ADDR "\n", block->header.address + instruction_offset);
 			}
+
+			printf(" - found opcode in trace @ address: " PRINTF_ADDR "\n", block->header.address + instruction_offset);
 		}
 	}
 }
