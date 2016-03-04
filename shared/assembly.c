@@ -1167,7 +1167,7 @@ void assembly_print_ins(struct assembly* assembly, struct instructionIterator* i
 	}
 }
 
-static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint8_t* buffer, const uint8_t* valid, uint32_t size){
+static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint8_t* buffer, const uint8_t* valid, size_t size){
 	uint32_t i;
 
 	if (block->header.size != size){
@@ -1175,10 +1175,8 @@ static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint
 	}
 
 	for (i = 0; i < size; i++){
-		if (valid[i]){
-			if (block->data[i] != buffer[i]){
-				return 0;
-			}
+		if ((block->data[i] & valid[i]) != buffer[i]){
+			return 0;
 		}
 	}
 
@@ -1186,20 +1184,28 @@ static int32_t assembly_assert_asmBlock(const struct asmBlock* block, const uint
 }
 
 #define SIZE_BBL_1_LINUX_1 12
-static const uint8_t buffer_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] = {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] 		= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_1[SIZE_BBL_1_LINUX_1] 		= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 #define SIZE_BBL_2_LINUX_1 10
-static const uint8_t buffer_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {0x68, 0x00, 0x00, 0x00, 0x00, 0xe9, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] 		= {0x68, 0x00, 0x00, 0x00, 0x00, 0xe9, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_2_linux_1[SIZE_BBL_2_LINUX_1] 		= {0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00};
 
 #define SIZE_BBL_3_LINUX_1 6
-static const uint8_t buffer_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] = {1, 0, 0, 0, 0, 0};
+static const uint8_t buffer_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] 		= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_3_linux_1[SIZE_BBL_3_LINUX_1] 		= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-#define SIZE_BBL_1_LINUX_2 6
-static const uint8_t buffer_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t valid_bbl_1_linux_2[SIZE_BBL_1_LINUX_2] = {1, 0, 0, 0, 0, 0};
+#define SIZE_BBL_1_LINUX_WIN 6
+static const uint8_t buffer_bbl_1_linux_win[SIZE_BBL_1_LINUX_WIN] 	= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_linux_win[SIZE_BBL_1_LINUX_WIN] 	= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+#define SIZE_BBL_1_WIN_1 6
+static const uint8_t buffer_bbl_1_win_1[SIZE_BBL_1_WIN_1] 			= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_1_win_1[SIZE_BBL_1_WIN_1] 			= {0xff, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+#define SIZE_BBL_2_WIN_1 5
+static const uint8_t buffer_bbl_2_win_1[SIZE_BBL_2_WIN_1] 			= {0xe9, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t valid_bbl_2_win_1[SIZE_BBL_2_WIN_1] 			= {0xff, 0x00, 0x00, 0x00, 0x00};
 
 #define SIZE_MAGIC_BLOCK 6
 static const uint8_t magic_block[SIZE_MAGIC_BLOCK] = {0x81, 0xc4, 0x04, 0x00, 0x00, 0x00};
@@ -1351,14 +1357,62 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 				}
 			}
 
-			/* LINUX - already resolved call */
+			/* Windows debug */
+			if (i - offset >= 3){
+				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 3)){
+					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 1 && assembly->dyn_blocks[i - offset - 2].block->header.nb_ins == 1){
+						asmBlock_get_last_instruction(assembly->dyn_blocks[i - offset - 3].block, &xedd);
+						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
+							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_win_1, valid_bbl_1_win_1, SIZE_BBL_1_WIN_1) && assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 2].block, buffer_bbl_2_win_1, valid_bbl_2_win_1, SIZE_BBL_2_WIN_1)){
+								log_info_m("found WINDOWS black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 2].instruction_count - 1);
+
+								extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 2].mem_access_count;
+								extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
+
+								if (array_add(*extrude_array, &extrude) < 0){
+									log_err("unable to add element to array");
+								}
+								else{
+									mem_access_delete_count += extrude.index_stop - extrude.index_start;
+								}
+
+								if (dynBlock_is_invalid(assembly->dyn_blocks + i + 1) || assembly->dyn_blocks[i + 1].block->header.address != assembly->dyn_blocks[i - offset - 3].block->header.address + assembly->dyn_blocks[i - offset - 3].block->header.size){
+									log_warn("black listed function call has not returned, ESP value could be incorrect");
+
+									assembly->dyn_blocks[i - offset - 2].instruction_count 	= assembly->dyn_blocks[i - offset - 3].instruction_count + assembly->dyn_blocks[i - offset - 3].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 2].mem_access_count 	= assembly->dyn_blocks[i - offset - 3].mem_access_count + assembly->dyn_blocks[i - offset - 3].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 2].block 				= NULL;
+
+									offset += 2;
+								}
+								else{
+									assembly->dyn_blocks[i - offset - 2].instruction_count 	= assembly->dyn_blocks[i - offset - 3].instruction_count + assembly->dyn_blocks[i - offset - 3].block->header.nb_ins;
+									assembly->dyn_blocks[i - offset - 2].mem_access_count 	= assembly->dyn_blocks[i - offset - 3].mem_access_count + assembly->dyn_blocks[i - offset - 3].block->header.nb_mem_access;
+									assembly->dyn_blocks[i - offset - 2].block 				= NULL;
+
+									assembly->dyn_blocks[i - offset - 1].instruction_count 	= assembly->dyn_blocks[i - offset - 2].instruction_count;
+									assembly->dyn_blocks[i - offset - 1].mem_access_count 	= assembly->dyn_blocks[i - offset - 2].mem_access_count;
+									assembly->dyn_blocks[i - offset - 1].block 				= (void*)(-1);
+
+									offset += 1;
+								}
+
+								modify = 1;
+								continue;
+							}
+						}
+					}
+				}
+			}
+
+			/* LINUX/Windows - already resolved call */
 			if (i - offset >= 2){
 				if (dynBlock_is_valid(assembly->dyn_blocks + i - offset - 1) && dynBlock_is_valid(assembly->dyn_blocks + i - offset - 2)){
 					if (assembly->dyn_blocks[i - offset - 1].block->header.nb_ins == 1){
 						asmBlock_get_last_instruction(assembly->dyn_blocks[i - offset - 2].block, &xedd);
 						if (xed_decoded_inst_get_iclass(&xedd) == XED_ICLASS_CALL_NEAR){
-							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_2, valid_bbl_1_linux_2, SIZE_BBL_1_LINUX_2)){
-								log_info_m("found LINUX black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 1].instruction_count - 1);
+							if (assembly_assert_asmBlock(assembly->dyn_blocks[i - offset - 1].block, buffer_bbl_1_linux_win, valid_bbl_1_linux_win, SIZE_BBL_1_LINUX_WIN)){
+								log_info_m("found LINUX/Windows black listed function call @ %u, formatting", assembly->dyn_blocks[i - offset - 1].instruction_count - 1);
 
 								extrude.index_start = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count;
 								extrude.index_stop = mem_access_delete_count + assembly->dyn_blocks[i - offset - 1].mem_access_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_mem_access;
@@ -1542,7 +1596,7 @@ void assembly_locate_opcode(struct assembly* assembly, const uint8_t* opcode, si
 			log_err("the last asmBlock is incomplete");
 			break;
 		}
-		
+
 		for (offset = 0, instruction_offset = 0; (ptr = asmBlock_search_opcode(block, opcode, opcode_length, offset)) != NULL; offset += opcode_length){
 			offset = ptr - block->data;
 
