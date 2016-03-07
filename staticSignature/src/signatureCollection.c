@@ -72,7 +72,12 @@ static uint32_t nameEngine_register_symbol(const char* name, struct signatureCol
 	data = (struct nameEngineData*)(result->data);
 
 	if (data->collection != collection){
-		log_warn_m("symbol: \"%s\" has been registered with a different collection", name);
+		if (data->collection == NULL){
+			data->collection = collection;
+		}
+		else{
+			log_warn_m("symbol: \"%s\" has been registered with a different collection", name);
+		}
 	}
 
 	return data->id;

@@ -15,7 +15,7 @@ void modeSignature_printDot_node(void* data, FILE* file, void* arg){
 			break;
 		}
 		case MODESIGNATURE_NODE_TYPE_SYMBOL 	: {
-			fprintf(file, "[label=\"%s\"]", mode_signature_node->node_type.symbol.name);
+			fprintf(file, "[label=\"%u:%s\"]", mode_signature_node->node_type.symbol.id, mode_signature_node->node_type.symbol.name);
 			break;
 
 		}
@@ -42,7 +42,6 @@ uint32_t modeSignatureNode_get_label(struct node* node){
 		case MODESIGNATURE_NODE_TYPE_SYMBOL 	: {
 			label = mode_signature_node->node_type.symbol.id << 2;
 			break;
-
 		}
 		case MODESIGNATURE_NODE_TYPE_RAW 		: {
 			break;
@@ -71,7 +70,7 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 			break;
 		}
 		case SYNTHESISNODETYPE_IR_NODE 			: {
-			label = 0x00000003;
+			label = 0x00000002;
 			break;
 		}
 	}
@@ -92,7 +91,7 @@ void modeSignature_init(struct modeSignature* mode_signature){
 	for (node_cursor = graph_get_head_node(&(mode_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		mode_signature_node = (struct modeSignatureNode*)node_get_data(node_cursor);
 		if (mode_signature_node->type == MODESIGNATURE_NODE_TYPE_SYMBOL){
-			signatureSymbol_fetch(&(mode_signature_node->node_type.symbol), NULL);
+			signatureSymbol_register(&(mode_signature_node->node_type.symbol), mode_signature_node->node_type.symbol.name, NULL);
 		}
 	}
 } 

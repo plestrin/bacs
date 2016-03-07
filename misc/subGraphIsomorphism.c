@@ -17,11 +17,10 @@ static struct labelTab** graphIso_create_connectivity_mapping(struct labelTab* l
 static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, struct labelTab* label_tab, uint32_t* nb_label);
 static struct edgeTab* graphIso_create_edge_tab(struct graph* graph, uint32_t(*edge_get_label)(struct edge*), struct nodeTab* node_tab);
 
-int32_t compare_labelTabItem_label(const void* arg1, const void* arg2);
-int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2);
+static int32_t compare_labelTabItem_label(const void* arg1, const void* arg2);
+static int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2);
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2);
-int32_t compare_labelTabPtr_connectivity(void* arg1, void* arg2);
+static int32_t compare_labelTabPtr_connectivity(const void* arg1, const void* arg2);
 #endif
 
 struct possibleAssignmentHeader{
@@ -138,7 +137,7 @@ static struct labelTab** graphIso_create_connectivity_mapping(struct labelTab* l
 	for(i = 0; i < nb_node; i++){
 		connectivity_mapping[i] = label_tab + i;
 	}
-	qsort(connectivity_mapping, nb_node, sizeof(struct labelTab*), (int32_t(*)(const void*,const void*))compare_labelTabPtr_connectivity);
+	qsort(connectivity_mapping, nb_node, sizeof(struct labelTab*), compare_labelTabPtr_connectivity);
 
 	return connectivity_mapping;
 }
@@ -159,8 +158,7 @@ static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, s
 		}
 	}
 
-	label_fast = (struct labelFastAccess*)malloc(sizeof(struct labelFastAccess) * (*nb_label));
-	if (label_fast == NULL){
+	if ((label_fast = (struct labelFastAccess*)malloc(sizeof(struct labelFastAccess) * (*nb_label))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -175,10 +173,6 @@ static struct labelFastAccess* graphIso_create_label_fast(struct graph* graph, s
 			label_fast[prev_label_index].size ++;
 		}
 		else{
-			#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-			qsort(label_tab + label_fast[prev_label_index].offset, label_fast[prev_label_index].size, sizeof(struct labelTab), compare_labelTabItem_connectivity);
-			#endif
-
 			prev_label_index  ++;
 			label_fast[prev_label_index].label 		= label_tab[i].label;
 			label_fast[prev_label_index].offset 	= i;
@@ -222,40 +216,26 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 		return NULL;
 	}
 
-	handle = (struct graphIsoHandle*)malloc(sizeof(struct graphIsoHandle));
-	if (handle == NULL){
+	if ((handle = (struct graphIsoHandle*)calloc(1, sizeof(struct graphIsoHandle))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
 
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-	handle->dst = (uint32_t**)calloc(graph->nb_node, sizeof(uint32_t*));
-	if (handle->dst == NULL){
+	if ((handle->dst = (uint32_t**)calloc(graph->nb_node, sizeof(uint32_t*))) == NULL){
 		log_err("unable to allocate memory");
-		free(handle);
-		return NULL;
+		goto error;
 	}
 	#endif
 
-	handle->label_tab = graphIso_create_label_tab(graph, node_get_label);
-	if (handle->label_tab == NULL){
+	if ((handle->label_tab = graphIso_create_label_tab(graph, node_get_label)) == NULL){
 		log_err("unable to create labelTab");
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 
-	handle->label_fast = graphIso_create_label_fast(graph, handle->label_tab, &nb_label);
-	if (handle->label_fast == NULL){
+	if ((handle->label_fast = graphIso_create_label_fast(graph, handle->label_tab, &nb_label)) == NULL){
 		log_err("unable to create labelFastAccess");
-		free(handle->label_tab);
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 		
 	handle->graph 			= graph;
@@ -263,20 +243,29 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	handle->edge_get_label 	= edge_get_label;
 
 	#if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-	handle->connectivity_mapping = graphIso_create_connectivity_mapping(handle->label_tab, graph->nb_node);
-	if (handle->connectivity_mapping == NULL){
+	if ((handle->connectivity_mapping = graphIso_create_connectivity_mapping(handle->label_tab, graph->nb_node)) == NULL){
 		log_err("unable to create connectivity mapping");
-		free(handle->label_fast);
-		free(handle->label_tab);
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 	#endif
 
 	return handle;
+
+	error:
+	if (handle->label_fast != NULL){
+		free(handle->label_fast);
+	}
+	if (handle->label_tab != NULL){
+		free(handle->label_tab);
+	}
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	if (handle->dst != NULL){
+		free(handle->dst);
+	}
+	#endif
+	free(handle);
+
+	return NULL;
 }
 
 struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
@@ -858,7 +847,7 @@ static void possibleAssignment_save_state(struct possibleAssignment* possible_as
 /* Compare routines 													 */
 /* ===================================================================== */
 
-int32_t compare_labelTabItem_label(const void* arg1, const void* arg2){
+static int32_t compare_labelTabItem_label(const void* arg1, const void* arg2){
 	const struct labelTab* label_item1 = (const struct labelTab*)arg1;
 	const struct labelTab* label_item2 = (const struct labelTab*)arg2;
 
@@ -868,14 +857,22 @@ int32_t compare_labelTabItem_label(const void* arg1, const void* arg2){
 	else if (label_item1->label > label_item2->label){
 		return 1;
 	}
+	#ifdef SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY
+	if (label_item1->connectivity > label_item2->connectivity){
+		return -1;
+	}
+	else if (label_item1->connectivity < label_item2->connectivity){
+		return 1;
+	}
+	#endif
 	else{
 		return 0;
 	}
 }
 
-int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
-	uint32_t 				key = *(const uint32_t*)arg1;
-	const struct labelFastAccess* fast_access = (const struct labelFastAccess*)arg2;
+static int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
+	uint32_t 						key = *(const uint32_t*)arg1;
+	const struct labelFastAccess* 	fast_access = (const struct labelFastAccess*)arg2;
 
 	if (key < fast_access->label){
 		return -1;
@@ -889,24 +886,9 @@ int32_t compare_key_labelFastAccess(const void* arg1, const void* arg2){
 }
 
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
-int32_t compare_labelTabItem_connectivity(const void* arg1, const void* arg2){
-	const struct labelTab* label_item1 = (const struct labelTab*)arg1;
-	const struct labelTab* label_item2 = (const struct labelTab*)arg2;
-
-	if (label_item1->connectivity > label_item2->connectivity){
-		return -1;
-	}
-	else if (label_item1->connectivity < label_item2->connectivity){
-		return 1;
-	}
-	else{
-		return 0;
-	}
-}
-
-int32_t compare_labelTabPtr_connectivity(void* arg1, void* arg2){
-	struct labelTab* label_item1 = *(struct labelTab**)arg1;
-	struct labelTab* label_item2 = *(struct labelTab**)arg2;
+static int32_t compare_labelTabPtr_connectivity(const void* arg1, const void* arg2){
+	struct labelTab const* label_item1 = *(struct labelTab* const*)arg1;
+	struct labelTab const* label_item2 = *(struct labelTab* const*)arg2;
 
 	if (label_item1->connectivity > label_item2->connectivity){
 		return -1;

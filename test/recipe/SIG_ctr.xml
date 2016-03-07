@@ -301,7 +301,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="6"/>
+			<algo name="ctr_v1" number="6"/> <!-- there are two reasons: first the memcpy is blacked listed thus the counter is left initialized. Second in debug mode uninitialized memory on the heap are set to 0xcc. Since constant are discarded while looking for constant, some dependencies are missing. -->
 		</result>
 	</recipe>
 
