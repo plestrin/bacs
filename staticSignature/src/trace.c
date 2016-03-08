@@ -369,7 +369,7 @@ void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, 
 		}
 	}
 
-	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it);  status == 0 && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
+	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it); status == 0 && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
 		ir_component.instruction_start 	= it.instruction_index;
 		ir_component.instruction_stop 	= ir_component.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
 		ir_component.ir 				= trace_inn->trace_type.frag.ir;

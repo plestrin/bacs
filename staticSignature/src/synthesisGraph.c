@@ -95,7 +95,7 @@ static inline uint64_t irInstruction_shl_get_mask(struct node* node_dst, uint64_
 		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 			operand = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand->type == IR_OPERATION_TYPE_IMM){
-				disp = ir_imm_operation_get_unsigned_value(operand);
+				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
 			}
 			break;
 		}
@@ -118,7 +118,7 @@ static inline uint64_t irInstruction_rol_get_mask(struct node* node_dst, uint64_
 		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 			operand = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand->type == IR_OPERATION_TYPE_IMM){
-				disp = ir_imm_operation_get_unsigned_value(operand);
+				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
 			}
 			break;
 		}
@@ -321,8 +321,8 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 }
 
 static int32_t synthesisGraph_compare_ir_node(const void* data1, const void* data2){
-	struct synthesisNode* synthesis_node1  = synthesisGraph_get_synthesisNode(*(struct node**)data1);
-	struct synthesisNode* synthesis_node2  = synthesisGraph_get_synthesisNode(*(struct node**)data2);
+	struct synthesisNode* synthesis_node1 = synthesisGraph_get_synthesisNode(*(struct node* const*)data1);
+	struct synthesisNode* synthesis_node2 = synthesisGraph_get_synthesisNode(*(struct node* const*)data2);
 
 	if (synthesis_node1->node_type.ir_node < synthesis_node2->node_type.ir_node){
 		return -1;
@@ -336,8 +336,8 @@ static int32_t synthesisGraph_compare_ir_node(const void* data1, const void* dat
 }
 
 static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2){
-	struct edge* edge1 = *(struct edge**)data1;
-	struct edge* edge2 = *(struct edge**)data2;
+	struct edge* edge1 = *(struct edge* const*)data1;
+	struct edge* edge2 = *(struct edge* const*)data2;
 
 	if (edge_get_src(edge1) < edge_get_src(edge2)){
 		return -1;

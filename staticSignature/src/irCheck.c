@@ -196,7 +196,7 @@ static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
 	2, 	/* 7  IR_IMUL 						*/
 	0, 	/* 8  IR_LEA 	It doesn't matter 	*/
 	0, 	/* 9  IR_MOV 	It doesn't matter 	*/
-	1, 	/* 10  IR_MOVZX 					*/
+	1, 	/* 10 IR_MOVZX 						*/
 	2, 	/* 11 IR_MUL 						*/
 	1, 	/* 12 IR_NEG 						*/
 	1, 	/* 13 IR_NOT 						*/
@@ -229,8 +229,8 @@ static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
 	0xffffffff, /* 7  IR_IMUL 						*/
 	0x00000000, /* 8  IR_LEA 	It doesn't matter 	*/
 	0x00000000, /* 9  IR_MOV 	It doesn't matter 	*/
-	0x00000001, /* 10  IR_MOVZX 					*/
-	0xffffffff, /* 11  IR_MUL 						*/
+	0x00000001, /* 10 IR_MOVZX 						*/
+	0xffffffff, /* 11 IR_MUL 						*/
 	0x00000001, /* 12 IR_NEG 						*/
 	0x00000001, /* 13 IR_NOT 						*/
 	0xffffffff, /* 14 IR_OR 						*/

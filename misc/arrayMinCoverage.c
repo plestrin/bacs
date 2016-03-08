@@ -153,7 +153,7 @@ uint32_t arrayMinCoverage_rand(struct array* array, uint32_t nb_category, struct
 	uint32_t 		score;
 
 	for (i = 0, score = 0; i < nb_category; i++){
-		desc_buffer[i].choice = rand() % desc_buffer[i].nb_element;
+		desc_buffer[i].choice = (uint32_t)rand() % desc_buffer[i].nb_element;
 
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
@@ -441,12 +441,11 @@ static uint32_t* arrayMinCoverage_save_order(struct categoryDesc* desc_buffer, u
 static void arrayMinCoverage_restore_order(struct categoryDesc* desc_buffer, uint32_t nb_category, uint32_t* order);
 
 int32_t arrayMinCoverage_rand_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
-	struct tagMap* 	tag_map = NULL;
-	int32_t 		result 	= -1;
-	uint32_t 		local_score;
+	struct tagMap* 	tag_map 		= NULL;
+	int32_t 		result 			= -1;
+	uint32_t 		local_score 	= 0;
 
 	if (nb_category == 0){
-		local_score = 0;
 		result = 0;
 	}
 	else{
@@ -473,13 +472,12 @@ int32_t arrayMinCoverage_rand_wrapper(struct array* array, uint32_t nb_category,
 }
 
 int32_t arrayMinCoverage_greedy_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
-	struct tagMap* 	tag_map = NULL;
-	uint32_t* 		order 	= NULL;
-	int32_t 		result 	= -1;
-	uint32_t 		local_score;
+	struct tagMap* 	tag_map 		= NULL;
+	uint32_t* 		order 			= NULL;
+	int32_t 		result 			= -1;
+	uint32_t 		local_score 	= 0;
 
 	if (nb_category == 0){
-		local_score = 0;
 		result = 0;
 	}
 	else{
@@ -515,13 +513,12 @@ int32_t arrayMinCoverage_greedy_wrapper(struct array* array, uint32_t nb_categor
 }
 
 int32_t arrayMinCoverage_exact_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
-	struct tagMap* 	tag_map = NULL;
-	uint32_t* 		order 	= NULL;
-	int32_t 		result 	= -1;
-	uint32_t 		local_score;
+	struct tagMap* 	tag_map 		= NULL;
+	uint32_t* 		order 			= NULL;
+	int32_t 		result 			= -1;
+	uint32_t 		local_score 	= 0;
 
 	if (nb_category == 0){
-		local_score = 0;
 		result = 0;
 	}
 	else{
@@ -564,11 +561,10 @@ int32_t arrayMinCoverage_reshape_wrapper(struct array* array, uint32_t nb_catego
 	struct tagMap* 	tag_map 		= NULL;
 	uint32_t* 		order 			= NULL;
 	int32_t 		result 			= -1;
-	uint32_t 		local_score;
+	uint32_t 		local_score 	= 0;
 	uint32_t 		selection_value = 1;
 
 	if (nb_category == 0){
-		local_score = 0;
 		result = 0;
 	}
 	else{
@@ -604,14 +600,13 @@ int32_t arrayMinCoverage_reshape_wrapper(struct array* array, uint32_t nb_catego
 }
 
 int32_t arrayMinCoverage_split_wrapper(struct array* array, uint32_t nb_category, struct categoryDesc* desc_buffer, int32_t(*compare)(const void*,const void*), uint32_t* score){
-	struct tagMap* 	tag_map = NULL;
-	uint32_t* 		order 	= NULL;
-	int32_t 		result 	= -1;
-	uint32_t 		local_score;
+	struct tagMap* 	tag_map 		= NULL;
+	uint32_t* 		order 			= NULL;
+	int32_t 		result 			= -1;
+	uint32_t 		local_score 	= 0;
 	uint32_t 		selection_value = 1;
 
 	if (nb_category == 0){
-		local_score = 0;
 		result = 0;
 	}
 	else{

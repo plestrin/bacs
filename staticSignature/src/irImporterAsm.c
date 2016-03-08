@@ -204,7 +204,8 @@ static void simd_decode_generic(struct ir* ir, struct instructionIterator* it, s
 static void simd_decode_vex_padding(struct instructionIterator* it, struct asmCiscIns* cisc);
 
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
-static void simd_decode_special_pcmpgt(struct instructionIterator* it,  struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
+static void simd_decode_special_palignr(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
 static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pshuf(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
@@ -259,7 +260,7 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		}
 		case XED_ICLASS_JB 			: {break;}
 		case XED_ICLASS_JBE 		: {break;}
-		case XED_ICLASS_JL  		: {break;}
+		case XED_ICLASS_JL 			: {break;}
 		case XED_ICLASS_JLE 		: {break;}
 		case XED_ICLASS_JMP 		: {break;}
 		case XED_ICLASS_JNB 		: {break;}
@@ -301,6 +302,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_PADDB 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_BYTE); break;}
 		case XED_ICLASS_PADDD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_DWORD); break;}
 		case XED_ICLASS_PADDW 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_WORD); break;}
+		case XED_ICLASS_PALIGNR 	: {
+			simd_decode_special_palignr(ir, it, &cisc, mem_addr);
+			break;
+		}
 		case XED_ICLASS_PAND 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_PCMPGTB 	: {
 			simd_decode_special_pcmpgt(it, &cisc, mem_addr, SIMD_TYPE_BYTE);
@@ -411,6 +416,11 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_VPADDB 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_BYTE); simd_decode_vex_padding(it, &cisc); break;}
 		case XED_ICLASS_VPADDD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_DWORD); simd_decode_vex_padding(it, &cisc); break;}
 		case XED_ICLASS_VPADDW 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_WORD); simd_decode_vex_padding(it, &cisc); break;}
+		case XED_ICLASS_VPALIGNR 	: {
+			simd_decode_special_palignr(ir, it, &cisc, mem_addr);
+			simd_decode_vex_padding(it, &cisc);
+			break;
+		}
 		case XED_ICLASS_VPAND 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); simd_decode_vex_padding(it, &cisc); break;}
 		case XED_ICLASS_VPOR 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); simd_decode_vex_padding(it, &cisc); break;}
 		case XED_ICLASS_VPSLLD 		: {
@@ -519,7 +529,7 @@ int32_t irImporterAsm_import(struct ir* ir, const struct assembly* assembly, con
 
 	for (; ; ){
 		irImporter_handle_instruction(ir, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
-		if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
+		if (instructionIterator_get_instruction_index(&it) == assembly_get_nb_instruction(assembly) - 1){
 			break;
 		}
 		else{
@@ -562,7 +572,7 @@ int32_t irImporterAsm_import_compound(struct ir* ir, const struct assembly* asse
 		}
 		else{
 			irImporter_handle_instruction(ir, &it, irImporterAsm_get_mem_trace(mem_trace, &it));
-			if (instructionIterator_get_instruction_index(&it) ==  assembly_get_nb_instruction(assembly) - 1){
+			if (instructionIterator_get_instruction_index(&it) == assembly_get_nb_instruction(assembly) - 1){
 				break;
 			}
 			else{
@@ -1213,7 +1223,7 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_VPSRLD 		: {return IR_SHR;}
 		case XED_ICLASS_VPXOR 		: {return IR_XOR;}
 		case XED_ICLASS_VXORPD 		: {return IR_XOR;}
-		case XED_ICLASS_VXORPS  	: {return IR_XOR;}
+		case XED_ICLASS_VXORPS 		: {return IR_XOR;}
 		case XED_ICLASS_XOR 		: {return IR_XOR;}
 		case XED_ICLASS_XORPD 		: {return IR_XOR;}
 		case XED_ICLASS_XORPS 		: {return IR_XOR;}
@@ -1803,7 +1813,90 @@ static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionItera
 	cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, local_simd.nb_input_operand);
 }
 
-static void simd_decode_special_pcmpgt(struct instructionIterator* it,  struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type){
+static void simd_decode_special_palignr(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	struct asmOperand 	in_operand_buffer[3];
+	struct asmOperand 	ou_operand_buffer[1];
+	uint8_t 			nb_operand;
+	uint32_t 			frag_size;
+	uint32_t 			disp;
+	uint32_t 			i;
+	uint32_t 			operand_size;
+
+	asmOperand_decode(it, in_operand_buffer, 3, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 3){
+		log_err_m("incorrect ALIGNR format (%u input arg(s))", nb_operand);
+		return;
+	}
+	if (in_operand_buffer[2].type != ASM_OPERAND_IMM){
+		log_err("incorrect ALIGNR format (last operand is not IMM)");
+		return;
+	}
+	#endif
+
+	asmOperand_decode(it, ou_operand_buffer, 1, ASM_OPERAND_ROLE_WRITE_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect ALIGNR format (%u output arg(s))", nb_operand);
+		return;
+	}
+	if (ou_operand_buffer[0].type != ASM_OPERAND_REG){
+		log_err("incorrect ALIGNR format (destination operand is not a register)");
+		return;
+	}
+	if (ou_operand_buffer[0].size != in_operand_buffer[0].size || ou_operand_buffer[0].size != in_operand_buffer[1].size){
+		log_err("incorrect ALIGNR format (size of source and destination operands are different)");
+		return;
+	}
+	#endif
+
+
+	operand_size = min(128, ou_operand_buffer[0].size);
+
+	disp = ((uint32_t)in_operand_buffer[2].operand_type.imm & 0x000000ff) << 3;
+	frag_size = disp;
+	if (in_operand_buffer[0].type == ASM_OPERAND_REG){
+		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg));
+	}
+	if (in_operand_buffer[1].type == ASM_OPERAND_REG){
+		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg));
+	}
+
+	for (i = 0; i < operand_size / frag_size; i++){
+		cisc->ins[i].opcode 			= IR_MOV;
+		cisc->ins[i].nb_input_operand 	= 1;
+
+		asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer + 0, frag_size, i);
+		if (disp + frag_size * i < operand_size){
+			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, disp / frag_size + i);
+		}
+		else{
+			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
+		}
+	}
+
+	if (ou_operand_buffer[0].size > operand_size){
+		for ( ; i < ou_operand_buffer[0].size / frag_size; i++){
+			cisc->ins[i].opcode 			= IR_MOV;
+			cisc->ins[i].nb_input_operand 	= 1;
+
+			asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer + 0, frag_size, i);
+			if (disp + frag_size * i < ou_operand_buffer[0].size){
+				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, disp / frag_size + i);
+			}
+			else{
+				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
+			}
+		}
+	}
+
+	cisc->type 		= CISC_TYPE_PARA;
+	cisc->nb_ins 	= i;
+}
+
+static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type){
 	struct asmRiscIns 	local_simd;
 	struct asmOperand 	operand_buffer[2];
 	uint8_t 			nb_operand;
@@ -1929,7 +2022,7 @@ static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator
 			cisc->nb_ins 	= 1;
 			cisc->type 		= CISC_TYPE_SEQ;
 
-			mask =  0x000000000000ffffULL << ((operand_buffer[2].operand_type.imm & 0x0000000000000001ULL) * 16);
+			mask = 0x000000000000ffffULL << ((operand_buffer[2].operand_type.imm & 0x0000000000000001ULL) * 16);
 
 			cisc->ins[0].opcode 								= IR_AND;
 			cisc->ins[0].nb_input_operand 						= 2;
