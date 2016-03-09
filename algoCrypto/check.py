@@ -103,7 +103,8 @@ ckeck_list = [
 		r'openssl/build/openssl_cbc_aes',
 		r'tomCrypt/build/tom_cbc_aes',
 		r'botan/build/bot_cbc_aes',
-		r'nettle/build/net_cbc_aes'
+		r'nettle/build/net_cbc_aes',
+		r'cryptopp/build/cryptopp_cbc_aes'
 	],
 
 	# AES OFB
@@ -131,7 +132,8 @@ ckeck_list = [
 	# AES CTR (endianess 2)
 	[
 		r'openssl/build/openssl_ctr_aes',
-		r'botan/build/bot_ctr_aes'
+		r'botan/build/bot_ctr_aes',
+		r'cryptopp/build/cryptopp_ctr_aes'
 	],
 
 	# SHA1
