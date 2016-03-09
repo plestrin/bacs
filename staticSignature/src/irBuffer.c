@@ -6,6 +6,7 @@
 #include "signatureCollection.h"
 #include "dijkstra.h"
 #include "array.h"
+#include "set.h"
 #include "multiColumn.h"
 #include "base.h"
 
@@ -126,6 +127,8 @@ static struct array* memoryBuffer_create_array(struct array* mem_access_array, u
 		nb_mem_access = array_get_length(mem_access_array);
 	}
 
+	log_debug_m(" nb mem access: %u", nb_mem_access);
+
 	for (i = 0; i < nb_mem_access; i = j){
 		operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[i]))->node);
 		address = operation->operation_type.mem.con_addr;
@@ -189,24 +192,24 @@ static uint32_t* memoryBuffer_get_dst_from(const struct memoryBuffer* mem_buf, s
 	return result;
 }
 
-static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct memoryBuffer* ou_buf, const uint32_t* dst_from, struct graph* graph, struct array* buffer_couple_array){
+static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct memoryBuffer* ou_buf, const uint32_t* dst_from, struct graph* graph, struct set* buffer_couple_set){
 	uint32_t 					i;
 	uint32_t 					j;
 	uint32_t 					k;
 	uint32_t 					l;
 	uint32_t 					m;
 	uint32_t 					n;
-	uint32_t 					o;
 	uint32_t 					ou_size;
 	uint32_t 					in_size;
-	struct bufferCouple 		couple;
-	uint32_t 					start;
-	enum bufferCoupleCompare 	cmp;
+	struct bufferCouple 		new_couple;
+	struct bufferCouple* 		set_couple;
+	struct subSet 				buffer_couple_sub_set;
+	struct setIterator 			it;
 
-	couple.in.buffer = in_buf;
-	couple.ou.buffer = ou_buf;
+	new_couple.in.buffer = in_buf;
+	new_couple.ou.buffer = ou_buf;
 
-	start = array_get_length(buffer_couple_array);
+	subSet_init(&buffer_couple_sub_set, buffer_couple_set);
 
 	for (i = 0; i < in_buf->nb_access; i ++){
 		for (j = 0; j < ou_buf->nb_access; j ++){
@@ -226,35 +229,33 @@ static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct m
 					n = m;
 
 					if (in_size >= IRBUFFER_MIN_SIZE){
-						couple.in.offset 	= i;
-						couple.in.length 	= l + 1 - i;
-						couple.in.size 		= in_size;
-						couple.ou.offset 	= j;
-						couple.ou.length 	= n;
-						couple.ou.size 		= ou_size;
+						new_couple.in.offset 	= i;
+						new_couple.in.length 	= l + 1 - i;
+						new_couple.in.size 		= in_size;
+						new_couple.ou.offset 	= j;
+						new_couple.ou.length 	= n;
+						new_couple.ou.size 		= ou_size;
 
-						for (o = start, cmp = BUFFERCOUPLECOMPARE_NONE; o < array_get_length(buffer_couple_array); o++){
-							cmp = bufferCouple_compare_subset_superset(&couple, array_get(buffer_couple_array, o));
-							if (cmp != BUFFERCOUPLECOMPARE_NONE){
-								break;
-							}
-						}
-
-						switch(cmp){
-							case BUFFERCOUPLECOMPARE_SUPERSET 	: {
-								memcpy(array_get(buffer_couple_array, o), &couple, sizeof(struct bufferCouple));
-								break;
-							}
-							case BUFFERCOUPLECOMPARE_SUBSET 	: {
-								break;
-							}
-							case BUFFERCOUPLECOMPARE_NONE 		: {
-								if (array_add(buffer_couple_array, &couple) < 0){
-									log_err("unable to add element to array");
+						for (set_couple = subSetIterator_get_first(&buffer_couple_sub_set, &it); set_couple != NULL; set_couple = setIterator_get_next(&it)){
+							switch (bufferCouple_compare_subset_superset(&new_couple, set_couple)){
+								case BUFFERCOUPLECOMPARE_SUPERSET 	: {
+									setIterator_pop(&it);
+									break;
 								}
-								break;
+								case BUFFERCOUPLECOMPARE_SUBSET 	: {
+									goto next;
+								}
+								case BUFFERCOUPLECOMPARE_NONE 		: {
+									break;
+								}
 							}
 						}
+
+						if (subSet_add(&buffer_couple_sub_set, &new_couple) < 0){
+							log_err("unable to add element to set");
+						}
+
+						next:;
 					}
 				}
 				else{
@@ -263,6 +264,10 @@ static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct m
 			}
 		}
 	}
+}
+
+void memoryBuffer_print(const struct memoryBuffer* mem_buf){
+	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", mem_buf->address_start, mem_buf->address_start + mem_buf->size, mem_buf->size);
 }
 
 static void memoryBuffer_delete_array(struct array* buffer_array){
@@ -281,40 +286,6 @@ void subMemoryBuffer_print(const struct subMemoryBuffer* sub_mem_buf){
 
 	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", op1->operation_type.mem.con_addr, op2->operation_type.mem.con_addr + op2->size / 8, sub_mem_buf->size);
 }
-
-/*static int32_t bufferCouple_compare_redundant(void* arg1, void* arg2){
-	struct bufferCouple* 	c1 = (struct bufferCouple*)arg1;
-	struct bufferCouple* 	c2 = (struct bufferCouple*)arg2;
-	int32_t 				result;
-
-	result = memcmp(&(c1->ou), &(c2->ou), sizeof(struct subMemoryBuffer));
-	if (result != 0){
-		return result;
-	}
-	else{
-		if (c1->in.buffer < c2->in.buffer){
-			return -1;
-		}
-		else if (c1->in.buffer > c2->in.buffer){
-			return 1;
-		}
-		else if (c1->in.offset + c1->in.length < c2->in.offset + c2->in.length){
-			return -1;
-		}
-		else if (c1->in.offset + c1->in.length > c2->in.offset + c2->in.length){
-			return 1;
-		}
-		else if (c1->in.offset < c2->in.offset){
-			return -1;
-		}
-		else if (c1->in.offset > c2->in.offset){
-			return 1;
-		}
-		else{
-			return 0;
-		}
-	}
-}*/
 
 static enum bufferCoupleCompare bufferCouple_compare_subset_superset(const struct bufferCouple* couple1, const struct bufferCouple* couple2){
 	if (couple1->in.buffer != couple2->in.buffer || couple1->ou.buffer != couple2->ou.buffer){
@@ -367,17 +338,6 @@ void bufferCouple_print(const struct bufferCouple* couple){
 	subMemoryBuffer_print(&(couple->ou));
 }
 
-/* Warning: from here it is an awful hack */
-
-/*
-
-Liste des choses à améliorer:
-	- [Done] printer les signatures disponibles
-	- printer les signatures qui sont touvées
-	- les pushées correctement (notamment permettre dans d'en pusher plusieurs)
-
-*/
-
 #define BUFFERSIGNATURE_NB_MAX_INPUT 4
 
 struct bufferSignature{
@@ -398,8 +358,19 @@ static struct bufferSignature sha1_compress = {
 	.ou_size 		= 160
 };
 
+static struct bufferSignature aes128_ks = {
+	.symbol 		= {
+		.name 		= "aes_ks_128",
+	},
+	.export_name 	= "ks",
+	.nb_in 			= 1,
+	.in_size 		= {128},
+	.ou_size 		= 1280
+};
+
 static struct bufferSignature* const buffer_signature_buffer[] = {
 	&sha1_compress,
+	&aes128_ks,
 	NULL
 };
 
@@ -454,10 +425,11 @@ static inline uint32_t bufferSignature_is_fit(const struct bufferSignature* buff
 	return couple->in.size == buffer_signature->in_size[0] && couple->ou.size == buffer_signature->ou_size;
 }
 
-static void bufferSignature_search_buffer(struct array* couple_array, struct ir* ir){
+static void bufferSignature_search_buffer(struct set* couple_set, struct ir* ir){
 	uint32_t 					i;
 	uint32_t 					j;
 	struct bufferCouple* 		couple;
+	struct setIterator 			it;
 	uint8_t* 					remove_footprint 	= NULL;
 	uint32_t* 					nb_signature_found 	= NULL;
 	uint32_t 					nb_signature;
@@ -467,11 +439,11 @@ static void bufferSignature_search_buffer(struct array* couple_array, struct ir*
 		nb_signature ++;
 	}
 
-	if (nb_signature == 0 || array_get_length(couple_array) == 0){
+	if (nb_signature == 0 || set_get_length(couple_set) == 0){
 		return;
 	}
 
-	remove_footprint = (uint8_t*)calloc(array_get_length(couple_array), 1);
+	remove_footprint = (uint8_t*)calloc(set_get_length(couple_set), 1);
 	nb_signature_found = (uint32_t*)calloc(nb_signature, sizeof(uint32_t));
 
 	if (remove_footprint == NULL || nb_signature_found == NULL){
@@ -492,9 +464,7 @@ static void bufferSignature_search_buffer(struct array* couple_array, struct ir*
 
 	multiColumnPrinter_print_header(printer);
 
-	for (i = 0; i < array_get_length(couple_array); i++){
-		couple = (struct bufferCouple*)array_get(couple_array, i);
-
+	for (couple = setIterator_get_first(couple_set, &it); couple != NULL; couple = setIterator_get_next(&it)){
 		for (j = 0; buffer_signature_buffer[j] != NULL; j++){
 			if (bufferSignature_is_fit(buffer_signature_buffer[j], couple)){
 				bufferSignature_push(buffer_signature_buffer[j], couple, ir);
@@ -510,9 +480,9 @@ static void bufferSignature_search_buffer(struct array* couple_array, struct ir*
 		}
 	}
 
-	for (i = 0; i < array_get_length(couple_array); i++){
+	for (couple = setIterator_get_first(couple_set, &it); couple != NULL; couple = setIterator_get_next(&it)){
 		if (remove_footprint[i]){
-			bufferCouple_remove_edge_footprint(array_get(couple_array, i), ir);
+			bufferCouple_remove_edge_footprint(couple, ir);
 		}
 	}
 
@@ -587,9 +557,7 @@ void ir_search_buffer_signature(struct ir* ir){
 	struct array* 			buf_in_array 			= NULL;
 	struct array* 			buf_ou_array 			= NULL;
 	struct memAccess 		mem_access;
-	struct array* 			couple_array 			= NULL;
-	/*uint32_t* 				filter_couple 			= NULL;
-	uint32_t 				nb_couple;*/
+	struct set* 			couple_set 				= NULL;
 
 	read_mem_access_array = array_create(sizeof(struct memAccess));
 	write_mem_access_array = array_create(sizeof(struct memAccess));
@@ -648,11 +616,18 @@ void ir_search_buffer_signature(struct ir* ir){
 	write_mem_access_array = NULL;
 
 	#ifdef VERBOSE
-	log_info_m("%u input buffer(s) and %u output buffer(s)", array_get_length(buf_in_array), array_get_length(buf_ou_array));
+	log_info_m("%u input buffer(s):", array_get_length(buf_in_array));
+	for (i = 0; i < array_get_length(buf_in_array); i++){
+		memoryBuffer_print(*(struct memoryBuffer**)array_get(buf_in_array, i)); putchar('\n');
+	}
+	log_info_m("%u output buffer(s):", array_get_length(buf_ou_array));
+	for (i = 0; i < array_get_length(buf_ou_array); i++){
+		memoryBuffer_print(*(struct memoryBuffer**)array_get(buf_ou_array, i)); putchar('\n');
+	}
 	#endif
 
-	if ((couple_array = array_create(sizeof(struct bufferCouple))) == NULL){
-		log_err("unable to create array");
+	if ((couple_set = set_create(sizeof(struct bufferCouple), 16)) == NULL){
+		log_err("unable to create set");
 		goto exit;
 	}
 
@@ -665,7 +640,7 @@ void ir_search_buffer_signature(struct ir* ir){
 		if ((dst_from = memoryBuffer_get_dst_from(in_ptr, &(ir->graph))) != NULL){
 			for (j = 0; j < array_get_length(buf_ou_array); j++){
 				ou_ptr = *(struct memoryBuffer**)array_get(buf_ou_array, j);
-				memoryBuffer_search_dependence(in_ptr, ou_ptr, dst_from, &(ir->graph), couple_array);
+				memoryBuffer_search_dependence(in_ptr, ou_ptr, dst_from, &(ir->graph), couple_set);
 			}
 			free(dst_from);
 		}
@@ -674,47 +649,26 @@ void ir_search_buffer_signature(struct ir* ir){
 		}
 	}
 
-	if (array_get_length(couple_array) == 0){
+	if (set_get_length(couple_set) == 0){
 		goto exit;
 	}
 
-	#if 0
-	if ((filter_couple = array_create_mapping(couple_array, bufferCouple_compare_redundant)) == NULL){
-		log_err("unable to create mapping");
-		goto exit;
-	}
+	#ifdef VERBOSE
+	{
+		struct setIterator 		it;
+		struct bufferCouple* 	couple;
 
-	
-	for (i = 1, j = 1; i < array_get_length(couple_array); i++){
-		struct bufferCouple* c1;
-		struct bufferCouple* c2;
-
-		c1 = (struct bufferCouple*)array_get(couple_array, filter_couple[i - 1]);
-		c2 = (struct bufferCouple*)array_get(couple_array, filter_couple[i]);
-		
-		if (memcmp(&(c1->ou), &(c2->ou), sizeof(struct subMemoryBuffer)) != 0 || c1->in.buffer != c2->ou.buffer || c1->in.offset + c1->in.length != c2->in.offset + c2->in.length){
-			if (i != j){
-				filter_couple[]
-			}
-
+		for (couple = setIterator_get_first(couple_set, &it); couple != NULL; couple = setIterator_get_next(&it)){
+			bufferCouple_print(couple); putchar('\n');
 		}
 	}
 	#endif
 
-	#if 1
-	for (i = 0; i < array_get_length(couple_array); i++){
-		bufferCouple_print((struct bufferCouple*)array_get(couple_array, i)); putchar('\n');
-	}
-	#endif
-
-	bufferSignature_search_buffer(couple_array, ir);
+	bufferSignature_search_buffer(couple_set, ir);
 
 	exit:
-	/*if (filter_couple != NULL){
-		free(filter_couple);
-	}*/
-	if (couple_array != NULL){
-		array_delete(couple_array);
+	if (couple_set != NULL){
+		set_delete(couple_set);
 	}
 	if (buf_in_array != NULL){
 		memoryBuffer_delete_array(buf_in_array);

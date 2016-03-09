@@ -69,7 +69,18 @@ void* setIterator_get_next(struct setIterator* iterator);
 
 #define setIterator_get_current(iterator) ((iterator)->block->data + ((iterator)->element * (iterator)->set->element_size))
 
-void setIterator_pop(struct setIterator* iterator); 
+void setIterator_pop(struct setIterator* iterator);
+
+struct subSet{
+	struct set* 		parent;
+	uint32_t 			offset;
+	struct setBlock*	block;
+};
+
+void subSet_init(struct subSet* sub_set, struct set* set);
+int32_t subSet_add(struct subSet* sub_set, void* element);
+
+void* subSetIterator_get_first(struct subSet* sub_set, struct setIterator* iterator);
 
 
 #endif

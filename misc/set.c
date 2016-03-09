@@ -282,3 +282,60 @@ void setIterator_pop(struct setIterator* iterator){
 		iterator->set->nb_element_tot --;
 	}
 }
+
+void subSet_init(struct subSet* sub_set, struct set* set){
+	struct setBlock* block_cursor;
+
+	for (block_cursor = &(set->block); block_cursor->next != NULL; ){
+		block_cursor = block_cursor->next;
+	}
+
+	sub_set->parent = set;
+	sub_set->offset = block_cursor->nb_element;
+	sub_set->block 	= block_cursor;
+}
+
+int32_t subSet_add(struct subSet* sub_set, void* element){
+	struct setBlock* block_cursor;
+
+	for (block_cursor = sub_set->block; block_cursor != NULL; block_cursor = block_cursor->next){
+		if (block_cursor->nb_element < sub_set->parent->nb_element_block){
+			memcpy(block_cursor->data + (block_cursor->nb_element * sub_set->parent->element_size), element, sub_set->parent->element_size);
+			block_cursor->nb_element ++;
+			return (int32_t)(sub_set->parent->nb_element_tot ++);
+		}
+
+		if (block_cursor->next == NULL){
+			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(sub_set->parent->element_size, sub_set->parent->nb_element_block));
+			if (block_cursor->next == NULL){
+				log_err("unable to allocate memory");
+			}
+			else{
+				block_cursor->next->nb_element 	= 0;
+				block_cursor->next->next 		= NULL;
+				block_cursor->next->prev 		= block_cursor;
+			}
+		}
+	}
+
+	return -1;
+}
+
+void* subSetIterator_get_first(struct subSet* sub_set, struct setIterator* iterator){
+	iterator->set 		= sub_set->parent;
+	iterator->block 	= sub_set->block;
+	iterator->element 	= sub_set->offset;
+
+	if (sub_set->offset == sub_set->block->nb_element){
+		iterator->block 	= iterator->block->next;
+		iterator->element 	= 0;
+	}
+
+	for ( ; iterator->block != NULL; iterator->block = iterator->block->next){
+		if (iterator->block->nb_element > 0){
+			return setIterator_get_current(iterator);
+		}
+	}
+
+	return NULL;
+}
