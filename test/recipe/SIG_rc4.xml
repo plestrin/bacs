@@ -282,7 +282,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_RC4" active="no">
+	<recipe name="OPEN_RC4" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/open_rc4"/>
 		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
 		<search>
@@ -296,7 +296,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v3" number="24"/>
+			<algo name="rc4_prga_v4" number="24"/>
 		</result>
 	</recipe>
 </xml>

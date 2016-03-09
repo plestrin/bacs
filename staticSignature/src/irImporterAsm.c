@@ -209,6 +209,7 @@ static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct as
 static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pshuf(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_psllq_psrlq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pslldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_psrldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_punpckldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
@@ -344,12 +345,20 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			simd_decode_special_pslldq(ir, it, &cisc, mem_addr);
 			break;
 		}
+		case XED_ICLASS_PSLLQ 		: {
+			simd_decode_special_psllq_psrlq(ir, it, &cisc, mem_addr);
+			break;
+		}
 		case XED_ICLASS_PSRLD 		: {
 			simd_decode_special_pslld_psrld(ir, it, &cisc, mem_addr);
 			break;
 		}
 		case XED_ICLASS_PSRLDQ 		: {
 			simd_decode_special_psrldq(ir, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PSRLQ 		: {
+			simd_decode_special_psllq_psrlq(ir, it, &cisc, mem_addr);
 			break;
 		}
 		case XED_ICLASS_PUNPCKLDQ 	: {
@@ -1201,7 +1210,9 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_PAND 		: {return IR_AND;}
 		case XED_ICLASS_POR 		: {return IR_OR;}
 		case XED_ICLASS_PSLLD 		: {return IR_SHL;}
+		case XED_ICLASS_PSLLQ 		: {return IR_SHL;}
 		case XED_ICLASS_PSRLD 		: {return IR_SHR;}
+		case XED_ICLASS_PSRLQ 		: {return IR_SHR;}
 		case XED_ICLASS_PXOR 		: {return IR_XOR;}
 		case XED_ICLASS_ROL 		: {return IR_ROL;}
 		case XED_ICLASS_ROR 		: {return IR_ROR;}
@@ -2169,12 +2180,12 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 	asmOperand_decode(it, local_simd.input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(local_simd.nb_input_operand), mem_addr);
 
 	#ifdef EXTRA_CHECK
+	if (local_simd.nb_input_operand != 2){
+		log_err_m("incorrect PS*LD format (%u input arg(s))", local_simd.nb_input_operand);
+	}
 	if (local_simd.input_operand[0].type != ASM_OPERAND_REG){
 		log_err("incorrect PS*LD format (first argument is not a register)");
 		return;
-	}
-	if (local_simd.nb_input_operand != 2){
-		log_err_m("incorrect PS*LD format (%u input arg(s))", local_simd.nb_input_operand);
 	}
 	#endif
 
@@ -2230,6 +2241,85 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 
 	cisc->type 		= CISC_TYPE_PARA;
 	cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, 32, 1);
+}
+
+static void simd_decode_special_psllq_psrlq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	struct asmOperand 	operand_buffer[2];
+	uint8_t 			nb_operand;
+	uint32_t 			frag_size;
+	uint32_t 			i;
+	enum irOpcode 		opcode;
+
+	asmOperand_decode(it, operand_buffer, 2, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 2){
+		log_err_m("incorrect PS*LQ format (%u input arg(s))", nb_operand);
+	}
+	if (operand_buffer[0].type != ASM_OPERAND_REG){
+		log_err("incorrect PS*LQ format (first argument is not a register)");
+		return;
+	}
+	#endif
+
+	if (operand_buffer[1].type != ASM_OPERAND_IMM){
+		log_err("this case is not implemented yet: PS*LQ second operand is not an IMM -> skip instruction");
+		return;
+	}
+
+	if (operand_buffer[1].operand_type.imm >= 64){
+		struct asmRiscIns local_simd;
+
+		asmRisc_set_reg_cst(&local_simd, operand_buffer[0].size, it->instruction_index, 0, operand_buffer[0].operand_type.reg)
+
+		cisc->type 		= CISC_TYPE_PARA;
+		cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, SIMD_DEFAULT_FRAG_SIZE, 1);
+
+		return;
+	}
+
+	if (operand_buffer[1].operand_type.imm % 8 == 0){
+		frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), operand_buffer[0].operand_type.reg);
+
+		if (operand_buffer[1].operand_type.imm % 32 == 0){
+			frag_size = min(frag_size, 32);
+		}
+		else if (operand_buffer[1].operand_type.imm % 16 == 0){
+			frag_size = min(frag_size, 16);
+		}
+		else{
+			frag_size = 8;
+		}
+
+		opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
+		
+		cisc->type 		= CISC_TYPE_PARA;
+		cisc->nb_ins 	= 0;
+
+		for (i = 0; i < operand_buffer[0].size / frag_size; i++){
+			if (opcode == IR_SHL){
+				if ((i % (64 / frag_size)) < operand_buffer[1].operand_type.imm / frag_size){
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i))
+				}
+				else{
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i - (operand_buffer[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i))
+				}
+			}
+			else{
+				if ((i % (64 / frag_size)) >= (64 - operand_buffer[1].operand_type.imm) / frag_size){
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i))
+				}
+				else{
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i + (operand_buffer[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(operand_buffer[0].operand_type.reg, frag_size, i))
+				}
+			}
+			cisc->nb_ins ++;
+		}
+
+		return;
+	}
+
+	log_err_m("this case is not implemented yet: PS*LQ second operand is equal to: %llu -> skip instruction", operand_buffer[1].operand_type.imm);
 }
 
 static void simd_decode_special_pslldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){

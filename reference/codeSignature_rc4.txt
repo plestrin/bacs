@@ -1,13 +1,15 @@
 # This file define the following signature(s):
-#															S[i] 		Volatile 	First
-#	- rc4_prga_v1: pseudo random generation of 1 byte 		no 			yes 		yes
-#	- rc4_prga_v2: pseudo random generation of 1 byte 		no 			yes 		no
-#	- rc4_prga_v3: pseudo random generation of 1 byte 		no 			no 			no
+#															S[i] 		Volatile 	First 		S 			Remark
+#	- rc4_prga_v1: pseudo random generation of 1 byte 		no 			yes 		yes 		8 bits 		-
+#	- rc4_prga_v2: pseudo random generation of 1 byte 		no 			yes 		no 			8 bits 		-
+#	- rc4_prga_v3: pseudo random generation of 1 byte 		no 			no 			no 			8 bits 		-
+#	- rc4_prga_v4: pseudo random generation of 1 byte 		no 			no 			no 			32 bits 	The message parameter has been removed to provide a better support for OpenSSL
 #
 # Help to understand the previous column title =):
 # 	- S[i] is the computation of S[i] address in the signature? If no, it is an input parameter. It has been designed that way, in order to avoid the effect of potential constant simplification (the value of S is known and maybe so is the value of i)
 # 	- Volatile, means that S[j] is read again from memory after the swap? The other possibility is to keep it in a register from the first read.
 # 	- First, for the first iteration j = 0 and some specific simplifications are done on this basis.
+#	- S, size of the data in S
 
 "rc4_prga_v1" (rc4_prga)
 
@@ -96,3 +98,33 @@
 16 -> 17 (MOVZX)
 17 -> 18 (XOR) [O:1:1]
 19 (*) [I:4:1] -> 18
+
+
+"rc4_prga_v4" (rc4_prga)
+
+# INPUT: 3 [1 frag (i), 1 frag (S), 1 frag (j)]
+# OUTPUT: 1 [1 frag]
+# Remark: each of this subgraph occurrence counts for 1 in the subgraph isomorphism
+
+22  (*) [I:1:1] -> 1 (ADD)
+1 -> (@) 2 (LOAD)
+2 -> 4 (ADD)
+5 (*) [I:3:1] -> 4
+4 -> 21 (SHL)
+21 -> 6 (AND)
+6 -> 7 (ADD)
+7 -> (@) 8 (LOAD)
+8 -> 9 (STORE)
+1 -> (@) 9
+7 -> (@) 10 (STORE)
+2 -> 10
+8 -> 12 (ADD)
+2 -> 12
+12 -> 20 (SHL)
+20 -> 13 (AND)
+13 -> 14 (ADD)
+15 (*) [I:2:1] -> 14
+15 -> 7
+15 -> 1
+14 -> (@) 16 (LOAD)
+16 -> 18 (XOR) [O:1:1]
