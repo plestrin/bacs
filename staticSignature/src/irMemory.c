@@ -761,7 +761,7 @@ static int32_t ir_memory_concrete_split_full_access(void** binary_tree_root, str
 
 }
 
-static struct node* ir_memory_concrete_get_access_value(struct ir* ir, struct memAccessFragment* mem_access_fragment){
+static struct node* ir_memory_concrete_get_access_value(struct ir* ir, struct memAccessFragment* mem_access_fragment, uint32_t size){
 	struct node* 		raw_value 	= NULL;
 	struct edge* 		edge_cursor;
 
@@ -811,7 +811,20 @@ static struct node* ir_memory_concrete_get_access_value(struct ir* ir, struct me
 	if (mem_access_fragment->size != ir_node_get_operation(raw_value)->size / 8){
 		struct node* part = NULL;
 
-		if (mem_access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 32){
+		if (ir_node_get_operation(raw_value)->size == size){
+			part = ir_add_inst(ir,IR_OPERATION_INDEX_UNKOWN, size, IR_AND, IR_OPERATION_DST_UNKOWN);
+			if (part != NULL){
+				struct node* mask;
+
+				mask = ir_add_immediate(ir, ir_node_get_operation(raw_value)->size, ~(0xffffffffffffffff << (mem_access_fragment->size * 8)));
+				if (mask != NULL){
+					if (ir_add_dependence(ir, mask, part, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
+						log_err("unable to add new dependency to IR");
+					}
+				}
+			}
+		}
+		else if (mem_access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 32){
 			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
 		}
 		else if (mem_access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 16){
@@ -1018,7 +1031,7 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 						}
 						k = 0;
 					}
-					if (ir_memory_concrete_build_compound_value(ir, &value, ir_memory_concrete_get_access_value(ir, access_fragment + j), i, operation_cursor->size)){
+					if (ir_memory_concrete_build_compound_value(ir, &value, ir_memory_concrete_get_access_value(ir, access_fragment + j, operation_cursor->size), i, operation_cursor->size)){
 						log_err_m("unable to get memory access fragment of size %u at offset %u", access_fragment[j].offset, access_fragment[j].offset);
 					}
 					
