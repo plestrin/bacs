@@ -2,8 +2,9 @@
 #	- aes_last_v1 	: specific last aes round
 #	- aes_last_v2 	: specific last aes round. Lookup results are merged before the add round key using a OR
 #	- aes_last_v3 	: specific last aes round. Lookup results are merged before the add round key using a OR. Shifting and merging are done together.
-#	- aes_last_v4 	: specific last aes round. Another version: this one uses mask to get select the right byte after the table lookup
-#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). This is only difference with the aes128_v2. No key binding for the last round: the offset might depend on the number of rounds.
+#	- aes_last_v4 	: specific last aes round. Another version: this one uses mask to get select the right byte after the table lookup.
+# 	- aes_last_v5 	: specific last aes round. Lookup results are merged before the add round key using a OR. Lookup table has 32-bit granularity.						
+#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). This is the only difference with the aes128_v2. No key binding for the last round: the offset might depend on the number of rounds.
 #	- aes128_v2 	: full aes128 encryption /decryption. No key binding for the last round: the offset might depend on the number of rounds.
 # 	- ks_aes_128 	: key schedule for a 128-bit key
 
@@ -475,7 +476,134 @@
 78 (*) [I:2:4] -> 77
 
 
-# INPUT: 2 [4 frag, 1 frag]
+# INPUT: 2 [4 frag, 4 frag]
+# OUTPUT: 1 [4 frag]
+# Remark: each of this subgraph occurrence counts for 4 in the subgraph isomorphism
+
+"aes_last_v5" (aes_r1)
+
+1 (*) [I:1:1] -> 5 (SHR) 		# 1
+2 (*) [I:1:2] -> 6 (SHR)
+3 (*) [I:1:3] -> 7 (SHR)
+4 (*) [I:1:4] -> 8 (SHL)
+5 -> 9 (AND)
+6 -> 10 (AND)
+7 -> 11 (AND)
+8 -> 12 (AND)
+9  -> 13 (ADD)
+10 -> 14 (ADD)
+11 -> 15 (ADD)
+12 -> 16 (ADD)
+13 -> (@) 17 (LOAD)
+14 -> (@) 18 (LOAD)
+15 -> (@) 19 (LOAD)
+16 -> (@) 20 (LOAD)
+17 -> 201 (MOVZX)
+18 -> 202 (MOVZX)
+19 -> 203 (MOVZX)
+20 -> 204 (MOVZX)
+202 -> 302 (SHL)
+203 -> 303 (SHL)
+204 -> 304 (SHL)
+201 -> 21 (OR)
+302 -> 21
+303 -> 21
+304 -> 21
+21 -> 401 (XOR) [O:1:1]
+22 (*) [I:2:1] -> 401
+
+2 -> 23 (SHR) 					# 2
+3 -> 24 (SHR)
+4 -> 25 (SHR)
+1 -> 26 (SHL)
+23 -> 27 (AND)
+24 -> 28 (AND)
+25 -> 29 (AND)
+26 -> 30 (AND)
+27 -> 31 (ADD)
+28 -> 32 (ADD)
+29 -> 33 (ADD)
+30 -> 34 (ADD)
+31 -> (@) 35 (LOAD)
+32 -> (@) 36 (LOAD)
+33 -> (@) 37 (LOAD)
+34 -> (@) 38 (LOAD)
+35 -> 205 (MOVZX)
+36 -> 206 (MOVZX)
+37 -> 207 (MOVZX)
+38 -> 208 (MOVZX)
+206 -> 306 (SHL)
+207 -> 307 (SHL)
+208 -> 308 (SHL)
+205 -> 39 (OR)
+306 -> 39
+307 -> 39
+308 -> 39
+39 -> 402 (XOR) [O:1:2]
+40 (*) [I:2:2] -> 402
+
+3 -> 41 (SHR) 					# 3
+4 -> 42 (SHR)
+1 -> 43 (SHR)
+2 -> 44 (SHL)
+41 -> 45 (AND)
+42 -> 46 (AND)
+43 -> 47 (AND)
+44 -> 48 (AND)
+45 -> 49 (ADD)
+46 -> 50 (ADD)
+47 -> 51 (ADD)
+48 -> 52 (ADD)
+49 -> (@) 53 (LOAD)
+50 -> (@) 54 (LOAD)
+51 -> (@) 55 (LOAD)
+52 -> (@) 56 (LOAD)
+53 -> 209 (MOVZX)
+54 -> 210 (MOVZX)
+55 -> 211 (MOVZX)
+56 -> 212 (MOVZX)
+210 -> 310 (SHL)
+211 -> 311 (SHL)
+212 -> 312 (SHL)
+209 -> 57 (OR)
+310 -> 57
+311 -> 57
+312 -> 57
+57 -> 403 (XOR) [O:1:3]
+58 (*) [I:2:3] -> 403
+
+4 -> 59 (SHR) 					# 4
+1 -> 60 (SHR)
+2 -> 61 (SHR)
+3 -> 62 (SHL)
+59 -> 63 (AND)
+60 -> 64 (AND)
+61 -> 65 (AND)
+62 -> 66 (AND)
+63 -> 67 (ADD)
+64 -> 68 (ADD)
+65 -> 69 (ADD)
+66 -> 70 (ADD)
+67 -> (@) 71 (LOAD)
+68 -> (@) 72 (LOAD)
+69 -> (@) 73 (LOAD)
+70 -> (@) 74 (LOAD)
+71 -> 213 (MOVZX)
+72 -> 214 (MOVZX)
+73 -> 215 (MOVZX)
+74 -> 216 (MOVZX)
+214 -> 314 (SHL)
+215 -> 315 (SHL)
+216 -> 316 (SHL)
+213 -> 75 (OR)
+314 -> 75
+315 -> 75
+316 -> 75
+75 -> 404 (XOR) [O:1:4]
+76 (*) [I:2:4] -> 404
+
+
+# INPUT: 2 [4 frag, 44 frag]
 # OUTPUT: 1 [4 frag]
 # Remark: each of this subgraph occurrence counts for 1 in the subgraph isomorphism
 
@@ -635,7 +763,7 @@
 1010 -> (O1F4) 1014 (XOR) [O:1:4]
 
 
-# INPUT: 2 [4 frag, 40 frag]
+# INPUT: 2 [4 frag, 44 frag]
 # OUTPUT: 1 [4 frag]
 # Remark: each of this subgraph occurrence counts for 1 / 4 / 24 depending on the first / last round implementation
 

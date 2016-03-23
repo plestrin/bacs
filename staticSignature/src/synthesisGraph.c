@@ -487,33 +487,35 @@ static void synthesisGraph_pack(struct graph* graph){
 		}
 	}
 
-	qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_ir_node);
+	if (nb_node){
+		qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_ir_node);
 
-	for (i = 1, j = 0; i < nb_node; i++){
-		if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
-			graph_transfert_dst_edge(graph, node_buffer[j], node_buffer[i]);
-			graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
-			graph_remove_node(graph, node_buffer[i]);
+		for (i = 1, j = 0; i < nb_node; i++){
+			if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
+				graph_transfert_dst_edge(graph, node_buffer[j], node_buffer[i]);
+				graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
+				graph_remove_node(graph, node_buffer[i]);
+			}
+			else{
+				node_buffer[++ j] = node_buffer[i];
+			}
 		}
-		else{
-			node_buffer[++ j] = node_buffer[i];
-		}
-	}
 
-	for (nb_node = j + 1, node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
+		for (nb_node = j + 1, node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+			synthesis_node_cursor = synthesisGraph_get_synthesisNode(node_cursor);
 
-		if (synthesis_node_cursor->type == SYNTHESISNODETYPE_RESULT){
-			for (i = 0; i < synthesis_node_cursor->node_type.cluster->symbol_mapping[1].nb_parameter; i++){
-				for (j = 0; j < synthesis_node_cursor->node_type.cluster->symbol_mapping[1].mapping_buffer[i].nb_fragment; j++){
-					for (k = 0; k < nb_node; k++){
-						if (synthesisGraph_get_synthesisNode(node_buffer[k])->node_type.ir_node == synthesis_node_cursor->node_type.cluster->symbol_mapping[1].mapping_buffer[i].ptr_buffer[j]){
-							graph_transfert_dst_edge(graph, synthesis_node_cursor->node_type.cluster->synthesis_graph_node, node_buffer[k]);
-							graph_transfert_src_edge(graph, synthesis_node_cursor->node_type.cluster->synthesis_graph_node, node_buffer[k]);
-							graph_remove_node(graph, node_buffer[k]);
+			if (synthesis_node_cursor->type == SYNTHESISNODETYPE_RESULT){
+				for (i = 0; i < synthesis_node_cursor->node_type.cluster->symbol_mapping[1].nb_parameter; i++){
+					for (j = 0; j < synthesis_node_cursor->node_type.cluster->symbol_mapping[1].mapping_buffer[i].nb_fragment; j++){
+						for (k = 0; k < nb_node; k++){
+							if (synthesisGraph_get_synthesisNode(node_buffer[k])->node_type.ir_node == synthesis_node_cursor->node_type.cluster->symbol_mapping[1].mapping_buffer[i].ptr_buffer[j]){
+								graph_transfert_dst_edge(graph, synthesis_node_cursor->node_type.cluster->synthesis_graph_node, node_buffer[k]);
+								graph_transfert_src_edge(graph, synthesis_node_cursor->node_type.cluster->synthesis_graph_node, node_buffer[k]);
+								graph_remove_node(graph, node_buffer[k]);
 
-							node_buffer[k] = node_buffer[-- nb_node];
-							break;
+								node_buffer[k] = node_buffer[-- nb_node];
+								break;
+							}
 						}
 					}
 				}

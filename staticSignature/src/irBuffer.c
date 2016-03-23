@@ -267,7 +267,7 @@ static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct m
 }
 
 void memoryBuffer_print(const struct memoryBuffer* mem_buf){
-	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", mem_buf->address_start, mem_buf->address_start + mem_buf->size, mem_buf->size);
+	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", mem_buf->address_start, mem_buf->address_start + mem_buf->size / 8, mem_buf->size);
 }
 
 static void memoryBuffer_delete_array(struct array* buffer_array){

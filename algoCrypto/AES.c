@@ -1,4 +1,3 @@
-
 #include "AES.h"
 
 #ifdef __GNUC__

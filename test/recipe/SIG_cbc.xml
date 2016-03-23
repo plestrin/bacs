@@ -1048,4 +1048,30 @@
 			<algo name="enc_cbc_cfb" number="3"/>
 		</result>
 	</recipe>
+
+	<recipe name="PP_CBC_AES" active="no"> <!-- only dec (we have no signatures for PP_AES enc). Does not work because the primitive is process and XOR (parasitic detections) -->
+		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_cbc_aes"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_cbc_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_CBC_AES"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZNK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="export callGraph _ZN8CryptoPP14CBC_Decryption11ProcessDataEPhPKhj"/>
+			<arg value="create compound ir 4"/>
+			<!-- a completer -->
+			<arg value="exit"/>
+		</search>
+		<result>
+			<!-- a completer -->
+		</result>
+	</recipe>
 </xml>
