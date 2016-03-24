@@ -2175,6 +2175,7 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 	struct asmRiscIns 	local_simd;
 	uint32_t 			frag_size;
 	uint32_t 			i;
+	uint8_t 			nb_operand;
 
 	local_simd.opcode = xedOpcode_2_irOpcode(xed_decoded_inst_get_iclass(&(it->xedd)));
 	asmOperand_decode(it, local_simd.input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(local_simd.nb_input_operand), mem_addr);
@@ -2184,7 +2185,20 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 		log_err_m("incorrect PS*LD format (%u input arg(s))", local_simd.nb_input_operand);
 	}
 	if (local_simd.input_operand[0].type != ASM_OPERAND_REG){
-		log_err("incorrect PS*LD format (first argument is not a register)");
+		log_err("incorrect PS*LD format (first input argument is not a register)");
+		return;
+	}
+	#endif
+
+	asmOperand_decode(it, &(local_simd.output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect PS*LD format (%u output arg(s))", nb_operand);
+		return;
+	}
+	if (local_simd.output_operand.type != ASM_OPERAND_REG){
+		log_err("incorrect PS*LD format (output argument is not a register)");
 		return;
 	}
 	#endif
@@ -2197,10 +2211,9 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 	frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), local_simd.input_operand[0].operand_type.reg);
 
 	if (local_simd.input_operand[1].operand_type.imm >= 32){
-		enum irRegister reg = local_simd.input_operand[0].operand_type.reg;
-		uint32_t 		size = local_simd.input_operand[0].size;
-
-		asmRisc_set_reg_cst(&local_simd, size, it->instruction_index, 0, reg)
+		local_simd.opcode = IR_MOV;
+		local_simd.nb_input_operand = 1;
+		asmOperand_set_imm(local_simd.input_operand[0], local_simd.output_operand.size, 0)
 
 		cisc->type 		= CISC_TYPE_PARA;
 		cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, frag_size, 1);
@@ -2209,26 +2222,24 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 	}
 
 	if (local_simd.input_operand[1].operand_type.imm % frag_size == 0){
-		enum irRegister reg = local_simd.input_operand[0].operand_type.reg;
-		
 		cisc->type 		= CISC_TYPE_PARA;
 		cisc->nb_ins 	= 0;
 
 		for (i = 0; i < local_simd.input_operand[0].size / frag_size; i++){
 			if (local_simd.opcode == IR_SHL){
 				if ((i % (32 / frag_size)) < local_simd.input_operand[1].operand_type.imm / frag_size){
-					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(reg, frag_size, i))
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(local_simd.output_operand.operand_type.reg, frag_size, i))
 				}
 				else{
-					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(reg, frag_size, i - (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(reg, frag_size, i))
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(local_simd.input_operand[0].operand_type.reg, frag_size, i - (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(local_simd.output_operand.operand_type.reg, frag_size, i))
 				}
 			}
 			else{
 				if ((i % (32 / frag_size)) >= (32 - local_simd.input_operand[1].operand_type.imm) / frag_size){
-					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(reg, frag_size, i))
+					asmRisc_set_reg_cst(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, 0, irRegister_virtual_get_simd(local_simd.output_operand.operand_type.reg, frag_size, i))
 				}
 				else{
-					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(reg, frag_size, i + (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(reg, frag_size, i))
+					asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(local_simd.input_operand[0].operand_type.reg, frag_size, i + (local_simd.input_operand[1].operand_type.imm / frag_size)), irRegister_virtual_get_simd(local_simd.output_operand.operand_type.reg, frag_size, i))
 				}
 			}
 			cisc->nb_ins ++;
@@ -2236,8 +2247,6 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 
 		return;
 	}
-
-	asmOperand_copy(&(local_simd.output_operand), local_simd.input_operand);
 
 	cisc->type 		= CISC_TYPE_PARA;
 	cisc->nb_ins 	= asmSimd_frag(cisc->ins, IRIMPORTERASM_MAX_RISC_INS, &local_simd, 32, 1);

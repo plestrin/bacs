@@ -136,7 +136,7 @@ static struct array* memoryBuffer_create_array(struct array* mem_access_array, u
 		for (j = i + 1; j < nb_mem_access; j++){
 			operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[j]))->node);
 			if (operation->operation_type.mem.con_addr < address + (size / 8)){
-				log_warn_m("found and overlapping memory access (" PRINTF_ADDR ", " PRINTF_ADDR "). Make sure you have done a concrete memory simplification", address + (size / 8), operation->operation_type.mem.con_addr);
+				log_warn_m("found an overlapping memory access (" PRINTF_ADDR ", " PRINTF_ADDR ":%u). Make sure you have done a concrete memory simplification", address + (size / 8), operation->operation_type.mem.con_addr, operation->size / 8);
 			}
 			else if (operation->operation_type.mem.con_addr > address + (size / 8)){
 				break;
