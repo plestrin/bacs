@@ -40,10 +40,13 @@ static struct possibleAssignment* possibleAssignment_create(uint32_t nb_node, ui
 static struct possibleAssignment* possibleAssignment_create_init_first(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error);
 #if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 static int32_t possibleAssignment_duplicate(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
+static int32_t possibleAssignment_duplicate_light(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
 #elif SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 static int32_t possibleAssignment_duplicate(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
+static int32_t possibleAssignment_duplicate_light(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
 #else
 static int32_t possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
+static int32_t possibleAssignment_duplicate_light(struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value);
 #endif
 static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment);
 #if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
@@ -57,12 +60,31 @@ static void possibleAssignment_save_state(struct possibleAssignment* possible_as
 static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array);
 
 #if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-#define get_node_order(sub_graph_handle, index) ((sub_graph_handle)->node_order[index])
+#define get_node_order(sub_graph_handle, index) ((sub_graph_handle)->node_order[2*(index)])
 
-static void graphIso_choose_next_node(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t* index_);
+#define save_node_order(sub_graph_handle, index, new_value) 																			\
+	{ 																																	\
+		uint32_t __tmp__ = (sub_graph_handle)->node_order[2*(index)]; 																	\
+																																		\
+		(sub_graph_handle)->node_order[2*(index) + 1] = (new_value); 																	\
+		(sub_graph_handle)->node_order[2*(index)] = (sub_graph_handle)->node_order[2*(new_value)]; 										\
+		(sub_graph_handle)->node_order[2*(new_value)] = __tmp__; 																		\
+	}
+
+#define restore_node_order(sub_graph_handle, index) 																					\
+	{ 																																	\
+		uint32_t __tmp__ = (sub_graph_handle)->node_order[2*(sub_graph_handle)->node_order[2*(index) + 1]]; 							\
+																																		\
+		(sub_graph_handle)->node_order[2*(sub_graph_handle)->node_order[2*(index) + 1]] = (sub_graph_handle)->node_order[2*(index)]; 	\
+		(sub_graph_handle)->node_order[2*(index)] = __tmp__; 																			\
+	}
+
+static void graphIso_choose_next_node(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment);
 
 #else
 #define get_node_order(sub_graph_handle, index) (index)
+#define save_node_order(sub_graph_handle, index, new_value)
+#define restore_node_order(sub_graph_handle, index)
 #endif
 
 #if SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY == 1
@@ -297,7 +319,7 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 				
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	for (i = 0; i < sub_graph_handle->graph->nb_node; i++){
-		sub_graph_handle->node_order[i] = i;
+		sub_graph_handle->node_order[2*i] = i;
 	}
 	#endif
 
@@ -309,78 +331,93 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 }
 
 static uint32_t graphIso_recursive_search(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct node** assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array){
-	uint32_t 		i;
-	uint32_t 		result = 0;
-	uint32_t 		local_nb_possible_assignment;
-	uint32_t 		local_node_offset;
-	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-	uint32_t 		index;
-	uint32_t 		tmp;
-	#endif
+	uint32_t i;
+	uint32_t result = 0;
+	uint32_t local_nb_possible_assignment;
+	uint32_t local_node_offset;
+	uint32_t nb_assigned;
 
 	if (possibleAssignment_update(graph_handle, sub_graph_handle, possible_assignment)){
 		return 0;
 	}
 
-	if (nb_assignment < sub_graph_handle->graph->nb_node - 1){
+	for (nb_assigned = 0; nb_assignment + nb_assigned < sub_graph_handle->graph->nb_node - 1; nb_assigned ++){
 		#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-		graphIso_choose_next_node(sub_graph_handle, possible_assignment, nb_assignment, &index);
+		graphIso_choose_next_node(sub_graph_handle, possible_assignment, nb_assignment + nb_assigned);
 		#endif
 
-		#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-		possibleAssignment_save_state(sub_graph_handle, possible_assignment, nb_assignment);
-		#else
-		possibleAssignment_save_state(possible_assignment, nb_assignment);
-		#endif
+		possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].assigned = 1;
 
-		local_nb_possible_assignment = possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].nb_possible_assignment;
-		local_node_offset = possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].node_offset;
-
-		possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].assigned = 1;
-		for (i = 0; i < local_nb_possible_assignment; i++){
-			possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].node_offset = local_node_offset + i;
-
-			#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-			if (!possibleAssignment_duplicate(graph_handle, sub_graph_handle, possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i])){
-			#elif SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-			if (!possibleAssignment_duplicate(sub_graph_handle, possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i])){
+		if (possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].nb_possible_assignment > 1){
+			#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+			possibleAssignment_save_state(sub_graph_handle, possible_assignment, nb_assignment + nb_assigned);
 			#else
-			if (!possibleAssignment_duplicate(possible_assignment, nb_assignment, possible_assignment->nodes[local_node_offset + i])){
+			possibleAssignment_save_state(possible_assignment, nb_assignment + nb_assigned);
 			#endif
-				assignment[get_node_order(sub_graph_handle, nb_assignment)] = graph_handle->label_tab[possible_assignment->nodes[local_node_offset + i]].node;
-				result += graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + 1, possible_assignment, assignment_array);
 
-				possible_assignment->stacked_size[sub_graph_handle->graph->nb_node * nb_assignment + nb_assignment] --;
+			local_nb_possible_assignment = possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].nb_possible_assignment;
+			local_node_offset = possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset;
+
+			for (i = 0; i < local_nb_possible_assignment; i++){
+				possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset = local_node_offset + i;
+
+				#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+				if (!possibleAssignment_duplicate(graph_handle, sub_graph_handle, possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[local_node_offset + i])){
+				#elif SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+				if (!possibleAssignment_duplicate(sub_graph_handle, possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[local_node_offset + i])){
+				#else
+				if (!possibleAssignment_duplicate(possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[local_node_offset + i])){
+				#endif
+					assignment[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)] = graph_handle->label_tab[possible_assignment->nodes[local_node_offset + i]].node;
+					result += graphIso_recursive_search(graph_handle, sub_graph_handle, assignment, nb_assignment + nb_assigned + 1, possible_assignment, assignment_array);
+
+					possible_assignment->stacked_size[sub_graph_handle->graph->nb_node * (nb_assignment + nb_assigned) + nb_assignment + nb_assigned] --;
+				}
 			}
+
+			possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset = local_node_offset;
+			nb_assigned ++;
+
+			goto quit;
 		}
 
-		possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].node_offset = local_node_offset;
-		possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].assigned = 0;
-
-		#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-		tmp = sub_graph_handle->node_order[nb_assignment];
-		sub_graph_handle->node_order[nb_assignment] = sub_graph_handle->node_order[index];
-		sub_graph_handle->node_order[index] = tmp;
+		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+		if (!possibleAssignment_duplicate_light(graph_handle, sub_graph_handle, possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset])){
+		#elif SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+		if (!possibleAssignment_duplicate_light(sub_graph_handle, possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset])){
+		#else
+		if (!possibleAssignment_duplicate_light(possible_assignment, nb_assignment + nb_assigned, possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset])){
 		#endif
-	}
-	else{
-		for (i = 0; i < possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].nb_possible_assignment; i++){
-			assignment[get_node_order(sub_graph_handle, nb_assignment)] = graph_handle->label_tab[possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment)].node_offset + i]].node;
-			if (array_add(assignment_array, assignment) < 0){
-				log_err("unable to add assignment to array");
-			}
-			result ++;
+			assignment[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)] = graph_handle->label_tab[possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset]].node;
 		}
+		else{
+			goto quit;
+		}
+	}
+
+	for (i = 0; i < possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].nb_possible_assignment; i++){
+		assignment[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)] = graph_handle->label_tab[possible_assignment->nodes[possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].node_offset + i]].node;
+		if (array_add(assignment_array, assignment) < 0){
+			log_err("unable to add assignment to array");
+		}
+		result ++;
+	}
+
+	quit:
+
+	for (; nb_assigned; ){
+		nb_assigned --;
+		possible_assignment->headers[get_node_order(sub_graph_handle, nb_assignment + nb_assigned)].assigned = 0;
+		restore_node_order(sub_graph_handle, nb_assignment + nb_assigned);
 	}
 
 	return result;
 }
 
 #if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-static void graphIso_choose_next_node(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t* index_){
+static void graphIso_choose_next_node(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment){
 	uint32_t index;
 	uint32_t i;
-	uint32_t tmp;
 	uint32_t min_nb_assignement;
 	uint32_t max_connectivity;
 
@@ -403,10 +440,7 @@ static void graphIso_choose_next_node(struct subGraphIsoHandle* sub_graph_handle
 		}
 	}
 
-	tmp = sub_graph_handle->node_order[nb_assignment];
-	sub_graph_handle->node_order[nb_assignment] = sub_graph_handle->node_order[index];
-	sub_graph_handle->node_order[index] = tmp;
-	*index_ = index;
+	save_node_order(sub_graph_handle, nb_assignment, index)
 }
 #endif
 
@@ -417,18 +451,15 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 	struct node* 				node_cursor;
 	#endif
 
-	handle = (struct subGraphIsoHandle*)malloc(sizeof(struct subGraphIsoHandle));
-	if (handle == NULL){
+	if ((handle = (struct subGraphIsoHandle*)calloc(1, sizeof(struct subGraphIsoHandle))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
 		
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-	handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node);
-	if (handle->dst == NULL){
+	if ((handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
-		free(handle);
-		return NULL;
+		goto error;
 	}
 
 	for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL && i < graph->nb_node; node_cursor = node_get_next(node_cursor), i++){
@@ -438,46 +469,44 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 	}
 	#endif
 
-	handle->node_tab = graphIso_create_node_tab(graph, node_get_label);
-	if (handle->node_tab == NULL){
+	if ((handle->node_tab = graphIso_create_node_tab(graph, node_get_label)) == NULL){
 		log_err("unable to create labelTab");
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 		
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-	handle->node_order = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node);
-	if (handle->node_order == NULL){
+	if ((handle->node_order = (uint32_t*)malloc(2 * sizeof(uint32_t) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
-		free(handle->node_tab);
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 	#endif
 
-	handle->edge_tab = graphIso_create_edge_tab(graph, edge_get_label, handle->node_tab);
-	if (handle->edge_tab == NULL){
+	if ((handle->edge_tab = graphIso_create_edge_tab(graph, edge_get_label, handle->node_tab)) == NULL){
 		log_err("unable to create edgeTab");
-		#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-		free(handle->node_order);
-		#endif
-		free(handle->node_tab);
-		#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
-		free(handle->dst);
-		#endif
-		free(handle);
-		return NULL;
+		goto error;
 	}
 
 	handle->graph = graph;
 	
 	return handle;
+
+	error:
+	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+	if (handle->node_order != NULL){
+		free(handle->node_order);
+	}
+	#endif
+	if (handle->node_tab != NULL){
+		free(handle->node_tab);
+	}
+	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+	if (handle->dst != NULL){
+		free(handle->dst);
+	}
+	#endif
+	free(handle);
+
+	return NULL;
 }
 
 void graphIso_delete_graph_handle(struct graphIsoHandle* handle){
@@ -635,6 +664,7 @@ static struct possibleAssignment* possibleAssignment_create_init_first(struct gr
 
 	return possible_assignment;
 }
+
 #if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 static int32_t possibleAssignment_duplicate(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value){
 	uint32_t 	i;
@@ -731,6 +761,107 @@ static int32_t possibleAssignment_duplicate(struct possibleAssignment* possible_
 				tmp = possible_assignment_local_ptr[size];
 				possible_assignment_local_ptr[size] = possible_assignment_local_ptr[j];
 				possible_assignment_local_ptr[j] = tmp;
+				break;
+			}
+		}
+		possible_assignment->headers[get_node_order(sub_graph_handle, i)].nb_possible_assignment = size;
+		if (!size){
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
+static int32_t possibleAssignment_duplicate_light(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint32_t 	tmp;
+	uint32_t 	size;
+	uint32_t* 	possible_assignment_local_ptr;
+
+	for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+		if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * get_node_order(sub_graph_handle, nb_assignment) + get_node_order(sub_graph_handle, i)] != DIJKSTRA_INVALID_DST){
+			j = 0;
+			size = possible_assignment->headers[get_node_order(sub_graph_handle, i)].nb_possible_assignment;
+			possible_assignment_local_ptr = possible_assignment->nodes + possible_assignment->headers[get_node_order(sub_graph_handle, i)].node_offset;
+
+			while(j < size){
+				if (possible_assignment_local_ptr[j] != new_assignment_value){
+					uint32_t index_k = (uint32_t)(graph_handle->label_tab[new_assignment_value].index);
+					uint32_t index_i = (uint32_t)(graph_handle->label_tab[possible_assignment_local_ptr[j]].index);
+
+					if (graph_handle->dst[index_k] == NULL){
+						graph_handle->dst[index_k] = (uint32_t*)malloc(sizeof(uint32_t) * graph_handle->graph->nb_node);
+						if (graph_handle->dst[index_k] == NULL){
+							log_err("unable to allocate memory");
+							return -1;
+						}
+						if (dijkstra_dst(graph_handle->graph, graph_handle->label_tab[new_assignment_value].node, graph_handle->dst[index_k])){
+							log_err("unable to compute graph dst (Dijkstra)");
+							return -1;
+						}
+					}
+
+					if (sub_graph_handle->dst[sub_graph_handle->graph->nb_node * get_node_order(sub_graph_handle, nb_assignment) + get_node_order(sub_graph_handle, i)] >= graph_handle->dst[index_k][index_i]){
+						j ++;
+					}
+					else{
+						size --;
+						tmp = possible_assignment_local_ptr[size];
+						possible_assignment_local_ptr[size] = possible_assignment_local_ptr[j];
+						possible_assignment_local_ptr[j] = tmp;
+					}
+				}
+				else{
+					size --;
+					tmp = possible_assignment_local_ptr[size];
+					possible_assignment_local_ptr[size] = possible_assignment_local_ptr[j];
+					possible_assignment_local_ptr[j] = tmp;
+				}
+			}
+			possible_assignment->headers[get_node_order(sub_graph_handle, i)].nb_possible_assignment = size;
+			if (!size){
+				return -1;
+			}
+		}
+		else{
+			log_err("this case is not supposed to happen, subgrah is not connected");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#else
+#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
+static int32_t possibleAssignment_duplicate_light(struct subGraphIsoHandle* sub_graph_handle, struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value){
+#else
+static int32_t possibleAssignment_duplicate_light(struct possibleAssignment* possible_assignment, uint32_t nb_assignment, uint32_t new_assignment_value){
+#endif
+	uint32_t 	i;
+	uint32_t 	j;
+	uint32_t	tmp;
+	uint32_t 	size;
+	uint32_t* 	possible_assignment_local_ptr;
+
+	for (i = nb_assignment + 1; i < possible_assignment->nb_node; i++){
+		j = 0;
+		size = possible_assignment->headers[get_node_order(sub_graph_handle, i)].nb_possible_assignment;
+		possible_assignment_local_ptr = possible_assignment->nodes + possible_assignment->headers[get_node_order(sub_graph_handle, i)].node_offset;
+
+		while(j < size){
+			if (possible_assignment_local_ptr[j] != new_assignment_value){
+				j ++;
+			}
+			else{
+				size --;
+				tmp = possible_assignment_local_ptr[size];
+				possible_assignment_local_ptr[size] = possible_assignment_local_ptr[j];
+				possible_assignment_local_ptr[j] = tmp;
+				break;
 			}
 		}
 		possible_assignment->headers[get_node_order(sub_graph_handle, i)].nb_possible_assignment = size;
