@@ -13,7 +13,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -31,7 +31,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -49,7 +49,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -67,7 +67,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -85,7 +85,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -103,7 +103,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -121,7 +121,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -139,7 +139,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -157,7 +157,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -175,7 +175,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -193,7 +193,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -211,7 +211,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -230,7 +230,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -266,25 +266,29 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="1"/>
+			<algo name="sha1_ms" number="1"/>
 		</result>
 	</recipe>
 
-	<recipe name="OPEN_SHA1" active="no">
+	<recipe name="OPEN_SHA1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1">
+			<arg value="-m"/>
+		</trace>
 		<search>
 			<arg value="load trace traceOPEN_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph SHA1_Final"/> <!-- SHA1_Update seems promising too, but since it uses large register I give up -->
+			<arg value="export callGraph SHA1_Final"/>
+			<arg value="export callGraph 401"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_init" number="2"/>
+			<algo name="sha1_ms_open" number="2"/>
+			<algo name="sha1_open" number="2"/>
 		</result>
 	</recipe>
 </xml>
