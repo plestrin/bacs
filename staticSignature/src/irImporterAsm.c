@@ -1872,7 +1872,7 @@ static void simd_decode_special_palignr(struct ir* ir, struct instructionIterato
 		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg));
 	}
 	if (in_operand_buffer[1].type == ASM_OPERAND_REG){
-		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg));
+		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[1].operand_type.reg));
 	}
 
 	for (i = 0; i < operand_size / frag_size; i++){
@@ -1881,10 +1881,10 @@ static void simd_decode_special_palignr(struct ir* ir, struct instructionIterato
 
 		asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer + 0, frag_size, i);
 		if (disp + frag_size * i < operand_size){
-			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, disp / frag_size + i);
+			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, disp / frag_size + i);
 		}
 		else{
-			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
+			asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
 		}
 	}
 
@@ -1895,10 +1895,10 @@ static void simd_decode_special_palignr(struct ir* ir, struct instructionIterato
 
 			asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer + 0, frag_size, i);
 			if (disp + frag_size * i < ou_operand_buffer[0].size){
-				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, disp / frag_size + i);
+				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, disp / frag_size + i);
 			}
 			else{
-				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 1, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
+				asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer + 0, frag_size, (disp / frag_size) + i - (operand_size / frag_size));
 			}
 		}
 	}
