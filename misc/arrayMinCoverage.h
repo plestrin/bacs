@@ -5,7 +5,6 @@
 
 #include "array.h"
 
-
 #define ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD 0x00000000ffffffffULL
 
 struct categoryDesc{

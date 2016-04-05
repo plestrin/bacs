@@ -518,7 +518,7 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 				case 'L' : {filters |= ASSEMBLYSCAN_FILTER_FUNC_LEAF; 	break;}
 				case 'R' : {filters |= ASSEMBLYSCAN_FILTER_BBL_RATIO; 	break;}
 				case 'S' : {filters |= ASSEMBLYSCAN_FILTER_BBL_SIZE; 	break;}
-				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {E, L, R, S}", arg[i]); break;}
+				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {E: executed, L: leaf, R: ratio, S: size}", arg[i]); return;}
 			}
 		}
 	}

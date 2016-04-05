@@ -17,8 +17,7 @@
 # 	- md5_v1 	: full MD5 Feistel Network 	No interference with the feedback
 # 	- md5_v2 	: full MD5 Feistel Network 	Interference with the feedback
 #
-#	- md5_comp 	: compression function
-
+#	- md5_compress 	: compression function
 
 
 "md5_p1_v1" (md5_p1)

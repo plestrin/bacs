@@ -288,7 +288,8 @@
 		</search>
 		<result>
 			<algo name="sha1_ms_open" number="2"/>
-			<algo name="sha1_open" number="2"/>
+			<algo name="sha1_open" number="4"/>
+			<algo name="sha1_compress" number="2"/>
 		</result>
 	</recipe>
 </xml>

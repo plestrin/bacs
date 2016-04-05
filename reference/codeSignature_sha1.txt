@@ -2,6 +2,8 @@
 #	- sha1_ms 		: message schedule
 # 	- sha1_ms_open 	: message schedule for OpenSSL
 # 	- sha1_open 	: full sha1 Feistel network including the message expansion for OpenSSL
+# 	- sha1_compress : compression function
+
 
 "sha1_ms" (sha1_ms)
 
@@ -395,19 +397,20 @@
 
 "sha1_open" (fn_sha1)
 
-# INPUT: 2 [4 frag, 16 frag]
+# INPUT: 2 [5 frag, 16 frag]
 # OUTPUT: 1 [5 frag]
-# Remark: e is not part of the signature (thus the first input is only 4 fragments) because it cannot be dissociate from the round constant
+# Remark: each of this signature occurrence counts for 2, since the 5th input cannot be distinguish from the round constant
 
 1 (*) [I:1:1] -> 105 (ROR)
 2 (*) [I:1:2] -> 100 (AND)
 3 (*) [I:1:3] -> 101 (XOR)
 4 (*) [I:1:4] -> 101
+5 (*) [I:1:5] -> 104 (ADD)
 101 -> 100
 100 -> 102 (XOR)
 4 -> 102
 2 -> 103 (ROR)
-102 -> 104 (ADD)
+102 -> 104
 105 -> 104
 
 104 -> 205 (ROR)
@@ -1928,3 +1931,49 @@
 26301 -> 26303 (SHL)
 26302 -> 10080 (OR) [O:1:64]
 26303 -> 10080
+
+
+"sha1_compress" (compress)
+
+# INPUT: 2 [5 frag, 16 frag]
+# OUTPUT: 1 [5 frag]
+
+1 (*) [I:1:1] -> (I1F1) 100 (fn_sha1)
+2 (*) [I:1:2] -> (I1F2) 100
+3 (*) [I:1:3] -> (I1F3) 100
+4 (*) [I:1:4] -> (I1F4) 100
+5 (*) [I:1:5] -> (I1F5) 100
+
+100 -> (O1F1) 201 (ADD) [O:1:1]
+100 -> (O1F2) 102 (ADD)
+100 -> (O1F3) 103 (ROR)
+100 -> (O1F4) 104 (ROR)
+100 -> (O1F5) 105 (ROR)
+
+102 -> 202 (ADD) [O:1:2]
+103 -> 203 (ADD) [O:1:3]
+104 -> 204 (ADD) [O:1:4]
+105 -> 205 (ADD) [O:1:5]
+
+1 -> 201
+2 -> 202
+3 -> 203
+4 -> 204
+5 -> 205
+
+10 (*) [I:2:1 ] -> (I2F1) 100
+11 (*) [I:2:2 ] -> (I2F2) 100
+12 (*) [I:2:3 ] -> (I2F3) 100
+13 (*) [I:2:4 ] -> (I2F4) 100
+14 (*) [I:2:5 ] -> (I2F5) 100
+15 (*) [I:2:6 ] -> (I2F6) 100
+16 (*) [I:2:7 ] -> (I2F7) 100
+17 (*) [I:2:8 ] -> (I2F8) 100
+18 (*) [I:2:9 ] -> (I2F9) 100
+19 (*) [I:2:10] -> (I2F10) 100
+20 (*) [I:2:11] -> (I2F11) 100
+21 (*) [I:2:12] -> (I2F12) 100
+22 (*) [I:2:13] -> (I2F13) 100
+23 (*) [I:2:14] -> (I2F14) 100
+24 (*) [I:2:15] -> (I2F15) 100
+25 (*) [I:2:16] -> (I2F16) 100
