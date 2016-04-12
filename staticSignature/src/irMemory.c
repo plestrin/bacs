@@ -939,6 +939,7 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 	void* 						binary_tree_root = NULL;
 	struct memAccessToken 		fetch_token;
 	struct memAccessToken** 	existing_token;
+	struct memAccessToken* 		dead_token;
 	struct memAccessFragment 	access_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
 	uint32_t 					nb_mem_access_fragment;
 	uint8_t 					taken_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
@@ -997,10 +998,11 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 			}
 			else{
 				if (!is_alive){
-					if (tdelete(*existing_token, &binary_tree_root, compare_address_memToken) == NULL){
+					dead_token = *existing_token;
+					if (tdelete(dead_token, &binary_tree_root, compare_address_memToken) == NULL){
 						log_err("unable to delete token from the binary tree");
 					}
-					free(*existing_token);
+					free(dead_token);
 				}
 				if (i == 0){
 					if (j + 1 == CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT){
