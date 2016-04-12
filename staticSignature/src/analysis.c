@@ -436,6 +436,12 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 	}
 
 	inputParser_extract_index(arg, &start, &stop);
+	if (start > stop){
+		log_err_m("incorrect fragment: [%u:%u]", start, stop);
+		return;
+	}
+
+
 	if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 		log_err("unable to extract traceFragment");
 		return;
@@ -468,8 +474,7 @@ static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
 
 	pc = strtoul(arg, NULL, 16);
 
-	printf("Instance of EIP " PRINTF_ADDR ":\n", pc);
-
+	printf("Instance of EIP " PRINTF_ADDR ": ", pc);
 	codeMap_fprint_address_info(analysis->code_map, pc, stdout);
 	putchar('\n');
 

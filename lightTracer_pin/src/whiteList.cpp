@@ -101,7 +101,6 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	size_t		i;
 	int 		n;
 
-
 	file = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (file == INVALID_HANDLE_VALUE){
 		printf("ERROR: in %s, unable to open file: \"%s\"\n", __func__, file_name);

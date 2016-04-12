@@ -40,8 +40,6 @@ struct codeMap* codeMap_create(void){
 
 		cm->current_image = NULL;
 		cm->current_section = NULL;
-
-		cm->memory_consumption = sizeof(struct codeMap);
 	}
 
 	return cm;
@@ -73,8 +71,6 @@ int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address
 
 			cm->current_image = image;
 			cm->current_section = NULL;
-
-			cm->memory_consumption += sizeof(struct cm_image);
 		}
 	}
 
@@ -107,8 +103,6 @@ int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS addre
 				*cursor = section;
 
 				cm->current_section = section;
-
-				cm->memory_consumption += sizeof(struct cm_section);
 			}
 		}
 		else{
@@ -144,8 +138,6 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start
 					cursor = &((*cursor)->next);
 				}
 				*cursor = routine;
-
-				cm->memory_consumption += sizeof(struct cm_routine);
 			}
 		}
 		else{
@@ -231,8 +223,6 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image){
 
 			cm->current_image = new_image;
 			cm->current_section = NULL;
-
-			cm->memory_consumption += sizeof(struct cm_image);
 		}
 	}
 
@@ -263,8 +253,6 @@ int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section){
 				*cursor = new_section;
 
 				cm->current_section = new_section;
-
-				cm->memory_consumption += sizeof(struct cm_section);
 			}
 		}
 		else{
@@ -297,8 +285,6 @@ int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 					cursor = &((*cursor)->next);
 				}
 				*cursor = new_routine;
-
-				cm->memory_consumption += sizeof(struct cm_routine);
 			}
 		}
 		else{
@@ -329,6 +315,64 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 		}		
 	}
 }
+
+#if defined ARCH_32
+#define codeMap_create_printer(printer) 																								\
+	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 													\
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__); 														\
+	} 																																	\
+																																		\
+	multiColumnPrinter_set_column_size((printer), 0, 38); 																				\
+	multiColumnPrinter_set_column_size((printer), 1, 7); 																				\
+	multiColumnPrinter_set_column_size((printer), 2, 48); 																				\
+	multiColumnPrinter_set_column_size((printer), 3, 10); 																				\
+	multiColumnPrinter_set_column_size((printer), 4, 10); 																				\
+	multiColumnPrinter_set_column_size((printer), 5, 1); 																				\
+	multiColumnPrinter_set_column_size((printer), 6, 1); 																				\
+																																		\
+	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_32); 															\
+	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_32); 															\
+	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 															\
+	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 															\
+																																		\
+	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 																		\
+	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 																		\
+	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 																		\
+	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 																		\
+	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 																		\
+	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 																			\
+	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 																			\
+	multiColumnPrinter_print_header((printer));
+#elif defined ARCH_64
+#define codeMap_create_printer(printer) 																								\
+	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 													\
+		printf("ERROR: in %s, unable to create multi column printer\n", __func__); 														\
+	} 																																	\
+																																		\
+	multiColumnPrinter_set_column_size((printer), 0, 38); 																				\
+	multiColumnPrinter_set_column_size((printer), 1, 7); 																				\
+	multiColumnPrinter_set_column_size((printer), 2, 48); 																				\
+	multiColumnPrinter_set_column_size((printer), 3, 10); 																				\
+	multiColumnPrinter_set_column_size((printer), 4, 10); 																				\
+	multiColumnPrinter_set_column_size((printer), 5, 1); 																				\
+	multiColumnPrinter_set_column_size((printer), 6, 1); 																				\
+																																		\
+	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_64); 															\
+	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_64); 															\
+	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 															\
+	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 															\
+																																		\
+	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 																		\
+	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 																		\
+	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 																		\
+	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 																		\
+	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 																		\
+	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 																			\
+	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 																			\
+	multiColumnPrinter_print_header((printer));
+#else
+#error Please specify an architecture {ARCH_32 or ARCH_64}
+#endif 
 
 void codeMap_print(struct codeMap* cm, char* str_filter){
 	struct cm_image* 			image;
@@ -361,48 +405,14 @@ void codeMap_print(struct codeMap* cm, char* str_filter){
 			}
 			printf("} ***\n");
 		}
-		else{
-			printf("*** Code Map ***\n");
+
+		codeMap_create_printer(printer)
+		
+		for (image = cm->images; image != NULL; image = image->next){
+			codeMap_print_image(printer, image, filter);
 		}
 
-		printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL);
-		if (printer != NULL){
-			multiColumnPrinter_set_column_size(printer, 0, 38);
-			multiColumnPrinter_set_column_size(printer, 1, 7);
-			multiColumnPrinter_set_column_size(printer, 2, 48);
-			multiColumnPrinter_set_column_size(printer, 3, 10);
-			multiColumnPrinter_set_column_size(printer, 4, 10);
-			multiColumnPrinter_set_column_size(printer, 5, 6);
-
-			#if defined ARCH_32
-			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_32);
-			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_32);
-			#elif defined ARCH_64
-			multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_64);
-			multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_64);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
-
-			multiColumnPrinter_set_title(printer, 0, (char*)"IMAGE");
-			multiColumnPrinter_set_title(printer, 1, (char*)"SECTION");
-			multiColumnPrinter_set_title(printer, 2, (char*)"ROUTINE");
-			multiColumnPrinter_set_title(printer, 3, (char*)"START @");
-			multiColumnPrinter_set_title(printer, 4, (char*)"STOP @");
-			multiColumnPrinter_set_title(printer, 5, (char*)"WHITEL");
-			multiColumnPrinter_print_header(printer);
-
-			image = cm->images;
-			while(image != NULL){
-				codeMap_print_image(printer, image, filter);
-				image = image->next;
-			}
-
-			multiColumnPrinter_delete(printer);
-		}
-		else{
-			printf("ERROR: in %s, unable to create multi column printer\n", __func__);
-		}
+		multiColumnPrinter_delete(printer);
 	}
 }
 
@@ -541,82 +551,46 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 }
 
 static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter){
-	if (routine != NULL){
-		if (filter & CODEMAP_FILTER_EXECUTED){
-			if (!codeMap_filter_routine_executed(routine)){
-				return;
-			}
-		}
-		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (!codeMap_filter_routine_whitelisted(routine)){
-				return;
-			}
-		}
-
-		if (routine->white_listed == CODEMAP_WHITELISTED){
-			multiColumnPrinter_print(printer, " ", " ", routine->name, routine->address_start, routine->address_stop, "yes", NULL);
-		}
-		else{
-			multiColumnPrinter_print(printer, " ", " ", routine->name, routine->address_start, routine->address_stop, "no", NULL);
-		}
+	if (filter & CODEMAP_FILTER_EXECUTED && !codeMap_filter_routine_executed(routine)){
+		return;
 	}
+	if (filter & CODEMAP_FILTER_WHITELIST && !codeMap_filter_routine_whitelisted(routine)){
+		return;
+	}
+
+	multiColumnPrinter_print(printer, routine->parent->parent->name, routine->parent->name, routine->name, routine->address_start, routine->address_stop, codeMap_filter_routine_whitelisted(routine), codeMap_filter_routine_executed(routine), NULL);
 }
 
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter){
-	struct cm_routine* 	routine;
+	struct cm_routine* routine;
 
-	if (section != NULL){
-		if (filter & CODEMAP_FILTER_EXECUTED){
-			if (!codeMap_filter_section_executed(section)){
-				return;
-			}
-		}
-		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (!codeMap_filter_section_whitelisted(section)){
-				return;
-			}
-		}
+	if (filter & CODEMAP_FILTER_EXECUTED && !codeMap_filter_section_executed(section)){
+		return;
+	}
+	if (filter & CODEMAP_FILTER_WHITELIST && !codeMap_filter_section_whitelisted(section)){
+		return;
+	}
 
-		multiColumnPrinter_print(printer, " ", section->name, " ", section->address_start, section->address_stop, " ", NULL);
-
-		routine = section->routines;
-		while(routine != NULL){
-			codeMap_print_routine(printer, routine, filter);
-			routine = routine->next;
-		}		
+	for (routine = section->routines; routine != NULL; routine = routine->next){
+		codeMap_print_routine(printer, routine, filter);
 	}
 }
 
 static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter){
-	struct cm_section* 	section;
+	struct cm_section* section;
 
-	if (image != NULL){
-		if (filter & CODEMAP_FILTER_EXECUTED){
-			if (!codeMap_filter_image_executed(image)){
-				return;
-			}
-		}
-		if (filter & CODEMAP_FILTER_WHITELIST){
-			if (!codeMap_filter_image_whitelisted(image)){
-				return;
-			}
-		}
-
-		if (image->white_listed == CODEMAP_WHITELISTED){
-			multiColumnPrinter_print(printer, image->name, " ", " ", image->address_start, image->address_stop, "yes", NULL);
-		}
-		else{
-			multiColumnPrinter_print(printer, image->name, " ", " ", image->address_start, image->address_stop, "no", NULL);
-		}
-
-		section = image->sections;
-		while(section != NULL){
-			codeMap_print_section(printer, section, filter);
-			section = section->next;
-		}
-
-		multiColumnPrinter_print_horizontal_separator(printer);
+	if (filter & CODEMAP_FILTER_EXECUTED && !codeMap_filter_image_executed(image)){
+		return;
 	}
+	if (filter & CODEMAP_FILTER_WHITELIST && !codeMap_filter_image_whitelisted(image)){
+		return;
+	}
+
+	for (section = image->sections; section != NULL; section = section->next){
+		codeMap_print_section(printer, section, filter);
+	}
+
+	multiColumnPrinter_print_horizontal_separator(printer);
 }
 
 void codeMap_clean_image(struct cm_image* image){
@@ -675,34 +649,35 @@ static int codeMap_filter_image_executed(struct cm_image* image){
 }
 
 static int codeMap_filter_section_whitelisted(struct cm_section* section){
-	struct cm_routine* cursor = section->routines;
+	struct cm_routine* routine;
 
-	while(cursor != NULL){
-		if (!codeMap_filter_routine_whitelisted(cursor)){
-			return 0;
+	for (routine = section->routines; routine != NULL; routine = routine->next){
+		if (codeMap_filter_routine_whitelisted(routine)){
+			break;
 		}
-		cursor = cursor->next;
+	}
+	if (routine == NULL){
+		return 0;
 	}
 
 	return 1;
 }
 
 static int codeMap_filter_image_whitelisted(struct cm_image* image){
-	if (image->white_listed == CODEMAP_WHITELISTED){
-		return 1;
-	}
-	else{
-		struct cm_section* cursor = image->sections;
+	struct cm_section* section;
 
-		while(cursor != NULL){
-			if (!codeMap_filter_section_whitelisted(cursor)){
-				return 0;
+	if (image->white_listed != CODEMAP_WHITELISTED){
+		for (section = image->sections; section != NULL; section = section->next){
+			if (codeMap_filter_section_whitelisted(section)){
+				break;
 			}
-			cursor = cursor->next;
 		}
-
-		return 1;
+		if (section == NULL){
+			return 0;
+		}
 	}
+
+	return 1;
 }
 
 int codeMap_check_address(struct codeMap* cm){
@@ -942,58 +917,10 @@ void codeMap_search_and_print_symbol(struct codeMap* cm, const char* symbol){
 	struct cm_routine* 			ptr;
 	struct multiColumnPrinter* 	printer;
 
-	printer = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL);
-	if (printer == NULL){
-		printf("ERROR: in %s, unable to create multi column printer\n", __func__);
-		return;
-	}
-	
-	multiColumnPrinter_set_column_size(printer, 0, 38);
-	multiColumnPrinter_set_column_size(printer, 1, 7);
-	multiColumnPrinter_set_column_size(printer, 2, 48);
-	multiColumnPrinter_set_column_size(printer, 3, 10);
-	multiColumnPrinter_set_column_size(printer, 4, 10);
-	multiColumnPrinter_set_column_size(printer, 5, 1);
-	multiColumnPrinter_set_column_size(printer, 6, 1);
-
-	#if defined ARCH_32
-	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_32);
-	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_32);
-	#elif defined ARCH_64
-	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_HEX_64);
-	multiColumnPrinter_set_column_type(printer, 4, MULTICOLUMN_TYPE_HEX_64);
-	#else
-	#error Please specify an architecture {ARCH_32 or ARCH_64}
-	#endif
-	multiColumnPrinter_set_column_type(printer, 5, MULTICOLUMN_TYPE_STRING);
-	multiColumnPrinter_set_column_type(printer, 6, MULTICOLUMN_TYPE_STRING);
-
-	multiColumnPrinter_set_title(printer, 0, (char*)"IMAGE");
-	multiColumnPrinter_set_title(printer, 1, (char*)"SECTION");
-	multiColumnPrinter_set_title(printer, 2, (char*)"ROUTINE");
-	multiColumnPrinter_set_title(printer, 3, (char*)"START @");
-	multiColumnPrinter_set_title(printer, 4, (char*)"STOP @");
-	multiColumnPrinter_set_title(printer, 5, (char*)"W");
-	multiColumnPrinter_set_title(printer, 6, (char*)"E");
-	multiColumnPrinter_print_header(printer);
+	codeMap_create_printer(printer)
 
 	for (ptr = codeMap_search_approx_symbol(cm, NULL, symbol); ptr; ptr = codeMap_search_approx_symbol(cm, ptr, symbol)){
-		if (codeMap_filter_routine_executed(ptr)){
-			if (codeMap_filter_routine_whitelisted(ptr)){
-				multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, "1", "1", NULL);
-			}
-			else{
-				multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, "0", "1", NULL);
-			}
-		}
-		else{
-			if (codeMap_filter_routine_whitelisted(ptr)){
-				multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, "1", "0", NULL);
-			}
-			else{
-				multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, "0", "0", NULL);
-			}
-		}
+		multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, codeMap_filter_routine_whitelisted(ptr), codeMap_filter_routine_executed(ptr), NULL);
 	}
 
 	multiColumnPrinter_delete(printer);

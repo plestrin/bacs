@@ -272,9 +272,7 @@
 
 	<recipe name="OPEN_SHA1" active="yes">
 		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1">
-			<arg value="-m"/>
-		</trace>
+		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
 		<search>
 			<arg value="load trace traceOPEN_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -289,7 +287,7 @@
 		<result>
 			<algo name="sha1_ms_open" number="2"/>
 			<algo name="sha1_open" number="4"/>
-			<algo name="sha1_compress" number="2"/>
+			<!-- <algo name="sha1_compress" number="2"/> aliasing issues -->
 		</result>
 	</recipe>
 </xml>

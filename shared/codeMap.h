@@ -22,8 +22,6 @@ struct codeMap{
 
 	struct cm_image*	current_image;
 	struct cm_section*	current_section;
-
-	long 				memory_consumption;
 };
 
 struct cm_image{

@@ -149,7 +149,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	assembly->nb_dyn_block 			= buffer_size_id / sizeof(uint32_t);
 	assembly->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
 	if (assembly->dyn_blocks == NULL){
-		log_err("unable to allocate memory");
+		log_err_m("unable to allocate memory: %zu", sizeof(struct dynBlock) * assembly->nb_dyn_block);
 		goto error;
 	}
 
