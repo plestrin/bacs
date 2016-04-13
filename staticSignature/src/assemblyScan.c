@@ -7,6 +7,7 @@
 #include "array.h"
 #include "base.h"
 
+#define ASSEMBLYSCAN_NB_MIN_EXECUTION 	5
 #define ASSEMBLYSCAN_NB_MIN_INSTRUCTION 40
 #define ASSEMBLYSCAN_NB_MAX_INS_PER_BBL 70
 
@@ -114,18 +115,19 @@ static uint32_t assemblyScan_count_specific_instruction(struct asmBlock* block, 
 	return result;
 }
 
-static uint32_t assemblyScan_is_executed(const struct assembly* assembly, const struct asmBlock* block){
+static uint32_t assemblyScan_nb_execution(const struct assembly* assembly, const struct asmBlock* block){
 	uint32_t i;
+	uint32_t result;
 
-	for (i = 0; i < assembly->nb_dyn_block; i++){
+	for (i = 0, result = 0; i < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
 			if (assembly->dyn_blocks[i].block == block){
-				return 1;
+				result ++;
 			}
 		}
 	}
 
-	return 0;
+	return result;
 }
 
 static void assemblyScan_get_function(const struct assembly* assembly, const struct asmBlock* block, struct callGraph* call_graph, struct set* function_set){
@@ -154,7 +156,8 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
  *	- Special opcode (refer to crypto_instruction)
  * 	1 Large basic blocks (refer to ASSEMBLYSCAN_NB_MIN_INSTRUCTION)
  * 	2 High ratio of bitwise instruction (refer to bitwise_instruction and ASSEMBLYSCAN_MIN_BIT_WISE_RATIO)
- * 	3 Leaf in the callGraph if provided
+ * 	3 Numerous executions (refer to ASSEMBLYSCAN_NB_MIN_EXECUTION)
+ * 	4 Leaf in the callGraph if provided
  */
 
 void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
@@ -199,7 +202,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		struct asmBlock* 	next_block;
 		ADDRESS 			address;
 		double 				ratio;
-		uint32_t 			is_executed;
+		uint32_t 			nb_execution;
 
 		for (i = 0; i < array_get_length(bbl_array); ){
 			block = *(struct asmBlock**)array_get(bbl_array, address_mapping[i]);
@@ -233,8 +236,8 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 				ratio = 100 * (double)nb_bitwise / (double)nb_ins;
 
 				if (ratio >= ASSEMBLYSCAN_MIN_BIT_WISE_RATIO || !(filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
-					is_executed = assemblyScan_is_executed(assembly, block);
-					if (is_executed || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
+					nb_execution = assemblyScan_nb_execution(assembly, block);
+					if 	(nb_execution > ASSEMBLYSCAN_NB_MIN_EXECUTION || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
 						#ifdef COLOR
 						if (ratio < 25){
 							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
@@ -249,11 +252,11 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 						printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
 						#endif
 						
-						if (is_executed){
-							fputs(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET, stdout);
+						if (nb_execution){
+							printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", nb_execution);
 						}
 						else{
-							fputs(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET, stdout);
+							printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", nb_execution);
 						}
 
 						if (cm != NULL){
