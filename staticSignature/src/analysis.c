@@ -303,14 +303,11 @@ static void analysis_trace_load(struct analysis* analysis, char* arg){
 		analysis->code_map = NULL;
 	}
 
-	analysis->trace = trace_load_exe(arg);
-	if (analysis->trace == NULL){
+	if ((analysis->trace = trace_load_exe(arg)) == NULL){
 		log_err("unable to create trace");
-		return;
 	}
 
-	analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid);
-	if (analysis->code_map == NULL){
+	if ((analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid)) == NULL){
 		log_err("unable to create codeMap");
 	}
 }
@@ -364,8 +361,7 @@ static void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 		analysis->code_map = NULL;
 	}
 
-	analysis->trace = trace_load_elf(arg);
-	if (analysis->trace == NULL){
+	if ((analysis->trace = trace_load_elf(arg)) == NULL){
 		log_err("unable to create trace");
 	}
 }

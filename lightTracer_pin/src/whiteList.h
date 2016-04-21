@@ -3,7 +3,6 @@
 
 struct whiteList{
 	char*	buffer;
-	size_t	buffer_size;
 	int 	nb_entry;
 	char** 	entries;
 };
