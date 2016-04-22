@@ -278,7 +278,7 @@
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph SHA1_Final"/>
-			<arg value="export callGraph 401"/>
+			<arg value="export callGraph SHA1_Update"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -286,7 +286,7 @@
 		</search>
 		<result>
 			<algo name="sha1_ms_open" number="2"/>
-			<algo name="sha1_open" number="4"/>
+			<algo name="sha1_open_v2" number="4"/>
 			<!-- <algo name="sha1_compress" number="2"/> aliasing issues -->
 		</result>
 	</recipe>
