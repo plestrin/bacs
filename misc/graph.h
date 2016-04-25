@@ -106,6 +106,9 @@ struct edge* graph_add_edge(struct graph* graph, struct node* node_src, struct n
 struct edge* graph_get_edge(struct node* node_src, struct node* node_dst);
 void graph_remove_edge(struct graph* graph, struct edge* edge);
 
+void graph_remove_src_edge(struct graph* graph, struct node* node);
+void graph_remove_dst_edge(struct graph* graph, struct node* node);
+
 #define node_get_head_edge_src(node) 	((node)->src_edge_linkedList)
 #define node_get_head_edge_dst(node) 	((node)->dst_edge_linkedList)
 #define edge_get_next_src(edge) 		((edge)->src_next)

@@ -288,7 +288,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 	return node;
 }
 
-void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value){
+void ir_convert_operation_to_imm(struct ir* ir, struct node* node, uint64_t value){
 	struct irOperation* operation = ir_node_get_operation(node);
 	struct edge* 		edge_cursor;
 	struct edge* 		edge_current;
@@ -306,9 +306,32 @@ void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint
 
 	operation->type 						= IR_OPERATION_TYPE_IMM;
 	operation->operation_type.imm.value 	= value;
-	operation->size 						= size;
 	operation->index 						= IR_OPERATION_INDEX_IMMEDIATE;
-	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
+}
+
+void ir_convert_operation_to_inst(struct node* node, enum irOpcode opcode){
+	struct irOperation* operation = ir_node_get_operation(node);
+
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_operation_remove(operation);
+	}
+
+	operation->type 						= IR_OPERATION_TYPE_INST;
+	operation->operation_type.inst.opcode 	= opcode;
+	operation->operation_type.inst.dst 		= IR_OPERATION_DST_UNKOWN;
+	operation->operation_type.inst.seed 	= IR_INVALID_RANGE_SEED;
+}
+
+void ir_convert_operation_to_null(struct ir* ir, struct node* node){
+	struct irOperation* operation = ir_node_get_operation(node);
+
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		ir_mem_operation_remove(operation);
+	}
+
+	graph_remove_dst_edge(&(ir->graph), node);
+
+	operation->type 						= IR_OPERATION_TYPE_NULL;
 }
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, enum irDependenceType type){
@@ -353,8 +376,8 @@ void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node*
 }
 
 void ir_remove_node(struct ir* ir, struct node* node){
-	struct edge* 	edge_curr;
-	struct edge* 	edge_next;
+	struct edge* edge_curr;
+	struct edge* edge_next;
 
 	if (ir_node_get_operation(node)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node)->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_operation_remove(ir_node_get_operation(node));
@@ -394,15 +417,7 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 			continue;
 		}
 
-		if (ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_buffer[i])->type == IR_OPERATION_TYPE_OUT_MEM){
-			ir_mem_operation_remove(ir_node_get_operation(node_buffer[i]));
-		}
-
-		if (irOperation_is_final(ir_node_get_operation(node_buffer[i]))){
-			irBuilder_del_final_node(&(ir->builder), node_buffer[i]);
-		}
-
-		graph_remove_node(&(ir->graph), node_buffer[i]);
+		ir_convert_operation_to_null(ir, node_buffer[i]);
 	}
 }
 

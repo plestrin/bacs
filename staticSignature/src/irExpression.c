@@ -402,7 +402,7 @@ static void irAffineForm_export(struct irAffineForm* affine_form, struct ir* ir)
 
 	switch (set_get_length(&(affine_form->term_set))){
 		case 0 : {
-			ir_convert_node_to_imm(ir, affine_form->root, affine_form->size, 0);
+			ir_convert_operation_to_imm(ir, affine_form->root, 0);
 			break;
 		}
 		case 1 : {

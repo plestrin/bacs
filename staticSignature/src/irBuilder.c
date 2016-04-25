@@ -472,13 +472,13 @@ struct node* irBuilder_get_std_register_ref(struct irBuilder* builder, struct ir
 						if (builder->alias_buffer[reg].ir_node != NULL){
 							alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
 
-							ir_convert_node_to_inst(builder->alias_buffer[reg1].ir_node, ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, irRegister_get_size(reg1), partIns[family][registerIndex[reg]][registerIndex[reg1]]);
+							ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg1]]);
 							ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 							alias_set_type(builder->alias_buffer[reg2], IRBUILDER_TYPE_EXTEND);
 							builder->alias_buffer[reg2].order = builder->alias_buffer[reg1].order;
 
-							ir_convert_node_to_inst(builder->alias_buffer[reg2].ir_node, ir_node_get_operation(builder->alias_buffer[reg2].ir_node)->index, irRegister_get_size(reg2), partIns[family][registerIndex[reg]][registerIndex[reg2]]);
+							ir_convert_operation_to_inst(builder->alias_buffer[reg2].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg2]]);
 							ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 							node = builder->alias_buffer[reg].ir_node;
@@ -503,7 +503,7 @@ struct node* irBuilder_get_std_register_ref(struct irBuilder* builder, struct ir
 							if (builder->alias_buffer[reg].ir_node != NULL){
 								alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
 
-								ir_convert_node_to_inst(builder->alias_buffer[reg1].ir_node, ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, irRegister_get_size(reg1), new_ins);
+								ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, new_ins);
 								ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
 
 								node = builder->alias_buffer[reg].ir_node;

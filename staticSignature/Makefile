@@ -15,11 +15,11 @@ PROG_NAME 		:= $(BUILD_DIR)../$(PROG_NAME)
 endif
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/pierre/Documents/tool/pin-2.14-71313-gcc.4.4.7-linux/extras/xed-ia32/
+XED_DIR 		:= /home/pierre/Documents/tool/xed-2016-02-02-lin-ia32/
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
-LDFLAGS			:= -lyajl -lelf $(XED_DIR)lib/libxed.a
+LDFLAGS			:= -lyajl -lelf -lxed
 CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI) -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 # CFLAGS			:= -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -Wno-documentation -Wno-padded -std=gnu99 -D_GNU_SOURCE -D$(ARCHI) -D_FILE_OFFSET_BITS=64
 OBJ 			:= 	$(BUILD_DIR)codeMap.o				\

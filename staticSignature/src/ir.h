@@ -931,25 +931,11 @@ struct node* ir_add_symbol_(struct ir* ir, struct signatureSymbol* sym_sig, void
 struct node* ir_insert_immediate(struct ir* ir, struct node* root, uint8_t size, uint64_t value);
 struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, uint8_t size, enum irOpcode opcode, uint32_t dst);
 
-static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, uint8_t size, enum irOpcode opcode){
-	struct irOperation* operation = ir_node_get_operation(node);
+/* Warning: attribute SIZE, INDEX and FLAG are not modified by 'convert' */
 
-	/* Warning: it migth not be a good idea to discard the status flag without any check */
-
-	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
-		ir_mem_operation_remove(operation);
-	}
-
-	operation->type 						= IR_OPERATION_TYPE_INST;
-	operation->operation_type.inst.opcode 	= opcode;
-	operation->operation_type.inst.dst 		= IR_OPERATION_DST_UNKOWN;
-	operation->operation_type.inst.seed 	= IR_INVALID_RANGE_SEED;
-	operation->size 						= size;
-	operation->index 						= index;
-	operation->status_flag 					= IR_OPERATION_STATUS_FLAG_NONE;
-}
-
-void ir_convert_node_to_imm(struct ir* ir, struct node* node, uint8_t size, uint64_t value);
+void ir_convert_operation_to_imm (struct ir* ir, struct node* node, uint64_t value);
+void ir_convert_operation_to_inst(struct node* node, enum irOpcode opcode);
+void ir_convert_operation_to_null(struct ir* ir, struct node* node);
 
 struct edge* ir_add_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, uint32_t desc);

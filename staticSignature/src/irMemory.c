@@ -543,7 +543,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 	operation2 = ir_node_get_operation(node2);
 
 	if (operation1->size > operation2->size){
-		ir_convert_node_to_inst(node2, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size));
+		ir_convert_operation_to_inst(node2, ir_normalize_choose_part_opcode(operation1->size, operation2->size));
 
 		for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
@@ -560,7 +560,7 @@ static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct no
 	}
 
 	if (operation1->size < operation2->size){
-		ir_convert_node_to_inst(node1, operation1->index, operation1->size, ir_normalize_choose_part_opcode(operation2->size, operation1->size));
+		ir_convert_operation_to_inst(node1, ir_normalize_choose_part_opcode(operation2->size, operation1->size));
 
 		for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){

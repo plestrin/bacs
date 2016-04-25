@@ -649,7 +649,6 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	uint32_t 		nb_exported_result;
 	struct set* 	node_set 			= NULL;
 	struct node** 	footprint 			= NULL;
-	uint32_t 		nb_node_footprint;
 
 	if (trace->type != FRAGMENT_TRACE || trace->trace_type.frag.ir == NULL){
 		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
@@ -702,21 +701,19 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	}
 
 	if (set_get_length(node_set)){
+		uint32_t nb_node_footprint;
+
 		footprint = (struct node**)set_export_buffer_unique(node_set, &nb_node_footprint);
 		if (footprint == NULL){
 			log_err("unable to export set");
 			goto exit;
 		}
-	}
-	else{
-		footprint = NULL;
-		nb_node_footprint = 0;
+
+		ir_remove_footprint(trace->trace_type.frag.ir, footprint, nb_node_footprint);
 	}
 
 	set_delete(node_set);
 	node_set = NULL;
-
-	ir_remove_footprint(trace->trace_type.frag.ir, footprint, nb_node_footprint);
 
 	for (i = 0; i < nb_exported_result; i++){
 		result_remove_edge_footprint((struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]), trace->trace_type.frag.ir);

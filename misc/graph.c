@@ -245,13 +245,8 @@ int32_t graph_copy_dst_edge(struct graph* graph, struct node* node1, struct node
 void graph_remove_node(struct graph* graph, struct node* node){
 	graph->nb_node --;
 
-	while(node->src_edge_linkedList != NULL){
-		graph_remove_edge(graph, node->src_edge_linkedList);
-	}
-
-	while(node->dst_edge_linkedList != NULL){
-		graph_remove_edge(graph, node->dst_edge_linkedList);
-	}
+	graph_remove_src_edge(graph, node);
+	graph_remove_dst_edge(graph, node);
 
 	if (node->prev == NULL){
 		graph->node_linkedList_head = node->next;
@@ -343,6 +338,62 @@ void graph_remove_edge(struct graph* graph, struct edge* edge){
 	graph_edge_clean_data(graph, edge)
 
 	graph_free_edge(graph, edge);
+}
+
+void graph_remove_src_edge(struct graph* graph, struct node* node){
+	struct edge* edge_cursor;
+	struct edge* edge_current;
+
+	for (edge_current = node->src_edge_linkedList; edge_current != NULL; edge_current = edge_cursor){
+		edge_cursor = edge_current->src_next;
+
+		if (edge_current->dst_prev == NULL){
+			edge_current->dst_node->dst_edge_linkedList = edge_current->dst_next;
+		}
+		else{
+			edge_current->dst_prev->dst_next = edge_current->dst_next;
+		}
+		if (edge_current->dst_next != NULL){
+			edge_current->dst_next->dst_prev = edge_current->dst_prev;
+		}
+		edge_current->dst_node->nb_edge_dst --;
+		graph->nb_edge --;
+
+		graph_edge_clean_data(graph, edge_current)
+
+		graph_free_edge(graph, edge_current);
+	}
+
+	node->src_edge_linkedList = NULL;
+	node->nb_edge_src = 0;
+}
+
+void graph_remove_dst_edge(struct graph* graph, struct node* node){
+	struct edge* edge_cursor;
+	struct edge* edge_current;
+
+	for (edge_current = node->dst_edge_linkedList; edge_current != NULL; edge_current = edge_cursor){
+		edge_cursor = edge_current->dst_next;
+
+		if (edge_current->src_prev == NULL){
+			edge_current->src_node->src_edge_linkedList = edge_current->src_next;
+		}
+		else{
+			edge_current->src_prev->src_next = edge_current->src_next;
+		}
+		if (edge_current->src_next != NULL){
+			edge_current->src_next->src_prev = edge_current->src_prev;
+		}
+		edge_current->src_node->nb_edge_src --;
+		graph->nb_edge --;
+
+		graph_edge_clean_data(graph, edge_current)
+
+		graph_free_edge(graph, edge_current);
+	}
+
+	node->dst_edge_linkedList = NULL;
+	node->nb_edge_dst = 0;
 }
 
 int32_t graph_copy(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
