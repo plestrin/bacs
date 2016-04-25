@@ -290,7 +290,7 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			cisc_decode_special_movsx(it, &cisc, mem_addr, 4);
 			break;
 		}
-		case XED_ICLASS_MOVSD_XMM 		: {
+		case XED_ICLASS_MOVSD_XMM 	: {
 			simd_decode_special_movsd_xmm(ir, it, &cisc, mem_addr);
 			break;
 		}
@@ -370,6 +370,30 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			break;
 		}
 		case XED_ICLASS_PXOR 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
+		case XED_ICLASS_REP_MOVSB 	: {
+			cisc_decode_special_movsx(it, &cisc, mem_addr, 1);
+			break;
+		}
+		case XED_ICLASS_REP_MOVSD 	: {
+			cisc_decode_special_movsx(it, &cisc, mem_addr, 4);
+			break;
+		}
+		case XED_ICLASS_REP_MOVSW 	: {
+			cisc_decode_special_movsx(it, &cisc, mem_addr, 2);
+			break;
+		}
+		case XED_ICLASS_REP_STOSB 	: {
+			cisc_decode_special_stosx(it, &cisc, mem_addr, 1);
+			break;
+		}
+		case XED_ICLASS_REP_STOSD 	: {
+			cisc_decode_special_stosx(it, &cisc, mem_addr, 4);
+			break;
+		}
+		case XED_ICLASS_REP_STOSW 	: {
+			cisc_decode_special_stosx(it, &cisc, mem_addr, 2);
+			break;
+		}
 		case XED_ICLASS_RET_FAR 	: {
 			cisc_decode_special_ret(it, &cisc);
 			irBuilder_decrement_call_stack(&(ir->builder))
