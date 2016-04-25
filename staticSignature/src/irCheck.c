@@ -9,16 +9,16 @@ uint32_t ir_check_size(struct ir* ir){
 	struct node* 			node_cursor;
 	struct edge* 			edge_cursor;
 	struct irOperation* 	operation_cursor;
-	struct irOperation* 	operand;
-	struct irDependence* 	dependence;
-	uint32_t 				result = 0;
+	struct irOperation* 	operand_cursor;
+	struct irDependence* 	dependence_cursor;
+	uint32_t 				result 				= 0;
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
 
 		if (operation_cursor->size % 8 && operation_cursor->type != IR_OPERATION_TYPE_SYMBOL){
 			log_err_m("incorrect size: %u is not a multiple of 8", operation_cursor->size);
-			fputs("\t", stderr); irOperation_fprint(operation_cursor, stderr); fputs("\n", stderr);
+			fputc('\t', stderr); irOperation_fprint(operation_cursor, stderr); fputc('\n', stderr);
 			operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 			result = 1;
 			continue;
@@ -26,13 +26,20 @@ uint32_t ir_check_size(struct ir* ir){
 
 		switch(operation_cursor->type){
 			case IR_OPERATION_TYPE_IN_REG 	: {
+				if (operation_cursor->size != irRegister_get_size(operation_cursor->operation_type.in_reg.reg)){
+					log_err_m("register %s has an incorrect size: %u", irRegister_2_string(operation_cursor->operation_type.in_reg.reg), operation_cursor->size);
+					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+					result = 1;
+				}
 				break;
 			}
 			case IR_OPERATION_TYPE_IN_MEM 	: {
-				if (node_cursor->nb_edge_dst > 1){
-					operand = ir_node_get_operation(edge_get_src(node_get_head_edge_dst(node_cursor)));
-					if (operand->size != 32){
-						log_err_m("memory load address is %u bits large", operand->size);
+				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					operand_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+					dependence_cursor = ir_edge_get_dependence(edge_cursor);
+
+					if (dependence_cursor->type == IR_DEPENDENCE_TYPE_ADDRESS && operand_cursor->size != ADDRESS_SIZE){
+						log_err_m("memory load address is %u bits large", operand_cursor->size);
 						operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 						result = 1;
 					}
@@ -41,21 +48,21 @@ uint32_t ir_check_size(struct ir* ir){
 			}
 			case IR_OPERATION_TYPE_OUT_MEM  : {
 				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					operand = ir_node_get_operation(edge_get_src(edge_cursor));
-					dependence = ir_edge_get_dependence(edge_cursor);
+					operand_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+					dependence_cursor = ir_edge_get_dependence(edge_cursor);
 
-					switch(dependence->type){
+					switch(dependence_cursor->type){
 						case IR_DEPENDENCE_TYPE_ADDRESS : {
-							if (operand->size != 32){
-								log_err_m("memory store address is %u bits large", operand->size);
+							if (operand_cursor->size != ADDRESS_SIZE){
+								log_err_m("memory store address is %u bits large", operand_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
 							break;
 						}
 						case IR_DEPENDENCE_TYPE_DIRECT 	: {
-							if (operation_cursor->size != operand->size){
-								log_err_m("incorrect operand size for memory store: (%u -> %u)", operand->size, operation_cursor->size);	
+							if (operation_cursor->size != operand_cursor->size){
+								log_err_m("incorrect operand size for memory store: (%u -> %u)", operand_cursor->size, operation_cursor->size);	
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
@@ -73,10 +80,10 @@ uint32_t ir_check_size(struct ir* ir){
 			}
 			case IR_OPERATION_TYPE_INST 	: {
 				for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					operand = ir_node_get_operation(edge_get_src(edge_cursor));
-					dependence = ir_edge_get_dependence(edge_cursor);
+					operand_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+					dependence_cursor = ir_edge_get_dependence(edge_cursor);
 
-					if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+					if (dependence_cursor->type == IR_DEPENDENCE_TYPE_MACRO){
 						continue;
 					}
 
@@ -84,16 +91,16 @@ uint32_t ir_check_size(struct ir* ir){
 						case IR_DIVQ 		:
 						case IR_DIVR 		:
 						case IR_IDIV 		: {
-							if (dependence->type == IR_DEPENDENCE_TYPE_DIVISOR){
-								if (operand->size != operation_cursor->size / 2 && operation_cursor->size != operand->size){
-									log_err_m("incorrect operand size for divide: %u", operand->size);
+							if (dependence_cursor->type == IR_DEPENDENCE_TYPE_DIVISOR){
+								if (operand_cursor->size != operation_cursor->size / 2 && operation_cursor->size != operand_cursor->size){
+									log_err_m("incorrect operand size for divide: %u", operand_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
 								}
 							}
 							else{
-								if (operation_cursor->size != operand->size){
-									log_err_m("found size mismatch (%u -> %s:%u)", operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
+								if (operation_cursor->size != operand_cursor->size){
+									log_err_m("found size mismatch (%u -> %s:%u)", operand_cursor->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
 								}
@@ -101,32 +108,32 @@ uint32_t ir_check_size(struct ir* ir){
 							break;
 						}
 						case IR_MOVZX 		: {
-							if (!valid_operand_size_ins_movzx(operation_cursor, operand)){
-								log_err_m("found size mismatch (%u -> MOVZX:%u)", operand->size, operation_cursor->size);
+							if (!valid_operand_size_ins_movzx(operation_cursor, operand_cursor)){
+								log_err_m("found size mismatch (%u -> MOVZX:%u)", operand_cursor->size, operation_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
 							break;
 						}
 						case IR_PART1_8 	: {
-							if (!valid_operand_size_ins_partX_8(operation_cursor, operand)){
-								log_err_m("found size mismatch (%u -> PART1_8:%u)", operand->size, operation_cursor->size);
+							if (!valid_operand_size_ins_partX_8(operation_cursor, operand_cursor)){
+								log_err_m("found size mismatch (%u -> PART1_8:%u)", operand_cursor->size, operation_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
 							break;
 						}
 						case IR_PART2_8 	: {
-							if (!valid_operand_size_ins_partX_8(operation_cursor, operand)){
-								log_err_m("found size mismatch (%u -> PART2_8:%u)", operand->size, operation_cursor->size);
+							if (!valid_operand_size_ins_partX_8(operation_cursor, operand_cursor)){
+								log_err_m("found size mismatch (%u -> PART2_8:%u)", operand_cursor->size, operation_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
 							break;
 						}
 						case IR_PART1_16 	: {
-							if (!valid_operand_size_ins_partX_16(operation_cursor, operand)){
-								log_err_m("found size mismatch (%u -> PART1_16:%u)", operand->size, operation_cursor->size);
+							if (!valid_operand_size_ins_partX_16(operation_cursor, operand_cursor)){
+								log_err_m("found size mismatch (%u -> PART1_16:%u)", operand_cursor->size, operation_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
@@ -138,16 +145,16 @@ uint32_t ir_check_size(struct ir* ir){
 						case IR_SHLD 		:
 						case IR_SHR 		:
 						case IR_SHRD 		: {
-							if (dependence->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-								if (operand->size != 8 && operation_cursor->size != operand->size){
-									log_err_m("incorrect operand size for displacement: %u", operand->size);
+							if (dependence_cursor->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+								if (operand_cursor->size != 8 && operation_cursor->size != operand_cursor->size){
+									log_err_m("incorrect operand size for displacement: %u", operand_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
 								}
 							}
 							else{
-								if (operation_cursor->size != operand->size){
-									log_err_m("found size mismatch (%u -> %s:%u)", operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
+								if (operation_cursor->size != operand_cursor->size){
+									log_err_m("found size mismatch (%u -> %s:%u)", operand_cursor->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
 								}
@@ -156,8 +163,8 @@ uint32_t ir_check_size(struct ir* ir){
 						}
 						case IR_IMUL 	:
 						case IR_MUL 	: {
-							if (operand->size * 2 != operation_cursor->size && operand->size != operation_cursor->size){
-								log_err_m("incorrect operand size for multiply: %u -> %u", operand->size, operation_cursor->size);
+							if (operand_cursor->size * 2 != operation_cursor->size && operand_cursor->size != operation_cursor->size){
+								log_err_m("incorrect operand size for multiply: %u -> %u", operand_cursor->size, operation_cursor->size);
 								putchar('\t'); irOperation_fprint(operation_cursor, stdout); putchar('\n');
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
@@ -165,8 +172,8 @@ uint32_t ir_check_size(struct ir* ir){
 							break;
 						}
 						default 		: {
-							if (operation_cursor->size != operand->size){
-								log_err_m("found size mismatch (%u -> %s:%u)", operand->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
+							if (operation_cursor->size != operand_cursor->size){
+								log_err_m("found size mismatch (%u -> %s:%u)", operand_cursor->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 								result = 1;
 							}
@@ -177,6 +184,9 @@ uint32_t ir_check_size(struct ir* ir){
 				break;
 			}
 			case IR_OPERATION_TYPE_SYMBOL 	: {
+				break;
+			}
+			case IR_OPERATION_TYPE_NULL 	: {
 				break;
 			}
 		}
@@ -793,6 +803,22 @@ uint32_t ir_check_connectivity(struct ir* ir){
 					}
 				}
 
+				break;
+			}
+			case IR_OPERATION_TYPE_NULL 	: {
+				/* Check input edge(s) */
+				if (node_cursor->nb_edge_dst){
+					log_err_m("NULL operation has %u dst edge(s)", node_cursor->nb_edge_dst);
+					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+					result = 1;
+				}
+
+				/* Check output edge(s) */
+				if (!node_cursor->nb_edge_src){
+					log_err("NULL operation has no src edge");
+					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+					result = 1;
+				}
 				break;
 			}
 		}

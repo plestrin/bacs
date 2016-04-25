@@ -214,6 +214,10 @@ static int32_t irAffineForm_import(struct node* node, struct irAffineForm** affi
 			irAffineForm_import_var(node, affine_form, coef, sign);
 			break;
 		}
+		case IR_OPERATION_TYPE_NULL 	: {
+			irAffineForm_import_var(node, affine_form, coef, sign);
+			break;
+		}
 	}
 
 	return 0;

@@ -287,9 +287,6 @@ static int TOOL_init(const char* trace_dir_name, const char* white_list_file_nam
 			std::cerr << "ERROR: in " << __func__ << ", unable to create shared library whiteList" << std::endl;
 		}
 	}
-	else{
-		light_tracer.white_list = NULL;
-	}
 
 	light_tracer.trace_file = traceFile_create(trace_dir_name, PIN_GetPid());
 	if (light_tracer.trace_file == NULL){

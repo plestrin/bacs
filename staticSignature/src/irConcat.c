@@ -73,6 +73,9 @@ static int32_t irOperation_copy(void* data_dst, const void* data_src, void* arg)
 			op_dst->operation_type.symbol.result 	= NULL;
 			op_dst->operation_type.symbol.index 	= 0;
 		}
+		case IR_OPERATION_TYPE_NULL  	: {
+			break;
+		}
 	}
 
 	if (op_dst->index != IR_OPERATION_INDEX_ADDRESS && op_dst->index != IR_OPERATION_INDEX_IMMEDIATE && op_dst->index != IR_OPERATION_INDEX_UNKOWN){

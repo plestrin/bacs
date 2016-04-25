@@ -423,6 +423,9 @@ void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){
 				case IR_OPERATION_TYPE_SYMBOL 	: {
 					break;
 				}
+				case IR_OPERATION_TYPE_NULL 	: {
+					break;
+				}
 			}
 		}
 	}

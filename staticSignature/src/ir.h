@@ -750,7 +750,8 @@ enum irOperationType{
 	IR_OPERATION_TYPE_OUT_MEM 	= 2,
 	IR_OPERATION_TYPE_IMM 		= 3,
 	IR_OPERATION_TYPE_INST 		= 4,
-	IR_OPERATION_TYPE_SYMBOL 	= 5
+	IR_OPERATION_TYPE_SYMBOL 	= 5,
+	IR_OPERATION_TYPE_NULL 		= 6
 };
 
 #define NB_OPERATION_TYPE 6
@@ -933,7 +934,7 @@ struct node* ir_insert_inst(struct ir* ir, struct node* root, uint32_t index, ui
 static inline void ir_convert_node_to_inst(struct node* node, uint32_t index, uint8_t size, enum irOpcode opcode){
 	struct irOperation* operation = ir_node_get_operation(node);
 
-	/* Warning: it migth not be a good idea to discard the status flag without anymore check */
+	/* Warning: it migth not be a good idea to discard the status flag without any check */
 
 	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
 		ir_mem_operation_remove(operation);

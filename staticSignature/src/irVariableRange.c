@@ -182,6 +182,10 @@ void irVariableRange_compute(struct node* node, struct variableRange* range_dst,
 			variableRange_init_size(range_dst, 64);
 			break;
 		}
+		case IR_OPERATION_TYPE_NULL 	: {
+			variableRange_init_size(range_dst, operation->size);
+			break;
+		}
 	}
 }
 

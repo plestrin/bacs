@@ -147,6 +147,9 @@ uint32_t irNode_get_label(struct node* node){
 		case IR_OPERATION_TYPE_SYMBOL 	: {
 			return 0x0000ffff | (operation->operation_type.symbol.sym_sig->id << 16);
 		}
+		case IR_OPERATION_TYPE_NULL 	: {
+			return 0xfffffffc;
+		}
 	}
 
 	log_err("this case is not supposed to happen");

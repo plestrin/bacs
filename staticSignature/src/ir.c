@@ -511,6 +511,10 @@ void irOperation_fprint(struct irOperation* operation, FILE* file){
 			fputs(operation->operation_type.symbol.sym_sig->name, file);
 			break;
 		}
+		case IR_OPERATION_TYPE_NULL 		: {
+			fputs("NULL", file);
+			break;
+		}
 	}
 	fprintf(file, ":{size=%u, flag=0x%08x, index=%u}", operation->size, operation->status_flag, operation->index);
 }
@@ -570,6 +574,10 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		}
 		case IR_OPERATION_TYPE_SYMBOL 		: {
 			fprintf(file, "[label=\"%s\"", operation->operation_type.symbol.sym_sig->name);
+			break;
+		}
+		case IR_OPERATION_TYPE_NULL 		: {
+			fputs("[style=\"invis\"", file);
 			break;
 		}
 	}
