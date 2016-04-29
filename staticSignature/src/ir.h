@@ -940,6 +940,15 @@ void ir_convert_operation_to_null(struct ir* ir, struct node* node);
 struct edge* ir_add_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, enum irDependenceType type);
 struct edge* ir_add_macro_dependence(struct ir* ir, struct node* node_src, struct node* node_dst, uint32_t desc);
 
+#ifdef EXTRA_CHECK
+#define ir_add_dependence_check(ir, node_src, node_dst, type) 			\
+	if (ir_add_dependence(ir, node_src, node_dst, type) == NULL){ 		\
+		log_err("unable to add dependency to IR"); 						\
+	}
+#else
+#define ir_add_dependence_check(ir, node_src, node_dst, type) ir_add_dependence(ir, node_src, node_dst, type);
+#endif
+
 void ir_merge_equivalent_node(struct ir* ir, struct node* node_dst, struct node* node_src);
 
 void ir_remove_node(struct ir* ir, struct node* node);
@@ -999,8 +1008,8 @@ static inline struct node* irNodeIterator_get_next(struct ir* ir, struct irNodeI
 
 #define ir_clean(ir) graph_clean(&((ir)->graph));
 
-#define ir_delete(ir) 											\
-	ir_clean(ir); 												\
+#define ir_delete(ir) 												\
+	ir_clean(ir); 													\
 	free(ir);
 
 #include "irNormalize.h"
