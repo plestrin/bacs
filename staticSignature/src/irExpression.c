@@ -383,9 +383,8 @@ static int32_t irAffineForm_simplify(struct irAffineForm* affine_form){
 			if (term_1->variable == term_2->variable){
 				irAffineTerm_add(term_1, term_2);
 				setIterator_pop(&iterator_2);
-				if (term_1->variable != NULL){
+				if (term_1->variable != NULL)
 					result = 1;
-				}
 			}
 		}
 	}
@@ -394,9 +393,19 @@ static int32_t irAffineForm_simplify(struct irAffineForm* affine_form){
 }
 
 static void irAffineForm_export(struct irAffineForm* affine_form, struct ir* ir){
-	struct setIterator 		iterator;
-	struct irAffineTerm* 	term;
-	struct node* 			term_node;
+	struct setIterator 	iterator;
+	struct node* 		term_node;
+	struct edge* 		edge_cursor;
+	struct edge** 		edge_buffer;
+	uint32_t 			i;
+	uint32_t 			nb_edge;
+
+	nb_edge = affine_form->root->nb_edge_dst;
+	edge_buffer = (struct edge**)alloca(sizeof(struct edge*) * nb_edge);
+
+	for (edge_cursor = node_get_head_edge_dst(affine_form->root), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		edge_buffer[i ++] = edge_cursor;
+	}
 
 	switch (set_get_length(&(affine_form->term_set))){
 		case 0 : {
@@ -404,33 +413,65 @@ static void irAffineForm_export(struct irAffineForm* affine_form, struct ir* ir)
 			break;
 		}
 		case 1 : {
+			struct irAffineTerm* term;
+
 			term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator);
 			term_node = irAffineTerm_export(affine_form->root, term, ir, affine_form->size);
 			ir_merge_equivalent_node(ir, term_node, affine_form->root);
 			break;
 		}
-		default : {
-			struct edge* 	edge_cursor;
-			struct edge** 	edge_buffer;
-			uint32_t 		i;
-			uint32_t 		nb_edge;
+		case 2 	: {
+			struct irAffineTerm* term1;
+			struct irAffineTerm* term2;
+			struct irAffineTerm* tmp;
 
-			nb_edge = affine_form->root->nb_edge_dst;
-			edge_buffer = (struct edge**)alloca(sizeof(struct edge*) * nb_edge);
+			term1 = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator);
+			term2 = (struct irAffineTerm*)setIterator_get_next(&iterator);
 
-			for (edge_cursor = node_get_head_edge_dst(affine_form->root), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				edge_buffer[i ++] = edge_cursor;
+			if (term1->sign != term2->sign){
+				ir_node_get_operation(affine_form->root)->operation_type.inst.opcode = IR_SUB;
+				ir_node_get_operation(affine_form->root)->size = affine_form->size;
+
+				if (irAffineTerm_is_neg(term1)){
+					tmp = term1;
+					term1 = term2;
+					term2 = tmp;
+				}
+
+				if ((term_node = irAffineTerm_export(affine_form->root, term1, ir, affine_form->size)) != NULL){
+					ir_add_dependence_check(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT)
+				}
+				else{
+					log_err("unable to export AffineTerm");
+				}
+
+				term2->sign = IR_EXPRESSION_SIGN_POS;
+				if ((term_node = irAffineTerm_export(affine_form->root, term2, ir, affine_form->size)) != NULL){
+					ir_add_dependence_check(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_SUBSTITUTE)
+				}
+				else{
+					log_err("unable to export AffineTerm");
+				}
+
+				for (i = 0; i < nb_edge; i++){
+					ir_remove_dependence(ir, edge_buffer[i]);
+				}
+
+				break;
 			}
+		} 
+		default : {
+			struct irAffineTerm* term;
 
 			ir_node_get_operation(affine_form->root)->operation_type.inst.opcode = IR_ADD;
 			ir_node_get_operation(affine_form->root)->size = affine_form->size;
 
 			for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
-				term_node = irAffineTerm_export(affine_form->root, term, ir, affine_form->size);
-				if (term_node != NULL){
-					if (ir_add_dependence(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-						log_err("unable to add dependence to IR");
-					}
+				if ((term_node = irAffineTerm_export(affine_form->root, term, ir, affine_form->size)) != NULL){
+					ir_add_dependence_check(ir, term_node, affine_form->root, IR_DEPENDENCE_TYPE_DIRECT)
+				}
+				else{
+					log_err("unable to export AffineTerm");
 				}
 			}
 

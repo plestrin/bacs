@@ -346,7 +346,7 @@ static int32_t synthesisGraph_compare_edge(const void* data1, const void* data2)
 		return 1;
 	}
 	else{
-		return memcmp(edge_get_data(edge1), edge_get_data(edge2), sizeof(struct synthesisEdge));
+		return 0;
 	}
 }
 
@@ -468,6 +468,7 @@ static void synthesisGraph_pack(struct graph* graph){
 	uint32_t 				nb_node;
 	uint32_t 				nb_edge;
 	struct synthesisNode* 	synthesis_node_cursor;
+	struct synthesisEdge* 	synthesis_edge_cursor;
 	uint32_t 				i;
 	uint32_t 				j;
 	uint32_t 				k;
@@ -533,7 +534,9 @@ static void synthesisGraph_pack(struct graph* graph){
 		qsort(edge_buffer, nb_edge, sizeof(struct edge*), synthesisGraph_compare_edge);
 
 		for (i = 1, j = 0; i < nb_edge; i++){
+			synthesis_edge_cursor = synthesisGraph_get_synthesisEdge(edge_buffer[j]);
 			if (synthesisGraph_compare_edge(edge_buffer + j, edge_buffer + i) == 0){
+				synthesis_edge_cursor->tag = max(synthesis_edge_cursor->tag, synthesisGraph_get_synthesisEdge(edge_buffer[i])->tag);
 				graph_remove_edge(graph, edge_buffer[i]);
 			}
 			else{
