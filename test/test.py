@@ -33,15 +33,6 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 
 recipes = []
 
-# VERIFY step
-if action == "TRACE" or action == "ALL":
-	file = open("/proc/sys/kernel/yama/ptrace_scope", "r")
-	if int(file.read()) == 1:
-		print("ERROR: the Operating System configuration prevents Pin from using the default (parent) injection mode")
-		file.close()
-		exit()
-	file.close()
-
 # PARSE step
 try:
 	tree = ET.parse(file_name)
