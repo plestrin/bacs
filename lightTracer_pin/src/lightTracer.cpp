@@ -13,13 +13,17 @@
 #include "traceFile.h"
 #include "memTrace.h"
 
+#define MEM_VAL_PADDING 16
+
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
-#define DEFAULT_MEMORY_TRACE 			"0"
+#define DEFAULT_MEMORY_ADD_TRACE 		"0"
+#define DEFAULT_MEMORY_VAL_TRACE 		"0"
 
 KNOB<string> 	knob_trace(KNOB_MODE_WRITEONCE, "pintool", "o", DEFAULT_TRACE_FILE_NAME, "Specify a directory to write trace results");
 KNOB<string> 	knob_white_list(KNOB_MODE_WRITEONCE, "pintool", "w", DEFAULT_WHITE_LIST_FILE_NAME, "(Optional) Shared library white list. Specify file name");
-KNOB<bool> 		knob_memory(KNOB_MODE_WRITEONCE, "pintool", "m", DEFAULT_MEMORY_TRACE, "(Optional) Save memory addresses alongside the execution trace");
+KNOB<bool> 		knob_memory_add(KNOB_MODE_WRITEONCE, "pintool", "m", DEFAULT_MEMORY_ADD_TRACE, "(Optional) Save memory addresses alongside the execution trace");
+KNOB<bool> 		knob_memory_val(KNOB_MODE_WRITEONCE, "pintool", "v", DEFAULT_MEMORY_VAL_TRACE, "(Optional) Save memory values alongside the execution trace");
 
 struct lightTracer{
 	BUFFER_ID 			block_buffer_id;
@@ -28,10 +32,18 @@ struct lightTracer{
 	struct codeMap* 	code_map;
 	struct whiteList*	white_list;
 	struct traceFile* 	trace_file;
-	bool 				trace_memory;
+	bool 				trace_mem_add;
+	bool 				trace_mem_val;
 };
 
-struct lightTracer	light_tracer;
+struct toolThreadData{
+	FILE* 		block_file;
+	FILE* 		mem_add_file;
+	FILE* 		mem_val_file;
+	ADDRINT 	last_addr;
+};
+
+static struct lightTracer light_tracer;
 
 /* ===================================================================== */
 /* Analysis function(s) 	                                             */
@@ -41,6 +53,58 @@ void TOOL_routine_analysis(void* cm_routine_ptr){
 	struct cm_routine* routine = (struct cm_routine*)cm_routine_ptr;
 
 	CODEMAP_INCREMENT_ROUTINE_EXE(routine);
+}
+
+void INS_save_memory_addr(ADDRINT address, THREADID tid){
+	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+
+	data->last_addr = address;
+}
+
+void INS_trace_memory_read_value(ADDRINT address, UINT32 size, THREADID tid){
+	char 					value[MEM_VAL_PADDING];
+	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+
+	PIN_SafeCopy(value, (void*)address, size);
+
+	if (data->mem_val_file == NULL){
+		char file_name[TRACEFILE_NAME_MAX_LENGTH];
+
+		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memValu%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
+		#ifdef __linux__
+		data->mem_val_file = fopen(file_name, "wb");
+		#endif
+		#ifdef WIN32
+		fopen_s(&(data->mem_val_file), file_name, "wb");
+		#endif
+	}
+
+	if (data->mem_val_file != NULL){
+		fwrite(value, MEM_VAL_PADDING, 1, data->mem_val_file);
+	}
+}
+
+void INS_trace_memory_write_value(UINT32 size, THREADID tid){
+	char 					value[MEM_VAL_PADDING];
+	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+
+	PIN_SafeCopy(value, (void*)data->last_addr, size);
+
+	if (data->mem_val_file == NULL){
+		char file_name[TRACEFILE_NAME_MAX_LENGTH];
+
+		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memValu%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
+		#ifdef __linux__
+		data->mem_val_file = fopen(file_name, "wb");
+		#endif
+		#ifdef WIN32
+		fopen_s(&(data->mem_val_file), file_name, "wb");
+		#endif
+	}
+
+	if (data->mem_val_file != NULL){
+		fwrite(value, MEM_VAL_PADDING, 1, data->mem_val_file);
+	}
 }
 
 /* ===================================================================== */
@@ -61,7 +125,7 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 		if (codeMap_is_instruction_whiteListed(light_tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_WHITELISTED){
 			
 			nb_mem_access = UNTRACK_MEM_ACCESS;
-			if (light_tracer.trace_memory){
+			if (light_tracer.trace_mem_add){
 				nb_mem_access = 0;
 				for (instruction = BBL_InsHead(basic_block); INS_Valid(instruction); instruction = INS_Next(instruction)){
 					if (INS_IsNop(instruction)){
@@ -85,13 +149,28 @@ void TOOL_instrumentation_trace(TRACE trace, void* arg){
 							if (INS_OperandRead(instruction, i)){
 								if (nb_mem_read == 1){
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD_EA, offsetof(struct memAddress, address), IARG_END);
+									if (light_tracer.trace_mem_val){
+										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_read_value), IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
+									}
 								}
 								else{
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD2_EA, offsetof(struct memAddress, address), IARG_END);
+									if (light_tracer.trace_mem_val){
+										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_read_value), IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
+									}
 								}
 							}
 							else{
 								INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYWRITE_EA, offsetof(struct memAddress, address), IARG_END);
+								if (light_tracer.trace_mem_val){
+									INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_save_memory_addr), IARG_MEMORYWRITE_EA, IARG_THREAD_ID, IARG_END);
+									if (INS_IsBranchOrCall(instruction)){
+										INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(INS_trace_memory_write_value), IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
+									}
+									else{
+										INS_InsertCall(instruction, IPOINT_AFTER, AFUNPTR(INS_trace_memory_write_value), IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
+									}
+								}
 							}
 						}
 					}
@@ -157,10 +236,7 @@ void TOOL_instrumentation_img(IMG image, void* arg){
 /* Call back function                                                 	 */
 /* ===================================================================== */
 
-struct toolThreadData{
-	FILE* 	block_file;
-	FILE* 	memory_file;
-};
+
 
 void* TOOL_block_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void* buffer, UINT64 numElements, void* arg){
 	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
@@ -215,20 +291,20 @@ void* TOOL_mem_buffer_full(BUFFER_ID id, THREADID tid, const CONTEXT *ctxt, void
 		return buffer;
 	}
 
-	if (data->memory_file == NULL){
+	if (data->mem_add_file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
 
 		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memAddr%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
 		#ifdef __linux__
-		data->memory_file = fopen(file_name, "wb");
+		data->mem_add_file = fopen(file_name, "wb");
 		#endif
 		#ifdef WIN32
-		fopen_s(&(data->memory_file), file_name, "wb");
+		fopen_s(&(data->mem_add_file), file_name, "wb");
 		#endif
 	}
 
-	if (data->memory_file != NULL){
-		fwrite(buffer, sizeof(struct memAddress), numElements, data->memory_file);
+	if (data->mem_add_file != NULL){
+		fwrite(buffer, sizeof(struct memAddress), numElements, data->mem_add_file);
 	}
 
 	return buffer;
@@ -245,8 +321,11 @@ void TOOL_thread_stop(THREADID tid, const CONTEXT *ctxt, INT32 code, void* arg){
 		if (data->block_file != NULL){
 			fclose(data->block_file);
 		}
-		if (data->memory_file != NULL){
-			fclose(data->memory_file);
+		if (data->mem_add_file != NULL){
+			fclose(data->mem_add_file);
+		}
+		if (data->mem_val_file != NULL){
+			fclose(data->mem_val_file);
 		}
 		free(data);
 		PIN_SetThreadData(light_tracer.thread_key, NULL, tid);
@@ -268,12 +347,18 @@ void TOOL_clean(INT32 code, void* arg){
 /* Init function                                                    	 */
 /* ===================================================================== */
 
-static int TOOL_init(const char* trace_dir_name, const char* white_list_file_name, bool trace_memory){
+static int TOOL_init(const char* trace_dir_name, const char* white_list_file_name, bool trace_memory_add, bool trace_memory_val){
+	if (trace_memory_val && !trace_memory_add){
+		std::cerr << "WARNING: in " << __func__ << ", turning memory address one" << std::endl;
+		trace_memory_add = true;
+	}
+
 	light_tracer.thread_key		= -1;
 	light_tracer.code_map 		= NULL;
 	light_tracer.white_list 	= NULL;
 	light_tracer.trace_file 	= NULL;
-	light_tracer.trace_memory 	= trace_memory;
+	light_tracer.trace_mem_add 	= trace_memory_add;
+	light_tracer.trace_mem_val 	= trace_memory_val;
 
 	light_tracer.code_map = codeMap_create();
 	if (light_tracer.code_map == NULL){
@@ -349,7 +434,7 @@ int main(int argc, char * argv[]){
 		return -1;
 	}
 
-	if (TOOL_init(knob_trace.Value().c_str(), knob_white_list.Value().c_str(), knob_memory.Value())){
+	if (TOOL_init(knob_trace.Value().c_str(), knob_white_list.Value().c_str(), knob_memory_add.Value(), knob_memory_val.Value())){
 		std::cerr << "ERROR: in " << __func__ << ", unable to init the TOOL" << std::endl << KNOB_BASE::StringKnobSummary();
 		return -1;
 	}

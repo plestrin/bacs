@@ -8,7 +8,7 @@
 #include "codeMap.h"
 #include "assembly.h"
 
-#define TRACEFILE_NAME_MAX_LENGTH 		256
+#define TRACEFILE_NAME_MAX_LENGTH 256
 
 struct traceFile{
 	char				dir_name[TRACEFILE_NAME_MAX_LENGTH];
