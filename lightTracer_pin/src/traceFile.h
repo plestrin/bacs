@@ -1,9 +1,7 @@
 #ifndef TRACEFILE_H
 #define TRACEFILE_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
+#include "pin.H"
 
 #include "codeMap.h"
 #include "assembly.h"

@@ -1,6 +1,8 @@
 #ifndef ADDRESS_H
 #define ADDRESS_H
 
+#include <stdint.h>
+
 #if defined ARCH_32
 typedef uint32_t ADDRESS;
 #define ADDRESS_SIZE 32

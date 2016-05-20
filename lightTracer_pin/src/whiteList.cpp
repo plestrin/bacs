@@ -1,6 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "pin.H"
+
+#ifdef WIN32
+#include "windowsComp.h"
+#endif
 
 #include "whiteList.h"
 
@@ -15,12 +17,14 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	list->buffer = NULL;
 
 	if ((file = fopen(file_name, "rb")) == NULL){
-		printf("ERROR: in %s, unable to open file: \"%s\"\n", __func__, file_name);
+		LOG("ERROR: unable to open file: ");
+		LOG(file_name);
+		LOG("\n");
 		goto error;
 	}
 
 	if (fseek(file, 0, SEEK_END)){
-		printf("ERROR: in %s, unable to fseek\n", __func__);
+		LOG("ERROR: unable to fseek\n");
 		goto error;
 	}
 	
@@ -28,12 +32,12 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	rewind(file);
 
 	if ((list->buffer = (char*)malloc(size)) == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		LOG("ERROR: unable to allocate memory\n");
 		goto error;
 	}
 
 	if (fread(list->buffer, 1, size, file) != (size_t)size){
-		printf("ERROR: in %s, unable to read file\n", __func__);
+		LOG("ERROR: unable to read file\n");
 		goto error;
 	}
 
@@ -48,7 +52,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	}
 
 	if ((list->entries = (char**)malloc(sizeof(char*)*list->nb_entry)) == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		LOG("ERROR: unable to allocate memory\n");
 		goto error;
 	}
 
@@ -58,7 +62,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 			i++;
 		}
 		if (i >= size){
-			printf("ERROR: in %s, searching for end of line fails at line %d:%d\n", __func__, n, list->nb_entry);
+			LOG("ERROR: searching for end of line fails at line " + decstr(n) + ":" + decstr(list->nb_entry) + "\n");
 			list->entries[n] = list->entries[n-1];
 		}
 		else{
@@ -95,11 +99,11 @@ struct whiteList* whiteList_create(const char* file_name){
 	struct whiteList* result;
 
 	if ((result = (struct whiteList*)malloc(sizeof(struct whiteList))) == NULL){
-		printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		LOG("ERROR: unable to allocate memory\n");
 	}
 	else{
 		if (whiteList_init(result, file_name)){
-			printf("ERROR: in %s, unable to init whiteList\n", __func__);
+			LOG("ERROR: unable to init whiteList\n");
 			free(result);
 			result = NULL;
 		}
@@ -119,23 +123,6 @@ int whiteList_search(struct whiteList* list, const char* entry){
 	}
 	else{
 		return -1;
-	}
-}
-
-void whiteList_print(struct whiteList* list){
-	int n;
-
-	printf("*** PRINT WHITELIST ***\n");
-
-	if (list != NULL){
-		printf("Nb entrie(s): \t%d\n", list->nb_entry);
-
-		for (n = 0; n < list->nb_entry; n++){
-			printf("Entry %d: \"%s\"\n", n, list->entries[n]);
-		}
-	}
-	else{
-		printf("WhiteList pointer is NULL\n");
 	}
 }
 

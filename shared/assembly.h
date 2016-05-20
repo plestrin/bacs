@@ -3,10 +3,7 @@
 
 #include <stdint.h>
 
-#include "xed-interface.h"
 #include "address.h"
-#include "array.h"
-#include "base.h"
 
 struct asmWriter{
 	uint32_t 				blockId_generator;
@@ -25,6 +22,12 @@ struct asmBlockHeader{
 	uint32_t 				nb_mem_access;
 	ADDRESS 				address;
 };
+
+#ifndef __PIN__
+
+#include "xed-interface.h"
+#include "array.h"
+#include "base.h"
 
 struct asmBlock{
 	struct asmBlockHeader 	header;
@@ -117,5 +120,7 @@ void assembly_clean(struct assembly* assembly);
 #define assembly_delete(assembly) 				\
 	assembly_clean(assembly); 					\
 	free(assembly)
+
+#endif
 
 #endif

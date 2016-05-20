@@ -4,10 +4,13 @@
 #include <stdint.h>
 
 #include "address.h"
-#include "mapFile.h"
-#include "assembly.h"
-#include "array.h"
-#include "base.h"
+
+#define MEMADDRESS_DESCRIPTOR_CLEAN 	0x00000000
+#define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
+#define MEMADDRESS_DESCRIPTOR_WRITE_0 	0x00010000
+
+#define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
+#define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
 
 struct memAddress{
 	ADDRESS 	pc;
@@ -15,16 +18,16 @@ struct memAddress{
 	ADDRESS 	address;
 };
 
+#ifndef __PIN__
+
+#include "mapFile.h"
+#include "assembly.h"
+#include "array.h"
+#include "base.h"
+
 int32_t memAddress_buffer_compare(const struct memAddress* buffer1, const struct memAddress* buffer2, uint64_t nb_mem_addr);
 
-#define MEMADDRESS_DESCRIPTOR_CLEAN 	0x00000000
-#define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
-#define MEMADDRESS_DESCRIPTOR_WRITE_0 	0x00010000
-
 #define memAddress_descriptor_is_included(desc1, desc2) (((desc2) & 0x00010000) ? (((desc1) & 0xffff0000) == (desc2)) : (((desc1) & 0x0000ffff) == (desc2)))
-
-#define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
-#define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
 
 #define memAddress_descriptor_is_read(desc) 	((desc) & 0x00000001)
 #define memAddress_descriptor_is_write(desc) 	((desc) & 0x00010000)
@@ -102,5 +105,7 @@ int32_t memTraceIterator_get_next_addr(struct memTraceIterator* it, ADDRESS addr
 	if ((it)->mapping.buffer != NULL){ 				\
 		mappingDesc_free_mapping((it)->mapping); 	\
 	}
+
+#endif
 
 #endif

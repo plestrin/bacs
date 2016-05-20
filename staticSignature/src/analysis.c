@@ -305,6 +305,7 @@ static void analysis_trace_load(struct analysis* analysis, char* arg){
 
 	if ((analysis->trace = trace_load_exe(arg)) == NULL){
 		log_err("unable to create trace");
+		return;
 	}
 
 	if ((analysis->code_map = cmReaderJSON_parse(arg, analysis->trace->trace_type.exe.identifier.current_pid)) == NULL){

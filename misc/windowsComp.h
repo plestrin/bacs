@@ -10,7 +10,9 @@
 #endif
 
 #ifndef strncpy
-#	define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
+#	ifndef __PIN__
+#		define strncpy(dst, src, size) strncpy_s((dst), (size), (src), _TRUNCATE)
+#	endif
 #endif
 
 #ifndef mkdir
@@ -19,6 +21,10 @@
 
 #ifndef inline
 # 	define inline __inline
+#endif
+
+#ifndef strcasestr
+# 	define strcasestr strstr
 #endif
 
 char* windowsComp_sanitize_path(char* path);
