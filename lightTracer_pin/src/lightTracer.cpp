@@ -9,8 +9,6 @@
 #include "traceFile.h"
 #include "memTrace.h"
 
-#define MEM_VAL_PADDING 16
-
 #define DEFAULT_TRACE_FILE_NAME 		"trace"
 #define DEFAULT_WHITE_LIST_FILE_NAME	""
 #define DEFAULT_MEMORY_ADD_TRACE 		"0"
@@ -59,7 +57,7 @@ static void INS_save_memory_addr(ADDRINT address, THREADID tid){
 }
 
 static void INS_trace_memory_read_value(ADDRINT address, UINT32 size, THREADID tid){
-	char 					value[MEM_VAL_PADDING];
+	char 					value[MEMVALUE_PADDING];
 	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
 
 	PIN_SafeCopy(value, (void*)address, size);
@@ -72,12 +70,12 @@ static void INS_trace_memory_read_value(ADDRINT address, UINT32 size, THREADID t
 	}
 
 	if (data->mem_val_file != NULL){
-		fwrite(value, MEM_VAL_PADDING, 1, data->mem_val_file);
+		fwrite(value, MEMVALUE_PADDING, 1, data->mem_val_file);
 	}
 }
 
 static void INS_trace_memory_write_value(UINT32 size, THREADID tid){
-	char 					value[MEM_VAL_PADDING];
+	char 					value[MEMVALUE_PADDING];
 	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
 
 	PIN_SafeCopy(value, (void*)data->last_addr, size);
@@ -90,7 +88,7 @@ static void INS_trace_memory_write_value(UINT32 size, THREADID tid){
 	}
 
 	if (data->mem_val_file != NULL){
-		fwrite(value, MEM_VAL_PADDING, 1, data->mem_val_file);
+		fwrite(value, MEMVALUE_PADDING, 1, data->mem_val_file);
 	}
 }
 

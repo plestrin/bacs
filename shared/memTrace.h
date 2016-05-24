@@ -9,6 +9,8 @@
 #define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
 #define MEMADDRESS_DESCRIPTOR_WRITE_0 	0x00010000
 
+#define MEMVALUE_PADDING 16
+
 #define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
 #define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))
 
@@ -67,10 +69,13 @@ static inline ADDRESS memAddress_search_and_get(const struct memAddress* mem_add
 }
 
 struct memTrace{
-	int 				file;
-	struct mappingDesc 	mapping;
+	int 				file_addr;
+	int 				file_valu;
+	struct mappingDesc 	mapping_addr;
+	struct mappingDesc 	mapping_valu;
 	struct memAddress* 	mem_addr_buffer;
-	uint64_t 			nb_mem_addr;
+	uint8_t* 			mem_valu_buffer;
+	uint64_t 			nb_mem;
 	enum allocationType allocation_type;
 };
 
