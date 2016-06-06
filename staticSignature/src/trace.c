@@ -375,7 +375,7 @@ void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, 
 		ir_component.ir 				= trace_inn->trace_type.frag.ir;
 
 		if (trace_ext->mem_trace != NULL && trace_ext->mem_trace->mem_addr_buffer != NULL){
-			if (memAddress_buffer_compare(trace_ext->mem_trace->mem_addr_buffer + instructionIterator_get_mem_addr_index(&it), trace_inn->mem_trace->mem_addr_buffer, trace_inn->mem_trace->nb_mem_addr)){
+			if (memAddress_buffer_compare(trace_ext->mem_trace->mem_addr_buffer + instructionIterator_get_mem_addr_index(&it), trace_inn->mem_trace->mem_addr_buffer, trace_inn->mem_trace->nb_mem)){
 				goto next;
 			}
 		}

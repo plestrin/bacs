@@ -14,7 +14,7 @@ TEST_ARRAYMINCOVERAGE 	:= test_arrayMinCoverage
 
 CC						:= gcc
 # gcc FLAGS
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -O1 -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 # clang FLAGS
 ##CFLAGS 				:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 LDFLAGS					:=

@@ -114,7 +114,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 	uint32_t 					i;
 	struct memTrace* 			mem_trace;
 	struct memAddress* 			new_mem_addr_buffer;
-	uint8_t* 					new_mem_valu_buffer;
+	uint8_t* 					new_mem_valu_buffer = NULL;
 	struct memAccessExtrude* 	extrude;
 	uint64_t 					size;
 	uint64_t 					start;
@@ -252,6 +252,9 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 		if (mem_trace->mem_valu_buffer == NULL){
 			log_err("unable to allocate memory");
 		}
+	}
+	else{
+		mem_trace->mem_valu_buffer = NULL;
 	}
 
 	for (i = 0, j = 0; i < nb_mem_trace_src; i++){
