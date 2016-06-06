@@ -11,7 +11,6 @@
 #include "dagPartialOrder.h"
 #include "base.h"
 
-#define IR_NORMALIZE_REMOVE_DEAD_CODE 				1
 #define IR_NORMALIZE_SIMPLIFY_INSTRUCTION			1
 #define IR_NORMALIZE_REMOVE_SUBEXPRESSION 			1
 #define IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS 		1
@@ -105,18 +104,6 @@ void ir_normalize(struct ir* ir){
 	#endif
 	#endif
 	uint8_t 		modification = 0;
-
-	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
-	ir_normalize_remove_dead_code(ir, &modification);
-	#if defined VERBOSE || defined IR_FULL_CHECK
-	if (modification){
-		#ifdef VERBOSE
-		log_info("modification remove dead code @ START");
-		#endif
-		ir_normalize_check_ir(ir);
-	}
-	#endif
-	#endif
 
 	do {
 		#ifdef IR_PRINT_STEP
@@ -216,19 +203,6 @@ void ir_normalize_concrete(struct ir* ir){
 	#endif
 	uint8_t 		modification 			= 0;
 
-	#if IR_NORMALIZE_REMOVE_DEAD_CODE == 1
-	ir_normalize_remove_dead_code(ir, &modification);
-	#if defined VERBOSE || defined IR_FULL_CHECK
-	if (modification){
-		#ifdef VERBOSE
-		log_info("modification remove dead code @ START");
-		#endif
-		ir_normalize_check_ir(ir);
-	}
-	#endif
-	modification = 0;
-	#endif
-
 	#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
 	ir_simplify_concrete_memory_access(ir, &modification);
 	#if defined VERBOSE || defined IR_FULL_CHECK
@@ -269,73 +243,6 @@ void ir_normalize_concrete(struct ir* ir){
 
 	timer_print("Simplify instruction", timer_1_elapsed_time);
 	timer_print("Remove subexpression", timer_2_elapsed_time);
-}
-
-void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification){
-	struct irNodeIterator 	it;
-	struct irOperation* 	operation_cursor;
-	uint8_t 				local_modification = 0;
-
-	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
-		log_err("unable to sort DAG");
-		return;
-	}
-
-	for (irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
-		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
-
-		switch (operation_cursor->type){
-			case IR_OPERATION_TYPE_IN_REG 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
-					ir_remove_node(ir, irNodeIterator_get_node(it));
-					local_modification = 1;
-				}
-				break;
-			}
-			case IR_OPERATION_TYPE_IN_MEM 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
-					ir_remove_node(ir, irNodeIterator_get_node(it));
-					local_modification = 1;
-				}
-				break;
-			}
-			case IR_OPERATION_TYPE_OUT_MEM  : {
-				break;
-			}
-			case IR_OPERATION_TYPE_IMM 		: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
-					ir_remove_node(ir, irNodeIterator_get_node(it));
-					local_modification = 1;
-				}
-				break;
-			}
-			case IR_OPERATION_TYPE_INST 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
-					ir_remove_node(ir, irNodeIterator_get_node(it));
-					local_modification = 1;
-				}
-				break;
-			}
-			case IR_OPERATION_TYPE_SYMBOL 	: {
-				break;
-			}
-			case IR_OPERATION_TYPE_NULL 	: {
-				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
-					ir_remove_node(ir, irNodeIterator_get_node(it));
-					local_modification = 1;
-				}
-				break;
-			}
-		}
-	}
-
-	if (modification != NULL){
-		*modification = local_modification;
-	}
-
-	#ifdef IR_FULL_CHECK
-	ir_check_order(ir);
-	#endif
 }
 
 static void ir_normalize_simplify_instruction_numeric_add(struct ir* ir, struct node* node, uint8_t* modification);

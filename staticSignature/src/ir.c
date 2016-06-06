@@ -5,6 +5,7 @@
 #include "ir.h"
 #include "irImporterAsm.h"
 #include "irBuilder.h"
+#include "dagPartialOrder.h"
 #include "base.h"
 
 const uint32_t irRegister_simd_virt_base[4] = {0, 0, 8, 16};
@@ -419,6 +420,63 @@ void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_n
 
 		ir_convert_operation_to_null(ir, node_buffer[i]);
 	}
+}
+
+void ir_remove_dead_code(struct ir* ir){
+	struct irNodeIterator 	it;
+	struct irOperation* 	operation_cursor;
+
+	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
+		log_err("unable to sort DAG");
+		return;
+	}
+
+	for (irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
+
+		switch (operation_cursor->type){
+			case IR_OPERATION_TYPE_IN_REG 	: {
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_IN_MEM 	: {
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_OUT_MEM  : {
+				break;
+			}
+			case IR_OPERATION_TYPE_IMM 		: {
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_INST 	: {
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
+				}
+				break;
+			}
+			case IR_OPERATION_TYPE_SYMBOL 	: {
+				break;
+			}
+			case IR_OPERATION_TYPE_NULL 	: {
+				if (!irNodeIterator_get_node(it)->nb_edge_src && !irOperation_is_final(operation_cursor)){
+					ir_remove_node(ir, irNodeIterator_get_node(it));
+				}
+				break;
+			}
+		}
+	}
+
+	#ifdef IR_FULL_CHECK
+	ir_check_order(ir);
+	#endif
 }
 
 void ir_remove_dependence(struct ir* ir, struct edge* edge){

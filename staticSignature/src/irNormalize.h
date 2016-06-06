@@ -6,8 +6,6 @@
 void ir_normalize(struct ir* ir);
 void ir_normalize_concrete(struct ir* ir);
 
-void ir_normalize_remove_dead_code(struct ir* ir,  uint8_t* modification);
-
 void ir_normalize_simplify_instruction_(struct ir* ir,  uint8_t* modification, uint8_t final);
 
 #define ir_normalize_simplify_instruction(ir, modification) ir_normalize_simplify_instruction_(ir, modification, 0)

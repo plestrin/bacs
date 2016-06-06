@@ -341,7 +341,10 @@ void trace_create_ir(struct trace* trace){
 
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
+		return;
 	}
+
+	ir_remove_dead_code(trace->trace_type.frag.ir);
 }
 
 void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, struct array* ir_component_array){
@@ -483,6 +486,9 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 
 	if (trace->trace_type.frag.ir == NULL){
 		log_err_m("unable to create IR for fragment \"%s\"", trace->trace_type.frag.tag);
+	}
+	else{
+		ir_remove_dead_code(trace->trace_type.frag.ir);
 	}
 
 	free(mapping);
@@ -719,7 +725,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		result_remove_edge_footprint((struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]), trace->trace_type.frag.ir);
 	}
 
-	ir_normalize_remove_dead_code(trace->trace_type.frag.ir, NULL);
+	ir_remove_dead_code(trace->trace_type.frag.ir);
 
 	trace_reset_result(trace);
 

@@ -955,6 +955,7 @@ void ir_remove_node(struct ir* ir, struct node* node);
 void ir_remove_dependence(struct ir* ir, struct edge* edge);
 
 void ir_remove_footprint(struct ir* ir, struct node** node_buffer, uint32_t nb_node);
+void ir_remove_dead_code(struct ir* ir);
 
 #define ir_printDot(ir) graphPrintDot_print(&((ir)->graph), NULL, NULL)
 
