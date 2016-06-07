@@ -1394,23 +1394,44 @@ static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCi
 }
 
 static void cisc_decode_special_div(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	asmOperand_decode(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[0].nb_input_operand), mem_addr);
+	asmOperand_decode(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[1].nb_input_operand), mem_addr);
+	
+	#ifdef EXTRA_CHECK
+	if (cisc->ins[0].nb_input_operand != 2){
+		log_err_m("incorrect DIV format (%u input arg(s))", cisc->ins[0].nb_input_operand);
+		return;
+	}
+	if (cisc->ins[0].input_operand[0].size != 8 && cisc->ins[0].input_operand[0].size != 16 && cisc->ins[0].input_operand[0].size != 32){
+		log_err_m("incorrect DIV format (second operand size is %u)", cisc->ins[0].input_operand[0].size);
+		return;
+	}
+	#endif
+
 	cisc->type 												= CISC_TYPE_SEQ;
 	cisc->nb_ins 											= 3;
-
 	cisc->ins[0].opcode 									= IR_DIVQ;
-	asmOperand_decode(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[0].nb_input_operand), mem_addr);
-	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
-	cisc->ins[0].output_operand.type 						= ASM_OPERAND_REG;
-	cisc->ins[0].output_operand.operand_type.reg 			= IR_REG_TMP;
-
 	cisc->ins[1].opcode 									= IR_DIVR;
-	asmOperand_decode(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[1].nb_input_operand), mem_addr);
-	asmOperand_decode(it, &(cisc->ins[1].output_operand), 1, ASM_OPERAND_ROLE_WRITE_2, NULL, mem_addr);
-
 	cisc->ins[2].opcode 									= IR_MOV;
+
+	if (cisc->ins[0].input_operand[1].size == 8){
+		asmOperand_set_reg(cisc->ins[0].output_operand, 8, it->instruction_index, IR_REG_TMP)
+		asmOperand_set_reg(cisc->ins[1].output_operand, 8, it->instruction_index, IR_REG_AH)
+		asmOperand_set_reg(cisc->ins[2].output_operand, 8, it->instruction_index, IR_REG_AL)
+	}
+	else if (cisc->ins[0].input_operand[1].size == 16){
+		asmOperand_set_reg(cisc->ins[0].output_operand, 16, it->instruction_index, IR_REG_TMP)
+		asmOperand_set_reg(cisc->ins[1].output_operand, 16, it->instruction_index, IR_REG_AX)
+		asmOperand_set_reg(cisc->ins[2].output_operand, 16, it->instruction_index, IR_REG_DX)
+	}
+	else{
+		asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_TMP)
+		asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_EAX)
+		asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_EDX)
+	}
+
 	cisc->ins[2].nb_input_operand 							= 1;
 	asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[0].output_operand));
-	asmOperand_decode(it, &(cisc->ins[2].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
 static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
