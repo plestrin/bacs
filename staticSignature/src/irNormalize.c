@@ -15,7 +15,6 @@
 #define IR_NORMALIZE_SIMPLIFY_INSTRUCTION			1
 #define IR_NORMALIZE_REMOVE_SUBEXPRESSION 			1
 #define IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS 		1
-#define IR_NORMALIZE_FACTOR_INSTRUCTION 			1
 #define IR_NORMALIZE_EXPAND_VARIABLE				1
 #define IR_NORMALIZE_DISTRIBUTE_IMMEDIATE 			1
 #define IR_NORMALIZE_AFFINE_EXPRESSION 				1
@@ -361,7 +360,6 @@ void ir_normalize(struct ir* ir){
 	double 			timer_6_elapsed_time = 0.0;
 	double 			timer_7_elapsed_time = 0.0;
 	double 			timer_8_elapsed_time = 0.0;
-	double 			timer_9_elapsed_time = 0.0;
 	struct timespec timer_start_time;
 	struct timespec timer_stop_time;
 	#endif
@@ -400,24 +398,20 @@ void ir_normalize(struct ir* ir){
 		ir_normalize_apply_rule(ir_normalize_simplify_memory_access, "simplify memory", timer_4_elapsed_time);
 		#endif
 
-		#if IR_NORMALIZE_FACTOR_INSTRUCTION == 1
-		ir_normalize_apply_rule(ir_normalize_factor_instruction, "factor instruction", timer_5_elapsed_time);
-		#endif
-
 		#if IR_NORMALIZE_DISTRIBUTE_IMMEDIATE == 1
-		ir_normalize_apply_rule(ir_normalize_distribute_immediate, "distribute immediate", timer_6_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_distribute_immediate, "distribute immediate", timer_5_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_EXPAND_VARIABLE == 1
-		ir_normalize_apply_rule(ir_normalize_expand_variable, "expand variable", timer_7_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_expand_variable, "expand variable", timer_6_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_REGROUP_MEM_ACCESS == 1
-		ir_normalize_apply_rule(ir_normalize_regroup_mem_access, "regroup mem access", timer_8_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_regroup_mem_access, "regroup mem access", timer_7_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
-		ir_normalize_apply_rule(ir_normalize_affine_expression, "affine expression", timer_9_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_affine_expression, "affine expression", timer_8_elapsed_time);
 		#endif
 
 		#if defined VERBOSE || defined IR_FULL_CHECK
@@ -451,11 +445,10 @@ void ir_normalize(struct ir* ir){
 	timer_print("Simplify instruction", 	timer_2_elapsed_time);
 	timer_print("Remove subexpression", 	timer_3_elapsed_time);
 	timer_print("Simplify memory access", 	timer_4_elapsed_time);
-	timer_print("Factor instruction", 		timer_5_elapsed_time);
-	timer_print("Distribute immediate", 	timer_6_elapsed_time);
-	timer_print("Expand variable", 			timer_7_elapsed_time);
-	timer_print("Regroup memory access", 	timer_8_elapsed_time);
-	timer_print("Affine expression", 		timer_9_elapsed_time);
+	timer_print("Distribute immediate", 	timer_5_elapsed_time);
+	timer_print("Expand variable", 			timer_6_elapsed_time);
+	timer_print("Regroup memory access", 	timer_7_elapsed_time);
+	timer_print("Affine expression", 		timer_8_elapsed_time);
 }
 
 void ir_normalize_concrete(struct ir* ir){
@@ -1926,153 +1919,6 @@ void ir_normalize_distribute_immediate(struct ir* ir, uint8_t* modification){
 		}
 
 		next:;
-	}
-}
-
-void ir_normalize_factor_instruction(struct ir* ir, uint8_t* modification){
-	struct node* 			node_cursor1;
-	struct node* 			node_cursor2;
-	struct node* 			node_cursor3;
-	struct edge* 			edge_cursor2;
-	struct edge* 			next_edge_cursor2;
-	struct edge* 			edge_cursor3;
-	struct irOperation* 	operation_cursor1;
-	struct irOperation* 	operation_cursor2;
-	uint32_t 				opcode_counter[NB_IR_OPCODE];
-	uint32_t 				i;
-	uint32_t 				j;
-	#define IR_NORMALIZE_FACTOR_MAX_NB_OPERAND 16
-	struct node* 			operand[IR_NORMALIZE_FACTOR_MAX_NB_OPERAND];
-	uint8_t 				operand_count[IR_NORMALIZE_FACTOR_MAX_NB_OPERAND];
-	uint8_t 				nb_operand;
-	struct node*			common_operand;
-
-	for(node_cursor1 = graph_get_head_node(&(ir->graph)); node_cursor1 != NULL; node_cursor1 = node_get_next(node_cursor1)){
-		operation_cursor1 = ir_node_get_operation(node_cursor1);
-
-		if (operation_cursor1->type != IR_OPERATION_TYPE_INST || node_cursor1->nb_edge_dst < 2){
-			continue;
-		}
-		
-		memset(opcode_counter, 0, sizeof(opcode_counter));
-		for (edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-			node_cursor2 = edge_get_src(edge_cursor2);
-			operation_cursor2 = ir_node_get_operation(node_cursor2);
-
-			if (operation_cursor2->type == IR_OPERATION_TYPE_INST && node_cursor2->nb_edge_dst == 2){
-				opcode_counter[operation_cursor2->operation_type.inst.opcode] ++;
-			}
-		}
-
-		for (i = 0; i < NB_IR_OPCODE; i++){
-			if (opcode_counter[i] > 1 && ((operation_cursor1->operation_type.inst.opcode == IR_ADD && (enum irOpcode)i == IR_MUL) || (operation_cursor1->operation_type.inst.opcode == IR_ADD && (enum irOpcode)i == IR_SHL) || (operation_cursor1->operation_type.inst.opcode == IR_AND && (enum irOpcode)i == IR_SHL))){
-				if (opcode_counter[i] >= IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
-					log_warn("IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached");
-					continue;
-				}
-
-				for (edge_cursor2 = node_get_head_edge_dst(node_cursor1), nb_operand = 0; edge_cursor2 != NULL; edge_cursor2 = edge_get_next_dst(edge_cursor2)){
-					node_cursor2 = edge_get_src(edge_cursor2);
-					operation_cursor2 = ir_node_get_operation(node_cursor2);
-
-					if (operation_cursor2->type == IR_OPERATION_TYPE_INST && node_cursor2->nb_edge_dst == 2 && operation_cursor2->operation_type.inst.opcode == (enum irOpcode)i){
-						for (edge_cursor3 = node_get_head_edge_dst(node_cursor2); edge_cursor3 != NULL; edge_cursor3 = edge_get_next_dst(edge_cursor3)){
-							node_cursor3 = edge_get_src(edge_cursor3);
-
-							for (j = 0; j < nb_operand; j++){
-								if (operand[j] == node_cursor3){ /* This is a weak test: for IMM test the value */
-									operand_count[j] ++;
-									break;
-								}
-							}
-							if (j == nb_operand){
-								if (nb_operand == IR_NORMALIZE_FACTOR_MAX_NB_OPERAND){
-									log_warn("IR_NORMALIZE_FACTOR_MAX_NB_OPERAND has been reached");
-									break;
-								}
-								operand[j] = node_cursor3;
-								operand_count[j] = 1;
-								nb_operand ++;
-							}
-						}
-					}
-				}
-
-				for (j = 0, common_operand = NULL; j < nb_operand; j++){
-					if (operand_count[j] > 1){
-						if (common_operand == NULL){
-							common_operand = operand[j];
-						}
-						else{
-							log_warn("multiple scenario for factoring instruction");
-						}
-					}
-				}
-
-				if (common_operand != NULL){
-					struct node* 			new_node1;
-					struct node* 			new_node2;
-					struct edge*	 		new_edge;
-					struct edge* 			op1;
-					struct edge* 			op2;
-					enum irDependenceType 	common_operand_dependence_type = IR_DEPENDENCE_TYPE_DIRECT;
-
-					new_node1 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, operation_cursor1->operation_type.inst.opcode, IR_OPERATION_DST_UNKOWN);
-					new_node2 = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor1->size, (enum irOpcode)i, IR_OPERATION_DST_UNKOWN);
-
-					if (new_node1 == NULL || new_node2 == NULL){
-						log_err("unable to add operation to IR");
-						continue;
-					}
-
-					new_edge = ir_add_dependence(ir, common_operand, new_node2, IR_DEPENDENCE_TYPE_DIRECT);
-
-					for (edge_cursor2 = node_get_head_edge_dst(node_cursor1); edge_cursor2 != NULL; edge_cursor2 = next_edge_cursor2){
-						node_cursor2 = edge_get_src(edge_cursor2);
-						operation_cursor2 = ir_node_get_operation(node_cursor2);
-						next_edge_cursor2 = edge_get_next_dst(edge_cursor2);
-
-						if (operation_cursor2->type == IR_OPERATION_TYPE_INST && node_cursor2->nb_edge_dst == 2 && operation_cursor2->operation_type.inst.opcode == (enum irOpcode)i){
-							op1 = node_get_head_edge_dst(node_cursor2);
-							op2 = edge_get_next_dst(op1);
-
-							if (edge_get_src(op1) != common_operand && edge_get_src(op2) != common_operand){
-								continue;
-							}
-
-							if (edge_get_src(op1) == common_operand){
-								common_operand_dependence_type = ir_edge_get_dependence(op1)->type;
-								ir_add_dependence_check(ir, edge_get_src(op2), new_node1, IR_DEPENDENCE_TYPE_DIRECT)
-							}
-							else{
-								common_operand_dependence_type = ir_edge_get_dependence(op1)->type;
-								ir_add_dependence_check(ir, edge_get_src(op1), new_node1, IR_DEPENDENCE_TYPE_DIRECT)
-							}
-
-							ir_remove_dependence(ir, edge_cursor2);
-						}
-					}
-
-					ir_add_dependence_check(ir, new_node2, node_cursor1, IR_DEPENDENCE_TYPE_DIRECT)
-
-					if (new_edge != NULL){
-						ir_edge_get_dependence(new_edge)->type = common_operand_dependence_type;
-					}
-					else{
-						log_err("unable to add dependency to IR");
-					}
-
-					if (common_operand_dependence_type == IR_DEPENDENCE_TYPE_DIRECT && (enum irOpcode)i == IR_SHL){
-						ir_add_dependence_check(ir, new_node1, new_node2, IR_DEPENDENCE_TYPE_SHIFT_DISP)
-					}
-					else{
-						ir_add_dependence_check(ir, new_node1, new_node2, IR_DEPENDENCE_TYPE_DIRECT)
-					}
-
-					*modification = 1;
-				}
-			}
-		}
 	}
 }
 
