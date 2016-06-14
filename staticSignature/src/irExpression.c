@@ -502,12 +502,13 @@ void irAffineForm_print(struct irAffineForm* affine_form){
 	set_clean(&((affine_form)->term_set)); 											\
 	free(affine_form);
 
-void ir_normalize_affine_expression(struct ir* ir, uint8_t* modification){
-	struct irNodeIterator it;
+int32_t irNormalize_affine_expression(struct ir* ir){
+	struct irNodeIterator 	it;
+	int32_t 				result = 0;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort DAG");
-		return;
+		return 0;
 	}
 
 	for(irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
@@ -517,7 +518,7 @@ void ir_normalize_affine_expression(struct ir* ir, uint8_t* modification){
 			if (!irAffineForm_import(irNodeIterator_get_node(it), &affine_form, 0, 1, IR_EXPRESSION_SIGN_POS)){
 				if (irAffineForm_simplify(affine_form)){
 					irAffineForm_export(affine_form, ir);
-					*modification = 1;
+					result = 1;
 				}
 				irAffineForm_delete(affine_form)
 			}
@@ -530,4 +531,6 @@ void ir_normalize_affine_expression(struct ir* ir, uint8_t* modification){
 	#ifdef IR_FULL_CHECK
 	ir_check_order(ir);
 	#endif
+
+	return result;
 }

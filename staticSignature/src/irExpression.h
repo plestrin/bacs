@@ -5,6 +5,6 @@
 
 #include "ir.h"
 
-void ir_normalize_affine_expression(struct ir* ir,  uint8_t* modification);
+int32_t irNormalize_affine_expression(struct ir* ir);
 
 #endif

@@ -412,6 +412,7 @@
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph AES_encrypt"/>
+			<arg value="export callGraph AES_set_encrypt_key"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -426,6 +427,8 @@
 			<algo name="aes_open_r11" number="8"/>
 			<algo name="aes_open_r13" number="2"/>
 			<algo name="aes_open_mixColumn" number="132"/>
+			<algo name="aes_open_ks_128" number="1"/>
+			<algo name="aes_open_ks_256" number="1"/>
 		</result>
 	</recipe>
 
