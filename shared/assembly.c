@@ -85,6 +85,33 @@ uint8_t* asmBlock_search_opcode(struct asmBlock* block, const uint8_t* opcode, s
 	return NULL;
 }
 
+int32_t asmBlock_get_first_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
+	xed_decoded_inst_zero(xedd); 
+	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
+
+	if (xed_decode(xedd, (xed_uint8_t*)block->data, min(block->header.size, 15)) != XED_ERROR_NONE){
+		log_err_m("unable to decode instruction in block %u. Run \"check trace\" for more information", block->header.id);
+		return -1;
+	}
+
+	return 0;
+}
+
+int32_t asmBlock_get_next_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd, uint32_t* offset){
+	*offset += xed_decoded_inst_get_length(xedd);
+	if (*offset != block->header.size){
+		xed_decoded_inst_zero_keep_mode(xedd);
+		if (xed_decode(xedd, (xed_uint8_t*)(block->data + *offset), min(block->header.size - *offset, 15)) != XED_ERROR_NONE){
+			log_err_m("unable to decode instruction in block %u. Run \"check trace\" for more information", block->header.id);
+			return -1;
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
 int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
 	uint32_t instruction_offset;
 
@@ -96,7 +123,7 @@ int32_t asmBlock_get_last_instruction(struct asmBlock* block, xed_decoded_inst_t
 			instruction_offset += xed_decoded_inst_get_length(xedd);
 		}
 		else{
-			log_err_m("unable to decode instruction in block %u. Run \"Check trace\" for more information", block->header.id);
+			log_err_m("unable to decode instruction in block %u. Run \"check trace\" for more information", block->header.id);
 			return -1;
 		}
 	}
@@ -228,7 +255,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 		assembly->nb_dyn_block = j;
 	}
 
-	if(dynBlock_is_valid(assembly->dyn_blocks + (assembly->nb_dyn_block - 1))){
+	if (dynBlock_is_valid(assembly->dyn_blocks + (assembly->nb_dyn_block - 1))){
 		assembly->nb_dyn_instruction = assembly->dyn_blocks[assembly->nb_dyn_block - 1].instruction_count + assembly->dyn_blocks[assembly->nb_dyn_block - 1].block->header.nb_ins;
 	}
 	else if (assembly->nb_dyn_block > 1){

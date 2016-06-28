@@ -169,7 +169,6 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 		}
 		else{
 			printf("The syntax of the command is incorrect: \"%s\" (length: %u)\n", line, strlen(line));
-			inputParser_print_help(parser);
 		}
 	}
 }

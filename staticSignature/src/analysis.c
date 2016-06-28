@@ -516,11 +516,13 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 	if (arg != NULL){
 		for (i = 0; i < strlen(arg); i++){
 			switch(arg[i]){
+				case 'C' : {filters |= ASSEMBLYSCAN_FILTER_CST; 		break;}
 				case 'E' : {filters |= ASSEMBLYSCAN_FILTER_BBL_EXEC; 	break;}
 				case 'L' : {filters |= ASSEMBLYSCAN_FILTER_FUNC_LEAF; 	break;}
 				case 'R' : {filters |= ASSEMBLYSCAN_FILTER_BBL_RATIO; 	break;}
 				case 'S' : {filters |= ASSEMBLYSCAN_FILTER_BBL_SIZE; 	break;}
-				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {E: executed, L: leaf, R: ratio, S: size}", arg[i]); return;}
+				case 'V' : {filters |= ASSEMBLYSCAN_FILTER_VERBOSE; 	break;}
+				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {C: constant, E: executed, L: leaf, R: ratio, S: size, V: verbose}", arg[i]); return;}
 			}
 		}
 	}

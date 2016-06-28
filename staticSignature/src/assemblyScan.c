@@ -23,6 +23,8 @@ static const xed_iclass_enum_t crypto_instruction[] = {
 
 #define nb_crypto_instruction (sizeof(crypto_instruction) / sizeof(xed_iclass_enum_t))
 
+#define INSTRUCTION_FLAG 0x80000000
+
 #define ASSEMBLYSCAN_MIN_BIT_WISE_RATIO 25.0
 
 static const xed_iclass_enum_t bitwise_instruction[] = {
@@ -54,13 +56,167 @@ static const xed_iclass_enum_t bitwise_instruction[] = {
 
 #define nb_bitwise_instruction (sizeof(bitwise_instruction) / sizeof(xed_iclass_enum_t))
 
-static struct array* assemblyScan_create_bbl_array(const struct assembly* assembly){
+#define MD5_NB_ELEMENT 		64
+#define MD5_NAME 			"MD5"
+#define MD5_FLAG 			0x00000001
+
+static const uint32_t MD5[MD5_NB_ELEMENT] = {
+	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+	0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
+	0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
+	0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
+
+	0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
+	0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+	0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+	0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
+
+	0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
+	0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+	0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
+	0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
+
+	0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
+	0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+	0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
+	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391,
+};
+
+#define SHA1_NB_ELEMENT 	9
+#define SHA1_NAME 			"SHA1"
+#define SHA1_FLAG 			0x00000002
+
+static const uint32_t SHA1[SHA1_NB_ELEMENT] = {
+	0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6,
+	0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476,
+	0xc3d2e1f0
+};
+
+#define HAVAL_NB_ELEMENT 	8
+#define HAVAL_NAME 			"HAVAL"
+#define HAVAL_FLAG 			0x00000004
+
+static const uint32_t HAVAL[HAVAL_NB_ELEMENT] = {
+	0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344,
+	0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89
+};
+
+#define TEA_NB_ELEMENT 		3
+#define TEA_NAME 			"TEA"
+#define TEA_FLAG 			0x00000008
+
+static const uint32_t TEA[TEA_NB_ELEMENT] = {
+	0x9e3779b9, 0x61c88647, 0xc6ef3720
+};
+
+static uint32_t assemblySan_search_cst(struct asmBlock* block, uint32_t verbose){
+	uint32_t 				offset;
+	xed_decoded_inst_t 		xedd;
+	int32_t 				flag;
+	const xed_inst_t* 		xi;
+	const xed_operand_t* 	xed_op;
+	xed_operand_enum_t 		op_name;
+	uint32_t 				i;
+	uint32_t 				j;
+	uint64_t 				value;
+	uint32_t 				result;
+
+	for (flag = asmBlock_get_first_instruction(block, &xedd), offset = 0, result = 0; !flag; flag = asmBlock_get_next_instruction(block, &xedd, &offset)){
+		xi = xed_decoded_inst_inst(&xedd);
+		for (i = 0; i < xed_inst_noperands(xi); i++){
+			xed_op = xed_inst_operand(xi, i);
+			op_name = xed_operand_name(xed_op);
+
+			if (op_name == XED_OPERAND_IMM0 && xed_decoded_inst_get_immediate_width_bits(&xedd) == 32){
+				value = xed_decoded_inst_get_unsigned_immediate(&xedd);
+			}
+			else if (op_name == XED_OPERAND_AGEN){
+				value = xed_decoded_inst_get_memory_displacement(&xedd, 0);
+			}
+			else{
+				continue;
+			}
+
+			for (j = 0; j < MD5_NB_ELEMENT; j++){
+				if ((uint32_t)value == MD5[j]){
+					result |= MD5_FLAG;
+					if (verbose){
+						printf("  - " MD5_NAME " constant @ 0x%08x\n", block->header.address + offset);
+					}
+					break;
+				}
+			}
+
+			for (j = 0; j < SHA1_NB_ELEMENT; j++){
+				if ((uint32_t)value == SHA1[j]){
+					result |= SHA1_FLAG;
+					if (verbose){
+						printf("  - " SHA1_NAME " constant @ 0x%08x\n", block->header.address + offset);
+					}
+					break;
+				}
+			}
+
+			for (j = 0; j < HAVAL_NB_ELEMENT; j++){
+				if ((uint32_t)value == HAVAL[j]){
+					result |= HAVAL_FLAG;
+					if (verbose){
+						printf("  - " HAVAL_NAME " constant @ 0x%08x\n", block->header.address + offset);
+					}
+					break;
+				}
+			}
+
+			for (j = 0; j < TEA_NB_ELEMENT; j++){
+				if ((uint32_t)value == TEA[j]){
+					result |= TEA_FLAG;
+					if (verbose){
+						printf("  - " TEA_NAME " constant @ 0x%08x\n", block->header.address + offset);
+					}
+					break;
+				}
+			}
+		}
+	}
+	if (flag < 0){
+		log_err("unable to fetch instruction");
+	}
+
+	return result;
+}
+
+static uint32_t assemblySan_search_inst(struct asmBlock* block, uint32_t verbose){
+	uint8_t* 			ptr;
+	xed_decoded_inst_t 	xedd;
+	uint32_t 			result;
+
+	for (ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, 0), result = 0; ptr != NULL; ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, ptr + xed_decoded_inst_get_length(&xedd) - block->data)){
+		result |= INSTRUCTION_FLAG;
+		if (verbose){
+			printf("  - %s @ 0x%08x\n", xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&xedd)), block->header.address + (ptr - block->data));
+		}
+	}
+
+	return result;
+}
+
+struct flagAsmBlock{
+	struct asmBlock* 	block;
+	uint32_t 			flag;
+	uint32_t 			nb_exec;
+	uint32_t 			nb_bitw;
+};
+
+static struct array* assemblyScan_create_bbl_array(const struct assembly* assembly, uint32_t verbose){
+	uint32_t 			i;
 	struct array* 		bbl_array;
 	struct asmBlock* 	block;
 	uint32_t 			block_offset;
+	struct flagAsmBlock flag_block;
+	xed_decoded_inst_t 	xedd;
+	uint8_t* 			ptr;
 
-	bbl_array = array_create(sizeof(struct asmBlock*));
-	if (bbl_array == NULL){
+	if ((bbl_array = array_create(sizeof(struct flagAsmBlock))) == NULL){
 		log_err("unable to create array");
 		return NULL;
 	}
@@ -72,8 +228,27 @@ static struct array* assemblyScan_create_bbl_array(const struct assembly* assemb
 			break;
 		}
 
-		if (array_add(bbl_array, &block) < 0){
+		flag_block.block 	= block;
+		flag_block.flag 	= assemblySan_search_cst(block, verbose) | assemblySan_search_inst(block, verbose);
+		flag_block.nb_exec 	= 0;
+
+		for (flag_block.nb_bitw = 0, ptr = asmBlock_search_instruction(block, bitwise_instruction, nb_bitwise_instruction, &xedd, 0); ptr != NULL; ptr = asmBlock_search_instruction(block, bitwise_instruction, nb_bitwise_instruction, &xedd, ptr + xed_decoded_inst_get_length(&xedd) - block->data)){
+			flag_block.nb_bitw ++;
+		}
+
+		if (array_add(bbl_array, &flag_block) < 0){
 			log_err("unable to add element to array");
+		}
+	}
+
+	for (i = 0; i < assembly->nb_dyn_block; i++){
+		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
+			if (assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID > array_get_length(bbl_array)){
+				log_err_m("block id (%u) is out of bound", assembly->dyn_blocks[i].block->header.id);
+			}
+			else{
+				((struct flagAsmBlock*)array_get(bbl_array, assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID))->nb_exec ++;
+			}
 		}
 	}
 
@@ -103,33 +278,6 @@ static int32_t asmBlock_compare_address(void* arg1, void* arg2){
 	}
 }
 
-static uint32_t assemblyScan_count_specific_instruction(struct asmBlock* block, const xed_iclass_enum_t* buffer, uint32_t buffer_length){
-	uint32_t 			result;
-	xed_decoded_inst_t 	xedd;
-	uint8_t* 			ptr;
-
-	for (result = 0, ptr = asmBlock_search_instruction(block, buffer, buffer_length, &xedd, 0); ptr != NULL; ptr = asmBlock_search_instruction(block, buffer, buffer_length, &xedd, ptr + xed_decoded_inst_get_length(&xedd) - block->data)){
-		result ++;
-	}
-
-	return result;
-}
-
-static uint32_t assemblyScan_nb_execution(const struct assembly* assembly, const struct asmBlock* block){
-	uint32_t i;
-	uint32_t result;
-
-	for (i = 0, result = 0; i < assembly->nb_dyn_block; i++){
-		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
-			if (assembly->dyn_blocks[i].block == block){
-				result ++;
-			}
-		}
-	}
-
-	return result;
-}
-
 static void assemblyScan_get_function(const struct assembly* assembly, const struct asmBlock* block, struct callGraph* call_graph, struct set* function_set){
 	uint32_t 		i;
 	struct node* 	function;
@@ -154,6 +302,7 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
 /*
  * List of heuristics
  *	- Special opcode (refer to crypto_instruction)
+ * 	- Special immediate operand
  * 	1 Large basic blocks (refer to ASSEMBLYSCAN_NB_MIN_INSTRUCTION)
  * 	2 High ratio of bitwise instruction (refer to bitwise_instruction and ASSEMBLYSCAN_MIN_BIT_WISE_RATIO)
  * 	3 Numerous executions (refer to ASSEMBLYSCAN_NB_MIN_EXECUTION)
@@ -161,14 +310,36 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
  */
 
 void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
-	struct asmBlock* 	block;
-	xed_decoded_inst_t 	xedd;
-	uint32_t 			i;
-	struct array* 		bbl_array;
-	uint32_t* 			address_mapping;
-	struct set 			function_set;
-	struct setIterator 	it;
-	struct node** 		func_ptr;
+	struct macroBlock{
+		uint32_t 	nb_block;
+		uint32_t 	nb_ins;
+		uint32_t 	nb_bitw;
+		uint32_t 	flag;
+	};
+
+	#define macroBlock_init(macro_block, flag_block) 												\
+		(macro_block).nb_block 	= 1; 																\
+		(macro_block).nb_ins 	= (flag_block)->block->header.nb_ins; 								\
+		(macro_block).nb_bitw 	= (flag_block)->nb_bitw; 											\
+		(macro_block).flag 		= (flag_block)->flag;
+
+	#define macroBlock_add(macro_block, flag_block) 												\
+		(macro_block).nb_block 	+= 1; 																\
+		(macro_block).nb_ins 	+= (flag_block)->block->header.nb_ins; 								\
+		(macro_block).nb_bitw 	+= (flag_block)->nb_bitw; 											\
+		(macro_block).flag 		|= (flag_block)->flag;
+
+	uint32_t 				i;
+	struct array* 			bbl_array;
+	uint32_t* 				address_mapping;
+	struct set 				function_set;
+	struct setIterator 		it;
+	struct node** 			func_ptr;
+	struct flagAsmBlock* 	next_flag_block;
+	ADDRESS 				address;
+	double 					ratio;
+	struct flagAsmBlock* 	flag_block;
+	struct macroBlock 		macro_block;
 
 	set_init(&function_set, sizeof(struct node*), 16);
 
@@ -176,106 +347,102 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		log_info("using callGraph to apply function heuristic(s)");
 	}
 
-	bbl_array = assemblyScan_create_bbl_array(assembly);
-	if (bbl_array == NULL){
+	if ((bbl_array = assemblyScan_create_bbl_array(assembly, filters & ASSEMBLYSCAN_FILTER_VERBOSE)) == NULL){
 		log_err("unable to create bbl array");
 		return;
 	}
 
-	for (i = 0; i < array_get_length(bbl_array); i++){
-		uint8_t* ptr;
-
-		block = *(struct asmBlock**)array_get(bbl_array, i);
-		for (ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, 0); ptr != NULL; ptr = asmBlock_search_instruction(block, crypto_instruction, nb_crypto_instruction, &xedd, ptr + xed_decoded_inst_get_length(&xedd) - block->data)){
-			printf("  - %s @ 0x%08x\n", xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&xedd)), block->header.address + (ptr - block->data));
-		}
-	}
-
-	address_mapping = array_create_mapping(bbl_array, asmBlock_compare_address);
-	if (address_mapping == NULL){
+	if ((address_mapping = array_create_mapping(bbl_array, asmBlock_compare_address)) == NULL){
 		log_err("unable to create array mapping");
 	}
 	else{
-		uint32_t 			nb_bbl;
-		uint32_t 			nb_ins;
-		uint32_t 			nb_bitwise;
-		struct asmBlock* 	next_block;
-		ADDRESS 			address;
-		double 				ratio;
-		uint32_t 			nb_execution;
-
 		for (i = 0; i < array_get_length(bbl_array); ){
-			block = *(struct asmBlock**)array_get(bbl_array, address_mapping[i]);
+			flag_block = (struct flagAsmBlock*)array_get(bbl_array, address_mapping[i]);
+			macroBlock_init(macro_block, flag_block)
+			address = flag_block->block->header.address + flag_block->block->header.size;
 
-			if (block->header.nb_ins > ASSEMBLYSCAN_NB_MIN_INSTRUCTION || !(filters & ASSEMBLYSCAN_FILTER_BBL_SIZE)){
-				nb_bbl 		= 1;
-				nb_ins 		= block->header.nb_ins;
-				address 	=  block->header.address + block->header.size;
-				nb_bitwise 	= assemblyScan_count_specific_instruction(block, bitwise_instruction, nb_bitwise_instruction);
-
-				for (next_block = block, i = i + 1; next_block->header.nb_ins == ASSEMBLYSCAN_NB_MAX_INS_PER_BBL && i < array_get_length(bbl_array); i++){
-					next_block = *(struct asmBlock**)array_get(bbl_array, address_mapping[i]);
-					if (next_block->header.address > address){
-						break;
-					}
-					else if (next_block->header.address < address){
-						continue;
-					}
-					else{
-						nb_bbl 		+= 1;
-						nb_ins 		+= next_block->header.nb_ins;
-						address 	+= next_block->header.size;
-						nb_bitwise 	+= assemblyScan_count_specific_instruction(next_block, bitwise_instruction, nb_bitwise_instruction);
-					}
+			for (next_flag_block = flag_block, i = i + 1; next_flag_block->block->header.nb_ins == ASSEMBLYSCAN_NB_MAX_INS_PER_BBL && i < array_get_length(bbl_array); i++){
+				next_flag_block = (struct flagAsmBlock*)array_get(bbl_array, address_mapping[i]);
+				if (next_flag_block->block->header.address > address){
+					break;
 				}
+				else if (next_flag_block->block->header.address < address){
+					continue;
+				}
+				else{
+					macroBlock_add(macro_block, flag_block)
+					address += next_flag_block->block->header.size;
+				}
+			}
 
-				if (nb_bitwise == 0){
+			if (macro_block.nb_ins == 0){
+				continue;
+			}
+
+			ratio = 100 * (double)macro_block.nb_bitw / (double)macro_block.nb_ins;
+
+			if (!(macro_block.flag & INSTRUCTION_FLAG) && !((filters & ASSEMBLYSCAN_FILTER_CST) && macro_block.flag)){
+				if (macro_block.nb_ins < ASSEMBLYSCAN_NB_MIN_INSTRUCTION && (filters & ASSEMBLYSCAN_FILTER_BBL_SIZE)){
 					continue;
 				}
 
-				ratio = 100 * (double)nb_bitwise / (double)nb_ins;
+				if (ratio < ASSEMBLYSCAN_MIN_BIT_WISE_RATIO && (filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
+					continue;
+				}
 
-				if (ratio >= ASSEMBLYSCAN_MIN_BIT_WISE_RATIO || !(filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
-					nb_execution = assemblyScan_nb_execution(assembly, block);
-					if 	(nb_execution > ASSEMBLYSCAN_NB_MIN_EXECUTION || !(filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
-						#ifdef COLOR
-						if (ratio < 25){
-							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
-						}
-						else if (ratio < 50){
-							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
-						}
-						else{
-							printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, nb_bbl, nb_ins, block->header.address, address, ratio);
-						}
-						#else
-						printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", nb_bbl, nb_ins, block->header.address, address, ratio);
-						#endif
-						
-						if (nb_execution){
-							printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", nb_execution);
-						}
-						else{
-							printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", nb_execution);
-						}
-
-						if (cm != NULL){
-							struct cm_routine* rtn;
-
-							if ((rtn = codeMap_search_routine(cm, block->header.address)) != NULL){
-								printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, block->header.address - rtn->address_start);
-							}
-						}
-						fputc('\n', stdout);
-
-						if (call_graph != NULL){
-							assemblyScan_get_function(assembly, block, call_graph, &function_set);
-						}
-					}
+				if (flag_block->nb_exec < ASSEMBLYSCAN_NB_MIN_EXECUTION && (filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
+					continue;
 				}
 			}
+
+			#ifdef COLOR
+			if (ratio < 25){
+				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			}
+			else if (ratio < 50){
+				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			}
 			else{
-				i ++;
+				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			}
+			#else
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			#endif
+			
+			if (flag_block->nb_exec){
+				printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
+			}
+			else{
+				printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
+			}
+
+			if (cm != NULL){
+				struct cm_routine* rtn;
+
+				if ((rtn = codeMap_search_routine(cm, flag_block->block->header.address)) != NULL){
+					printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, flag_block->block->header.address - rtn->address_start);
+				}
+			}
+
+			if (macro_block.flag & INSTRUCTION_FLAG){
+				fputs(" " ANSI_COLOR_BOLD_YELLOW "INST" ANSI_COLOR_RESET, stdout);
+			}
+			if (macro_block.flag & MD5_FLAG){
+				fputs(" " ANSI_COLOR_BOLD_YELLOW MD5_NAME ANSI_COLOR_RESET, stdout);
+			}
+			if (macro_block.flag & SHA1_FLAG){
+				fputs(" " ANSI_COLOR_BOLD_YELLOW SHA1_NAME ANSI_COLOR_RESET, stdout);
+			}
+			if (macro_block.flag & HAVAL_FLAG){
+				fputs(" " ANSI_COLOR_BOLD_YELLOW HAVAL_NAME ANSI_COLOR_RESET, stdout);
+			}
+			if (macro_block.flag & TEA_FLAG){
+				fputs(" " ANSI_COLOR_BOLD_YELLOW TEA_NAME ANSI_COLOR_RESET, stdout);
+			}
+			fputc('\n', stdout);
+
+			if (call_graph != NULL){
+				assemblyScan_get_function(assembly, flag_block->block, call_graph, &function_set);
 			}
 		}
 
