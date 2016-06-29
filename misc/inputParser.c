@@ -14,7 +14,7 @@ uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t
 static void inputParser_print_help(struct inputParser* parser);
 static void inputParser_exit(struct inputParser* parser);
 
-static char* inputParser_get_argument(char* cmd, char* line);
+static char* inputParser_get_argument(const char* cmd, char* line);
 
 struct inputParser* inputParser_create(void){
 	struct inputParser* parser;
@@ -281,7 +281,7 @@ static void inputParser_exit(struct inputParser* parser){
 	parser->exit = 1;
 }
 
-static char* inputParser_get_argument(char* cmd, char* line){
+static char* inputParser_get_argument(const char* cmd, char* line){
 	char* result;
 
 	result = line + strlen(cmd);
@@ -297,30 +297,37 @@ static char* inputParser_get_argument(char* cmd, char* line){
 }
 
 void inputParser_extract_index(const char* input, uint32_t* start, uint32_t* stop){
-	uint32_t 	length;
-	char* 		offset1;
-	char* 		offset2;
+	size_t 	length;
+	char* 	offset;
 
-	if (input != NULL){
-		offset1 = strpbrk(input, "0123456789[");
-
-		if (offset1 != NULL){
-			length = strlen(offset1);
-			if (length >= 4 && offset1[0] == '['){
-				offset2 = strchr(offset1, ':');
-				if (offset2 != NULL){
-					*start = (uint32_t)atoi(offset1 + 1);
-					*stop  = (uint32_t)atoi(offset2 + 1);
-				}
-				else{
-					*start = (uint32_t)atoi(offset1 + 1);
-					*stop  = *start + 1;
-				}
-			}
-			else{
-				*start = (uint32_t)atoi(offset1);
-				*stop  = *start + 1;
-			}
-		}
+	if (input == NULL){
+		return;
 	}
+
+	if ((offset = strpbrk(input, "0123456789")) == NULL){
+		return;
+	}
+
+	if (offset != input && offset[-1] != '[' && offset[-1] != ' '){
+		return;
+	}
+
+	length = strspn(offset, "0123456789");
+	if (offset[length] != '\0' && offset[length] != ' ' && offset[length] != ':'){
+		return;
+	}
+
+	*start = (uint32_t)atoi(offset);
+	*stop  = *start + 1;
+
+	if (offset[length] != ':' || (offset = strpbrk(offset + length, "0123456789")) == NULL){
+		return;
+	}
+
+	length = strspn(offset, "0123456789");
+	if (offset[length] != '\0' && offset[length] != ' '){
+		return;
+	}
+
+	*stop  = (uint32_t)atoi(offset);
 }

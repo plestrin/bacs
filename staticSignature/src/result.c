@@ -261,14 +261,14 @@ void result_print(struct result* result){
 	}
 
 	if (array_get_length(class_array) > MAX_CLASS_THRESHOLD){
-		log_warn_m("too many result clusters to be printed (%d)", array_get_length(class_array));
+		log_warn_m("too many result clusters to be printed (%d) for " ANSI_COLOR_BOLD "%s" ANSI_COLOR_RESET, array_get_length(class_array), result->code_signature->signature.symbol.name);
 		goto exit;
 	}
 
 	for (i = 0; i < array_get_length(class_array); i++){
 		class = *(struct symbolMapping**)array_get(class_array, i);
 
-		printf("CLUSTER %u/%u:\n", i + 1, array_get_length(class_array));
+		printf(ANSI_COLOR_BOLD "%s" ANSI_COLOR_RESET " CLUSTER %u/%u:\n", result->code_signature->signature.symbol.name, i + 1, array_get_length(class_array));
 		for (j = 0; j < class[0].nb_parameter; j++){
 			if (class[0].mapping_buffer[j].similarity == PARAMETER_EQUAL){
 				printf("\t Parameter I%u EQUAL = ", j);

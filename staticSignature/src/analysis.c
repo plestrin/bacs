@@ -117,14 +117,14 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "locate frag", 				"Locate traceFragment in the codeMap", 			"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_locate)
 	add_cmd_to_input_parser(parser, "concat frag", 				"Concat two or more traceFragments", 			"Frag indexes", 			INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_concat)
 	add_cmd_to_input_parser(parser, "check frag", 				"Check traceFragment: assembly and IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_check)
-	add_cmd_to_input_parser(parser, "print result", 			"Print code signature result in details", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
+	add_cmd_to_input_parser(parser, "print result", 			"Print code signature result in details", 		"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
 	add_cmd_to_input_parser(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
 	add_cmd_to_input_parser(parser, "clean frag", 				"Clean the traceFragment array", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
 	add_cmd_to_input_parser(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
 	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
-	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
+	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
@@ -167,51 +167,20 @@ int main(int argc, char** argv){
 	return EXIT_SUCCESS;
 }
 
-#define apply_to_one_frag(analysis, func, arg) 																							\
-	{ 																																	\
-		uint32_t index; 																												\
-																																		\
-		if ((arg) == NULL){ 																											\
-			if (array_get_length(&((analysis)->frag_array)) < 2){  																		\
-				index = 0; 																												\
-			} 																															\
-			else{ 																														\
-				log_err_m("%u fragments available, please specify fragment index", array_get_length(&((analysis)->frag_array))); 		\
-				return; 																												\
-			} 																															\
-		} 																																\
-		else{ 																															\
-			index = (uint32_t)atoi((arg)); 																								\
-		} 																																\
-																																		\
-		if (index < array_get_length(&((analysis)->frag_array))){ 																		\
-			func((struct trace*)array_get(&((analysis)->frag_array), index)); 															\
-		} 																																\
-		else{ 																															\
-			log_err_m("incorrect fragment index %u (array size: %u)", index, array_get_length(&((analysis)->frag_array))); 				\
-		} 																																\
-	}
-
 #define apply_to_multiple_frags(analysis, func, arg) 																					\
 	{ 																																	\
-		uint32_t start; 																												\
-		uint32_t stop; 																													\
+		uint32_t start = 0; 																											\
+		uint32_t stop  = array_get_length(&((analysis)->frag_array)); 																	\
 		uint32_t i; 																													\
 																																		\
-		if ((arg) != NULL){ 																											\
-			inputParser_extract_index(arg, &start, &stop); 																				\
-			if (start >= array_get_length(&((analysis)->frag_array))){ 																	\
-				log_err_m("incorrect fragment index %u (array size: %u)", start, array_get_length(&((analysis)->frag_array))); 			\
-				return; 																												\
-			} 																															\
-			if (stop > array_get_length(&((analysis)->frag_array))){ 																	\
-				log_warn_m("fragment range exceeds array size, cropping to %u", array_get_length(&((analysis)->frag_array))); 			\
-				stop = array_get_length(&((analysis)->frag_array)); 																	\
-			} 																															\
-		} 																																\
-		else{ 																															\
-			start = 0; 																													\
+		inputParser_extract_index(arg, &start, &stop); 																					\
+		if (stop > array_get_length(&((analysis)->frag_array))){ 																		\
+			log_warn_m("fragment range exceeds array size, cropping to %u", array_get_length(&((analysis)->frag_array))); 				\
 			stop = array_get_length(&((analysis)->frag_array)); 																		\
+		} 																																\
+		if (start > stop){ 																												\
+			log_err_m("incorrect fragment range [%u:%u]", start, stop); 																\
+			return; 																													\
 		} 																																\
 																																		\
 		for (i = start; i < stop; i++){ 																								\
@@ -368,16 +337,18 @@ static void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 }
 
 static void analysis_trace_print(struct analysis* analysis, char* arg){
-	uint32_t start = 0;
-	uint32_t stop = 0;
+	uint32_t start;
+	uint32_t stop;
 
 	if (analysis->trace != NULL){
-		if (arg == NULL){
-			stop = trace_get_nb_instruction(analysis->trace);
+		start = 0;
+		stop  = trace_get_nb_instruction(analysis->trace);
+		inputParser_extract_index(arg, &start, &stop);
+		if (start > stop){
+			log_err_m("incorrect fragment: [%u:%u]", start, stop);
+			return;
 		}
-		else{
-			inputParser_extract_index(arg, &start, &stop);
-		}
+
 		trace_print(analysis->trace, start, stop);
 	}
 	else{
@@ -437,7 +408,6 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 		log_err_m("incorrect fragment: [%u:%u]", start, stop);
 		return;
 	}
-
 
 	if (trace_extract_segment(analysis->trace, &fragment, start, stop - start)){
 		log_err("unable to extract traceFragment");
@@ -757,27 +727,23 @@ static void analysis_frag_check(struct analysis* analysis, char* arg){
 }
 
 static void analysis_frag_print_result(struct analysis* analysis, char* arg){
-	uint32_t 		index;
 	uint32_t 		start;
 	uint32_t 		stop;
 	uint32_t 		i;
 	uint32_t 		j;
 	struct trace* 	fragment;
+	struct result* 	result;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
-			return;
-		}
+	start = 0;
+	stop  = array_get_length(&(analysis->frag_array));
+	inputParser_extract_index(arg, &start, &stop);
+	if (stop > array_get_length(&(analysis->frag_array))){
+		log_warn_m("fragment range exceeds array size, cropping to %u", array_get_length(&(analysis->frag_array)));
+		stop = array_get_length(&((analysis)->frag_array));
 	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
+	if (start > stop){
+		log_err_m("incorrect fragment range [%u:%u]", start, stop);
+		return;
 	}
 
 	for (i = start; i < stop; i++){
@@ -787,13 +753,15 @@ static void analysis_frag_print_result(struct analysis* analysis, char* arg){
 		}
 
 		for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
-			result_print((struct result*)array_get(&(fragment->trace_type.frag.result_array), j));
+			result = (struct result*)array_get(&(fragment->trace_type.frag.result_array), j);
+			if (arg != NULL && strstr(arg, result->code_signature->signature.symbol.name) != NULL){
+				result_print(result);
+			}
 		}
 	}
 }
 
 static void analysis_frag_export_result(struct analysis* analysis, char* arg){
-	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
 	uint32_t 				i;
@@ -803,26 +771,21 @@ static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	struct codeSignature* 	signature_cursor;
 	char* 					ptr;
 
-	signature_buffer = (void**)malloc(sizeof(void*) * signatureCollection_get_nb_signature(&(analysis->code_signature_collection)));
-	if (signature_buffer == NULL){
+	if ((signature_buffer = (void**)malloc(sizeof(void*) * signatureCollection_get_nb_signature(&(analysis->code_signature_collection)))) == NULL){
 		log_err("unable to allocate memory");
 		return;
 	}
 
-	if (arg != NULL && arg[0] >= 48 && arg[0] <= 57){
-		index = (uint32_t)atoi(arg);
-		if (index < array_get_length(&(analysis->frag_array))){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			log_err_m("incorrect index value %u (array size :%u)", index, array_get_length(&(analysis->frag_array)));
-			goto exit;
-		}
+	start = 0;
+	stop  = array_get_length(&(analysis->frag_array));
+	inputParser_extract_index(arg, &start, &stop);
+	if (stop > array_get_length(&(analysis->frag_array))){
+		log_warn_m("fragment range exceeds array size, cropping to %u", array_get_length(&(analysis->frag_array)));
+		stop = array_get_length(&((analysis)->frag_array));
 	}
-	else{
-		start = 0;
-		stop = array_get_length(&(analysis->frag_array));
+	if (start > stop){
+		log_err_m("incorrect fragment range [%u:%u]", start, stop);
+		goto exit;
 	}
 
 	for (node_cursor = graph_get_head_node(&(analysis->code_signature_collection.syntax_graph)), nb_signature = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -913,7 +876,7 @@ static void analysis_frag_create_compound_ir(struct analysis* analysis, char* ar
 }
 
 static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
-	apply_to_one_frag(analysis, trace_printDot_ir, arg)
+	apply_to_multiple_frags(analysis, trace_printDot_ir, arg)
 }
 
 static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
@@ -1063,7 +1026,7 @@ static void analysis_buffer_signature_search(struct analysis* analysis, char* ar
 /* ===================================================================== */
 
 static void analysis_call_create(struct analysis* analysis, char* arg){
-	uint32_t start = 0;
+	uint32_t start;
 	uint32_t stop;
 
 	if (analysis->call_graph != NULL){
@@ -1076,8 +1039,13 @@ static void analysis_call_create(struct analysis* analysis, char* arg){
 		log_err("trace is NULL");
 	}
 	else{
-		stop = trace_get_nb_instruction(analysis->trace);
+		start = 0;
+		stop  = trace_get_nb_instruction(analysis->trace);
 		inputParser_extract_index(arg, &start, &stop);
+		if (start > stop){
+			log_err_m("incorrect fragment: [%u:%u]", start, stop);
+			return;
+		}
 
 		analysis->call_graph = callGraph_create(&(analysis->trace->assembly), start, stop);
 		if (analysis->call_graph == NULL){
