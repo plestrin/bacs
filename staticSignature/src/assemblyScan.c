@@ -207,16 +207,16 @@ struct flagAsmBlock{
 	uint32_t 			nb_bitw;
 };
 
-static struct array* assemblyScan_create_bbl_array(const struct assembly* assembly, uint32_t verbose){
+static struct array* assemblyScan_create_flag_block_array(const struct assembly* assembly, uint32_t verbose){
 	uint32_t 			i;
-	struct array* 		bbl_array;
+	struct array* 		flag_block_array;
 	struct asmBlock* 	block;
 	uint32_t 			block_offset;
 	struct flagAsmBlock flag_block;
 	xed_decoded_inst_t 	xedd;
 	uint8_t* 			ptr;
 
-	if ((bbl_array = array_create(sizeof(struct flagAsmBlock))) == NULL){
+	if ((flag_block_array = array_create(sizeof(struct flagAsmBlock))) == NULL){
 		log_err("unable to create array");
 		return NULL;
 	}
@@ -236,23 +236,23 @@ static struct array* assemblyScan_create_bbl_array(const struct assembly* assemb
 			flag_block.nb_bitw ++;
 		}
 
-		if (array_add(bbl_array, &flag_block) < 0){
+		if (array_add(flag_block_array, &flag_block) < 0){
 			log_err("unable to add element to array");
 		}
 	}
 
 	for (i = 0; i < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
-			if (assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID > array_get_length(bbl_array)){
+			if (assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID > array_get_length(flag_block_array)){
 				log_err_m("block id (%u) is out of bound", assembly->dyn_blocks[i].block->header.id);
 			}
 			else{
-				((struct flagAsmBlock*)array_get(bbl_array, assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID))->nb_exec ++;
+				((struct flagAsmBlock*)array_get(flag_block_array, assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID))->nb_exec ++;
 			}
 		}
 	}
 
-	return bbl_array;
+	return flag_block_array;
 }
 
 static int32_t asmBlock_compare_address(void* arg1, void* arg2){
@@ -299,16 +299,6 @@ static void assemblyScan_get_function(const struct assembly* assembly, const str
 	}
 }
 
-/*
- * List of heuristics
- *	- Special opcode (refer to crypto_instruction)
- * 	- Special immediate operand
- * 	1 Large basic blocks (refer to ASSEMBLYSCAN_NB_MIN_INSTRUCTION)
- * 	2 High ratio of bitwise instruction (refer to bitwise_instruction and ASSEMBLYSCAN_MIN_BIT_WISE_RATIO)
- * 	3 Numerous executions (refer to ASSEMBLYSCAN_NB_MIN_EXECUTION)
- * 	4 Leaf in the callGraph if provided
- */
-
 void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
 	struct macroBlock{
 		uint32_t 	nb_block;
@@ -330,9 +320,9 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		(macro_block).flag 		|= (flag_block)->flag;
 
 	uint32_t 				i;
-	struct array* 			bbl_array;
-	uint32_t* 				address_mapping;
-	struct set 				function_set;
+	struct array* 			flag_block_array 	= NULL;
+	uint32_t* 				address_mapping 	= NULL;
+	struct set* 			function_set 		= NULL;
 	struct setIterator 		it;
 	struct node** 			func_ptr;
 	struct flagAsmBlock* 	next_flag_block;
@@ -341,127 +331,142 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 	struct flagAsmBlock* 	flag_block;
 	struct macroBlock 		macro_block;
 
-	set_init(&function_set, sizeof(struct node*), 16);
-
+	#ifdef VERBOSE
 	if (call_graph != NULL){
 		log_info("using callGraph to apply function heuristic(s)");
 	}
+	#endif
 
-	if ((bbl_array = assemblyScan_create_bbl_array(assembly, filters & ASSEMBLYSCAN_FILTER_VERBOSE)) == NULL){
+	if ((function_set = set_create(sizeof(struct node*), 16)) == NULL){
+		log_err("unable to create set");
+		goto exit;
+	}
+
+	if ((flag_block_array = assemblyScan_create_flag_block_array(assembly, filters & ASSEMBLYSCAN_FILTER_VERBOSE)) == NULL){
 		log_err("unable to create bbl array");
-		return;
+		goto exit;
 	}
 
-	if ((address_mapping = array_create_mapping(bbl_array, asmBlock_compare_address)) == NULL){
+	if ((address_mapping = array_create_mapping(flag_block_array, asmBlock_compare_address)) == NULL){
 		log_err("unable to create array mapping");
+		goto exit;
 	}
-	else{
-		for (i = 0; i < array_get_length(bbl_array); ){
-			flag_block = (struct flagAsmBlock*)array_get(bbl_array, address_mapping[i]);
-			macroBlock_init(macro_block, flag_block)
-			address = flag_block->block->header.address + flag_block->block->header.size;
 
-			for (next_flag_block = flag_block, i = i + 1; next_flag_block->block->header.nb_ins == ASSEMBLYSCAN_NB_MAX_INS_PER_BBL && i < array_get_length(bbl_array); i++){
-				next_flag_block = (struct flagAsmBlock*)array_get(bbl_array, address_mapping[i]);
-				if (next_flag_block->block->header.address > address){
-					break;
-				}
-				else if (next_flag_block->block->header.address < address){
-					continue;
-				}
-				else{
-					macroBlock_add(macro_block, flag_block)
-					address += next_flag_block->block->header.size;
-				}
+	for (i = 0; i < array_get_length(flag_block_array); ){
+		flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]);
+		macroBlock_init(macro_block, flag_block)
+		address = flag_block->block->header.address + flag_block->block->header.size;
+
+		for (next_flag_block = flag_block, i = i + 1; next_flag_block->block->header.nb_ins == ASSEMBLYSCAN_NB_MAX_INS_PER_BBL && i < array_get_length(flag_block_array); i++){
+			next_flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]);
+			if (next_flag_block->block->header.address > address){
+				break;
 			}
-
-			if (macro_block.nb_ins == 0){
+			else if (next_flag_block->block->header.address < address){
 				continue;
 			}
-
-			ratio = 100 * (double)macro_block.nb_bitw / (double)macro_block.nb_ins;
-
-			if (!(macro_block.flag & INSTRUCTION_FLAG) && !((filters & ASSEMBLYSCAN_FILTER_CST) && macro_block.flag)){
-				if (macro_block.nb_ins < ASSEMBLYSCAN_NB_MIN_INSTRUCTION && (filters & ASSEMBLYSCAN_FILTER_BBL_SIZE)){
-					continue;
-				}
-
-				if (ratio < ASSEMBLYSCAN_MIN_BIT_WISE_RATIO && (filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
-					continue;
-				}
-
-				if (flag_block->nb_exec < ASSEMBLYSCAN_NB_MIN_EXECUTION && (filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
-					continue;
-				}
-			}
-
-			#ifdef COLOR
-			if (ratio < 25){
-				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
-			}
-			else if (ratio < 50){
-				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
-			}
 			else{
-				printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
-			}
-			#else
-			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
-			#endif
-			
-			if (flag_block->nb_exec){
-				printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
-			}
-			else{
-				printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
-			}
-
-			if (cm != NULL){
-				struct cm_routine* rtn;
-
-				if ((rtn = codeMap_search_routine(cm, flag_block->block->header.address)) != NULL){
-					printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, flag_block->block->header.address - rtn->address_start);
-				}
-			}
-
-			if (macro_block.flag & INSTRUCTION_FLAG){
-				fputs(" " ANSI_COLOR_BOLD_YELLOW "INST" ANSI_COLOR_RESET, stdout);
-			}
-			if (macro_block.flag & MD5_FLAG){
-				fputs(" " ANSI_COLOR_BOLD_YELLOW MD5_NAME ANSI_COLOR_RESET, stdout);
-			}
-			if (macro_block.flag & SHA1_FLAG){
-				fputs(" " ANSI_COLOR_BOLD_YELLOW SHA1_NAME ANSI_COLOR_RESET, stdout);
-			}
-			if (macro_block.flag & HAVAL_FLAG){
-				fputs(" " ANSI_COLOR_BOLD_YELLOW HAVAL_NAME ANSI_COLOR_RESET, stdout);
-			}
-			if (macro_block.flag & TEA_FLAG){
-				fputs(" " ANSI_COLOR_BOLD_YELLOW TEA_NAME ANSI_COLOR_RESET, stdout);
-			}
-			fputc('\n', stdout);
-
-			if (call_graph != NULL){
-				assemblyScan_get_function(assembly, flag_block->block, call_graph, &function_set);
+				macroBlock_add(macro_block, flag_block)
+				address += next_flag_block->block->header.size;
 			}
 		}
 
-		free(address_mapping);
+		if (macro_block.nb_ins == 0){
+			continue;
+		}
+
+		ratio = 100 * (double)macro_block.nb_bitw / (double)macro_block.nb_ins;
+
+		if (!(macro_block.flag & INSTRUCTION_FLAG) && !((filters & ASSEMBLYSCAN_FILTER_CST) && macro_block.flag)){
+			if (macro_block.nb_ins < ASSEMBLYSCAN_NB_MIN_INSTRUCTION && (filters & ASSEMBLYSCAN_FILTER_BBL_SIZE)){
+				continue;
+			}
+
+			if (ratio < ASSEMBLYSCAN_MIN_BIT_WISE_RATIO && (filters & ASSEMBLYSCAN_FILTER_BBL_RATIO)){
+				continue;
+			}
+
+			if (flag_block->nb_exec < ASSEMBLYSCAN_NB_MIN_EXECUTION && (filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
+				continue;
+			}
+		}
+
+		#ifdef COLOR
+		if (ratio < 25){
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+		}
+		else if (ratio < 50){
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+		}
+		else{
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+		}
+		#else
+		printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+		#endif
+		
+		if (flag_block->nb_exec){
+			printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
+		}
+		else{
+			printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
+		}
+
+		if (cm != NULL){
+			struct cm_routine* rtn;
+
+			if ((rtn = codeMap_search_routine(cm, flag_block->block->header.address)) != NULL){
+				printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, flag_block->block->header.address - rtn->address_start);
+			}
+		}
+
+		if (macro_block.flag & INSTRUCTION_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW "INST" ANSI_COLOR_RESET, stdout);
+		}
+		if (macro_block.flag & MD5_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW MD5_NAME ANSI_COLOR_RESET, stdout);
+		}
+		if (macro_block.flag & SHA1_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW SHA1_NAME ANSI_COLOR_RESET, stdout);
+		}
+		if (macro_block.flag & HAVAL_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW HAVAL_NAME ANSI_COLOR_RESET, stdout);
+		}
+		if (macro_block.flag & TEA_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW TEA_NAME ANSI_COLOR_RESET, stdout);
+		}
+		fputc('\n', stdout);
+
+		if (call_graph != NULL){
+			assemblyScan_get_function(assembly, flag_block->block, call_graph, function_set);
+		}
 	}
 
-	log_info_m("%d block(s) have been scanned", array_get_length(bbl_array));
+	free(address_mapping);
 
-	for (func_ptr = setIterator_get_first(&function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
+	log_info_m("%d block(s) have been scanned", array_get_length(flag_block_array));
+
+	for (func_ptr = setIterator_get_first(function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
 		if (callGraphNode_is_leaf(call_graph, *func_ptr, assembly)){
 			fputs("L:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET ", ", stdout);
 		}
 		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){
 			fputs("L:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET ", ", stdout);
 		}
+		else{
+			continue;
+		}
 		callGraph_fprint_node(call_graph, *func_ptr, stdout);
 		putchar('\n');
 	}
 
-	array_delete(bbl_array);
-	set_clean(&function_set);
+	log_info_m("%d dyn function(s) have been scanned", set_get_length(function_set));
+
+	exit:
+	if (flag_block_array != NULL){
+		array_delete(flag_block_array);
+	}
+	if (function_set != NULL){
+		set_delete(function_set);
+	}
 }

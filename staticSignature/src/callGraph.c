@@ -832,7 +832,7 @@ void callGraph_fprint_node(struct callGraph* call_graph, const struct node* node
 		}
 	}
 	else{
-		fputs("inv", file);
+		fputs("invalid function", file);
 	}
 }
 
