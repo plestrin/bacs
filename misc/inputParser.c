@@ -325,7 +325,7 @@ void inputParser_extract_index(const char* input, uint32_t* start, uint32_t* sto
 	}
 
 	length = strspn(offset, "0123456789");
-	if (offset[length] != '\0' && offset[length] != ' '){
+	if (offset[length] != '\0' && offset[length] != ' ' && offset[length] != ']'){
 		return;
 	}
 

@@ -205,6 +205,7 @@ struct flagAsmBlock{
 	uint32_t 			flag;
 	uint32_t 			nb_exec;
 	uint32_t 			nb_bitw;
+	uint32_t 			taken;
 };
 
 static struct array* assemblyScan_create_flag_block_array(const struct assembly* assembly, uint32_t verbose){
@@ -231,6 +232,7 @@ static struct array* assemblyScan_create_flag_block_array(const struct assembly*
 		flag_block.block 	= block;
 		flag_block.flag 	= assemblySan_search_cst(block, verbose) | assemblySan_search_inst(block, verbose);
 		flag_block.nb_exec 	= 0;
+		flag_block.taken 	= 0; 
 
 		for (flag_block.nb_bitw = 0, ptr = asmBlock_search_instruction(block, bitwise_instruction, nb_bitwise_instruction, &xedd, 0); ptr != NULL; ptr = asmBlock_search_instruction(block, bitwise_instruction, nb_bitwise_instruction, &xedd, ptr + xed_decoded_inst_get_length(&xedd) - block->data)){
 			flag_block.nb_bitw ++;
@@ -303,30 +305,36 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 	struct macroBlock{
 		uint32_t 	nb_block;
 		uint32_t 	nb_ins;
+		uint32_t 	nb_exec;
 		uint32_t 	nb_bitw;
 		uint32_t 	flag;
+		ADDRESS 	addr_strt;
+		ADDRESS 	addr_end;
 	};
 
 	#define macroBlock_init(macro_block, flag_block) 												\
 		(macro_block).nb_block 	= 1; 																\
 		(macro_block).nb_ins 	= (flag_block)->block->header.nb_ins; 								\
+		(macro_block).nb_exec 	= (flag_block)->nb_exec; 											\
 		(macro_block).nb_bitw 	= (flag_block)->nb_bitw; 											\
-		(macro_block).flag 		= (flag_block)->flag;
+		(macro_block).flag 		= (flag_block)->flag; 												\
+		(macro_block).addr_strt = (flag_block)->block->header.address; 								\
+		(macro_block).addr_end 	= (macro_block).addr_strt + (flag_block)->block->header.size;
 
 	#define macroBlock_add(macro_block, flag_block) 												\
 		(macro_block).nb_block 	+= 1; 																\
 		(macro_block).nb_ins 	+= (flag_block)->block->header.nb_ins; 								\
 		(macro_block).nb_bitw 	+= (flag_block)->nb_bitw; 											\
-		(macro_block).flag 		|= (flag_block)->flag;
+		(macro_block).flag 		|= (flag_block)->flag; 												\
+		(macro_block).addr_end 	+= (flag_block)->block->header.size;
 
 	uint32_t 				i;
+	uint32_t 				j;
 	struct array* 			flag_block_array 	= NULL;
 	uint32_t* 				address_mapping 	= NULL;
 	struct set* 			function_set 		= NULL;
 	struct setIterator 		it;
 	struct node** 			func_ptr;
-	struct flagAsmBlock* 	next_flag_block;
-	ADDRESS 				address;
 	double 					ratio;
 	struct flagAsmBlock* 	flag_block;
 	struct macroBlock 		macro_block;
@@ -352,22 +360,23 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		goto exit;
 	}
 
-	for (i = 0; i < array_get_length(flag_block_array); ){
+	for (i = 0; i < array_get_length(flag_block_array); i++){
 		flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]);
-		macroBlock_init(macro_block, flag_block)
-		address = flag_block->block->header.address + flag_block->block->header.size;
+		if (!flag_block->nb_exec || flag_block->taken){
+			continue;
+		}
 
-		for (next_flag_block = flag_block, i = i + 1; next_flag_block->block->header.nb_ins == ASSEMBLYSCAN_NB_MAX_INS_PER_BBL && i < array_get_length(flag_block_array); i++){
-			next_flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]);
-			if (next_flag_block->block->header.address > address){
+		macroBlock_init(macro_block, flag_block)
+		flag_block->taken = 1;
+
+		for (j = j + 1; (macro_block.nb_ins % ASSEMBLYSCAN_NB_MAX_INS_PER_BBL) == 0 && j < array_get_length(flag_block_array); j++){
+			flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[j]);
+			if (flag_block->block->header.address > macro_block.addr_end){
 				break;
 			}
-			else if (next_flag_block->block->header.address < address){
-				continue;
-			}
-			else{
+			else if (!flag_block->taken && macro_block.addr_end == flag_block->block->header.address && macro_block.nb_exec == flag_block->nb_exec){
 				macroBlock_add(macro_block, flag_block)
-				address += next_flag_block->block->header.size;
+				flag_block->taken = 1;
 			}
 		}
 
@@ -386,37 +395,32 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 				continue;
 			}
 
-			if (flag_block->nb_exec < ASSEMBLYSCAN_NB_MIN_EXECUTION && (filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
+			if (macro_block.nb_exec < ASSEMBLYSCAN_NB_MIN_EXECUTION && (filters & ASSEMBLYSCAN_FILTER_BBL_EXEC)){
 				continue;
 			}
 		}
 
 		#ifdef COLOR
 		if (ratio < 25){
-			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, macro_block.addr_strt, macro_block.addr_end, ratio);
 		}
 		else if (ratio < 50){
-			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, macro_block.addr_strt, macro_block.addr_end, ratio);
 		}
 		else{
-			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+			printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:" "\x1b[1;35m" "%5.2f%%" ANSI_COLOR_RESET, macro_block.nb_block, macro_block.nb_ins, macro_block.addr_strt, macro_block.addr_end, ratio);
 		}
 		#else
-		printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, flag_block->block->header.address, address, ratio);
+		printf("%3u bbl, %4u ins, [" PRINTF_ADDR " : " PRINTF_ADDR "], R:%5.2f%%", macro_block.nb_block, macro_block.nb_ins, macro_block.addr_strt, macro_block.addr_end, ratio);
 		#endif
 		
-		if (flag_block->nb_exec){
-			printf(", E:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
-		}
-		else{
-			printf(", E:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET " %6u", flag_block->nb_exec);
-		}
+		printf(", E: %6u", macro_block.nb_exec);
 
 		if (cm != NULL){
 			struct cm_routine* rtn;
 
-			if ((rtn = codeMap_search_routine(cm, flag_block->block->header.address)) != NULL){
-				printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, flag_block->block->header.address - rtn->address_start);
+			if ((rtn = codeMap_search_routine(cm, macro_block.addr_strt)) != NULL){
+				printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, macro_block.addr_strt - rtn->address_start);
 			}
 		}
 
@@ -438,7 +442,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		fputc('\n', stdout);
 
 		if (call_graph != NULL){
-			assemblyScan_get_function(assembly, flag_block->block, call_graph, function_set);
+			assemblyScan_get_function(assembly, ((struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]))->block, call_graph, function_set); /* chaud */
 		}
 	}
 

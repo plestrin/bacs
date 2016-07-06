@@ -1379,7 +1379,6 @@ static void cisc_decode_special_call(struct instructionIterator* it, struct asmC
 	cisc->ins[1].output_operand.operand_type.mem.scale 		= 1;
 	cisc->ins[1].output_operand.operand_type.mem.disp 		= 0;
 	cisc->ins[1].output_operand.operand_type.mem.con_addr 	= memAddress_search_and_get(mem_addr, MEMADDRESS_DESCRIPTOR_WRITE_0, 2);
-
 }
 
 static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
