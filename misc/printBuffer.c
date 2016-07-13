@@ -11,7 +11,7 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 

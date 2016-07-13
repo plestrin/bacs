@@ -2,7 +2,7 @@
 
 #include "pin.H"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
@@ -123,22 +123,10 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 static void codeMap_print_routine_JSON(struct cm_routine* routine, FILE* file){
 	if (routine != NULL){
 		if (routine->white_listed == CODEMAP_WHITELISTED){
-			#if defined ARCH_32
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
-			#elif defined ARCH_64
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":true,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
 		}
 		else{
-			#if defined ARCH_32
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
-			#elif defined ARCH_64
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
-			#endif
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":false,\"exe\":%u}", routine->address_start, routine->address_stop, routine->name, routine->nb_execution);
 		}
 	}
 }
@@ -147,13 +135,7 @@ static void codeMap_print_section_JSON(struct cm_section* section, FILE* file){
 	struct cm_routine* routine;
 
 	if (section != NULL){
-		#if defined ARCH_32
-		fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
-		#elif defined ARCH_64
-		fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
-		#else
-		#error Please specify an architecture {ARCH_32 or ARCH_64}
-		#endif
+		fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
 
 		routine = section->routines;
 		while(routine != NULL){
@@ -174,37 +156,17 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 
 	if (image != NULL){
 		if (image->white_listed == CODEMAP_WHITELISTED){
-			#if defined ARCH_32
-			#ifdef WIN32
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#ifdef _WIN32
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
 			#else
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
-			#endif
-			#elif defined ARCH_64
-			#ifdef WIN32
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
-			#else
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
-			#endif
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":true,\"section\":[", image->address_start, image->address_stop, image->name);
 			#endif
 		}
 		else{
-			#if defined ARCH_32
-			#ifdef WIN32
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
+			#ifdef _WIN32
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
 			#else
-			fprintf(file, "{\"start\":\"%x\",\"stop\":\"%x\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
-			#endif
-			#elif defined ARCH_64
-			#ifdef WIN32
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, windowsComp_sanitize_path(image->name));
-			#else
-			fprintf(file, "{\"start\":\"%llx\",\"stop\":\"%llx\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
-			#endif
-			#else
-			#error Please specify an architecture {ARCH_32 or ARCH_64}
+			fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"whl\":false,\"section\":[", image->address_start, image->address_stop, image->name);
 			#endif
 		}
 
@@ -234,7 +196,7 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 

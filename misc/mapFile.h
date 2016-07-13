@@ -1,7 +1,7 @@
 #ifndef MAPFILE_H
 #define MAPFILE_H
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <stdint.h>
 #include <sys/mman.h>
 #endif
@@ -11,7 +11,7 @@ struct mappingDesc{
 	size_t 	size;
 };
 
-#ifndef WIN32
+#ifndef _WIN32
 
 #define mappingDesc_free_mapping(desc) munmap((desc).buffer, (desc).size)
 

@@ -1,6 +1,6 @@
 #include "pin.H"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
@@ -79,7 +79,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	if (file != NULL){
 		fclose(file);
 	}
-	if (list->buffer == NULL){
+	if (list->buffer != NULL){
 		free(list->buffer);
 	}
 
@@ -137,7 +137,7 @@ static int whiteList_compare(const void* entry1, const void* entry2){
 	#ifdef __linux__
 	return strcmp(*(char**)entry1, *(char**)entry2);
 	#endif
-	#ifdef WIN32
+	#ifdef _WIN32
 	return _stricmp(*(char**)entry1, *(char**)entry2);
 	#endif
 }
