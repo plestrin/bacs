@@ -9,25 +9,25 @@ from recipe import recipe
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/pierre/Documents/tool/pin-3.0-76991-gcc-linux/pin"
-TOOL_PATH 				= "/home/pierre/Documents/bacs/lightTracer_pin/obj-ia32/lightTracer.so"
-TOOL_SRC_PATH 			= "/home/pierre/Documents/bacs/lightTracer_pin/"
-WHITELIST_PATH 			= "/home/pierre/Documents/bacs/test/whiteList/"
-MAKEFILE_ANAL_PATH 		= "/home/pierre/Documents/bacs/traceAnalysis/Makefile"
-MAKEFILE_SIG_PATH 		= "/home/pierre/Documents/bacs/staticSignature/Makefile"
-TRACE_PATH				= "/home/pierre/Documents/bacs/test/"
-LOG_PATH 				= "/home/pierre/Documents/bacs/test/log/"
+PIN_PATH 				= "/home/plt/Documents/tool/pin-3.0-76991-gcc-linux/pin"
+TOOL_PATH 				= "../lightTracer_pin/obj-ia32/lightTracer.so"
+TOOL_SRC_PATH 			= "../lightTracer_pin/"
+WHITELIST_PATH 			= "./whiteList/"
+MAKEFILE_ANAL_PATH 		= "../traceAnalysis/Makefile"
+MAKEFILE_SIG_PATH 		= "../staticSignature/Makefile"
+TRACE_PATH				= ""
+LOG_PATH 				= "./log/"
 
 if len(sys.argv) < 3:
 	print("ERROR: incorrect number of argument")
 	print("- 1 arg: recipe file name")
-	print("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL")
+	print("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL or WHL")
 	print("- 3 arg: name of specific test case [OPT]")
 	exit()
 
 file_name = sys.argv[1]
 action = sys.argv[2]
-if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == "SEARCH" or action == "ALL"):
+if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == "SEARCH" or action == "ALL" or action == "WHL"):
 	print("ERROR: incorrect action type")
 	exit()
 
@@ -107,3 +107,8 @@ if action == "SEARCH" or action == "ALL":
 if action == "SEARCH" or action == "ALL":
 	for r in recipes:
 		r.search(LOG_PATH)
+
+# WHL step
+if action == "WHL":
+	for r in recipes:
+		r.create_whl(WHITELIST_PATH)

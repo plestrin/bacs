@@ -30,12 +30,25 @@ class recipe(object):
 			string = string + "\t\t-" + i + ": " + str(self.algo.get(i)) + "\n"
 		return string
 
+	def create_whl(self, whiteList_path):
+		if self.trace != "":
+			if not os.path.isdir(whiteList_path):
+				os.makedirs(whiteList_path)
+
+			f = open(whiteList_path + self.name + ".lst", "w")
+			f.write(self.trace + "\n")
+			f.close()
+		else:
+			sys.stdout.write("Creating whiteList for " + self.name + " ... \x1b[36mSKIP\x1b[0m\n")
+
 	def build_prog(self, log_path):
 		sys.stdout.write("Building " + self.name + " ... ")
 		sys.stdout.flush()
 
 		if self.build != "":
 			if self.log == None:
+				if not os.path.isdir(log_path):
+					os.makedirs(log_path)
 				self.log = open(log_path + self.name + ".log", "w")
 
 			self.log.write("\n\n### BULID STDOUT & STDERR ###\n\n")
@@ -49,13 +62,15 @@ class recipe(object):
 			else:
 				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 		else:
-			sys.stdout.write("no rule\n")
+			sys.stdout.write("\x1b[36mSKIP\x1b[0m\n")
 
 	def trace_prog(self, log_path, pin_path, tool_path, trace_path, whiteList_path):
 		sys.stdout.write("Tracing " + self.name + " ... ")
 		sys.stdout.flush()
 		if self.trace != "":
 			if self.log == None:
+				if not os.path.isdir(log_path):
+					os.makedirs(log_path)
 				self.log = open(log_path + self.name + ".log", "w")
 
 			self.log.write("\n\n### TRACE STDOUT & STDERR ###\n\n")
@@ -94,6 +109,8 @@ class recipe(object):
 				trace_dir = a[11:]
 
 		if self.log == None:
+			if not os.path.isdir(log_path):
+				os.makedirs(log_path)
 			self.log = open(log_path + self.name + ".log", "w")
 
 		self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
