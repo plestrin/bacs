@@ -15,7 +15,7 @@ PROG_NAME 		:= $(BUILD_DIR)../$(PROG_NAME)
 endif
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/pierre/Documents/tool/xed-2016-02-02-lin-ia32/
+XED_DIR 		:= /home/plt/Documents/tool/xed-2016-02-02-lin-ia32/
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 

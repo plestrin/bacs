@@ -1,4 +1,4 @@
-PIN_ROOT 		:= /home/pierre/Documents/tool/pin-3.0-76991-gcc-linux
+PIN_ROOT 		:= /home/plt/Documents/tool/pin-3.0-76991-gcc-linux
 CONFIG_ROOT 	:= $(PIN_ROOT)/source/tools/Config
 SOURCE_DIR 		:= src/
 MISC_DIR		:= ../misc/
@@ -82,5 +82,8 @@ $(OBJDIR)%$(OBJ_SUFFIX): $(SHARED_DIR)%.cpp
 
 $(OBJDIR)lightTracer$(PINTOOL_SUFFIX): $(OBJDIR)lightTracer$(OBJ_SUFFIX) $(OBJDIR)whiteList$(OBJ_SUFFIX) $(OBJDIR)traceFile$(OBJ_SUFFIX) $(OBJDIR)codeMap$(OBJ_SUFFIX)
 	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(SHARED_DIR)%.cpp: $(SHARED_DIR)%.c
+	ln -s $< $@
 
 include $(TOOLS_ROOT)/Config/makefile.default.rules
