@@ -369,7 +369,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		macroBlock_init(macro_block, flag_block)
 		flag_block->taken = 1;
 
-		for (j = j + 1; (macro_block.nb_ins % ASSEMBLYSCAN_NB_MAX_INS_PER_BBL) == 0 && j < array_get_length(flag_block_array); j++){
+		for (j = i + 1; (macro_block.nb_ins % ASSEMBLYSCAN_NB_MAX_INS_PER_BBL) == 0 && j < array_get_length(flag_block_array); j++){
 			flag_block = (struct flagAsmBlock*)array_get(flag_block_array, address_mapping[j]);
 			if (flag_block->block->header.address > macro_block.addr_end){
 				break;
