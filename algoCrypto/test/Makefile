@@ -1,4 +1,4 @@
-MISC_DIRECTORY 			:= /home/pierre/Documents/bacs/misc/
+MISC_DIRECTORY 			:= ../../misc/
 
 GCC_CC					:= gcc
 GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra -std=gnu99
@@ -93,9 +93,12 @@ build/$(TWOFISH_TEST_NAME)_$(1): build/twofish.$(1) build/test_twofish.$$(shell 
 	$$(GCC_CC) -o $$@ $$^
 endef
 
-all: $(foreach target,$(TARGETS),$(foreach compilation,$(COMPILATIONS),build/$(target)_$(compilation))) build/$(ASA_CBC_AES_TEST_NAME)
+all: build $(foreach target,$(TARGETS),$(foreach compilation,$(COMPILATIONS),build/$(target)_$(compilation))) build/$(ASA_CBC_AES_TEST_NAME)
 
 $(foreach compilation,$(COMPILATIONS),$(eval $(call TEMPLATE,$(compilation))))
+
+build:
+	mkdir -p build
 
 build/$(ASA_CBC_AES_TEST_NAME): build/test_asa_cbc_aes.go0 build/mode.go2 build/AES.go2 build/printBuffer.go0
 	$(GCC_CC) -o $@ $^

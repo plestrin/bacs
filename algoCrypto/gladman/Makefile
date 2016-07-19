@@ -1,4 +1,4 @@
-MISC_DIRECTORY 				:= /home/pierre/Documents/bacs/misc/
+MISC_DIRECTORY 				:= ../../misc/
 GCC_CC						:= gcc
 GCC_CFLAGS 					:= -W -Wall -pedantic -Wextra  -std=c99 -std=c99
 CLANG_CC 					:= clang
@@ -42,7 +42,10 @@ build/%.$(1)$(2)o$(3): lib/%.c
 endif
 endef
 
-all: $(PROGRAM_NAMES)
+all: build $(PROGRAM_NAMES)
+
+build:
+	mkdir -p build
 
 $(foreach optim, $(GCC_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),$(eval $(call PROGRAM_template,$(version),g,$(optim)))))
 $(foreach optim, $(CLANG_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),$(eval $(call PROGRAM_template,$(version),c,$(optim)))))

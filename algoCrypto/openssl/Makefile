@@ -1,8 +1,8 @@
-MISC_DIRECTORY 				:= /home/pierre/Documents/bacs/misc/
+MISC_DIRECTORY 	:= ../../misc/
 
-CC							:= gcc
-CFLAGS						:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2
-LDFLAGS						:= -lcrypto
+CC				:= gcc
+CFLAGS			:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2
+LDFLAGS			:= -lcrypto
 
 AES_OPENSSL_EXAMPLE_NAME 		:= openssl_aes
 ECB_AES_OPENSSL_EXAMPLE_NAME 	:= openssl_ecb_aes
@@ -16,7 +16,7 @@ DES_OPENSSL_EXAMPLE_NAME 		:= openssl_des
 SHA1_OPENSSL_EXAMPLE_NAME 		:= openssl_sha1
 HMAC_MD5_OPENSSL_EXAMPLE_NAME 	:= openssl_hmac_md5
 
-all: 	build/$(AES_OPENSSL_EXAMPLE_NAME) 		\
+all: 	build build/$(AES_OPENSSL_EXAMPLE_NAME) \
 		build/$(ECB_AES_OPENSSL_EXAMPLE_NAME) 	\
 		build/$(CBC_AES_OPENSSL_EXAMPLE_NAME) 	\
 		build/$(OFB_AES_OPENSSL_EXAMPLE_NAME) 	\
@@ -27,6 +27,9 @@ all: 	build/$(AES_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(DES_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(SHA1_OPENSSL_EXAMPLE_NAME) 		\
 		build/$(HMAC_MD5_OPENSSL_EXAMPLE_NAME)
+
+build:
+	mkdir -p build
 
 build/$(AES_OPENSSL_EXAMPLE_NAME): build/openssl_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)

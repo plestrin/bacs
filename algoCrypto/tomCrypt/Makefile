@@ -1,4 +1,4 @@
-MISC_DIRECTORY 					:= /home/pierre/Documents/bacs/misc/
+MISC_DIRECTORY 					:= ../../misc/
 
 CC								:= gcc
 CFLAGS							:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -g
@@ -27,7 +27,7 @@ SHA512_TOMCRYPT_EXAMPLE_NAME 	:= tom_sha512
 DES_TOMCRYPT_EXAMPLE_NAME 		:= tom_des
 TWOFISH_TOMCRYPT_EXAMPLE_NAME 	:= tom_twofish
 
-all: build/$(TEA_TOMCRYPT_EXAMPLE_NAME) 		\
+all: build build/$(TEA_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(ECB_TEA_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(CBC_TEA_TOMCRYPT_EXAMPLE_NAME) 	\
 	 build/$(OFB_TEA_TOMCRYPT_EXAMPLE_NAME) 	\
@@ -49,6 +49,9 @@ all: build/$(TEA_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(SHA512_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(DES_TOMCRYPT_EXAMPLE_NAME) 		\
 	 build/$(TWOFISH_TOMCRYPT_EXAMPLE_NAME)
+
+build:
+	mkdir -p build
 
 build/$(TEA_TOMCRYPT_EXAMPLE_NAME): build/tom_tea.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)

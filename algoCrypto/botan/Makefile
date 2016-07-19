@@ -1,6 +1,6 @@
-CXX							:= g++
-CXXFLAGS					:= -W -Wall -I/usr/include/botan-1.10/
-LDFLAGS						:= -lbotan-1.10 -ldl
+CXX 		:= g++
+CXXFLAGS 	:= -W -Wall -I/usr/include/botan-1.10/
+LDFLAGS 	:= -lbotan-1.10 -ldl
 
 TEA_BOTAN_EXAMPLE_NAME 			:= bot_tea
 ECB_TEA_BOTAN_EXAMPLE_NAME 		:= bot_ecb_tea
@@ -23,7 +23,7 @@ HMAC_SHA1_BOTAN_EXAMPLE_NAME 	:= bot_hmac_sha1
 MD5_BOTAN_EXAMPLE_NAME 			:= bot_md5
 HMAC_MD5_BOTAN_EXAMPLE_NAME 	:= bot_hmac_md5
 
-all: 	build/$(TEA_BOTAN_EXAMPLE_NAME) 		\
+all: 	build build/$(TEA_BOTAN_EXAMPLE_NAME) 	\
 		build/$(ECB_TEA_BOTAN_EXAMPLE_NAME) 	\
 		build/$(CBC_TEA_BOTAN_EXAMPLE_NAME) 	\
 		build/$(OFB_TEA_BOTAN_EXAMPLE_NAME) 	\
@@ -44,6 +44,9 @@ all: 	build/$(TEA_BOTAN_EXAMPLE_NAME) 		\
 		build/$(HMAC_SHA1_BOTAN_EXAMPLE_NAME) 	\
 		build/$(MD5_BOTAN_EXAMPLE_NAME) 		\
 		build/$(HMAC_MD5_BOTAN_EXAMPLE_NAME)
+
+build:
+	mkdir -p build
 
 build/$(TEA_BOTAN_EXAMPLE_NAME): build/botan_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
