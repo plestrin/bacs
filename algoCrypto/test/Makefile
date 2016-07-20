@@ -150,6 +150,6 @@ build/%.coz: ../%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -Oz
 
 clean:
-	@ rm -f build/*
+	@ rm -rf build
 
 .PHONY: all clean
