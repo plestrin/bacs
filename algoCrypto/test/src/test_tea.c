@@ -9,7 +9,7 @@
 #include "windowsComp.h"
 #endif
 
-int main(){
+int main(void){
 	unsigned char 	plaintext[TEA_BLOCK_NB_BYTE]		= {0x45, 0xb7, 0x28, 0xba, 0xd7, 0x8f, 0x1a, 0x1f};
 	char 			ciphertext[TEA_BLOCK_NB_BYTE];
 	char  			deciphertext[TEA_BLOCK_NB_BYTE];
@@ -46,5 +46,5 @@ int main(){
 		printf("\nRecovery:        FAIL\n");
 	}
 	
-	return 0;
+	return EXIT_SUCCESS;
 }

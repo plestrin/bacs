@@ -29,6 +29,7 @@
 
 #define AES_BLOCK_NB_BIT 			128
 #define AES_BLOCK_NB_BYTE 			16
+#define AES_BLOCK_NB_DWORD 			4
 
 /* 
  * Key schedule - normally the same round key is used for encryption and decryption but here it's a little bit tricky due to our implementation

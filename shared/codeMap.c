@@ -188,17 +188,10 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "codeMap.h"
 #include "multiColumn.h"
-
-#ifdef __linux__
-#include <unistd.h>
-#endif
-
-#ifdef _WIN32
-#include "windowsComp.h"
-#endif
 
 static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter);
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter);

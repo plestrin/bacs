@@ -31,7 +31,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	size = ftell(file);
 	rewind(file);
 
-	if ((list->buffer = (char*)malloc(size)) == NULL){
+	if ((list->buffer = (char*)malloc(size + 1)) == NULL){
 		LOG("ERROR: unable to allocate memory\n");
 		goto error;
 	}
@@ -41,8 +41,19 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 		goto error;
 	}
 
-	fclose (file);
+	fclose(file);
 	file = NULL;
+
+	list->buffer[size] = '\0';
+	for (i = size; i > 0; ){
+		i --;
+		if (list->buffer[i] == '\0' || list->buffer[i] == '\n'){
+			list->buffer[i] = '\0';
+		}
+		else{
+			break;
+		}
+	}
 
 	for (i = 0, list->nb_entry = 1; i < size; i++){
 		if (list->buffer[i] == '\n'){
@@ -113,17 +124,11 @@ struct whiteList* whiteList_create(const char* file_name){
 }
 
 int whiteList_search(struct whiteList* list, const char* entry){
-	if (list != NULL){
-		if (bsearch(&entry, list->entries, list->nb_entry, sizeof(char*), whiteList_compare) != NULL){
-			return 0;
-		}
-		else{
-			return -1;
-		}
+	if (list != NULL && bsearch(&entry, list->entries, list->nb_entry, sizeof(char*), whiteList_compare) != NULL){
+		return 0;
 	}
-	else{
-		return -1;
-	}
+
+	return -1;
 }
 
 void whiteList_delete(struct whiteList* list){
