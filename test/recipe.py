@@ -19,15 +19,15 @@ class recipe(object):
 		self.log  		= None
 
 	def __str__(self):
-		string = self.name + "\n\t-BUILD: " + self.build + "\n\t-CMD: " + self.trace + " OPT ARG:"
-		for i in self.trace_arg:
-			string += " " + i
-		string += "\n\t-ARG:\n"
+		string = ""
 		for i in self.arg:
-			string = string + "\t\t-" + i + "\n"
-		string += "\n\t-PRIMITIVE(S):\n"
-		for i in self.algo:
-			string = string + "\t\t-" + i + ": " + str(self.algo.get(i)) + "\n"
+			if  i == "exit":
+				continue
+			if i.startswith("load trace "):
+				i = "load trace /home/plt/Documents/bacs/test/" + i[11:]
+			if i.startswith("load code signature ../"):
+				i = "load code signature /home/plt/Documents/bacs/" + i[23:]
+			string += i + "\n"
 		return string
 
 	def create_whl(self, whiteList_path):

@@ -60,6 +60,7 @@ try:
 		if len(sys.argv) == 4:
 			if name == sys.argv[3]:
 				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
+				break
 		else:
 			if xml_recipe.attrib.get("active") == "yes":
 				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
@@ -72,8 +73,21 @@ except IOError:
 
 # PRINT step
 if action == "PRINT":
-	for r in recipes:
-		print r
+	if len(sys.argv) == 4:
+		if len(recipes) == 1:
+			sys.stdout.write(str(recipes[0]))
+			sys.stdout.flush()
+			while True:
+				cmd = sys.stdin.readline()
+				sys.stdout.write(cmd)
+				if cmd[:-1] == "exit":
+					break
+				else:
+					sys.stdout.flush()
+		else:
+			print("ERROR: incorrect test case name: " + sys.argv[3])
+	else:
+		print("ERROR: a third argument is expected (name of a specific test case)")
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
