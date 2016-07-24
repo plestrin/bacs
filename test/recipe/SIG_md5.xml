@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_MD5_GO0" active="no"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -23,8 +23,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_GO1" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -46,8 +46,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_GO2" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -69,8 +69,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_GO3" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -92,8 +92,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_GOs" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -115,8 +115,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_CO0" active="no"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -138,8 +138,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_CO1" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -161,8 +161,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_CO2" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -184,8 +184,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_CO3" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -207,8 +207,8 @@
 	</recipe>
 
 	<recipe name="TEST_MD5_COz" active="yes"> <!-- First MD5 block is broken: due to constant propagation -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_COz"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -233,7 +233,7 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_MD5_WD"/>
+			<arg value="load trace traceTEST_MD5_WD"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph md5"/>
@@ -256,7 +256,7 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_MD5_WR"/>
+			<arg value="load trace traceTEST_MD5_WR"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph md5"/>
@@ -277,8 +277,8 @@
 	</recipe>
 
 	<recipe name="TOM_MD5" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
 		<search>
 			<arg value="load trace traceTOM_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -302,8 +302,8 @@
 	</recipe>
 
 	<recipe name="OPEN_MD5" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
 		<search>
 			<arg value="load trace traceOPEN_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -326,8 +326,8 @@
 	</recipe>
 
 	<recipe name="PP_MD5" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
 		<search>
 			<arg value="load trace tracePP_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -350,8 +350,8 @@
 	</recipe>
 
 	<recipe name="BOT_MD5" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
 		<search>
 			<arg value="load trace traceBOT_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -368,13 +368,14 @@
 			<algo name="md5_p3_v1" number="192"/>
 			<algo name="md5_p4_v1" number="96"/>
 			<algo name="md5_slice" number="64"/>
-			<algo name="md5_v1" number="2"/> <!-- md5_compress is not detected to due some aliasing issue -->
+			<algo name="md5_v1" number="2"/>
+			<algo name="md5_compress" number="1"/> <!-- md5_compress might not be detected because of aliasing issues -->
 		</result>
 	</recipe>
 
 	<recipe name="NET_MD5" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
 		<search>
 			<arg value="load trace traceNET_MD5"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
@@ -386,13 +387,13 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="96"/>
-			<algo name="md5_p2_v1" number="96"/>
-			<algo name="md5_p3_v1" number="192"/>
-			<algo name="md5_p4_v1" number="96"/>
-			<algo name="md5_slice" number="64"/>
-			<algo name="md5_v1" number="2"/>
-			<algo name="md5_compress" number="1"/>
+			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
 		</result>
 	</recipe>
 </xml>

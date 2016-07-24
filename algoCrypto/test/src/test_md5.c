@@ -5,13 +5,13 @@
 #include "MD5.h"
 #include "printBuffer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
 /* This test vector is taken from http://www.ietf.org/rfc/rfc1321.txt */
 
-int main(){
+int main(void){
 	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	char* 		padded_message;
 	uint32_t 	message_size;
@@ -35,5 +35,5 @@ int main(){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
