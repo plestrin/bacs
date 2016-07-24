@@ -10,7 +10,7 @@ TRACE_DIR 	:= trace/
 WHL_DIR 	:= trace\whiteList
 PIN 		:= C:\pin-2.14-71313-msvc12-windows\pin
 TOOL 		:= E:\lightTracer_pin\obj-ia32\lightTracer.dll
-TARGETS 	:= TEST_TEA
+TARGETS 	:= TEST_TEA TEST_RC4
 TARGETS_D 	:= $(foreach  target,$(TARGETS),$(target)_WD)
 TARGETS_R 	:= $(foreach  target,$(TARGETS),$(target)_WR)
 
@@ -40,6 +40,7 @@ $$(TRACE_DIR)trace$(1): $$(BUILD_DIR)/$(2).exe $$(WHL_DIR)\$(1).lst $$(TOOL)
 endef
 
 $(eval $(call BUILD_template,test_tea,TEA test_tea printBuffer))
+$(eval $(call BUILD_template,test_rc4,RC4 test_rc4 printBuffer))
 
 $(foreach target,$(TARGETS_D) $(TARGETS_R),$(eval $(call TRACE_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
 

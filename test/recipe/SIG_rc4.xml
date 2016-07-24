@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_RC4_GO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -19,8 +19,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -38,8 +38,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -57,8 +57,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -76,8 +76,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GOs" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_gos"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -95,8 +95,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -114,8 +114,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -133,8 +133,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -152,8 +152,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -171,8 +171,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_COz" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_rc4_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_rc4_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_coz"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_COz"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -193,10 +193,10 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_RC4_WD"/>
+			<arg value="load trace traceTEST_RC4_WD"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph rc4"/>
+			<arg value="export callGraph _rc4"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -212,24 +212,23 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_RC4_WR"/>
+			<arg value="load trace traceTEST_RC4_WR"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph rc4"/>
+			<arg value="export callGraph _rc4"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
-			<algo name="rc4_prga_v2" number="11"/>
+			<algo name="rc4_prga_v2" number="12"/>
 		</result>
 	</recipe>
 
 	<recipe name="TOM_RC4" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/test_rc4"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
 		<search>
 			<arg value="load trace traceTOM_RC4"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -246,8 +245,8 @@
 	</recipe>
 
 	<recipe name="BOT_RC4" active="no">
-		<build cmd="make -C /home/pierre/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
 		<search>
 			<arg value="load trace traceBOT_RC4"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -265,8 +264,8 @@
 	</recipe>
 
 	<recipe name="PP_RC4" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_rc4"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_rc4"/>
 		<search>
 			<arg value="load trace tracePP_RC4"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
@@ -283,8 +282,8 @@
 	</recipe>
 
 	<recipe name="OPEN_RC4" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/open_rc4"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
 		<search>
 			<arg value="load trace traceOPEN_RC4"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>

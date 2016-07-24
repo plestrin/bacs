@@ -6,11 +6,11 @@
 #include "RC4.h"
 #include "printBuffer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
-int main(){
+int main(void){
 	char 	plaintext[] = "Hello World!";
 	char	key[] = "Key";
 	char*	ciphertext;
@@ -48,5 +48,5 @@ int main(){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
