@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_SHA1_GO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go0"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO0"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -18,8 +18,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go1"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -36,8 +36,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go2"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO2"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -54,8 +54,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go3"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO3"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -72,8 +72,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GOs" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_gos"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GOs"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -90,8 +90,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO0" active="no">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO0"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -108,8 +108,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co1"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -126,8 +126,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co2"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO2"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -144,8 +144,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co3"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO3"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -162,8 +162,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_COz" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_sha1_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_sha1_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_coz"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_COz"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -183,10 +183,10 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_SHA1_WD"/>
+			<arg value="load trace traceTEST_SHA1_WD"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph _sha1"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -201,10 +201,10 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_SHA1_WR"/>
+			<arg value="load trace traceTEST_SHA1_WR"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph _sha1"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -216,8 +216,8 @@
 	</recipe>
 
 	<recipe name="TOM_SHA1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
 		<search>
 			<arg value="load trace traceTOM_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -235,8 +235,8 @@
 	</recipe>
 
 	<recipe name="PP_SHA1" active="no">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
 		<search>
 			<arg value="load trace tracePP_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -253,8 +253,8 @@
 	</recipe>
 
 	<recipe name="BOT_SHA1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_sha1"/>
 		<search>
 			<arg value="load trace traceBOT_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -271,8 +271,8 @@
 	</recipe>
 
 	<recipe name="OPEN_SHA1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
 		<search>
 			<arg value="load trace traceOPEN_SHA1"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
@@ -286,7 +286,7 @@
 		</search>
 		<result>
 			<algo name="sha1_ms_open" number="2"/>
-			<algo name="sha1_open_v2" number="4"/>
+			<algo name="sha1_open_v1" number="4"/>
 			<!-- <algo name="sha1_compress" number="2"/> aliasing issues -->
 		</result>
 	</recipe>
