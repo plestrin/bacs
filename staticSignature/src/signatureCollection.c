@@ -507,7 +507,7 @@ static void signatureCollection_dotPrint_node(void* data, FILE* file, void* arg)
 	fprintf(file, "[label=\"%s\"]", signature->symbol.name);
 }
 
-void signatureCollection_clean(struct signatureCollection* collection){
+void signatureCollection_empty(struct signatureCollection* collection){
 	struct node* node_cursor;
 
 	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -515,5 +515,9 @@ void signatureCollection_clean(struct signatureCollection* collection){
 	}
 
 	graph_clean(&(collection->syntax_graph));
+}
+
+void signatureCollection_clean(struct signatureCollection* collection){
+	signatureCollection_empty(collection);
 	nameEngine_release();
 }

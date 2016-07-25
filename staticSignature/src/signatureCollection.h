@@ -81,6 +81,7 @@ struct graphSearcher{
 
 void signatureCollection_search(struct signatureCollection* collection, struct graphSearcher* graph_searcher_buffer, uint32_t nb_graph_searcher, uint32_t(*graphNode_get_label)(struct node*), uint32_t(*graphEdge_get_label)(struct edge*));
 
+void signatureCollection_empty(struct signatureCollection* collection);
 void signatureCollection_clean(struct signatureCollection* collection);
 
 #define signatureCollection_delete(collection) 																		\

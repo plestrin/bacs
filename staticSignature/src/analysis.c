@@ -137,7 +137,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "load mode signature", 		"Load mode signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->mode_signature_collection), modeSignatureReader_parse)
 	add_cmd_to_input_parser(parser, "search mode signature", 	"Search mode signature for a given synthesis", 	"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_mode_signature_search)
 	add_cmd_to_input_parser(parser, "printDot mode signature", 	"Print every mode signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_printDot)
-	add_cmd_to_input_parser(parser, "clean mode signature", 	"Remove every mode signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_clean)
+	add_cmd_to_input_parser(parser, "clean mode signature", 	"Remove every mode signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_empty)
 	add_cmd_to_input_parser(parser, "search buffer signature", 	"Search for highly dependent buffers", 			"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_buffer_signature_search)
 	add_cmd_to_input_parser(parser, "print buffer signature", 	"Search for highly dependent buffers", 			NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	NULL, 									bufferSignature_print_buffer)
 
@@ -959,7 +959,7 @@ static void analysis_code_signature_clean(struct analysis* analysis){
 		trace_reset_ir(array_get(&(analysis->frag_array), i));
 	}
 
-	signatureCollection_clean(&(analysis->code_signature_collection));
+	signatureCollection_empty(&(analysis->code_signature_collection));
 }
 
 static void analysis_mode_signature_search(struct analysis* analysis, char* arg){
