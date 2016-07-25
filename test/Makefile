@@ -2,6 +2,7 @@ BIN_DIR 	:= build/
 SRC_DIR 	:= ../staticSignature/
 LOG_DIR 	:= log/
 FIG_DIR 	:= fig/
+FIGURES 	:= $(shell ls $(FIG_DIR)*.dot)
 RECIPE_DIR 	:= recipe/
 RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_aes.xml SIG_md5.xml SIG_cbc.xml SIG_ctr.xml SIG_hmac.xml
 EXE 		:= signature
@@ -30,6 +31,11 @@ $(foreach recipe,$(RECIPES),$(eval $(call TRACE_template,$(recipe))))
 search: all $(foreach recipe,$(RECIPES),search_$(recipe))
 
 $(foreach recipe,$(RECIPES),$(eval $(call SEARCH_template,$(recipe))))
+
+figure: $(FIGURES:dot=png)
+
+$(FIG_DIR)%.png: $(FIG_DIR)%.dot
+	dot -Tpng -o $@ $^
 
 clean:
 	@ rm -rf $(BIN_DIR)
