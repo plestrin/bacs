@@ -4,7 +4,7 @@
 
 #include "mode.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 

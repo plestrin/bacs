@@ -6,11 +6,11 @@
 #include "mode.h"
 #include "printBuffer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
-int main(){
+int main(void){
 	char 				message[] = "Hello I am a test vector for the HMAC SHA1. Since I am 93 bytes wide I lay on several blocks.";
 	char 				key[] = "1 4m 4 53cr3t k3y";
 	struct sha1State 	sha1_state;
@@ -35,5 +35,5 @@ int main(){
 		printf("\n");
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

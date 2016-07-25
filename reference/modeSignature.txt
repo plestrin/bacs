@@ -6,6 +6,7 @@
 # 	- ctr_v2  				input is the same. Useful for large block when the addition is done with conditional statements. one part of the block stay unchanged.
 # 	- hmac_v1 				RAS
 # 	- hmac_v2 				additional instructions between the inner and the outer hash function. This is typically due to byte manipulation.
+# 	- hmac_v3 				additional instructions between the different executions of the compression function. This is typically due to byte manipulation.
 
 
 "enc_cbc_cfb"
@@ -54,13 +55,24 @@
 
 
 "hmac_v1"
+
 1 (compress) -> (I0) 2 (compress)
 3 (compress) -> (I0) 4 (compress)
 2 -> (I1) 4
 
 
 "hmac_v2"
+
 1 (compress) -> (I0) 2 (compress)
 3 (compress) -> (I0) 4 (compress)
 2 -> (O0) 5 (*)
 5 -> (I1) 4
+
+
+"hmac_v3"
+
+1 (compress) -> (I0) 2 (compress)
+3 (compress) -> (O0) 4 (*)
+4 -> (I0) 40 (compress)
+2 -> (O0) 20 (*)
+20 -> (I1) 40

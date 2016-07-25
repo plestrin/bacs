@@ -20,6 +20,7 @@ endef
 
 all:
 	@ if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi
+	@ if [ ! -d $(FIG_DIR) ]; then mkdir -p $(FIG_DIR); fi
 	@ cd $(SRC_DIR) && $(MAKE) VERBOSE=0 DEBUG=0 BUILD_DIR=../test/$(BIN_DIR)
 
 trace: $(foreach recipe,$(RECIPES),trace_$(recipe))
@@ -36,7 +37,6 @@ clean:
 
 cleaner: clean
 	@ rm -rf trace*
-	@ rm -f $(LOG_DIR)*.log
+	@ rm -rf $(LOG_DIR)
 	@ rm -f *.pyc
-	@ rm -f $(FIG_DIR)*.dot
-	@ rm -f $(FIG_DIR)*.png
+	@ rm -rf $(FIG_DIR)
