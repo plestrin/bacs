@@ -1911,7 +1911,7 @@ static void simd_decode_special_palignr(struct ir* ir, struct instructionIterato
 	operand_size = min(128, ou_operand_buffer[0].size);
 
 	disp = ((uint32_t)in_operand_buffer[2].operand_type.imm & 0x000000ff) << 3;
-	frag_size = disp;
+	frag_size = disp & (-disp);
 	if (in_operand_buffer[0].type == ASM_OPERAND_REG){
 		frag_size = min(frag_size, irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg));
 	}
