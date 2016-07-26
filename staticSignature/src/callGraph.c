@@ -901,13 +901,14 @@ int32_t callGraphNode_is_leaf(struct callGraph* call_graph, struct node* node, c
 	return 1;
 }
 
-int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct array* frag_array){
+int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct set* frag_set){
 	struct function* 		function;
 	int32_t 				first_snippet_index;
 	struct assemblySnippet* snippet;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct trace 			fragment;
+	struct setIterator 		it;
 	uint32_t 				i;
 
 	if (node == NULL){
@@ -952,15 +953,15 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
 	}
 
-	for (i = 0; i < array_get_length(frag_array); i++){
-		if (trace_compare(&fragment, (struct trace*)array_get(frag_array, i)) == 0){
+	for (setIterator_get_first(frag_set, &it), i = 0; setIterator_get_current(&it) != NULL; setIterator_get_next(&it), i++){
+		if (trace_compare(&fragment, (struct trace*)setIterator_get_current(&it)) == 0){
 			log_info_m("an equivalent fragment (%u) has already been exported", i);
 			trace_clean(&fragment);
 			return 0;
 		}
 	}
 
-	if (array_add(frag_array, &fragment) < 0){
+	if (set_add(frag_set, &fragment) < 0){
 		log_err("unable to add traceFragment to array");
 		trace_clean(&fragment);
 		return -1;

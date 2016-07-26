@@ -245,6 +245,22 @@ void* setIterator_get_first(struct set* set, struct setIterator* iterator){
 	return NULL;
 }
 
+void* setIterator_get_index(struct set* set, struct setIterator* iterator, uint32_t index){
+	uint32_t i;
+
+	iterator->set 		= set;
+	iterator->block 	= &(set->block);
+
+	for (i = 0; iterator->block != NULL; i += iterator->block->nb_element, iterator->block = iterator->block->next){
+		if (index - i < iterator->block->nb_element){
+			iterator->element = index - i;
+			return setIterator_get_current(iterator);
+		}
+	}
+
+	return NULL;
+}
+
 void* setIterator_get_next(struct setIterator* iterator){
 	for (iterator->element ++; iterator->block != NULL; iterator->block = iterator->block->next, iterator->element = 0){
 		if (iterator->element < iterator->block->nb_element){

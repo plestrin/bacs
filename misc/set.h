@@ -65,6 +65,7 @@ struct setIterator{
 };
 
 void* setIterator_get_first(struct set* set, struct setIterator* iterator);
+void* setIterator_get_index(struct set* set, struct setIterator* iterator, uint32_t index);
 void* setIterator_get_next(struct setIterator* iterator);
 
 #define setIterator_get_current(iterator) ((iterator)->block->data + ((iterator)->element * (iterator)->set->element_size))

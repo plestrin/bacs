@@ -635,6 +635,12 @@ void trace_check(struct trace* trace){
 void trace_print_location(const struct trace* trace, struct codeMap* cm){
 	uint32_t i;
 
+	#ifdef VERBOSE
+	if (trace->type == FRAGMENT_TRACE){
+		printf("Locating frag (tag: \"%s\")\n", trace->trace_type.frag.tag);
+	}
+	#endif
+
 	for (i = 0; i < trace->assembly.nb_dyn_block; i++){
 		if (dynBlock_is_valid(trace->assembly.dyn_blocks + i)){
 			printf("\t-BBL %u [%u:%u] " PRINTF_ADDR ":", trace->assembly.dyn_blocks[i].block->header.id, trace->assembly.dyn_blocks[i].instruction_count, trace->assembly.dyn_blocks[i].instruction_count + trace->assembly.dyn_blocks[i].block->header.nb_ins, trace->assembly.dyn_blocks[i].block->header.address);
