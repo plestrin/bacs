@@ -229,7 +229,7 @@ static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
-	0xffffffff, /* 0  IR_ADc 						*/
+	0x00000002, /* 0  IR_ADc 						*/
 	0xffffffff, /* 1  IR_ADD 						*/
 	0xffffffff, /* 2  IR_AND 						*/
 	0x00000002, /* 3  IR_CMOV 						*/
