@@ -1,5 +1,5 @@
 CC		:= gcc
-CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99 -DINTERACTIVE -DCOLOR -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99
 LDFLAGS	:=
 PROG 	:= build/asa
 WHL 	:= whiteList.lst
@@ -19,6 +19,7 @@ build/%.o: src/%.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 trace: $(WHL) $(PROG)
+	@ rm -rf trace
 	$(PIN) -t $(TOOL) -w $(WHL) -m -o trace -- $(PROG)
 
 $(WHL):
