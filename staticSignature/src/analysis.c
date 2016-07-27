@@ -128,7 +128,7 @@ int main(int argc, char** argv){
 
 	/* ir specific commands */
 	add_cmd_to_input_parser(parser, "create ir", 				"Create an IR directly from a traceFragment", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_ir)
-	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
+	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
 	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
@@ -180,7 +180,7 @@ int main(int argc, char** argv){
 	struct setIterator 	it; 																													\
 	struct trace* 		fragment; 																												\
 																																				\
-	inputParser_extract_index(arg, &start, &stop); 																								\
+	inputParser_extract_range(arg, &start, &stop); 																								\
 	if (stop > set_get_length((analysis)->frag_set)){ 																							\
 		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length((analysis)->frag_set)); 									\
 		stop = set_get_length((analysis)->frag_set); 																							\
@@ -362,20 +362,20 @@ static void analysis_trace_print(struct analysis* analysis, char* arg){
 	uint32_t start;
 	uint32_t stop;
 
-	if (analysis->trace != NULL){
-		start = 0;
-		stop  = trace_get_nb_instruction(analysis->trace);
-		inputParser_extract_index(arg, &start, &stop);
-		if (start > stop){
-			log_err_m("incorrect fragment: [%u:%u]", start, stop);
-			return;
-		}
-
-		trace_print(analysis->trace, start, stop);
-	}
-	else{
+	if (analysis->trace == NULL){
 		log_err("trace is NULL");
+		return;
 	}
+
+	start = 0;
+	stop  = trace_get_nb_instruction(analysis->trace);
+	inputParser_extract_range(arg, &start, &stop);
+	if (start > stop){
+		log_err_m("incorrect fragment: [%u:%u]", start, stop);
+		return;
+	}
+
+	trace_print(analysis->trace, start, stop);
 }
 
 static void analysis_trace_check(struct analysis* analysis){
@@ -415,8 +415,8 @@ static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
 }
 
 static void analysis_trace_export(struct analysis* analysis, char* arg){
-	uint32_t 			start = 0;
-	uint32_t 			stop = 0;
+	uint32_t 			start;
+	uint32_t 			stop;
 	struct trace 		new_fragment;
 	uint32_t 			i;
 	struct setIterator 	it;
@@ -427,7 +427,9 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 		return;
 	}
 
-	inputParser_extract_index(arg, &start, &stop);
+	start = 0;
+	stop  = trace_get_nb_instruction(analysis->trace);
+	inputParser_extract_range(arg, &start, &stop);
 	if (start > stop){
 		log_err_m("incorrect fragment: [%u:%u]", start, stop);
 		return;
@@ -446,7 +448,7 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 		}
 	}
 
-	if (set_add(analysis->frag_set, &new_fragment) < 0){
+	if (set_add_last(analysis->frag_set, &new_fragment) < 0){
 		log_err("unable to add traceFragment to set");
 		trace_clean(&new_fragment);
 	}
@@ -708,7 +710,7 @@ static void analysis_frag_concat(struct analysis* analysis, char* arg){
 
 	snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "concat %s", arg);
 
-	if (set_add(analysis->frag_set, &new_fragment) < 0){
+	if (set_add_last(analysis->frag_set, &new_fragment) < 0){
 		log_err("unable to add traceFragment to set");
 		trace_clean(&new_fragment);
 	}
@@ -729,7 +731,7 @@ static void analysis_frag_print_result(struct analysis* analysis, char* arg){
 
 	start = 0;
 	stop  = set_get_length(analysis->frag_set);
-	inputParser_extract_index(arg, &start, &stop);
+	inputParser_extract_range(arg, &start, &stop);
 	if (stop > set_get_length(analysis->frag_set)){
 		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
 		stop = set_get_length(analysis->frag_set);
@@ -777,7 +779,7 @@ static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 
 	start = 0;
 	stop  = set_get_length(analysis->frag_set);
-	inputParser_extract_index(arg, &start, &stop);
+	inputParser_extract_range(arg, &start, &stop);
 	if (stop > set_get_length(analysis->frag_set)){
 		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
 		stop = set_get_length(analysis->frag_set);
@@ -867,7 +869,6 @@ static void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 }
 
 static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
-	uint32_t 			index;
 	uint32_t 			start;
 	uint32_t 			stop;
 	uint32_t 			i;
@@ -877,20 +878,16 @@ static void analysis_frag_create_compound_ir(struct analysis* analysis, char* ar
 	struct setIterator 	it2;
 	struct trace* 		fragment;
 
-	if (arg != NULL){
-		index = (uint32_t)atoi(arg);
-		if (index < set_get_length(analysis->frag_set)){
-			start = index;
-			stop = index + 1;
-		}
-		else{
-			log_err_m("incorrect fragment index %u (set size: %u)", index, set_get_length(analysis->frag_set));
-			return;
-		}
-	}
-	else{
-		start = 0;
+	start = 0;
+	stop  = set_get_length(analysis->frag_set);
+	inputParser_extract_range(arg, &start, &stop);
+	if (stop > set_get_length(analysis->frag_set)){
+		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
 		stop = set_get_length(analysis->frag_set);
+	}
+	if (start > stop){
+		log_err_m("incorrect fragment range [%u:%u]", start, stop);
+		return;
 	}
 
 	for (selected_trace = setIterator_get_index(analysis->frag_set, &it1, start), i = start; i < stop; selected_trace = setIterator_get_next(&it1), i++){
@@ -1093,7 +1090,7 @@ static void analysis_call_create(struct analysis* analysis, char* arg){
 	else{
 		start = 0;
 		stop  = trace_get_nb_instruction(analysis->trace);
-		inputParser_extract_index(arg, &start, &stop);
+		inputParser_extract_range(arg, &start, &stop);
 		if (start > stop){
 			log_err_m("incorrect fragment: [%u:%u]", start, stop);
 			return;

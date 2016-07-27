@@ -962,7 +962,7 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 		}
 	}
 
-	if (set_add(frag_set, &new_fragment) < 0){
+	if (set_add_last(frag_set, &new_fragment) < 0){
 		log_err("unable to add traceFragment to array");
 		trace_clean(&new_fragment);
 		return -1;

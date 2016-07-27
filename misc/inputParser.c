@@ -296,38 +296,126 @@ static char* inputParser_get_argument(const char* cmd, char* line){
 	return result;
 }
 
-void inputParser_extract_index(const char* input, uint32_t* start, uint32_t* stop){
-	size_t 	length;
-	char* 	offset;
+void inputParser_extract_range(const char* input, uint32_t* start, uint32_t* stop){
+	enum rangeParserState{
+		RANGE_PARSER_IDLE,
+		RANGE_PARSER_INDEX1,
+		RANGE_PARSER_NEG_INDEX1,
+		RANGE_PARSER_SEP,
+		RANGE_PARSER_INDEX2,
+		RANGE_PARSER_NEG_INDEX2,
+		RANGE_PARSER_END
+	};
+
+	size_t 					i;
+	enum rangeParserState 	state;
+	uint32_t 				tmp;
 
 	if (input == NULL){
 		return;
 	}
 
-	if ((offset = strpbrk(input, "0123456789")) == NULL){
+	for (i = 0, state = RANGE_PARSER_IDLE; input[i] != '\0' && state != RANGE_PARSER_END; i++){
+		switch (input[i]){
+			case '-' : {
+				if (state == RANGE_PARSER_INDEX1){
+					state = RANGE_PARSER_NEG_INDEX1;
+				}
+				else if (state == RANGE_PARSER_INDEX2){
+					state = RANGE_PARSER_NEG_INDEX2;
+				}
+				else{
+					state = RANGE_PARSER_IDLE;
+				}
+				break;
+			}
+			case '0' :
+			case '1' :
+			case '2' :
+			case '3' :
+			case '4' :
+			case '5' :
+			case '6' :
+			case '7' :
+			case '8' :
+			case '9' : {
+				if (state == RANGE_PARSER_INDEX1){
+					*start = atoi(input + i);
+					state = RANGE_PARSER_SEP;
+				}
+				else if(state == RANGE_PARSER_NEG_INDEX1){
+					tmp = atoi(input + i);
+					if (tmp < *stop){
+						*start = *stop - tmp;
+					}
+					state = RANGE_PARSER_SEP;
+				}
+				else if (state == RANGE_PARSER_INDEX2){
+					*stop = atoi(input + i);
+					state = RANGE_PARSER_END;
+				}
+				else if (state == RANGE_PARSER_NEG_INDEX2){
+					tmp = atoi(input + i);
+					if (tmp < *stop){
+						*stop = *stop - tmp;
+					}
+					state = RANGE_PARSER_END;
+				}
+				else if (state != RANGE_PARSER_SEP){
+					state = RANGE_PARSER_IDLE;
+				}
+				break;
+			}
+			case ':' : {
+				if (state == RANGE_PARSER_SEP || state == RANGE_PARSER_INDEX1){
+					state = RANGE_PARSER_INDEX2;
+				}
+				else{
+					state = RANGE_PARSER_IDLE;
+				}
+				break;
+			}
+			case '[' : {
+				if (state == RANGE_PARSER_IDLE){
+					state = RANGE_PARSER_INDEX1;
+				}
+				else{
+					state = RANGE_PARSER_IDLE;
+				}
+				break;
+			}
+			case ']' : {
+				if (state == RANGE_PARSER_INDEX2){
+					state = RANGE_PARSER_END;
+				}
+				else{
+					state = RANGE_PARSER_IDLE;
+				}
+				break;
+			}
+			default : {
+				state = RANGE_PARSER_IDLE;
+			}
+		}
+	}
+
+	if (state == RANGE_PARSER_END || state == RANGE_PARSER_INDEX2){
 		return;
 	}
 
-	if (offset != input && offset[-1] != '[' && offset[-1] != ' '){
-		return;
+	for (i = 0, state = RANGE_PARSER_INDEX1; input[i] != '\0'; i++){
+		if (input[i] == ' '){
+			state = RANGE_PARSER_INDEX1;
+		}
+		else if (input[i] >= '0' && input[i] <= '9'){
+			if (state == RANGE_PARSER_INDEX1){
+				*start = atoi(input + i);
+				*stop = *start + 1;
+				break;
+			}
+		}
+		else{
+			state = RANGE_PARSER_IDLE;
+		}
 	}
-
-	length = strspn(offset, "0123456789");
-	if (offset[length] != '\0' && offset[length] != ' ' && offset[length] != ':'){
-		return;
-	}
-
-	*start = (uint32_t)atoi(offset);
-	*stop  = *start + 1;
-
-	if (offset[length] != ':' || (offset = strpbrk(offset + length, "0123456789")) == NULL){
-		return;
-	}
-
-	length = strspn(offset, "0123456789");
-	if (offset[length] != '\0' && offset[length] != ' ' && offset[length] != ']'){
-		return;
-	}
-
-	*stop  = (uint32_t)atoi(offset);
 }

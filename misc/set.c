@@ -78,16 +78,43 @@ int32_t set_add_unique(struct set* set, void* element){
 	return -1;
 }
 
+int32_t set_add_last(struct set* set, void* element){
+	struct setBlock* block_cursor;
+
+	for (block_cursor = &(set->block); ; block_cursor = block_cursor->next){
+		if (block_cursor->next == NULL){
+			if (block_cursor->nb_element < set->nb_element_block){
+				memcpy(block_cursor->data + (block_cursor->nb_element * set->element_size), element, set->element_size);
+				block_cursor->nb_element ++;
+				return (int32_t)(set->nb_element_tot ++);
+			}
+
+			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(set->element_size, set->nb_element_block));
+			if (block_cursor->next == NULL){
+				log_err("unable to allocate memory");
+				break;
+			}
+			else{
+				block_cursor->next->nb_element 	= 0;
+				block_cursor->next->next 		= NULL;
+				block_cursor->next->prev 		= block_cursor;
+			}
+		}
+	}
+
+	return -1;
+}
+
 void* set_get(struct set* set, uint32_t index){
 	struct setBlock* 	block_cursor;
 	uint32_t 			nb;
 
 	for (block_cursor = &(set->block), nb = 0; block_cursor != NULL; block_cursor = block_cursor->next){
-		if (nb + set->nb_element_block > index){
+		if (nb + block_cursor->nb_element > index){
 			return block_cursor->data + (index - nb) * set->element_size;
 		}
 		else{
-			nb += set->nb_element_block;
+			nb += block_cursor->nb_element;
 		}
 	}
 
