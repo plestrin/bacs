@@ -907,9 +907,10 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 	struct assemblySnippet* snippet;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
-	struct trace 			fragment;
+	struct trace 			new_fragment;
 	struct setIterator 		it;
 	uint32_t 				i;
+	struct trace* 			fragment;
 
 	if (node == NULL){
 		log_err("callGraph node is NULL");
@@ -940,30 +941,30 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 	snippet = (struct assemblySnippet*)array_get(&(call_graph->snippet_array), first_snippet_index);
 	start_index = snippet->offset;
 
-	if (trace_extract_segment(trace, &fragment, start_index, stop_index - start_index)){
+	if (trace_extract_segment(trace, &new_fragment, start_index, stop_index - start_index)){
 		log_err("unable to extract traceFragment");
 		return -1;
 	}
 
 	log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
 	if (function->routine != NULL){
-		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", function->routine->name);
+		snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", function->routine->name);
 	}
 	else{
-		snprintf(fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
+		snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
 	}
 
-	for (setIterator_get_first(frag_set, &it), i = 0; setIterator_get_current(&it) != NULL; setIterator_get_next(&it), i++){
-		if (trace_compare(&fragment, (struct trace*)setIterator_get_current(&it)) == 0){
+	for (fragment = setIterator_get_first(frag_set, &it), i = 0; fragment != NULL; fragment = setIterator_get_next(&it), i++){
+		if (trace_compare(&new_fragment, fragment) == 0){
 			log_info_m("an equivalent fragment (%u) has already been exported", i);
-			trace_clean(&fragment);
+			trace_clean(&new_fragment);
 			return 0;
 		}
 	}
 
-	if (set_add(frag_set, &fragment) < 0){
+	if (set_add(frag_set, &new_fragment) < 0){
 		log_err("unable to add traceFragment to array");
-		trace_clean(&fragment);
+		trace_clean(&new_fragment);
 		return -1;
 	}
 

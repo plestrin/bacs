@@ -8,8 +8,7 @@
 struct set* set_create(uint32_t element_size, uint32_t nb_element_block){
 	struct set* set;
 
-	set = (struct set*)malloc(set_get_size(element_size, nb_element_block));
-	if (set != NULL){
+	if ((set = (struct set*)malloc(set_get_size(element_size, nb_element_block))) != NULL){
 		set_init(set, element_size, nb_element_block)
 	}
 	else{
