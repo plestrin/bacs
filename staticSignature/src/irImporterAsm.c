@@ -203,6 +203,7 @@ enum simdType{
 static void simd_decode_generic(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
 static void simd_decode_vex_padding(struct instructionIterator* it, struct asmCiscIns* cisc);
 
+static void simd_decode_special_movhlps(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_palignr(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
@@ -212,6 +213,7 @@ static void simd_decode_special_pslld_psrld(struct ir* ir, struct instructionIte
 static void simd_decode_special_psllq_psrlq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pslldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_psrldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_punpckhdq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_punpckldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_vzeroall(struct instructionIterator* it, struct asmCiscIns* cisc);
 
@@ -281,6 +283,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_MOVD 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_DWORD); break;}
 		case XED_ICLASS_MOVDQA 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_MOVDQU 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
+		case XED_ICLASS_MOVHLPS 	: {
+			simd_decode_special_movhlps(ir, it, &cisc, mem_addr);
+			break;
+		}
 		case XED_ICLASS_MOVQ 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_MOVSB 		: {
 			cisc_decode_special_movsx(it, &cisc, mem_addr, 1);
@@ -359,6 +365,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		}
 		case XED_ICLASS_PSRLQ 		: {
 			simd_decode_special_psllq_psrlq(ir, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PUNPCKHDQ 	: {
+			simd_decode_special_punpckhdq(ir, it, &cisc, mem_addr);
 			break;
 		}
 		case XED_ICLASS_PUNPCKLDQ 	: {
@@ -1842,6 +1852,48 @@ static void simd_decode_vex_padding(struct instructionIterator* it, struct asmCi
 	}
 }
 
+static void simd_decode_special_movhlps(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	struct asmOperand 	in_operand_buffer[1];
+	struct asmOperand 	ou_operand_buffer[1];
+	uint8_t 			nb_operand;
+	uint32_t 			i;
+	uint32_t 			frag_size;
+
+	asmOperand_decode(it, in_operand_buffer, 1, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect MOVHLPS format (%u input arg(s))", nb_operand);
+		return;
+	}
+	if (in_operand_buffer[0].type != ASM_OPERAND_REG){
+		log_err("incorrect MOVHLPS format (last operand is not IMM)");
+		return;
+	}
+	#endif
+
+	asmOperand_decode(it, ou_operand_buffer, 1, ASM_OPERAND_ROLE_WRITE_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect MOVHLPS format (%u output arg(s))", nb_operand);
+		return;
+	}
+	#endif
+
+	frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg);
+
+	for (i = 0; i < (64 / frag_size); i++){
+		cisc->ins[i].opcode = IR_MOV;
+		cisc->ins[i].nb_input_operand = 1;
+		asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer, frag_size, (64 / frag_size) + i);
+		asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer, frag_size, i);
+	}
+
+	cisc->type = CISC_TYPE_PARA;
+	cisc->nb_ins = i;
+}
+
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
 	struct asmRiscIns 	local_simd;
 	uint32_t 			frag_size;
@@ -1961,7 +2013,7 @@ static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct as
 
 	#ifdef EXTRA_CHECK
 	if (nb_operand != 2){
-		log_err_m("incorrect PINSRW format (%u input arg(s))", nb_operand);
+		log_err_m("incorrect PCMPGT format (%u input arg(s))", nb_operand);
 		return;
 	}
 	#endif
@@ -2514,6 +2566,55 @@ static void simd_decode_special_psrldq(struct ir* ir, struct instructionIterator
 			asmRisc_set_reg_reg(cisc->ins + cisc->nb_ins, frag_size, it->instruction_index, irRegister_virtual_get_simd(in_operand_buffer[0].operand_type.reg, frag_size, i + ((in_operand_buffer[1].operand_type.imm * 8) / frag_size)), irRegister_virtual_get_simd(ou_operand_buffer[0].operand_type.reg, frag_size, i))
 		}
 		cisc->nb_ins ++;
+	}
+}
+
+static void simd_decode_special_punpckhdq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	struct asmOperand 	operand_buffer[2];
+	uint8_t 			nb_operand;
+	uint32_t 			i1;
+	uint32_t 			i2;
+	struct asmRiscIns 	local_simd;
+	uint32_t 			frag_size1 = SIMD_DEFAULT_FRAG_SIZE;
+	uint32_t 			frag_size2 = SIMD_DEFAULT_FRAG_SIZE;
+
+	asmOperand_decode(it, operand_buffer, 2, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 2){
+		log_err_m("incorrect PUNPCKHDQ format (%u input arg(s))", nb_operand);
+		return;
+	}
+	#endif
+
+	cisc->type 		= CISC_TYPE_PARA;
+	cisc->nb_ins 	= 0;
+
+	if (operand_buffer[0].type == ASM_OPERAND_REG){
+		frag_size1 = irBuilder_get_vir_register_frag_size(&(ir->builder), operand_buffer[0].operand_type.reg);
+	}
+	if (operand_buffer[1].type == ASM_OPERAND_REG){
+		frag_size2 = irBuilder_get_vir_register_frag_size(&(ir->builder), operand_buffer[1].operand_type.reg);
+	}
+
+	local_simd.opcode 				= IR_MOV;
+	local_simd.nb_input_operand 	= 1;
+
+	for (i1 = 0, i2 = 0; i1 + i2 < (operand_buffer[0].size >> 5); ){
+		if (i2 <= i1){
+			asmOperand_frag(local_simd.input_operand, operand_buffer + 1, 32, (operand_buffer[1].size >> 5) - i2 - 1);
+			asmOperand_frag(&(local_simd.output_operand), operand_buffer, 32, (operand_buffer[0].size >> 5) - (i1 + i2) - 1);
+
+			cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size2, local_simd.nb_input_operand);
+			i2 ++;
+		}
+		else{
+			asmOperand_frag(local_simd.input_operand, operand_buffer, 32, (operand_buffer[0].size >> 5) - i1 - 1);
+			asmOperand_frag(&(local_simd.output_operand), operand_buffer, 32, (operand_buffer[0].size >> 5) - (i1 + i2) - 1);
+
+			cisc->nb_ins += asmSimd_frag(cisc->ins + cisc->nb_ins, IRIMPORTERASM_MAX_RISC_INS - cisc->nb_ins, &local_simd, frag_size1, local_simd.nb_input_operand);
+			i1 ++;
+		}
 	}
 }
 
