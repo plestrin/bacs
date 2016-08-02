@@ -7,7 +7,7 @@
 
 #define list_get_element_size(list) (sizeof(struct listElement) + (list)->element_size)
 
-int32_t list_add_head(struct list* list, void* element){
+int32_t list_add_head(struct list* list, const void* element){
 	struct listElement* list_el;
 
 	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
@@ -32,7 +32,7 @@ int32_t list_add_head(struct list* list, void* element){
 	return 0;
 }
 
-int32_t list_add_tail(struct list* list, void* element){
+int32_t list_add_tail(struct list* list, const void* element){
 	struct listElement* list_el;
 
 	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
@@ -68,7 +68,43 @@ void list_clean(struct list* list){
 	}
 }
 
-int32_t listIterator_push_next(struct listIterator* it, void* element){
+void* listIterator_get_index(struct listIterator* it, struct list* list, uint32_t index){
+	it->list 	= list;
+	it->index 	= 0;
+	it->cursor 	= NULL;
+
+	if (index >= list->nb_element){
+		log_err_m("index %u is not in the list", index);
+		return NULL;
+	}
+
+	if (index <= list->nb_element / 2){
+		for (it->cursor = list->head; it->index < index; it->index ++){
+			#ifdef EXTRA_CHECK
+			if (it->cursor == NULL){
+				log_err("iterator cursor is NULL");
+				break;
+			}
+			#endif
+			it->cursor = it->cursor->next;
+		}
+	}
+	else{
+		for (it->index = list->nb_element - 1, it->cursor = list->tail; it->index > index; it->index --){
+			#ifdef EXTRA_CHECK
+			if (it->cursor == NULL){
+				log_err("iterator cursor is NULL");
+				break;
+			}
+			#endif
+			it->cursor = it->cursor->prev;
+		}
+	}
+
+	return it->cursor;
+}
+
+int32_t listIterator_push_next(struct listIterator* it, const void* element){
 	struct listElement* list_el;
 
 	if (it->cursor == NULL){
@@ -99,7 +135,7 @@ int32_t listIterator_push_next(struct listIterator* it, void* element){
 	return it->index + 1;
 }
 
-int32_t listIterator_push_prev(struct listIterator* it, void* element){
+int32_t listIterator_push_prev(struct listIterator* it, const void* element){
 	struct listElement* list_el;
 
 	if (it->cursor == NULL){

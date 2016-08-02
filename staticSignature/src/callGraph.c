@@ -901,16 +901,14 @@ int32_t callGraphNode_is_leaf(struct callGraph* call_graph, struct node* node, c
 	return 1;
 }
 
-int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct set* frag_set){
+int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct list* frag_list){
 	struct function* 		function;
 	int32_t 				first_snippet_index;
 	struct assemblySnippet* snippet;
 	uint32_t 				start_index;
 	uint32_t 				stop_index;
 	struct trace 			new_fragment;
-	struct setIterator 		it;
-	uint32_t 				i;
-	struct trace* 			fragment;
+	struct listIterator 	it;
 
 	if (node == NULL){
 		log_err("callGraph node is NULL");
@@ -954,16 +952,16 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 		snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
 	}
 
-	for (fragment = setIterator_get_first(frag_set, &it), i = 0; fragment != NULL; fragment = setIterator_get_next(&it), i++){
-		if (trace_compare(&new_fragment, fragment) == 0){
-			log_info_m("an equivalent fragment (%u) has already been exported", i);
+	for (listIterator_init(&it, frag_list); listIterator_get_next(&it) != NULL; ){
+		if (trace_compare(&new_fragment, listIterator_get_data(it)) == 0){
+			log_info_m("an equivalent fragment (%u) has already been exported", it.index);
 			trace_clean(&new_fragment);
 			return 0;
 		}
 	}
 
-	if (set_add_last(frag_set, &new_fragment) < 0){
-		log_err("unable to add traceFragment to array");
+	if (list_add_tail(frag_list, &new_fragment) < 0){
+		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 		return -1;
 	}

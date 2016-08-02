@@ -129,6 +129,7 @@ void trace_check(struct trace* trace);
 void trace_print_location(const struct trace* trace, struct codeMap* cm);
 
 void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t nb_signature);
+void trace_print_result(struct trace* trace, const char* result_desc);
 
 int32_t trace_compare(const struct trace* trace1, const struct trace* trace2);
 

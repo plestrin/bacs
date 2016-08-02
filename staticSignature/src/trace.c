@@ -751,6 +751,23 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	}
 }
 
+void trace_print_result(struct trace* trace, const char* result_desc){
+	uint32_t 		i;
+	struct result* 	result;
+
+	if (trace->type != FRAGMENT_TRACE){
+		log_err("wrong trace type");
+		return;
+	}
+
+	for (i = 0; i < array_get_length(&(trace->trace_type.frag.result_array)); i++){
+		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), i);
+		if (result_desc != NULL && strstr(result_desc, result->code_signature->signature.symbol.name) != NULL){
+			result_print(result);
+		}
+	}
+}
+
 int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
 	int32_t result;
 

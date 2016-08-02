@@ -61,6 +61,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)dagPartialOrder.o 		\
 					$(BUILD_DIR)dijkstra.o 				\
 					$(BUILD_DIR)set.o 					\
+					$(BUILD_DIR)list.o 					\
 					$(BUILD_DIR)variableRange.o 		\
 					$(BUILD_DIR)arrayMinCoverage.o
 

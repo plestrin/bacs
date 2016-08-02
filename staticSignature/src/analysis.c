@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "array.h"
-#include "set.h"
+#include "list.h"
 #include "codeMap.h"
 #include "trace.h"
 #include "signatureCollection.h"
@@ -24,7 +24,7 @@ struct analysis{
 	struct signatureCollection 	code_signature_collection;
 	struct signatureCollection 	mode_signature_collection;
 	struct callGraph* 			call_graph;
-	struct set*					frag_set;
+	struct list					frag_list;
 };
 
 static struct analysis* analysis_create();
@@ -51,7 +51,7 @@ static void analysis_frag_check(struct analysis* analysis, char* arg);
 static void analysis_frag_print_result(struct analysis* analysis, char* arg);
 static void analysis_frag_export_result(struct analysis* analysis, char* arg);
 static void analysis_frag_filter_size(struct analysis* analysis, char* arg);
-static void analysis_frag_filter_last(struct analysis* analysis);
+static void analysis_frag_filter_selection(struct analysis* analysis, char* arg);
 static void analysis_frag_clean(struct analysis* analysis);
 
 static void analysis_frag_create_ir(struct analysis* analysis, char* arg);
@@ -123,7 +123,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "print result", 			"Print code signature result in details", 		"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_result)
 	add_cmd_to_input_parser(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
 	add_cmd_to_input_parser(parser, "filter frag size", 		"Remove traceFragment that are smaller than", 	"Size", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_filter_size)
-	add_cmd_to_input_parser(parser, "filter frag last", 		"Remove all traceFragments except the last", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_filter_last)
+	add_cmd_to_input_parser(parser, "filter frag selection", 	"Remove selected traceFragment", 				"Frag index or Frag Range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_filter_selection)
 	add_cmd_to_input_parser(parser, "clean frag", 				"Clean the set of traceFragments", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
@@ -175,38 +175,38 @@ int main(int argc, char** argv){
 
 #define apply_to_multiple_frags__(analysis, arg) 																								\
 	uint32_t 			start = 0; 																												\
-	uint32_t 			stop  = set_get_length((analysis)->frag_set); 																			\
-	uint32_t 			i; 																														\
-	struct setIterator 	it; 																													\
+	uint32_t 			stop  = list_get_length(&((analysis)->frag_list)); 																		\
+	struct listIterator it; 																													\
 	struct trace* 		fragment; 																												\
 																																				\
 	inputParser_extract_range(arg, &start, &stop); 																								\
-	if (stop > set_get_length((analysis)->frag_set)){ 																							\
-		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length((analysis)->frag_set)); 									\
-		stop = set_get_length((analysis)->frag_set); 																							\
+	if (stop > list_get_length(&((analysis)->frag_list))){ 																						\
+		log_warn_m("fragment range exceeds list size, cropping to %u", list_get_length(&((analysis)->frag_list))); 								\
+		stop = list_get_length(&((analysis)->frag_list)); 																						\
 	} 																																			\
 	if (start > stop){ 																															\
 		log_err_m("incorrect fragment range [%u:%u]", start, stop); 																			\
-		return; 																																\
 	} 																																			\
-																																				\
-	for (fragment = setIterator_get_index((analysis)->frag_set, &it, start), i = start; i < stop; fragment = setIterator_get_next(&it), i++){ 	\
-		if (fragment == NULL){ 																													\
-			log_err_m("unable to fetch element %u", i); 																						\
-			break; 																																\
-		}
+	else{ 																																		\
+		for (listIterator_get_index(&it, &((analysis)->frag_list), start); it.index < stop; listIterator_get_next(&it)){ 						\
+			if ((fragment = listIterator_get_data(it)) == LIST_NULL_DATA){ 																		\
+				log_err_m("unable to fetch element %u", it.index); 																				\
+				break; 																															\
+			}
 
 #define apply_to_multiple_frags(analysis, func, arg) 																							\
 	{ 																																			\
 		apply_to_multiple_frags__(analysis, arg)																								\
-			func(fragment); 																													\
+				func(fragment); 																												\
+			} 																																	\
 		} 																																		\
 	}
 
 #define apply_to_multiple_frags_args(analysis, func, arg, ...) 																					\
 	{ 																																			\
 		apply_to_multiple_frags__(analysis, arg)																								\
-			func(fragment, __VA_ARGS__); 																										\
+				func(fragment, __VA_ARGS__); 																									\
+			} 																																	\
 		} 																																		\
 	}
 
@@ -225,11 +225,7 @@ static struct analysis* analysis_create(){
 		return NULL;
 	}
 
-	if ((analysis->frag_set = set_create(sizeof(struct trace), 16)) == NULL){
-		log_err("unable to create set");
-		free(analysis);
-		return NULL;
-	}
+	list_init(analysis->frag_list, sizeof(struct trace))
 
 	callback.signatureNode_get_label = codeSignatureNode_get_label;
 	callback.signatureEdge_get_label = codeSignatureEdge_get_label;
@@ -255,7 +251,7 @@ static void analysis_delete(struct analysis* analysis){
 	}
 
 	analysis_frag_clean(analysis);
-	set_delete(analysis->frag_set);
+	list_clean(&(analysis->frag_list));
 
 	signatureCollection_clean(&(analysis->code_signature_collection));
 	signatureCollection_clean(&(analysis->mode_signature_collection));
@@ -418,9 +414,7 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 	uint32_t 			start;
 	uint32_t 			stop;
 	struct trace 		new_fragment;
-	uint32_t 			i;
-	struct setIterator 	it;
-	struct trace* 		fragment;
+	struct listIterator it;
 
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
@@ -440,16 +434,16 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 		return;
 	}
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it), i = 0; fragment != NULL; fragment = setIterator_get_next(&it), i++){
-		if (trace_compare(&new_fragment, fragment) == 0){
-			log_info_m("an equivalent fragment (%u) has already been exported", i);
+	for (listIterator_init(&it, &(analysis->frag_list)); listIterator_get_next(&it) != NULL; ){
+		if (trace_compare(&new_fragment, listIterator_get_data(it)) == 0){
+			log_info_m("an equivalent fragment (%u) has already been exported", it.index);
 			trace_clean(&new_fragment);
 			return;
 		}
 	}
 
-	if (set_add_last(analysis->frag_set, &new_fragment) < 0){
-		log_err("unable to add traceFragment to set");
+	if (list_add_tail(&(analysis->frag_list), &new_fragment) < 0){
+		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 	}
 }
@@ -527,10 +521,11 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 }
 
 static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
-	char* 			token1;
-	char* 			token2;
-	struct trace* 	trace;
-	uint32_t 		index;
+	char* 				token1;
+	char* 				token2;
+	struct trace* 		trace;
+	uint32_t 			index;
+	struct listIterator it;
 
 	if ((trace = analysis->trace) == NULL){
 		log_err("trace is NULL");
@@ -545,12 +540,13 @@ static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
 
 	if ((token2 = strchr(token1, ' ')) != NULL){
 		index = (uint32_t)atoi(arg);
-		if (index < set_get_length(analysis->frag_set)){
-			trace = (struct trace*)set_get(analysis->frag_set, index);
+
+		if (listIterator_get_index(&it, &(analysis->frag_list), index) != NULL){
+			trace = listIterator_get_data(it);
 			log_info_m("running the research on fragment %u", index);
 		}
 		else{
-			log_err_m("incorrect fragment index %u (set size: %u)", index, set_get_length(analysis->frag_set));
+			log_err_m("unable to select fragment %u (list size: %u)", index, list_get_length(&(analysis->frag_list)));
 			return;
 		}
 		arg = token1;
@@ -583,24 +579,23 @@ static void analysis_trace_delete(struct analysis* analysis){
 /* ===================================================================== */
 
 static void analysis_frag_print(struct analysis* analysis, char* arg){
-	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					index;
 	struct trace*				fragment;
 	#define IRDESCRIPTOR_MAX_LENGTH 32
 	char 						ir_descriptor[IRDESCRIPTOR_MAX_LENGTH];
-	struct setIterator 			it;
+	struct listIterator 		it;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
 
-		if (index < set_get_length(analysis->frag_set)){
-			trace_print_all((struct trace*)set_get(analysis->frag_set, index));
-			return;
+		if (listIterator_get_index(&it, &(analysis->frag_list), index) != NULL){
+			trace_print_all((struct trace*)listIterator_get_data(it));
 		}
 		else{
-			log_err_m("incorrect index value %u (set size: %u)", index, set_get_length(analysis->frag_set));
+			log_err_m("unable to select fragment %u (list size: %u)", index, list_get_length(&(analysis->frag_list)));
 		}
+		return;
 	}
 
 	if ((printer = multiColumnPrinter_create(stdout, 6, NULL, NULL, NULL)) == NULL){
@@ -629,7 +624,8 @@ static void analysis_frag_print(struct analysis* analysis, char* arg){
 
 	multiColumnPrinter_print_header(printer);
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it), i = 0; fragment != NULL; fragment = setIterator_get_next(&it), i++){
+	for (listIterator_init(&it, &(analysis->frag_list)); listIterator_get_next(&it) != NULL; ){
+		fragment = listIterator_get_data(it);
 		if (fragment->type != FRAGMENT_TRACE || fragment->trace_type.frag.ir == NULL){
 			snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "NULL");
 		}
@@ -637,7 +633,7 @@ static void analysis_frag_print(struct analysis* analysis, char* arg){
 			snprintf(ir_descriptor, IRDESCRIPTOR_MAX_LENGTH, "%u node(s), %u edge(s)", fragment->trace_type.frag.ir->graph.nb_node, fragment->trace_type.frag.ir->graph.nb_edge);
 		}
 
-		multiColumnPrinter_print(printer, i, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), ir_descriptor, (fragment->mem_trace != NULL), (fragment->type == FRAGMENT_TRACE && fragment->trace_type.frag.synthesis_graph != NULL), NULL);
+		multiColumnPrinter_print(printer, it.index, (fragment->type == FRAGMENT_TRACE) ? fragment->trace_type.frag.tag : "", trace_get_nb_instruction(fragment), ir_descriptor, (fragment->mem_trace != NULL), (fragment->type == FRAGMENT_TRACE && fragment->trace_type.frag.synthesis_graph != NULL), NULL);
 	}
 
 	multiColumnPrinter_delete(printer);
@@ -654,12 +650,13 @@ static void analysis_frag_locate(struct analysis* analysis, char* arg){
 }
 
 static void analysis_frag_concat(struct analysis* analysis, char* arg){
-	uint32_t 		i;
-	uint32_t 		nb_index;
-	uint8_t 		start_index;
-	uint32_t 		index;
-	struct trace** 	trace_src_buffer;
-	struct trace 	new_fragment;
+	uint32_t 			i;
+	uint32_t 			nb_index;
+	uint8_t 			start_index;
+	uint32_t 			index;
+	struct trace** 		trace_src_buffer;
+	struct trace 		new_fragment;
+	struct listIterator it;
 
 	for (i = 0, nb_index = 0, start_index = 0; i < strlen(arg); i++){
 		if (arg[i] >= 48 && arg[i] <= 57){
@@ -683,11 +680,12 @@ static void analysis_frag_concat(struct analysis* analysis, char* arg){
 		if (arg[i] >= 48 && arg[i] <= 57){
 			if (start_index == 0){
 				index = atoi(arg + i);
-				if (index < set_get_length(analysis->frag_set)){
-					trace_src_buffer[nb_index ++] = (struct trace*)set_get(analysis->frag_set, index);
+
+				if (listIterator_get_index(&it, &(analysis->frag_list), index) != NULL){
+					trace_src_buffer[nb_index ++] = listIterator_get_data(it);
 				}
 				else{
-					log_err_m("the index specified @ %u is incorrect (set size: %u)", nb_index, set_get_length(analysis->frag_set));
+					log_err_m("unable to select fragment %u (list size: %u)", index, list_get_length(&(analysis->frag_list)));
 				}
 
 				start_index = 1;
@@ -710,8 +708,8 @@ static void analysis_frag_concat(struct analysis* analysis, char* arg){
 
 	snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "concat %s", arg);
 
-	if (set_add_last(analysis->frag_set, &new_fragment) < 0){
-		log_err("unable to add traceFragment to set");
+	if (list_add_tail(&(analysis->frag_list), &new_fragment) < 0){
+		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 	}
 }
@@ -721,72 +719,19 @@ static void analysis_frag_check(struct analysis* analysis, char* arg){
 }
 
 static void analysis_frag_print_result(struct analysis* analysis, char* arg){
-	uint32_t 			start;
-	uint32_t 			stop;
-	uint32_t 			i;
-	uint32_t 			j;
-	struct trace* 		fragment;
-	struct result* 		result;
-	struct setIterator 	it;
-
-	start = 0;
-	stop  = set_get_length(analysis->frag_set);
-	inputParser_extract_range(arg, &start, &stop);
-	if (stop > set_get_length(analysis->frag_set)){
-		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
-		stop = set_get_length(analysis->frag_set);
-	}
-	if (start > stop){
-		log_err_m("incorrect fragment range [%u:%u]", start, stop);
-		return;
-	}
-
-	for (fragment = setIterator_get_index(analysis->frag_set, &it, start), i = start; i < stop; fragment = setIterator_get_next(&it), i++){
-		if (fragment == NULL){
-			log_err_m("unable to fetch element %u", i);
-			break;
-		}
-
-		if (fragment->type != FRAGMENT_TRACE){
-			continue;
-		}
-
-		for (j = 0; j < array_get_length(&(fragment->trace_type.frag.result_array)); j++){
-			result = (struct result*)array_get(&(fragment->trace_type.frag.result_array), j);
-			if (arg != NULL && strstr(arg, result->code_signature->signature.symbol.name) != NULL){
-				result_print(result);
-			}
-		}
-	}
+	apply_to_multiple_frags_args(analysis, trace_print_result, arg, arg)
 }
 
 static void analysis_frag_export_result(struct analysis* analysis, char* arg){
-	uint32_t 				start;
-	uint32_t 				stop;
-	uint32_t 				i;
 	void** 					signature_buffer;
 	uint32_t 				nb_signature;
 	struct node* 			node_cursor;
 	struct codeSignature* 	signature_cursor;
 	char* 					ptr;
-	struct setIterator 		it;
-	struct trace* 			fragment;
 
 	if ((signature_buffer = (void**)malloc(sizeof(void*) * signatureCollection_get_nb_signature(&(analysis->code_signature_collection)))) == NULL){
 		log_err("unable to allocate memory");
 		return;
-	}
-
-	start = 0;
-	stop  = set_get_length(analysis->frag_set);
-	inputParser_extract_range(arg, &start, &stop);
-	if (stop > set_get_length(analysis->frag_set)){
-		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
-		stop = set_get_length(analysis->frag_set);
-	}
-	if (start > stop){
-		log_err_m("incorrect fragment range [%u:%u]", start, stop);
-		goto exit;
 	}
 
 	for (node_cursor = graph_get_head_node(&(analysis->code_signature_collection.syntax_graph)), nb_signature = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -806,58 +751,62 @@ static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 		}
 	}
 
-	for (fragment = setIterator_get_index(analysis->frag_set, &it, start), i = start; i < stop; fragment = setIterator_get_next(&it), i++){
-		if (fragment == NULL){
-			log_err_m("unable to fetch element %u", i);
-			break;
-		}
-		trace_export_result(fragment, signature_buffer, nb_signature);
-	}
+	apply_to_multiple_frags_args(analysis, trace_export_result, arg, signature_buffer, nb_signature)
 
-	exit:
 	free(signature_buffer);
 }
 
 static void analysis_frag_filter_size(struct analysis* analysis, char* arg){
-	struct setIterator 	it;
+	struct listIterator it;
 	struct trace* 		fragment;
 	uint32_t 			size;
 
 	size = atoi(arg);
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it); fragment != NULL; fragment = setIterator_get_next(&it)){
+	for (listIterator_init(&it, &(analysis->frag_list)); listIterator_get_next(&it) != NULL; ){
+		fragment = listIterator_get_data(it);
 		if (trace_get_nb_instruction(fragment) < size){
 			trace_clean(fragment);
-			setIterator_pop(&it);
+			listIterator_pop_prev(&it);
 		}
 	}
 }
 
-static void analysis_frag_filter_last(struct analysis* analysis){
-	uint32_t 			nb_frag;
-	struct setIterator 	it;
-	uint32_t 			i;
+static void analysis_frag_filter_selection(struct analysis* analysis, char* arg){
+	uint32_t 			start = 0;
+	uint32_t 			stop  = list_get_length(&(analysis->frag_list));
+	struct listIterator it;
 	struct trace* 		fragment;
+	uint32_t 			i;
 
-	nb_frag = set_get_length(analysis->frag_set);
+	inputParser_extract_range(arg, &start, &stop);
+	if (stop > list_get_length(&(analysis->frag_list))){
+		log_warn_m("fragment range exceeds list size, cropping to %u", list_get_length(&(analysis->frag_list)));
+		stop = list_get_length(&(analysis->frag_list));
+	}
+	if (start > stop){
+		log_err_m("incorrect fragment range [%u:%u]", start, stop);
+	}
+	else{
+		for (listIterator_get_index(&it, &(analysis->frag_list), start), i = 0; i < stop - start; listIterator_get_next(&it), i++){
+			if ((fragment = listIterator_get_data(it)) == LIST_NULL_DATA){
+				log_err_m("unable to fetch element %u", it.index);
+				break;
+			}
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it), i = 0; fragment != NULL; fragment = setIterator_get_next(&it)){
-		i ++;
-		if (i < nb_frag){
 			trace_clean(fragment);
-			setIterator_pop(&it);
+			listIterator_pop_prev(&it);
 		}
 	}
 }
 
 static void analysis_frag_clean(struct analysis* analysis){
-	struct setIterator 	it;
-	struct trace* 		fragment;
+	struct listIterator it;
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it); fragment != NULL; fragment = setIterator_get_next(&it)){
-		trace_clean(fragment);
+	for (listIterator_init(&it, &(analysis->frag_list)); listIterator_get_next(&it) != NULL; ){
+		trace_clean(listIterator_get_data(it));
 	}
-	set_empty(analysis->frag_set);
+	list_empty(&(analysis->frag_list));
 }
 
 /* ===================================================================== */
@@ -871,28 +820,27 @@ static void analysis_frag_create_ir(struct analysis* analysis, char* arg){
 static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
 	uint32_t 			start;
 	uint32_t 			stop;
-	uint32_t 			i;
 	struct trace* 		selected_trace;
 	struct array 		ir_component_array;
-	struct setIterator 	it1;
-	struct setIterator 	it2;
+	struct listIterator it1;
+	struct listIterator it2;
 	struct trace* 		fragment;
 
 	start = 0;
-	stop  = set_get_length(analysis->frag_set);
+	stop  = list_get_length(&(analysis->frag_list));
 	inputParser_extract_range(arg, &start, &stop);
-	if (stop > set_get_length(analysis->frag_set)){
-		log_warn_m("fragment range exceeds set size, cropping to %u", set_get_length(analysis->frag_set));
-		stop = set_get_length(analysis->frag_set);
+	if (stop > list_get_length(&(analysis->frag_list))){
+		log_warn_m("fragment range exceeds list size, cropping to %u", list_get_length(&(analysis->frag_list)));
+		stop = list_get_length(&(analysis->frag_list));
 	}
 	if (start > stop){
 		log_err_m("incorrect fragment range [%u:%u]", start, stop);
 		return;
 	}
 
-	for (selected_trace = setIterator_get_index(analysis->frag_set, &it1, start), i = start; i < stop; selected_trace = setIterator_get_next(&it1), i++){
-		if (selected_trace == NULL){
-			log_err_m("unable to fetch element %u", i);
+	for (listIterator_get_index(&it1, &(analysis->frag_list), start); it1.index < stop; listIterator_get_next(&it1)){
+		if ((selected_trace = listIterator_get_data(it1)) == LIST_NULL_DATA){
+			log_err_m("unable to fetch element %u", it1.index);
 			break;
 		}
 
@@ -901,7 +849,8 @@ static void analysis_frag_create_compound_ir(struct analysis* analysis, char* ar
 			break;
 		}
 
-		for (fragment = setIterator_get_first(analysis->frag_set, &it2); fragment != NULL; fragment = setIterator_get_next(&it2)){
+		for (listIterator_init(&it2, &(analysis->frag_list)); listIterator_get_next(&it2) != NULL; ){
+			fragment = listIterator_get_data(it2);
 			if (fragment == selected_trace){
 				continue;
 			}
@@ -937,26 +886,25 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
-	uint32_t 				i;
 	struct trace* 			fragment;
 	struct graphSearcher*	graph_searcher_buffer;
 	uint32_t 				nb_graph_searcher;
-	struct setIterator 		it;
+	struct listIterator 	it;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
-		if (index < set_get_length(analysis->frag_set)){
+		if (index < list_get_length(&(analysis->frag_list))){
 			start = index;
 			stop = index + 1;
 		}
 		else{
-			log_err_m("incorrect index value %u (set size :%u)", index, set_get_length(analysis->frag_set));
+			log_err_m("incorrect index value %u (list size :%u)", index, list_get_length(&(analysis->frag_list)));
 			return;
 		}
 	}
 	else{
 		start = 0;
-		stop = set_get_length(analysis->frag_set);
+		stop = list_get_length(&(analysis->frag_list));
 	}
 
 	graph_searcher_buffer = (struct graphSearcher*)malloc(sizeof(struct graphSearcher) * (stop - start));
@@ -965,9 +913,9 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 		return;
 	}
 
-	for (fragment = setIterator_get_index(analysis->frag_set, &it, start), i = start, nb_graph_searcher = 0; i < stop; fragment = setIterator_get_next(&it), i++){
-		if (fragment == NULL){
-			log_err_m("unable to fetch element %u", i);
+	for (listIterator_get_index(&it, &(analysis->frag_list), start), nb_graph_searcher = 0; it.index < stop; listIterator_get_next(&it)){
+		if ((fragment = listIterator_get_data(it)) == LIST_NULL_DATA){
+			log_err_m("unable to fetch element %u", it.index);
 			break;
 		}
 
@@ -987,7 +935,7 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 			nb_graph_searcher ++;
 		}
 		else{
-			log_err_m("the IR is NULL for fragment %u", i);
+			log_err_m("the IR is NULL for fragment %u", it.index);
 		}
 	}
 
@@ -996,11 +944,10 @@ static void analysis_code_signature_search(struct analysis* analysis, char* arg)
 }
 
 static void analysis_code_signature_clean(struct analysis* analysis){
-	struct setIterator 	it;
-	struct trace* 		fragment;
+	struct listIterator it;
 
-	for (fragment = setIterator_get_first(analysis->frag_set, &it); fragment != NULL; fragment = setIterator_get_next(&it)){
-		trace_reset_ir(fragment);
+	for (listIterator_init(&it, &(analysis->frag_list)); listIterator_get_next(&it) != NULL; ){
+		trace_reset_ir(listIterator_get_data(it));
 	}
 
 	signatureCollection_empty(&(analysis->code_signature_collection));
@@ -1010,26 +957,25 @@ static void analysis_mode_signature_search(struct analysis* analysis, char* arg)
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
-	uint32_t 				i;
 	struct trace* 			fragment;
 	struct graphSearcher*	graph_searcher_buffer;
 	uint32_t 				nb_graph_searcher;
-	struct setIterator 		it;
+	struct listIterator 	it;
 
 	if (arg != NULL){
 		index = (uint32_t)atoi(arg);
-		if (index < set_get_length(analysis->frag_set)){
+		if (index < list_get_length(&(analysis->frag_list))){
 			start = index;
 			stop = index + 1;
 		}
 		else{
-			log_err_m("incorrect index value %u (set size :%u)", index, set_get_length(analysis->frag_set));
+			log_err_m("incorrect index value %u (list size :%u)", index, list_get_length(&(analysis->frag_list)));
 			return;
 		}
 	}
 	else{
 		start = 0;
-		stop = set_get_length(analysis->frag_set);
+		stop = list_get_length(&(analysis->frag_list));
 	}
 
 	graph_searcher_buffer = (struct graphSearcher*)malloc(sizeof(struct graphSearcher) * (stop - start));
@@ -1038,9 +984,9 @@ static void analysis_mode_signature_search(struct analysis* analysis, char* arg)
 		return;
 	}
 
-	for (fragment = setIterator_get_index(analysis->frag_set, &it, start), i = start, nb_graph_searcher = 0; i < stop; fragment = setIterator_get_next(&it), i++){
-		if (fragment == NULL){
-			log_err_m("unable to fetch element %u", i);
+	for (listIterator_get_index(&it, &(analysis->frag_list), start), nb_graph_searcher = 0; it.index < stop; listIterator_get_next(&it)){
+		if ((fragment = listIterator_get_data(it)) == LIST_NULL_DATA){
+			log_err_m("unable to fetch element %u", it.index);
 			break;
 		}
 
@@ -1058,7 +1004,7 @@ static void analysis_mode_signature_search(struct analysis* analysis, char* arg)
 			nb_graph_searcher ++;
 		}
 		else{
-			log_err_m("the synthesis graph is NULL for fragment %u", i);
+			log_err_m("the synthesis graph is NULL for fragment %u", it.index);
 		}
 	}
 
@@ -1143,7 +1089,7 @@ static void analysis_call_export(struct analysis* analysis, char* arg){
 	}
 
 	if (arg[0] >= 0x30 && arg[0] <= 0x39){
-		if (callGraph_export_node_inclusive(analysis->call_graph, callGraph_get_index(analysis->call_graph, atoi(arg)), analysis->trace, analysis->frag_set)){
+		if (callGraph_export_node_inclusive(analysis->call_graph, callGraph_get_index(analysis->call_graph, atoi(arg)), analysis->trace, &(analysis->frag_list))){
 			log_err_m("unable to export callGraph @ %u", atoi(arg));
 		}
 		return;
@@ -1156,7 +1102,7 @@ static void analysis_call_export(struct analysis* analysis, char* arg){
 
 	for (rtn = codeMap_search_symbol(analysis->code_map, NULL, arg); rtn; rtn = codeMap_search_symbol(analysis->code_map, rtn, arg)){
 		for (return_code = assembly_get_first_pc(&(analysis->trace->assembly), &it, rtn->address_start); return_code == 0; return_code = assembly_get_next_pc(&(analysis->trace->assembly), &it)){
-			if (callGraph_export_node_inclusive(analysis->call_graph, callGraph_get_index(analysis->call_graph, it.instruction_index), analysis->trace, analysis->frag_set)){
+			if (callGraph_export_node_inclusive(analysis->call_graph, callGraph_get_index(analysis->call_graph, it.instruction_index), analysis->trace, &(analysis->frag_list))){
 				log_err_m("unable to export callGraph @ %u", it.instruction_index);
 			}
 		}
@@ -1193,16 +1139,17 @@ static void analysis_synthesis_create(struct analysis* analysis, char* arg){
 }
 
 static void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
-	uint32_t 	index;
-	char* 		name = NULL;
-	size_t 		offset;
+	uint32_t 			index;
+	char* 				name = NULL;
+	size_t 				offset;
+	struct listIterator it;
 
 	if (arg == NULL){
-		if (set_get_length(analysis->frag_set) < 2){
+		if (list_get_length(&(analysis->frag_list)) < 2){
 			index = 0;
 		}
 		else{
-			log_err_m("%u fragments available, please specify fragment index", set_get_length(analysis->frag_set));
+			log_err_m("%u fragments available, please specify fragment index", list_get_length(&(analysis->frag_list)));
 			return;
 		}
 
@@ -1215,10 +1162,10 @@ static void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
 		}
 	}
 
-	if (index < set_get_length(analysis->frag_set)){
-		trace_printDot_synthesis((struct trace*)set_get(analysis->frag_set, index), name);
+	if (listIterator_get_index(&it, &(analysis->frag_list), index) != NULL){
+		trace_printDot_synthesis(listIterator_get_data(it), name);
 	}
 	else{
-		log_err_m("incorrect fragment index %u (set size: %u)", index, set_get_length(analysis->frag_set));
+		log_err_m("unable to select fragment %u (list size: %u)", index, list_get_length(&(analysis->frag_list)));
 	}
 }

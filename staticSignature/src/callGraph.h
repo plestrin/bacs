@@ -4,7 +4,7 @@
 #include "trace.h"
 #include "graph.h"
 #include "array.h"
-#include "set.h"
+#include "list.h"
 #include "codeMap.h"
 
 struct assemblySnippet{
@@ -76,7 +76,7 @@ void callGraph_fprint_stack(struct callGraph* call_graph, struct node* node, FIL
 
 int32_t callGraphNode_is_leaf(struct callGraph* call_graph, struct node* node, const struct assembly* assembly);
 
-int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct set* frag_set);
+int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct node* node, struct trace* trace, struct list* frag_list);
 
 #define callGraph_clean(call_graph) 													\
 	graph_clean(&((call_graph)->graph)); 												\
