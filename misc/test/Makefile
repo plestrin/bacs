@@ -7,6 +7,7 @@ TEST_SUBGRAPHISO 		:= test_subGraphIso
 TEST_DIJKSTRA 			:= test_dijkstra
 TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
 TEST_SET 				:= test_set
+TEST_LIST 				:= test_list
 TEST_GRAPHREADER		:= test_graphReader
 TEST_VARIABLERANGE 		:= test_variableRange
 TEST_READBUFFER 		:= test_readBuffer
@@ -29,6 +30,7 @@ all: 										\
 	$(TEST_DIJKSTRA) 						\
 	$(TEST_DAGPARTIALORDER) 				\
 	$(TEST_SET) 							\
+	$(TEST_LIST) 							\
 	$(TEST_GRAPHREADER) 					\
 	$(TEST_VARIABLERANGE) 					\
 	$(TEST_READBUFFER) 						\
@@ -62,6 +64,9 @@ $(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphP
 $(TEST_SET): test_set.o set.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+$(TEST_LIST): test_list.o list.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 $(TEST_GRAPHREADER): test_graphReader.o mapFile.o graph.o graphReader.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -90,6 +95,7 @@ test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot
 test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
 test_set.o: ../set.h ../base.h
+test_list.o: ../list.h ../base.h
 test_graphReader.o: ../graphReader.h ../mapFile.h ../graph.h ../graphPrintDot.h ../base.h
 test_variableRange.o: ../variableRange.h
 test_readBuffer.o: ../readBuffer.h ../printBuffer.h ../readBuffer.h ../base.h
@@ -106,6 +112,7 @@ subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstr
 dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
 set.o: ../set.h ../base.h
+list.o: ../list.h ../base.h
 graphReader.o: ../graphReader.h ../base.h
 variableRange.o: ../variableRange.h ../base.h
 arrayMinCoverage.o: ../arrayMinCoverage.h ../array.h ../base.h
@@ -123,6 +130,7 @@ clean:
 	@ rm -f $(TEST_DIJKSTRA)
 	@ rm -f $(TEST_DAGPARTIALORDER)
 	@ rm -f $(TEST_SET)
+	@ rm -f $(TEST_LIST)
 	@ rm -f $(TEST_GRAPHREADER)
 	@ rm -f $(TEST_VARIABLERANGE)
 	@ rm -f $(TEST_READBUFFER)
