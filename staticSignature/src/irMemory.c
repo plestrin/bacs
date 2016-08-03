@@ -8,55 +8,12 @@
 #include "irBuilder.h"
 #include "base.h"
 
-#define IRMEMORY_ALIAS_HEURISTIC_ESP 		1
-#define IRMEMORY_ALIAS_HEURISTIC_CONCRETE 	1
-#define IRMEMORY_ALIAS_HEURISTIC_TOTAL 		1
+#define IRMEMORY_ALIAS_HEURISTIC_ESP 				1
+#define IRMEMORY_ALIAS_HEURISTIC_CONCRETE_MAY 		1 /* use concrete memory addresses to determine if two addresses MAY alias */
+#define IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT 	1 /* use concrete memory addresses to determine if two addresses CANNOT alias */
 
-static int32_t compare_order_memoryNode(const void* arg1, const void* arg2);
-
-static void ir_normalize_print_alias_conflict(struct node* node1, struct node* node2, const char* type){
-	struct node* addr1 = NULL;
-	struct node* addr2 = NULL;
-	struct edge* edge_cursor;
-
-	for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-			addr1 = edge_get_src(edge_cursor);
-			break;
-		}
-	}
-
-	for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-			addr2 = edge_get_src(edge_cursor);
-			break;
-		}
-	}
-
-	if (addr1 && addr2){
-		printf("Aliasing conflict %s: ", type);
-		ir_print_location_node(addr1);
-		printf(", ");
-		ir_print_location_node(addr2);
-		putchar('\n');
-	}
-	else{
-		log_err("unable to get memory access address");
-	}
-}
-
-static enum irOpcode ir_normalize_choose_part_opcode(uint8_t size_src, uint8_t size_dst){
-	if (size_src == 32 && size_dst == 8){
-		return IR_PART1_8;
-	}
-	else if (size_src == 32 && size_dst == 16){
-		return IR_PART1_16;
-	}
-	else{
-		log_err_m("this case is not implemented (src=%u, dst=%u)", size_src, size_dst);
-		return IR_PART1_8;
-	}
-}
+#define IRMEMORY_ACCESS_MAX_SIZE 			32
+#define IRMEMORY_ACCESS_MAX_NB_FRAGMENT  	(IRMEMORY_ACCESS_MAX_SIZE / 8)
 
 enum aliasResult{
 	CANNOT_ALIAS 	= 0x00000000,
@@ -64,8 +21,13 @@ enum aliasResult{
 	MUST_ALIAS 		= 0x00000003
 };
 
-#define ADDRESS_NB_MAX_DEPENDENCE 64 /* it must not exceed 0x0fffffff because the last bit of the flag is reversed for leave tagging */
+#define ADDRESS_NB_MAX_DEPENDENCE 64 /* it must not exceed 0x0fffffff because the last byte of the flag is reversed */
 #define FINGERPRINT_MAX_RECURSION_LEVEL 5
+
+#define FINGERPRINT_FLAG_ESP 		0x00000001
+#define FINGERPRINT_FLAG_INCOMPLETE 0x00000002
+#define FINGERPRINT_FLAG_LEAF 		0x80000000
+#define FINGERPRINT_FLAG_DISABLE 	0x40000000
 
 struct addrFingerprint{
 	uint32_t 			nb_dependence;
@@ -87,13 +49,13 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 		addr_fgp->flag 			= 0;
 	}
 	else if (recursion_level == FINGERPRINT_MAX_RECURSION_LEVEL){
-		addr_fgp->flag |= 0x0000002;
+		addr_fgp->flag |= FINGERPRINT_FLAG_INCOMPLETE;
 		return;
 	}
 
 	if (addr_fgp->nb_dependence < ADDRESS_NB_MAX_DEPENDENCE){
 		addr_fgp->dependence[addr_fgp->nb_dependence].node = node;
-		addr_fgp->dependence[addr_fgp->nb_dependence].flag = parent_label & 0x7fffffff;
+		addr_fgp->dependence[addr_fgp->nb_dependence].flag = parent_label & 0x0fffffff;
 		addr_fgp->dependence[addr_fgp->nb_dependence].label = addr_fgp->nb_dependence + 1;
 
 		nb_dependence = ++ addr_fgp->nb_dependence;
@@ -117,7 +79,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
 		case IR_OPERATION_TYPE_IN_REG 	: {
 			if (operation->operation_type.in_reg.reg == IR_REG_ESP){
-				addr_fgp->flag |= 0x00000001;
+				addr_fgp->flag |= FINGERPRINT_FLAG_ESP;
 			}
 			break;
 		}
@@ -128,7 +90,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	}
 
 	if (nb_dependence == addr_fgp->nb_dependence){
-		addr_fgp->dependence[nb_dependence - 1].flag |= 0x80000000;
+		addr_fgp->dependence[nb_dependence - 1].flag |= FINGERPRINT_FLAG_LEAF;
 	}
 
 	return;
@@ -148,11 +110,38 @@ static void addrFingerprint_remove(struct addrFingerprint* addr_fgp, uint32_t in
 	addr_fgp->nb_dependence --;
 
 	for (i = 0; i < addr_fgp->nb_dependence; ){
-		if ((addr_fgp->dependence[i].flag & 0x7fffffff) == label){
+		if ((addr_fgp->dependence[i].flag & 0x0fffffff) == label){
 			addrFingerprint_remove(addr_fgp, i);
 		}
 		else{
 			i ++;
+		}
+	}
+}
+
+static void addrFingerprint_enable_all(struct addrFingerprint* addr_fgp){
+	uint32_t i;
+
+	for (i = 0; i < addr_fgp->nb_dependence; i++){
+		addr_fgp->dependence[i].flag &= ~FINGERPRINT_FLAG_DISABLE;
+	}
+}
+
+static void addrFingerprint_disable(struct addrFingerprint* addr_fgp, uint32_t index){
+	uint32_t i;
+	uint32_t label;
+
+	label = addr_fgp->dependence[index].label;
+	addr_fgp->dependence[index].flag |= FINGERPRINT_FLAG_DISABLE;
+
+	for (i = 0; i < addr_fgp->nb_dependence; i++){
+		if ((addr_fgp->dependence[i].flag & 0x0fffffff) == label){
+			if (addr_fgp->dependence[i].flag & FINGERPRINT_FLAG_LEAF){
+				addr_fgp->dependence[i].flag |= FINGERPRINT_FLAG_DISABLE;
+			}
+			else if (!(addr_fgp->dependence[i].flag & FINGERPRINT_FLAG_DISABLE)){
+				addrFingerprint_disable(addr_fgp, i);
+			}
 		}
 	}
 }
@@ -186,13 +175,13 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	}
 
 	for (i = 0, nb_dependence_left1 = 0; i < addr1_fgp.nb_dependence; i++){
-		if (addr1_fgp.dependence[i].flag & 0x80000000){
+		if (addr1_fgp.dependence[i].flag & FINGERPRINT_FLAG_LEAF){
 			dependence_left1[nb_dependence_left1 ++] = addr1_fgp.dependence[i].node;
 		}
 	}
 
 	for (j = 0, nb_dependence_left2 = 0; j < addr2_fgp.nb_dependence; j++){
-		if (addr2_fgp.dependence[j].flag & 0x80000000){
+		if (addr2_fgp.dependence[j].flag & FINGERPRINT_FLAG_LEAF){
 			dependence_left2[nb_dependence_left2 ++] = addr2_fgp.dependence[j].node;
 		}
 	}
@@ -210,10 +199,10 @@ static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr
 	}
 	else if (variableRange_intersect(&range1, &range2)){
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-		if (addr1_fgp.flag & 0x00000002 || addr2_fgp.flag & 0x00000002){
+		if (addr1_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE || addr2_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE){
 			return MAY_ALIAS;
 		}
-		else if ((addr1_fgp.flag & 0x00000001) == (addr2_fgp.flag & 0x00000001)){
+		else if ((addr1_fgp.flag & FINGERPRINT_FLAG_ESP) == (addr2_fgp.flag & FINGERPRINT_FLAG_ESP)){
 			return MAY_ALIAS;
 		}
 		else{
@@ -244,12 +233,12 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 	while(node_cursor != node2){
 		operation_cursor = ir_node_get_operation(node_cursor);
 		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_IN) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_OUT)){
-			#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE == 1
+			#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_MAY == 1
 			if (ir_node_get_operation(node1)->operation_type.mem.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.con_addr != MEMADDRESS_INVALID){
 				if (ir_node_get_operation(node1)->operation_type.mem.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.con_addr){
 					return node_cursor;
 				}
-				#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
+				#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT == 1
 				else{
 					goto next;
 				}
@@ -284,7 +273,7 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 			}
 		}
 
-		#if IRMEMORY_ALIAS_HEURISTIC_TOTAL == 1
+		#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT == 1
 		next:
 		#endif
 		node_cursor = operation_cursor->operation_type.mem.next;
@@ -295,307 +284,6 @@ struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node*
 	}
 
 	return NULL;
-}
-
-/*
-	Return value description:
-	< 0 : error
-	0   : node2 overwrites node1
-	> 0 : node1 overwrites node2
-*/
-
-static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct node* node2);
-static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2);
-static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct node* node2);
-
-void ir_normalize_simplify_memory_access_(struct ir* ir, uint8_t* modification, enum aliasingStrategy strategy){
-	struct node* 			node_cursor;
-	struct edge* 			edge_cursor;
-	uint32_t 				nb_mem_access;
-	struct node** 			access_list 			= NULL;
-	uint32_t 				access_list_alloc_size;
-	uint32_t 				i;
-	struct node*			alias;
-	int32_t 				return_code;
-
-	ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
-
-	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		if (node_cursor->nb_edge_src > 1){
-			for (edge_cursor = node_get_head_edge_src(node_cursor), nb_mem_access = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS && (ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_OUT_MEM)){
-					nb_mem_access ++;
-				}
-			}
-			if (nb_mem_access > 1){
-				if (access_list == NULL || access_list_alloc_size < nb_mem_access * sizeof(struct node*)){
-					if (access_list != NULL){
-						free(access_list);
-					}
-					access_list = (struct node**)malloc(sizeof(struct node*) * nb_mem_access);
-					access_list_alloc_size = sizeof(struct node*) * nb_mem_access;
-					if (access_list == NULL){
-						log_err("unable to allocate memory");
-						continue;
-					}
-				}
-
-				for (edge_cursor = node_get_head_edge_src(node_cursor), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS && (ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(edge_get_dst(edge_cursor))->type == IR_OPERATION_TYPE_OUT_MEM)){
-						access_list[i++] = edge_get_dst(edge_cursor);
-					}
-				}
-
-				qsort(access_list, nb_mem_access, sizeof(struct node*), compare_order_memoryNode);
-
-				for (i = 1; i < nb_mem_access; i++){
-					struct irOperation* operation_prev;
-					struct irOperation* operation_next;
-
-					operation_prev = ir_node_get_operation(access_list[i - 1]);
-					operation_next = ir_node_get_operation(access_list[i]);
-
-					#ifdef IR_FULL_CHECK
-					if (operation_prev->operation_type.mem.con_addr != MEMADDRESS_INVALID && operation_next->operation_type.mem.con_addr != MEMADDRESS_INVALID){
-						if (operation_prev->operation_type.mem.con_addr != operation_next->operation_type.mem.con_addr){
-							log_err_m("memory operations has the same address operand but different concrete addresses: 0x%08x - 0x%08x", operation_prev->operation_type.mem.con_addr, operation_next->operation_type.mem.con_addr);
-							printf("  - %p ", (void*)access_list[i - 1]); irOperation_fprint(operation_prev, stdout); putchar('\n');
-							printf("  - %p ", (void*)access_list[i - 0]); irOperation_fprint(operation_next, stdout); putchar('\n');
-
-							operation_prev->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-							operation_next->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
-
-							continue;
-						}
-					}
-					#endif
-
-					/* STORE -> LOAD */
-					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
-
-						switch(strategy){
-							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
-								if (alias){
-									continue;
-								}
-								break;
-							}
-							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
-								if (alias){
-									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> LOAD ");
-								}
-								else{
-									log_warn("possible memory simplification, but strategy is print");
-								}
-								continue;
-							}
-						}
-
-						return_code = irMemory_simplify_WR(ir, access_list[i - 1], access_list[i]);
-						goto decode_return_code;
-					}
-
-					/* LOAD -> LOAD */
-					if (operation_prev->type == IR_OPERATION_TYPE_IN_MEM && operation_next->type == IR_OPERATION_TYPE_IN_MEM){
-
-						switch(strategy){
-							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
-								if (alias){
-									continue;
-								}
-								break;
-							}
-							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_OUT, ir->range_seed);
-								if (alias){
-									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "LOAD  -> LOAD ");
-								}
-								else{
-									log_warn("possible memory simplification, but strategy is print");
-								}
-								continue;
-							}
-						}
-
-						return_code = irMemory_simplify_RR(ir, access_list[i - 1], access_list[i]);
-						goto decode_return_code;
-					}
-
-					/* STORE -> STORE */
-					if (operation_prev->type == IR_OPERATION_TYPE_OUT_MEM && operation_next->type == IR_OPERATION_TYPE_OUT_MEM){
-
-						switch(strategy){
-							case ALIASING_STRATEGY_CHECK 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, ir->range_seed);
-								if (alias){
-									continue;
-								}
-								break;
-							}
-							case ALIASING_STRATEGY_PRINT 	: {
-								alias = ir_normalize_search_alias_conflict(access_list[i - 1], access_list[i], ALIAS_IN, ir->range_seed);
-								if (alias){
-									ir_normalize_print_alias_conflict(access_list[i - 1], alias, "STORE -> STORE");
-								}
-								else{
-									log_warn("possible memory simplification, but strategy is print");
-								}
-								continue;
-							}
-						}
-
-						return_code = irMemory_simplify_WW(ir, access_list[i - 1], access_list[i]);
-						goto decode_return_code;
-					}
-
-					continue;
-
-					decode_return_code:
-					switch(return_code){
-						case 0  : {
-							*modification = 1;
-							break;
-						}
-						case 1  : {
-							access_list[i] = access_list[i - 1];
-							*modification = 1;
-							break;
-						}
-						default : {
-							log_err_m("simplification failed, return code: %d", return_code);
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (access_list != NULL){
-		free(access_list);
-	}
-}
-
-static int32_t irMemory_simplify_WR(struct ir* ir, struct node* node1, struct node* node2){
-	struct irOperation* operation1;
-	struct irOperation* operation2;
-	struct edge*		edge_cursor;
-	struct node* 		new_inst;
-	int32_t 			result = -1;
-
-	operation1 = ir_node_get_operation(node1);
-	operation2 = ir_node_get_operation(node2);
-
-	for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_ADDRESS){
-			if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size > operation2->size){
-				if ((new_inst = ir_add_inst(ir, operation2->index, operation2->size, ir_normalize_choose_part_opcode(operation1->size, operation2->size), IR_OPERATION_DST_UNKOWN)) == NULL){
-					log_err("unable to add instruction to IR");
-					continue;
-				}
-
-				if (ir_add_dependence(ir, edge_get_src(edge_cursor), new_inst, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-					log_err("unable to add new dependency to IR");
-				}
-
-				if (graph_copy_src_edge(&(ir->graph), new_inst, node2)){
-					log_err("unable to copy edge(s)");
-				}
-				if (irOperation_is_final(operation2)){
-					irBuilder_chg_final_node(&(ir->builder), node2, new_inst);
-				}
-
-				result = 1;
-			}
-			else if (ir_edge_get_dependence(edge_cursor)->type != IR_DEPENDENCE_TYPE_MACRO && operation1->size < operation2->size){
-				log_warn_m("simplification of memory access of different size (case STORE:%u -> LOAD:%u)", operation1->size, operation2->size);
-			}
-			else{
-				if (graph_copy_src_edge(&(ir->graph), edge_get_src(edge_cursor), node2)){
-					log_err("unable to copy edge(s)");
-				}
-				if (irOperation_is_final(operation2)){
-					irBuilder_chg_final_node(&(ir->builder), node2, edge_get_src(edge_cursor));
-				}
-
-				result = 1;
-			}
-		}
-	}
-
-	if (result == 1){
-		ir_remove_node(ir, node2);
-		ir_drop_range(ir);
-	}
-
-	return result;
-}
-
-static int32_t irMemory_simplify_RR(struct ir* ir, struct node* node1, struct node* node2){
-	struct irOperation* operation1;
-	struct irOperation* operation2;
-	struct edge*		edge_cursor;
-
-	operation1 = ir_node_get_operation(node1);
-	operation2 = ir_node_get_operation(node2);
-
-	if (operation1->size > operation2->size){
-		ir_convert_operation_to_inst(node2, ir_normalize_choose_part_opcode(operation1->size, operation2->size));
-
-		for (edge_cursor = node_get_head_edge_dst(node2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-				ir_remove_dependence(ir, edge_cursor);
-				break;
-			}
-		}
-
-		if (ir_add_dependence(ir, node1, node2, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-			log_err("unable to add new dependency to IR");
-		}
-
-		return 1;
-	}
-
-	if (operation1->size < operation2->size){
-		ir_convert_operation_to_inst(node1, ir_normalize_choose_part_opcode(operation2->size, operation1->size));
-
-		for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-				ir_remove_dependence(ir, edge_cursor);
-				break;
-			}
-		}
-
-		if (ir_add_dependence(ir, node2, node1, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-			log_err("unable to add new dependency to IR");
-		}
-
-		return 0;
-	}
-
-	ir_merge_equivalent_node(ir, node1, node2);
-
-	return 1;
-}
-
-static int32_t irMemory_simplify_WW(struct ir* ir, struct node* node1, struct node* node2){
-	struct irOperation* operation1;
-	struct irOperation* operation2;
-
-	operation1 = ir_node_get_operation(node1);
-	operation2 = ir_node_get_operation(node2);
-
-	if (operation1->size > operation2->size){
-		log_warn_m("simplification of memory access of different size (case STORE (%u bits) -> STORE (%u bits))", operation1->size, operation2->size);
-		return -1;
-	}
-
-	ir_merge_equivalent_node(ir, node2, node1);
-
-	return 0;
 }
 
 struct memAccessToken{
@@ -618,9 +306,6 @@ static int32_t memAccessToken_is_alive(struct memAccessToken* token, struct node
 }
 
 static int32_t compare_address_memToken(const void* arg1, const void* arg2);
-
-#define CONCRETE_MEMORY_ACCESS_MAX_SIZE 		32
-#define CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT  (CONCRETE_MEMORY_ACCESS_MAX_SIZE / 8)
 
 struct memAccessFragment{
 	struct memAccessToken* 	token;
@@ -940,28 +625,11 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 	struct memAccessToken 		fetch_token;
 	struct memAccessToken** 	existing_token;
 	struct memAccessToken* 		dead_token;
-	struct memAccessFragment 	access_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
+	struct memAccessFragment 	access_fragment[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
 	uint32_t 					nb_mem_access_fragment;
-	uint8_t 					taken_fragment[CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT];
+	uint8_t 					taken_fragment[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
 
-	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		operation_cursor = ir_node_get_operation(node_cursor);
-
-		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
-			break;
-		}
-	}
-
-	if (node_cursor == NULL){
-		return;
-	}
-
-	while (operation_cursor->operation_type.mem.prev != NULL){
-		node_cursor = operation_cursor->operation_type.mem.prev;
-		operation_cursor = ir_node_get_operation(node_cursor);
-	}
-
-	for ( ; node_cursor != NULL; node_cursor = next_node_cursor){
+	for (node_cursor = irMemory_get_first(ir); node_cursor != NULL; node_cursor = next_node_cursor){
 		operation_cursor = ir_node_get_operation(node_cursor);
 		next_node_cursor = operation_cursor->operation_type.mem.next;
 
@@ -970,15 +638,15 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 			continue;
 		}
 
-		if (operation_cursor->size > CONCRETE_MEMORY_ACCESS_MAX_SIZE){
-			log_warn_m("memory access size (%u) exceeds max limit (%u), further simplification might be incorrect", operation_cursor->size, CONCRETE_MEMORY_ACCESS_MAX_SIZE);
+		if (operation_cursor->size > IRMEMORY_ACCESS_MAX_SIZE){
+			log_warn_m("memory access size (%u) exceeds max limit (%u), further simplification might be incorrect", operation_cursor->size, IRMEMORY_ACCESS_MAX_SIZE);
 			continue;
 		}
 
 		fetch_token.node 	= NULL;
 		fetch_token.address = operation_cursor->operation_type.mem.con_addr;
 
-		memset(taken_fragment, 0, sizeof(uint8_t) * CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT);
+		memset(taken_fragment, 0, sizeof(uint8_t) * IRMEMORY_ACCESS_MAX_NB_FRAGMENT);
 
 		for (i = 0, j = 0, nb_mem_access_fragment = 0; i < operation_cursor->size / 8; ){
 			int32_t is_alive = 1;
@@ -1005,7 +673,7 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 					free(dead_token);
 				}
 				if (i == 0){
-					if (j + 1 == CONCRETE_MEMORY_ACCESS_MAX_NB_FRAGMENT){
+					if (j + 1 == IRMEMORY_ACCESS_MAX_NB_FRAGMENT){
 						i ++;
 						fetch_token.address += j + 1;
 						j = 0;
@@ -1089,26 +757,31 @@ void ir_simplify_concrete_memory_access(struct ir* ir, uint8_t* modification){
 	tdestroy(binary_tree_root, free);
 }
 
+struct node* irMemory_get_first(struct ir* ir){
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+
+	for(node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+			break;
+		}
+	}
+
+	if (node_cursor != NULL){
+		while (operation_cursor->operation_type.mem.prev != NULL){
+			node_cursor = operation_cursor->operation_type.mem.prev;
+			operation_cursor = ir_node_get_operation(node_cursor);
+		}
+	}
+
+	return node_cursor;
+}
+
 /* ===================================================================== */
 /* Sorting routines						                                 */
 /* ===================================================================== */
-
-static int32_t compare_order_memoryNode(const void* arg1, const void* arg2){
-	struct node* access1 = *(struct node**)arg1;
-	struct node* access2 = *(struct node**)arg2;
-	struct irOperation* op1 = ir_node_get_operation(access1);
-	struct irOperation* op2 = ir_node_get_operation(access2);
-
-	if (op1->operation_type.mem.order < op2->operation_type.mem.order){
-		return -1;
-	}
-	else if (op1->operation_type.mem.order > op2->operation_type.mem.order){
-		return 1;
-	}
-	else{
-		return 0;
-	}
-}
 
 static int32_t compare_address_memToken(const void* arg1, const void* arg2){
 	const struct memAccessToken* token1 = (const struct memAccessToken*)arg1;
@@ -1123,4 +796,601 @@ static int32_t compare_address_memToken(const void* arg1, const void* arg2){
 	else{
 		return 0;
 	}
+}
+
+/* this is the new stuff BRUTAL */
+
+#include "list.h"
+
+struct memTokenStatic{
+	struct node* 			access;
+	struct addrFingerprint 	addr_fgp;
+};
+
+#define memTokenStatic_is_read(token) (ir_node_get_operation((token)->access)->type == IR_OPERATION_TYPE_IN_MEM)
+#define memTokenStatic_is_write(token) (ir_node_get_operation((token)->access)->type == IR_OPERATION_TYPE_OUT_MEM)
+#define memTokenStatic_get_size(token) (ir_node_get_operation((token)->access)->size / 8)
+#define memTokenStatic_get_conAddr(token) (ir_node_get_operation((token)->access)->operation_type.mem.con_addr)
+
+enum accessFragmentType{
+	IRMEMORY_ACCESS_NONE 		= 0x00000000,
+	IRMEMORY_ACCESS_ALIAS 		= 0x00000010,
+	IRMEMORY_ACCESS_ALIAS_READ 	= 0x00000011,
+	IRMEMORY_ACCESS_ALIAS_WRITE = 0x00000012,
+	IRMEMORY_ACCESS_ALIAS_ALL 	= 0x00000013,
+	IRMEMORY_ACCESS_VALUE 		= 0x00000020,
+	IRMEMORY_ACCESS_VALUE_READ 	= 0x00000021,
+	IRMEMORY_ACCESS_VALUE_WRITE = 0x00000022,
+	IRMEMORY_ACCESS_VALUE_ALL 	= 0x00000023
+};
+
+struct accessFragment{
+	enum accessFragmentType type;
+	struct memTokenStatic* 	token;
+	uint16_t 				size;
+	uint8_t 				offset_src;
+	uint8_t 				offset_dst;
+};
+
+static void accessFragment_merge(struct accessFragment* access_frag_buffer, const struct accessFragment* new_frag){
+	uint32_t 	i;
+	uint16_t 	local_size;
+	uint8_t 	local_offset;
+
+	local_size = new_frag->size;
+	local_offset = new_frag->offset_src;
+
+	for (i = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && local_size; i++){
+		if (access_frag_buffer[i].type == IRMEMORY_ACCESS_NONE){
+			access_frag_buffer[i].type 			= new_frag->type;
+			access_frag_buffer[i].token 		= new_frag->token;
+			access_frag_buffer[i].size 			= local_size;
+			access_frag_buffer[i].offset_src 	= local_offset;
+			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + local_offset;
+
+			local_size = 0;
+		}
+		else if (local_offset < access_frag_buffer[i].offset_src){
+			memmove(access_frag_buffer + i + 1, access_frag_buffer + i, sizeof(struct accessFragment) * (IRMEMORY_ACCESS_MAX_NB_FRAGMENT - i - 1));
+			access_frag_buffer[i].type 			= new_frag->type;
+			access_frag_buffer[i].token 		= new_frag->token;
+			access_frag_buffer[i].size 			= min(local_size, access_frag_buffer[i + 1].offset_src - local_offset);
+			access_frag_buffer[i].offset_src 	= local_offset;
+			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + local_offset;
+
+			local_size -= access_frag_buffer[i].size;
+			local_offset += access_frag_buffer[i].size;
+		}
+		else if (access_frag_buffer[i].offset_src + access_frag_buffer[i].size > local_offset){
+			local_size -= min(local_size, (access_frag_buffer[i].offset_src + access_frag_buffer[i].size) - local_offset);
+			local_offset = access_frag_buffer[i].offset_src + access_frag_buffer[i].size;
+		}
+	}
+}
+
+static int32_t accessFragment_is_complete(const struct accessFragment* access_frag_buffer, uint32_t access_size){
+	uint32_t i;
+	uint32_t size;
+
+	for (i = 0, size = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT; i++){
+		if (access_frag_buffer[i].type == IRMEMORY_ACCESS_NONE || access_frag_buffer[i].offset_src != size){
+			break;
+		}
+		size += access_frag_buffer[i].size;
+		#ifdef EXTRA_CHECK
+		if (size > access_size){
+			log_err_m("sum of the sizes over the fragment buffer is larger than the size of the access: %u/%u", size, access_size);
+		}
+		#endif
+		if (size >= access_size){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void accessFragment_remove_token(struct accessFragment* access_frag_buffer, uint32_t index){
+	uint32_t i;
+
+	for (i = index + 1; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && access_frag_buffer[i].type != IRMEMORY_ACCESS_NONE; ){
+		if (access_frag_buffer[i].token == access_frag_buffer[index].token){
+			memmove(access_frag_buffer + i, access_frag_buffer + i + 1, sizeof(struct accessFragment) * (IRMEMORY_ACCESS_MAX_NB_FRAGMENT - i - 1));
+			memset(access_frag_buffer + IRMEMORY_ACCESS_MAX_NB_FRAGMENT - 1, 0, sizeof(struct accessFragment));
+		}
+		else{
+			i ++;
+		}
+	}
+}
+
+static struct node* accessFragment_get(const struct accessFragment* access_fragment, struct ir* ir){
+	struct node* raw_value 	= NULL;
+	struct edge* edge_cursor;
+
+	if (memTokenStatic_is_read(access_fragment->token)){
+		raw_value = access_fragment->token->access;
+	}
+	else if (memTokenStatic_is_write(access_fragment->token)){
+		for (edge_cursor = node_get_head_edge_dst(access_fragment->token->access); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+				break;
+			}
+		}
+		if (edge_cursor == NULL){
+			log_err("unable to get data operand of a memory store");
+			return NULL;
+		}
+		else{
+			raw_value = edge_get_src(edge_cursor);
+		}
+	}
+	#ifdef EXTRA_CHECK
+	else{
+		log_err("incorrect operation type");
+		return NULL;
+	}
+	#endif
+
+	if (access_fragment->offset_dst){
+		struct node* disp_value;
+		struct node* shift;
+
+		disp_value = ir_add_immediate(ir, ir_node_get_operation(raw_value)->size, access_fragment->offset_dst * 8);
+		shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(raw_value)->size, IR_SHR, IR_OPERATION_DST_UNKOWN);
+
+		if (disp_value != NULL && shift != NULL){
+			ir_add_dependence_check(ir, disp_value, shift, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+			ir_add_dependence_check(ir, raw_value, shift, IR_DEPENDENCE_TYPE_DIRECT)
+			raw_value = shift;
+		}
+		else{
+			log_err("unable to add nodes to IR");
+		}
+	}
+
+	if (access_fragment->size != ir_node_get_operation(raw_value)->size / 8){
+		struct node* part = NULL;
+
+		if (access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 32){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
+		}
+		else if (access_fragment->size == 1 && ir_node_get_operation(raw_value)->size == 16){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
+		}
+		else if (access_fragment->size == 2 && ir_node_get_operation(raw_value)->size == 32){
+			part = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_PART1_16, IR_OPERATION_DST_UNKOWN);
+		}
+		else{
+			log_err_m("incorrect size selection %u byte(s) from %u", access_fragment->size, ir_node_get_operation(raw_value)->size / 8);
+		}
+
+		if (part != NULL){
+			ir_add_dependence_check(ir, raw_value, part, IR_DEPENDENCE_TYPE_DIRECT)
+			raw_value = part;
+		}
+		else{
+			log_err("unable to add instruction to IR");
+		}
+	}
+
+	return raw_value;
+}
+
+static int32_t accessFragment_build_compound(const struct accessFragment* access_fragment, struct ir* ir, struct node** current_value, struct node* new_value, uint32_t access_size){
+	struct node* or;
+	struct node* movzx;
+	struct node* disp_value;
+	struct node* shift;
+
+	if (new_value == NULL){
+		log_err("new value is NULL");
+		return -1;
+	}
+
+	if (ir_node_get_operation(new_value)->size < access_size){
+		if ((movzx = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, access_size, IR_MOVZX, IR_OPERATION_DST_UNKOWN)) != NULL){
+			ir_add_dependence_check(ir, new_value, movzx, IR_DEPENDENCE_TYPE_DIRECT)
+			new_value = movzx;
+		}
+		else{
+			log_err("unable to add instruction to IR");
+		}
+	}
+
+	if (access_fragment->offset_src){
+		disp_value = ir_add_immediate(ir, access_size, access_fragment->offset_src * 8);
+		shift = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, access_size, IR_SHL, IR_OPERATION_DST_UNKOWN);
+
+		if (disp_value != NULL && shift != NULL){
+			ir_add_dependence_check(ir, disp_value, shift, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+			ir_add_dependence_check(ir, new_value, shift, IR_DEPENDENCE_TYPE_DIRECT)
+			new_value = shift;
+		}
+		else{
+			log_err("unable to add nodes to IR");
+		}
+	}
+
+	if (*current_value == NULL){
+		*current_value = new_value;
+	}
+	else{
+		if ((or = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, access_size, IR_OR, IR_OPERATION_DST_UNKOWN)) != NULL){
+			ir_add_dependence_check(ir, *current_value, or, IR_DEPENDENCE_TYPE_DIRECT)
+			ir_add_dependence_check(ir, new_value, or, IR_DEPENDENCE_TYPE_DIRECT)
+			*current_value = or;
+		}
+		else{
+			log_err("unable to add instruction to IR");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static void accessFragment_print(const struct accessFragment* access_frag_buffer, const struct memTokenStatic* token){
+	uint32_t i;
+
+	for (i = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && access_frag_buffer[i].type != IRMEMORY_ACCESS_NONE; i++){
+		switch(access_frag_buffer[i].type){
+			case IRMEMORY_ACCESS_ALIAS_READ 	: {
+				printf("ALIAS READ  [%u:%u] ", access_frag_buffer[i].offset_src, access_frag_buffer[i].offset_src + access_frag_buffer[i].size);
+				if (memTokenStatic_is_read(token)){
+					puts(ANSI_COLOR_RED "ignore" ANSI_COLOR_RESET " this case is not supposed to happen");
+				}
+				else{
+					puts(ANSI_COLOR_YELLOW "aliasing" ANSI_COLOR_RESET);
+				}
+				break;
+			}
+			case IRMEMORY_ACCESS_ALIAS_WRITE 	: {
+				printf("ALIAS WRITE [%u:%u] ", access_frag_buffer[i].offset_src, access_frag_buffer[i].offset_src + access_frag_buffer[i].size);
+				if (memTokenStatic_is_read(token)){
+					puts(ANSI_COLOR_YELLOW "aliasing" ANSI_COLOR_RESET);
+				}
+				else{
+					puts(ANSI_COLOR_RED "ignore" ANSI_COLOR_RESET " this case is not supposed to happen");
+				}
+				break;
+			}
+			case IRMEMORY_ACCESS_VALUE_READ 	: {
+				printf("READ        [%u:%u] ", access_frag_buffer[i].offset_src, access_frag_buffer[i].offset_src + access_frag_buffer[i].size);
+				if (memTokenStatic_is_read(token)){
+					puts(ANSI_COLOR_GREEN "simplification RR" ANSI_COLOR_RESET);
+				}
+				else{
+					puts("no simplification");
+				}
+				break;
+			}
+			case IRMEMORY_ACCESS_VALUE_WRITE 	: {
+				printf("WRITE       [%u:%u] ", access_frag_buffer[i].offset_src, access_frag_buffer[i].offset_src + access_frag_buffer[i].size);
+				if (memTokenStatic_is_read(token)){
+						puts(ANSI_COLOR_GREEN "simplification WR" ANSI_COLOR_RESET);
+				}
+				else{
+					puts(ANSI_COLOR_GREEN "simplification WW" ANSI_COLOR_RESET);
+				}
+				break;
+			}
+			default : {log_err_m("this case is not supposed to happen: type=0x%08x", access_frag_buffer[i].type); break;}
+		}
+
+	}
+}
+
+static int32_t memTokenStatic_init(struct memTokenStatic* mem_token_static, struct node* node){
+	struct node* address;
+
+	mem_token_static->access = node;
+
+	if ((address = irMemory_get_address(node)) == NULL){
+		log_err("unable to get memory address");
+		return -1;
+	}
+
+	addrFingerprint_init(address, &(mem_token_static->addr_fgp), 0, 0);
+
+	return 0;
+}
+
+static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct memTokenStatic* token2, uint32_t ir_range_seed, struct accessFragment* access_frag_buffer){
+	uint32_t 				i;
+	uint32_t 				j;
+	struct variableRange 	range1;
+	struct variableRange 	range2;
+	uint32_t 				nb_dependence_left1;
+	uint32_t 				nb_dependence_left2;
+	struct node* 			dependence_left1[ADDRESS_NB_MAX_DEPENDENCE];
+	struct node* 			dependence_left2[ADDRESS_NB_MAX_DEPENDENCE];
+
+	#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT == 1
+	if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
+		if (memTokenStatic_get_conAddr(token1) < memTokenStatic_get_conAddr(token2)){
+			if (memTokenStatic_get_conAddr(token2) - memTokenStatic_get_conAddr(token1) > memTokenStatic_get_size(token1)){
+				return 0;
+			}
+		}
+		else{
+			if (memTokenStatic_get_conAddr(token1) - memTokenStatic_get_conAddr(token2) > memTokenStatic_get_size(token2)){
+				return 0;
+			}
+		}
+	}
+	#endif
+
+	addrFingerprint_enable_all(&(token1->addr_fgp));
+	addrFingerprint_enable_all(&(token2->addr_fgp));
+
+	for (i = 0; i < token1->addr_fgp.nb_dependence; i++){
+		if (token1->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_DISABLE){
+			continue;
+		}
+
+		for (j = 0; j < token2->addr_fgp.nb_dependence; j++){
+			if (token1->addr_fgp.dependence[i].node == token2->addr_fgp.dependence[j].node){
+				if (token1->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE){
+					continue;
+				}
+				addrFingerprint_disable(&token1->addr_fgp, i);
+				addrFingerprint_disable(&token2->addr_fgp, j);
+			}
+		}
+	}
+
+	for (i = 0, nb_dependence_left1 = 0; i < token1->addr_fgp.nb_dependence; i++){
+		if ((token1->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_LEAF) && !(token1->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_DISABLE)){
+			dependence_left1[nb_dependence_left1 ++] = token1->addr_fgp.dependence[i].node;
+		}
+	}
+
+	for (j = 0, nb_dependence_left2 = 0; j < token2->addr_fgp.nb_dependence; j++){
+		if ((token2->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_LEAF) && !(token2->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE)){
+			dependence_left2[nb_dependence_left2 ++] = token2->addr_fgp.dependence[j].node;
+		}
+	}
+
+	irVariableRange_get_range_add_buffer(&range1, dependence_left1, nb_dependence_left1, 32, ir_range_seed);
+	irVariableRange_get_range_add_buffer(&range2, dependence_left2, nb_dependence_left2, 32, ir_range_seed);
+
+	if (variableRange_is_cst(&range1) && variableRange_is_cst(&range2)){
+		if (variableRange_get_cst(&range1) <= variableRange_get_cst(&range2)){
+			#ifdef EXTRA_CHECK
+			if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
+				if (memTokenStatic_get_conAddr(token2) - memTokenStatic_get_conAddr(token1) != variableRange_get_cst(&range2) - variableRange_get_cst(&range1)){
+					log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token1));
+				}
+			}
+			#endif
+
+			if (variableRange_get_cst(&range2) - variableRange_get_cst(&range1) < memTokenStatic_get_size(token1)){
+				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_VALUE;
+				access_frag_buffer[0].token 		= token2;
+				access_frag_buffer[0].size 			= (uint16_t)(min(variableRange_get_cst(&range1) + memTokenStatic_get_size(token1) - variableRange_get_cst(&range2), memTokenStatic_get_size(token2)));
+				access_frag_buffer[0].offset_src 	= (uint8_t)(variableRange_get_cst(&range2) - variableRange_get_cst(&range1));
+				access_frag_buffer[0].offset_dst 	= 0;
+
+				return 1;
+			}
+			else{
+				return 0;
+			}
+		}
+		else{
+			#ifdef EXTRA_CHECK
+			if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
+				if (memTokenStatic_get_conAddr(token1) - memTokenStatic_get_conAddr(token2) != variableRange_get_cst(&range1) - variableRange_get_cst(&range2)){
+					log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token1));
+				}
+			}
+			#endif
+
+			if (variableRange_get_cst(&range1) - variableRange_get_cst(&range2) < memTokenStatic_get_size(token2)){
+				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_VALUE;
+				access_frag_buffer[0].token 		= token2;
+				access_frag_buffer[0].size 			= (uint16_t)(min(variableRange_get_cst(&range2) + memTokenStatic_get_size(token2) - variableRange_get_cst(&range1), memTokenStatic_get_size(token1)));
+				access_frag_buffer[0].offset_src 	= 0;
+				access_frag_buffer[0].offset_dst 	= (uint8_t)(variableRange_get_cst(&range1) - variableRange_get_cst(&range2));
+
+				return 1;
+			}
+			else{
+				return 0;
+			}
+		}
+	}
+	#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_MAY == 1  /* fragment are not handled for aliasing */
+	if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
+		if (memTokenStatic_get_conAddr(token1) < memTokenStatic_get_conAddr(token2)){
+			if (memTokenStatic_get_conAddr(token2) - memTokenStatic_get_conAddr(token1) < memTokenStatic_get_size(token1)){
+				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_ALIAS;
+				access_frag_buffer[0].token 		= token2;
+				access_frag_buffer[0].size 			= memTokenStatic_get_size(token1);
+				access_frag_buffer[0].offset_src 	= 0;
+				access_frag_buffer[0].offset_dst 	= 0;
+
+				return 1;
+			}
+		}
+		else{
+			if (memTokenStatic_get_conAddr(token1) - memTokenStatic_get_conAddr(token2) < memTokenStatic_get_size(token2)){
+				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_ALIAS;
+				access_frag_buffer[0].token 		= token2;
+				access_frag_buffer[0].size 			= memTokenStatic_get_size(token1);
+				access_frag_buffer[0].offset_src 	= 0;
+				access_frag_buffer[0].offset_dst 	= 0;
+
+				return 1;
+			}
+		}
+	}
+	#endif
+	else if (variableRange_intersect(&range1, &range2)){ /* fragment are not handled for aliasing */
+		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
+		if (!(token1->addr_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE || token2->addr_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE) && (token1->addr_fgp.flag & FINGERPRINT_FLAG_ESP) != (token2->addr_fgp.flag & FINGERPRINT_FLAG_ESP)){
+			return 0;
+		}
+		#endif
+
+		access_frag_buffer[0].type 			= IRMEMORY_ACCESS_ALIAS;
+		access_frag_buffer[0].token 		= token2;
+		access_frag_buffer[0].size 			= memTokenStatic_get_size(token1);
+		access_frag_buffer[0].offset_src 	= 0;
+		access_frag_buffer[0].offset_dst 	= 0;
+
+		return 1;
+	}
+
+	return 0;
+}
+
+static void memTokenStatic_search(struct memTokenStatic* token, struct list* token_list, uint32_t ir_range_seed, struct accessFragment* access_frag_buffer){
+	uint32_t 				i;
+	struct listIterator 	it;
+	struct memTokenStatic* 	token_cursor;
+	struct accessFragment* 	local_access_frag_buffer;
+	uint32_t 				nb_frag;
+
+	local_access_frag_buffer = (struct accessFragment*)alloca(sizeof(struct accessFragment) * memTokenStatic_get_size(token));
+
+	memset(access_frag_buffer, 0, sizeof(struct accessFragment) * IRMEMORY_ACCESS_MAX_NB_FRAGMENT);
+
+	for (listIterator_init(&it, token_list); listIterator_get_prev(&it) != NULL; ){
+		token_cursor = listIterator_get_data(it);
+		nb_frag = memTokenStatic_compare(token, token_cursor, ir_range_seed, local_access_frag_buffer);
+
+		for (i = 0; i < nb_frag; i++){
+			local_access_frag_buffer[i].type |= 0x00000001 << ((memTokenStatic_is_write(token_cursor)) ? 1 : 0);
+			if ((memTokenStatic_is_read(token) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_READ) || (memTokenStatic_is_write(token) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_WRITE)){
+				continue;
+			}
+
+			accessFragment_merge(access_frag_buffer, local_access_frag_buffer + i);
+		}
+
+		if (accessFragment_is_complete(access_frag_buffer, memTokenStatic_get_size(token))){
+			break;
+		}
+	}
+}
+
+int32_t irMemory_simplify(struct ir* ir){
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				size;
+	int32_t 				result;
+	struct node* 			node_cursor;
+	struct node* 			next_node_cursor;
+	struct list 			mem_token_list;
+	struct memTokenStatic 	current_token;
+	struct accessFragment 	fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
+
+	ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
+
+	list_init(mem_token_list, sizeof(struct memTokenStatic))
+
+	for (node_cursor = irMemory_get_first(ir), result = 0; node_cursor != NULL; node_cursor = next_node_cursor){
+		next_node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.next;
+		if (ir_node_get_operation(node_cursor)->size > IRMEMORY_ACCESS_MAX_SIZE){
+			log_warn_m("memory access size (%u) exceeds max limit (%u), further simplification might be incorrect", ir_node_get_operation(node_cursor)->size, IRMEMORY_ACCESS_MAX_SIZE);
+			continue;
+		}
+
+		if (memTokenStatic_init(&current_token, node_cursor)){
+			log_err("unable to init memAccessToken, further simplification might be incorrect");
+			continue;
+		}
+
+		memTokenStatic_search(&current_token, &mem_token_list, ir->range_seed, fragments);
+
+		if (memTokenStatic_is_read(&current_token)){
+			for (i = 0, size = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT; i++){
+				if (fragments[i].type == IRMEMORY_ACCESS_NONE || (fragments[i].type & IRMEMORY_ACCESS_ALIAS) || fragments[i].offset_src != size){
+					break;
+				}
+				size += fragments[i].size;
+			}
+
+			#ifdef EXTRA_CHECK
+			if (size > memTokenStatic_get_size(&current_token)){
+				log_err_m("sum of the sizes over the fragment buffer is larger than the size of the access: %u/%u", size, memTokenStatic_get_size(&current_token));
+			}
+			#endif
+
+			if (size >= memTokenStatic_get_size(&current_token)){
+				struct node* value;
+
+				for (j = 0, value = NULL; j < i; j++){
+					if (accessFragment_build_compound(fragments + j, ir, &value, accessFragment_get(fragments + j, ir), memTokenStatic_get_size(&current_token))){
+						log_err("unable to build compound value");
+					}
+				}
+
+				if (value != NULL){
+					ir_merge_equivalent_node(ir, value, node_cursor);
+					result = 1;
+				}
+				else{
+					log_err("compound value is NULL, further simplification might be incorrect");
+				}
+			}
+			else{
+				list_add_tail_check(&mem_token_list, &current_token)
+			}
+		}
+		else{
+			for (i = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && fragments[i].type != IRMEMORY_ACCESS_NONE; i++){
+				if (fragments[i].type == IRMEMORY_ACCESS_VALUE_WRITE){
+					if (fragments[i].offset_dst == 0 && fragments[i].size >= memTokenStatic_get_size(fragments[i].token)){
+						ir_merge_equivalent_node(ir, node_cursor, fragments[i].token->access);
+						list_remove(&mem_token_list, fragments[i].token);
+						accessFragment_remove_token(fragments, i);
+						result = 1;
+					}
+					#ifdef VERBOSE
+					else{
+						log_warn("simplification of memory STOREs of different size: not implemented");
+					}
+					#endif
+				}
+			}
+
+			list_add_tail_check(&mem_token_list, &current_token)
+		}
+	}
+
+	list_clean(&mem_token_list);
+
+	return result;
+}
+
+void irMemory_print_aliasing(struct ir* ir){
+	struct node* 			node_cursor;
+	struct list 			mem_token_list;
+	struct memTokenStatic 	current_token;
+	struct accessFragment 	fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
+
+	ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
+
+	list_init(mem_token_list, sizeof(struct memTokenStatic))
+
+	for (node_cursor = irMemory_get_first(ir); node_cursor != NULL; node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.next){
+		if (ir_node_get_operation(node_cursor)->size > IRMEMORY_ACCESS_MAX_SIZE){
+			log_warn_m("memory access size (%u) exceeds max limit (%u)", ir_node_get_operation(node_cursor)->size, IRMEMORY_ACCESS_MAX_SIZE);
+			continue;
+		}
+		if (memTokenStatic_init(&current_token, node_cursor)){
+			log_err("unable to init memAccessToken");
+			continue;
+		}
+
+		memTokenStatic_search(&current_token, &mem_token_list, ir->range_seed, fragments);
+		accessFragment_print(fragments, &current_token);
+
+		list_add_tail_check(&mem_token_list, &current_token)
+	}
+
+	list_clean(&mem_token_list);
 }

@@ -57,6 +57,28 @@ int32_t list_add_tail(struct list* list, const void* element){
 	return list->nb_element - 1;
 }
 
+void list_remove(struct list* list, void* element){
+	struct listElement* list_el;
+
+	list_el = ((struct listElement*)element - 1);
+
+	list->nb_element --;
+	if (list_el->prev == NULL){
+		list->head = list_el->next;
+	}
+	else{
+		list_el->prev->next = list_el->next;
+	}
+	if (list_el->next == NULL){
+		list->tail = list_el->prev;
+	}
+	else{
+		list_el->next->prev = list_el->prev;
+	}
+
+	free(list_el);
+}
+
 void list_clean(struct list* list){
 	struct listElement* cursor;
 	void* 				tmp;

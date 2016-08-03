@@ -101,7 +101,7 @@ static inline void trace_printDot_ir(struct trace* trace){
 
 static inline void trace_print_aliasing_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
-		ir_print_aliasing(trace->trace_type.frag.ir);
+		irMemory_print_aliasing(trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);

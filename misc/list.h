@@ -19,10 +19,10 @@ struct list{
 	struct listElement* 	head;	
 };
 
-#define list_init(list, element_size_) 			\
-	(list).nb_element 	= 0; 					\
-	(list).element_size = (element_size_); 		\
-	(list).tail 		= NULL; 				\
+#define list_init(list, element_size_) 					\
+	(list).nb_element 	= 0; 							\
+	(list).element_size = (element_size_); 				\
+	(list).tail 		= NULL; 						\
 	(list).head 		= NULL;
 
 #define list_get_length(list) ((list)->nb_element)
@@ -30,10 +30,26 @@ struct list{
 int32_t list_add_head(struct list* list, const void* element);
 int32_t list_add_tail(struct list* list, const void* element);
 
-#define list_empty(list) 						\
-	list_clean(list); 							\
-	(list)->nb_element 		= 0; 				\
-	(list)->tail 			= 0; 				\
+#ifdef EXTRA_CHECK
+#define list_add_head_check(list, element) 				\
+	if (list_add_head(list, element) < 0){ 				\
+		log_err("unable to add element to list"); 		\
+	}
+#define list_add_tail_check(list, element) 				\
+	if (list_add_tail(list, element) < 0){ 				\
+		log_err("unable to add element to list"); 		\
+	}
+#else
+#define list_add_head_check(list, element) list_add_head(list, element);
+#define list_add_tail_check(list, element) list_add_tail(list, element);
+#endif
+
+void list_remove(struct list* list, void* element);
+
+#define list_empty(list) 								\
+	list_clean(list); 									\
+	(list)->nb_element 		= 0; 						\
+	(list)->tail 			= 0; 						\
 	(list)->head 			= 0;
 
 void list_clean(struct list* list);

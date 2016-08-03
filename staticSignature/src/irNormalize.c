@@ -481,7 +481,7 @@ void ir_normalize(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule(ir_normalize_simplify_memory_access, "simplify memory", timer_4_elapsed_time);
+		ir_normalize_apply_rule_new(irMemory_simplify, "simplify memory", timer_4_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_DISTRIBUTE_IMMEDIATE == 1
