@@ -5,13 +5,13 @@
 #include "AES.h"
 #include "printBuffer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
 /* Those test vectors are taken from: http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf */
 
-int main(){
+int main(void){
 	unsigned char plaintext[AES_BLOCK_NB_BYTE] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
 	
 	unsigned char key_128[AES_128_NB_BYTE_KEY] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
@@ -89,5 +89,5 @@ int main(){
 		printf("\nRecovery 256:   FAIL\n");
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

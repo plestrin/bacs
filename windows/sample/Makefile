@@ -10,9 +10,9 @@ TRACE_DIR 	:= trace/
 WHL_DIR 	:= trace\whiteList
 PIN 		:= C:\pin-2.14-71313-msvc12-windows\pin
 TOOL 		:= E:\lightTracer_pin\obj-ia32\lightTracer.dll
-TARGETS 	:= TEST_TEA TEST_RC4 TEST_SHA1 TEST_MD5
-TARGETS_D 	:= $(foreach  target,$(TARGETS),$(target)_WD)
-TARGETS_R 	:= $(foreach  target,$(TARGETS),$(target)_WR)
+TARGETS 	:= TEST_TEA TEST_RC4 TEST_SHA1 TEST_MD5 TEST_AES GLAD_AES_V0 GLAD_AES_V1 GLAD_AES_V2 GLAD_AES_V3
+TARGETS_D 	:= $(foreach target,$(TARGETS),$(target)_WD)
+TARGETS_R 	:= $(foreach target,$(TARGETS),$(target)_WR)
 
 all: build $(foreach target,$(TARGETS_D) $(TARGETS_R),$(BUILD_DIR)/$(shell echo $(target) | tr A-Z a-z).exe $(TRACE_DIR)trace$(target))
 
@@ -24,6 +24,31 @@ $(BUILD_DIR)/%.wd.obj: $(SOURCE_DIR)%.c
 
 $(BUILD_DIR)/%.wr.obj: $(SOURCE_DIR)%.c
 	$(CXX) $(CXXFLAGS) /Ox /Fo$(COMP_OBJ)$@ $<
+
+# Specific rules for GLAD_AES
+$(BUILD_DIR)/%.v0.wd.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /Od /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v0.wr.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /Ox /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v1.wd.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /DENC_UNROLL=PARTIAL /DDEC_UNROLL=PARTIAL /Od /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v1.wr.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /DENC_UNROLL=PARTIAL /DDEC_UNROLL=PARTIAL /Ox /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v2.wd.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /DENC_UNROLL=NONE /DDEC_UNROLL=NONE /DNO_ENC_KS_UNROLL /DNO_DEC_KS_UNROLL /Od /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v2.wr.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) /DENC_UNROLL=NONE /DDEC_UNROLL=NONE /DNO_ENC_KS_UNROLL /DNO_DEC_KS_UNROLL /Ox /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v3.wd.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) -DENC_ROUND=ONE_TABLE /DLAST_ENC_ROUND=ONE_TABLE /DDEC_ROUND=ONE_TABLE /DLAST_DEC_ROUND=ONE_TABLE /DKEY_SCHED=ONE_TABLE /Od /Fo$(COMP_OBJ)$@ $<
+
+$(BUILD_DIR)/%.v3.wr.obj: $(SOURCE_DIR)%.c
+	$(CXX) $(CXXFLAGS) -DENC_ROUND=ONE_TABLE /DLAST_ENC_ROUND=ONE_TABLE /DDEC_ROUND=ONE_TABLE /DLAST_DEC_ROUND=ONE_TABLE /DKEY_SCHED=ONE_TABLE /Ox /Fo$(COMP_OBJ)$@ $<
 
 define BUILD_template
 $$(BUILD_DIR)/$(1)_wd.exe: $$(foreach obj,$(2),$$(BUILD_DIR)/$$(obj).wd.obj)
@@ -43,6 +68,11 @@ $(eval $(call BUILD_template,test_tea,TEA test_tea printBuffer))
 $(eval $(call BUILD_template,test_rc4,RC4 test_rc4 printBuffer))
 $(eval $(call BUILD_template,test_sha1,SHA1 test_sha1 printBuffer))
 $(eval $(call BUILD_template,test_md5,MD5 test_md5 printBuffer))
+$(eval $(call BUILD_template,test_aes,AES test_aes printBuffer))
+$(eval $(call BUILD_template,glad_aes_v0,aescrypt.v0 aeskey.v0 aes_modes.v0 aestab.v0 glad_aes.v0 printBuffer))
+$(eval $(call BUILD_template,glad_aes_v1,aescrypt.v1 aeskey.v1 aes_modes.v1 aestab.v1 glad_aes.v1 printBuffer))
+$(eval $(call BUILD_template,glad_aes_v2,aescrypt.v2 aeskey.v2 aes_modes.v2 aestab.v2 glad_aes.v2 printBuffer))
+$(eval $(call BUILD_template,glad_aes_v3,aescrypt.v3 aeskey.v3 aes_modes.v3 aestab.v3 glad_aes.v3 printBuffer))
 
 $(foreach target,$(TARGETS_D) $(TARGETS_R),$(eval $(call TRACE_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
 

@@ -1,6 +1,6 @@
 MISC_DIRECTORY 				:= ../../misc/
 GCC_CC						:= gcc
-GCC_CFLAGS 					:= -W -Wall -pedantic -Wextra  -std=c99 -std=c99
+GCC_CFLAGS 					:= -W -Wall -pedantic -Wextra -std=c99
 CLANG_CC 					:= clang
 CLANG_CFLAGS 				:= -pedantic -Weverything -Wno-cast-align -Wno-newline-eof -Wno-unused-macros
 
@@ -10,7 +10,7 @@ GCC_OPTIMIZATION_LEVEL 		:= 0 1 2 3 s
 CLANG_OPTIMIZATION_LEVEL 	:= 0 1 2 3 z
 PROGRAM_NAMES 				:= $(foreach optim, $(GCC_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),build/$(AES_NAME)_$(version)_go$(optim))) $(foreach optim, $(CLANG_OPTIMIZATION_LEVEL),$(foreach version,$(PROGRAM_VERSIONS),build/$(AES_NAME)_$(version)_co$(optim)))
 VARIABLE_OBJECTS 			:= glad_aes aeskey aestab aescrypt aes_modes
-MISC_OBJECTS 				:= multiColumn printBuffer
+MISC_OBJECTS 				:= printBuffer
 
 v0_DEFINE 					:=
 v1_DEFINE					:= -DENC_UNROLL=PARTIAL -DDEC_UNROLL=PARTIAL
@@ -81,6 +81,6 @@ build/%.coz: $(MISC_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -Oz
 
 clean:
-	@ rm -f build/*
+	@ rm -rf build/*
 
 .PHONY: all clean

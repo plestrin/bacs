@@ -27,7 +27,7 @@
 
 | Operation | Arity | Description |
 | --------- | ----- | ----------- |
-| ADC | 2 | Modular with carry. Incorrect: should take an extra argument Do not normalize. |
+| ADC | 2 | Modular addition with carry. Incorrect: should take an extra argument Do not normalize. |
 | ADD | > 1 | Modular addition. |
 | AND | > 1 | Bitwise AND. |
 | CMOV | 2 | Conditional move. Incorrect: should take an extra argument. Do not normalize. |
