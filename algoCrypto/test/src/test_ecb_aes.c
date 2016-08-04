@@ -6,11 +6,11 @@
 #include "mode.h"
 #include "printBuffer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "windowsComp.h"
 #endif
 
-int main(){
+int main(void){
 	char 			plaintext[] = "Hi I am an AES ECB test vector distributed on 4 128-bit blocks!";
 	unsigned char 	key_128[AES_128_NB_BYTE_KEY] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 	unsigned char 	round_key_128[AES_128_NB_BYTE_ROUND_KEY];
@@ -37,5 +37,5 @@ int main(){
 		printf("\nRecovery:       FAIL\n");
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

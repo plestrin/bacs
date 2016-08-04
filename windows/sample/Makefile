@@ -11,10 +11,10 @@ WHL_DIR 	:= trace\whiteList
 PIN 		:= C:\pin-2.14-71313-msvc12-windows\pin
 TOOL 		:= E:\lightTracer_pin\obj-ia32\lightTracer.dll
 TARGETS 	:= TEST_TEA TEST_RC4 TEST_SHA1 TEST_MD5 TEST_AES GLAD_AES_V0 GLAD_AES_V1 GLAD_AES_V2 GLAD_AES_V3
-TARGETS_D 	:= $(foreach target,$(TARGETS),$(target)_WD)
-TARGETS_R 	:= $(foreach target,$(TARGETS),$(target)_WR)
+TARGETS_MEM := TEST_CBC_TEA TEST_CBC_AES TEST_CTR_TEA TEST_CTR_AES
+TARGETS_ALL := $(foreach target,$(TARGETS) $(TARGETS_MEM),$(target)_WD) $(foreach target,$(TARGETS) $(TARGETS_MEM),$(target)_WR)
 
-all: build $(foreach target,$(TARGETS_D) $(TARGETS_R),$(BUILD_DIR)/$(shell echo $(target) | tr A-Z a-z).exe $(TRACE_DIR)trace$(target))
+all: build $(foreach target,$(TARGETS_ALL),$(BUILD_DIR)/$(shell echo $(target) | tr A-Z a-z).exe $(TRACE_DIR)trace$(target))
 
 build:
 	mkdir -p $(BUILD_DIR)
@@ -64,6 +64,13 @@ $$(TRACE_DIR)trace$(1): $$(BUILD_DIR)/$(2).exe $$(WHL_DIR)\$(1).lst $$(TOOL)
 	$$(PIN) -t $$(TOOL) -w $$(WHL_DIR)\$(1).lst -o $$@ -- $$(BUILD_DIR)\$(2).exe
 endef
 
+define TRACE_MEM_template
+$$(TRACE_DIR)trace$(1): $$(BUILD_DIR)/$(2).exe $$(WHL_DIR)\$(1).lst $$(TOOL)
+	mkdir -p $$@
+	rm -f $$@/*
+	$$(PIN) -t $$(TOOL) -m -w $$(WHL_DIR)\$(1).lst -o $$@ -- $$(BUILD_DIR)\$(2).exe
+endef
+
 $(eval $(call BUILD_template,test_tea,TEA test_tea printBuffer))
 $(eval $(call BUILD_template,test_rc4,RC4 test_rc4 printBuffer))
 $(eval $(call BUILD_template,test_sha1,SHA1 test_sha1 printBuffer))
@@ -73,10 +80,15 @@ $(eval $(call BUILD_template,glad_aes_v0,aescrypt.v0 aeskey.v0 aes_modes.v0 aest
 $(eval $(call BUILD_template,glad_aes_v1,aescrypt.v1 aeskey.v1 aes_modes.v1 aestab.v1 glad_aes.v1 printBuffer))
 $(eval $(call BUILD_template,glad_aes_v2,aescrypt.v2 aeskey.v2 aes_modes.v2 aestab.v2 glad_aes.v2 printBuffer))
 $(eval $(call BUILD_template,glad_aes_v3,aescrypt.v3 aeskey.v3 aes_modes.v3 aestab.v3 glad_aes.v3 printBuffer))
+$(eval $(call BUILD_template,test_cbc_tea,TEA mode test_cbc_tea printBuffer))
+$(eval $(call BUILD_template,test_cbc_aes,AES mode test_cbc_aes printBuffer))
+$(eval $(call BUILD_template,test_ctr_tea,TEA mode test_ctr_tea printBuffer))
+$(eval $(call BUILD_template,test_ctr_aes,AES mode test_ctr_aes printBuffer))
 
-$(foreach target,$(TARGETS_D) $(TARGETS_R),$(eval $(call TRACE_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
+$(foreach target,$(foreach target,$(TARGETS),$(target)_WD) $(foreach target,$(TARGETS),$(target)_WR),$(eval $(call TRACE_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
+$(foreach target,$(foreach target,$(TARGETS_MEM),$(target)_WD) $(foreach target,$(TARGETS_MEM),$(target)_WR),$(eval $(call TRACE_MEM_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
 
 clean:
 	@ rm -rf $(BUILD_DIR)
-	@ $(foreach target,$(TARGETS_D) $(TARGETS_R), rm -rf $(TRACE_DIR)trace$(target))
+	@ $(foreach target,$(TARGETS_ALL), rm -rf $(TRACE_DIR)trace$(target))
 	@ rm -f pintool.log
