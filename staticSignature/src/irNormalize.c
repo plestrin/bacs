@@ -548,10 +548,10 @@ void ir_normalize_concrete(struct ir* ir){
 	struct timespec timer_stop_time;
 	#endif
 	#endif
-	uint8_t 		modification 			= 0;
+	uint8_t 		modification;
 
 	#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-	ir_simplify_concrete_memory_access(ir, &modification);
+	modification = irMemory_simplify_concrete(ir);
 	#if defined VERBOSE || defined IR_FULL_CHECK
 	if (modification){
 		#ifdef VERBOSE

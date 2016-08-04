@@ -27,10 +27,10 @@
 
 | Operation | Arity | Description |
 | --------- | ----- | ----------- |
-| ADC | 2 | Modular addition with carry. Incorrect: should take an extra argument Do not normalize. |
+| ADC | 2 | Modular addition with carry. Incorrect: should take an extra argument for the carry. Do not normalize. |
 | ADD | > 1 | Modular addition. |
 | AND | > 1 | Bitwise AND. |
-| CMOV | 2 | Conditional move. Incorrect: should take an extra argument. Do not normalize. |
+| CMOV | 2 | Conditional move. Incorrect: should take an extra argument for FLAGS. Do not normalize. |
 | DIVQ | 2 | Division return quotient. |
 | DIVR | 2 | Division return the remainder. |
 | IDIV | 2 | Signed division returned both quotient and remainder. Might be incorrect in some case. |
