@@ -1246,31 +1246,39 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 	return 0;
 }
 
-static void memTokenStatic_search(struct memTokenStatic* token, struct list* token_list, uint32_t ir_range_seed, struct accessFragment* access_frag_buffer){
+static void memTokenStatic_search(struct memTokenStatic* mem_token_static, struct list* token_list, uint32_t ir_range_seed, struct accessFragment* access_frag_buffer){
 	uint32_t 				i;
 	struct listIterator 	it;
-	struct memTokenStatic* 	token_cursor;
+	struct memTokenStatic* 	mem_token_static_cursor;
 	struct accessFragment* 	local_access_frag_buffer;
 	uint32_t 				nb_frag;
+	struct node* 			node_cursor;
 
-	local_access_frag_buffer = (struct accessFragment*)alloca(sizeof(struct accessFragment) * memTokenStatic_get_size(token));
+	local_access_frag_buffer = (struct accessFragment*)alloca(sizeof(struct accessFragment) * memTokenStatic_get_size(mem_token_static));
 
 	memset(access_frag_buffer, 0, sizeof(struct accessFragment) * IRMEMORY_ACCESS_MAX_NB_FRAGMENT);
 
-	for (listIterator_init(&it, token_list); listIterator_get_prev(&it) != NULL; ){
-		token_cursor = listIterator_get_data(it);
-		nb_frag = memTokenStatic_compare(token, token_cursor, ir_range_seed, local_access_frag_buffer);
+	for (listIterator_init(&it, token_list), node_cursor = ir_node_get_operation(mem_token_static->access)->operation_type.mem.prev; listIterator_get_prev(&it) != NULL; ){
+		mem_token_static_cursor = listIterator_get_data(it);
+		if (mem_token_static_cursor->access != node_cursor){ /* suppression of memory STORE can lead to the suppression of a memory LOAD and to an incorrect list of token */
+			listIterator_pop_next(&it);
+			continue;
+		}
+
+		nb_frag = memTokenStatic_compare(mem_token_static, mem_token_static_cursor, ir_range_seed, local_access_frag_buffer);
 
 		for (i = 0; i < nb_frag; i++){
-			local_access_frag_buffer[i].type |= 0x00000001 << ((memTokenStatic_is_write(token_cursor)) ? 1 : 0);
-			if ((memTokenStatic_is_read(token) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_READ) || (memTokenStatic_is_write(token) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_WRITE)){
+			local_access_frag_buffer[i].type |= 0x00000001 << ((memTokenStatic_is_write(mem_token_static_cursor)) ? 1 : 0);
+			if ((memTokenStatic_is_read(mem_token_static) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_READ) || (memTokenStatic_is_write(mem_token_static) && local_access_frag_buffer[i].type == IRMEMORY_ACCESS_ALIAS_WRITE)){
 				continue;
 			}
 
 			accessFragment_merge(access_frag_buffer, local_access_frag_buffer + i);
 		}
 
-		if (accessFragment_is_complete(access_frag_buffer, memTokenStatic_get_size(token))){
+		node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.prev;
+
+		if (accessFragment_is_complete(access_frag_buffer, memTokenStatic_get_size(mem_token_static))){
 			break;
 		}
 	}
