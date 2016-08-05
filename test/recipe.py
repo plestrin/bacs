@@ -6,28 +6,41 @@ import time
 import subprocess
 import re
 import shutil
+import xml.etree.ElementTree as ET
 
 class recipe(object):
 
-	def __init__(self, name, build, trace, trace_arg, arg, algo):
-		self.name 		= name
-		self.build 		= build
-		self.trace 		= trace
-		self.trace_arg 	= trace_arg
-		self.arg 		= arg
-		self.algo 		= algo
+	def __init__(self, xml_recipe):
+		self.name 		= xml_recipe.attrib.get("name")
+		self.build 		= xml_recipe.find("build").attrib.get("cmd")
+		self.trace 		= xml_recipe.find("trace").attrib.get("cmd")
+		self.active 	= (xml_recipe.attrib.get("active") == "yes")
+
+		self.trace_arg 	= []
+		self.search_arg = []
+		self.algo 		= {}
+		self.comment 	= []
 		self.log  		= None
+
+		for xml_arg in xml_recipe.find("trace").findall("arg"):
+			self.trace_arg.append(xml_arg.attrib.get("value"))
+		for xml_arg in xml_recipe.find("search").findall("arg"):
+			self.search_arg.append(xml_arg.attrib.get("value"))
+		for xml_algo in xml_recipe.find("result").findall("algo"):
+			self.algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
+		for xml_comment in xml_recipe.find("result").findall("comment"):
+			self.comment.append(xml_comment.attrib.get("value"))
 
 	def __str__(self):
 		string = ""
-		for i in self.arg:
-			if  i == "exit":
+		for arg in self.search_arg:
+			if  arg == "exit":
 				continue
-			if i.startswith("load trace "):
-				i = "load trace /home/plt/Documents/bacs/test/" + i[11:]
-			if i.startswith("load code signature ../"):
-				i = "load code signature /home/plt/Documents/bacs/" + i[23:]
-			string += i + "\n"
+			if arg.startswith("load trace "):
+				arg = "load trace /home/plt/Documents/bacs/test/" + arg[11:]
+			if arg.startswith("load code signature ../"):
+				arg = "load code signature /home/plt/Documents/bacs/" + arg[23:]
+			string += arg + "\n"
 		return string
 
 	def create_whl(self, whiteList_path):
@@ -99,15 +112,6 @@ class recipe(object):
 		sys.stdout.write("Searching " + self.name + " ... ")
 		sys.stdout.flush()
 
-		signature_file = None
-		trace_dir = None
-
-		for a in self.arg:
-			if a.startswith("load code signature"):
-				signature_file = a[20:]
-			elif a.startswith("load trace"):
-				trace_dir = a[11:]
-
 		if self.log == None:
 			if not os.path.isdir(log_path):
 				os.makedirs(log_path)
@@ -117,7 +121,7 @@ class recipe(object):
 		self.log.flush()
 
 		cmd = ["./signature"]
-		cmd.extend(self.arg)
+		cmd.extend(self.search_arg)
 
 		time_start = time.time()
 		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -159,6 +163,9 @@ class recipe(object):
 			for i in detected_signature:
 				if i not in self.algo and detected_signature.get(i) > 0:
 					print("\t" + i + " \x1b[33mEXTRA " + str(detected_signature.get(i)) + "/0\x1b[0m")
+
+			for c in self.comment:
+				print("\t\x1b[1mCOMMENT:\x1b[0m " + c)
 
 		else:
 			sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
