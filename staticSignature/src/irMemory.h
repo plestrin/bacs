@@ -13,8 +13,6 @@ enum aliasType{
 
 struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed);
 
-
-
 struct node* irMemory_get_first(struct ir* ir);
 
 static inline struct node* irMemory_get_address(struct node* node){
