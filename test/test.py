@@ -38,34 +38,14 @@ try:
 	tree = ET.parse(file_name)
 	root = tree.getroot()
 	for xml_recipe in root.findall("recipe"):
-		name 		= None
-		kind 		= None
-		build 		= None
-		trace 		= None
-		trace_arg 	= []
-		search_arg 	= []
-		algo 		= {}
-
-		name 		= xml_recipe.attrib.get("name")
-		build 		= xml_recipe.find("build").attrib.get("cmd")
-		trace 		= xml_recipe.find("trace").attrib.get("cmd")
-
-		for xml_arg in xml_recipe.find("trace").findall("arg"):
-			trace_arg.append(xml_arg.attrib.get("value"))
-		for xml_arg in xml_recipe.find("search").findall("arg"):
-			search_arg.append(xml_arg.attrib.get("value"))
-		for xml_algo in xml_recipe.find("result").findall("algo"):
-			algo[xml_algo.attrib.get("name")] = int(xml_algo.attrib.get("number"))
-
+		r = recipe(xml_recipe)
 		if len(sys.argv) == 4:
-			if name == sys.argv[3]:
-				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
-				break
+			if r.name == sys.argv[3]:
+				recipes.append(r)
+		elif r.active:
+			recipes.append(r)
 		else:
-			if xml_recipe.attrib.get("active") == "yes":
-				recipes.append(recipe(name, build, trace, trace_arg, search_arg, algo))
-			else:
-				print("\x1b[35mWARNING: " + name + " is desactivated\x1b[0m")
+			print("\x1b[35mWARNING: " + r.name + " is desactivated\x1b[0m")
 except IOError:
 	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
 	exit()

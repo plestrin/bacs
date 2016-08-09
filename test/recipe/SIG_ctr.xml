@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_CTR_TEA_GO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -28,8 +28,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_GO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -56,8 +56,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_GO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -84,8 +84,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_GO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_go3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -112,8 +112,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_GOs" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_gos">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -140,8 +140,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_CO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -168,8 +168,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_CO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -196,8 +196,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_CO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -224,8 +224,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_CO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_co3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -252,8 +252,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_TEA_COz" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_tea_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_tea_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_tea_coz">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -283,11 +283,11 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_CTR_TEA_WD"/>
+			<arg value="load trace traceTEST_CTR_TEA_WD"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph mode_enc_ctr"/>
+			<arg value="export callGraph _mode_enc_ctr"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -301,7 +301,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="6"/> <!-- there are two reasons: first the memcpy is blacked listed thus the counter is left initialized. Second in debug mode uninitialized memory on the heap are set to 0xcc. Since constant are discarded while looking for constant, some dependencies are missing. -->
+			<algo name="ctr_v1" number="13"/>
 		</result>
 	</recipe>
 
@@ -309,11 +309,11 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_CTR_TEA_WR"/>
+			<arg value="load trace traceTEST_CTR_TEA_WR"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph mode_dec_ctr"/>
+			<arg value="export callGraph _mode_dec_ctr"/>
 			<arg value="create ir 0"/>
 			<arg value="normalize ir 0"/>
 			<arg value="search code signature 0"/>
@@ -332,8 +332,8 @@
 	</recipe>
 
 	<recipe name="TOM_CTR_TEA" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_ctr_tea"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_ctr_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_ctr_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_ctr_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -360,8 +360,8 @@
 	</recipe>
 
 	<recipe name="BOT_CTR_TEA" active="no"> <!-- block cipher is called 256 times in the set IV function. It is too big to apply our method -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_ctr_tea"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_ctr_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_ctr_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_ctr_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -387,8 +387,8 @@
 	</recipe>
 
 	<recipe name="PP_CTR_TEA" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_ctr_tea"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_ctr_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_ctr_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_ctr_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -415,8 +415,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_GO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -446,8 +446,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_GO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -477,8 +477,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_GO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -508,8 +508,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_GO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_go3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -539,8 +539,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_GOs" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_gos"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_gos">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -570,8 +570,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_CO0" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co0"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -601,8 +601,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_CO1" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co1"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -632,8 +632,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_CO2" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co2"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -663,8 +663,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_CO3" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co3"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_co3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -694,8 +694,8 @@
 	</recipe>
 
 	<recipe name="TEST_CTR_AES_COz" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_coz"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/test/build/test_ctr_aes_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_ctr_aes_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_ctr_aes_coz">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -728,12 +728,12 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_CTR_AES_WD"/>
+			<arg value="load trace traceTEST_CTR_AES_WD"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph mode_enc_ctr"/>
+			<arg value="export callGraph _mode_enc_ctr"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -757,12 +757,12 @@
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
-			<arg value="load trace ../windows/trace/traceTEST_CTR_AES_WR"/>
+			<arg value="load trace traceTEST_CTR_AES_WR"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph mode_dec_ctr"/>
+			<arg value="export callGraph _mode_dec_ctr"/>
 			<arg value="create ir 0"/>
 			<arg value="normalize ir 0"/>
 			<arg value="search code signature 0"/>
@@ -778,13 +778,13 @@
 			<algo name="aes_r9" number="112"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v3" number="16"/>
-			<algo name="ctr_v2" number="12"/>
+			<algo name="ctr_v2" number="6"/>
 		</result>
 	</recipe>
 
 	<recipe name="TOM_CTR_AES" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/tomCrypt/ build/tom_ctr_aes"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/tomCrypt/build/tom_ctr_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_ctr_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_ctr_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -817,8 +817,8 @@
 	</recipe>
 
 	<recipe name="NET_CTR_AES" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/nettle/ build/net_ctr_aes"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/nettle/build/net_ctr_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_ctr_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_ctr_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -848,8 +848,8 @@
 	</recipe>
 
 	<recipe name="BOT_CTR_AES" active="no">  <!-- block cipher is called 256 times in the set IV function. It is too big to apply our method -->
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/botan/ build/bot_ctr_aes"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/botan/build/bot_ctr_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_ctr_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_ctr_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -876,8 +876,8 @@
 	</recipe>
 
 	<recipe name="OPEN_CTR_AES" active="yes">
-		<build cmd="make -C /home/pierre/Documents/bacs/algoCrypto/openssl/ build/openssl_ctr_aes"/>
-		<trace cmd="/home/pierre/Documents/bacs/algoCrypto/openssl/build/openssl_ctr_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_ctr_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_ctr_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -885,20 +885,18 @@
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph 1707"/>
-			<arg value="export callGraph 3037"/>
-			<arg value="export callGraph 4367"/>
-			<arg value="export callGraph 5697"/>
+			<arg value="export callGraph AES_encrypt"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="export result aes_open_128"/>
 			<arg value="export callGraph AES_ctr128_encrypt"/>
-			<arg value="create compound ir 4"/>
-			<arg value="simplify concrete ir 4"/>
-			<arg value="create synthesis 4"/>
-			<arg value="search mode signature 4"/>
-			<arg value="printDot synthesis 4 fig/OPEN_CTR_AES.dot"/>
+			<arg value="create compound ir [-1:]"/>
+			<arg value="filter frag selection [:-1]"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/OPEN_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
@@ -906,7 +904,7 @@
 			<algo name="aes_open_r1" number="72"/>
 			<algo name="aes_open_r9" number="8"/>
 			<algo name="aes_open_128" number="4"/>
-			<algo name="ctr_v2" number="12"/>
+			<comment value="no mode signature, check manually: xdot fig/OPEN_CTR_AES.dot"/>
 		</result>
 	</recipe>
 </xml>

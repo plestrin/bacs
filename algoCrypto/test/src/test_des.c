@@ -6,7 +6,7 @@
 #include "DES.h"
 #include "printBuffer.h"
 
-int main(){
+int main(void){
 	uint8_t key[DES_KEY_NB_BYTE] = {0x75, 0x29, 0x79, 0x38, 0x75, 0x92, 0xcb, 0x70};
 	uint8_t ct[DES_BLOCK_NB_BYTE];
 	uint8_t vt[DES_BLOCK_NB_BYTE];
@@ -32,5 +32,5 @@ int main(){
 		printf("\nRecovery:   FAIL\n");
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
