@@ -432,130 +432,136 @@ struct node* irBuilder_get_std_register_ref(struct irBuilder* builder, struct ir
 	if (irBuilder_is_register_nested(reg)){
 		irBuilder_get_list(builder, reg, &list);
 	}
-	else {
+	else{
 		list.nb_register = 0;
 	}
-	if (list.nb_register){
-		reg1 = irBuilder_pop_list(builder, &list);
-		family = registerFamily[reg];
-		if (family == registerFamily[reg1]){
-			if (larger[family][registerIndex[reg1]][registerIndex[reg]]){
-				new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
 
-				if (new_ins != IR_INVALID){
-					builder->alias_buffer[reg].ir_node = ir_add_inst(ir, instruction_index, irRegister_get_size(reg), new_ins, irBuilder_get_call_id(builder));
-					builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
-					alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_EXTEND);
-					if (builder->alias_buffer[reg].ir_node == NULL){
-						log_err("unable to add operation to IR");
-					}
-					else{
-						ir_add_dependence(ir, builder->alias_buffer[reg1].ir_node, builder->alias_buffer[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
-						node = builder->alias_buffer[reg].ir_node;
-					}
+	if (list.nb_register){
+		family = registerFamily[reg];
+		reg1 = irBuilder_pop_list(builder, &list);
+
+		#ifdef EXTRA_CHECK
+		if (family != registerFamily[reg1]){
+			log_err_m("register is in dependence list but not in the same family (%s - %s)", irRegister_2_string(reg1), irRegister_2_string(reg));
+			return NULL;
+		}
+		#endif
+
+		if (larger[family][registerIndex[reg1]][registerIndex[reg]]){
+			new_ins = partIns[family][registerIndex[reg1]][registerIndex[reg]];
+
+			if (new_ins != IR_INVALID){
+				builder->alias_buffer[reg].ir_node = ir_add_inst(ir, instruction_index, irRegister_get_size(reg), new_ins, irBuilder_get_call_id(builder));
+				builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
+				alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_EXTEND);
+				if (builder->alias_buffer[reg].ir_node == NULL){
+					log_err("unable to add operation to IR");
 				}
 				else{
-					log_err("unable to choose correct instruction, INVALID");
+					ir_add_dependence_check(ir, builder->alias_buffer[reg1].ir_node, builder->alias_buffer[reg].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+					node = builder->alias_buffer[reg].ir_node;
 				}
 			}
 			else{
-				if (list.nb_register){
-					reg2 = irBuilder_pop_list(builder, &list);
-					if (list.nb_register){
-						log_err("this case is not implemented yet, more than two elements in the dependence list");
-					}
-					else if (alias_is_read(builder->alias_buffer[reg1]) && alias_is_read(builder->alias_buffer[reg2])){
-						builder->alias_buffer[reg].ir_node = ir_add_in_reg(ir, min(ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, ir_node_get_operation(builder->alias_buffer[reg2].ir_node)->index), reg, (alias_is_primer(builder->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
-						builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
-						alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
+				log_err("unable to choose correct instruction, INVALID");
+			}
+		}
+		else if (list.nb_register){
+			reg2 = irBuilder_pop_list(builder, &list);
 
-						if (builder->alias_buffer[reg].ir_node != NULL){
-							alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
+			#ifdef EXTRA_CHECK
+			if (family != registerFamily[reg2]){
+				log_err_m("register is in dependence list but not in the same family (%s - %s)", irRegister_2_string(reg2), irRegister_2_string(reg));
+				return NULL;
+			}
+			#endif
 
-							ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg1]]);
-							ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+			if (list.nb_register){
+				log_err("this case is not implemented yet, more than two elements in the dependence list");
+			}
+			else if (alias_is_read(builder->alias_buffer[reg1]) && alias_is_read(builder->alias_buffer[reg2])){
+				builder->alias_buffer[reg].ir_node = ir_add_in_reg(ir, min(ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, ir_node_get_operation(builder->alias_buffer[reg2].ir_node)->index), reg, (alias_is_primer(builder->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
+				builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
+				alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
 
-							alias_set_type(builder->alias_buffer[reg2], IRBUILDER_TYPE_EXTEND);
-							builder->alias_buffer[reg2].order = builder->alias_buffer[reg1].order;
+				if (builder->alias_buffer[reg].ir_node != NULL){
+					alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
 
-							ir_convert_operation_to_inst(builder->alias_buffer[reg2].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg2]]);
-							ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+					ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg1]]);
+					ir_add_dependence_check(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT)
 
-							node = builder->alias_buffer[reg].ir_node;
-						}
-						else{
-							log_err("unable to add input to IR");
-						}
-					}
-					else{
-						log_err_m("this case is not implemented yet, %s and %s in the dependence list of %s", irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
-					}
+					alias_set_type(builder->alias_buffer[reg2], IRBUILDER_TYPE_EXTEND);
+					builder->alias_buffer[reg2].order = builder->alias_buffer[reg1].order;
+
+					ir_convert_operation_to_inst(builder->alias_buffer[reg2].ir_node, partIns[family][registerIndex[reg]][registerIndex[reg2]]);
+					ir_add_dependence_check(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg2].ir_node, IR_DEPENDENCE_TYPE_DIRECT)
+
+					node = builder->alias_buffer[reg].ir_node;
 				}
 				else{
-					if (alias_is_read(builder->alias_buffer[reg1])){
-						new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
-
-						if (new_ins != IR_INVALID){
-							builder->alias_buffer[reg].ir_node = ir_add_in_reg(ir, ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, reg, (alias_is_primer(builder->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
-							builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
-							alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
-
-							if (builder->alias_buffer[reg].ir_node != NULL){
-								alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
-
-								ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, new_ins);
-								ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
-
-								node = builder->alias_buffer[reg].ir_node;
-							}
-							else{
-								log_err("unable to add input to IR");
-							}
-						}
-						else{
-							log_err("unable to choose correct instruction, INVALID");
-						}
-					}
-					else{
-						if (builder->alias_buffer[reg].ir_node){
-							uint32_t 		size_reg1;
-							uint32_t 		size_reg;
-							struct node* 	imm_mask;
-							struct node* 	ins_and;
-							struct node* 	ins_movzx;
-
-							size_reg 	= irRegister_get_size(reg);
-							size_reg1 	= irRegister_get_size(reg1);
-
-							imm_mask 	= ir_add_immediate(ir, size_reg, (0xffffffffffffffff >> (64 - size_reg)) << size_reg1);
-							ins_and 	= ir_add_inst(ir, instruction_index, size_reg, IR_AND, irBuilder_get_call_id(builder));
-							node 		= ir_add_inst(ir, instruction_index, size_reg, IR_OR, irBuilder_get_call_id(builder));
-							ins_movzx 	= ir_add_inst(ir, instruction_index, size_reg, IR_MOVZX, irBuilder_get_call_id(builder));
-
-							if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
-								log_err("unable to add node to IR");
-							}
-							else{
-								ir_add_dependence(ir, imm_mask, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(ir, ins_and, node, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(ir, ins_movzx, node, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(ir, builder->alias_buffer[reg].ir_node, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
-								ir_add_dependence(ir, builder->alias_buffer[reg1].ir_node, ins_movzx, IR_DEPENDENCE_TYPE_DIRECT);
-
-								builder->alias_buffer[reg].ir_node = node;
-								builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
-								alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
-							}
-						}
-						else{
-							log_err_m("this case is not implemented yet, smaller write dependence (%s - %s = NULL)", irRegister_2_string(reg1), irRegister_2_string(reg));
-						}
-					}
+					log_err("unable to add input to IR");
 				}
+			}
+			else{
+				log_err_m("this case is not implemented yet, %s and %s in the dependence list of %s", irRegister_2_string(reg1), irRegister_2_string(reg2), irRegister_2_string(reg));
+			}
+		}
+		else if (alias_is_read(builder->alias_buffer[reg1])){
+			new_ins = partIns[family][registerIndex[reg]][registerIndex[reg1]];
+
+			if (new_ins != IR_INVALID){
+				builder->alias_buffer[reg].ir_node = ir_add_in_reg(ir, ir_node_get_operation(builder->alias_buffer[reg1].ir_node)->index, reg, (alias_is_primer(builder->alias_buffer[reg])) ? IR_IN_REG_IS_PRIMER : ~IR_IN_REG_IS_PRIMER);
+				builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
+				alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
+
+				if (builder->alias_buffer[reg].ir_node != NULL){
+					alias_set_type(builder->alias_buffer[reg1], IRBUILDER_TYPE_EXTEND);
+
+					ir_convert_operation_to_inst(builder->alias_buffer[reg1].ir_node, new_ins);
+					ir_add_dependence_check(ir, builder->alias_buffer[reg].ir_node, builder->alias_buffer[reg1].ir_node, IR_DEPENDENCE_TYPE_DIRECT);
+
+					node = builder->alias_buffer[reg].ir_node;
+				}
+				else{
+					log_err("unable to add input to IR");
+				}
+			}
+			else{
+				log_err("unable to choose correct instruction, INVALID");
+			}
+		}
+		else if (builder->alias_buffer[reg].ir_node != NULL){
+			uint32_t 		size_reg1;
+			uint32_t 		size_reg;
+			struct node* 	imm_mask;
+			struct node* 	ins_and;
+			struct node* 	ins_movzx;
+
+			size_reg 	= irRegister_get_size(reg);
+			size_reg1 	= irRegister_get_size(reg1);
+
+			imm_mask 	= ir_add_immediate(ir, size_reg, (0xffffffffffffffff >> (64 - size_reg)) << size_reg1);
+			ins_and 	= ir_add_inst(ir, instruction_index, size_reg, IR_AND, irBuilder_get_call_id(builder));
+			node 		= ir_add_inst(ir, instruction_index, size_reg, IR_OR, irBuilder_get_call_id(builder));
+			ins_movzx 	= ir_add_inst(ir, instruction_index, size_reg, IR_MOVZX, irBuilder_get_call_id(builder));
+
+			if (imm_mask == NULL || ins_and == NULL || node == NULL || ins_movzx == NULL){
+				log_err("unable to add node to IR");
+			}
+			else{
+				ir_add_dependence_check(ir, imm_mask, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
+				ir_add_dependence_check(ir, ins_and, node, IR_DEPENDENCE_TYPE_DIRECT);
+				ir_add_dependence_check(ir, ins_movzx, node, IR_DEPENDENCE_TYPE_DIRECT);
+				ir_add_dependence_check(ir, builder->alias_buffer[reg].ir_node, ins_and, IR_DEPENDENCE_TYPE_DIRECT);
+				ir_add_dependence_check(ir, builder->alias_buffer[reg1].ir_node, ins_movzx, IR_DEPENDENCE_TYPE_DIRECT);
+
+				builder->alias_buffer[reg].ir_node = node;
+				builder->alias_buffer[reg].order = builder->alias_buffer[reg1].order;
+				alias_set_type(builder->alias_buffer[reg], IRBUILDER_TYPE_READ);
 			}
 		}
 		else{
-			log_err_m("register is in dependence list but not in the same family (%s - %s)", irRegister_2_string(reg1), irRegister_2_string(reg));
+			log_err_m("this case is not implemented yet, smaller write dependence (%s - %s = NULL)", irRegister_2_string(reg1), irRegister_2_string(reg));
 		}
 	}
 	else{
