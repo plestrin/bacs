@@ -27,16 +27,16 @@ struct list{
 
 #define list_get_length(list) ((list)->nb_element)
 
-int32_t list_add_head(struct list* list, const void* element);
-int32_t list_add_tail(struct list* list, const void* element);
+void* list_add_head(struct list* list, const void* element);
+void* list_add_tail(struct list* list, const void* element);
 
 #ifdef EXTRA_CHECK
 #define list_add_head_check(list, element) 				\
-	if (list_add_head(list, element) < 0){ 				\
+	if (list_add_head(list, element) == NULL){ 			\
 		log_err("unable to add element to list"); 		\
 	}
 #define list_add_tail_check(list, element) 				\
-	if (list_add_tail(list, element) < 0){ 				\
+	if (list_add_tail(list, element) == NULL){ 			\
 		log_err("unable to add element to list"); 		\
 	}
 #else

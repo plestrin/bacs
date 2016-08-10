@@ -16,7 +16,7 @@ int32_t main(void){
 	list_init(list, sizeof(uint32_t));
 
 	for (i = 0; i < NB_ELEMENT_LIST; i++){
-		if (list_add_tail(&list, &i) != (int32_t)i){
+		if (list_add_tail(&list, &i) == NULL){
 			log_err("unable to add element to list");
 			return EXIT_FAILURE;
 		}

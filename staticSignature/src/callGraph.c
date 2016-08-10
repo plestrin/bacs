@@ -960,7 +960,7 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 		}
 	}
 
-	if (list_add_tail(frag_list, &new_fragment) < 0){
+	if (list_add_tail(frag_list, &new_fragment) == NULL){
 		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 		return -1;

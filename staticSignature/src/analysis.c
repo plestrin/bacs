@@ -442,7 +442,7 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 		}
 	}
 
-	if (list_add_tail(&(analysis->frag_list), &new_fragment) < 0){
+	if (list_add_tail(&(analysis->frag_list), &new_fragment) == NULL){
 		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 	}
@@ -708,7 +708,7 @@ static void analysis_frag_concat(struct analysis* analysis, char* arg){
 
 	snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "concat %s", arg);
 
-	if (list_add_tail(&(analysis->frag_list), &new_fragment) < 0){
+	if (list_add_tail(&(analysis->frag_list), &new_fragment) == NULL){
 		log_err("unable to add traceFragment to list");
 		trace_clean(&new_fragment);
 	}

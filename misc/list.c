@@ -7,12 +7,12 @@
 
 #define list_get_element_size(list) (sizeof(struct listElement) + (list)->element_size)
 
-int32_t list_add_head(struct list* list, const void* element){
+void* list_add_head(struct list* list, const void* element){
 	struct listElement* list_el;
 
 	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
 		log_err("unable to allocate memory");
-		return -1;
+		return NULL;
 	}
 
 	memcpy(list_el + 1, element, list->element_size);
@@ -29,15 +29,15 @@ int32_t list_add_head(struct list* list, const void* element){
 	}
 	list->head = list_el;
 
-	return 0;
+	return list_el + 1;
 }
 
-int32_t list_add_tail(struct list* list, const void* element){
+void* list_add_tail(struct list* list, const void* element){
 	struct listElement* list_el;
 
 	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
 		log_err("unable to allocate memory");
-		return -1;
+		return NULL;
 	}
 
 	memcpy(list_el + 1, element, list->element_size);
@@ -54,7 +54,7 @@ int32_t list_add_tail(struct list* list, const void* element){
 		list_el->prev->next = list_el;
 	}
 
-	return list->nb_element - 1;
+	return list_el + 1;
 }
 
 void list_remove(struct list* list, void* element){
