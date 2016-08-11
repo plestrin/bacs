@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <search.h>
 
 #include "irMemory.h"
 #include "irVariableRange.h"
@@ -297,10 +296,7 @@ struct memToken{
 #define memToken_get_conAddr(token) (ir_node_get_operation((token)->access)->operation_type.mem.con_addr)
 
 struct memTokenDynamic{
-	struct memToken 	token; 				/* must be first */
-	/*ADDRESS 			address;
-	uint32_t 			offset;
-	uint32_t 			size;*/
+	struct memToken token; 					/* must be first */
 };
 
 #define memTokenDynamic_is_read(dyn_token) memToken_is_read(&((dyn_token)->token))
@@ -432,20 +428,6 @@ static void accessFragment_fill(struct accessFragment* access_frag_buffer, struc
 		size = access_frag_buffer[i].offset_src + access_frag_buffer[i].size;
 	}
 }
-
-/*static void accessFragment_remove_token(struct accessFragment* access_frag_buffer, uint32_t index){
-	uint32_t i;
-
-	for (i = index + 1; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && access_frag_buffer[i].type != IRMEMORY_ACCESS_NONE; ){
-		if (access_frag_buffer[i].token == access_frag_buffer[index].token){
-			memmove(access_frag_buffer + i, access_frag_buffer + i + 1, sizeof(struct accessFragment) * (IRMEMORY_ACCESS_MAX_NB_FRAGMENT - i - 1));
-			memset(access_frag_buffer + IRMEMORY_ACCESS_MAX_NB_FRAGMENT - 1, 0, sizeof(struct accessFragment));
-		}
-		else{
-			i ++;
-		}
-	}
-}*/
 
 static struct node* accessFragment_get(const struct accessFragment* access_fragment, struct ir* ir){
 	struct node* raw_value 	= NULL;
@@ -959,7 +941,6 @@ int32_t irMemory_simplify(struct ir* ir){
 					if (fragments[i].offset_dst == 0 && fragments[i].size >= memToken_get_size(fragments[i].token)){
 						ir_merge_equivalent_node(ir, node_cursor, fragments[i].token->access);
 						list_remove(&mem_token_list, fragments[i].token);
-						/* accessFragment_remove_token(fragments, i);*/ /* ca ne peut pas arriver */
 						result = 1;
 					}
 					#ifdef VERBOSE
@@ -1016,284 +997,10 @@ static int32_t memTokenDynamic_init(struct memTokenDynamic* mem_token_dyn, struc
 	}
 
 	mem_token_dyn->token.access = node;
-	/*mem_token_dyn->address 		= ir_node_get_operation(node)->operation_type.mem.con_addr;
-	mem_token_dyn->offset 		= 0;
-	mem_token_dyn->size 		= ir_node_get_operation(node)->size / 8;*/
 
 	return 0;
 }
 
-/*static int32_t memTokenDynamic_compare_address(const void* arg1, const void* arg2){
-	const struct memTokenDynamic* token1 = (const struct memTokenDynamic*)arg1;
-	const struct memTokenDynamic* token2 = (const struct memTokenDynamic*)arg2;
-
-	if (token1->address < token2->address){
-		return -1;
-	}
-	else if (token1->address > token2->address){
-		return 1;
-	}
-	else{
-		return 0;
-	}
-}
-
-static int32_t memTokenDynamic_is_alive(const struct memTokenDynamic* mem_token_dyn, struct node* current_node){
-	struct node* node_cursor;
-
-	for (node_cursor = ir_node_get_operation(current_node)->operation_type.mem.prev; node_cursor != NULL; node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.prev){
-		if (node_cursor == mem_token_dyn->token.access){
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-static int32_t memTokenDynamic_remove_frag(struct memTokenDynamic* mem_token_dyn, void** binary_tree_root, uint32_t l_bound, uint32_t h_bound){
-	struct memTokenDynamic* 	new_token;
-	struct memTokenDynamic** 	result;
-
-	if (l_bound == 0){
-		if (tdelete(mem_token_dyn, binary_tree_root, memTokenDynamic_compare_address) == NULL){
-			log_err("unable to delete token from the binary tree");
-			return -1;
-		}
-
-		if (h_bound == mem_token_dyn->size){
-			free(mem_token_dyn);
-		}
-		else{
-			mem_token_dyn->address 	+= l_bound;
-			mem_token_dyn->offset 	+= l_bound;
-			mem_token_dyn->size 	-= l_bound;
-
-			result = (struct memTokenDynamic**)tsearch((void*)mem_token_dyn, binary_tree_root, memTokenDynamic_compare_address);
-			if (result == NULL){
-				log_err("unable to insert token in the binary tree");
-				free(mem_token_dyn);
-				return -1;
-			}
-			else if (*result != mem_token_dyn){
-				log_err("a token is already available at this address");
-				free(mem_token_dyn);
-				return -1;
-			}
-		}
-	}
-	else{
-		mem_token_dyn->size = l_bound;
-
-		if (h_bound < mem_token_dyn->size){
-			if ((new_token = (struct memTokenDynamic*)malloc(sizeof(struct memTokenDynamic))) == NULL){
-				log_err("unable to allocate memory");
-				return -1;
-			}
-
-			new_token->token.access = mem_token_dyn->token.access;
-			new_token->address 		= mem_token_dyn->address + h_bound;
-			new_token->offset 		= h_bound;
-			new_token->size 		= mem_token_dyn->size - h_bound;
-
-			result = (struct memTokenDynamic**)tsearch((void*)new_token, binary_tree_root, memTokenDynamic_compare_address);
-			if (result == NULL){
-				log_err("unable to insert token in the binary tree");
-				free(new_token);
-				return -1;
-			}
-			else if (*result != new_token){
-				log_err("a token is already available at this address");
-				free(new_token);
-				return -1;
-			}
-		}
-	}
-
-	return 0;
-}
-
-static struct memTokenDynamic* memTokenDynamic_push_to_tree(const struct memTokenDynamic* mem_token_dyn, void** binary_tree_root){
-	struct memTokenDynamic* 	new_token;
-	struct memTokenDynamic** 	result;
-
-	if ((new_token = (struct memTokenDynamic*)malloc(sizeof(struct memTokenDynamic))) == NULL){
-		log_err("unable to allocate memory");
-		return NULL;
-	}
-
-	memcpy(new_token, mem_token_dyn, sizeof(struct memTokenDynamic));
-
-	result = (struct memTokenDynamic**)tsearch((void*)new_token, binary_tree_root, memTokenDynamic_compare_address);
-	if (result == NULL){
-		log_err("unable to insert memTokenDynamic in the binary tree");
-		free(new_token);
-		return NULL;
-	}
-	else if (*result != new_token){
-		log_err("a memTokenDynamic is already available at this address");
-		free(new_token);
-		return NULL;
-	}
-
-	return new_token;
-}*/
-
-/*int32_t irMemory_simplify_concrete(struct ir* ir){
-	uint32_t 					i;
-	uint32_t 					j;
-	struct node* 				node_cursor;
-	struct node* 				next_node_cursor;
-	void* 						binary_tree_root 	= NULL;
-	struct memTokenDynamic 		fetch_token;
-	struct memTokenDynamic** 	existing_token;
-	struct memTokenDynamic* 	dead_token;
-	struct accessFragment 		fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
-	uint32_t 					nb_mem_fragments;
-	uint32_t 					result 				= 0;
-
-	for (node_cursor = irMemory_get_first(ir); node_cursor != NULL; node_cursor = next_node_cursor){
-		next_node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.next;
-
-		if (memTokenDynamic_init(&fetch_token, node_cursor)){
-			log_err("unable to init memTokenDynamic");
-			continue;
-		}
-
-		for (i = 0, j = 0, nb_mem_fragments = 0; i < memTokenDynamic_get_size(&fetch_token); ){
-			int32_t is_alive = 1;
-
-			existing_token = (struct memTokenDynamic**)tfind((void*)&fetch_token, &binary_tree_root, memTokenDynamic_compare_address);
-			if (existing_token != NULL && (is_alive = memTokenDynamic_is_alive(*existing_token, node_cursor)) && (*existing_token)->size > j){
-				fragments[nb_mem_fragments].type 		= memTokenDynamic_is_read(*existing_token) ? IRMEMORY_ACCESS_VALUE_READ : IRMEMORY_ACCESS_VALUE_WRITE;
-				fragments[nb_mem_fragments].token 		= memTokenDynamic_get_token(*existing_token);
-				fragments[nb_mem_fragments].size 		= min((*existing_token)->size - j, memTokenDynamic_get_size(&fetch_token) - i);
-				fragments[nb_mem_fragments].offset_src 	= i;
-				fragments[nb_mem_fragments].offset_dst 	= j;
-
-				i += fragments[nb_mem_fragments].size;
-				fetch_token.address += fragments[nb_mem_fragments].size + j;
-				nb_mem_fragments ++;
-				j = 0;
-			}
-			else{
-				if (!is_alive){
-					dead_token = *existing_token;
-					if (tdelete(dead_token, &binary_tree_root, memTokenDynamic_compare_address) == NULL){
-						log_err("unable to delete token from the binary tree");
-					}
-					free(dead_token);
-				}
-				if (i == 0){
-					if (j + 1 == IRMEMORY_ACCESS_MAX_NB_FRAGMENT){
-						i ++;
-						fetch_token.address += j + 1;
-						j = 0;
-					}
-					else{
-						j ++;
-						fetch_token.address --;
-					}
-				}
-				else{
-					i ++;
-					fetch_token.address ++;
-				}
-			}
-		}
-
-		fetch_token.address = ir_node_get_operation(node_cursor)->operation_type.mem.con_addr;
-
-		if (memTokenDynamic_is_read(&fetch_token)){
-			if (nb_mem_fragments == 0){
-				memTokenDynamic_push_to_tree(&fetch_token, &binary_tree_root);
-			}
-			else{
-				struct node* 			value;
-				struct node* 			new_access;
-				struct memTokenDynamic 	new_token;
-				struct memTokenDynamic* new_token_ptr;
-
-				for (i = 0, j = 0; j < memTokenDynamic_get_size(&fetch_token); i++){
-					if (i >= nb_mem_fragments){
-						if ((new_access = accessFragment_create(ir, node_cursor, j, memTokenDynamic_get_size(&fetch_token) - j)) == NULL){
-							log_err("unable to create accessFragment");
-							continue;
-						}
-
-						if (memTokenDynamic_init(&new_token, new_access)){
-							log_err("unable to init memTokenDynamic");
-							continue;
-						}
-
-						if ((new_token_ptr = memTokenDynamic_push_to_tree(&new_token, &binary_tree_root)) != NULL){
-							fragments[i].type 			= IRMEMORY_ACCESS_VALUE_READ;
-							fragments[i].token 			= memTokenDynamic_get_token(new_token_ptr);
-							fragments[i].size 			= memTokenDynamic_get_size(&fetch_token) - j;
-							fragments[i].offset_src 	= j;
-							fragments[i].offset_dst 	= 0;
-
-							nb_mem_fragments ++;
-						}
-						else{
-							log_err("unable to push memTokenDynamic");
-						}
-					}
-					else if (j < fragments[i].offset_src){
-						if ((new_access = accessFragment_create(ir, node_cursor, j, fragments[i].offset_src - j)) == NULL){
-							log_err("unable to create accessFragment");
-							continue;
-						}
-
-						if (memTokenDynamic_init(&new_token, new_access)){
-							log_err("unable to init memTokenDynamic");
-							continue;
-						}
-
-						if ((new_token_ptr = memTokenDynamic_push_to_tree(&new_token, &binary_tree_root)) != NULL){
-							memmove(fragments + i + 1, fragments + i, sizeof(struct accessFragment) * (nb_mem_fragments - i));
-
-							fragments[i].type 			= IRMEMORY_ACCESS_VALUE_READ;
-							fragments[i].token 			= memTokenDynamic_get_token(new_token_ptr);
-							fragments[i].size 			= fragments[i + 1].offset_src - j;
-							fragments[i].offset_src 	= j;
-							fragments[i].offset_dst 	= 0;
-
-							nb_mem_fragments ++;
-						}
-						else{
-							log_err("unable to push memTokenDynamic");
-						}
-					}
-					j = fragments[i].offset_src + fragments[i].size;
-				}
-
-
-				for (i = 0, value = NULL; i < nb_mem_fragments; i++){
-					if (accessFragment_build_compound(fragments + i, ir, &value, accessFragment_get(fragments + i, ir), memTokenDynamic_get_size(&fetch_token))){
-						log_err("unable to build compound value");
-					}
-				}
-
-				if (value != NULL){
-					ir_merge_equivalent_node(ir, value, node_cursor);
-					result = 1;
-				}
-			}
-		}
-		else{
-			for (i = 0; i < nb_mem_fragments; i++){
-				if (memTokenDynamic_remove_frag(memToken_getDynamicToken(fragments[i].token), &binary_tree_root, fragments[i].offset_dst, fragments[i].offset_dst + fragments[i].size)){
-					log_err("unable to remove fragment from memTokenDynamic");
-				}
-			}
-			memTokenDynamic_push_to_tree(&fetch_token, &binary_tree_root);
-		}
-	}
-
-	tdestroy(binary_tree_root, free);
-
-	return result;
-}*/
 static uint32_t memTokenDynamic_compare(struct memTokenDynamic* token1, struct memTokenDynamic* token2, struct accessFragment* access_frag_buffer){
 	if (memTokenDynamic_get_conAddr(token1) < memTokenDynamic_get_conAddr(token2)){
 		if (memTokenDynamic_get_conAddr(token2) - memTokenDynamic_get_conAddr(token1) < memTokenDynamic_get_size(token1)){
@@ -1350,8 +1057,6 @@ static void memTokenDynamic_search(struct memTokenDynamic* mem_token_dyn, struct
 
 int32_t irMemory_simplify_concrete(struct ir* ir){
 	uint32_t 				i;
-	/*uint32_t 				j;
-	uint32_t 				size;*/
 	int32_t 				result;
 	struct node* 			node_cursor;
 	struct node* 			next_node_cursor;
@@ -1417,40 +1122,6 @@ int32_t irMemory_simplify_concrete(struct ir* ir){
 				ir_merge_equivalent_node(ir, value, node_cursor);
 				result = 1;
 			}
-			/* a modifier */
-			/*for (i = 0, size = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT; i++){
-				if (fragments[i].type == IRMEMORY_ACCESS_NONE || (fragments[i].type & IRMEMORY_ACCESS_ALIAS) || fragments[i].offset_src != size){
-					break;
-				}
-				size += fragments[i].size;
-			}
-
-			#ifdef EXTRA_CHECK
-			if (size > memTokenStatic_get_size(&current_token)){
-				log_err_m("sum of the sizes over the fragment buffer is larger than the size of the access: %u/%u", size, memTokenStatic_get_size(&current_token));
-			}
-			#endif
-
-			if (size >= memTokenStatic_get_size(&current_token)){
-				struct node* value;
-
-				for (j = 0, value = NULL; j < i; j++){
-					if (accessFragment_build_compound(fragments + j, ir, &value, accessFragment_get(fragments + j, ir), memTokenStatic_get_size(&current_token))){
-						log_err("unable to build compound value");
-					}
-				}
-
-				if (value != NULL){
-					ir_merge_equivalent_node(ir, value, node_cursor);
-					result = 1;
-				}
-				else{
-					log_err("compound value is NULL, further simplification might be incorrect");
-				}
-			}
-			else{
-				list_add_tail_check(&mem_token_list, &current_token)
-			}*/
 		}
 		else{
 			for (i = 0; i < IRMEMORY_ACCESS_MAX_NB_FRAGMENT && fragments[i].type != IRMEMORY_ACCESS_NONE; i++){

@@ -12,7 +12,6 @@ int32_t main(void){
 	char pt[48] 							= "I am a 48-byte plaintext. Here is some padding.";
 	char ct[48];
 
-
 	aes128_key_expand_encrypt(k1, rk);
 	aes128_encrypt(k2, rk, iv);
 
