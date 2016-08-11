@@ -135,7 +135,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="13"/>
+			<algo name="ctr_v1" number="14"/>
 		</result>
 	</recipe>
 
@@ -301,7 +301,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="13"/>
+			<algo name="ctr_v1" number="14"/>
 		</result>
 	</recipe>
 
@@ -408,9 +408,9 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="xtea_enc" number="385"/> <!-- the last encryption round is deleted by the remove subexpression function. May be caused by black listed fontion calls -> ESP flaw -->
-			<algo name="xtea_enc_32_v2" number="7"/>
-			<algo name="ctr_v2" number="42"/>
+			<algo name="xtea_enc" number="440"/>
+			<algo name="xtea_enc_32_v2" number="8"/>
+			<algo name="ctr_v2" number="56"/>
 		</result>
 	</recipe>
 
@@ -883,7 +883,6 @@
 		<search>
 			<arg value="load trace traceOPEN_CTR_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
-			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph AES_encrypt"/>
 			<arg value="create ir"/>
@@ -895,7 +894,6 @@
 			<arg value="filter frag selection [:-1]"/>
 			<arg value="simplify concrete ir"/>
 			<arg value="create synthesis"/>
-			<arg value="search mode signature"/>
 			<arg value="printDot synthesis 0 fig/OPEN_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
