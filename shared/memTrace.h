@@ -9,7 +9,10 @@
 #define MEMADDRESS_DESCRIPTOR_READ_0 	0x00000001
 #define MEMADDRESS_DESCRIPTOR_WRITE_0 	0x00010000
 
-#define MEMVALUE_PADDING 16
+/* Bits [0:127] are for the read value if any ; Bits [128:255] are for the write value if any */
+#define MEMVALUE_PADDING 		32
+#define MEMVALUE_READ_PADDING 	16
+#define MEMVALUE_WRITE_PADDING 	16
 
 #define memAddress_descriptor_set_read(desc, index) 	((desc) |= 0x00000001 | (((index) << 8) & 0x0000ff00))
 #define memAddress_descriptor_set_write(desc, index) 	((desc) |= 0x00010000 | ((index) << 24))

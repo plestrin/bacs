@@ -1138,8 +1138,6 @@ int32_t irMemory_simplify_concrete(struct ir* ir){
 		}
 	}
 
-	log_debug_m("The list has %u elements", list_get_length(&mem_token_list));
-
 	list_clean(&mem_token_list);
 
 	return result;

@@ -35,8 +35,21 @@ struct toolThreadData{
 	FILE* 		block_file;
 	FILE* 		mem_add_file;
 	FILE* 		mem_val_file;
-	ADDRINT 	last_addr;
+	uint32_t 	mem_flag;
+	char 		r_mem1[MEMVALUE_READ_PADDING];
+	char 		r_mem2[MEMVALUE_READ_PADDING];
+	ADDRINT 	w_mem1;
+	ADDRINT 	w_mem2;
+	uint32_t 	size_w_mem1;
+	uint32_t 	size_w_mem2;
 };
+
+#define MEM_FLAG_R_MEM_1 	0x00000001
+#define MEM_FLAG_R_MEM_2 	0x00000002
+#define MEM_FLAG_W_MEM_1 	0x00000010
+#define MEM_FLAG_W_MEM_2 	0x00000020
+#define MEM_FLAG_MEM_1 		0x00000011
+#define MEM_FLAG_MEM_2 		0x00000022
 
 static struct lightTracer light_tracer;
 
@@ -50,17 +63,35 @@ static void TOOL_routine_analysis(void* cm_routine_ptr){
 	CODEMAP_INCREMENT_ROUTINE_EXE(routine);
 }
 
-static void INS_save_memory_addr(ADDRINT address, THREADID tid){
+static void INS_trace_memory_r_mem1(ADDRINT address, UINT32 size, THREADID tid){
 	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
-
-	data->last_addr = address;
+	data->mem_flag |= MEM_FLAG_R_MEM_1;
+	PIN_SafeCopy(data->r_mem1, (void*)address, size);
 }
 
-static void INS_trace_memory_read_value(ADDRINT address, UINT32 size, THREADID tid){
-	char 					value[MEMVALUE_PADDING];
-	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+static void INS_trace_memory_r_mem2(ADDRINT address, UINT32 size, THREADID tid){
+	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	data->mem_flag |= MEM_FLAG_R_MEM_2;
+	PIN_SafeCopy(data->r_mem2, (void*)address, size);
+}
 
-	PIN_SafeCopy(value, (void*)address, size);
+static void INS_trace_memory_w_mem1(ADDRINT address, UINT32 size, THREADID tid){
+	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	data->mem_flag 		|= MEM_FLAG_W_MEM_1;
+	data->w_mem1 		= address;
+	data->size_w_mem1 	= size;
+}
+
+static void INS_trace_memory_w_mem2(ADDRINT address, UINT32 size, THREADID tid){
+	struct toolThreadData* data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	data->mem_flag 		|= MEM_FLAG_W_MEM_2;
+	data->w_mem2 		= address;
+	data->size_w_mem2 	= size;
+}
+
+static void INS_trace_memory_flush(THREADID tid){
+	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
+	char 					value[MEMVALUE_WRITE_PADDING];
 
 	if (data->mem_val_file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
@@ -70,26 +101,27 @@ static void INS_trace_memory_read_value(ADDRINT address, UINT32 size, THREADID t
 	}
 
 	if (data->mem_val_file != NULL){
-		fwrite(value, MEMVALUE_PADDING, 1, data->mem_val_file);
+		/* 1 is packed */
+		if (data->mem_flag & MEM_FLAG_MEM_1){
+			fwrite(data->r_mem1, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
+			if (data->mem_flag & MEM_FLAG_W_MEM_1){
+				PIN_SafeCopy(value, (void*)data->w_mem1, data->size_w_mem1);
+			}
+			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+		}
+		/* 2 is not */
+		if (data->mem_flag & MEM_FLAG_R_MEM_2){
+			fwrite(data->r_mem2, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
+			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+		}
+		if (data->mem_flag & MEM_FLAG_W_MEM_2){
+			fwrite(data->r_mem2, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
+			PIN_SafeCopy(value, (void*)data->w_mem2, data->size_w_mem2);
+			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+		}
 	}
-}
 
-static void INS_trace_memory_write_value(UINT32 size, THREADID tid){
-	char 					value[MEMVALUE_PADDING];
-	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
-
-	PIN_SafeCopy(value, (void*)data->last_addr, size);
-
-	if (data->mem_val_file == NULL){
-		char file_name[TRACEFILE_NAME_MAX_LENGTH];
-
-		snprintf(file_name, TRACEFILE_NAME_MAX_LENGTH, "%s/memValu%u_%u.bin", traceFile_get_dir_name(light_tracer.trace_file), PIN_GetPid(), tid);
-		data->mem_val_file = fopen(file_name, "wb");
-	}
-
-	if (data->mem_val_file != NULL){
-		fwrite(value, MEMVALUE_PADDING, 1, data->mem_val_file);
-	}
+	data->mem_flag = 0;
 }
 
 /* ===================================================================== */
@@ -108,7 +140,7 @@ static void TOOL_instrumentation_trace(TRACE trace, void* arg){
 
 	for(basic_block = TRACE_BblHead(trace); BBL_Valid(basic_block); basic_block = BBL_Next(basic_block)){
 		if (codeMap_is_instruction_whiteListed(light_tracer.code_map, (unsigned long)BBL_Address(basic_block)) == CODEMAP_WHITELISTED){
-			
+
 			nb_mem_access = UNTRACK_MEM_ACCESS;
 			if (light_tracer.trace_mem_add){
 				nb_mem_access = 0;
@@ -135,28 +167,39 @@ static void TOOL_instrumentation_trace(TRACE trace, void* arg){
 								if (nb_mem_read == 1){
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD_EA, offsetof(struct memAddress, address), IARG_END);
 									if (light_tracer.trace_mem_val){
-										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_read_value), IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
+										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_r_mem1), IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
 									}
 								}
 								else{
 									INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYREAD2_EA, offsetof(struct memAddress, address), IARG_END);
 									if (light_tracer.trace_mem_val){
-										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_read_value), IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
+										INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_r_mem2), IARG_MEMORYREAD2_EA, IARG_MEMORYREAD_SIZE, IARG_THREAD_ID, IARG_END);
 									}
 								}
 							}
 							else{
 								INS_InsertFillBuffer(instruction, IPOINT_BEFORE, light_tracer.mem_buffer_id, IARG_INST_PTR, offsetof(struct memAddress, pc), IARG_UINT32, descriptor, offsetof(struct memAddress, descriptor), IARG_MEMORYWRITE_EA, offsetof(struct memAddress, address), IARG_END);
-								if (light_tracer.trace_mem_val){
-									INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_save_memory_addr), IARG_MEMORYWRITE_EA, IARG_THREAD_ID, IARG_END);
-									if (INS_IsBranchOrCall(instruction)){
-										INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(INS_trace_memory_write_value), IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
-									}
-									else{
-										INS_InsertCall(instruction, IPOINT_AFTER, AFUNPTR(INS_trace_memory_write_value), IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
-									}
+							}
+							/* The address is saved only once for both read and write, but the value must be saved two times for a read & write access */
+							if (light_tracer.trace_mem_val && INS_OperandWritten(instruction, i)){
+								if (INS_OperandWrittenOnly(instruction, i)){
+									INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_w_mem2), IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
+								}
+								else if (nb_mem_write == 1){
+									INS_InsertCall(instruction, IPOINT_BEFORE, AFUNPTR(INS_trace_memory_w_mem1), IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_THREAD_ID, IARG_END);
+								}
+								else{
+									LOG("ERROR: this case (second memory write is not write only) is not implemented\n");
 								}
 							}
+						}
+					}
+					if (light_tracer.trace_mem_val && nb_mem_read + nb_mem_write){
+						if (INS_IsBranchOrCall(instruction)){
+							INS_InsertCall(instruction, IPOINT_TAKEN_BRANCH, AFUNPTR(INS_trace_memory_flush), IARG_THREAD_ID, IARG_END);
+						}
+						else{
+							INS_InsertCall(instruction, IPOINT_AFTER, AFUNPTR(INS_trace_memory_flush), IARG_THREAD_ID, IARG_END);
 						}
 					}
 				}
@@ -421,7 +464,7 @@ int main(int argc, char * argv[]){
 	PIN_AddThreadStartFunction(TOOL_thread_start, NULL);
 	PIN_AddThreadFiniFunction(TOOL_thread_stop, NULL);
 	PIN_AddFiniFunction(TOOL_fini, NULL);
-	
+
 	PIN_StartProgram();
 
 	return EXIT_SUCCESS;
