@@ -155,6 +155,7 @@ static const uint8_t* smIterator_get_next(struct smIterator* it, size_t size){
 static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 
 void trace_search_io(struct trace* trace){
 	uint32_t 					i;
@@ -364,6 +365,7 @@ void trace_search_io(struct trace* trace){
 			found |= std_prim_search_xtea_enc(mem_read, mem_writ);
 			found |= std_prim_search_xtea_dec(mem_read, mem_writ);
 			found |= std_prim_search_md5_comp(mem_read, mem_writ);
+			found |= std_prim_search_sha_comp(mem_read, mem_writ);
 
 			if (!found){
 				searchableMemory_print(mem_read);
@@ -416,13 +418,12 @@ static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read
 
 	for (pt = smIterator_get_first(&it_pt, mem_read, 8), result = 0; pt != NULL; pt = smIterator_get_next(&it_pt, 8)){
 		for (key = smIterator_get_first(&it_key, mem_read, 16); key != NULL; key = smIterator_get_next(&it_key, 16)){
-
-			/* Endianness 1 */
 			if (xtea_setup(key, 16, 32, &skey) != CRYPT_OK){
 				log_err("unable to setup xtea key");
 				break;
 			}
 
+			/* Endianness 1 */
 			if (xtea_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
 				log_err("unable to encrypt xtea");
 				break;
@@ -463,13 +464,12 @@ static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read
 
 	for (ct = smIterator_get_first(&it_ct, mem_read, 8), result = 0; ct != NULL; ct = smIterator_get_next(&it_ct, 8)){
 		for (key = smIterator_get_first(&it_key, mem_read, 16); key != NULL; key = smIterator_get_next(&it_key, 16)){
-			
-			/* Endianness 1 */
 			if (xtea_setup(key, 16, 32, &skey) != CRYPT_OK){
 				log_err("unable to setup xtea key");
 				break;
 			}
 
+			/* Endianness 1 */
 			if (xtea_ecb_decrypt(ct, pt, &skey) != CRYPT_OK){
 				log_err("unable to decrypt xtea");
 				break;
@@ -519,6 +519,54 @@ static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read
 
 			if (searchableMemory_search(mem_writ, (uint8_t*)md.md5.state, sizeof(md.md5.state))){
 				puts("md5_compress                     | 1            | 0.0");
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
+static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ){
+	struct smIterator 	it_state;
+	struct smIterator 	it_msg;
+	const uint8_t* 		state;
+	const uint8_t* 		msg;
+	uint8_t 			msg_inv[64];
+	hash_state 			md;
+	uint32_t 			result;
+
+	for (state = smIterator_get_first(&it_state, mem_read, sizeof(md.sha1.state)), result = 0; state != NULL; state = smIterator_get_next(&it_state, sizeof(md.sha1.state))){
+		for (msg = smIterator_get_first(&it_msg, mem_read, 64); msg != NULL; msg = smIterator_get_next(&it_msg, 64)){
+
+			/* Endianness 1 */
+			memcpy(md.sha1.state, state, sizeof(md.sha1.state));
+			md.sha1.curlen = 0;
+			md.sha1.length = 0;
+			
+			if (sha1_process(&md, msg, 64) != CRYPT_OK){
+				log_err("unable to process sha1");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, (uint8_t*)md.sha1.state, sizeof(md.sha1.state))){
+				puts("sha1_compress                    | 1            | 0.0");
+				result = 1;
+			}
+
+			/* Endianness 2 */
+			memcpy(md.sha1.state, state, sizeof(md.sha1.state));
+			md.sha1.curlen = 0;
+			md.sha1.length = 0;
+			
+			change_endianness((uint32_t*)msg_inv, (uint32_t*)msg, 16);
+			if (sha1_process(&md, msg_inv, 64) != CRYPT_OK){
+				log_err("unable to process sha1");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, (uint8_t*)md.sha1.state, sizeof(md.sha1.state))){
+				puts("sha1_compress                    | 1            | 0.0");
 				result = 1;
 			}
 		}

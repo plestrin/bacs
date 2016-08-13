@@ -1,0 +1,301 @@
+<xml>
+	<recipe name="TEST_SHA1_GO0" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go0">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO1" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO2" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go2">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO3" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go3">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GOs" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_gos">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO0" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co0">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO1" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO2" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co2">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO3" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co3">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_COz" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_coz">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WD" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_SHA1_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WR" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_SHA1_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _sha1"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_process"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP4SHA19TransformEPjPKj"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_sha1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan7SHA_16010compress_nEPKhj"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_sha1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph SHA1_Update"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_sha1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_sha1_compress"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+</xml>
