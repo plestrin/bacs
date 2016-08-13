@@ -154,6 +154,7 @@ static const uint8_t* smIterator_get_next(struct smIterator* it, size_t size){
 
 static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 
 void trace_search_io(struct trace* trace){
 	uint32_t 					i;
@@ -362,6 +363,7 @@ void trace_search_io(struct trace* trace){
 
 			found |= std_prim_search_xtea_enc(mem_read, mem_writ);
 			found |= std_prim_search_xtea_dec(mem_read, mem_writ);
+			found |= std_prim_search_md5_comp(mem_read, mem_writ);
 
 			if (!found){
 				searchableMemory_print(mem_read);
@@ -481,13 +483,42 @@ static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read
 			/* Endianness 2*/
 			change_endianness((uint32_t*)ct_inv, (const uint32_t*)ct, 2);
 			if (xtea_ecb_decrypt(ct_inv, pt, &skey) != CRYPT_OK){
-				log_err("unable to encrypt xtea");
+				log_err("unable to decrypt xtea");
 				break;
 			}
 
 			change_endianness((uint32_t*)pt, (uint32_t*)pt, 2);
 			if (searchableMemory_search(mem_writ, pt, sizeof(pt))){
 				puts("xtea_dec                         | 1            | 0.0");
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
+static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ){
+	struct smIterator 	it_state;
+	struct smIterator 	it_msg;
+	const uint8_t* 		state;
+	const uint8_t* 		msg;
+	hash_state 			md;
+	uint32_t 			result;
+
+	for (state = smIterator_get_first(&it_state, mem_read, sizeof(md.md5.state)), result = 0; state != NULL; state = smIterator_get_next(&it_state, sizeof(md.md5.state))){
+		for (msg = smIterator_get_first(&it_msg, mem_read, 64); msg != NULL; msg = smIterator_get_next(&it_msg, 64)){
+			memcpy(md.md5.state, state, sizeof(md.md5.state));
+			md.md5.curlen = 0;
+			md.md5.length = 0;
+
+			if (md5_process(&md, msg, 64) != CRYPT_OK){
+				log_err("unable to process md5");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, (uint8_t*)md.md5.state, sizeof(md.md5.state))){
+				puts("md5_compress                     | 1            | 0.0");
 				result = 1;
 			}
 		}

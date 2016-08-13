@@ -4,6 +4,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go0"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -27,6 +28,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go1"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -50,6 +52,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go2"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -73,6 +76,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go3"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -96,6 +100,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_gos"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -119,6 +124,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co0"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -142,6 +148,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co1"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -165,6 +172,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co2"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -188,6 +196,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co3"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -211,6 +220,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_coz"/>
 		<search>
 			<arg value="load trace traceTEST_MD5_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5"/>
@@ -234,6 +244,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_MD5_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph md5"/>
@@ -257,6 +268,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_MD5_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph md5"/>
@@ -281,6 +293,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
 		<search>
 			<arg value="load trace traceTOM_MD5"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph md5_process"/>
@@ -306,6 +319,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_md5"/>
 		<search>
 			<arg value="load trace traceOPEN_MD5"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph MD5_Update"/>
@@ -330,6 +344,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
 		<search>
 			<arg value="load trace tracePP_MD5"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
@@ -354,6 +369,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
 		<search>
 			<arg value="load trace traceBOT_MD5"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
@@ -378,6 +394,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
 		<search>
 			<arg value="load trace traceNET_MD5"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _nettle_md5_compress"/>

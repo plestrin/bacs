@@ -1,0 +1,301 @@
+<xml>
+	<recipe name="TEST_MD5_GO0" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go0">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO1" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO2" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go2">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GO3" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_go3">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_GOs" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_gos">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO0" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co0">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO1" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co1">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO2" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co2">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_CO3" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_co3">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_COz" active="no">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_md5_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_md5_coz">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_MD5_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v2" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WD" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_MD5_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v1" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_MD5_WR" active="no">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_MD5_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph md5"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_v1" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_MD5"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph md5_process"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_compress" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_md5">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_MD5"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph MD5_Update"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_compress" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_MD5"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_md5">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_MD5"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_md5">
+			<arg value="-m"/>
+			<arg value="-v"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_MD5"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_md5_compress"/>
+			<arg value="search iorel"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_compress" number="2"/>
+		</result>
+	</recipe>
+</xml>
