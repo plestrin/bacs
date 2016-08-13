@@ -15,6 +15,9 @@
 #include "modeSignature.h"
 #include "modeSignatureReader.h"
 #include "cmReaderJSON.h"
+#ifdef IOREL
+#include "ioRel.h"
+#endif
 #include "multiColumn.h"
 #include "base.h"
 
@@ -42,6 +45,7 @@ static void analysis_trace_search_pc(struct analysis* analysis, char* arg);
 static void analysis_trace_search_opcode(struct analysis* analysis, char* arg);
 static void analysis_trace_scan(struct analysis* analysis, char* arg);
 static void analysis_trace_search_mem(struct analysis* analysis, char* arg);
+static void analysis_trace_drop_mem(struct analysis* analysis);
 static void analysis_trace_delete(struct analysis* analysis);
 
 static void analysis_frag_print(struct analysis* analysis, char* arg);
@@ -52,6 +56,9 @@ static void analysis_frag_print_result(struct analysis* analysis, char* arg);
 static void analysis_frag_export_result(struct analysis* analysis, char* arg);
 static void analysis_frag_filter_size(struct analysis* analysis, char* arg);
 static void analysis_frag_filter_selection(struct analysis* analysis, char* arg);
+#ifdef IOREL
+static void analysis_frag_search_io(struct analysis* analysis, char* arg);
+#endif
 static void analysis_frag_clean(struct analysis* analysis);
 
 static void analysis_frag_create_ir(struct analysis* analysis, char* arg);
@@ -113,6 +120,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "search opcode", 			"Search given hexa string in the trace", 		"Hexa string", 				INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_opcode)
 	add_cmd_to_input_parser(parser, "scan trace", 				"Scan trace and report interesting fragments", 	"Filters", 					INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_trace_scan)
 	add_cmd_to_input_parser(parser, "search memory", 			"Search memory address", 						"Frag [opt] & Index & Addr",INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_trace_search_mem)
+	add_cmd_to_input_parser(parser, "drop mem", 				"Remove concrete memory values", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_drop_mem)
 	add_cmd_to_input_parser(parser, "clean trace", 				"Delete the current trace", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_trace_delete)
 
 	/* traceFragment specific commands */
@@ -124,6 +132,9 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "export result", 			"Appends selected results to the IR", 			"Frag index & signatures", 	INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_export_result)
 	add_cmd_to_input_parser(parser, "filter frag size", 		"Remove traceFragment that are smaller than", 	"Size", 					INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_frag_filter_size)
 	add_cmd_to_input_parser(parser, "filter frag selection", 	"Remove selected traceFragment", 				"Frag index or Frag Range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_filter_selection)
+	#ifdef IOREL
+	add_cmd_to_input_parser(parser, "search iorel", 			"Search IO relationship", 						"Frag index or Frag Range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_search_io)
+	#endif
 	add_cmd_to_input_parser(parser, "clean frag", 				"Clean the set of traceFragments", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
@@ -243,6 +254,7 @@ static struct analysis* analysis_create(){
 
 	return analysis;
 }
+
 
 static void analysis_delete(struct analysis* analysis){
 	if (analysis->call_graph != NULL){
@@ -556,6 +568,14 @@ static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
 	trace_search_memory(trace, (uint32_t)atoi(arg), strtoul(token1, NULL, 16));
 }
 
+static void analysis_trace_drop_mem(struct analysis* analysis){
+	if (analysis->trace == NULL){
+		log_err("trace is NULL");
+		return;
+	}
+	trace_drop_mem(analysis->trace);
+}
+
 static void analysis_trace_delete(struct analysis* analysis){
 	if (analysis->trace != NULL){
 		trace_delete(analysis->trace);
@@ -799,6 +819,12 @@ static void analysis_frag_filter_selection(struct analysis* analysis, char* arg)
 		}
 	}
 }
+
+#ifdef IOREL
+static void analysis_frag_search_io(struct analysis* analysis, char* arg){
+	apply_to_multiple_frags(analysis, trace_search_io, arg)
+}
+#endif
 
 static void analysis_frag_clean(struct analysis* analysis){
 	struct listIterator it;

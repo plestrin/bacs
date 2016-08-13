@@ -13,6 +13,9 @@ BUILD_DIR 		:= build/
 else
 PROG_NAME 		:= $(BUILD_DIR)../$(PROG_NAME)
 endif
+ifeq ($(IOREL),)
+IOREL 			:= 1
+endif
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
 XED_DIR 		:= /home/plt/Documents/tool/xed-2016-02-02-lin-ia32/
@@ -74,6 +77,12 @@ endif
 ifeq ($(VERBOSE),1)
 CFLAGS 			:= $(CFLAGS) -DVERBOSE -DINTERACTIVE -DCOLOR
 OBJ 			:= $(OBJ) $(BUILD_DIR)termReader.o
+endif
+
+ifeq ($(IOREL),1)
+CFLAGS 			:= $(CFLAGS) -DIOREL
+OBJ 			:= $(OBJ) $(BUILD_DIR)ioRel.o $(BUILD_DIR)printBuffer.o
+LDFLAGS 		:= $(LDFLAGS) -ltomcrypt
 endif
 
 all: $(PROG_NAME)

@@ -140,6 +140,8 @@ void trace_reset_result(struct trace* trace);
 void trace_reset_synthesis(struct trace* trace);
 void trace_reset(struct trace* trace);
 
+void trace_drop_mem(struct trace* trace);
+
 void trace_clean(struct trace* trace);
 
 #define trace_delete(trace) 	\

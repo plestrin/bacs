@@ -951,6 +951,16 @@ void trace_reset(struct trace* trace){
 	}
 }
 
+void trace_drop_mem(struct trace* trace){
+	if (trace->mem_trace != NULL){
+		memTrace_delete(trace->mem_trace);
+		trace->mem_trace = NULL;
+	}
+	else{
+		log_warn("memTrace is already NULL");
+	}
+}
+
 void trace_clean(struct trace* trace){
 	struct result* 	result;
 	uint32_t 		i;
