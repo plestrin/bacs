@@ -4,6 +4,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go0"/>
 		<search>
 			<arg value="load trace traceTEST_AES_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -30,6 +31,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go1"/>
 		<search>
 			<arg value="load trace traceTEST_AES_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -56,6 +58,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go2"/>
 		<search>
 			<arg value="load trace traceTEST_AES_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -82,6 +85,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go3"/>
 		<search>
 			<arg value="load trace traceTEST_AES_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -108,6 +112,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_gos"/>
 		<search>
 			<arg value="load trace traceTEST_AES_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -134,6 +139,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co0"/>
 		<search>
 			<arg value="load trace traceTEST_AES_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -160,6 +166,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co1"/>
 		<search>
 			<arg value="load trace traceTEST_AES_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -186,6 +193,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co2"/>
 		<search>
 			<arg value="load trace traceTEST_AES_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -212,6 +220,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co3"/>
 		<search>
 			<arg value="load trace traceTEST_AES_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -238,6 +247,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_coz"/>
 		<search>
 			<arg value="load trace traceTEST_AES_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
@@ -264,6 +274,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_AES_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes128_encrypt"/>
@@ -290,6 +301,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_AES_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes128_encrypt"/>
@@ -316,6 +328,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes"/>
 		<search>
 			<arg value="load trace traceTOM_AES"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rijndael_ecb_encrypt"/>
@@ -338,6 +351,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes"/>
 		<search>
 			<arg value="load trace tracePP_AES"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<!--<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>-->
@@ -360,6 +374,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_aes"/>
 		<search>
 			<arg value="load trace traceBOT_AES"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZNK5Botan7AES_1289encrypt_nEPKhPhj"/>
@@ -387,6 +402,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_aes"/>
 		<search>
 			<arg value="load trace traceNET_AES"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph nettle_aes_encrypt"/>
@@ -409,6 +425,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_aes"/>
 		<search>
 			<arg value="load trace traceOPEN_AES"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph AES_encrypt"/>
@@ -437,6 +454,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -459,6 +477,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -481,6 +500,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -503,6 +523,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -525,6 +546,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_gos"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -547,6 +569,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -569,6 +592,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -591,6 +615,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -613,6 +638,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -635,6 +661,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_coz"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -657,6 +684,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -679,6 +707,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -701,6 +730,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -723,6 +753,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -745,6 +776,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -767,6 +799,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -789,6 +822,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_gos"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -811,6 +845,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -833,6 +868,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -855,6 +891,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -877,6 +914,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -899,6 +937,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_coz"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -921,6 +960,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -943,6 +983,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -965,6 +1006,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -987,6 +1029,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1009,6 +1052,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1031,6 +1075,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1053,6 +1098,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_gos"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1075,6 +1121,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1097,6 +1144,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1119,6 +1167,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1141,6 +1190,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1163,6 +1213,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_coz"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1185,6 +1236,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -1207,6 +1259,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_ecb_encrypt"/>
@@ -1229,6 +1282,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1251,6 +1305,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1273,6 +1328,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1295,6 +1351,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1317,6 +1374,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_gos"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1339,6 +1397,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co0"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1361,6 +1420,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co1"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1383,6 +1443,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co2"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1405,6 +1466,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co3"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1427,6 +1489,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_coz"/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
@@ -1449,6 +1512,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
@@ -1466,11 +1530,12 @@
 		</result>
 	</recipe>
 
-	<recipe name="GLAD_AES_V3_WR" active="no"> <!-- disable due to rotation -->
+	<recipe name="GLAD_AES_V3_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_ecb_encrypt"/>

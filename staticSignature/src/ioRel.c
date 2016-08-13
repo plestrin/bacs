@@ -156,6 +156,9 @@ static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read
 static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes128_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes192_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes256_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
 
 void trace_search_io(struct trace* trace){
 	uint32_t 					i;
@@ -366,6 +369,9 @@ void trace_search_io(struct trace* trace){
 			found |= std_prim_search_xtea_dec(mem_read, mem_writ);
 			found |= std_prim_search_md5_comp(mem_read, mem_writ);
 			found |= std_prim_search_sha_comp(mem_read, mem_writ);
+			found |= std_prim_search_aes128_enc(mem_read, mem_writ);
+			found |= std_prim_search_aes192_enc(mem_read, mem_writ);
+			found |= std_prim_search_aes256_enc(mem_read, mem_writ);
 
 			if (!found){
 				searchableMemory_print(mem_read);
@@ -432,6 +438,7 @@ static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read
 			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
 				puts("xtea_enc                         | 1            | 0.0");
 				result = 1;
+				continue;
 			}
 
 			/* Endianness 2*/
@@ -478,6 +485,7 @@ static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read
 			if (searchableMemory_search(mem_writ, pt, sizeof(pt))){
 				puts("xtea_dec                         | 1            | 0.0");
 				result = 1;
+				continue;
 			}
 
 			/* Endianness 2*/
@@ -552,6 +560,7 @@ static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read
 			if (searchableMemory_search(mem_writ, (uint8_t*)md.sha1.state, sizeof(md.sha1.state))){
 				puts("sha1_compress                    | 1            | 0.0");
 				result = 1;
+				continue;
 			}
 
 			/* Endianness 2 */
@@ -567,6 +576,162 @@ static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read
 
 			if (searchableMemory_search(mem_writ, (uint8_t*)md.sha1.state, sizeof(md.sha1.state))){
 				puts("sha1_compress                    | 1            | 0.0");
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
+static uint32_t std_prim_search_aes128_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ){
+	struct smIterator 	it_ct;
+	struct smIterator 	it_key;
+	const uint8_t* 		pt;
+	const uint8_t* 		key;
+	uint8_t 			key_inv[16];
+	symmetric_key 		skey;
+	uint8_t 			ct[16];
+	uint32_t 			result;
+
+	for (pt = smIterator_get_first(&it_ct, mem_read, 16), result = 0; pt != NULL; pt = smIterator_get_next(&it_ct, 16)){
+		for (key = smIterator_get_first(&it_key, mem_read, 16); key != NULL; key = smIterator_get_next(&it_key, 16)){
+
+			/* Endianness 1 */
+			if (aes_setup(key, 16, 10, &skey) != CRYPT_OK){
+				log_err("unable to setup aes128 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes128");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes128_enc                       | 1            | 0.0");
+				result = 1;
+				continue;
+			}
+
+			/* Endianness 2 */
+			change_endianness((uint32_t*)key_inv, (uint32_t*)key, 4);
+			if (aes_setup(key_inv, sizeof(key_inv), 10, &skey) != CRYPT_OK){
+				log_err("unable to setup aes128 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes128");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes128_enc                       | 1            | 0.0");
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
+static uint32_t std_prim_search_aes192_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ){
+	struct smIterator 	it_ct;
+	struct smIterator 	it_key;
+	const uint8_t* 		pt;
+	const uint8_t* 		key;
+	uint8_t 			key_inv[24];
+	symmetric_key 		skey;
+	uint8_t 			ct[16];
+	uint32_t 			result;
+
+	for (pt = smIterator_get_first(&it_ct, mem_read, 16), result = 0; pt != NULL; pt = smIterator_get_next(&it_ct, 16)){
+		for (key = smIterator_get_first(&it_key, mem_read, 24); key != NULL; key = smIterator_get_next(&it_key, 24)){
+
+			/* Endianness 1 */
+			if (aes_setup(key, 24, 12, &skey) != CRYPT_OK){
+				log_err("unable to setup aes192 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes192");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes192_enc                       | 1            | 0.0");
+				result = 1;
+				continue;
+			}
+
+			/* Endianness 2 */
+			change_endianness((uint32_t*)key_inv, (uint32_t*)key, 6);
+			if (aes_setup(key_inv, sizeof(key_inv), 12, &skey) != CRYPT_OK){
+				log_err("unable to setup aes192 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes192");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes192_enc                       | 1            | 0.0");
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
+static uint32_t std_prim_search_aes256_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ){
+	struct smIterator 	it_ct;
+	struct smIterator 	it_key;
+	const uint8_t* 		pt;
+	const uint8_t* 		key;
+	uint8_t 			key_inv[32];
+	symmetric_key 		skey;
+	uint8_t 			ct[16];
+	uint32_t 			result;
+
+	for (pt = smIterator_get_first(&it_ct, mem_read, 16), result = 0; pt != NULL; pt = smIterator_get_next(&it_ct, 16)){
+		for (key = smIterator_get_first(&it_key, mem_read, 32); key != NULL; key = smIterator_get_next(&it_key, 32)){
+
+			/* Endianness 1 */
+			if (aes_setup(key, 32, 14, &skey) != CRYPT_OK){
+				log_err("unable to setup aes256 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes256");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes256_enc                       | 1            | 0.0");
+				result = 1;
+				continue;
+			}
+
+			/* Endianness 2 */
+			change_endianness((uint32_t*)key_inv, (uint32_t*)key, 8);
+			if (aes_setup(key_inv, sizeof(key_inv), 14, &skey) != CRYPT_OK){
+				log_err("unable to setup aes256 key");
+				break;
+			}
+
+			if (aes_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes256");
+				break;
+			}
+
+			if (searchableMemory_search(mem_writ, ct, sizeof(ct))){
+				puts("aes256_enc                       | 1            | 0.0");
 				result = 1;
 			}
 		}
