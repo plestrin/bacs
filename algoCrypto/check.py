@@ -76,6 +76,7 @@ ckeck_list = [
 		r'cryptopp/build/cryptopp_rc4',
 		r'tomCrypt/build/tom_rc4',
 		r'botan/build/bot_rc4',
+		r'nettle/build/net_rc4',
 		r'go/build/go_rc4'
 	],
 

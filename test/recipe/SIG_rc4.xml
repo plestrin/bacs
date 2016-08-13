@@ -298,4 +298,22 @@
 			<algo name="rc4_prga_v4" number="24"/>
 		</result>
 	</recipe>
+
+	<recipe name="NET_RC4" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_rc4"/>
+		<search>
+			<arg value="load trace traceNET_RC4"/>
+			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph nettle_arcfour_crypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="rc4_prga_v3" number="12"/>
+		</result>
+	</recipe>
 </xml>
