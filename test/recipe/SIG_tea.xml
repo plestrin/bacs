@@ -4,6 +4,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go0"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -32,6 +33,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go1"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -60,6 +62,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go2"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -88,6 +91,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go3"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -116,6 +120,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_gos"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -144,6 +149,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co0"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -172,6 +178,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co1"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -200,6 +207,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co2"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -228,6 +236,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co3"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -256,6 +265,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_coz"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph tea_encrypt"/>
@@ -284,6 +294,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_TEA_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _tea_encrypt"/>
@@ -312,6 +323,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_TEA_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _tea_encrypt"/>
@@ -340,6 +352,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea"/>
 		<search>
 			<arg value="load trace traceTOM_TEA"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph xtea_ecb_encrypt"/>
@@ -362,6 +375,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea"/>
 		<search>
 			<arg value="load trace tracePP_TEA"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZThn4_NK8CryptoPP3TEA3Enc18ProcessAndXorBlockEPKhS3_Ph"/>
@@ -390,6 +404,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_tea"/>
 		<search>
 			<arg value="load trace traceBOT_TEA"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_tea.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZNK5Botan3TEA9encrypt_nEPKhPhj"/>
