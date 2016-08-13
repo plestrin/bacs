@@ -143,6 +143,7 @@ ckeck_list = [
 		r'cryptopp/build/cryptopp_sha1',
 		r'tomCrypt/build/tom_sha1',
 		r'botan/build/bot_sha1',
+		r'nettle/build/net_sha1',
 		r'go/build/go_sha1'
 	],
 
