@@ -328,7 +328,7 @@
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZNK5Botan7AES_1289encrypt_nEPKhPhj"/>
-			<arg value="export callGraph _ZNK5Botan7AES_1929encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1929encrypt_nEPKhPhj"/>_
 			<arg value="export callGraph _ZNK5Botan7AES_2569encrypt_nEPKhPhj"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
@@ -350,14 +350,14 @@
 			<arg value="load trace traceNET_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph nettle_aes_encrypt"/>
+			<arg value="export callGraph _nettle_aes_encrypt"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
 			<algo name="aes128_enc" number="1"/>
-			<algo name="aes192_enc" number="1"/>
-			<algo name="aes256_enc" number="1"/>
+			<algo name="aes192_enc" number="1"/> <!-- roundkeys are stored with different endianess -->
+			<algo name="aes256_enc" number="1"/> <!-- roundkeys are stored with different endianess -->
 		</result>
 	</recipe>
 
@@ -371,7 +371,7 @@
 			<arg value="load trace traceOPEN_AES"/>
 			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph AES_encrypt"/>
+			<arg value="export callGraph AES_encrypt"/> <!-- this is a wrapper function, if we export the asm function, iorel is not detected anymore -->
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>

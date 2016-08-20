@@ -5,14 +5,6 @@
 
 #include "ir.h"
 
-enum aliasType{
-	ALIAS_IN,
-	ALIAS_OUT,
-	ALIAS_ALL
-};
-
-struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed);
-
 struct node* irMemory_get_first(struct ir* ir);
 
 static inline struct node* irMemory_get_address(struct node* node){
@@ -30,5 +22,13 @@ static inline struct node* irMemory_get_address(struct node* node){
 int32_t irMemory_simplify(struct ir* ir);
 int32_t irMemory_simplify_concrete(struct ir* ir);
 void irMemory_print_aliasing(struct ir* ir);
+
+enum aliasType{
+	ALIAS_READ,
+	ALIAS_WRITE,
+	ALIAS_ALL
+};
+
+uint32_t irMemory_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed);
 
 #endif

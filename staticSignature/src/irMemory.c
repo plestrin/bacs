@@ -15,12 +15,6 @@
 #define IRMEMORY_ACCESS_MAX_SIZE 			32
 #define IRMEMORY_ACCESS_MAX_NB_FRAGMENT 	(IRMEMORY_ACCESS_MAX_SIZE / 8)
 
-enum aliasResult{
-	CANNOT_ALIAS 	= 0x00000000,
-	MAY_ALIAS 		= 0x00000001,
-	MUST_ALIAS 		= 0x00000003
-};
-
 #define ADDRESS_NB_MAX_DEPENDENCE 64 /* it must not exceed 0x0fffffff because the last byte of the flag is reversed */
 #define FINGERPRINT_MAX_RECURSION_LEVEL 5
 
@@ -96,29 +90,6 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	return;
 }
 
-static void addrFingerprint_remove(struct addrFingerprint* addr_fgp, uint32_t index){
-	uint32_t i;
-	uint32_t label;
-
-	label = addr_fgp->dependence[index].label;
-
-	if (index + 1 < addr_fgp->nb_dependence){
-		addr_fgp->dependence[index].node 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].node;
-		addr_fgp->dependence[index].flag 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].flag;
-		addr_fgp->dependence[index].label 	= addr_fgp->dependence[addr_fgp->nb_dependence - 1].label;
-	}
-	addr_fgp->nb_dependence --;
-
-	for (i = 0; i < addr_fgp->nb_dependence; ){
-		if ((addr_fgp->dependence[i].flag & 0x0fffffff) == label){
-			addrFingerprint_remove(addr_fgp, i);
-		}
-		else{
-			i ++;
-		}
-	}
-}
-
 static void addrFingerprint_enable_all(struct addrFingerprint* addr_fgp){
 	uint32_t i;
 
@@ -144,146 +115,6 @@ static void addrFingerprint_disable(struct addrFingerprint* addr_fgp, uint32_t i
 			}
 		}
 	}
-}
-
-static enum aliasResult ir_normalize_alias_analysis(struct addrFingerprint* addr1_fgp_ptr, struct node* addr2, uint32_t ir_range_seed){
-	struct addrFingerprint 	addr1_fgp;
-	struct addrFingerprint 	addr2_fgp;
-	uint32_t 				i;
-	uint32_t 				j;
-	struct variableRange 	range1;
-	struct variableRange 	range2;
-	uint32_t 				nb_dependence_left1;
-	uint32_t 				nb_dependence_left2;
-	struct node* 			dependence_left1[ADDRESS_NB_MAX_DEPENDENCE];
-	struct node* 			dependence_left2[ADDRESS_NB_MAX_DEPENDENCE];
-
-	memcpy(&addr1_fgp, addr1_fgp_ptr, sizeof(struct addrFingerprint));
-	addrFingerprint_init(addr2, &addr2_fgp, 0, 0);
-
-	for (i = 0; i < addr1_fgp.nb_dependence; ){
-		for (j = 0; j < addr2_fgp.nb_dependence; j++){
-			if (addr1_fgp.dependence[i].node == addr2_fgp.dependence[j].node){
-				addrFingerprint_remove(&addr1_fgp, i);
-				addrFingerprint_remove(&addr2_fgp, j);
-
-				goto next;
-			}
-		}
-		i ++;
-		next:;
-	}
-
-	for (i = 0, nb_dependence_left1 = 0; i < addr1_fgp.nb_dependence; i++){
-		if (addr1_fgp.dependence[i].flag & FINGERPRINT_FLAG_LEAF){
-			dependence_left1[nb_dependence_left1 ++] = addr1_fgp.dependence[i].node;
-		}
-	}
-
-	for (j = 0, nb_dependence_left2 = 0; j < addr2_fgp.nb_dependence; j++){
-		if (addr2_fgp.dependence[j].flag & FINGERPRINT_FLAG_LEAF){
-			dependence_left2[nb_dependence_left2 ++] = addr2_fgp.dependence[j].node;
-		}
-	}
-
-	irVariableRange_get_range_add_buffer(&range1, dependence_left1, nb_dependence_left1, 32, ir_range_seed);
-	irVariableRange_get_range_add_buffer(&range2, dependence_left2, nb_dependence_left2, 32, ir_range_seed);
-
-	if (variableRange_is_cst(&range1) && variableRange_is_cst(&range2)){
-		if (variableRange_get_cst(&range1) == variableRange_get_cst(&range2)){
-			return MUST_ALIAS;
-		}
-		else{
-			return CANNOT_ALIAS;
-		}
-	}
-	else if (variableRange_intersect(&range1, &range2)){
-		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
-		if (addr1_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE || addr2_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE){
-			return MAY_ALIAS;
-		}
-		else if ((addr1_fgp.flag & FINGERPRINT_FLAG_ESP) == (addr2_fgp.flag & FINGERPRINT_FLAG_ESP)){
-			return MAY_ALIAS;
-		}
-		else{
-			return CANNOT_ALIAS;
-		}
-		#else
-		return MAY_ALIAS;
-		#endif
-	}
-
-	return CANNOT_ALIAS;
-}
-
-struct node* ir_normalize_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed){
-	struct node* 			node_cursor;
-	struct irOperation* 	operation_cursor;
-	struct edge* 			edge_cursor;
-	struct node* 			addr1 = NULL;
-	struct node* 			addr_cursor;
-	struct addrFingerprint 	addr1_fgp;
-
-	node_cursor = ir_node_get_operation(node1)->operation_type.mem.next;
-	if (node_cursor == NULL){
-		log_err("found NULL pointer instead of the expected element");
-		return NULL;
-	}
-
-	while(node_cursor != node2){
-		operation_cursor = ir_node_get_operation(node_cursor);
-		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_IN) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_OUT)){
-			#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_MAY == 1
-			if (ir_node_get_operation(node1)->operation_type.mem.con_addr != MEMADDRESS_INVALID && ir_node_get_operation(node_cursor)->operation_type.mem.con_addr != MEMADDRESS_INVALID){
-				if (ir_node_get_operation(node1)->operation_type.mem.con_addr == ir_node_get_operation(node_cursor)->operation_type.mem.con_addr){
-					return node_cursor;
-				}
-				#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT == 1
-				else{
-					goto next;
-				}
-				#endif
-			}
-			#endif
-
-			if (addr1 == NULL){
-				for (edge_cursor = node_get_head_edge_dst(node1); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-						addr1 = edge_get_src(edge_cursor);
-						addrFingerprint_init(addr1, &addr1_fgp, 0, 0);
-						break;
-					}
-				}
-			}
-
-			for (edge_cursor = node_get_head_edge_dst(node_cursor), addr_cursor = NULL; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
-					addr_cursor = edge_get_src(edge_cursor);
-					break;
-				}
-			}
-
-			if (addr1 != NULL && addr_cursor != NULL){
-				if (ir_normalize_alias_analysis(&addr1_fgp, addr_cursor, ir_range_seed) != CANNOT_ALIAS){
-					return node_cursor;
-				}
-			}
-			else{
-				log_err("memory access with no address operand");
-			}
-		}
-
-		#if IRMEMORY_ALIAS_HEURISTIC_CONCRETE_CANNOT == 1
-		next:
-		#endif
-		node_cursor = operation_cursor->operation_type.mem.next;
-		if (node_cursor == NULL){
-			log_err("found NULL pointer instead of the expected element");
-			break;
-		}
-	}
-
-	return NULL;
 }
 
 struct memToken{
@@ -983,6 +814,39 @@ void irMemory_print_aliasing(struct ir* ir){
 	}
 
 	list_clean(&mem_token_list);
+}
+
+uint32_t irMemory_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed){
+	struct memTokenStatic 	token2;
+	struct node* 			node_cursor;
+	struct irOperation* 	operation_cursor;
+	struct memTokenStatic 	token_cursor;
+	struct accessFragment 	fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
+
+	if (memTokenStatic_init(&token2, node2)){
+		log_err("unable to init memTokenStatic");
+		return 1;
+	}
+
+	for (node_cursor = ir_node_get_operation(node2)->operation_type.mem.prev; node_cursor != NULL; node_cursor = operation_cursor->operation_type.mem.prev){
+		if (node_cursor == node1){
+			break;
+		}
+
+		operation_cursor = ir_node_get_operation(node_cursor);
+		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_READ) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_WRITE)){
+			if (memTokenStatic_init(&token_cursor, node_cursor)){
+				log_err("unable to init memTokenStatic");
+				return 1;
+			}
+
+			if (memTokenStatic_compare(&token2, &token_cursor, ir_range_seed, fragments)){
+				return 1;
+			}
+		}
+	}
+
+	return 0;
 }
 
 static int32_t memTokenDynamic_init(struct memTokenDynamic* mem_token_dyn, struct node* node){

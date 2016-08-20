@@ -254,7 +254,7 @@
 		<search>
 			<arg value="load trace tracePP_MD5"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
+			<arg value="export callGraph _ZN8CryptoPP5Weak13MD59TransformEPjPKj"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
