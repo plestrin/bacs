@@ -493,7 +493,7 @@ void ir_normalize(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_REGROUP_MEM_ACCESS == 1
-		ir_normalize_apply_rule(ir_normalize_regroup_mem_access, "regroup mem access", timer_7_elapsed_time);
+		ir_normalize_apply_rule_new(irMemory_coalesce, "regroup mem access", timer_7_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1

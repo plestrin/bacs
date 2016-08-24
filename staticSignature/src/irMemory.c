@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <search.h>
 
 #include "irMemory.h"
 #include "irVariableRange.h"
@@ -338,7 +339,7 @@ static struct node* accessFragment_create(struct accessFragment* access_fragment
 	struct node* access;
 
 	if (access_fragment->size != memToken_get_size(access_fragment->token)){
-		if ((addr = irMemory_get_address(access_fragment->token->access)) == NULL){
+		if ((addr = irMemory_get_address_node(access_fragment->token->access)) == NULL){
 			log_err("unable to get memory address");
 			return NULL;
 		}
@@ -508,7 +509,7 @@ static int32_t memTokenStatic_init(struct memTokenStatic* mem_token_static, stru
 
 	mem_token_static->token.access = node;
 
-	if ((address = irMemory_get_address(node)) == NULL){
+	if ((address = irMemory_get_address_node(node)) == NULL){
 		log_err("unable to get memory address");
 		return -1;
 	}
@@ -816,39 +817,6 @@ void irMemory_print_aliasing(struct ir* ir){
 	list_clean(&mem_token_list);
 }
 
-uint32_t irMemory_search_alias_conflict(struct node* node1, struct node* node2, enum aliasType alias_type, uint32_t ir_range_seed){
-	struct memTokenStatic 	token2;
-	struct node* 			node_cursor;
-	struct irOperation* 	operation_cursor;
-	struct memTokenStatic 	token_cursor;
-	struct accessFragment 	fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
-
-	if (memTokenStatic_init(&token2, node2)){
-		log_err("unable to init memTokenStatic");
-		return 1;
-	}
-
-	for (node_cursor = ir_node_get_operation(node2)->operation_type.mem.prev; node_cursor != NULL; node_cursor = operation_cursor->operation_type.mem.prev){
-		if (node_cursor == node1){
-			break;
-		}
-
-		operation_cursor = ir_node_get_operation(node_cursor);
-		if (alias_type == ALIAS_ALL || (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM && alias_type == ALIAS_READ) || (operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM && alias_type == ALIAS_WRITE)){
-			if (memTokenStatic_init(&token_cursor, node_cursor)){
-				log_err("unable to init memTokenStatic");
-				return 1;
-			}
-
-			if (memTokenStatic_compare(&token2, &token_cursor, ir_range_seed, fragments)){
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}
-
 static int32_t memTokenDynamic_init(struct memTokenDynamic* mem_token_dyn, struct node* node){
 	if (ir_node_get_operation(node)->operation_type.mem.con_addr == MEMADDRESS_INVALID){
 		log_warn("a memory access has an incorrect concrete address, further simplifications might be incorrect");
@@ -1003,6 +971,596 @@ int32_t irMemory_simplify_concrete(struct ir* ir){
 	}
 
 	list_clean(&mem_token_list);
+
+	return result;
+}
+
+struct accessEntry{
+	uint64_t 		offset;
+	uint32_t 		size;
+	struct node* 	address;
+	struct edge* 	access;
+};
+
+static int32_t accessEntry_compare_offset_and_type(void* element1, void* element2){
+	struct accessEntry* entry1 = (struct accessEntry*)element1;
+	struct accessEntry* entry2 = (struct accessEntry*)element2;
+	struct irOperation* mem_access1;
+	struct irOperation* mem_access2;
+
+	mem_access1 = ir_node_get_operation(edge_get_dst(entry1->access));
+	mem_access2 = ir_node_get_operation(edge_get_dst(entry2->access));
+
+	if (mem_access1->type < mem_access2->type){
+		return -1;
+	}
+	else if (mem_access1->type > mem_access2->type){
+		return 1;
+	}
+	else{
+		if (entry1->offset < entry2->offset){
+			return -1;
+		}
+		else if (entry1->offset > entry2->offset){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
+}
+
+static int32_t accessEntry_compare_order(const void* element1, const void* element2){
+	struct accessEntry* entry1 = *(struct accessEntry**)element1;
+	struct accessEntry* entry2 = *(struct accessEntry**)element2;
+	struct irOperation* mem_access1;
+	struct irOperation* mem_access2;
+
+	mem_access1 = ir_node_get_operation(edge_get_dst(entry1->access));
+	mem_access2 = ir_node_get_operation(edge_get_dst(entry2->access));
+
+	if (mem_access1->operation_type.mem.order < mem_access2->operation_type.mem.order){
+		return -1;
+	}
+	else if (mem_access1->operation_type.mem.order > mem_access2->operation_type.mem.order){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+#define IRVARIABLESIZE_GROUP_MAX_SIZE 4
+
+struct accessGroup{
+	uint32_t 			nb_entry;
+	struct accessEntry* entries[IRVARIABLESIZE_GROUP_MAX_SIZE];
+};
+
+void accessGroup_print(const struct accessGroup* group, FILE* file){
+	uint32_t i;
+
+	fputc('{', file);
+	for (i = 0; i < group->nb_entry; i++){
+		if (ir_node_get_operation(edge_get_dst(group->entries[i]->access))->type == IR_OPERATION_TYPE_IN_MEM){
+			fputc('R', file);
+		}
+		else{
+			fputc('W', file);
+		}
+		fprintf(file, ":0x%llx:%u:%p", group->entries[i]->offset, group->entries[i]->size, (void*)group->entries[i]);
+		if (i != group->nb_entry - 1){
+			fputc(' ', file);
+		}
+	}
+	fputc('}', file);
+}
+
+static uint32_t accessGroup_check_aliasing(const struct accessGroup* group, struct ir* ir){
+	uint32_t 				i;
+	struct accessGroup 		local_group;
+	struct memTokenStatic 	token;
+	struct node* 			node_cursor;
+	struct irOperation* 	operation_cursor;
+	struct memTokenStatic 	token_cursor;
+	struct accessFragment 	fragments[IRMEMORY_ACCESS_MAX_NB_FRAGMENT];
+
+	memcpy(&local_group, group, sizeof(struct accessGroup));
+	qsort(local_group.entries, local_group.nb_entry, sizeof(struct accessEntry*), accessEntry_compare_order);
+
+	for (i = 0; i + 1 < local_group.nb_entry; i++){
+		if (memTokenStatic_init(&token, edge_get_dst(local_group.entries[i]->access))){
+			log_err("unable to init memTokenStatic");
+			return 0;
+		}
+
+		for (node_cursor = ir_node_get_operation(edge_get_dst(local_group.entries[i]->access))->operation_type.mem.next; node_cursor != NULL; node_cursor = operation_cursor->operation_type.mem.next){
+			if (node_cursor == edge_get_dst(local_group.entries[local_group.nb_entry - 1]->access)){
+				break;
+			}
+
+			operation_cursor = ir_node_get_operation(node_cursor);
+			if (ir_node_get_operation(edge_get_dst(local_group.entries[0]->access))->type != IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+				if (memTokenStatic_init(&token_cursor, node_cursor)){
+					log_err("unable to init memTokenStatic");
+					return 0;
+				}
+
+				if (memTokenStatic_compare(&token_cursor, &token, ir->range_seed, fragments)){
+					return 0;
+				}
+			}
+		}
+	}
+
+	return 1;
+}
+
+static enum irOpcode accessGroup_choose_part_opcode(uint32_t offset, uint32_t size){
+	if (offset == 0){
+		if (size == 1){
+			return IR_PART1_8;
+		}
+		else if (size == 2){
+			return IR_PART1_16;
+		}
+	}
+	else if (offset == 1){
+		if (size == 1){
+			return IR_PART2_8;
+		}
+	}
+
+	log_err_m("this case is not handled yet (offset=%u, size=%u)", offset, size);
+	return IR_INVALID;
+}
+
+static int32_t accessGroup_commit(struct accessGroup* group, struct ir* ir){
+	uint32_t i;
+	uint32_t offset;
+
+	if (ir_node_get_operation(edge_get_dst(group->entries[0]->access))->type == IR_OPERATION_TYPE_IN_MEM){
+		enum irOpcode 	opcode;
+		struct node* 	part_node;
+		struct node* 	imm_node;
+		struct node* 	root;
+
+		root = edge_get_dst(group->entries[0]->access);
+		for (i = 0, offset = 0; i < group->nb_entry; i++){
+			opcode = accessGroup_choose_part_opcode(offset, group->entries[i]->size);
+			if (opcode != IR_INVALID){
+				part_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, group->entries[i]->size * 8, opcode, IR_OPERATION_DST_UNKOWN);
+				if (part_node == NULL){
+					log_err("unable to add instruction to IR");
+				}
+				else{
+					graph_transfert_src_edge(&(ir->graph), part_node, edge_get_dst(group->entries[i]->access));
+					ir_add_dependence_check(ir, root, part_node, IR_DEPENDENCE_TYPE_DIRECT)
+				}
+			}
+			else{
+				log_err("unable to choose part opcode");
+			}
+
+			offset += group->entries[i]->size;
+			if (offset >= 2 && i + 1 != group->nb_entry){
+				offset -= 2;
+
+				root = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_SHR, IR_OPERATION_DST_UNKOWN);
+				if (root == NULL){
+					log_err("unable to add instruction to IR");
+					return 0;
+				}
+
+				imm_node = ir_add_immediate(ir, 32, 16);
+				if (imm_node == NULL){
+					log_err("unable to add immediate to IR");
+				}
+				else{
+					ir_add_dependence_check(ir, imm_node, root, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+				}
+
+				ir_add_dependence_check(ir, edge_get_dst(group->entries[0]->access), root, IR_DEPENDENCE_TYPE_DIRECT)
+			}
+		}
+
+		for (i = 1; i < group->nb_entry; i++){
+			ir_remove_node(ir, edge_get_dst(group->entries[i]->access));
+		}
+
+		ir_node_get_operation(edge_get_dst(group->entries[0]->access))->size = 32;
+	}
+	else{
+		struct node* shl_node;
+		struct node* exp_node;
+		struct node* or_node;
+		struct node* imm_node;
+		struct edge* edge_cursor;
+
+		or_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_OR, IR_OPERATION_DST_UNKOWN);
+		if (or_node == NULL){
+			log_err("unable to add instruction to IR");
+		}
+		else{
+			for (i = 0, offset = 0; i < group->nb_entry; i++){
+				for (edge_cursor = node_get_head_edge_dst(edge_get_dst(group->entries[i]->access)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
+						break;
+					}
+				}
+				if (edge_cursor == NULL){
+					log_err("unable to locate direct operand");
+					continue;
+				}
+
+				exp_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
+				if (exp_node == NULL){
+					log_err("unable to add instruction to IR");
+				}
+				else{
+					ir_add_dependence_check(ir, edge_get_src(edge_cursor), exp_node, IR_DEPENDENCE_TYPE_DIRECT)
+					if (i == 0){
+						ir_add_dependence_check(ir, exp_node, or_node, IR_DEPENDENCE_TYPE_DIRECT)
+						ir_remove_dependence(ir, edge_cursor);
+					}
+					else{
+						shl_node = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_SHL, IR_OPERATION_DST_UNKOWN);
+						if (shl_node == NULL){
+							log_err("unable to add instruction to IR");
+						}
+						else{
+							imm_node = ir_add_immediate(ir, 32, offset);
+							if (imm_node == NULL){
+								log_err("unable to add immediate to IR");
+							}
+							else{
+								ir_add_dependence_check(ir, imm_node, shl_node, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+							}
+							ir_add_dependence_check(ir, exp_node, shl_node, IR_DEPENDENCE_TYPE_DIRECT)
+							ir_add_dependence_check(ir, shl_node, or_node, IR_DEPENDENCE_TYPE_DIRECT)
+
+							ir_remove_node(ir, edge_get_dst(group->entries[i]->access));
+						}
+					}
+				}
+				offset += group->entries[i]->size * 8;
+			}
+
+			ir_add_dependence_check(ir, or_node, edge_get_dst(group->entries[0]->access), IR_DEPENDENCE_TYPE_DIRECT)
+			ir_node_get_operation(edge_get_dst(group->entries[0]->access))->size = 32;
+		}
+	}
+
+	return 1;
+}
+
+struct accessTable{
+	struct node* 	var;
+	struct array* 	group_array;
+	struct ir* 		ir;
+	struct array 	access_array;
+};
+
+void accessTable_print(const struct accessTable* table, uint32_t* mapping, FILE* file){
+	uint32_t 			i;
+	struct accessEntry* entry;
+
+	fputs("{", file);
+	for (i = 0; i < array_get_length(&(table->access_array)); i++){
+		if (mapping != NULL){
+			entry = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
+		}
+		else{
+			entry = (struct accessEntry*)array_get(&(table->access_array), i);
+		}
+
+		if (i == array_get_length(&(table->access_array)) - 1){
+			fprintf(file, "%c:0x%llx:%u", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
+		}
+		else{
+			fprintf(file, "%c:0x%llx:%u ", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
+		}
+	}
+	fputs("}", file);
+}
+
+static uint32_t accessTable_generate_recursive_group(struct accessTable* table, uint32_t* mapping, struct accessGroup* group, uint32_t offset_start, uint32_t nb_entry, uint32_t size){
+	uint32_t i;
+
+	#ifdef IR_FULL_CHECK
+	#define accessGroup_check() 																																	\
+		{ 																																							\
+			struct node* 		node_mem_access1 = edge_get_dst(group->entries[0]->access); 																		\
+			struct node* 		node_mem_access2 = edge_get_dst(group->entries[nb_entry]->access); 																	\
+			struct irOperation* op_mem_access1 = ir_node_get_operation(node_mem_access1); 																			\
+			struct irOperation* op_mem_access2 = ir_node_get_operation(node_mem_access2); 																			\
+			ADDRESS 			address1 = op_mem_access1->operation_type.mem.con_addr; 																			\
+			ADDRESS 			address2 = op_mem_access2->operation_type.mem.con_addr; 																			\
+																																									\
+			if (address1 != MEMADDRESS_INVALID && address2 != MEMADDRESS_INVALID){ 																					\
+				if (address1 + size != address2){ 																													\
+					log_err_m("found group with concrete address incoherence, expected 0x%08x but get 0x%08x", address1 + size, address2); 							\
+					printf("  - %p ", (void*)node_mem_access1); irOperation_fprint(op_mem_access1, stdout); putchar('\n'); 											\
+					printf("  - %p ", (void*)node_mem_access2); irOperation_fprint(op_mem_access2, stdout); putchar('\n'); 											\
+																																									\
+					op_mem_access1->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\
+					op_mem_access2->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR; 																					\
+																																									\
+					continue; 																																		\
+				} 																																					\
+			} 																																						\
+		}
+	#else
+	#define accessGroup_check()
+	#endif
+
+	for (i = offset_start; i < array_get_length(&(table->access_array)); i++){
+		group->entries[nb_entry] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
+		if (ir_node_get_operation(edge_get_dst(group->entries[0]->access))->type != ir_node_get_operation(edge_get_dst(group->entries[nb_entry]->access))->type){
+			continue;
+		}
+		if (group->entries[nb_entry - 1]->offset + group->entries[nb_entry - 1]->size != group->entries[nb_entry]->offset){
+			continue;
+		}
+
+		if (group->entries[nb_entry]->size + size > 4){
+			continue;
+		}
+		else if (group->entries[nb_entry]->size + size == 4){
+			accessGroup_check()
+
+			group->nb_entry = nb_entry + 1;
+
+			if (accessGroup_check_aliasing(group, table->ir)){
+				if (array_add(table->group_array, group) < 0){
+					log_err("unable to add element to array");
+				}
+				else{
+					return 1;
+				}
+			}
+		}
+		else if (nb_entry != IRVARIABLESIZE_GROUP_MAX_SIZE - 1){
+			accessGroup_check()
+
+			if (accessTable_generate_recursive_group(table, mapping, group, i + 1, nb_entry + 1, size + group->entries[nb_entry]->size)){
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static void accessTable_regroup(const void* data, const VISIT which, int32_t depth){
+	struct accessTable* table = *(struct accessTable**)data;
+	uint32_t* 			mapping;
+	uint32_t 			i;
+	struct accessGroup 	group;
+
+	if (which != leaf && which != preorder){
+		return;
+	}
+
+	if (array_get_length(&(table->access_array)) < 2){
+		return;
+	}
+
+	mapping = array_create_mapping(&(table->access_array), accessEntry_compare_offset_and_type);
+	if (mapping == NULL){
+		log_err("unable to create mapping");
+		return;
+	}
+
+	for (i = 0; i < array_get_length(&(table->access_array)); i++){	
+		group.entries[0] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
+		if (group.entries[0]->offset & 0x0000000000000003){
+			continue;
+		}
+
+		#ifdef IR_FULL_CHECK
+		{
+			struct irOperation* op_mem_access = ir_node_get_operation(edge_get_dst(group.entries[0]->access));
+
+			if (op_mem_access->operation_type.mem.con_addr != MEMADDRESS_INVALID && op_mem_access->operation_type.mem.con_addr & 0x0000000000000003){
+				log_warn("memory access seems to be aligned but concrete address is not");
+			}
+		}
+		#endif
+
+		if (accessTable_generate_recursive_group(table, mapping, &group, i + 1, 1, group.entries[0]->size)){
+			break;
+		}
+	}
+
+	free(mapping);
+}
+
+static int32_t accessTable_compare_var(const void* arg1, const void* arg2){
+	struct accessTable* table1 = (struct accessTable*)arg1;
+	struct accessTable* table2 = (struct accessTable*)arg2;
+
+	if (table1->var < table2->var){
+		return -1;
+	}
+	else if (table1->var > table2->var){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+static void accessTable_delete(struct accessTable* table){
+	array_clean(&(table->access_array));
+	free(table);
+}
+
+int32_t irMemory_coalesce(struct ir* ir){
+	struct node* 		node_cursor;
+	struct irOperation* operation_cursor;
+	struct edge*		edge_cursor;
+	struct node*		var;
+	struct node* 		imm;
+	void* 				tree_root 			= NULL;
+	struct accessTable* new_table 			= NULL;
+	void* 				ptr;
+	struct accessTable* table_ptr;
+	struct accessEntry 	new_entry;
+	struct array 		group_array;
+	int32_t 			result 				= 0;
+
+	if (array_init(&group_array, sizeof(struct accessGroup))){
+		log_err("unable to init array");
+		return 0;
+	}
+
+	ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		if (node_cursor->nb_edge_dst != 2 || node_cursor->nb_edge_src == 0){
+			continue;
+		}
+
+		operation_cursor = ir_node_get_operation(node_cursor);
+
+		if (operation_cursor->type != IR_OPERATION_TYPE_INST || operation_cursor->operation_type.inst.opcode != IR_ADD){
+			continue;
+		}
+
+		for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+				break;
+			}
+		}
+		if (edge_cursor == NULL){
+			continue;
+		}
+
+		var = NULL;
+		imm = NULL;
+
+		edge_cursor = node_get_head_edge_dst(node_cursor);
+		switch (ir_node_get_operation(edge_get_src(edge_cursor))->type){
+			case IR_OPERATION_TYPE_IN_REG 	:
+			case IR_OPERATION_TYPE_IN_MEM 	:
+			case IR_OPERATION_TYPE_INST 	: {
+				var = edge_get_src(edge_cursor);
+				break;
+			}
+			case IR_OPERATION_TYPE_IMM 		: {
+				imm = edge_get_src(edge_cursor);
+				break;
+			}
+			default 						: {
+				continue;
+			}
+		}
+
+		edge_cursor = edge_get_next_dst(edge_cursor);
+		switch (ir_node_get_operation(edge_get_src(edge_cursor))->type){
+			case IR_OPERATION_TYPE_IN_REG 	:
+			case IR_OPERATION_TYPE_IN_MEM 	:
+			case IR_OPERATION_TYPE_INST 	: {
+				if (var == NULL){
+					var = edge_get_src(edge_cursor);
+					break;
+				}
+				else{
+					continue;
+				}
+			}
+			case IR_OPERATION_TYPE_IMM 		: {
+				if (imm == NULL){
+					imm = edge_get_src(edge_cursor);
+					break;
+				}
+				else{
+					continue;
+				}
+			}
+			default 						: {
+				continue;
+			}
+		}
+
+		if (new_table == NULL){
+			new_table = (struct accessTable*)malloc(sizeof(struct accessTable));
+			if (new_table == NULL){
+				log_err("unable to allocate memory\n");
+				continue;
+			}
+			else{
+				if (array_init(&(new_table->access_array), sizeof(struct accessEntry))){
+					log_err("unable to init array");
+					free(new_table);
+					new_table = NULL;
+					continue;
+				}
+			}
+		}
+
+		new_table->var 			= var;
+		new_table->group_array 	= &group_array;
+		new_table->ir 			= ir;
+
+		if ((ptr = tsearch(new_table, &tree_root, accessTable_compare_var)) == NULL){
+			log_err("unable to allocate memory in tsearch");
+			continue;
+		}
+
+		table_ptr = *(struct accessTable**)ptr;
+		if (table_ptr == new_table){
+			for (edge_cursor = node_get_head_edge_src(var); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+
+					new_entry.offset 	= 0;
+					new_entry.size 		= ir_node_get_operation(edge_get_dst(edge_cursor))->size / 8;
+					new_entry.address 	= var;
+					new_entry.access 	= edge_cursor;
+
+					if (array_add(&(table_ptr->access_array), &new_entry) < 0){
+						log_err("unable to add element to array\n");
+					}
+				}
+			}
+			new_table = NULL;
+		}
+
+		for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_ADDRESS){
+				new_entry.offset 	= ir_imm_operation_get_unsigned_value(ir_node_get_operation(imm));
+				new_entry.size 		= ir_node_get_operation(edge_get_dst(edge_cursor))->size / 8;
+				new_entry.address 	= node_cursor;
+				new_entry.access 	= edge_cursor;
+
+				if (array_add(&(table_ptr->access_array), &new_entry) < 0){
+					log_err("unable to add element to array\n");
+				}
+			}
+		}
+	}
+
+	if (new_table != NULL){
+		accessTable_delete(new_table);
+	}
+
+	twalk(tree_root, accessTable_regroup);
+
+	if (array_get_length(&group_array) > 0){
+		uint32_t 			i;
+		struct accessGroup* group;
+
+		for (i = 0; i < array_get_length(&group_array); i++){
+			group = (struct accessGroup*)array_get(&group_array, i);
+			result |= accessGroup_commit(group, ir);
+		}
+	}
+
+	array_clean(&group_array);
+
+	tdestroy(tree_root, (void(*)(void*))accessTable_delete);
 
 	return result;
 }
