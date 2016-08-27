@@ -199,7 +199,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WD" active="no">
+	<recipe name="TEST_TEA_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -216,7 +216,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_TEA_WR" active="no">
+	<recipe name="TEST_TEA_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>

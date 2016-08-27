@@ -4,6 +4,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -23,6 +24,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -42,6 +44,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -61,6 +64,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -80,6 +84,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_gos"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GOs"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -99,6 +104,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO0"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -118,6 +124,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO1"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -137,6 +144,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO2"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -156,6 +164,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO3"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -175,6 +184,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_coz"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_COz"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/>
@@ -194,6 +204,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_RC4_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _rc4"/>
@@ -213,6 +224,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_RC4_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _rc4"/>
@@ -231,6 +243,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
 		<search>
 			<arg value="load trace traceTOM_RC4"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4_read"/>
@@ -249,6 +262,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
 		<search>
 			<arg value="load trace traceBOT_RC4"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rc4"/> <!-- Modify this value -->
@@ -268,6 +282,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_rc4"/>
 		<search>
 			<arg value="load trace tracePP_RC4"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZN8CryptoPP5Weak19ARC4_Base11ProcessDataEPhPKhj"/>
@@ -286,6 +301,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
 		<search>
 			<arg value="load trace traceOPEN_RC4"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph RC4"/>
@@ -304,6 +320,7 @@
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_rc4"/>
 		<search>
 			<arg value="load trace traceNET_RC4"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph nettle_arcfour_crypt"/>
