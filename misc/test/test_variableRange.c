@@ -8,6 +8,99 @@
 #include "../variableRange.h"
 #include "../base.h"
 
+// #define SEED 		10347
+#define MAX_SIZE 	10
+#define NB_TEST 	16384
+
+#ifndef SEED
+#define SEED (uint32_t)getpid()
+#endif
+
+static uint32_t variableRange_init_rand(struct variableRange* range){
+	uint32_t size;
+	
+	size = rand() % MAX_SIZE;
+	range->mask 	= ~(0xffffffffffffffff << size);
+	range->disp 	= rand() & range->mask;
+	range->scale 	= rand() % (MAX_SIZE - size);
+	range->index 	= rand() & (range->mask >> range->scale);
+
+	return size;
+}
+
+int32_t main(void){
+	struct variableRange 			range1;
+	struct variableRange 			range2;
+	struct variableRangeIterator 	it1;
+	uint64_t 						value1;
+	uint64_t 						value2;
+	uint64_t 						value3;
+	uint32_t 						i;
+	uint32_t 						j;
+	uint32_t 						size;
+
+	log_info_m("seed=%d", SEED);
+	srand(SEED);
+
+	log_info("Test iterator & is_value_include");
+	for (i = 0; i < NB_TEST; i++){
+		variableRange_init_rand(&range1);
+		for (variableRangeIterator_init(&it1, &range1), j = 0; variableRangeIterator_get_next(&it1, &value1); j++){
+			if (!variableRange_is_value_include(&range1, value1)){
+				log_err("");
+				printf("\t%llx not in ", value1); variableRange_print(&range1); printf("\n");
+				return EXIT_FAILURE;
+			}
+		}
+		if (j != range1.index + 1){
+			log_err("");
+			printf("\tfound %u element(s) in ", j); variableRange_print(&range1); printf("\n");
+			return EXIT_FAILURE;
+		}
+	}
+
+	log_info("Test shl value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % size;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_shl_value(&range2, value2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = (value1 << value2) & range1.mask;
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err("");
+				printf("\t%llx (%llx << %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %llu)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	log_info("Test shr value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % size;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_shr_value(&range2, value2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 >> value2;
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err("");
+				printf("\t%llx (%llx >> %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" >> %llu)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	return EXIT_SUCCESS;
+}
+
+#if 0
 #define NB_TEST 		10000000
 #define MAX_SIZE 		8
 #define MASK 			(0xffffffffffffffff >> (64 - MAX_SIZE))
@@ -22,9 +115,7 @@
 /*#define TEST_CUSTOM*/
 #define NO_PRINT 								/* comment this line to print successful test */
 
-#ifndef SEED
-#define SEED (uint32_t)getpid()
-#endif
+
 
 #ifdef TEST_ADD
 static int32_t test_add(void){
@@ -675,3 +766,5 @@ int main(void){
 
 	return 0;
 }
+
+#endif

@@ -3,6 +3,62 @@
 
 #include <stdint.h>
 
+struct variableRange{
+	uint64_t index;
+	uint32_t scale;
+	uint64_t disp;
+	uint64_t mask;
+};
+
+static inline void variableRange_init_cst(struct variableRange* range, uint64_t value, uint64_t mask){
+	range->index 	= 0;
+	range->scale 	= 0;
+	range->disp 	= value & mask;
+	range->mask 	= mask;
+}
+
+static inline void variableRange_init_top(struct variableRange* range, uint64_t mask){
+	range->index 	= mask;
+	range->scale 	= 0;
+	range->disp 	= 0;
+	range->mask 	= mask;
+}
+
+void variableRange_shl_value(struct variableRange* range, uint64_t value);
+void variableRange_shr_value(struct variableRange* range, uint64_t value);
+
+int32_t variableRange_is_value_include(const struct variableRange* range, uint64_t value);
+
+void variableRange_print(const struct variableRange* range);
+
+struct variableRangeIterator{
+	const struct variableRange* range;
+	uint64_t 					index;
+	uint32_t 					stop;
+};
+
+static inline void variableRangeIterator_init(struct variableRangeIterator* it, const struct variableRange* range){
+	it->range 	= range;
+	it->index 	= 0;
+	it->stop 	= 0;
+}
+
+static inline uint32_t variableRangeIterator_get_next(struct variableRangeIterator* it, uint64_t* value){
+	if (!it->stop){
+		*value = ((it->index << it->range->scale) + it->range->disp) & it->range->mask;
+		if (it->index == it->range->index){
+			it->stop = 1;
+		}
+		it->index ++;
+
+		return 1;
+	}
+
+	return 0;
+}
+
+
+#if 0
 #include "graph.h"
 
 struct variableRange{
@@ -106,7 +162,6 @@ int32_t variableRange_intersect(const struct variableRange* range1, const struct
 int32_t variableRange_include(const struct variableRange* range1, const struct variableRange* range2);
 
 uint64_t variableRange_get_nb_value(const struct variableRange* range);
-
-void variableRange_print(const struct variableRange* range);
+#endif
 
 #endif

@@ -1,10 +1,94 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "variableRange.h"
 #include "base.h"
 
+void variableRange_shl_value(struct variableRange* range, uint64_t value){
+	if (value >= 64){
+		variableRange_init_cst(range, 0, range->mask);
+	}
+	else{
+		range->disp = (range->disp << value) & range->mask;
+		if (range->index){
+			if (value + range->scale >= 64 && !(range->mask >> (value + range->scale))){
+				range->index = 0;
+				range->scale = 0;
+			}
+			else{
+				range->scale += value;
+			}
+		}
+	}
+}
+
+void variableRange_shr_value(struct variableRange* range, uint64_t value){
+	if (value >= 64 || !(range->mask >> value)){
+		variableRange_init_cst(range, 0, range->mask);
+	}
+	else{
+		if (range->index){
+			if (range->scale > value){
+				range->disp = range->disp >> value;
+				range->scale -= value;
+			}
+			else{
+				range->disp >>= range->scale;
+				range->index = (range->index + range->disp) >> (value - range->scale);
+				range->disp >>= (value - range->scale);
+				range->index -= range->disp;
+				range->scale = 0;
+			}
+		}
+		else{
+			range->disp = range->disp >> value;
+		}
+	}
+}
+
+int32_t variableRange_is_value_include(const struct variableRange* range, uint64_t value){
+	if (value & ~range->mask){
+		return 0;
+	}
+
+	value = (value - range->disp) & range->mask;
+	if (value & ~(0xffffffffffffffff << range->scale)){
+		return 0;
+	}
+
+	value >>= range->scale;
+	if (value > range->index){
+		return 0;
+	}
+
+	return 1;
+}
+
+void variableRange_print(const struct variableRange* range){
+	if (!range->index){
+		printf("%llx, mask=%llx", range->disp, range->mask);
+	}
+	else{
+		if (!range->scale){
+			if (!range->disp){
+				printf("[0, %llx], mask=%llx", range->index, range->mask);
+			}
+			else{
+				printf("[0, %llx] + %llx, mask=%llx", range->index, range->disp, range->mask);
+			}
+		}
+		else{
+			if (!range->disp){
+				printf("[0, %llx] << %u, mask=%llx", range->index, range->scale, range->mask);
+			}
+			else{
+				printf("[0, %llx] << %u + %llx, mask=%llx", range->index, range->scale, range->disp, range->mask);
+			}
+		}
+	}
+}
+
+#if 0
 /* #define DEBUG_RANGE */
 
 static int32_t variableRange_seg_include_pt(uint64_t seg_lo, uint64_t seg_up, uint64_t pt){
@@ -502,38 +586,4 @@ int32_t variableRange_include(const struct variableRange* range1, const struct v
 	}
 }
 
-uint64_t variableRange_get_nb_value(const struct variableRange* range){
-	if (!variableRange_is_cst(range)){
-		if (range->index_up >= range->index_lo){
-			return 1 + range->index_up - range->index_lo;
-		}
-		else{
-			return 2 + range->index_up + (variableRange_get_index_mask(range) - range->index_lo);
-		}
-	}
-	else{
-		return 1;
-	}
-}
-
-void variableRange_print(const struct variableRange* range){
-	if (variableRange_is_cst(range)){
-		printf("{0x%llx, m=0x%llx}", variableRange_get_cst(range), range->size_mask);
-	}
-	else if (range->scale == 0){
-		if (range->disp != 0){
-			printf("{[0x%llx, 0x%llx] + 0x%llx, m=0x%llx}", range->index_lo, range->index_up, range->disp, range->size_mask);
-		}
-		else{
-			printf("{[0x%llx, 0x%llx], m=0x%llx}", range->index_lo, range->index_up, range->size_mask);
-		}
-	}
-	else{
-		if (range->disp != 0){
-			printf("{[0x%llx, 0x%llx] << %u + 0x%llx, m=0x%llx}", range->index_lo, range->index_up, range->scale, range->disp, range->size_mask);
-		}
-		else{
-			printf("{[0x%llx, 0x%llx] << %u, m=0x%llx}", range->index_lo, range->index_up, range->scale, range->size_mask);
-		}
-	}
-}
+#endif
