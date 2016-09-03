@@ -194,6 +194,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_RC4_WD"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _rc4"/>
@@ -213,6 +214,7 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_RC4_WR"/>
+			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _rc4"/>
