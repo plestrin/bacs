@@ -650,7 +650,7 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 		}
 	}
 	#endif
-	else if (variableRange_intersect(&range1, &range2)){ /* fragment are not handled for aliasing */
+	else if (variableRange_is_range_intersect(&range1, &range2)){ /* fragment are not handled for aliasing */
 		#if IRMEMORY_ALIAS_HEURISTIC_ESP == 1
 		if (!(token1->addr_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE || token2->addr_fgp.flag & FINGERPRINT_FLAG_INCOMPLETE) && (token1->addr_fgp.flag & FINGERPRINT_FLAG_ESP) != (token2->addr_fgp.flag & FINGERPRINT_FLAG_ESP)){
 			return 0;

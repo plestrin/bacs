@@ -49,7 +49,7 @@ static inline uint64_t irInstruction_movzx_get_mask(struct node* node_src, uint6
 		return mask;
 	}
 	else{
-		return mask & variableRange_get_size_mask(ir_node_get_operation(node_src)->size);
+		return mask & ~(0xffffffffffffffff << ir_node_get_operation(node_src)->size);
 	}
 }
 
@@ -70,7 +70,7 @@ static inline uint64_t irInstruction_or_get_mask(struct node* node_dst, uint64_t
 
 static inline uint64_t irInstruction_part1_x_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
 	if (dir == PATH_SRC_TO_DST){
-		return mask & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+		return mask & ~(0xffffffffffffffff << ir_node_get_operation(node_dst)->size);
 	}
 	else{
 		return mask;
@@ -79,7 +79,7 @@ static inline uint64_t irInstruction_part1_x_get_mask(struct node* node_dst, uin
 
 static inline uint64_t irInstruction_part2_8_get_mask(struct node* node_dst, uint64_t mask, enum dijkstraPathDirection dir){
 	if (dir == PATH_SRC_TO_DST){
-		return (mask >> 8) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+		return (mask >> 8) & ~(0xffffffffffffffff << ir_node_get_operation(node_dst)->size);
 	}
 	else{
 		return mask << 8;
@@ -102,7 +102,7 @@ static inline uint64_t irInstruction_shl_get_mask(struct node* node_dst, uint64_
 	}
 
 	if (dir == PATH_SRC_TO_DST){
-		return (mask << disp) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size);
+		return (mask << disp) & ~(0xffffffffffffffff << ir_node_get_operation(node_dst)->size);
 	}
 	else{
 		return mask >> disp;
@@ -125,10 +125,10 @@ static inline uint64_t irInstruction_rol_get_mask(struct node* node_dst, uint64_
 	}
 
 	if (dir == PATH_SRC_TO_DST){
-		return ((mask << disp) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size)) | (mask >> (ir_node_get_operation(node_dst)->size - disp));
+		return ((mask << disp) & ~(0xffffffffffffffff << ir_node_get_operation(node_dst)->size)) | (mask >> (ir_node_get_operation(node_dst)->size - disp));
 	}
 	else{
-		return (mask >> disp) | ((mask << (ir_node_get_operation(node_dst)->size - disp)) & variableRange_get_size_mask(ir_node_get_operation(node_dst)->size));
+		return (mask >> disp) | ((mask << (ir_node_get_operation(node_dst)->size - disp)) & ~(0xffffffffffffffff << ir_node_get_operation(node_dst)->size));
 	}
 }
 
@@ -231,7 +231,7 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 		}
 	}
 
-	return variableRange_get_size_mask(operation->size);
+	return ~(0xffffffffffffffff << operation->size);
 }
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct symbolMapping* mapping, struct node* node){

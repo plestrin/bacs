@@ -9,7 +9,7 @@
 #include "../base.h"
 
 // #define SEED 		5190
-#define MAX_SIZE 	12
+#define MAX_SIZE 	14
 #define NB_TEST 	131072
 
 #ifndef SEED
@@ -62,6 +62,25 @@ int32_t main(void){
 		}
 	}
 
+	log_info("Test resize");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_resize(&range2, value2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 & ~(0xffffffffffffffff << value2);
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" resized by %llx)\n", ~(0xffffffffffffffff << value2));
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
 	log_info("Test add value");
 	for (i = 0; i < NB_TEST; i++){
 		size = variableRange_init_rand(&range1);
@@ -95,26 +114,6 @@ int32_t main(void){
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
 				printf("\t%llx = (%llx & %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", value2);
-				return EXIT_FAILURE;
-			}
-		}
-	}
-
-	log_info("Test mod value");
-	for (i = 0; i < NB_TEST; i++){
-		size = variableRange_init_rand(&range1);
-		if (!size){
-			continue;
-		}
-		value2 = rand() % MAX_SIZE;
-		memcpy(&range2, &range1, sizeof(struct variableRange));
-		variableRange_mod_value(&range2, value2);
-		variableRange_check_format(&range2);
-		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = value1 & ~(0xffffffffffffffff << value2);
-			if (!variableRange_is_value_include(&range2, value3)){
-				log_err_m("%u", i);
-				printf("\t%llx = (%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", ~(0xffffffffffffffff << value2));
 				return EXIT_FAILURE;
 			}
 		}

@@ -17,11 +17,29 @@ static inline void variableRange_init_cst(struct variableRange* range, uint64_t 
 	range->mask 	= mask;
 }
 
+#define variableRange_init_cst_(range, value, size_bit) variableRange_init_cst(range, value, ~(0xffffffffffffffff << (size_bit)))
+
 static inline void variableRange_init_top(struct variableRange* range, uint64_t mask){
 	range->index 	= mask;
 	range->scale 	= 0;
 	range->disp 	= 0;
 	range->mask 	= mask;
+}
+
+#define variableRange_init_top_(range, size_bit) variableRange_init_top(range, ~(0xffffffffffffffff << (size_bit)))
+
+static inline void variableRange_init_mask(struct variableRange* range, uint64_t mask, uint32_t size_bit){
+	range->mask = ~(0xffffffffffffffff << size_bit);
+	range->disp = 0;
+	
+	if (!(mask &= range->mask)){
+		range->index = 0;
+		range->scale = 0;
+	}
+	else{
+		range->scale = __builtin_ctzll(mask);
+		range->index = mask >> range->scale;
+	}
 }
 
 #define variableRange_is_cst(range) 	((range)->index == 0)
@@ -49,6 +67,7 @@ void variableRange_or_value (struct variableRange* range, uint64_t value, uint32
 #define variableRange_must_upscale(range, size_bit) (~((range)->mask | (0xffffffffffffffff << (size_bit))))
 
 void variableRange_upscale_value(struct variableRange* range, uint32_t value);
+void variableRange_resize(struct variableRange* range, uint32_t size_bit);
 
 void variableRange_add_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 void variableRange_and_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
@@ -59,6 +78,8 @@ void variableRange_or_range (struct variableRange* range1, const struct variable
 int32_t variableRange_is_value_include(const struct variableRange* range, uint64_t value);
 int32_t variableRange_is_range_include(const struct variableRange* range1, const struct variableRange* range2);
 int32_t variableRange_is_range_intersect(const struct variableRange* range1, const struct variableRange* range2);
+
+#define variableRange_is_mask_compact(mask) (((((mask) & (-(mask))) + (mask)) & (mask)) == 0)
 
 void variableRange_check_format(const struct variableRange* range);
 

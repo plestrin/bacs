@@ -161,6 +161,15 @@ void variableRange_upscale_value(struct variableRange* range, uint32_t value){
 	range->mask = ~(0xffffffffffffffff << value);
 }
 
+void variableRange_resize(struct variableRange* range, uint32_t size_bit){
+	if (range->mask >> size_bit){
+		variableRange_mod_value(range, size_bit);
+	}
+	else if (range->mask != ~(0xffffffffffffffff << size_bit)){
+		variableRange_upscale_value(range, size_bit);
+	}
+}
+
 void variableRange_add_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
 	uint64_t mask = ~(0xffffffffffffffff << size_bit);
 
@@ -245,7 +254,7 @@ void variableRange_and_range(struct variableRange* range1, const struct variable
 	}
 }
 
-void vraiableRange_shl_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+void variableRange_shl_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
 	if (variableRange_is_cst(range2)){
 		variableRange_shl_value(range1, variableRange_get_cst(range2), size_bit);
 	}
@@ -255,7 +264,7 @@ void vraiableRange_shl_range(struct variableRange* range1, const struct variable
 	}
 }
 
-void vraiableRange_shr_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+void variableRange_shr_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
 	if (variableRange_is_cst(range2)){
 		variableRange_shr_value(range1, variableRange_get_cst(range2));
 		variableRange_mod_value(range1, size_bit);

@@ -846,15 +846,15 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 	if (imm_operand != NULL){
 		imm_value = ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(imm_operand)));
 		if (variableRange_is_mask_compact(imm_value)){
-			struct variableRange 	range;
-			struct variableRange 	mask_range;
+			struct variableRange range;
+			struct variableRange mask_range;
 
 			ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
 
 			irVariableRange_get_range_and_buffer(&range, operand_buffer, nb_operand, ir_node_get_operation(node)->size, ir->range_seed);
 			variableRange_init_mask(&mask_range, imm_value, ir_node_get_operation(edge_get_src(imm_operand))->size);
 
-			if (variableRange_include(&mask_range, &range)){
+			if (variableRange_is_range_include(&mask_range, &range)){
 				ir_remove_dependence(ir, imm_operand);
 
 				if (node->nb_edge_dst == 1){
