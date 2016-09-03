@@ -8,9 +8,9 @@
 #include "../variableRange.h"
 #include "../base.h"
 
-// #define SEED 		10347
-#define MAX_SIZE 	10
-#define NB_TEST 	16384
+// #define SEED 		5190
+#define MAX_SIZE 	12
+#define NB_TEST 	131072
 
 #ifndef SEED
 #define SEED (uint32_t)getpid()
@@ -22,8 +22,8 @@ static uint32_t variableRange_init_rand(struct variableRange* range){
 	size = rand() % MAX_SIZE;
 	range->mask 	= ~(0xffffffffffffffff << size);
 	range->disp 	= rand() & range->mask;
-	range->scale 	= rand() % (MAX_SIZE - size);
-	range->index 	= rand() & (range->mask >> range->scale);
+	range->scale 	= rand() % (size + 1); 	/* fuzzy scale */
+	range->index 	= rand() & range->mask; /* fuzzy index */
 
 	return size;
 }
@@ -31,31 +31,92 @@ static uint32_t variableRange_init_rand(struct variableRange* range){
 int32_t main(void){
 	struct variableRange 			range1;
 	struct variableRange 			range2;
+	struct variableRange 			range3;
 	struct variableRangeIterator 	it1;
+	struct variableRangeIterator 	it2;
 	uint64_t 						value1;
 	uint64_t 						value2;
 	uint64_t 						value3;
 	uint32_t 						i;
 	uint32_t 						j;
+	uint32_t 						k;
 	uint32_t 						size;
 
 	log_info_m("seed=%d", SEED);
 	srand(SEED);
 
-	log_info("Test iterator & is_value_include");
+	log_info("Test iterator & value include");
 	for (i = 0; i < NB_TEST; i++){
 		variableRange_init_rand(&range1);
 		for (variableRangeIterator_init(&it1, &range1), j = 0; variableRangeIterator_get_next(&it1, &value1); j++){
 			if (!variableRange_is_value_include(&range1, value1)){
-				log_err("");
+				log_err_m("%u", i);
 				printf("\t%llx not in ", value1); variableRange_print(&range1); printf("\n");
 				return EXIT_FAILURE;
 			}
 		}
 		if (j != range1.index + 1){
-			log_err("");
+			log_err_m("%u", i);
 			printf("\tfound %u element(s) in ", j); variableRange_print(&range1); printf("\n");
 			return EXIT_FAILURE;
+		}
+	}
+
+	log_info("Test add value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_add_value(&range2, value2, MAX_SIZE);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = (value1 + value2) & ~(0xffffffffffffffff << MAX_SIZE);
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llu + %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" + %llu)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	log_info("Test and value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % size;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_and_value(&range2, value2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 & value2;
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx & %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	log_info("Test mod value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_mod_value(&range2, value2);
+		variableRange_check_format(&range2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 & ~(0xffffffffffffffff << value2);
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", ~(0xffffffffffffffff << value2));
+				return EXIT_FAILURE;
+			}
 		}
 	}
 
@@ -67,12 +128,13 @@ int32_t main(void){
 		}
 		value2 = rand() % size;
 		memcpy(&range2, &range1, sizeof(struct variableRange));
-		variableRange_shl_value(&range2, value2);
+		variableRange_shl_value(&range2, value2, MAX_SIZE);
+		variableRange_check_format(&range2);
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = (value1 << value2) & range1.mask;
+			value3 = (value1 << value2) & ~(0xffffffffffffffff << MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
-				log_err("");
-				printf("\t%llx (%llx << %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %llu)\n", value2);
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx << %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %llu)\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -90,681 +152,162 @@ int32_t main(void){
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			value3 = value1 >> value2;
 			if (!variableRange_is_value_include(&range2, value3)){
-				log_err("");
-				printf("\t%llx (%llx >> %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" >> %llu)\n", value2);
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx >> %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" >> %llu)\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
 	}
 
+	log_info("Test or value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_or_value(&range2, value2, MAX_SIZE);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 | value2;
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx | %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" | %llx)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	log_info("Test add range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		memcpy(&range3, &range1, sizeof(struct variableRange));
+		size = rand() % MAX_SIZE + 1;
+		variableRange_add_range(&range3, &range2, size);
+
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
+				value3 = (value1 + value2) & ~(0xffffffffffffffff << size);
+				if (!variableRange_is_value_include(&range3, value3)){
+					log_err_m("%u", i);
+					printf("\t%llx = (%llx + %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" + "); variableRange_print(&range2); printf(")\n");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+
+	log_info("Test and range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		memcpy(&range3, &range1, sizeof(struct variableRange));
+		size = rand() % MAX_SIZE + 1;
+		variableRange_and_range(&range3, &range2, size);
+
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
+				value3 = value1 & value2 & ~(0xffffffffffffffff << size);
+				if (!variableRange_is_value_include(&range3, value3)){
+					log_err_m("%u", i);
+					printf("\t%llx = (%llx & %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" & "); variableRange_print(&range2); printf(")\n");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+
+	log_info("Test or range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		memcpy(&range3, &range1, sizeof(struct variableRange));
+		size = rand() % MAX_SIZE + 1;
+		variableRange_or_range(&range3, &range2, size);
+
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
+				value3 = (value1 | value2) & ~(0xffffffffffffffff << size);
+				if (!variableRange_is_value_include(&range3, value3)){
+					log_err_m("%u", i);
+					printf("\t%llx = (%llx | %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" | "); variableRange_print(&range2); printf(")\n");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+
+	log_info("Test include range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		j = variableRange_is_range_include(&range1, &range2);
+
+		for (variableRangeIterator_init(&it2, &range2), k = 1; variableRangeIterator_get_next(&it2, &value2); ){
+			if (!variableRange_is_value_include(&range1, value2)){
+				k = 0;
+				if (j){
+					log_err_m("%u", i);
+					printf("\t"); variableRange_print(&range2); printf(" not included in "); variableRange_print(&range1); printf(" counter example is %llx\n", value2);
+					return EXIT_FAILURE;
+				}
+			}
+		}
+		if (k && !j){
+			log_err_m("%u", i);
+			printf("\t"); variableRange_print(&range2); printf(" included in "); variableRange_print(&range1); printf("\n");
+			return EXIT_FAILURE;
+		}
+	}
+
+	log_info("Test intersect range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		j = variableRange_is_range_intersect(&range1, &range2);
+
+		for (variableRangeIterator_init(&it2, &range2), k = 0; variableRangeIterator_get_next(&it2, &value2); ){
+			if (variableRange_is_value_include(&range1, value2)){
+				k = 1;
+				if (!j){
+					log_err_m("%u", i);
+					printf("\t"); variableRange_print(&range2); printf(" intersect "); variableRange_print(&range1); printf(" counter example is %llx\n", value2);
+					return EXIT_FAILURE;
+				}
+			}
+		}
+		if (!k && j){
+			log_err_m("%u", i);
+			printf("\t"); variableRange_print(&range2); printf(" does not intersect "); variableRange_print(&range1); printf("\n");
+			return EXIT_FAILURE;
+		}
+	}
+
 	return EXIT_SUCCESS;
 }
-
-#if 0
-#define NB_TEST 		10000000
-#define MAX_SIZE 		8
-#define MASK 			(0xffffffffffffffff >> (64 - MAX_SIZE))
-#define SEED 			10347 				/* comment this line to start with a different SEED */
-/*#define TEST_ADD
-#define TEST_AND
-#define TEST_SHL 
-#define TEST_SHR*/
-#define TEST_OR
-/*#define TEST_INCLUDE
-#define TEST_INTERSECT*/
-/*#define TEST_CUSTOM*/
-#define NO_PRINT 								/* comment this line to print successful test */
-
-
-
-#ifdef TEST_ADD
-static int32_t test_add(void){
-	uint32_t 				i;
-	uint64_t 				j;
-	uint64_t 				k;
-	struct variableRange 	range[3];
-	uint64_t 				value;
-	struct variableRange 	cst;
-	uint64_t 				nb_test_predicted;
-	uint64_t 				nb_test_performed;
-
-	log_info_m("starting %u TEST ADD", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		nb_test_predicted = 1;
-		nb_test_performed = 0;
-
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		range[1].index_lo 	= (uint64_t)rand();
-		range[1].index_up 	= (uint64_t)rand();
-		range[1].scale 		= range[0].scale; /* cannot add range with different scale */
-		range[1].disp 		= (uint64_t)rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-		variableRange_pack(range + 1);
-
-		nb_test_predicted = variableRange_get_nb_value(range + 0) * variableRange_get_nb_value(range + 1);
-
-		memcpy(range + 2, range + 0, sizeof(struct variableRange));
-		variableRange_add(range + 2, range + 1, MAX_SIZE);
-
-		for (j = 0; j <= range[0].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[0].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 0, &cst)){
-				continue;
-			}
-
-			for (k = 0; k <= range[1].size_mask; k++){
-				variableRange_init_cst(&cst, k, MAX_SIZE);
-				cst.size_mask 	= range[1].size_mask;
-				cst.disp 		= cst.disp & cst.size_mask;
-				if (!variableRange_include(range + 1, &cst)){
-					continue;
-				}
-				nb_test_performed ++;
-
-				value = j + k;
-				variableRange_init_cst(&cst, value, MAX_SIZE);
-				cst.size_mask 	= range[2].size_mask;
-				cst.disp 		= cst.disp & cst.size_mask;
-				if (!variableRange_include(range + 2, &cst)){
-					log_err_m("incorrect range @ %u, seed=%u", i, SEED);
-					printf("\t-0x%llx + 0x%llx = 0x%llx not in ",  j, k, value);
-					variableRange_print(range + 2);
-					printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
-					printf("\n\t\t-0x%llx is in ", k); variableRange_print(range + 1);
-					printf("\n");
-					return -1;
-				}
-			}
-		}
-
-		if (nb_test_performed != nb_test_predicted){
-			log_err_m("TEST ADD %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
-			printf("\t-"); variableRange_print(range + 1); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 1));
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST ADD %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-		}
-		#endif
-	}
-
-	return 0;
-} 
-#endif
-
-#ifdef TEST_AND
-static int32_t test_and(void){
-	uint32_t 				i;
-	uint64_t 				j;
-	struct variableRange 	range[3];
-	uint64_t 				value;
-	struct variableRange 	cst;
-	uint64_t 				nb_test_predicted;
-	uint64_t 				nb_test_performed;
-
-	log_info_m("starting %u TEST AND", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		nb_test_predicted = 1;
-		nb_test_performed = 0;
-
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		range[1].index_lo 	= 0;
-		range[1].index_up 	= 0;
-		range[1].scale 		= 0xffffffff; /* cannot mask range by a not constant value */
-		range[1].disp 		= (uint64_t)rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-		variableRange_pack(range + 1);
-
-		nb_test_predicted = variableRange_get_nb_value(range + 0);
-
-		memcpy(range + 2, range + 0, sizeof(struct variableRange));
-		variableRange_and(range + 2, range + 1, MAX_SIZE);
-
-		for (j = 0; j <= range[0].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[0].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 0, &cst)){
-				continue;
-			}
-				
-			nb_test_performed ++;
-
-			value = j & range[1].disp;
-			variableRange_init_cst(&cst, value, MAX_SIZE);
-			cst.size_mask 	= range[2].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 2, &cst)){
-				log_err_m("incorrect range @ %u, seed=%u", i, SEED);
-				printf("\t-0x%llx & 0x%llx = 0x%llx not in ",  j, range[1].disp, cst.disp);
-				variableRange_print(range + 2);
-				printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
-				printf("\n");
-				return -1;
-			}
-		}
-
-		if (nb_test_performed != nb_test_predicted){
-			log_err_m("TEST AND %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST AND %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-		}
-		#endif
-	}
-
-	return 0;
-} 
-#endif
-
-#ifdef TEST_SHL
-static int32_t test_shl(void){
-	uint32_t 				i;
-	uint64_t 				j;
-	struct variableRange 	range[3];
-	uint64_t 				value;
-	struct variableRange 	cst;
-	uint64_t 				nb_test_predicted;
-	uint64_t 				nb_test_performed;
-
-	log_info_m("starting %u TEST SHL", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		nb_test_predicted = 1;
-		nb_test_performed = 0;
-
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-
-		if (variableRange_is_cst(range + 0)){ /* skip cst -it is pretty obvious */
-			i --;
-			continue;
-		}
-
-		range[1].index_lo 	= 0;
-		range[1].index_up 	= 0;
-		range[1].scale 		= 0xffffffff; /* cannot shift by a not constant value */
-		range[1].disp 		= (uint64_t)rand() % (MAX_SIZE + 1);
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		
-		variableRange_pack(range + 1);
-
-		nb_test_predicted = variableRange_get_nb_value(range + 0);
-
-		memcpy(range + 2, range + 0, sizeof(struct variableRange));
-		variableRange_shl(range + 2, range + 1, MAX_SIZE);
-
-		for (j = 0; j <= range[0].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[0].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 0, &cst)){
-				continue;
-			}
-				
-			nb_test_performed ++;
-
-			value = j << range[1].disp;
-			variableRange_init_cst(&cst, value, MAX_SIZE);
-			cst.size_mask 	= range[2].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 2, &cst)){
-				log_err_m("incorrect range @ %u, seed=%u", i, SEED);
-				printf("\t-0x%llx << 0x%llx = 0x%llx not in ",  j, range[1].disp, cst.disp);
-				variableRange_print(range + 2);
-				printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
-				printf("\n");
-				return -1;
-			}
-		}
-
-		if (nb_test_performed != nb_test_predicted){
-			log_err_m("TEST SHL %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST SHL %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-		}
-		#endif
-	}
-
-	return 0;
-} 
-#endif
-
-#ifdef TEST_SHR
-static int32_t test_shr(void){
-	uint32_t 				i;
-	uint64_t 				j;
-	struct variableRange 	range[3];
-	uint64_t 				value;
-	struct variableRange 	cst;
-	uint64_t 				nb_test_predicted;
-	uint64_t 				nb_test_performed;
-
-	log_info_m("starting %u TEST SHR", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		nb_test_predicted = 1;
-		nb_test_performed = 0;
-
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-
-		if (variableRange_is_cst(range + 0)){ /* skip cst -it is pretty obvious */
-			i --;
-			continue;
-		}
-
-		range[1].index_lo 	= 0;
-		range[1].index_up 	= 0;
-		range[1].scale 		= 0xffffffff; /* cannot shift by a not constant value */
-		range[1].disp 		= (uint64_t)rand() % (MAX_SIZE + 1);
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		
-		variableRange_pack(range + 1);
-
-		nb_test_predicted = variableRange_get_nb_value(range + 0);
-
-		memcpy(range + 2, range + 0, sizeof(struct variableRange));
-		variableRange_shr(range + 2, range + 1, MAX_SIZE);
-
-		for (j = 0; j <= range[0].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[0].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 0, &cst)){
-				continue;
-			}
-				
-			nb_test_performed ++;
-
-			value = j >> range[1].disp;
-			variableRange_init_cst(&cst, value, MAX_SIZE);
-			cst.size_mask 	= range[2].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 2, &cst)){
-				log_err_m("incorrect range @ %u, seed=%u", i, SEED);
-				printf("\t-0x%llx >> 0x%llx = 0x%llx not in ",  j, range[1].disp, cst.disp);
-				variableRange_print(range + 2);
-				printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
-				printf("\n");
-				return -1;
-			}
-		}
-
-		if (nb_test_performed != nb_test_predicted){
-			log_err_m("TEST SHR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST SHR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-		}
-		#endif
-	}
-
-	return 0;
-} 
-#endif
-
-#ifdef TEST_OR
-static int32_t test_or(void){
-	uint32_t 				i;
-	uint64_t 				j;
-	uint64_t 				k;
-	struct variableRange 	range[3];
-	uint64_t 				value;
-	struct variableRange 	cst;
-	uint64_t 				nb_test_predicted;
-	uint64_t 				nb_test_performed;
-
-	log_info_m("starting %u TEST OR", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		nb_test_predicted = 1;
-		nb_test_performed = 0;
-
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		range[1].index_lo 	= (uint64_t)rand();
-		range[1].index_up 	= (uint64_t)rand();
-		range[1].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[1].disp 		= (uint64_t)rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-		variableRange_pack(range + 1);
-
-		nb_test_predicted = variableRange_get_nb_value(range + 0) * variableRange_get_nb_value(range + 1);
-
-		memcpy(range + 2, range + 0, sizeof(struct variableRange));
-		variableRange_or(range + 2, range + 1, MAX_SIZE);
-
-		for (j = 0; j <= range[0].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[0].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-			if (!variableRange_include(range + 0, &cst)){
-				continue;
-			}
-
-			for (k = 0; k <= range[1].size_mask; k++){
-				variableRange_init_cst(&cst, k, MAX_SIZE);
-				cst.size_mask 	= range[1].size_mask;
-				cst.disp 		= cst.disp & cst.size_mask;
-				if (!variableRange_include(range + 1, &cst)){
-					continue;
-				}
-				nb_test_performed ++;
-
-				value = j | k;
-				variableRange_init_cst(&cst, value, MAX_SIZE);
-				cst.size_mask 	= range[2].size_mask;
-				cst.disp 		= cst.disp & cst.size_mask;
-				if (!variableRange_include(range + 2, &cst)){
-					log_err_m("incorrect range @ %u, seed=%u", i, SEED);
-					printf("\t-0x%llx | 0x%llx = 0x%llx not in ",  j, k, value);
-					variableRange_print(range + 2);
-					printf("\n\t\t-0x%llx is in ", j); variableRange_print(range + 0);
-					printf("\n\t\t-0x%llx is in ", k); variableRange_print(range + 1);
-					printf("\n");
-					return -1;
-				}
-			}
-		}
-
-		if (nb_test_performed != nb_test_predicted){
-			log_err_m("TEST OR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-			printf("\t-"); variableRange_print(range + 0); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 0));
-			printf("\t-"); variableRange_print(range + 1); printf(" nb_value=%llu\n", variableRange_get_nb_value(range + 1));
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST OR %u, %llu/%llu", i, nb_test_performed, nb_test_predicted);
-		}
-		#endif
-	}
-
-	return 0;
-} 
-#endif
-
-#ifdef TEST_INCLUDE
-static int32_t test_include(void){
-	uint32_t 				i;
-	uint32_t 				j;
-	struct variableRange 	range[2];
-	struct variableRange 	cst;
-	int32_t 				included_predicted;
-	int32_t 				included_performed;
-	uint64_t 				nb_test;
-
-	log_info_m("starting %u TEST INCLUDE", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		range[0].index_lo 	= (uint64_t)rand();
-		range[0].index_up 	= (uint64_t)rand();
-		range[0].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[0].disp 		= (uint64_t)rand();
-		range[0].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));
-
-		variableRange_pack(range + 0);
-
-		if (variableRange_is_cst(range + 0)){ /* skip cst -it is pretty obvious */
-			i --;
-			continue;
-		}
-
-		range[1].index_lo 	= (uint64_t)rand();
-		range[1].index_up 	= (uint64_t)rand();
-		range[1].scale 		= (uint64_t)rand() % MAX_SIZE;
-		range[1].disp 		= (uint64_t)rand();
-		range[1].size_mask 	= (0xffffffffffffffff >> (64 - (((uint64_t)rand() % (MAX_SIZE - 1)) + 1)));;
-
-		variableRange_pack(range + 1);
-
-		included_predicted = variableRange_include(range + 0, range + 1);
-
-		for (j = 0, included_performed = 1, nb_test = 0; j <= range[1].size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range[1].size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-
-			if (variableRange_include(range + 1, &cst)){
-				nb_test ++;
-				if (!variableRange_include(range + 0, &cst)){
-					included_performed = 0;
-					if (included_predicted){
-						log_err_m("incorrect include relation @ %u, seed=%u", i, SEED);
-						printf("\t-0x%x in ", j); variableRange_print(range + 1); printf("\n");
-						printf("\t-0x%x not in ", j); variableRange_print(range + 0); printf("\n");
-						return -1;
-					}
-				}
-			}
-		}
-
-		if (nb_test != variableRange_get_nb_value(range + 1)){
-			log_err_m("TEST INCLUDE %u %llu/%llu", i, nb_test, variableRange_get_nb_value(range + 1));
-			printf("\t"); variableRange_print(range + 1); printf("\n");
-			return -1;
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST INCLUDE %u, %llu/%llu", i, nb_test, variableRange_get_nb_value(range + 1));
-		}
-		#endif
-
-		if ((included_performed  && !included_predicted) || (!included_performed  && included_predicted)){
-			log_err_m("incorrect include relation @ %u, seed=%u, (predicted=%u performed=%u)", i, SEED, included_predicted, included_performed);
-			printf("\t"); variableRange_print(range + 1); printf(" C "); variableRange_print(range + 0); printf("\n");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-#endif
-
-#ifdef TEST_INTERSECT
-static int32_t test_intersect(void){
-	uint32_t 				i;
-	uint32_t 				j;
-	struct variableRange 	range1;
-	struct variableRange 	range2;
-	struct variableRange 	cst;
-	int32_t 				intersect_predicted;
-	int32_t 				intersect_performed;
-	uint64_t 				nb_test;
-
-	log_info_m("starting %u TEST INTERSECT", NB_TEST);
-
-	for (i = 0; i < NB_TEST; i++){
-		range1.index_lo 	= (uint64_t)rand();
-		range1.index_up 	= (uint64_t)rand();
-		range1.scale 		= (uint64_t)rand() % MAX_SIZE;
-		range1.disp 		= (uint64_t)rand();
-		range1.size_mask 	= MASK;
-
-		variableRange_pack(&range1);
-
-		if (variableRange_is_cst(&range1)){ /* skip cst -it is pretty obvious */
-			i --;
-			continue;
-		}
-
-		range2.index_lo 	= (uint64_t)rand();
-		range2.index_up 	= (uint64_t)rand();
-		range2.scale 		= (uint64_t)rand() % MAX_SIZE;
-		range2.disp 		= (uint64_t)rand();
-		range2.size_mask 	= MASK;
-		
-		variableRange_pack(&range2);
-
-		if (variableRange_is_cst(&range2)){ /* skip cst -it is pretty obvious */
-			i --;
-			continue;
-		}
-
-		intersect_predicted = variableRange_intersect(&range1, &range2);
-
-		for (j = 0, intersect_performed = 0, nb_test = 0; j <= range2.size_mask; j++){
-			variableRange_init_cst(&cst, j, MAX_SIZE);
-			cst.size_mask 	= range2.size_mask;
-			cst.disp 		= cst.disp & cst.size_mask;
-
-			if (variableRange_include(&range2, &cst)){
-				nb_test ++;
-				if (variableRange_include(&range1, &cst)){
-					intersect_performed = 1;
-					if (!intersect_predicted){
-						log_err_m("incorrect intersect relation @ %u, seed=%u", i, SEED);
-						printf("\t-0x%x in ", j); variableRange_print(&range2); printf("\n");
-						printf("\t-0x%x in ", j); variableRange_print(&range1); printf("\n");
-						return -1;
-					}
-				}
-			}
-		}
-
-		if (nb_test != variableRange_get_nb_value(&range2)){
-			log_err_m("TEST INTERSECT %u %llu/%llu", i, nb_test, variableRange_get_nb_value(&range2));
-			printf("\t"); variableRange_print(&range2); printf("\n");
-		}
-		#ifndef NO_PRINT
-		else{
-			log_info_m("TEST INTERSECT %u, %llu/%llu", i, nb_test, variableRange_get_nb_value(&range2));
-		}
-		#endif
-
-		if ((intersect_performed  && !intersect_predicted) || (!intersect_performed  && intersect_predicted)){
-			log_err_m("incorrect intersect relation @ %u, seed=%u, (predicted=%u performed=%u)", i, SEED, intersect_predicted, intersect_performed);
-			printf("\t"); variableRange_print(&range2); printf(" |_| "); variableRange_print(&range1); printf("\n");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-#endif
-
-#ifdef TEST_CUSTOM
-static int32_t test_custom(void){
-	struct variableRange 	range1;
-	struct variableRange 	range2;
-
-	range1.index_lo 	= 0x0;
-	range1.index_up 	= 0xffffffff;
-	range1.scale 		= 0x0;
-	range1.disp 		= 0x0;
-	range1.size_mask 	= 0xffffffff;
-
-	range2.index_lo 	= 0x0;
-	range2.index_up 	= 0x0;
-	range2.scale 		= 0xffffffff;
-	range2.disp 		= 0x00ff0000;
-	range2.size_mask 	= 0xffffffff;
-
-	variableRange_and(&range1, &range2, 32);
-	variableRange_print(&range1); printf("\n");
-
-	return 0;
-}
-#endif
-
-int main(void){
-	#ifndef SEED
-	#define SEED getpid()
-	#endif
-	log_info_m("seed=%d", SEED);
-	srand(SEED);
-
-	#ifdef TEST_CUSTOM
-	if (test_custom()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_ADD
-	if (test_add()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_AND
-	if (test_and()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_SHL
-	if (test_shl()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_SHR
-	if (test_shr()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_OR
-	if (test_or()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_INCLUDE
-	if (test_include()){
-		return 0;
-	}
-	#endif
-	#ifdef TEST_INTERSECT
-	if (test_intersect()){
-		return 0;
-	}
-	#endif
-
-	return 0;
-}
-
-#endif
