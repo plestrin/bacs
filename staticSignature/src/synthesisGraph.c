@@ -180,7 +180,8 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 				}
 				case IR_DIVQ 		: {break;}
 				case IR_DIVR 		: {break;}
-				case IR_IDIV 		: {break;}
+				case IR_IDIVQ 		: {break;}
+				case IR_IDIVR 		: {break;}
 				case IR_IMUL 		: {break;}
 				case IR_MOVZX 		: {
 					return irInstruction_movzx_get_mask(node_src, mask, dir);

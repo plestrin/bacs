@@ -90,16 +90,17 @@ uint32_t ir_check_size(struct ir* ir){
 					switch(operation_cursor->operation_type.inst.opcode){
 						case IR_DIVQ 		:
 						case IR_DIVR 		:
-						case IR_IDIV 		: {
+						case IR_IDIVQ 		:
+						case IR_IDIVR 		: {
 							if (dependence_cursor->type == IR_DEPENDENCE_TYPE_DIVISOR){
-								if (operand_cursor->size != operation_cursor->size / 2 && operation_cursor->size != operand_cursor->size){
+								if (operation_cursor->size != operand_cursor->size){
 									log_err_m("incorrect operand size for divide: %u", operand_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
 								}
 							}
 							else{
-								if (operation_cursor->size != operand_cursor->size){
+								if (operation_cursor->size != operand_cursor->size / 2){
 									log_err_m("found size mismatch (%u -> %s:%u)", operand_cursor->size, irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
 									operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 									result = 1;
@@ -200,32 +201,33 @@ static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
 	2, 	/* 1  IR_ADD 						*/
 	2, 	/* 2  IR_AND 						*/
 	2, 	/* 3  IR_CMOV 						*/
-	2, 	/* 4  IR_DIV 						*/
-	2, 	/* 5  IR_IDIVQ 						*/
-	2, 	/* 6  IR_IDIVR 						*/
-	2, 	/* 7  IR_IMUL 						*/
-	0, 	/* 8  IR_LEA 	It doesn't matter 	*/
-	0, 	/* 9  IR_MOV 	It doesn't matter 	*/
-	1, 	/* 10 IR_MOVZX 						*/
-	2, 	/* 11 IR_MUL 						*/
-	1, 	/* 12 IR_NEG 						*/
-	1, 	/* 13 IR_NOT 						*/
-	2, 	/* 14 IR_OR 						*/
-	1, 	/* 15 IR_PART1_8 					*/
-	1, 	/* 16 IR_PART2_8 					*/
-	1, 	/* 17 IR_PART1_16 					*/
-	2, 	/* 18 IR_ROL 						*/
-	2, 	/* 19 IR_ROR 						*/
-	2, 	/* 20 IR_SHL 						*/
-	3, 	/* 21 IR_SHLD 						*/
-	2, 	/* 22 IR_SHR 						*/
-	3, 	/* 23 IR_SHRD 						*/
-	2, 	/* 24 IR_SUB 						*/
-	2, 	/* 25 IR_XOR 						*/
-	0, 	/* 26 IR_LOAD 	It doesn't matter 	*/
-	0, 	/* 27 IR_STORE It doesn't matter 	*/
-	0, 	/* 28 IR_JOKER It doesn't matter 	*/
-	0, 	/* 29 IR_INVALID It doesn't matter 	*/
+	2, 	/* 4  IR_DIVQ 						*/
+	2, 	/* 5  IR_DIVR 						*/
+	2, 	/* 6  IR_IDIVQ 						*/
+	2, 	/* 7  IR_IDIVR 						*/
+	2, 	/* 8  IR_IMUL 						*/
+	0, 	/* 9  IR_LEA 	It doesn't matter 	*/
+	0, 	/* 10 IR_MOV 	It doesn't matter 	*/
+	1, 	/* 11 IR_MOVZX 						*/
+	2, 	/* 12 IR_MUL 						*/
+	1, 	/* 13 IR_NEG 						*/
+	1, 	/* 14 IR_NOT 						*/
+	2, 	/* 15 IR_OR 						*/
+	1, 	/* 16 IR_PART1_8 					*/
+	1, 	/* 17 IR_PART2_8 					*/
+	1, 	/* 18 IR_PART1_16 					*/
+	2, 	/* 19 IR_ROL 						*/
+	2, 	/* 20 IR_ROR 						*/
+	2, 	/* 21 IR_SHL 						*/
+	3, 	/* 22 IR_SHLD 						*/
+	2, 	/* 23 IR_SHR 						*/
+	3, 	/* 24 IR_SHRD 						*/
+	2, 	/* 25 IR_SUB 						*/
+	2, 	/* 26 IR_XOR 						*/
+	0, 	/* 27 IR_LOAD 	It doesn't matter 	*/
+	0, 	/* 28 IR_STORE It doesn't matter 	*/
+	0, 	/* 29 IR_JOKER It doesn't matter 	*/
+	0, 	/* 30 IR_INVALID It doesn't matter 	*/
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
@@ -235,30 +237,31 @@ static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
 	0x00000002, /* 3  IR_CMOV 						*/
 	0x00000003, /* 4  IR_DIVQ 						*/
 	0x00000003, /* 5  IR_DIVR 						*/
-	0x00000002, /* 6  IR_IDIV 						*/
-	0xffffffff, /* 7  IR_IMUL 						*/
-	0x00000000, /* 8  IR_LEA 	It doesn't matter 	*/
-	0x00000000, /* 9  IR_MOV 	It doesn't matter 	*/
-	0x00000001, /* 10 IR_MOVZX 						*/
-	0xffffffff, /* 11 IR_MUL 						*/
-	0x00000001, /* 12 IR_NEG 						*/
-	0x00000001, /* 13 IR_NOT 						*/
-	0xffffffff, /* 14 IR_OR 						*/
-	0x00000001, /* 15 IR_PART1_8 					*/
-	0x00000001, /* 16 IR_PART2_8 					*/
-	0x00000001, /* 17 IR_PART1_16 					*/
-	0x00000002, /* 18 IR_ROL 						*/
-	0x00000002, /* 19 IR_ROR 						*/
-	0x00000002, /* 20 IR_SHL 						*/
-	0x00000003, /* 21 IR_SHLD 						*/
-	0x00000002, /* 22 IR_SHR 						*/
-	0x00000003, /* 23 IR_SHRD 						*/
-	0x00000002, /* 24 IR_SUB 						*/
-	0xffffffff, /* 25 IR_XOR 						*/
-	0x00000000, /* 26 IR_LOAD 	It doesn't matter 	*/
-	0x00000000, /* 27 IR_STORE It doesn't matter 	*/
-	0x00000000, /* 28 IR_JOKER It doesn't matter 	*/
-	0x00000000, /* 29 IR_INVALID It doesn't matter 	*/
+	0x00000002, /* 6  IR_IDIVQ 						*/
+	0x00000002, /* 7  IR_IDIVR 						*/
+	0xffffffff, /* 8  IR_IMUL 						*/
+	0x00000000, /* 9  IR_LEA 	It doesn't matter 	*/
+	0x00000000, /* 10 IR_MOV 	It doesn't matter 	*/
+	0x00000001, /* 11 IR_MOVZX 						*/
+	0xffffffff, /* 12 IR_MUL 						*/
+	0x00000001, /* 13 IR_NEG 						*/
+	0x00000001, /* 14 IR_NOT 						*/
+	0xffffffff, /* 15 IR_OR 						*/
+	0x00000001, /* 16 IR_PART1_8 					*/
+	0x00000001, /* 17 IR_PART2_8 					*/
+	0x00000001, /* 18 IR_PART1_16 					*/
+	0x00000002, /* 19 IR_ROL 						*/
+	0x00000002, /* 20 IR_ROR 						*/
+	0x00000002, /* 21 IR_SHL 						*/
+	0x00000003, /* 22 IR_SHLD 						*/
+	0x00000002, /* 23 IR_SHR 						*/
+	0x00000003, /* 24 IR_SHRD 						*/
+	0x00000002, /* 25 IR_SUB 						*/
+	0xffffffff, /* 26 IR_XOR 						*/
+	0x00000000, /* 27 IR_LOAD 	It doesn't matter 	*/
+	0x00000000, /* 28 IR_STORE It doesn't matter 	*/
+	0x00000000, /* 29 IR_JOKER It doesn't matter 	*/
+	0x00000000, /* 30 IR_INVALID It doesn't matter 	*/
 };
 
 uint32_t ir_check_connectivity(struct ir* ir){
@@ -433,7 +436,8 @@ uint32_t ir_check_connectivity(struct ir* ir){
 					}
 					case IR_DIVQ 		: 
 					case IR_DIVR 		: 
-					case IR_IDIV 		: {
+					case IR_IDIVQ 		:
+					case IR_IDIVR 		: {
 						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
 							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
 								continue;

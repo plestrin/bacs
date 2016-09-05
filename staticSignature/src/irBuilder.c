@@ -999,7 +999,7 @@ void irBuilder_tag_final_node(struct irBuilder* builder){
 	struct irOperation* operation;
 
 	for (i = 0; i < NB_IR_STD_REGISTER; i++){
-		if (i == IR_REG_TMP){
+		if (i == IR_REG_TMP0 || i == IR_REG_TMP1 || i == IR_REG_TMP2 || i == IR_REG_TMP3){
 			continue;
 		}
 
@@ -1045,7 +1045,7 @@ void irBuilder_chg_final_node(struct irBuilder* builder, struct node* node_old, 
 	#endif
 
 	for (i = 0; i < NB_IR_STD_REGISTER; i++){
-		if (builder->alias_buffer[i].ir_node == node_old && i != IR_REG_TMP){
+		if (builder->alias_buffer[i].ir_node == node_old && i != IR_REG_TMP0 && i != IR_REG_TMP1 && i != IR_REG_TMP2 && i != IR_REG_TMP3){
 			builder->alias_buffer[i].ir_node = node_new;
 			#ifdef EXTRA_CHECK
 			found = 1;
@@ -1081,7 +1081,7 @@ void irBuilder_propagate_alias(struct irBuilder* builder_dst, struct ir* ir_dst,
 	uint32_t j;
 
 	for (i = 0; i < NB_IR_STD_REGISTER; i++){
-		if (i == IR_REG_TMP){
+		if (i == IR_REG_TMP0 || i == IR_REG_TMP1 || i == IR_REG_TMP2 || i == IR_REG_TMP3){
 			continue;
 		}
 
