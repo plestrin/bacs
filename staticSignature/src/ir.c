@@ -618,15 +618,19 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 			}
 			switch(operation->size){
 				case 8 	: {
-					fprintf(file, ",label=\"0x%02x\"", (uint32_t)(operation->operation_type.imm.value & 0xff));
+					fprintf(file, ",label=\"0x%x\"", (uint32_t)(operation->operation_type.imm.value & 0xff));
 					break;
 				}
 				case 16 : {
-					fprintf(file, ",label=\"0x%04x\"", (uint32_t)(operation->operation_type.imm.value & 0xffff));
+					fprintf(file, ",label=\"0x%x\"", (uint32_t)(operation->operation_type.imm.value & 0xffff));
 					break;
 				}
 				case 32 : {
-					fprintf(file, ",label=\"0x%08x\"", (uint32_t)(operation->operation_type.imm.value & 0xffffffff));
+					fprintf(file, ",label=\"0x%x\"", (uint32_t)(operation->operation_type.imm.value & 0xffffffff));
+					break;
+				}
+				case 64 : {
+					fprintf(file, ",label=\"0x%llx\"", operation->operation_type.imm.value);
 					break;
 				}
 				default : {
@@ -707,7 +711,8 @@ const char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_CMOV 		: {return "cmov";}
 		case IR_DIVQ 		: {return "divq";}
 		case IR_DIVR 		: {return "divr";}
-		case IR_IDIV 		: {return "idiv";}
+		case IR_IDIVQ 		: {return "idivq";}
+		case IR_IDIVR 		: {return "idivr";}
 		case IR_IMUL 		: {return "imul";}
 		case IR_LEA 		: {return "lea";}
 		case IR_MOV 		: {return "mov";}
@@ -736,7 +741,7 @@ const char* irOpcode_2_string(enum irOpcode opcode){
 	return NULL;
 }
 
-static const char irRegister_name_std[NB_IR_STD_REGISTER][4] = {
+static const char irRegister_name_std[NB_IR_STD_REGISTER][5] = {
 	"EAX",
 	"AX",
 	"AH",
@@ -761,7 +766,10 @@ static const char irRegister_name_std[NB_IR_STD_REGISTER][4] = {
 	"SI",
 	"EDI",
 	"DI",
-	"??"
+	"TMP0",
+	"TMP1",
+	"TMP2",
+	"TMP3"
 };
 
 static const char irRegister_name_mmx[NB_IR_MMX_REGISTER][3][8][10] = {

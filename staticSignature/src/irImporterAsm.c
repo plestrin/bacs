@@ -20,29 +20,30 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 3  IR_CMOV 		*/
 	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 4  IR_DIVQ 		*/
 	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 5  IR_DIVR 		*/
-	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 6  IR_IDIV 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 7  IR_IMUL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 8  IR_LEA 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 9  IR_MOV 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 10 IR_MOVZX 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 11 IR_MUL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 12 IR_NEG 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 13 IR_NOT 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 14 IR_OR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 15 IR_PART1_8 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 16 IR_PART2_8 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 17 IR_PART1_16 	*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 18 IR_ROL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 19 IR_ROR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 20 IR_SHL 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 21 IR_SHLD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 22 IR_SHR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 23 IR_SHRD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SUBSTITUTE, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 24 IR_SUB 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 25 IR_XOR 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 26 IR_LOAD 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 27 IR_STORE 		*/
-	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 28 IR_JOKER 		*/
+	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 6  IR_IDIVQ 		*/
+	{IR_DEPENDENCE_TYPE_DIVISOR, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 7  IR_IDIVR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 8  IR_IMUL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 9  IR_LEA 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 10 IR_MOV 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 11 IR_MOVZX 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 12 IR_MUL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 13 IR_NEG 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 14 IR_NOT 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 15 IR_OR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 16 IR_PART1_8 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 17 IR_PART2_8 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 18 IR_PART1_16 	*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 19 IR_ROL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 20 IR_ROR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 21 IR_SHL 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 22 IR_SHLD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SHIFT_DISP, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 23 IR_SHR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_ROUND_OFF, 	IR_DEPENDENCE_TYPE_SHIFT_DISP}, /* 24 IR_SHRD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_SUBSTITUTE, 	IR_DEPENDENCE_TYPE_DIRECT}, 	/* 25 IR_SUB 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 26 IR_XOR 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 27 IR_LOAD 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 28 IR_STORE 		*/
+	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 29 IR_JOKER 		*/
 };
 
 static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
@@ -52,29 +53,30 @@ static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
 	0, /* 3  IR_CMOV 		*/
 	0, /* 4  IR_DIVQ 		*/
 	0, /* 5  IR_DIVR 		*/
-	0, /* 6  IR_IDIV 		*/
-	1, /* 7  IR_IMUL 		*/
-	0, /* 8  IR_LEA 		*/
-	0, /* 9  IR_MOV 		*/
-	0, /* 10 IR_MOVZX 		*/
-	0, /* 11 IR_MUL 		*/
-	0, /* 12 IR_NEG 		*/
-	0, /* 13 IR_NOT 		*/
-	1, /* 14 IR_OR 			*/
-	0, /* 15 IR_PART1_8 	*/
-	0, /* 16 IR_PART2_8 	*/
-	0, /* 17 IR_PART1_16 	*/
-	0, /* 18 IR_ROL 		*/
-	0, /* 19 IR_ROR 		*/
-	0, /* 20 IR_SHL 		*/
-	0, /* 21 IR_SHLD 		*/
-	0, /* 22 IR_SHR 		*/
-	0, /* 23 IR_SHRD 		*/
-	1, /* 24 IR_SUB 		*/
-	1, /* 25 IR_XOR 		*/
-	0, /* 26 IR_LOAD 		*/
-	0, /* 27 IR_STORE 		*/
-	0  /* 28 IR_JOKER 		*/
+	0, /* 6  IR_IDIVQ 		*/
+	0, /* 7  IR_IDIVR 		*/
+	1, /* 8  IR_IMUL 		*/
+	0, /* 9  IR_LEA 		*/
+	0, /* 10 IR_MOV 		*/
+	0, /* 11 IR_MOVZX 		*/
+	0, /* 12 IR_MUL 		*/
+	0, /* 13 IR_NEG 		*/
+	0, /* 14 IR_NOT 		*/
+	1, /* 15 IR_OR 			*/
+	0, /* 19 IR_PART1_8 	*/
+	0, /* 17 IR_PART2_8 	*/
+	0, /* 18 IR_PART1_16 	*/
+	0, /* 19 IR_ROL 		*/
+	0, /* 20 IR_ROR 		*/
+	0, /* 21 IR_SHL 		*/
+	0, /* 22 IR_SHLD 		*/
+	0, /* 23 IR_SHR 		*/
+	0, /* 24 IR_SHRD 		*/
+	1, /* 25 IR_SUB 		*/
+	1, /* 26 IR_XOR 		*/
+	0, /* 27 IR_LOAD 		*/
+	0, /* 28 IR_STORE 		*/
+	0  /* 29 IR_JOKER 		*/
 };
 
 struct memOperand{
@@ -182,13 +184,13 @@ struct asmCiscIns{
 
 static void cisc_decode_special_call(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
-static void cisc_decode_special_div(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void cisc_decode_special_div_idiv(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t is_signed);
 static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_movsx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
-static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc); /* attention */
+static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc);
 static void cisc_decode_special_setxx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_stosx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
@@ -204,6 +206,7 @@ static void simd_decode_generic(struct ir* ir, struct instructionIterator* it, s
 static void simd_decode_vex_padding(struct instructionIterator* it, struct asmCiscIns* cisc);
 
 static void simd_decode_special_movhlps(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void simd_decode_special_movlpd(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_palignr(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void simd_decode_special_pcmpgt(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, enum simdType type);
@@ -253,10 +256,14 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			break;
 		}
 		case XED_ICLASS_DIV 		: {
-			cisc_decode_special_div(it, &cisc, mem_addr);
+			cisc_decode_special_div_idiv(it, &cisc, mem_addr, 0);
 			break;
 		}
 		case XED_ICLASS_EMMS 		: {break;}
+		case XED_ICLASS_IDIV 		: {
+			cisc_decode_special_div_idiv(it, &cisc, mem_addr, 1);
+			break;
+		}
 		case XED_ICLASS_INC 		: {
 			cisc_decode_special_inc(it, &cisc, mem_addr);
 			break;
@@ -285,6 +292,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		case XED_ICLASS_MOVDQU 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
 		case XED_ICLASS_MOVHLPS 	: {
 			simd_decode_special_movhlps(ir, it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_MOVLPD 		: {
+			simd_decode_special_movlpd(ir, it, &cisc, mem_addr);
 			break;
 		}
 		case XED_ICLASS_MOVQ 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
@@ -1223,7 +1234,6 @@ static enum irOpcode xedOpcode_2_irOpcode(xed_iclass_enum_t xed_opcode){
 		case XED_ICLASS_CMOVP 		: {return IR_CMOV;}
 		case XED_ICLASS_CMOVS 		: {return IR_CMOV;}
 		case XED_ICLASS_CMOVZ 		: {return IR_CMOV;}
-		case XED_ICLASS_IDIV		: {return IR_IDIV;}
 		case XED_ICLASS_IMUL 		: {return IR_IMUL;}
 		case XED_ICLASS_LEA 		: {return IR_LEA;}
 		case XED_ICLASS_MOV 		: {return IR_MOV;}
@@ -1402,45 +1412,134 @@ static void cisc_decode_special_dec(struct instructionIterator* it, struct asmCi
 	asmOperand_decode(it, &(cisc->ins[0].output_operand), 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
 }
 
-static void cisc_decode_special_div(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
-	asmOperand_decode(it, cisc->ins[0].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[0].nb_input_operand), mem_addr);
-	asmOperand_decode(it, cisc->ins[1].input_operand, IRIMPORTERASM_MAX_INPUT_OPERAND, ASM_OPERAND_ROLE_READ_ALL, &(cisc->ins[1].nb_input_operand), mem_addr);
+static void cisc_decode_special_div_idiv(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t is_signed){
+	struct asmOperand 	input_operand_buffer[3];
+	uint8_t 			nb_input_operand;
+	enum irOpcode 		opcode_divq;
+	enum irOpcode 		opcode_divr;
+
+	asmOperand_decode(it, input_operand_buffer, 3, ASM_OPERAND_ROLE_READ_ALL, &nb_input_operand, mem_addr);
 	
 	#ifdef EXTRA_CHECK
-	if (cisc->ins[0].nb_input_operand != 2){
-		log_err_m("incorrect DIV format (%u input arg(s))", cisc->ins[0].nb_input_operand);
-		return;
+	if (nb_input_operand == 2){
+		if (input_operand_buffer[0].size != 8){
+			log_err_m("incorrect *DIV format (second operand size is %u)", input_operand_buffer[0].size);
+			return;
+		}
 	}
-	if (cisc->ins[0].input_operand[0].size != 8 && cisc->ins[0].input_operand[0].size != 16 && cisc->ins[0].input_operand[0].size != 32){
-		log_err_m("incorrect DIV format (second operand size is %u)", cisc->ins[0].input_operand[0].size);
+	else if (nb_input_operand == 3){
+		if (input_operand_buffer[0].size != 16 && input_operand_buffer[0].size != 32){
+			log_err_m("incorrect *DIV format (second operand size is %u)", input_operand_buffer[0].size);
+			return;
+		}
+	}
+	else{
+		log_err_m("incorrect *DIV format (%u input arg(s))", nb_input_operand);
 		return;
 	}
 	#endif
 
-	cisc->type 												= CISC_TYPE_SEQ;
-	cisc->nb_ins 											= 3;
-	cisc->ins[0].opcode 									= IR_DIVQ;
-	cisc->ins[1].opcode 									= IR_DIVR;
-	cisc->ins[2].opcode 									= IR_MOV;
-
-	if (cisc->ins[0].input_operand[1].size == 8){
-		asmOperand_set_reg(cisc->ins[0].output_operand, 8, it->instruction_index, IR_REG_TMP)
-		asmOperand_set_reg(cisc->ins[1].output_operand, 8, it->instruction_index, IR_REG_AH)
-		asmOperand_set_reg(cisc->ins[2].output_operand, 8, it->instruction_index, IR_REG_AL)
-	}
-	else if (cisc->ins[0].input_operand[1].size == 16){
-		asmOperand_set_reg(cisc->ins[0].output_operand, 16, it->instruction_index, IR_REG_TMP)
-		asmOperand_set_reg(cisc->ins[1].output_operand, 16, it->instruction_index, IR_REG_AX)
-		asmOperand_set_reg(cisc->ins[2].output_operand, 16, it->instruction_index, IR_REG_DX)
+	if (is_signed){
+		opcode_divq = IR_IDIVQ;
+		opcode_divr = IR_IDIVR;
 	}
 	else{
-		asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_TMP)
-		asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_EAX)
-		asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_EDX)
+		opcode_divq = IR_DIVQ;
+		opcode_divr = IR_DIVR;
 	}
 
-	cisc->ins[2].nb_input_operand 							= 1;
-	asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[0].output_operand));
+	cisc->type 												= CISC_TYPE_SEQ;
+
+	if (input_operand_buffer[0].size == 8){
+		cisc->nb_ins 										= 3;
+		cisc->ins[0].opcode 								= opcode_divq;
+		cisc->ins[0].nb_input_operand 						= 2;
+		cisc->ins[1].opcode 								= opcode_divr;
+		cisc->ins[1].nb_input_operand 						= 2;
+		cisc->ins[2].opcode 								= IR_MOV;
+		cisc->ins[2].nb_input_operand 						= 1;
+
+		asmOperand_copy(cisc->ins[0].input_operand, input_operand_buffer);
+		asmOperand_set_reg(cisc->ins[0].input_operand[1], 16, it->instruction_index, IR_REG_AX)
+		asmOperand_set_reg(cisc->ins[0].output_operand, 8, it->instruction_index, IR_REG_TMP0)
+
+		asmOperand_copy(cisc->ins[1].input_operand, input_operand_buffer);
+		asmOperand_set_reg(cisc->ins[1].input_operand[1], 16, it->instruction_index, IR_REG_AX)
+		asmOperand_set_reg(cisc->ins[1].output_operand, 8, it->instruction_index, IR_REG_AH)
+
+		asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[0].output_operand));
+		asmOperand_set_reg(cisc->ins[2].output_operand, 8, it->instruction_index, IR_REG_AL)
+	}
+	else{
+		cisc->nb_ins 										= 7;
+		cisc->ins[0].opcode 								= IR_MOVZX;
+		cisc->ins[0].nb_input_operand 						= 1;
+		cisc->ins[1].opcode 								= IR_MOVZX;
+		cisc->ins[1].nb_input_operand 						= 1;
+		cisc->ins[2].opcode 								= IR_SHL;
+		cisc->ins[2].nb_input_operand 						= 2;
+		cisc->ins[3].opcode 								= IR_OR;
+		cisc->ins[3].nb_input_operand 						= 2;
+		cisc->ins[4].opcode 								= opcode_divq;
+		cisc->ins[4].nb_input_operand 						= 2;
+		cisc->ins[5].opcode 								= opcode_divr;
+		cisc->ins[5].nb_input_operand 						= 2;
+		cisc->ins[6].opcode 								= IR_MOV;
+		cisc->ins[6].nb_input_operand 						= 1;
+
+		if (input_operand_buffer[0].size == 16){
+			asmOperand_set_reg(cisc->ins[0].input_operand[0], 16, it->instruction_index, IR_REG_AX)
+			asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_TMP0)
+
+			asmOperand_set_reg(cisc->ins[1].input_operand[0], 16, it->instruction_index, IR_REG_DX)
+			asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[1].output_operand));
+			asmOperand_set_imm(cisc->ins[2].input_operand[1], 32, 16)
+			asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[3].input_operand + 0, &(cisc->ins[0].output_operand));
+			asmOperand_copy(cisc->ins[3].input_operand + 1, &(cisc->ins[2].output_operand));
+			asmOperand_set_reg(cisc->ins[3].output_operand, 32, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[4].input_operand + 0, input_operand_buffer);
+			asmOperand_copy(cisc->ins[4].input_operand + 1, &(cisc->ins[3].output_operand));
+			asmOperand_set_reg(cisc->ins[4].output_operand, 16, it->instruction_index, IR_REG_TMP2)
+
+			asmOperand_copy(cisc->ins[5].input_operand + 0, input_operand_buffer);
+			asmOperand_copy(cisc->ins[5].input_operand + 1, &(cisc->ins[3].output_operand));
+			asmOperand_set_reg(cisc->ins[5].output_operand, 16, it->instruction_index, IR_REG_DX)
+
+			asmOperand_copy(cisc->ins[6].input_operand, &(cisc->ins[4].output_operand));
+			asmOperand_set_reg(cisc->ins[6].output_operand, 16, it->instruction_index, IR_REG_AX)
+		}
+		else{
+			asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_EAX)
+			asmOperand_set_reg(cisc->ins[0].output_operand, 64, it->instruction_index, IR_REG_TMP0)
+
+			asmOperand_set_reg(cisc->ins[1].input_operand[0], 32, it->instruction_index, IR_REG_EDX)
+			asmOperand_set_reg(cisc->ins[1].output_operand, 64, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[2].input_operand, &(cisc->ins[1].output_operand));
+			asmOperand_set_imm(cisc->ins[2].input_operand[1], 64, 32)
+			asmOperand_set_reg(cisc->ins[2].output_operand, 64, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[3].input_operand + 0, &(cisc->ins[0].output_operand));
+			asmOperand_copy(cisc->ins[3].input_operand + 1, &(cisc->ins[2].output_operand));
+			asmOperand_set_reg(cisc->ins[3].output_operand, 64, it->instruction_index, IR_REG_TMP1)
+
+			asmOperand_copy(cisc->ins[4].input_operand + 0, input_operand_buffer);
+			asmOperand_copy(cisc->ins[4].input_operand + 1, &(cisc->ins[3].output_operand));
+			asmOperand_set_reg(cisc->ins[4].output_operand, 32, it->instruction_index, IR_REG_TMP2)
+
+			asmOperand_copy(cisc->ins[5].input_operand + 0, input_operand_buffer);
+			asmOperand_copy(cisc->ins[5].input_operand + 1, &(cisc->ins[3].output_operand));
+			asmOperand_set_reg(cisc->ins[5].output_operand, 32, it->instruction_index, IR_REG_EDX)
+
+			asmOperand_copy(cisc->ins[6].input_operand, &(cisc->ins[4].output_operand));
+			asmOperand_set_reg(cisc->ins[6].output_operand, 32, it->instruction_index, IR_REG_EAX)
+		}
+	}
 }
 
 static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
@@ -1520,18 +1619,18 @@ static void cisc_decode_special_movsx(struct instructionIterator* it, struct asm
 	cisc->ins[1].nb_input_operand 							= 2;
 	asmOperand_set_imm(cisc->ins[1].input_operand[0], 32, size)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, -(uint64_t)size)
-	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP0)
 
 	cisc->ins[2].opcode 									= IR_ADD;
 	cisc->ins[2].nb_input_operand 							= 2;
 	asmOperand_set_reg(cisc->ins[2].input_operand[0], 32, it->instruction_index, IR_REG_ESI)
-	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP0)
 	asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_ESI)
 
 	cisc->ins[3].opcode 									= IR_ADD;
 	cisc->ins[3].nb_input_operand 							= 2;
 	asmOperand_set_reg(cisc->ins[3].input_operand[0], 32, it->instruction_index, IR_REG_EDI)
-	asmOperand_set_reg(cisc->ins[3].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[3].input_operand[1], 32, it->instruction_index, IR_REG_TMP0)
 	asmOperand_set_reg(cisc->ins[3].output_operand, 32, it->instruction_index, IR_REG_EDI)
 }
 
@@ -1636,12 +1735,12 @@ static void cisc_decode_special_stosx(struct instructionIterator* it, struct asm
 	cisc->ins[1].nb_input_operand 							= 2;
 	asmOperand_set_imm(cisc->ins[1].input_operand[0], 32, size)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, -(uint64_t)size)
-	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_TMP0)
 
 	cisc->ins[2].opcode 									= IR_ADD;
 	cisc->ins[2].nb_input_operand 							= 2;
 	asmOperand_set_reg(cisc->ins[2].input_operand[0], 32, it->instruction_index, IR_REG_EDI)
-	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[2].input_operand[1], 32, it->instruction_index, IR_REG_TMP0)
 	asmOperand_set_reg(cisc->ins[2].output_operand, 32, it->instruction_index, IR_REG_EDI)
 }
 
@@ -1672,7 +1771,7 @@ static void cisc_decode_special_xchg(struct instructionIterator* it, struct asmC
 	cisc->ins[0].opcode 									= IR_MOV;
 	cisc->ins[0].nb_input_operand 							= 1;
 	asmOperand_decode(it, cisc->ins[0].input_operand, 1, ASM_OPERAND_ROLE_WRITE_1, NULL, mem_addr);
-	asmOperand_set_reg(cisc->ins[0].output_operand, cisc->ins[0].input_operand[0].size, it->instruction_index, IR_REG_TMP)
+	asmOperand_set_reg(cisc->ins[0].output_operand, cisc->ins[0].input_operand[0].size, it->instruction_index, IR_REG_TMP0)
 
 	cisc->ins[1].opcode 									= IR_MOV;
 	cisc->ins[1].nb_input_operand 							= 1;
@@ -1893,6 +1992,50 @@ static void simd_decode_special_movhlps(struct ir* ir, struct instructionIterato
 	cisc->type = CISC_TYPE_PARA;
 	cisc->nb_ins = i;
 }
+
+static void simd_decode_special_movlpd(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
+	struct asmOperand 	in_operand_buffer[1];
+	struct asmOperand 	ou_operand_buffer[1];
+	uint8_t 			nb_operand;
+	uint32_t 			i;
+	uint32_t 			frag_size;
+
+	asmOperand_decode(it, in_operand_buffer, 1, ASM_OPERAND_ROLE_READ_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect MOVLPD format (%u input arg(s))", nb_operand);
+		return;
+	}
+	#endif
+
+	asmOperand_decode(it, ou_operand_buffer, 1, ASM_OPERAND_ROLE_WRITE_ALL, &nb_operand, mem_addr);
+
+	#ifdef EXTRA_CHECK
+	if (nb_operand != 1){
+		log_err_m("incorrect MOVLPD format (%u output arg(s))", nb_operand);
+		return;
+	}
+	#endif
+
+	if (in_operand_buffer[0].type == ASM_OPERAND_REG){
+		frag_size = irBuilder_get_vir_register_frag_size(&(ir->builder), in_operand_buffer[0].operand_type.reg);
+	}
+	else{
+		frag_size = SIMD_DEFAULT_FRAG_SIZE;
+	}
+
+	for (i = 0; i < (64 / frag_size); i++){
+		cisc->ins[i].opcode = IR_MOV;
+		cisc->ins[i].nb_input_operand = 1;
+		asmOperand_frag(cisc->ins[i].input_operand, in_operand_buffer, frag_size, i);
+		asmOperand_frag(&(cisc->ins[i].output_operand), ou_operand_buffer, frag_size, i);
+	}
+
+	cisc->type = CISC_TYPE_PARA;
+	cisc->nb_ins = i;
+}
+
 
 static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
 	struct asmRiscIns 	local_simd;
@@ -2149,7 +2292,7 @@ static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator
 				cisc->ins[1].output_operand.instruction_index 	= it->instruction_index;
 				cisc->ins[1].output_operand.variable 			= NULL;
 				cisc->ins[1].output_operand.type 				= ASM_OPERAND_REG;
-				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP;
+				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP0;
 
 				cisc->nb_ins ++;
 
@@ -2172,7 +2315,7 @@ static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator
 				cisc->ins[1].output_operand.instruction_index 	= it->instruction_index;
 				cisc->ins[1].output_operand.variable 			= NULL;
 				cisc->ins[1].output_operand.type 				= ASM_OPERAND_REG;
-				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP;
+				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP0;
 
 				cisc->nb_ins ++;
 			}
@@ -2185,7 +2328,7 @@ static void simd_decode_special_pinsrw(struct ir* ir, struct instructionIterator
 				cisc->ins[1].output_operand.instruction_index 	= it->instruction_index;
 				cisc->ins[1].output_operand.variable 			= NULL;
 				cisc->ins[1].output_operand.type 				= ASM_OPERAND_REG;
-				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP;
+				cisc->ins[1].output_operand.operand_type.reg 	= IR_REG_TMP0;
 
 				cisc->nb_ins ++;
 			}

@@ -29,30 +29,31 @@ static const uint8_t propagate_constant[NB_IR_OPCODE] = {
 	0, /* 3  IR_CMOV 			*/
 	0, /* 4  IR_DIVQ  			*/
 	0, /* 5  IR_DIVR  			*/
-	0, /* 6  IR_IDIV 			*/
-	1, /* 7  IR_IMUL 			*/
-	0, /* 8  IR_LEA 			*/
-	0, /* 9  IR_MOV 			*/
-	0, /* 10 IR_MOVZX 			*/
-	1, /* 11 IR_MUL 			*/
-	0, /* 12 IR_NEG 			*/
-	0, /* 13 IR_NOT 			*/
-	1, /* 14 IR_OR 				*/
-	0, /* 15 IR_PART1_8 		*/
-	0, /* 16 IR_PART2_8 		*/
-	0, /* 17 IR_PART1_16 		*/
-	0, /* 18 IR_ROL 			*/
-	0, /* 19 IR_ROR 			*/
-	1, /* 20 IR_SHL 			*/
-	0, /* 21 IR_SHLD 			*/
-	1, /* 22 IR_SHR 			*/
-	0, /* 23 IR_SHRD 			*/
-	0, /* 24 IR_SUB 			*/
-	1, /* 25 IR_XOR 			*/
-	0, /* 26 IR_LOAD 			*/
-	0, /* 27 IR_STORE 			*/
-	0, /* 28 IR_JOKER 			*/
-	0 /* 29 IR_INVALID 			*/
+	0, /* 6  IR_IDIVQ 			*/
+	0, /* 7  IR_IDIVR 			*/
+	1, /* 8  IR_IMUL 			*/
+	0, /* 9  IR_LEA 			*/
+	0, /* 10 IR_MOV 			*/
+	0, /* 11 IR_MOVZX 			*/
+	1, /* 12 IR_MUL 			*/
+	0, /* 13 IR_NEG 			*/
+	0, /* 14 IR_NOT 			*/
+	1, /* 15 IR_OR 				*/
+	0, /* 16 IR_PART1_8 		*/
+	0, /* 17 IR_PART2_8 		*/
+	0, /* 18 IR_PART1_16 		*/
+	0, /* 19 IR_ROL 			*/
+	0, /* 20 IR_ROR 			*/
+	1, /* 21 IR_SHL 			*/
+	0, /* 22 IR_SHLD 			*/
+	1, /* 23 IR_SHR 			*/
+	0, /* 24 IR_SHRD 			*/
+	0, /* 25 IR_SUB 			*/
+	1, /* 26 IR_XOR 			*/
+	0, /* 27 IR_LOAD 			*/
+	0, /* 28 IR_STORE 			*/
+	0, /* 29 IR_JOKER 			*/
+	0  /* 30 IR_INVALID 		*/
 };
 
 static uint64_t irNormalize_cst_gen_add(uint64_t arg1, struct irOperation* arg2){
@@ -617,30 +618,31 @@ static const simplify_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 	NULL, 																			/* 3  IR_CMOV 			*/
 	NULL, 																			/* 4  IR_DIVQ  			*/
 	NULL, 																			/* 5  IR_DIVR  			*/
-	NULL, 																			/* 6  IR_IDIV 			*/
-	NULL, 																			/* 7  IR_IMUL 			*/
-	NULL, 																			/* 8  IR_LEA 			*/
-	NULL, 																			/* 9  IR_MOV 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_movzx, 		/* 10 IR_MOVZX 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_mul, 		/* 11 IR_MUL 			*/
-	NULL, 																			/* 12 IR_NEG 			*/
-	NULL, 																			/* 13 IR_NOT 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_or, 		/* 14 IR_OR 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part1_8, 	/* 15 IR_PART1_8 		*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part2_8, 	/* 16 IR_PART2_8 		*/
-	NULL, 																			/* 17 IR_PART1_16 		*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_rol, 		/* 18 IR_ROL 			*/
-	NULL, 																			/* 19 IR_ROR 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shl, 		/* 20 IR_SHL 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shld, 		/* 21 IR_SHLD 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shr, 		/* 22 IR_SHR 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shrd, 		/* 23 IR_SHRD 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_sub, 		/* 24 IR_SUB 			*/
-	ir_normalize_simplify_instruction_rewrite_xor, 									/* 25 IR_XOR 			*/
-	NULL, 																			/* 26 IR_LOAD 			*/
-	NULL, 																			/* 27 IR_STORE 			*/
-	NULL, 																			/* 28 IR_JOKER 			*/
-	NULL 																			/* 29 IR_INVALID 		*/
+	NULL, 																			/* 6  IR_IDIVQ 			*/
+	NULL, 																			/* 7  IR_IDIVR 			*/
+	NULL, 																			/* 8  IR_IMUL 			*/
+	NULL, 																			/* 9  IR_LEA 			*/
+	NULL, 																			/* 10 IR_MOV 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_movzx, 		/* 11 IR_MOVZX 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_mul, 		/* 12 IR_MUL 			*/
+	NULL, 																			/* 13 IR_NEG 			*/
+	NULL, 																			/* 14 IR_NOT 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_or, 		/* 15 IR_OR 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part1_8, 	/* 16 IR_PART1_8 		*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part2_8, 	/* 17 IR_PART2_8 		*/
+	NULL, 																			/* 18 IR_PART1_16 		*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_rol, 		/* 19 IR_ROL 			*/
+	NULL, 																			/* 20 IR_ROR 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shl, 		/* 21 IR_SHL 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shld, 		/* 22 IR_SHLD 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shr, 		/* 23 IR_SHR 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shrd, 		/* 24 IR_SHRD 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_sub, 		/* 25 IR_SUB 			*/
+	ir_normalize_simplify_instruction_rewrite_xor, 									/* 26 IR_XOR 			*/
+	NULL, 																			/* 27 IR_LOAD 			*/
+	NULL, 																			/* 28 IR_STORE 			*/
+	NULL, 																			/* 29 IR_JOKER 			*/
+	NULL 																			/* 30 IR_INVALID 		*/
 };
 
 void ir_normalize_simplify_instruction_(struct ir* ir, uint8_t* modification, uint8_t final){
@@ -846,15 +848,15 @@ static void ir_normalize_simplify_instruction_rewrite_and(struct ir* ir, struct 
 	if (imm_operand != NULL){
 		imm_value = ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(imm_operand)));
 		if (variableRange_is_mask_compact(imm_value)){
-			struct variableRange 	range;
-			struct variableRange 	mask_range;
+			struct variableRange range;
+			struct variableRange mask_range;
 
 			ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
 
 			irVariableRange_get_range_and_buffer(&range, operand_buffer, nb_operand, ir_node_get_operation(node)->size, ir->range_seed);
 			variableRange_init_mask(&mask_range, imm_value, ir_node_get_operation(edge_get_src(imm_operand))->size);
 
-			if (variableRange_include(&mask_range, &range)){
+			if (variableRange_is_range_include(&mask_range, &range)){
 				ir_remove_dependence(ir, imm_operand);
 
 				if (node->nb_edge_dst == 1){

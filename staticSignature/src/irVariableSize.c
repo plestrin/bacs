@@ -31,7 +31,10 @@ const uint8_t irRegisterSize[NB_IR_STD_REGISTER] = {
 	16, 	/* IR_REG_SI 		*/
 	32, 	/* IR_REG_EDI 		*/
 	16, 	/* IR_REG_DI 		*/
-	0 		/* IR_REG_TMP 		*/
+	0, 		/* IR_REG_TMP0 		*/
+	0, 		/* IR_REG_TMP1 		*/
+	0, 		/* IR_REG_TMP2 		*/
+	0 		/* IR_REG_TMP3 		*/
 };
 
 static void irVariableSize_remove_size_convertor(struct ir* ir);
@@ -228,21 +231,19 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 					continue;
 				}
 
+				if (operation_cursor->type == IR_OPERATION_TYPE_INST && (operation_cursor->operation_type.inst.opcode == IR_DIVQ || operation_cursor->operation_type.inst.opcode == IR_DIVR || operation_cursor->operation_type.inst.opcode == IR_IDIVR || operation_cursor->operation_type.inst.opcode == IR_IDIVR) && ir_edge_get_dependence(edge_current)->type == IR_DEPENDENCE_TYPE_DIRECT && (operand_operation->size / 2) == operation_cursor->size){
+					continue;
+				}
+
 				/* Add instruction to convert size */
-				if (operation_cursor->size == 32 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
+				if (operation_cursor->size > operand_operation->size){
+					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, operation_cursor->size, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
 				}
 				else if (operation_cursor->size == 8 && operand_operation->size == 32){
 					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 8, IR_PART1_8, IR_OPERATION_DST_UNKOWN);
 				}
-				else if (operation_cursor->size == 32 && operand_operation->size == 16){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 32, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
-				}
 				else if (operation_cursor->size == 16 && operand_operation->size == 32){
 					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_PART1_16, IR_OPERATION_DST_UNKOWN);
-				}
-				else if (operation_cursor->size == 16 && operand_operation->size == 8){
-					new_ins = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, 16, IR_MOVZX, IR_OPERATION_DST_UNKOWN);
 				}
 				else{
 					log_err_m("this case is not implemented, size mismatch %u -> %u", operand_operation->size, operation_cursor->size);
@@ -282,30 +283,31 @@ static const enum paddingStrategy insPaddingStrategy[NB_IR_OPCODE] = {
 	PADDING_OK, 		/* 3  IR_CMOV 		*/
 	PADDING_SECURE, 	/* 4  IR_DIVQ 		*/
 	PADDING_SECURE, 	/* 5  IR_DIVR 		*/
-	PADDING_SECURE, 	/* 6  IR_IDIV 		*/
-	PADDING_COMPLAIN, 	/* 7  IR_IMUL 		*/
-	PADDING_IGNORE, 	/* 8  IR_LEA 		- not important */
-	PADDING_IGNORE, 	/* 9  IR_MOV 		- not important */
-	PADDING_IGNORE, 	/* 10  IR_MOVZX 		*/
-	PADDING_COMPLAIN, 	/* 11  IR_MUL 		*/
-	PADDING_COMPLAIN, 	/* 12 IR_NEG 		*/
-	PADDING_OK, 		/* 13 IR_NOT 		*/
-	PADDING_OK, 		/* 14 IR_OR 		*/
-	PADDING_IGNORE, 	/* 15 IR_PART1_8 	*/
-	PADDING_IGNORE, 	/* 16 IR_PART2_8 	*/
-	PADDING_IGNORE, 	/* 17 IR_PART1_16 	*/
-	PADDING_COMPLAIN, 	/* 18 IR_ROL 		*/
-	PADDING_COMPLAIN, 	/* 19 IR_ROR 		*/
-	PADDING_COMPLAIN, 	/* 20 IR_SHL 		*/
-	PADDING_COMPLAIN, 	/* 21 IR_SHLD 		*/
-	PADDING_COMPLAIN, 	/* 22 IR_SHR 		*/
-	PADDING_COMPLAIN, 	/* 23 IR_SHRD 		*/
-	PADDING_COMPLAIN, 	/* 24 IR_SUB 		*/
-	PADDING_OK, 		/* 25 IR_XOR 		*/
-	PADDING_IGNORE, 	/* 26 IR_LOAD 		- not important */
-	PADDING_IGNORE, 	/* 27 IR_STORE 		- not important */
-	PADDING_IGNORE, 	/* 28 IR_JOKER 		- not important */
-	PADDING_IGNORE, 	/* 29 IR_INVALID 	- not important */
+	PADDING_SECURE, 	/* 6  IR_IDIVQ 		*/
+	PADDING_SECURE, 	/* 7  IR_IDIVR 		*/
+	PADDING_COMPLAIN, 	/* 8  IR_IMUL 		*/
+	PADDING_IGNORE, 	/* 9  IR_LEA 		- not important */
+	PADDING_IGNORE, 	/* 10 IR_MOV 		- not important */
+	PADDING_IGNORE, 	/* 11 IR_MOVZX 		*/
+	PADDING_COMPLAIN, 	/* 12 IR_MUL 		*/
+	PADDING_COMPLAIN, 	/* 13 IR_NEG 		*/
+	PADDING_OK, 		/* 14 IR_NOT 		*/
+	PADDING_OK, 		/* 15 IR_OR 		*/
+	PADDING_IGNORE, 	/* 16 IR_PART1_8 	*/
+	PADDING_IGNORE, 	/* 17 IR_PART2_8 	*/
+	PADDING_IGNORE, 	/* 18 IR_PART1_16 	*/
+	PADDING_COMPLAIN, 	/* 19 IR_ROL 		*/
+	PADDING_COMPLAIN, 	/* 20 IR_ROR 		*/
+	PADDING_COMPLAIN, 	/* 21 IR_SHL 		*/
+	PADDING_COMPLAIN, 	/* 22 IR_SHLD 		*/
+	PADDING_COMPLAIN, 	/* 23 IR_SHR 		*/
+	PADDING_COMPLAIN, 	/* 24 IR_SHRD 		*/
+	PADDING_COMPLAIN, 	/* 25 IR_SUB 		*/
+	PADDING_OK, 		/* 26 IR_XOR 		*/
+	PADDING_IGNORE, 	/* 27 IR_LOAD 		- not important */
+	PADDING_IGNORE, 	/* 28 IR_STORE 		- not important */
+	PADDING_IGNORE, 	/* 29 IR_JOKER 		- not important */
+	PADDING_IGNORE, 	/* 30 IR_INVALID 	- not important */
 };
 
 void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){

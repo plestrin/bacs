@@ -20,33 +20,34 @@ enum irOpcode{
 	IR_CMOV 	= 3, 	/* temp */
 	IR_DIVQ 	= 4,
 	IR_DIVR 	= 5,
-	IR_IDIV 	= 6,
-	IR_IMUL 	= 7,
-	IR_LEA 		= 8, 	/* importer */
-	IR_MOV 		= 9, 	/* importer */
-	IR_MOVZX 	= 10,
-	IR_MUL 		= 11,
-	IR_NEG 		= 12,
-	IR_NOT 		= 13,
-	IR_OR 		= 14,
-	IR_PART1_8 	= 15, 	/* specific */
-	IR_PART2_8 	= 16, 	/* specific */
-	IR_PART1_16 = 17, 	/* specific */
-	IR_ROL 		= 18,
-	IR_ROR 		= 19,
-	IR_SHL 		= 20,
-	IR_SHLD 	= 21,
-	IR_SHR 		= 22,
-	IR_SHRD 	= 23,
-	IR_SUB 		= 24,
-	IR_XOR 		= 25,
-	IR_LOAD 	= 26, 	/* signature */
-	IR_STORE 	= 27, 	/* signature */
-	IR_JOKER 	= 28, 	/* signature */
-	IR_INVALID 	= 29 	/* specific */
+	IR_IDIVQ 	= 6,
+	IR_IDIVR 	= 7,
+	IR_IMUL 	= 8,
+	IR_LEA 		= 9, 	/* importer */
+	IR_MOV 		= 10, 	/* importer */
+	IR_MOVZX 	= 11,
+	IR_MUL 		= 12,
+	IR_NEG 		= 13,
+	IR_NOT 		= 14,
+	IR_OR 		= 15,
+	IR_PART1_8 	= 16, 	/* specific */
+	IR_PART2_8 	= 17, 	/* specific */
+	IR_PART1_16 = 18, 	/* specific */
+	IR_ROL 		= 19,
+	IR_ROR 		= 20,
+	IR_SHL 		= 21,
+	IR_SHLD 	= 22,
+	IR_SHR 		= 23,
+	IR_SHRD 	= 24,
+	IR_SUB 		= 25,
+	IR_XOR 		= 26,
+	IR_LOAD 	= 27, 	/* signature */
+	IR_STORE 	= 28, 	/* signature */
+	IR_JOKER 	= 29, 	/* signature */
+	IR_INVALID 	= 30 	/* specific */
 };
 
-#define NB_IR_OPCODE 30 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
+#define NB_IR_OPCODE 31 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
 
 const char* irOpcode_2_string(enum irOpcode opcode);
 
@@ -77,7 +78,10 @@ enum irRegister{
 	IR_REG_EDI 			= 22,
 	IR_REG_DI 			= 23,
 
-	IR_REG_TMP 			= 24, 	/* importer */
+	IR_REG_TMP0 		= 24, 	/* importer */
+	IR_REG_TMP1 		= 25, 	/* importer */
+	IR_REG_TMP2 		= 26, 	/* importer */
+	IR_REG_TMP3 		= 27, 	/* importer */
 
 	/* Bit map description for the SIMD register
 		- [0 :7 ] 	frag
@@ -674,7 +678,7 @@ enum irRegister{
 	IR_REG_YMM8_8_32 	= IR_REGISTER_SIMD_YMM | IR_REGISTER_SIMD_INDEX_8 | IR_REGISTER_SIMD_SIZE_8 | 15,
 };
 
-#define NB_IR_STD_REGISTER 25
+#define NB_IR_STD_REGISTER 28
 #define NB_IR_MMX_REGISTER 8
 #define NB_IR_XMM_REGISTER 8
 #define NB_IR_YMM_REGISTER 8
@@ -754,13 +758,15 @@ enum irOperationType{
 	IR_OPERATION_TYPE_NULL 		= 6
 };
 
-#define NB_OPERATION_TYPE 6
+#define NB_OPERATION_TYPE 7
 
 #define IR_OPERATION_STATUS_FLAG_NONE 		0x00000000
 #define IR_OPERATION_STATUS_FLAG_FINAL 		0x00000001
 #define IR_OPERATION_STATUS_FLAG_ERROR 		0x80000000
 #define IR_OPERATION_STATUS_FLAG_TEST 		0x40000000
 #define IR_OPERATION_STATUS_FLAG_TESTING 	0x20000000
+#define IR_OPERATION_STATUS_FLAG_TEST1 		0x01000000 /* scratch flag */
+#define IR_OPERATION_STATUS_FLAG_TEST2 		0x02000000 /* scratch flag */
 
 #define IR_OPERATION_INDEX_ADDRESS 			0xfffffffd
 #define IR_OPERATION_INDEX_IMMEDIATE 		0xfffffffe
