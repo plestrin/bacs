@@ -27,6 +27,7 @@ static const uint32_t irNode_distance_array[NB_OPERATION_TYPE] = {
 	DIJKSTRA_INVALID_DST, 	/* IMM 		*/
 	0, 						/* INST 	*/
 	0, 						/* SYMBOL 	*/
+	DIJKSTRA_INVALID_DST 	/* NULL 	*/
 };
 
 static inline uint64_t irInstruction_and_get_mask(struct node* node_dst, uint64_t mask){

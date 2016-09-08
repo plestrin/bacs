@@ -1051,12 +1051,106 @@ uint32_t ir_check_memory(struct ir* ir){
 	return result;
 }
 
-void ir_check_clean_error_flag(struct ir* ir){
+static uint32_t ir_check_memory_adv_dst(struct node* node, uint32_t order){
+	struct edge* 		edge_cursor;
+	struct node* 		node_cursor;
+	uint32_t 			result;
+	struct irOperation* operation;
+
+	operation = ir_node_get_operation(node);
+
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM){
+		if (operation->operation_type.mem.order > order){
+			log_err_m("memory order is incorrect along path starting at %p ...", (void*)node);
+			operation->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+			return 1;
+		}
+		else{
+			if ((operation->status_flag & IR_OPERATION_STATUS_FLAG_TEST) || (operation->status_flag & IR_OPERATION_STATUS_FLAG_TEST1)){
+				return 0;
+			}
+			order = operation->operation_type.mem.order;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_dst(node), result = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		node_cursor = edge_get_src(edge_cursor);
+		if (ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_INST){
+			result |= ir_check_memory_adv_dst(node_cursor, order);
+		}
+	}
+
+	operation->status_flag |= IR_OPERATION_STATUS_FLAG_TEST1;
+
+	return result;
+}
+
+static uint32_t ir_check_memory_adv_src(struct node* node, uint32_t order){
+	struct edge* 		edge_cursor;
+	struct node* 		node_cursor;
+	uint32_t 			result;
+	struct irOperation* operation;
+
+	operation = ir_node_get_operation(node);
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM || operation->type == IR_OPERATION_TYPE_OUT_MEM){
+		if (operation->operation_type.mem.order < order){
+			log_err_m("memory order is incorrect along path ending at %p ...", (void*)node);
+			operation->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+			return 1;
+		}
+		else{
+			if ((operation->status_flag & IR_OPERATION_STATUS_FLAG_TEST) || (operation->status_flag & IR_OPERATION_STATUS_FLAG_TEST2)){
+				return 0;
+			}
+			order = operation->operation_type.mem.order;
+		}
+	}
+
+	for (edge_cursor = node_get_head_edge_src(node), result = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+		node_cursor = edge_get_dst(edge_cursor);
+		if (ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_IN_MEM || ir_node_get_operation(node_cursor)->type == IR_OPERATION_TYPE_INST){
+			result |= ir_check_memory_adv_src(node_cursor, order);
+		}
+	}
+
+	operation->status_flag |= IR_OPERATION_STATUS_FLAG_TEST2;
+
+	return result;
+}
+
+uint32_t ir_check_memory_advanced(struct ir* ir){
+	uint32_t 			result = 0;
 	struct node* 		node_cursor;
 	struct irOperation* operation_cursor;
 
 	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		ir_node_get_operation(node_cursor)->status_flag &= ~IR_OPERATION_STATUS_FLAG_TEST & ~IR_OPERATION_STATUS_FLAG_TEST1 & ~IR_OPERATION_STATUS_FLAG_TEST2;
+	}
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		operation_cursor = ir_node_get_operation(node_cursor);
-		operation_cursor->status_flag &= ~IR_OPERATION_STATUS_FLAG_ERROR;
+		if (operation_cursor->type == IR_OPERATION_TYPE_IN_MEM || operation_cursor->type == IR_OPERATION_TYPE_OUT_MEM){
+			if (ir_check_memory_adv_dst(node_cursor, operation_cursor->operation_type.mem.order)){
+				log_err_m("... and ending at %p", (void*)node_cursor);
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			if (ir_check_memory_adv_src(node_cursor, operation_cursor->operation_type.mem.order)){
+				log_err_m("... and starting at %p", (void*)node_cursor);
+				operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+				result = 1;
+			}
+			operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_TEST;
+		}
+	}
+
+	return result;
+}
+
+void ir_check_clean_error_flag(struct ir* ir){
+	struct node* node_cursor;
+
+	for (node_cursor = graph_get_head_node(&(ir->graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		ir_node_get_operation(node_cursor)->status_flag &= ~IR_OPERATION_STATUS_FLAG_ERROR;
 	}
 }
