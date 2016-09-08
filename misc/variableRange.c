@@ -45,15 +45,8 @@ void variableRange_and_value(struct variableRange* range, uint64_t value){
 
 			value >>= ctz;
 			
-			if (__builtin_popcountll(value + 1) <= 1){
-				range->mask &= 0xffffffffffffffff >> (__builtin_clzll(value) - range->scale);
-				range->disp &= range->mask;
-				range->index = range->mask >> range->scale;
-			}
-			else{
-				range->index = min(value, range->index + (range->disp >> range->scale));
-				range->disp &= ~(0xffffffffffffffff << range->scale);
-			}
+			range->index = min(value, range->index + (range->disp >> range->scale));
+			range->disp &= ~(0xffffffffffffffff << range->scale);
 		}
 	}
 }
