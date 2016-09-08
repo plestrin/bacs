@@ -7,6 +7,7 @@
 
 void variableRange_add_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
 	if (variableRange_is_cst(range)){
+		range->disp &= range->mask;
 		range->mask = ~(0xffffffffffffffff << size_bit);
 		range->disp += value;
 		range->disp &= range->mask;
@@ -141,6 +142,23 @@ void variableRange_or_value(struct variableRange* range, uint64_t value, uint32_
 				range->disp |= value << range->scale;
 			}
 		}
+	}
+}
+
+void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
+	if (variableRange_is_cst(range)){
+		range->disp &= range->mask;
+		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->disp -= value;
+		range->disp &= range->mask;
+	}
+	else{
+		if (variableRange_must_upscale(range, size_bit)){
+			variableRange_upscale_value(range, size_bit);
+		}
+
+		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->disp = (range->disp - value) & range->mask;
 	}
 }
 

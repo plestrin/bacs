@@ -63,6 +63,7 @@ static inline void variableRange_mod_value(struct variableRange* range, uint32_t
 void variableRange_shl_value(struct variableRange* range, uint64_t value, uint32_t size_bit);
 void variableRange_shr_value(struct variableRange* range, uint64_t value);
 void variableRange_or_value (struct variableRange* range, uint64_t value, uint32_t size_bit);
+void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32_t size_bit);
 
 #define variableRange_must_upscale(range, size_bit) (~((range)->mask | (0xffffffffffffffff << (size_bit))))
 
