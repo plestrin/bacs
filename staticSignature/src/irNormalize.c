@@ -307,10 +307,69 @@ static int32_t irNormalize_distribute_immediate(struct ir* ir){
 
 				if ((operation_cursor1->operation_type.inst.opcode == IR_MUL && operation_cursor2->operation_type.inst.opcode == IR_ADD) ||
 					(operation_cursor1->operation_type.inst.opcode == IR_SHL && operation_cursor2->operation_type.inst.opcode == IR_ADD) ||
-					(operation_cursor1->operation_type.inst.opcode == IR_SHL && operation_cursor2->operation_type.inst.opcode == IR_AND)){
+					(operation_cursor1->operation_type.inst.opcode == IR_SHL && operation_cursor2->operation_type.inst.opcode == IR_AND) ||
+					(operation_cursor1->operation_type.inst.opcode == IR_SHR && operation_cursor2->operation_type.inst.opcode == IR_AND) ||
+					(operation_cursor1->operation_type.inst.opcode == IR_SHL && operation_cursor2->operation_type.inst.opcode == IR_OR)  ||
+					(operation_cursor1->operation_type.inst.opcode == IR_SHR && operation_cursor2->operation_type.inst.opcode == IR_OR)  ||
+					(operation_cursor1->operation_type.inst.opcode == IR_AND && operation_cursor2->operation_type.inst.opcode == IR_OR)){
+
+					ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
+
 					for (edge_cursor = node_get_head_edge_dst(node_cursor2); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 						if (ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_IMM){
 							break;
+						}
+						else if (operation_cursor1->operation_type.inst.opcode == IR_SHL){
+							struct variableRange 	range;
+							struct variableRange* 	range_ptr;
+
+							if ((range_ptr = ir_operation_get_range(ir_node_get_operation(edge_get_src(edge_cursor)))) != NULL){
+								irVariableRange_compute(edge_get_src(edge_cursor), range_ptr, ir->range_seed);
+								memcpy(&range, range_ptr, sizeof(struct variableRange));
+							}
+							else{
+								irVariableRange_compute(edge_get_src(edge_cursor), &range, ir->range_seed);
+							}
+
+							variableRange_shl_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))), operation_cursor1->size);
+							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+								break;
+							}
+
+						}
+						else if (operation_cursor1->operation_type.inst.opcode == IR_SHR){
+							struct variableRange 	range;
+							struct variableRange* 	range_ptr;
+
+							if ((range_ptr = ir_operation_get_range(ir_node_get_operation(edge_get_src(edge_cursor)))) != NULL){
+								irVariableRange_compute(edge_get_src(edge_cursor), range_ptr, ir->range_seed);
+								memcpy(&range, range_ptr, sizeof(struct variableRange));
+							}
+							else{
+								irVariableRange_compute(edge_get_src(edge_cursor), &range, ir->range_seed);
+							}
+
+							variableRange_shr_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))));
+							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+								break;
+							}
+						}
+						else if (operation_cursor1->operation_type.inst.opcode == IR_AND){
+							struct variableRange 	range;
+							struct variableRange* 	range_ptr;
+
+							if ((range_ptr = ir_operation_get_range(ir_node_get_operation(edge_get_src(edge_cursor)))) != NULL){
+								irVariableRange_compute(edge_get_src(edge_cursor), range_ptr, ir->range_seed);
+								memcpy(&range, range_ptr, sizeof(struct variableRange));
+							}
+							else{
+								irVariableRange_compute(edge_get_src(edge_cursor), &range, ir->range_seed);
+							}
+
+							variableRange_and_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))));
+							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+								break;
+							}
 						}
 					}
 
@@ -1316,7 +1375,7 @@ static void ir_normalize_simplify_instruction_rewrite_shl(struct ir* ir, struct 
 			new_ope = operand_dire2;
 		}
 
-		if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, (~(0xffffffffffffffff << (ir_node_get_operation(node)->size - value_shr))) << value_shl)) == NULL){
+		if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, (~(0xffffffffffffffff << ir_node_get_operation(node)->size)) << value_shl)) == NULL){
 			log_err("unable to add immediate to IR");
 			return;
 		}
@@ -1359,30 +1418,31 @@ static void ir_normalize_simplify_instruction_rewrite_shld(struct ir* ir, struct
 
 static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct node* node, uint8_t* modification){
 	struct edge* 		edge_cursor;
-	struct irOperation* operation_cursor;
-	struct edge* 		edge_disp1 		= NULL;
-	struct edge* 		edge_dire1 		= NULL;
-	struct node* 		operand_disp2 	= NULL;
-	struct node* 		operand_dire2 	= NULL;
-	struct node* 		new_imm;
+	struct irOperation*	operation_cursor;
+	struct edge*		edge_dire1 			= NULL;
+	struct edge* 		edge_disp1 			= NULL;
+	struct node* 		operand_dire2 		= NULL;
+	struct node* 		operand_disp2 		= NULL;
+	struct node*		new_imm;
 
 	assert_nb_dst_edge(node, 2, "SHR")
 
 	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP && operation_cursor->type == IR_OPERATION_TYPE_IMM){
-			edge_disp1 = edge_cursor;
-		}
-		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT && operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_SHR){
+
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT && operation_cursor->type == IR_OPERATION_TYPE_INST && (operation_cursor->operation_type.inst.opcode == IR_SHL || operation_cursor->operation_type.inst.opcode == IR_SHR)){
 			edge_dire1 = edge_cursor;
+		}
+		else if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP && operation_cursor->type == IR_OPERATION_TYPE_IMM){
+			edge_disp1 = edge_cursor;
 		}
 	}
 
-	if (edge_disp1 == NULL || edge_dire1 == NULL){
+	if (edge_dire1 == NULL || edge_disp1 == NULL){
 		return;
 	}
 
-	assert_nb_dst_edge(edge_get_src(edge_dire1), 2, "SHR")
+	assert_nb_dst_edge(edge_get_src(edge_dire1), 2, "SH*")
 
 	for (edge_cursor = node_get_head_edge_dst(edge_get_src(edge_dire1)); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
@@ -1398,16 +1458,71 @@ static void ir_normalize_simplify_instruction_rewrite_shr(struct ir* ir, struct 
 		return;
 	}
 
-	if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(edge_disp1))) + ir_imm_operation_get_unsigned_value(ir_node_get_operation(operand_disp2)))) == NULL){
-		log_err("unable to add immediate to IR");
-		return;
+	if (ir_node_get_operation(edge_get_src(edge_dire1))->operation_type.inst.opcode == IR_SHR){
+		if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(edge_disp1))) + ir_imm_operation_get_unsigned_value(ir_node_get_operation(operand_disp2)))) == NULL){
+			log_err("unable to add immediate to IR");
+			return;
+		}
+
+		ir_add_dependence_check(ir, new_imm, node, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+		ir_add_dependence_check(ir, operand_dire2, node, IR_DEPENDENCE_TYPE_DIRECT)
+
+		ir_remove_dependence(ir, edge_disp1);
+		ir_remove_dependence(ir, edge_dire1);
 	}
+	else{
+		uint64_t 		value_shl;
+		uint64_t 		value_shr;
+		struct node* 	new_ope;
 
-	ir_add_dependence_check(ir, new_imm, node, IR_DEPENDENCE_TYPE_SHIFT_DISP)
-	ir_add_dependence_check(ir, operand_dire2, node, IR_DEPENDENCE_TYPE_DIRECT)
+		value_shr = ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(edge_disp1)));
+		value_shl = ir_imm_operation_get_unsigned_value(ir_node_get_operation(operand_disp2));
 
-	ir_remove_dependence(ir, edge_disp1);
-	ir_remove_dependence(ir, edge_dire1);
+		if (value_shl < value_shr){
+			if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, value_shr - value_shl)) == NULL){
+				log_err("unable to add immediate to IR");
+				return;
+			}
+
+			if ((new_ope = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(node)->size, IR_SHR, ir_node_get_operation(node)->operation_type.inst.dst)) == NULL){
+				log_err("unable to add operation to IR");
+				return;
+			}
+
+			ir_add_dependence_check(ir, new_imm, new_ope, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+			ir_add_dependence_check(ir, operand_dire2, new_ope, IR_DEPENDENCE_TYPE_DIRECT)
+		}
+		else if (value_shr < value_shl){
+			if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, value_shl - value_shr)) == NULL){
+				log_err("unable to add immediate to IR");
+				return;
+			}
+
+			if ((new_ope = ir_add_inst(ir, IR_OPERATION_INDEX_UNKOWN, ir_node_get_operation(node)->size, IR_SHL, ir_node_get_operation(node)->operation_type.inst.dst)) == NULL){
+				log_err("unable to add operation to IR");
+				return;
+			}
+
+			ir_add_dependence_check(ir, new_imm, new_ope, IR_DEPENDENCE_TYPE_SHIFT_DISP)
+			ir_add_dependence_check(ir, operand_dire2, new_ope, IR_DEPENDENCE_TYPE_DIRECT)
+		}
+		else{
+			new_ope = operand_dire2;
+		}
+
+		if ((new_imm = ir_add_immediate(ir, ir_node_get_operation(node)->size, (~(0xffffffffffffffff << ir_node_get_operation(node)->size)) >> value_shr)) == NULL){
+			log_err("unable to add immediate to IR");
+			return;
+		}
+
+		ir_node_get_operation(node)->operation_type.inst.opcode = IR_AND;
+
+		ir_add_dependence_check(ir, new_imm, node, IR_DEPENDENCE_TYPE_DIRECT)
+		ir_add_dependence_check(ir, new_ope, node, IR_DEPENDENCE_TYPE_DIRECT)
+
+		ir_remove_dependence(ir, edge_disp1);
+		ir_remove_dependence(ir, edge_dire1);
+	}
 
 	*modification = 1;
 }
