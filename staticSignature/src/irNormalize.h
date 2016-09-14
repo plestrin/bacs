@@ -7,10 +7,10 @@ void ir_normalize(struct ir* ir);
 void ir_normalize_concrete(struct ir* ir);
 
 /* should be removed from this header */
-void ir_normalize_simplify_instruction_(struct ir* ir,  uint8_t* modification, uint8_t final);
+int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final);
 
-#define ir_normalize_simplify_instruction(ir, modification) ir_normalize_simplify_instruction_(ir, modification, 0)
-#define ir_normalize_simplify_final_instruction(ir, modification) ir_normalize_simplify_instruction_(ir, modification, 1)
+#define ir_normalize_simplify_instruction_std(ir) ir_normalize_simplify_instruction(ir, 0)
+#define ir_normalize_simplify_instruction_lst(ir) ir_normalize_simplify_instruction(ir, 1)
 
 void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification);
 
