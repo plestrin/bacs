@@ -34,10 +34,11 @@ struct addrFingerprint{
 	} 					dependence[ADDRESS_NB_MAX_DEPENDENCE];
 };
 
-static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr_fgp, uint32_t recursion_level, uint32_t parent_label){
+static int32_t addrFingerprint_init(struct node* node, struct addrFingerprint* addr_fgp, uint32_t recursion_level, uint32_t parent_label){
 	struct irOperation* operation;
 	struct edge* 		operand_cursor;
 	uint32_t 			nb_dependence;
+	int32_t 			result 				= 0;
 
 	if (recursion_level == 0){
 		addr_fgp->nb_dependence = 0;
@@ -45,7 +46,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	}
 	else if (recursion_level == FINGERPRINT_MAX_RECURSION_LEVEL){
 		addr_fgp->flag |= FINGERPRINT_FLAG_INCOMPLETE;
-		return;
+		return 0;
 	}
 
 	if (addr_fgp->nb_dependence < ADDRESS_NB_MAX_DEPENDENCE){
@@ -57,7 +58,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 	}
 	else{
 		log_err("the max number of dependence has been reached");
-		return;
+		return -1;
 	}
 
 	operation = ir_node_get_operation(node);
@@ -66,7 +67,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 		case IR_OPERATION_TYPE_INST 	: {
 			if (operation->operation_type.inst.opcode == IR_ADD){
 				for (operand_cursor = node_get_head_edge_dst(node); operand_cursor != NULL; operand_cursor = edge_get_next_dst(operand_cursor)){
-					addrFingerprint_init(edge_get_src(operand_cursor), addr_fgp, recursion_level + 1, nb_dependence);
+					result |= addrFingerprint_init(edge_get_src(operand_cursor), addr_fgp, recursion_level + 1, nb_dependence);
 				}
 			}
 			break;
@@ -88,7 +89,7 @@ static void addrFingerprint_init(struct node* node, struct addrFingerprint* addr
 		addr_fgp->dependence[nb_dependence - 1].flag |= FINGERPRINT_FLAG_LEAF;
 	}
 
-	return;
+	return result;
 }
 
 static void addrFingerprint_enable_all(struct addrFingerprint* addr_fgp){
@@ -514,9 +515,7 @@ static int32_t memTokenStatic_init(struct memTokenStatic* mem_token_static, stru
 		return -1;
 	}
 
-	addrFingerprint_init(address, &(mem_token_static->addr_fgp), 0, 0);
-
-	return 0;
+	return addrFingerprint_init(address, &(mem_token_static->addr_fgp), 0, 0);
 }
 
 static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct memTokenStatic* token2, uint32_t ir_range_seed, struct accessFragment* access_frag_buffer){
@@ -553,10 +552,10 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 		}
 
 		for (j = 0; j < token2->addr_fgp.nb_dependence; j++){
+			if (token2->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE){
+				continue;				
+			}
 			if (token1->addr_fgp.dependence[i].node == token2->addr_fgp.dependence[j].node){
-				if (token1->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE){
-					continue;
-				}
 				addrFingerprint_disable(&token1->addr_fgp, i);
 				addrFingerprint_disable(&token2->addr_fgp, j);
 			}
@@ -726,8 +725,8 @@ int32_t irMemory_simplify(struct ir* ir){
 		next_node_cursor = ir_node_get_operation(node_cursor)->operation_type.mem.next;
 
 		if (memTokenStatic_init(&current_token, node_cursor)){
-			log_err("unable to init memTokenStatic, further simplification might be incorrect");
-			continue;
+			log_err("unable to init memTokenStatic, further simplification might be incorrect -> STOP");
+			break;
 		}
 
 		memTokenStatic_search(&current_token, &mem_token_list, ir->range_seed, fragments);

@@ -135,7 +135,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="13"/>
 		</result>
 	</recipe>
 
@@ -301,7 +301,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="14"/>
+			<algo name="ctr_v1" number="13"/>
 		</result>
 	</recipe>
 
