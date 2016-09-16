@@ -319,7 +319,7 @@ static int32_t irNormalize_distribute_immediate(struct ir* ir){
 						if (ir_node_get_operation(edge_get_src(edge_cursor))->type == IR_OPERATION_TYPE_IMM){
 							break;
 						}
-						else if (operation_cursor1->operation_type.inst.opcode == IR_SHL){
+						else if (operation_cursor1->operation_type.inst.opcode == IR_SHL && operation_cursor2->operation_type.inst.opcode != IR_ADD){
 							struct variableRange 	range;
 							struct variableRange* 	range_ptr;
 
@@ -332,7 +332,7 @@ static int32_t irNormalize_distribute_immediate(struct ir* ir){
 							}
 
 							variableRange_shl_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))), operation_cursor1->size);
-							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+							if (variableRange_is_cst(&range)){
 								break;
 							}
 
@@ -350,7 +350,7 @@ static int32_t irNormalize_distribute_immediate(struct ir* ir){
 							}
 
 							variableRange_shr_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))));
-							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+							if (variableRange_is_cst(&range)){
 								break;
 							}
 						}
@@ -367,7 +367,7 @@ static int32_t irNormalize_distribute_immediate(struct ir* ir){
 							}
 
 							variableRange_and_value(&range, ir_imm_operation_get_unsigned_value(ir_node_get_operation(edge_get_src(node1_imm_operand))));
-							if (variableRange_is_cst(&range) && variableRange_get_cst(&range) == 0){
+							if (variableRange_is_cst(&range)){
 								break;
 							}
 						}
@@ -706,41 +706,20 @@ static const simplify_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
 int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final){
 	struct irNodeIterator 	it;
 	struct irOperation* 	operation_cursor;
-	int32_t 				result 				= 0;
-	#ifdef IR_FULL_CHECK
-	int32_t 				local_result 		= 0;
-	enum irOpcode 			local_opcode;
-	#endif
+	int32_t 				result;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
-		return result;
+		return 0;
 	}
 
-	for (irNodeIterator_get_last(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_prev(&it)){
+	for (irNodeIterator_get_last(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_prev(&it)){
 		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
 
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST){
-			#ifdef IR_FULL_CHECK
-			local_opcode = operation_cursor->operation_type.inst.opcode;
-
-			if (rewrite_simplify[operation_cursor->operation_type.inst.opcode] != NULL){
-				local_result = rewrite_simplify[operation_cursor->operation_type.inst.opcode](ir, irNodeIterator_get_node(it), final);
-			}
-
-			if (local_result){
-				result = 1;
-				if (ir_check(ir) | ir_check_order(ir)){
-					log_debug_m("IR check failed after simplification of instruction %s", irOpcode_2_string(local_opcode));
-					return result;
-				}
-				local_result = 0;
-			}
-			#else
 			if (rewrite_simplify[operation_cursor->operation_type.inst.opcode] != NULL){
 				result |= rewrite_simplify[operation_cursor->operation_type.inst.opcode](ir, irNodeIterator_get_node(it), final);
 			}
-			#endif
 		}
 	}
 
