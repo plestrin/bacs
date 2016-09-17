@@ -383,8 +383,9 @@ static int32_t irAffineForm_simplify(struct irAffineForm* affine_form){
 			if (term_1->variable == term_2->variable){
 				irAffineTerm_add(term_1, term_2);
 				setIterator_pop(&iterator_2);
-				if (term_1->variable != NULL)
+				if (term_1->variable != NULL){
 					result = 1;
+				}
 			}
 		}
 	}

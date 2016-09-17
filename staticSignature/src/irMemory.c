@@ -547,17 +547,35 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 	addrFingerprint_enable_all(&(token2->addr_fgp));
 
 	for (i = 0; i < token1->addr_fgp.nb_dependence; i++){
-		if (token1->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_DISABLE){
+		if (!(token1->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_LEAF)){
 			continue;
 		}
 
 		for (j = 0; j < token2->addr_fgp.nb_dependence; j++){
 			if (token2->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE){
-				continue;				
+				continue;
 			}
 			if (token1->addr_fgp.dependence[i].node == token2->addr_fgp.dependence[j].node){
-				addrFingerprint_disable(&token1->addr_fgp, i);
+				token1->addr_fgp.dependence[i].flag |= FINGERPRINT_FLAG_DISABLE;
 				addrFingerprint_disable(&token2->addr_fgp, j);
+				break;
+			}
+		}
+	}
+
+	for (i = 0; i < token2->addr_fgp.nb_dependence; i++){
+		if ((token2->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_DISABLE) || !(token2->addr_fgp.dependence[i].flag & FINGERPRINT_FLAG_LEAF)){
+			continue;
+		}
+
+		for (j = 0; j < token1->addr_fgp.nb_dependence; j++){
+			if (token1->addr_fgp.dependence[j].flag & FINGERPRINT_FLAG_DISABLE){
+				continue;
+			}
+			if (token2->addr_fgp.dependence[i].node == token1->addr_fgp.dependence[j].node){
+				token2->addr_fgp.dependence[i].flag |= FINGERPRINT_FLAG_DISABLE;
+				addrFingerprint_disable(&token1->addr_fgp, j);
+				break;
 			}
 		}
 	}
