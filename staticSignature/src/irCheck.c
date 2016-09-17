@@ -218,16 +218,17 @@ static const uint32_t min_dst_edge[NB_IR_OPCODE] = {
 	1, 	/* 18 IR_PART1_16 					*/
 	2, 	/* 19 IR_ROL 						*/
 	2, 	/* 20 IR_ROR 						*/
-	2, 	/* 21 IR_SHL 						*/
-	3, 	/* 22 IR_SHLD 						*/
-	2, 	/* 23 IR_SHR 						*/
-	3, 	/* 24 IR_SHRD 						*/
-	2, 	/* 25 IR_SUB 						*/
-	2, 	/* 26 IR_XOR 						*/
-	0, 	/* 27 IR_LOAD 	It doesn't matter 	*/
-	0, 	/* 28 IR_STORE It doesn't matter 	*/
-	0, 	/* 29 IR_JOKER It doesn't matter 	*/
-	0, 	/* 30 IR_INVALID It doesn't matter 	*/
+	2, 	/* 21 IR_SBB 						*/
+	2, 	/* 22 IR_SHL 						*/
+	3, 	/* 23 IR_SHLD 						*/
+	2, 	/* 24 IR_SHR 						*/
+	3, 	/* 25 IR_SHRD 						*/
+	2, 	/* 26 IR_SUB 						*/
+	2, 	/* 27 IR_XOR 						*/
+	0, 	/* 28 IR_LOAD 	It doesn't matter 	*/
+	0, 	/* 29 IR_STORE It doesn't matter 	*/
+	0, 	/* 30 IR_JOKER It doesn't matter 	*/
+	0, 	/* 31 IR_INVALID It doesn't matter 	*/
 };
 
 static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
@@ -252,16 +253,17 @@ static const uint32_t max_dst_edge[NB_IR_OPCODE] = {
 	0x00000001, /* 18 IR_PART1_16 					*/
 	0x00000002, /* 19 IR_ROL 						*/
 	0x00000002, /* 20 IR_ROR 						*/
-	0x00000002, /* 21 IR_SHL 						*/
-	0x00000003, /* 22 IR_SHLD 						*/
-	0x00000002, /* 23 IR_SHR 						*/
-	0x00000003, /* 24 IR_SHRD 						*/
-	0x00000002, /* 25 IR_SUB 						*/
-	0xffffffff, /* 26 IR_XOR 						*/
-	0x00000000, /* 27 IR_LOAD 	It doesn't matter 	*/
-	0x00000000, /* 28 IR_STORE It doesn't matter 	*/
-	0x00000000, /* 29 IR_JOKER It doesn't matter 	*/
-	0x00000000, /* 30 IR_INVALID It doesn't matter 	*/
+	0x00000002, /* 21 IR_SBB 						*/
+	0x00000002, /* 22 IR_SHL 						*/
+	0x00000003, /* 23 IR_SHLD 						*/
+	0x00000002, /* 24 IR_SHR 						*/
+	0x00000003, /* 25 IR_SHRD 						*/
+	0x00000002, /* 26 IR_SUB 						*/
+	0xffffffff, /* 27 IR_XOR 						*/
+	0x00000000, /* 28 IR_LOAD 	It doesn't matter 	*/
+	0x00000000, /* 29 IR_STORE It doesn't matter 	*/
+	0x00000000, /* 30 IR_JOKER It doesn't matter 	*/
+	0x00000000, /* 31 IR_INVALID It doesn't matter 	*/
 };
 
 uint32_t ir_check_connectivity(struct ir* ir){
@@ -624,6 +626,29 @@ uint32_t ir_check_connectivity(struct ir* ir){
 						}
 						if (nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP] != 1){
 							log_err_m("incorrect number of dependence of type SHIFT_DISP: %u for inst ROR", nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP]);
+							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+							result = 1;
+						}
+						break;
+					}
+					case IR_SBB 		: {
+						for (i = 0; i < NB_DEPENDENCE_TYPE; i++){
+							if ((enum irDependenceType)i == IR_DEPENDENCE_TYPE_MACRO){
+								continue;
+							}
+							if ((enum irDependenceType)i != IR_DEPENDENCE_TYPE_DIRECT && (enum irDependenceType)i != IR_DEPENDENCE_TYPE_SUBSTITUTE && nb_dependence[i] > 0){
+								log_err_m("incorrect dependence type %u for inst SBB", i);
+								operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+								result = 1;
+							}
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_DIRECT] != 1){
+							log_err_m("incorrect number of dependence of type DIRECT: %u for inst SBB", nb_dependence[IR_DEPENDENCE_TYPE_DIRECT]);
+							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
+							result = 1;
+						}
+						if (nb_dependence[IR_DEPENDENCE_TYPE_SUBSTITUTE] != 1){
+							log_err_m("incorrect number of dependence of type SUBSTITUTE: %u for inst SBB", nb_dependence[IR_DEPENDENCE_TYPE_SHIFT_DISP]);
 							operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 							result = 1;
 						}

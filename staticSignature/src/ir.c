@@ -726,6 +726,7 @@ const char* irOpcode_2_string(enum irOpcode opcode){
 		case IR_PART1_16 	: {return "part(1/16)";}
 		case IR_ROL 		: {return "rol";}
 		case IR_ROR 		: {return "ror";}
+		case IR_SBB 		: {return "sbb";}
 		case IR_SHL 		: {return "shl";}
 		case IR_SHLD 		: {return "shld";}
 		case IR_SHR 		: {return "shr";}

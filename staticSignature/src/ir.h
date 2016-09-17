@@ -17,7 +17,7 @@ enum irOpcode{
 	IR_ADC 		= 0,
 	IR_ADD 		= 1,
 	IR_AND 		= 2,
-	IR_CMOV 	= 3, 	/* temp */
+	IR_CMOV 	= 3,
 	IR_DIVQ 	= 4,
 	IR_DIVR 	= 5,
 	IR_IDIVQ 	= 6,
@@ -35,19 +35,20 @@ enum irOpcode{
 	IR_PART1_16 = 18, 	/* specific */
 	IR_ROL 		= 19,
 	IR_ROR 		= 20,
-	IR_SHL 		= 21,
-	IR_SHLD 	= 22,
-	IR_SHR 		= 23,
-	IR_SHRD 	= 24,
-	IR_SUB 		= 25,
-	IR_XOR 		= 26,
-	IR_LOAD 	= 27, 	/* signature */
-	IR_STORE 	= 28, 	/* signature */
-	IR_JOKER 	= 29, 	/* signature */
-	IR_INVALID 	= 30 	/* specific */
+	IR_SBB 		= 21,
+	IR_SHL 		= 22,
+	IR_SHLD 	= 23,
+	IR_SHR 		= 24,
+	IR_SHRD 	= 25,
+	IR_SUB 		= 26,
+	IR_XOR 		= 27,
+	IR_LOAD 	= 28, 	/* signature */
+	IR_STORE 	= 29, 	/* signature */
+	IR_JOKER 	= 30, 	/* signature */
+	IR_INVALID 	= 31 	/* specific */
 };
 
-#define NB_IR_OPCODE 31 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
+#define NB_IR_OPCODE 32 /* after updating this value, please grep in the code because a lot of static arrays depend on this value */
 
 const char* irOpcode_2_string(enum irOpcode opcode);
 

@@ -298,16 +298,17 @@ static const enum paddingStrategy insPaddingStrategy[NB_IR_OPCODE] = {
 	PADDING_IGNORE, 	/* 18 IR_PART1_16 	*/
 	PADDING_COMPLAIN, 	/* 19 IR_ROL 		*/
 	PADDING_COMPLAIN, 	/* 20 IR_ROR 		*/
-	PADDING_COMPLAIN, 	/* 21 IR_SHL 		*/
-	PADDING_COMPLAIN, 	/* 22 IR_SHLD 		*/
-	PADDING_COMPLAIN, 	/* 23 IR_SHR 		*/
-	PADDING_COMPLAIN, 	/* 24 IR_SHRD 		*/
-	PADDING_COMPLAIN, 	/* 25 IR_SUB 		*/
-	PADDING_OK, 		/* 26 IR_XOR 		*/
-	PADDING_IGNORE, 	/* 27 IR_LOAD 		- not important */
-	PADDING_IGNORE, 	/* 28 IR_STORE 		- not important */
-	PADDING_IGNORE, 	/* 29 IR_JOKER 		- not important */
-	PADDING_IGNORE, 	/* 30 IR_INVALID 	- not important */
+	PADDING_COMPLAIN, 	/* 21 IR_SBB 		*/
+	PADDING_COMPLAIN, 	/* 22 IR_SHL 		*/
+	PADDING_COMPLAIN, 	/* 23 IR_SHLD 		*/
+	PADDING_COMPLAIN, 	/* 24 IR_SHR 		*/
+	PADDING_COMPLAIN, 	/* 25 IR_SHRD 		*/
+	PADDING_COMPLAIN, 	/* 26 IR_SUB 		*/
+	PADDING_OK, 		/* 27 IR_XOR 		*/
+	PADDING_IGNORE, 	/* 28 IR_LOAD 		- not important */
+	PADDING_IGNORE, 	/* 29 IR_STORE 		- not important */
+	PADDING_IGNORE, 	/* 30 IR_JOKER 		- not important */
+	PADDING_IGNORE, 	/* 31 IR_INVALID 	- not important */
 };
 
 void ir_normalize_expand_variable(struct ir* ir, uint8_t* modification){

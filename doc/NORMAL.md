@@ -27,10 +27,10 @@
 
 | Operation | Arity | Description |
 | --------- | ----- | ----------- |
-| ADC | 2 | Modular addition with carry. Incorrect: should take an extra argument for the carry. Do not normalize. |
+| ADC | 2 | Modular addition with carry. Incorrect: should take an extra argument for the carry. Do not delete as a subexpression. |
 | ADD | > 1 | Modular addition. |
 | AND | > 1 | Bitwise AND. |
-| CMOV | 2 | Conditional move. Incorrect: should take an extra argument for FLAGS. Do not normalize. |
+| CMOV | 2 | Conditional move. Incorrect: should take an extra argument for FLAGS. Do not delete as a subexpression. |
 | DIVQ | 2 | Division, returns the quotient. |
 | DIVR | 2 | Division, returns the remainder. |
 | IDIVQ | 2 | Signed division, returns the quotient. |
@@ -46,12 +46,19 @@
 | PART1_16 | 1 | Takes the 16 least significant bits. |
 | ROL | 2 | Rotate to the left. |
 | ROR | 2 | Rotate to the right. |
+| SBB | 2 | MOdular substitution with borrow. Incorrect: should take an extra argument for the borrow. Dot not delete as a subexpression. |
 | SHL | 2 | Shift to the left. |
 | SHLD | 3 | Shift to the left and shift in from the right bits from the third operand. |
 | SHR | 2 | Shift to the right. |
 | SHRD | 3 | Shift to the right and shift in from the left bits from the third operand. |
 | SUB | 2 | Modular subtraction. |
 | XOR | > 1 | Bitwise XOR. |
+
+## Constant Distribution
+
+## Detect Constant Expression
+
+If according to range value analysis an expression is constant, replace the expression by the constant.
 
 ## Miscellaneous Rewrite Rules
 
@@ -79,11 +86,9 @@
 ### PART1_8
 * If the operand is MOVZX -> replace the current node by MOVZ operand ;
 * If the operand is PART1_16 -> replace in the operand list PART1_16 by its operand.
-*Plus something that is more related with constant propagation than with anything else.*
 
 ### PART2_8
 * If the operand is PART1_16 -> replace in the operand list PART1_16 by its operand.
-*Plus something that is more related with constant propagation than with anything else.*
 
 ### ROL
 * If the disp operand is a constant -> replace by ROR (adjust the value of the disp operand).
@@ -100,7 +105,6 @@
 ### SHRD
 * If both the first and the third operand are equal -> replace by ROL.
 
-
 ### SUB
 * If the sub operand is an immediate -> replace by and ADD.
 
@@ -116,6 +120,8 @@
 | ----- | ----- | ------- |
 | Constant Propagation | DST -> SRC | Safe node iteration (only deletes operands). |
 | Dead Code Removal | DST -> SRC | Mandatory to delete everything in a single pass. |
+| Detect Cst Exp | DST -> SRC | Safe node iteration (only deletes operands). |
+| Distribute Immediate | No |Does not require any ordering, does not preserve ordering. |
 | Misc Rewriting | DST -> SRC | Safe node iteration. |
 
 
