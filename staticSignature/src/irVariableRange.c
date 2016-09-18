@@ -189,6 +189,10 @@ void irVariableRange_compute(struct node* node, struct variableRange* range_dst,
 					irVariableRange_apply_shift(node, variableRange_shr_range, seed);
 					break;
 				}
+				case IR_XOR 		: {
+					irVariableRange_apply_all_operand(node, variableRange_xor_range, seed);
+					break;
+				}
 				default 			: {
 					variableRange_init_top_(range_dst, operation->size);
 					break;

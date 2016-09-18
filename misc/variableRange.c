@@ -155,6 +155,34 @@ void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32
 	}
 }
 
+void variableRange_xor_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
+	if (variableRange_is_cst(range)){
+		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->disp ^= value;
+		range->disp &= range->mask;
+	}
+	else{
+		value &= ~(0xffffffffffffffff << size_bit);
+		if ((value & ~(range->mask)) && variableRange_must_upscale(range, size_bit)){
+			variableRange_upscale_value(range, size_bit);
+		}
+		if (range->mask >> size_bit){
+			range->mask = ~(0xffffffffffffffff << size_bit);
+		}
+
+		range->disp ^= value & ~(0xffffffffffffffff << range->scale);
+		value >>= range->scale;
+
+		if (value){
+			uint32_t clz;
+
+			clz = __builtin_ctzll(value | range->index);
+			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->index = (0xffffffffffffffff >> clz) & (range->mask >> range->scale);
+		}
+	}
+}
+
 void variableRange_upscale_value(struct variableRange* range, uint32_t value){
 	range->disp &= range->mask;
 
@@ -332,6 +360,62 @@ void variableRange_or_range(struct variableRange* range1, const struct variableR
 		range1->mask = ~(0xffffffffffffffff << size_bit);
 		range1->index = (0xffffffffffffffff >> __builtin_ctzll(index_a | index_b)) & (range1->mask >> range1->scale);
 		range1->disp = (range1->disp | range2->disp) & ~(0xffffffffffffffff << range1->scale) & range1->mask;
+	}
+}
+
+void variableRange_xor_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+	if (variableRange_is_cst(range2)){
+		variableRange_xor_value(range1, variableRange_get_cst(range2), size_bit);
+	}
+	else if (variableRange_is_cst(range1)){
+		uint64_t cst = variableRange_get_cst(range1);
+		memcpy(range1, range2, sizeof(struct variableRange));
+		variableRange_xor_value(range1, cst, size_bit);
+	}
+	else{
+		uint64_t index;
+
+		if (range1->scale < range2->scale){
+			range1->disp = (range1->disp  ^ range2->disp) & ~(0xffffffffffffffff << range1->scale);
+
+			if (variableRange_is_overflow(range1)){
+				index = range1->mask >> range1->scale;
+			}
+			else{
+				index = range1->index;
+			}
+
+			if (variableRange_is_overflow(range2)){
+				index |= range2->mask >> range1->scale;
+			}
+			else{
+				index |= range2->index << (range2->scale - range1->scale);
+			}
+
+			range1->mask = ~(0xffffffffffffffff << size_bit);
+			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
+		}
+		else{
+			range1->disp = (range1->disp  ^ range2->disp) & ~(0xffffffffffffffff << range2->scale);
+
+			if (variableRange_is_overflow(range1)){
+				index = range1->mask >> range2->scale;
+			}
+			else{
+				index = range1->index << (range1->scale - range2->scale);
+			}
+
+			if (variableRange_is_overflow(range2)){
+				index |= range2->mask >> range2->scale;
+			}
+			else{
+				index |= range2->index;
+			}
+
+			range1->scale = range2->scale;
+			range1->mask = ~(0xffffffffffffffff << size_bit);
+			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
+		}
 	}
 }
 
