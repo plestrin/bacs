@@ -139,20 +139,7 @@ void variableRange_or_value(struct variableRange* range, uint64_t value, uint32_
 }
 
 void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
-	if (variableRange_is_cst(range)){
-		range->disp &= range->mask;
-		range->mask = ~(0xffffffffffffffff << size_bit);
-		range->disp -= value;
-		range->disp &= range->mask;
-	}
-	else{
-		if (variableRange_must_upscale(range, size_bit)){
-			variableRange_upscale_value(range, size_bit);
-		}
-
-		range->mask = ~(0xffffffffffffffff << size_bit);
-		range->disp = (range->disp - value) & range->mask;
-	}
+	variableRange_add_value(range, ~value + 1, size_bit);
 }
 
 void variableRange_xor_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
@@ -206,6 +193,22 @@ void variableRange_resize(struct variableRange* range, uint32_t size_bit){
 	}
 	else if (range->mask != ~(0xffffffffffffffff << size_bit)){
 		variableRange_upscale_value(range, size_bit);
+	}
+}
+
+void variableRange_neg(struct variableRange* range, uint32_t size_bit){
+	if (variableRange_is_cst(range)){
+		range->disp &= range->mask;
+		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->disp = (~range->disp + 1) & range->mask;
+	}
+	else{
+		if (variableRange_must_upscale(range, size_bit)){
+			variableRange_upscale_value(range, size_bit);
+		}
+
+		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->disp = (~range->disp + 1 + ((~range->index + 1) << range->scale)) & range->mask;
 	}
 }
 
@@ -293,27 +296,6 @@ void variableRange_and_range(struct variableRange* range1, const struct variable
 	}
 }
 
-void variableRange_shl_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
-	if (variableRange_is_cst(range2)){
-		variableRange_shl_value(range1, variableRange_get_cst(range2), size_bit);
-	}
-	else{
-		/* can be improved using a lower bound */
-		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
-	}
-}
-
-void variableRange_shr_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
-	if (variableRange_is_cst(range2)){
-		variableRange_shr_value(range1, variableRange_get_cst(range2));
-		variableRange_mod_value(range1, size_bit);
-	}
-	else{
-		/* can be improved using a lower bound */
-		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
-	}
-}
-
 void variableRange_or_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
 	if (variableRange_is_cst(range2)){
 		variableRange_or_value(range1, variableRange_get_cst(range2), size_bit);
@@ -361,6 +343,35 @@ void variableRange_or_range(struct variableRange* range1, const struct variableR
 		range1->index = (0xffffffffffffffff >> __builtin_ctzll(index_a | index_b)) & (range1->mask >> range1->scale);
 		range1->disp = (range1->disp | range2->disp) & ~(0xffffffffffffffff << range1->scale) & range1->mask;
 	}
+}
+
+void variableRange_shl_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+	if (variableRange_is_cst(range2)){
+		variableRange_shl_value(range1, variableRange_get_cst(range2), size_bit);
+	}
+	else{
+		/* can be improved using a lower bound */
+		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
+	}
+}
+
+void variableRange_shr_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+	if (variableRange_is_cst(range2)){
+		variableRange_shr_value(range1, variableRange_get_cst(range2));
+		variableRange_mod_value(range1, size_bit);
+	}
+	else{
+		/* can be improved using a lower bound */
+		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
+	}
+}
+
+void variableRange_sub_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
+	struct variableRange range_tmp;
+
+	memcpy(&range_tmp, range2, sizeof(struct variableRange));
+	variableRange_neg(&range_tmp, size_bit);
+	variableRange_add_range(range1, &range_tmp, size_bit);
 }
 
 void variableRange_xor_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){

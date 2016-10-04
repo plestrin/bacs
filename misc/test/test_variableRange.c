@@ -16,6 +16,12 @@
 #define SEED (uint32_t)getpid()
 #endif
 
+#define ENABLE_RANGE_TEST_ADD 0
+#define ENABLE_RANGE_TEST_AND 0
+#define ENABLE_RANGE_TEST_OR  0
+#define ENABLE_RANGE_TEST_SUB 1
+#define ENABLE_RANGE_TEST_XOR 0
+
 static uint32_t variableRange_init_rand(struct variableRange* range){
 	uint32_t size;
 	
@@ -81,6 +87,25 @@ int32_t main(void){
 		}
 	}
 
+	log_info("Test neg");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_neg(&range2, value2);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = (-value1) & ~(0xffffffffffffffff << value2);
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (-%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" neg in %llx)\n", ~(0xffffffffffffffff << value2));
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
 	log_info("Test add value");
 	for (i = 0; i < NB_TEST; i++){
 		size = variableRange_init_rand(&range1);
@@ -114,6 +139,25 @@ int32_t main(void){
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
 				printf("\t%llx = (%llx & %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", value2);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	log_info("Test or value");
+	for (i = 0; i < NB_TEST; i++){
+		size = variableRange_init_rand(&range1);
+		if (!size){
+			continue;
+		}
+		value2 = rand() % MAX_SIZE;
+		memcpy(&range2, &range1, sizeof(struct variableRange));
+		variableRange_or_value(&range2, value2, MAX_SIZE);
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			value3 = value1 | value2;
+			if (!variableRange_is_value_include(&range2, value3)){
+				log_err_m("%u", i);
+				printf("\t%llx = (%llx | %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" | %llx)\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -158,25 +202,6 @@ int32_t main(void){
 		}
 	}
 
-	log_info("Test or value");
-	for (i = 0; i < NB_TEST; i++){
-		size = variableRange_init_rand(&range1);
-		if (!size){
-			continue;
-		}
-		value2 = rand() % MAX_SIZE;
-		memcpy(&range2, &range1, sizeof(struct variableRange));
-		variableRange_or_value(&range2, value2, MAX_SIZE);
-		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = value1 | value2;
-			if (!variableRange_is_value_include(&range2, value3)){
-				log_err_m("%u", i);
-				printf("\t%llx = (%llx | %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" | %llx)\n", value2);
-				return EXIT_FAILURE;
-			}
-		}
-	}
-
 	log_info("Test sub value");
 	for (i = 0; i < NB_TEST; i++){
 		size = variableRange_init_rand(&range1);
@@ -215,6 +240,7 @@ int32_t main(void){
 		}
 	}
 
+	#if ENABLE_RANGE_TEST_ADD == 1
 	log_info("Test add range");
 	for (i = 0; i < NB_TEST; i++){
 		if (!variableRange_init_rand(&range1)){
@@ -239,7 +265,9 @@ int32_t main(void){
 			}
 		}
 	}
+	#endif
 
+	#if ENABLE_RANGE_TEST_AND == 1
 	log_info("Test and range");
 	for (i = 0; i < NB_TEST; i++){
 		if (!variableRange_init_rand(&range1)){
@@ -264,7 +292,9 @@ int32_t main(void){
 			}
 		}
 	}
+	#endif
 
+	#if ENABLE_RANGE_TEST_OR == 1
 	log_info("Test or range");
 	for (i = 0; i < NB_TEST; i++){
 		if (!variableRange_init_rand(&range1)){
@@ -289,7 +319,36 @@ int32_t main(void){
 			}
 		}
 	}
+	#endif
 
+	#if ENABLE_RANGE_TEST_SUB == 1
+	log_info("Test sub range");
+	for (i = 0; i < NB_TEST; i++){
+		if (!variableRange_init_rand(&range1)){
+			continue;
+		}
+		if (!variableRange_init_rand(&range2)){
+			continue;
+		}
+
+		memcpy(&range3, &range1, sizeof(struct variableRange));
+		size = rand() % MAX_SIZE + 1;
+		variableRange_sub_range(&range3, &range2, size);
+
+		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
+			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
+				value3 = (value1 - value2) & ~(0xffffffffffffffff << size);
+				if (!variableRange_is_value_include(&range3, value3)){
+					log_err_m("%u", i);
+					printf("\t%llx = (%llx - %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" - "); variableRange_print(&range2); printf(")\n");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+	#endif
+
+	#if ENABLE_RANGE_TEST_XOR == 1
 	log_info("Test xor range");
 	for (i = 0; i < NB_TEST; i++){
 		if (!variableRange_init_rand(&range1)){
@@ -314,6 +373,7 @@ int32_t main(void){
 			}
 		}
 	}
+	#endif
 
 	log_info("Test include range");
 	for (i = 0; i < NB_TEST; i++){

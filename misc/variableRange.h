@@ -70,12 +70,14 @@ void variableRange_xor_value(struct variableRange* range, uint64_t value, uint32
 
 void variableRange_upscale_value(struct variableRange* range, uint32_t value);
 void variableRange_resize(struct variableRange* range, uint32_t size_bit);
+void variableRange_neg(struct variableRange* range, uint32_t size_bit);
 
 void variableRange_add_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 void variableRange_and_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
+void variableRange_or_range (struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 void variableRange_shl_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 void variableRange_shr_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
-void variableRange_or_range (struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
+void variableRange_sub_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 void variableRange_xor_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit);
 
 int32_t variableRange_is_value_include(const struct variableRange* range, uint64_t value);
