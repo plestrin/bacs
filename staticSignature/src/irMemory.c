@@ -596,15 +596,15 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 	irVariableRange_get_range_add_buffer(&range2, dependence_left2, nb_dependence_left2, 32, ir_range_seed);
 
 	if (variableRange_is_cst(&range1) && variableRange_is_cst(&range2)){
-		if (variableRange_get_cst(&range1) <= variableRange_get_cst(&range2)){
-			#ifdef EXTRA_CHECK
-			if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
-				if (memTokenStatic_get_conAddr(token2) - memTokenStatic_get_conAddr(token1) != variableRange_get_cst(&range2) - variableRange_get_cst(&range1)){
-					log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token2));
-				}
+		#ifdef EXTRA_CHECK
+		if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
+			if (variableRange_get_cst(&range1) + memTokenStatic_get_conAddr(token2) != variableRange_get_cst(&range2) + memTokenStatic_get_conAddr(token1)){
+				log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token2));
 			}
-			#endif
+		}
+		#endif
 
+		if (variableRange_get_cst(&range1) <= variableRange_get_cst(&range2)){
 			if (variableRange_get_cst(&range2) - variableRange_get_cst(&range1) < memTokenStatic_get_size(token1)){
 				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_VALUE;
 				access_frag_buffer[0].token 		= memTokenStatic_get_token(token2);
@@ -619,14 +619,6 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 			}
 		}
 		else{
-			#ifdef EXTRA_CHECK
-			if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
-				if (memTokenStatic_get_conAddr(token1) - memTokenStatic_get_conAddr(token2) != variableRange_get_cst(&range1) - variableRange_get_cst(&range2)){
-					log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token2));
-				}
-			}
-			#endif
-
 			if (variableRange_get_cst(&range1) - variableRange_get_cst(&range2) < memTokenStatic_get_size(token2)){
 				access_frag_buffer[0].type 			= IRMEMORY_ACCESS_VALUE;
 				access_frag_buffer[0].token 		= memTokenStatic_get_token(token2);

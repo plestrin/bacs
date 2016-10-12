@@ -944,7 +944,7 @@ uint32_t ir_check_order(struct ir* ir){
 				}
 			}
 			for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-				if ((ir_node_get_operation(edge_get_dst(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST) == 0){
+				if (!(ir_node_get_operation(edge_get_dst(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST)){
 					log_err("direction src -> dst, but found untagged src");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
@@ -953,15 +953,15 @@ uint32_t ir_check_order(struct ir* ir){
 		}
 		else{
 			for (edge_cursor = node_get_head_edge_dst(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-				if ((ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST) == 0){
-					log_err("direction src -> dst, but found untagged dst");
+				if (!(ir_node_get_operation(edge_get_src(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST)){
+					log_err("direction dst -> src, but found untagged dst");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
 				}
 			}
 			for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 				if (ir_node_get_operation(edge_get_dst(edge_cursor))->status_flag & IR_OPERATION_STATUS_FLAG_TEST){
-					log_err("direction src -> dst, but found tagged src");
+					log_err("direction dst -> src, but found tagged src");
 					operation_cursor->status_flag |= IR_OPERATION_STATUS_FLAG_ERROR;
 					result = 1;
 				}

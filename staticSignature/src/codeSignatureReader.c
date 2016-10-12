@@ -98,6 +98,11 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 		code_signature_node->node_type.opcode = IR_AND;
 		return;
 	}
+	else if (!strncmp(str, "CMOV", str_len)){
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
+		code_signature_node->node_type.opcode = IR_CMOV;
+		return;
+	}
 	else if (!strncmp(str, "MUL", str_len)){
 		code_signature_node->type = CODESIGNATURE_NODE_TYPE_OPCODE;
 		code_signature_node->node_type.opcode = IR_MUL;
