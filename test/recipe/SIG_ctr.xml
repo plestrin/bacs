@@ -898,9 +898,9 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_open_mixColumn" number="144"/>
-			<algo name="aes_open_r1" number="72"/>
-			<algo name="aes_open_r9" number="8"/>
+			<algo name="aes_open_mixColumn" number="576"/>
+			<algo name="aes_open_subMixAdd" number="144"/>
+			<algo name="aes_open_r9" number="16"/>
 			<algo name="aes_open_128" number="4"/>
 			<comment value="no mode signature, check manually: xdot fig/OPEN_CTR_AES.dot"/>
 		</result>

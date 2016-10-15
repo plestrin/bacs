@@ -439,11 +439,11 @@
 			<algo name="aes_open_128" number="1"/>
 			<algo name="aes_open_196" number="1"/>
 			<algo name="aes_open_256" number="1"/>
-			<algo name="aes_open_r1" number="66"/>
-			<algo name="aes_open_r9" number="18"/>
-			<algo name="aes_open_r11" number="8"/>
-			<algo name="aes_open_r13" number="2"/>
-			<algo name="aes_open_mixColumn" number="132"/>
+ 			<algo name="aes_open_r9" number="36"/>
+			<algo name="aes_open_r11" number="16"/>
+			<algo name="aes_open_r13" number="4"/>
+			<algo name="aes_open_mixColumn" number="528"/>
+			<algo name="aes_open_subMixAdd" number="132"/>
 			<algo name="aes_open_ks_128" number="1"/>
 			<algo name="aes_open_ks_256" number="1"/>
 		</result>
