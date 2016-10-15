@@ -215,7 +215,7 @@ static int32_t irNormalize_propagate_constant(struct ir* ir){
 		return 0;
 	}
 
-	for (irNodeIterator_get_last(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_prev(&it)){
+	for (irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
 		operation_cursor = irNodeIterator_get_operation(it);
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST){
 			switch(operation_cursor->operation_type.inst.opcode){
@@ -273,28 +273,169 @@ static const uint8_t propagate_constant[NB_IR_OPCODE];
 
 #if IR_NORMALIZE_DETECT_CST_EXPRESSION == 1
 
+static void irNormalize_update_mask_and(struct node* node){
+	struct edge* 		edge_cursor;
+	struct irOperation* operation_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
+			*(uint64_t*)(node->ptr) &= ir_imm_operation_get_unsigned_value(operation_cursor);
+		}
+	}
+}
+
+static void irNormalize_update_mask_shl(struct node* node){
+	struct edge* 		edge_cursor;
+	struct irOperation* operation_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+			if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
+				*(uint64_t*)(node->ptr) = *(uint64_t*)(node->ptr) >> ir_imm_operation_get_unsigned_value(operation_cursor);
+			}
+			else{
+				*(uint64_t*)(node->ptr) = ~(0xffffffffffffffff << ir_node_get_operation(node)->size);
+			}
+		}
+	}
+}
+
+static void irNormalize_update_mask_shr(struct node* node){
+	struct edge* 		edge_cursor;
+	struct irOperation* operation_cursor;
+
+	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
+			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
+			if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
+				*(uint64_t*)(node->ptr) = (*(uint64_t*)(node->ptr) << ir_imm_operation_get_unsigned_value(operation_cursor)) & ~(0xffffffffffffffff << ir_node_get_operation(node)->size);
+			}
+			else{
+				*(uint64_t*)(node->ptr) = ~(0xffffffffffffffff << ir_node_get_operation(node)->size);
+			}
+		}
+	}
+}
+
 static int32_t irNormalize_detect_cst_expression(struct ir* ir){
+	uint32_t 				i;
 	struct irNodeIterator 	it;
+	struct node* 			node_cursor;
 	struct irOperation* 	operation_cursor;
+	struct edge* 			edge_cursor;
 	int32_t 				result;
+	uint64_t* 				mask_buffer;
+	struct variableRange 	local_range;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort DAG");
 		return 0;
 	}
 
+	if ((mask_buffer = (uint64_t*)malloc(ir->graph.nb_node * sizeof(uint64_t))) == NULL){
+		log_err("unable to allocate memory");
+		return 0;
+	}
+
 	ir_drop_range(ir); /* We are not sure what have been done before. Might be removed later */
 
-	for (irNodeIterator_get_last(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_prev(&it)){
+	for (irNodeIterator_get_first(ir, &it), i = 0, result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it), i++){
+		node_cursor = irNodeIterator_get_node(it);
 		operation_cursor = irNodeIterator_get_operation(it);
+
+		if (node_cursor->nb_edge_dst == 0){
+			continue;
+		}
+
+		node_cursor->ptr = (void*)(mask_buffer + i);
+		if (node_cursor->nb_edge_src && !irOperation_is_final(operation_cursor)){
+			for (edge_cursor = node_get_head_edge_src(node_cursor), mask_buffer[i] = 0; edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				switch (ir_edge_get_dependence(edge_cursor)->type){
+					case IR_DEPENDENCE_TYPE_DIRECT 		: {
+						mask_buffer[i] |= *(uint64_t*)(edge_get_dst(edge_cursor)->ptr);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_ADDRESS 	: {
+						mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
+						mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_DIVISOR 	: {
+						mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_ROUND_OFF 	: {
+						mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_SUBSTITUTE 	: {
+						mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+						break;
+					}
+					case IR_DEPENDENCE_TYPE_MACRO 		: {
+						break;
+					}
+				}
+			}
+			mask_buffer[i] &= ~(0xffffffffffffffff << operation_cursor->size);
+		}
+		else{
+			mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size);
+		}
+
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST){
 			irVariableRange_compute(irNodeIterator_get_node(it), &(operation_cursor->operation_type.inst.range), ir->range_seed);
-			if (variableRange_is_cst(&(operation_cursor->operation_type.inst.range))){
-				ir_convert_operation_to_imm(ir, irNodeIterator_get_node(it), variableRange_get_cst(&(operation_cursor->operation_type.inst.range)));
+			memcpy(&local_range, &(operation_cursor->operation_type.inst.range), sizeof(struct variableRange));
+			variableRange_and_value(&local_range, mask_buffer[i]);
+			if (variableRange_is_cst(&local_range)){
+				ir_convert_operation_to_imm(ir, irNodeIterator_get_node(it), variableRange_get_cst(&local_range));
 				result = 1;
+				continue;
+			}
+
+			switch(operation_cursor->operation_type.inst.opcode){
+				case IR_ADC 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_ADD 		: {break;}
+				case IR_AND 		: {irNormalize_update_mask_and(node_cursor); break;}
+				case IR_CMOV 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_DIVQ 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_DIVR 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_IDIVQ 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_IDIVR 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_IMUL 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_LEA 		: {break;} /* importer */
+				case IR_MOV 		: {break;} /* importer */
+				case IR_MOVZX 		: {break;}
+				case IR_MUL 		: {break;}
+				case IR_NEG 		: {break;}
+				case IR_NOT 		: {break;}
+				case IR_OR 			: {break;}
+				case IR_PART1_8 	: {break;}
+				case IR_PART2_8 	: {mask_buffer[i] = (mask_buffer[i] << 8); break;}
+				case IR_PART1_16 	: {break;}
+				case IR_ROL 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_ROR 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_SBB 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_SHL 		: {irNormalize_update_mask_shl(node_cursor); break;}
+				case IR_SHLD 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_SHR 		: {irNormalize_update_mask_shr(node_cursor); break;}
+				case IR_SHRD 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_SUB 		: {mask_buffer[i] = ~(0xffffffffffffffff << operation_cursor->size); break;}
+				case IR_XOR 		: {break;}
+				case IR_LOAD 		: {break;} /* signature */
+				case IR_STORE 		: {break;} /* signature */
+				case IR_JOKER 		: {break;} /* signature */
+				case IR_INVALID 	: {break;} /* specific */
 			}
 		}
 	}
+
+	free(mask_buffer);
 
 	#ifdef IR_FULL_CHECK
 	ir_check_order(ir);
@@ -756,7 +897,7 @@ int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final){
 		return 0;
 	}
 
-	for (irNodeIterator_get_last(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_prev(&it)){
+	for (irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
 		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
 
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST){

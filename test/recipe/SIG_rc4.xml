@@ -234,7 +234,8 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v2" number="12"/>
+			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
 

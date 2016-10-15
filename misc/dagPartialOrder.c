@@ -20,17 +20,16 @@ int32_t dagPartialOrder_sort_src_dst(struct graph* graph){
 		return 0;
 	}
 
-	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
-	if (node_buffer == NULL){
+	if ((node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
 
-	for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		node_cursor->ptr = DAGPARTIALORDER_NODE_STATE_UNSET;
 	}
 
-	for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		if (node_cursor->ptr == DAGPARTIALORDER_NODE_STATE_UNSET){
 			dagPartialOrder_recursive_sort(node_buffer, node_cursor, &generator);
 		}
@@ -70,17 +69,16 @@ int32_t dagPartialOrder_sort_dst_src(struct graph* graph){
 		return 0;
 	}
 
-	node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*));
-	if (node_buffer == NULL){
+	if ((node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
 
-	for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		node_cursor->ptr = DAGPARTIALORDER_NODE_STATE_UNSET;
 	}
 
-	for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		if (node_cursor->ptr == DAGPARTIALORDER_NODE_STATE_UNSET){
 			dagPartialOrder_recursive_sort(node_buffer, node_cursor, &generator);
 		}

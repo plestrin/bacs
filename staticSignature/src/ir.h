@@ -989,13 +989,6 @@ static inline struct node* irNodeIterator_get_first(struct ir* ir, struct irNode
 	return it->curr_node;
 }
 
-static inline struct node* irNodeIterator_get_last(struct ir* ir, struct irNodeIterator* it){
-	it->curr_node = graph_get_tail_node(&(ir->graph));
-	it->prev_node = node_get_prev(it->curr_node);
-
-	return it->curr_node;
-}
-
 static inline struct node* irNodeIterator_get_next(struct ir* ir, struct irNodeIterator* it){
 	if (it->prev_node != NULL){
 		if (node_get_next(it->prev_node) != it->curr_node){
@@ -1016,15 +1009,6 @@ static inline struct node* irNodeIterator_get_next(struct ir* ir, struct irNodeI
 		}
 	}
 
-	return it->curr_node;
-}
-
-static inline struct node* irNodeIterator_get_prev(struct irNodeIterator* it){
-	it->curr_node = it->prev_node;
-	if (it->curr_node != NULL){
-		it->prev_node = node_get_prev(it->curr_node);
-	}
-	
 	return it->curr_node;
 }
 
