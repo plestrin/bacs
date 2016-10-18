@@ -14,6 +14,4 @@ int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final);
 
 void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification);
 
-void ir_normalize_remove_common_subexpression(struct ir* ir, uint8_t* modification);
-
 #endif
