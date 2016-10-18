@@ -598,7 +598,7 @@ static uint32_t memTokenStatic_compare(struct memTokenStatic* token1, struct mem
 	if (variableRange_is_cst(&range1) && variableRange_is_cst(&range2)){
 		#ifdef EXTRA_CHECK
 		if (memTokenStatic_get_conAddr(token1) != MEMADDRESS_INVALID && memTokenStatic_get_conAddr(token2) != MEMADDRESS_INVALID){
-			if (variableRange_get_cst(&range1) + memTokenStatic_get_conAddr(token2) != variableRange_get_cst(&range2) + memTokenStatic_get_conAddr(token1)){
+			if ((ADDRESS)(variableRange_get_cst(&range1) + memTokenStatic_get_conAddr(token2)) != (ADDRESS)(variableRange_get_cst(&range2) + memTokenStatic_get_conAddr(token1))){
 				log_err_m("incoherence between fingerprints and concrete addresses: " PRINTF_ADDR " - " PRINTF_ADDR, memTokenStatic_get_conAddr(token1), memTokenStatic_get_conAddr(token2));
 			}
 		}
