@@ -1070,10 +1070,10 @@ struct accessGroup{
 uint32_t accessGroup_check(const struct accessGroup* group){
 	uint32_t 			i;
 	struct irOperation* operation;
-	uint32_t 			result = 0;
+	uint32_t 			result;
 	uint32_t 			offset;
 
-	for (i = 0, offset = 0; i < group->nb_entry; offset += group->entries[i++]->size){
+	for (i = 0, offset = 0, result = 0; i < group->nb_entry; offset += group->entries[i++]->size){
 		operation = ir_node_get_operation(edge_get_dst(group->entries[i]->access));
 
 		if (operation->type != IR_OPERATION_TYPE_IN_MEM && operation->type != IR_OPERATION_TYPE_OUT_MEM){
@@ -1084,6 +1084,12 @@ uint32_t accessGroup_check(const struct accessGroup* group){
 		if (group->con_addr != MEMADDRESS_INVALID && operation->operation_type.mem.con_addr != MEMADDRESS_INVALID){
 			if (group->con_addr + offset != operation->operation_type.mem.con_addr){
 				log_err_m("found group with concrete address incoherence, expected " PRINTF_ADDR " but get " PRINTF_ADDR, group->con_addr + offset, operation->operation_type.mem.con_addr);
+				result = 1;
+			}
+		}
+		else if (i){
+			if (group->entries[i - 1]->offset + group->entries[i - 1]->size != group->entries[i]->offset){
+				log_err("group is not continuous memory region");
 				result = 1;
 			}
 		}
@@ -1205,8 +1211,6 @@ static enum irOpcode accessGroup_choose_part_opcode(uint32_t offset, uint32_t si
 static int32_t accessGroup_commit(struct accessGroup* group, struct ir* ir){
 	uint32_t i;
 	uint32_t offset;
-
-	qsort(group->entries, group->nb_entry, sizeof(struct accessEntry*), accessEntry_compare_offset);
 
 	if (accessGroup_is_read(group)){
 		enum irOpcode 	opcode;
@@ -1363,6 +1367,7 @@ void accessTable_print(const struct accessTable* table, uint32_t* mapping, FILE*
 
 static uint32_t accessTable_generate_recursive_group(struct accessTable* table, const uint32_t* mapping, struct accessGroup* group, uint32_t offset_start, uint32_t nb_entry, uint32_t size){
 	uint32_t i;
+	uint32_t alias;
 
 	for (i = offset_start; i < array_get_length(&(table->access_array)); i++){
 		group->entries[nb_entry] = (struct accessEntry*)array_get(&(table->access_array), mapping[i]);
@@ -1385,7 +1390,9 @@ static uint32_t accessTable_generate_recursive_group(struct accessTable* table, 
 			}
 			#endif
 
-			if (accessGroup_check_aliasing(group, table->ir)){
+			alias = accessGroup_check_aliasing(group, table->ir);
+			qsort(group->entries, group->nb_entry, sizeof(struct accessEntry*), accessEntry_compare_offset);
+			if (alias){
 				if (array_add(table->group_array, group) < 0){
 					log_err("unable to add element to array");
 				}
