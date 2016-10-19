@@ -55,6 +55,8 @@
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define abs(a) (((a) ^ ((a) >> (sizeof(a) * 8 - 1))) - ((a) >> (sizeof(a) * 8 - 1)))
 
+#define bitmask64(size) (~(0xffffffffffffffff << (size)) - ((size) == 64))
+
 enum allocationType{
 	ALLOCATION_MALLOC,
 	ALLOCATION_MMAP

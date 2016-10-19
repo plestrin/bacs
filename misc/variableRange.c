@@ -8,7 +8,7 @@
 void variableRange_add_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
 	if (variableRange_is_cst(range)){
 		range->disp &= range->mask;
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp += value;
 		range->disp &= range->mask;
 	}
@@ -17,7 +17,7 @@ void variableRange_add_value(struct variableRange* range, uint64_t value, uint32
 			variableRange_upscale_value(range, size_bit);
 		}
 
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp = (range->disp + value) & range->mask;
 	}
 }
@@ -31,7 +31,7 @@ void variableRange_and_value(struct variableRange* range, uint64_t value){
 		value = (value & range->mask) >> range->scale;
 
 		if (!value){
-			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->disp &= bitmask64(range->scale);
 			range->index = 0;
 			range->scale = 0;
 		}
@@ -40,27 +40,27 @@ void variableRange_and_value(struct variableRange* range, uint64_t value){
 
 			ctz = __builtin_ctzll(value);
 			range->index = ((range->index + (range->disp >> range->scale)) >> ctz) - (range->disp >> (range->scale + ctz));
-			range->disp &= (0xffffffffffffffff << (range->scale + ctz)) | ~(0xffffffffffffffff << range->scale);
+			range->disp &= (0xffffffffffffffff << (range->scale + ctz)) | bitmask64(range->scale);
 			range->scale += ctz;
 
 			value >>= ctz;
 			
 			range->index = min(value, range->index + (range->disp >> range->scale));
-			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->disp &= bitmask64(range->scale);
 		}
 	}
 }
 
 void variableRange_shl_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
 	if (value >= 64){
-		variableRange_init_cst(range, 0, ~(0xffffffffffffffff << size_bit));
+		variableRange_init_cst(range, 0, bitmask64(size_bit));
 	}
 	else{
 		if (variableRange_must_upscale(range, size_bit)){
 			variableRange_upscale_value(range, size_bit);
 		}
 
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp = (range->disp << value) & range->mask;
 		if (range->index){
 			if (value + range->scale >= 64){
@@ -103,20 +103,20 @@ void variableRange_shr_value(struct variableRange* range, uint64_t value){
 
 void variableRange_or_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
 	if (variableRange_is_cst(range)){
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp |= value;
 		range->disp &= range->mask;
 	}
 	else{
-		value &= ~(0xffffffffffffffff << size_bit);
+		value &= bitmask64(size_bit);
 		if ((value & ~(range->mask)) && variableRange_must_upscale(range, size_bit)){
 			variableRange_upscale_value(range, size_bit);
 		}
 		if (range->mask >> size_bit){
-			range->mask = ~(0xffffffffffffffff << size_bit);
+			range->mask = bitmask64(size_bit);
 		}
 
-		range->disp |= value & ~(0xffffffffffffffff << range->scale);
+		range->disp |= value & bitmask64(range->scale);
 		value >>= range->scale;
 
 		if (value){
@@ -131,7 +131,7 @@ void variableRange_or_value(struct variableRange* range, uint64_t value, uint32_
 
 			if (value){
 				range->index = (range->mask >> range->scale) - value;
-				range->disp &= ~(0xffffffffffffffff << range->scale);
+				range->disp &= bitmask64(range->scale);
 				range->disp |= value << range->scale;
 			}
 		}
@@ -144,27 +144,27 @@ void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32
 
 void variableRange_xor_value(struct variableRange* range, uint64_t value, uint32_t size_bit){
 	if (variableRange_is_cst(range)){
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp ^= value;
 		range->disp &= range->mask;
 	}
 	else{
-		value &= ~(0xffffffffffffffff << size_bit);
+		value &= bitmask64(size_bit);
 		if ((value & ~(range->mask)) && variableRange_must_upscale(range, size_bit)){
 			variableRange_upscale_value(range, size_bit);
 		}
 		if (range->mask >> size_bit){
-			range->mask = ~(0xffffffffffffffff << size_bit);
+			range->mask = bitmask64(size_bit);
 		}
 
-		range->disp ^= value & ~(0xffffffffffffffff << range->scale);
+		range->disp ^= value & bitmask64(range->scale);
 		value >>= range->scale;
 
 		if (value){
 			uint32_t clz;
 
 			clz = __builtin_ctzll(value | range->index);
-			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->disp &= bitmask64(range->scale);
 			range->index = (0xffffffffffffffff >> clz) & (range->mask >> range->scale);
 		}
 	}
@@ -176,22 +176,22 @@ void variableRange_upscale_value(struct variableRange* range, uint32_t value){
 	if (range->index){
 		if (range->index & ~(range->mask >> range->scale)){
 			range->index = range->mask >> range->scale;
-			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->disp &= bitmask64(range->scale);
 		}
 		else if (variableRange_is_overflow(range)){
 			range->index = range->mask >> range->scale;
-			range->disp &= ~(0xffffffffffffffff << range->scale);
+			range->disp &= bitmask64(range->scale);
 		}
 	}
 
-	range->mask = ~(0xffffffffffffffff << value);
+	range->mask = bitmask64(value);
 }
 
 void variableRange_resize(struct variableRange* range, uint32_t size_bit){
 	if (range->mask >> size_bit){
 		variableRange_mod_value(range, size_bit);
 	}
-	else if (range->mask != ~(0xffffffffffffffff << size_bit)){
+	else if (range->mask != bitmask64(size_bit)){
 		variableRange_upscale_value(range, size_bit);
 	}
 }
@@ -199,7 +199,7 @@ void variableRange_resize(struct variableRange* range, uint32_t size_bit){
 void variableRange_neg(struct variableRange* range, uint32_t size_bit){
 	if (variableRange_is_cst(range)){
 		range->disp &= range->mask;
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp = (~range->disp + 1) & range->mask;
 	}
 	else{
@@ -207,13 +207,13 @@ void variableRange_neg(struct variableRange* range, uint32_t size_bit){
 			variableRange_upscale_value(range, size_bit);
 		}
 
-		range->mask = ~(0xffffffffffffffff << size_bit);
+		range->mask = bitmask64(size_bit);
 		range->disp = (~range->disp + 1 + ((~range->index + 1) << range->scale)) & range->mask;
 	}
 }
 
 void variableRange_add_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
-	uint64_t mask = ~(0xffffffffffffffff << size_bit);
+	uint64_t mask = bitmask64(size_bit);
 
 	if (variableRange_is_cst(range2)){
 		variableRange_add_value(range1, variableRange_get_cst(range2),  size_bit);
@@ -245,7 +245,7 @@ void variableRange_add_range(struct variableRange* range1, const struct variable
 
 		if ((index2 << (range2->scale - scale)) >= (mask >> scale) - (index1 << (range1->scale -scale))){
 			range1->index = mask >> scale;
-			range1->disp &= ~(0xffffffffffffffff << scale);
+			range1->disp &= bitmask64(scale);
 		}
 		else{
 			range1->index = (index1 << (range1->scale - scale)) + (index2 << (range2->scale - scale));
@@ -256,12 +256,12 @@ void variableRange_add_range(struct variableRange* range1, const struct variable
 
 void variableRange_and_range(struct variableRange* range1, const struct variableRange* range2, uint32_t size_bit){
 	if (variableRange_is_cst(range2)){
-		variableRange_and_value(range1, variableRange_get_cst(range2) & ~(0xffffffffffffffff << size_bit));
+		variableRange_and_value(range1, variableRange_get_cst(range2) & bitmask64(size_bit));
 	}
 	else if (variableRange_is_cst(range1)){
 		uint64_t cst = variableRange_get_cst(range1);
 		memcpy(range1, range2, sizeof(struct variableRange));
-		variableRange_and_value(range1, cst & ~(0xffffffffffffffff << size_bit));
+		variableRange_and_value(range1, cst & bitmask64(size_bit));
 	}
 	else{
 		uint32_t scale;
@@ -291,7 +291,7 @@ void variableRange_and_range(struct variableRange* range1, const struct variable
 			range1->scale = range2->scale + scale;
 		}
 
-		range1->mask = ~(0xffffffffffffffff << size_bit);
+		range1->mask = bitmask64(size_bit);
 		range1->disp &= range1->mask;
 	}
 }
@@ -310,7 +310,7 @@ void variableRange_or_range(struct variableRange* range1, const struct variableR
 		uint64_t index_a;
 		uint64_t index_b;
 
-		if ((range2->mask & ~(0xffffffffffffffff << size_bit) & ~(range1->mask)) && variableRange_must_upscale(range1, size_bit)){
+		if ((range2->mask & bitmask64(size_bit) & ~(range1->mask)) && variableRange_must_upscale(range1, size_bit)){
 			variableRange_upscale_value(range1, size_bit);
 		}
 
@@ -339,7 +339,7 @@ void variableRange_or_range(struct variableRange* range1, const struct variableR
 			range1->scale = range2->scale + scale;	
 		}
 
-		range1->mask = ~(0xffffffffffffffff << size_bit);
+		range1->mask = bitmask64(size_bit);
 		range1->index = (0xffffffffffffffff >> __builtin_ctzll(index_a | index_b)) & (range1->mask >> range1->scale);
 		range1->disp = (range1->disp | range2->disp) & ~(0xffffffffffffffff << range1->scale) & range1->mask;
 	}
@@ -351,7 +351,7 @@ void variableRange_shl_range(struct variableRange* range1, const struct variable
 	}
 	else{
 		/* can be improved using a lower bound */
-		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
+		variableRange_init_top(range1, bitmask64(size_bit));
 	}
 }
 
@@ -362,7 +362,7 @@ void variableRange_shr_range(struct variableRange* range1, const struct variable
 	}
 	else{
 		/* can be improved using a lower bound */
-		variableRange_init_top(range1, ~(0xffffffffffffffff << size_bit));
+		variableRange_init_top(range1, bitmask64(size_bit));
 	}
 }
 
@@ -403,7 +403,7 @@ void variableRange_xor_range(struct variableRange* range1, const struct variable
 				index |= range2->index << (range2->scale - range1->scale);
 			}
 
-			range1->mask = ~(0xffffffffffffffff << size_bit);
+			range1->mask = bitmask64(size_bit);
 			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
 		}
 		else{
@@ -424,7 +424,7 @@ void variableRange_xor_range(struct variableRange* range1, const struct variable
 			}
 
 			range1->scale = range2->scale;
-			range1->mask = ~(0xffffffffffffffff << size_bit);
+			range1->mask = bitmask64(size_bit);
 			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
 		}
 	}
@@ -436,7 +436,7 @@ int32_t variableRange_is_value_include(const struct variableRange* range, uint64
 	}
 
 	value = (value - range->disp) & range->mask;
-	if (value & ~(0xffffffffffffffff << range->scale)){
+	if (value & bitmask64(range->scale)){
 		return 0;
 	}
 
@@ -585,12 +585,12 @@ int32_t variableRange_is_range_intersect(const struct variableRange* range1, con
 		disp2 >>= range2->scale;
 
 		rscale = range1->scale - range2->scale;
-		rdisp1 = disp1 & ~(0xffffffffffffffff << rscale);
+		rdisp1 = disp1 & bitmask64(rscale);
 
-		if ((disp2 & ~(0xffffffffffffffff << rscale)) > rdisp1){
+		if ((disp2 & bitmask64(rscale)) > rdisp1){
 			uint64_t offset;
 
-			offset = ((~(0xffffffffffffffff << rscale) & (range2->mask >> range2->scale)) + 1) - (disp2 & ~(0xffffffffffffffff << rscale)) + rdisp1;
+			offset = ((bitmask64(rscale) & (range2->mask >> range2->scale)) + 1) - (disp2 & bitmask64(rscale)) + rdisp1;
 			if (index2 < offset){
 				return 0;
 			}
@@ -599,14 +599,14 @@ int32_t variableRange_is_range_intersect(const struct variableRange* range1, con
 				disp2 = (disp2 + offset) & (range2->mask >> range2->scale);
 			}
 		}
-		else if ((rdisp1 - (disp2 & ~(0xffffffffffffffff << rscale)) > index2) || (rdisp1 & ~(range2->mask >> range2->scale))){
+		else if ((rdisp1 - (disp2 & bitmask64(rscale)) > index2) || (rdisp1 & ~(range2->mask >> range2->scale))){
 			return 0;
 		}
 
-		if (((index2 + disp2) & (range2->mask >> range2->scale) & ~(0xffffffffffffffff << rscale)) < rdisp1){
+		if (((index2 + disp2) & (range2->mask >> range2->scale) & bitmask64(rscale)) < rdisp1){
 			uint64_t offset;
 
-			offset = ((index2 + disp2) & (range2->mask >> range2->scale) & ~(0xffffffffffffffff << rscale)) + ((uint64_t)0x0000000000000001 << rscale) - rdisp1;
+			offset = ((index2 + disp2) & (range2->mask >> range2->scale) & bitmask64(rscale)) + ((uint64_t)0x0000000000000001 << rscale) - rdisp1;
 			if (index2 < offset){
 				index2 = 0;
 			}

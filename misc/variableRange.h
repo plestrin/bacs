@@ -2,6 +2,7 @@
 #define VARIABLERANGE_H
 
 #include <stdint.h>
+#include "base.h"
 
 struct variableRange{
 	uint64_t index;
@@ -17,7 +18,7 @@ static inline void variableRange_init_cst(struct variableRange* range, uint64_t 
 	range->mask 	= mask;
 }
 
-#define variableRange_init_cst_(range, value, size_bit) variableRange_init_cst(range, value, ~(0xffffffffffffffff << (size_bit)))
+#define variableRange_init_cst_(range, value, size_bit) variableRange_init_cst(range, value, bitmask64((size_bit)))
 
 static inline void variableRange_init_top(struct variableRange* range, uint64_t mask){
 	range->index 	= mask;
@@ -26,10 +27,10 @@ static inline void variableRange_init_top(struct variableRange* range, uint64_t 
 	range->mask 	= mask;
 }
 
-#define variableRange_init_top_(range, size_bit) variableRange_init_top(range, ~(0xffffffffffffffff << (size_bit)))
+#define variableRange_init_top_(range, size_bit) variableRange_init_top(range, bitmask64((size_bit)))
 
 static inline void variableRange_init_mask(struct variableRange* range, uint64_t mask, uint32_t size_bit){
-	range->mask = ~(0xffffffffffffffff << size_bit);
+	range->mask = bitmask64(size_bit);
 	range->disp = 0;
 	
 	if (!(mask &= range->mask)){
@@ -51,7 +52,7 @@ void variableRange_add_value(struct variableRange* range, uint64_t value, uint32
 void variableRange_and_value(struct variableRange* range, uint64_t value);
 
 static inline void variableRange_mod_value(struct variableRange* range, uint32_t value){
-	uint64_t mask = ~(0xffffffffffffffff << value) & range->mask;
+	uint64_t mask = bitmask64(value) & range->mask;
 
 	range->disp &= mask;
 	range->mask = mask;
@@ -66,7 +67,7 @@ void variableRange_or_value (struct variableRange* range, uint64_t value, uint32
 void variableRange_sub_value(struct variableRange* range, uint64_t value, uint32_t size_bit);
 void variableRange_xor_value(struct variableRange* range, uint64_t value, uint32_t size_bit);
 
-#define variableRange_must_upscale(range, size_bit) (~((range)->mask | (0xffffffffffffffff << (size_bit))))
+#define variableRange_must_upscale(range, size_bit) (~((range)->mask | ((0xffffffffffffffff << (size_bit)) + ((size_bit) == 64))))
 
 void variableRange_upscale_value(struct variableRange* range, uint32_t value);
 void variableRange_resize(struct variableRange* range, uint32_t size_bit);

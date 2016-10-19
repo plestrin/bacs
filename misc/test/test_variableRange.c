@@ -26,7 +26,7 @@ static uint32_t variableRange_init_rand(struct variableRange* range){
 	uint32_t size;
 	
 	size = rand() % MAX_SIZE;
-	range->mask 	= ~(0xffffffffffffffff << size);
+	range->mask 	= bitmask64(size);
 	range->disp 	= rand() & range->mask;
 	range->scale 	= rand() % (size + 1); 	/* fuzzy scale */
 	range->index 	= rand() & range->mask; /* fuzzy index */
@@ -116,7 +116,7 @@ int32_t main(void){
 		memcpy(&range2, &range1, sizeof(struct variableRange));
 		variableRange_add_value(&range2, value2, MAX_SIZE);
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = (value1 + value2) & ~(0xffffffffffffffff << MAX_SIZE);
+			value3 = (value1 + value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
 				printf("\t%llx = (%llu + %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" + %llu)\n", value2);
@@ -174,7 +174,7 @@ int32_t main(void){
 		variableRange_shl_value(&range2, value2, MAX_SIZE);
 		variableRange_check_format(&range2);
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = (value1 << value2) & ~(0xffffffffffffffff << MAX_SIZE);
+			value3 = (value1 << value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
 				printf("\t%llx = (%llx << %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %llu)\n", value2);
@@ -212,7 +212,7 @@ int32_t main(void){
 		memcpy(&range2, &range1, sizeof(struct variableRange));
 		variableRange_sub_value(&range2, value2, MAX_SIZE);
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
-			value3 = (value1 - value2) & ~(0xffffffffffffffff << MAX_SIZE);
+			value3 = (value1 - value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
 				printf("\t%llx = (%llu - %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" - %llu)\n", value2);
@@ -256,10 +256,10 @@ int32_t main(void){
 
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
-				value3 = (value1 + value2) & ~(0xffffffffffffffff << size);
+				value3 = (value1 + value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx + %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" + "); variableRange_print(&range2); printf(")\n");
+					printf("\t%llx = (%llx + %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" + "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -283,10 +283,10 @@ int32_t main(void){
 
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
-				value3 = value1 & value2 & ~(0xffffffffffffffff << size);
+				value3 = value1 & value2 & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx & %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" & "); variableRange_print(&range2); printf(")\n");
+					printf("\t%llx = (%llx & %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" & "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -310,10 +310,10 @@ int32_t main(void){
 
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
-				value3 = (value1 | value2) & ~(0xffffffffffffffff << size);
+				value3 = (value1 | value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx | %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" | "); variableRange_print(&range2); printf(")\n");
+					printf("\t%llx = (%llx | %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" | "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -337,10 +337,10 @@ int32_t main(void){
 
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
-				value3 = (value1 - value2) & ~(0xffffffffffffffff << size);
+				value3 = (value1 - value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx - %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" - "); variableRange_print(&range2); printf(")\n");
+					printf("\t%llx = (%llx - %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" - "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -364,10 +364,10 @@ int32_t main(void){
 
 		for (variableRangeIterator_init(&it1, &range1); variableRangeIterator_get_next(&it1, &value1); ){
 			for (variableRangeIterator_init(&it2, &range2); variableRangeIterator_get_next(&it2, &value2); ){
-				value3 = (value1 ^ value2) & ~(0xffffffffffffffff << size);
+				value3 = (value1 ^ value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx ^ %llx mask %llx) not in ", value3, value1, value2, ~(0xffffffffffffffff << size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" ^ "); variableRange_print(&range2); printf(")\n");
+					printf("\t%llx = (%llx ^ %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" ^ "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
