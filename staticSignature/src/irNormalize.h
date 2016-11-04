@@ -12,6 +12,6 @@ int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final);
 #define ir_normalize_simplify_instruction_std(ir) ir_normalize_simplify_instruction(ir, 0)
 #define ir_normalize_simplify_instruction_lst(ir) ir_normalize_simplify_instruction(ir, 1)
 
-void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification);
+int32_t ir_normalize_simplify_concrete_instruction(struct ir* ir);
 
 #endif

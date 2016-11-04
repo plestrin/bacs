@@ -34,7 +34,7 @@ class recipe(object):
 	def __str__(self):
 		string = ""
 		for arg in self.search_arg:
-			if  arg == "exit":
+			if arg == "exit":
 				continue
 			if arg.startswith("load trace "):
 				arg = "load trace /home/plt/Documents/bacs/test/" + arg[11:]

@@ -744,17 +744,9 @@ static int32_t irNormalize_distribute_cst(struct ir* ir){
 								continue;
 							}
 
-							if (ir_add_dependence(ir, edge_get_src(node1_imm_operand), new_node, ir_edge_get_dependence(node1_imm_operand)->type) == NULL){
-								log_err("unable to add dependency to IR");
-							}
-
-							if (ir_add_dependence(ir, edge_get_src(edge_cursor), new_node, IR_DEPENDENCE_TYPE_DIRECT) == NULL){
-								log_err("unable to add dependency to IR");
-							}
-
-							if (ir_add_dependence(ir, new_node, node_cursor1, ir_edge_get_dependence(edge_cursor)->type) == NULL){
-								log_err("unable to add dependency to IR");
-							}
+							ir_add_dependence_check(ir, edge_get_src(node1_imm_operand), new_node, ir_edge_get_dependence(node1_imm_operand)->type)
+							ir_add_dependence_check(ir, edge_get_src(edge_cursor), new_node, IR_DEPENDENCE_TYPE_DIRECT)
+							ir_add_dependence_check(ir, new_node, node_cursor1, ir_edge_get_dependence(edge_cursor)->type)
 						}
 						operation_cursor1->operation_type.inst.opcode = operation_cursor2->operation_type.inst.opcode;
 						operation_cursor1->size = operation_cursor2->size;
@@ -884,7 +876,7 @@ static int32_t irOperand_compare_node(const void* arg1, const void* arg2);
 
 #if defined VERBOSE || defined IR_FULL_CHECK
 
-#define ir_normalize_apply_rule_new(func, name, time) 																										\
+#define ir_normalize_apply_rule(func, name, time) 																											\
 	timer_start(); 																																			\
 	modification = func(ir); 																																\
 	timer_stop(time); 																																		\
@@ -896,22 +888,9 @@ static int32_t irOperand_compare_node(const void* arg1, const void* arg2);
 		modification_copy = 1; 																																\
 	}
 
-#define ir_normalize_apply_rule(func, name, time) 																											\
-	timer_start(); 																																			\
-	func(ir, &modification); 																																\
-	timer_stop(time); 																																		\
-																																							\
-	if (modification){ 																																		\
-		ir_normalize_print_notification(name, round_counter); 																								\
-		ir_normalize_check_ir(ir); 																															\
-		modification = 0; 																																	\
-		modification_copy = 1; 																																\
-	}
-
 #else
 
-#define ir_normalize_apply_rule_new(func, name, time) modification |= func(ir)
-#define ir_normalize_apply_rule(func, name, time) func(ir, &modification)
+#define ir_normalize_apply_rule(func, name, time) modification |= func(ir)
 
 #endif
 
@@ -953,43 +932,43 @@ void ir_normalize(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_FOLD_CONSTANT == 1
-		ir_normalize_apply_rule_new(irNormalize_fold_constant, "fold constant", timer_1_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_fold_constant, "fold constant", timer_1_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_DETECT_CST_EXPRESSION == 1
-		ir_normalize_apply_rule_new(irNormalize_detect_cst_expression, "detect cst expression", timer_2_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_detect_cst_expression, "detect cst expression", timer_2_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-		ir_normalize_apply_rule_new(ir_normalize_simplify_instruction_std, "simplify instruction", timer_3_elapsed_time);
+		ir_normalize_apply_rule(ir_normalize_simplify_instruction_std, "simplify instruction", timer_3_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		ir_normalize_apply_rule_new(irNormalize_remove_common_subexpression, "remove subexpression", timer_4_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_remove_common_subexpression, "remove subexpression", timer_4_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule_new(irMemory_simplify, "simplify memory", timer_5_elapsed_time);
+		ir_normalize_apply_rule(irMemory_simplify, "simplify memory", timer_5_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_DISTRIBUTE_CST == 1
-		ir_normalize_apply_rule_new(irNormalize_distribute_cst, "distribute cst", timer_6_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_distribute_cst, "distribute cst", timer_6_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_EXPAND_VARIABLE == 1
-		ir_normalize_apply_rule(ir_normalize_expand_variable, "expand variable", timer_7_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_expand_variable, "expand variable", timer_7_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_COALESCE_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule_new(irMemory_coalesce, "coalesce memory", timer_8_elapsed_time);
+		ir_normalize_apply_rule(irMemory_coalesce, "coalesce memory", timer_8_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
-		ir_normalize_apply_rule_new(irNormalize_affine_expression, "affine expression", timer_9_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_affine_expression, "affine expression", timer_9_elapsed_time);
 		#endif
 
 		#if IR_NORMALIZE_MERGE_CST == 1
-		ir_normalize_apply_rule_new(irNormalize_merge_cst, "merge cst", timer_10_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_merge_cst, "merge cst", timer_10_elapsed_time);
 		#endif
 
 		#if defined VERBOSE || defined IR_FULL_CHECK
@@ -1069,7 +1048,7 @@ void ir_normalize_concrete(struct ir* ir){
 		#endif
 
 		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		ir_normalize_apply_rule_new(irNormalize_remove_common_subexpression, "remove subexpression", timer_2_elapsed_time);
+		ir_normalize_apply_rule(irNormalize_remove_common_subexpression, "remove subexpression", timer_2_elapsed_time);
 		#endif
 
 		#if defined VERBOSE || defined IR_FULL_CHECK
@@ -1099,7 +1078,7 @@ static int32_t ir_normalize_simplify_instruction_rewrite_shrd   (struct ir* ir, 
 static int32_t ir_normalize_simplify_instruction_rewrite_sub    (struct ir* ir, struct node* node);
 static int32_t ir_normalize_simplify_instruction_rewrite_xor    (struct ir* ir, struct node* node, uint8_t final);
 
-static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification);
+static int32_t ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node);
 
 typedef int32_t(*simplify_instruction_ptr)(struct ir*,struct node*,uint8_t);
 
@@ -1165,26 +1144,27 @@ int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final){
 	return result;
 }
 
-void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modification){
+int32_t ir_normalize_simplify_concrete_instruction(struct ir* ir){
 	struct irNodeIterator 	it;
 	struct irOperation* 	operation_cursor;
 	struct node* 			node_operand;
+	int32_t 				result;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
 		log_err("unable to sort ir node(s)");
-		return;
+		return 0;
 	}
 
-	for(irNodeIterator_get_first(ir, &it); irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+	for(irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
 		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
 
 		if (operation_cursor->type == IR_OPERATION_TYPE_INST && operation_cursor->operation_type.inst.opcode == IR_XOR){
-			ir_normalize_simplify_instruction_symbolic_xor(ir, irNodeIterator_get_node(it), modification);
+			result |= ir_normalize_simplify_instruction_symbolic_xor(ir, irNodeIterator_get_node(it));
 			if (irNodeIterator_get_node(it)->nb_edge_dst == 1){
 				node_operand = edge_get_src(node_get_head_edge_dst(irNodeIterator_get_node(it)));
 				if (ir_node_get_operation(node_operand)->type == IR_OPERATION_TYPE_IMM && ir_imm_operation_get_unsigned_value(ir_node_get_operation(node_operand)) == 0){
 					ir_merge_equivalent_node(ir, node_operand, irNodeIterator_get_node(it));
-					*modification = 1;
+					result = 1;
 				}
 			}
 		}
@@ -1193,6 +1173,8 @@ void ir_normalize_simplify_concrete_instruction(struct ir* ir,  uint8_t* modific
 	#ifdef IR_FULL_CHECK
 	ir_check_order(ir);
 	#endif
+
+	return result;
 }
 
 #ifdef EXTRA_CHECK
@@ -1871,11 +1853,12 @@ static int32_t ir_normalize_simplify_instruction_rewrite_sub(struct ir* ir, stru
 	return 0;
 }
 
-static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node, uint8_t* modification){
+static int32_t ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node){
 	struct edge* 			edge_cursor;
 	struct irOperand*		operand_list;
 	uint32_t 				nb_operand;
 	uint32_t 				i;
+	int32_t 				result 			= 0;
 
 	if (node->nb_edge_dst >= 2){
 		operand_list = (struct irOperand*)alloca(sizeof(struct irOperand) * node->nb_edge_dst);
@@ -1908,11 +1891,13 @@ static void ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct
 					}
 
 					i++;
-					*modification = 1;
+					result = 1;
 				}
 			}
 		}
 	}
+
+	return result;
 }
 
 static int32_t ir_normalize_simplify_instruction_rewrite_xor(struct ir* ir, struct node* node, uint8_t final){

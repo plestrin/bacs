@@ -1544,41 +1544,32 @@ int32_t irMemory_coalesce(struct ir* ir){
 			case IR_OPERATION_TYPE_IN_REG 	:
 			case IR_OPERATION_TYPE_IN_MEM 	:
 			case IR_OPERATION_TYPE_INST 	: {
-				if (var == NULL){
-					var = edge_get_src(edge_cursor);
-					break;
-				}
-				else{
-					continue;
-				}
+				var = edge_get_src(edge_cursor);
+				break;
 			}
 			case IR_OPERATION_TYPE_IMM 		: {
-				if (imm == NULL){
-					imm = edge_get_src(edge_cursor);
-					break;
-				}
-				else{
-					continue;
-				}
+				imm = edge_get_src(edge_cursor);
+				break;
 			}
 			default 						: {
 				continue;
 			}
 		}
 
+		if (var == NULL || imm == NULL){
+			continue;
+		}
+
 		if (new_table == NULL){
-			new_table = (struct accessTable*)malloc(sizeof(struct accessTable));
-			if (new_table == NULL){
+			if ((new_table = (struct accessTable*)malloc(sizeof(struct accessTable))) == NULL){
 				log_err("unable to allocate memory\n");
 				continue;
 			}
-			else{
-				if (array_init(&(new_table->access_array), sizeof(struct accessEntry))){
-					log_err("unable to init array");
-					free(new_table);
-					new_table = NULL;
-					continue;
-				}
+			else if (array_init(&(new_table->access_array), sizeof(struct accessEntry))){
+				log_err("unable to init array");
+				free(new_table);
+				new_table = NULL;
+				continue;
 			}
 		}
 
