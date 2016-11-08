@@ -171,6 +171,23 @@ static int32_t irNormalize_cst_shift(struct ir* ir, struct node* node, uint64_t(
 	return 0;
 }
 
+static int32_t irNormalize_cst_movzx(struct ir* ir, struct node* node){
+	struct edge* 			edge;
+	struct irOperation* 	op;
+
+	if ((edge = node_get_head_edge_dst(node)) == NULL){
+		return 0;
+	}
+
+	op = ir_node_get_operation(edge_get_src(edge));
+	if (op->type != IR_OPERATION_TYPE_IMM){
+		return 0;
+	}
+
+	ir_convert_operation_to_imm(ir, node, ir_imm_operation_get_unsigned_value(op));
+	return 1;
+}
+
 static int32_t irNormalize_fold_constant(struct ir* ir){
 	struct irNodeIterator 	it;
 	struct irOperation* 	operation_cursor;
@@ -199,6 +216,10 @@ static int32_t irNormalize_fold_constant(struct ir* ir){
 				}
 				case IR_MUL 		: {
 					result |= irNormalize_cst_generic(ir, irNodeIterator_get_node(it), 0, 1, 1, irNormalize_cst_gen_mul);
+					break;
+				}
+				case IR_MOVZX 		: {
+					result |= irNormalize_cst_movzx(ir, irNodeIterator_get_node(it));
 					break;
 				}
 				case IR_OR 			: {

@@ -227,51 +227,43 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 	}
 }
 
-enum paddingStrategy{
-	PADDING_OK,
-	PADDING_COMPLAIN,
-	PADDING_SECURE,
-	PADDING_IGNORE
-};
-
-static const enum paddingStrategy insPaddingStrategy[NB_IR_OPCODE] = {
-	PADDING_OK, 		/* 0  IR_ADC 		*/
-	PADDING_OK, 		/* 1  IR_ADD 		*/
-	PADDING_OK, 		/* 2  IR_AND 		*/
-	PADDING_OK, 		/* 3  IR_CMOV 		*/
-	PADDING_IGNORE, 	/* 4  IR_DIVQ 		*/
-	PADDING_IGNORE, 	/* 5  IR_DIVR 		*/
-	PADDING_IGNORE, 	/* 6  IR_IDIVQ 		*/
-	PADDING_IGNORE, 	/* 7  IR_IDIVR 		*/
-	PADDING_COMPLAIN, 	/* 8  IR_IMUL 		*/
-	PADDING_IGNORE, 	/* 9  IR_LEA 		- not important */
-	PADDING_IGNORE, 	/* 10 IR_MOV 		- not important */
-	PADDING_IGNORE, 	/* 11 IR_MOVZX 		*/
-	PADDING_COMPLAIN, 	/* 12 IR_MUL 		*/
-	PADDING_COMPLAIN, 	/* 13 IR_NEG 		*/
-	PADDING_OK, 		/* 14 IR_NOT 		*/
-	PADDING_OK, 		/* 15 IR_OR 		*/
-	PADDING_IGNORE, 	/* 16 IR_PART1_8 	*/
-	PADDING_IGNORE, 	/* 17 IR_PART2_8 	*/
-	PADDING_IGNORE, 	/* 18 IR_PART1_16 	*/
-	PADDING_COMPLAIN, 	/* 19 IR_ROL 		*/
-	PADDING_COMPLAIN, 	/* 20 IR_ROR 		*/
-	PADDING_COMPLAIN, 	/* 21 IR_SBB 		*/
-	PADDING_COMPLAIN, 	/* 22 IR_SHL 		*/
-	PADDING_COMPLAIN, 	/* 23 IR_SHLD 		*/
-	PADDING_COMPLAIN, 	/* 24 IR_SHR 		*/
-	PADDING_COMPLAIN, 	/* 25 IR_SHRD 		*/
-	PADDING_COMPLAIN, 	/* 26 IR_SUB 		*/
-	PADDING_OK, 		/* 27 IR_XOR 		*/
-	PADDING_IGNORE, 	/* 28 IR_LOAD 		- not important */
-	PADDING_IGNORE, 	/* 29 IR_STORE 		- not important */
-	PADDING_IGNORE, 	/* 30 IR_JOKER 		- not important */
-	PADDING_IGNORE, 	/* 31 IR_INVALID 	- not important */
+static const uint8_t expand[NB_IR_OPCODE] = {
+	1, 	/* 0  IR_ADC 		*/
+	1, 	/* 1  IR_ADD 		*/
+	1, 	/* 2  IR_AND 		*/
+	1, 	/* 3  IR_CMOV 		*/
+	0, 	/* 4  IR_DIVQ 		*/
+	0, 	/* 5  IR_DIVR 		*/
+	0, 	/* 6  IR_IDIVQ 		*/
+	0, 	/* 7  IR_IDIVR 		*/
+	0, 	/* 8  IR_IMUL 		*/
+	0, 	/* 9  IR_LEA 		- not important */
+	0, 	/* 10 IR_MOV 		- not important */
+	0, 	/* 11 IR_MOVZX 		*/
+	0, 	/* 12 IR_MUL 		*/
+	1, 	/* 13 IR_NEG 		*/
+	1, 	/* 14 IR_NOT 		*/
+	1, 	/* 15 IR_OR 		*/
+	0, 	/* 16 IR_PART1_8 	*/
+	0, 	/* 17 IR_PART2_8 	*/
+	0, 	/* 18 IR_PART1_16 	*/
+	0, 	/* 19 IR_ROL 		*/
+	0, 	/* 20 IR_ROR 		*/
+	1, 	/* 21 IR_SBB 		*/
+	1, 	/* 22 IR_SHL 		*/
+	0, 	/* 23 IR_SHLD 		*/
+	0, 	/* 24 IR_SHR 		*/
+	0, 	/* 25 IR_SHRD 		*/
+	1, 	/* 26 IR_SUB 		*/
+	1, 	/* 27 IR_XOR 		*/
+	0, 	/* 28 IR_LOAD 		- not important */
+	0, 	/* 29 IR_STORE 		- not important */
+	0, 	/* 30 IR_JOKER 		- not important */
+	0 	/* 31 IR_INVALID 	- not important */
 };
 
 int32_t irNormalize_expand_variable(struct ir* ir){
-	struct node* 			node_cursor;
-	struct irOperation* 	operation_cursor;
+	struct irNodeIterator 	it;
 	int32_t 				result;
 
 	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
@@ -279,12 +271,11 @@ int32_t irNormalize_expand_variable(struct ir* ir){
 		return 0;
 	}
 
-	for (node_cursor = graph_get_head_node(&(ir->graph)), result = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
-		operation_cursor = ir_node_get_operation(node_cursor);
-		node_cursor->ptr = (void*)((uint32_t)(operation_cursor->size));
+	for (irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		irNodeIterator_get_node(it)->ptr = (void*)((uint32_t)(irNodeIterator_get_operation(it)->size));
 
-		if (operation_cursor->size < IDEAL_SIZE){
-			switch (operation_cursor->type){
+		if (irNodeIterator_get_operation(it)->size < IDEAL_SIZE){
+			switch (irNodeIterator_get_operation(it)->type){
 				case IR_OPERATION_TYPE_IN_REG 	: {
 					break;
 				}
@@ -295,80 +286,26 @@ int32_t irNormalize_expand_variable(struct ir* ir){
 					break;
 				}
 				case IR_OPERATION_TYPE_IMM 		: {
-					struct edge* edge_cursor;
+					struct edge* current_edge_cursor;
+					struct edge* next_edge_cursor;
+					struct node* new_imm;
 
-					for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-						if (ir_node_get_operation(edge_get_dst(edge_cursor))->size == IDEAL_SIZE){
-							operation_cursor->operation_type.imm.value &= bitmask64(operation_cursor->size);
-							operation_cursor->size = IDEAL_SIZE;
-							
-							result = 1;
-							break;
+					for (current_edge_cursor = node_get_head_edge_src(irNodeIterator_get_node(it)); current_edge_cursor != NULL; current_edge_cursor = next_edge_cursor){
+						next_edge_cursor = edge_get_next_src(current_edge_cursor);
+
+						if (ir_edge_get_dependence(current_edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT && ir_node_get_operation(edge_get_dst(current_edge_cursor))->size != (uint32_t)(edge_get_dst(current_edge_cursor)->ptr) && ir_node_get_operation(edge_get_dst(current_edge_cursor))->size == IDEAL_SIZE){
+							if ((new_imm = ir_insert_immediate(ir, irNodeIterator_get_node(it), IDEAL_SIZE, ir_imm_operation_get_unsigned_value(irNodeIterator_get_operation(it)))) != NULL){
+								ir_add_dependence_check(ir, new_imm, edge_get_dst(current_edge_cursor), IR_DEPENDENCE_TYPE_DIRECT)
+								ir_remove_dependence(ir, current_edge_cursor);
+							}
 						}
 					}
 					break;
 				}
 				case IR_OPERATION_TYPE_INST 	: {
-					switch (insPaddingStrategy[operation_cursor->operation_type.inst.opcode]){
-						case PADDING_OK 		: {
-							operation_cursor->size = IDEAL_SIZE;
-
-							result = 1;
-							break;
-						}
-						case PADDING_COMPLAIN 	: {
-							log_warn_m("%s of size: %u, this case is not implemented", irOpcode_2_string(operation_cursor->operation_type.inst.opcode), operation_cursor->size);
-							break;
-						}
-						case PADDING_SECURE 	: {
-							#define IRVARIABLESIZE_NB_OPERAND_MAX 16
-							struct edge* 	edge_cursor;
-							struct node* 	operand;
-							struct node* 	mask;
-							struct node* 	and_tab[IRVARIABLESIZE_NB_OPERAND_MAX];
-							struct edge* 	edge_tab[IRVARIABLESIZE_NB_OPERAND_MAX];
-							uint32_t 		i;
-							uint32_t 		nb_edge_dst;
-
-							if (node_cursor->nb_edge_dst > IRVARIABLESIZE_NB_OPERAND_MAX){
-								log_err("number of operand exceed a static array upper bound");
-							}
-							else{
-								for (edge_cursor = node_get_head_edge_dst(node_cursor), i = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor), i++){
-									operand = edge_get_src(edge_cursor);
-
-									edge_tab[i] = edge_cursor;
-
-									if ((mask = ir_insert_immediate(ir, node_cursor, IDEAL_SIZE, bitmask64(ir_node_get_operation(node_cursor)->size))) != NULL){
-										if ((and_tab[i] = ir_insert_inst(ir, node_cursor, IR_OPERATION_INDEX_UNKOWN, IDEAL_SIZE, IR_AND, IR_OPERATION_DST_UNKOWN)) != NULL){
-											ir_add_dependence_check(ir, mask, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT)
-											ir_add_dependence_check(ir, operand, and_tab[i], IR_DEPENDENCE_TYPE_DIRECT)
-										}
-										else{
-											log_err("unable to add instruction to IR");
-										}
-									}
-									else{
-										log_err("unable to add immediate to IR");
-									}
-								}
-
-								nb_edge_dst = node_cursor->nb_edge_dst;
-
-								for (i = 0; i < nb_edge_dst; i++){
-									ir_add_dependence_check(ir, and_tab[i], node_cursor,ir_edge_get_dependence(edge_tab[i])->type)
-									ir_remove_dependence(ir, edge_tab[i]);
-								}
-
-								operation_cursor->size = IDEAL_SIZE;
-
-								result = 1;
-							}
-							break;
-						}
-						case PADDING_IGNORE 	: {
-							break;
-						}
+					if (expand[irNodeIterator_get_operation(it)->operation_type.inst.opcode]){
+						irNodeIterator_get_operation(it)->size = IDEAL_SIZE;
+						result = 1;
 					}
 					break;
 				}
