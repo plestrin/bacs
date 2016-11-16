@@ -122,7 +122,7 @@ If according to range value analysis an expression is constant, replace the expr
 ### XOR
 * If two operands are equal -> remove both (if the operand count fall to zero, replace by a constant);
 * If there are two operand and one of them is a constant equal to 0xff..ff -> replace by NOT.
-* Complex rules based on merging: use diff value and final flag*
+*Complex rules based on merging: use diff value and final flag*
 
 ## Operation Size Expansion
 

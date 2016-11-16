@@ -429,6 +429,96 @@ static int32_t irNormalize_detect_cst_expression(struct ir* ir){
 
 #endif
 
+#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
+
+static int32_t ir_normalize_simplify_instruction_rewrite_add    (struct ir* ir, struct node* node, uint8_t final);
+static int32_t ir_normalize_simplify_instruction_rewrite_and    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_movzx  (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_mul    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_or     (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_part2_8(struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_rol    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_shl    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_shld   (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_shr    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_shrd   (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_sub    (struct ir* ir, struct node* node);
+static int32_t ir_normalize_simplify_instruction_rewrite_xor    (struct ir* ir, struct node* node, uint8_t final);
+
+typedef int32_t(*simplify_instruction_ptr)(struct ir*,struct node*,uint8_t);
+
+static const simplify_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
+	NULL, 																			/* 0  IR_ADC 			*/
+	ir_normalize_simplify_instruction_rewrite_add, 									/* 1  IR_ADD 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_and, 		/* 2  IR_AND 			*/
+	NULL, 																			/* 3  IR_CMOV 			*/
+	NULL, 																			/* 4  IR_DIVQ  			*/
+	NULL, 																			/* 5  IR_DIVR  			*/
+	NULL, 																			/* 6  IR_IDIVQ 			*/
+	NULL, 																			/* 7  IR_IDIVR 			*/
+	NULL, 																			/* 8  IR_IMUL 			*/
+	NULL, 																			/* 9  IR_LEA 			*/
+	NULL, 																			/* 10 IR_MOV 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_movzx, 		/* 11 IR_MOVZX 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_mul, 		/* 12 IR_MUL 			*/
+	NULL, 																			/* 13 IR_NEG 			*/
+	NULL, 																			/* 14 IR_NOT 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_or, 		/* 15 IR_OR 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part1_8, 	/* 16 IR_PART1_8 		*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part2_8, 	/* 17 IR_PART2_8 		*/
+	NULL, 																			/* 18 IR_PART1_16 		*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_rol, 		/* 19 IR_ROL 			*/
+	NULL, 																			/* 20 IR_ROR 			*/
+	NULL, 																			/* 21 IR_SBB 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shl, 		/* 22 IR_SHL 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shld, 		/* 23 IR_SHLD 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shr, 		/* 24 IR_SHR 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shrd, 		/* 25 IR_SHRD 			*/
+	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_sub, 		/* 26 IR_SUB 			*/
+	ir_normalize_simplify_instruction_rewrite_xor, 									/* 27 IR_XOR 			*/
+	NULL, 																			/* 28 IR_LOAD 			*/
+	NULL, 																			/* 29 IR_STORE 			*/
+	NULL, 																			/* 30 IR_JOKER 			*/
+	NULL 																			/* 31 IR_INVALID 		*/
+};
+
+static int32_t irNormalize_simplify_instruction(struct ir* ir, uint8_t final){
+	struct irNodeIterator 	it;
+	struct irOperation* 	operation_cursor;
+	int32_t 				result;
+
+	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
+		log_err("unable to sort ir node(s)");
+		return 0;
+	}
+
+	for (irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
+		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
+
+		if (operation_cursor->type == IR_OPERATION_TYPE_INST){
+			if (rewrite_simplify[operation_cursor->operation_type.inst.opcode] != NULL){
+				result |= rewrite_simplify[operation_cursor->operation_type.inst.opcode](ir, irNodeIterator_get_node(it), final);
+			}
+		}
+	}
+
+	#ifdef IR_FULL_CHECK
+	ir_check_order(ir);
+	#endif
+
+	return result;
+}
+
+static int32_t irNormalize_simplify_instruction_std(struct ir* ir){
+	return irNormalize_simplify_instruction(ir, 0);
+}
+
+static int32_t irNormalize_simplify_instruction_fin(struct ir* ir){
+	return  irNormalize_simplify_instruction(ir, 1);
+}
+
+#endif
 
 #if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
 
@@ -915,118 +1005,143 @@ static int32_t irOperand_compare_node(const void* arg1, const void* arg2);
 
 #endif
 
+struct normalizationMechanism{
+	int32_t(*func)(struct ir*);
+	char 	name[64];
+};
+
+static const struct normalizationMechanism normalization_mechanism[] = {
+	#if IR_NORMALIZE_FOLD_CONSTANT == 1
+	{
+		.func 	= irNormalize_fold_constant,
+		.name 	= "Fold Constant",
+	},
+	#endif
+	#if IR_NORMALIZE_DETECT_CST_EXPRESSION == 1
+	{
+		.func 	= irNormalize_detect_cst_expression,
+		.name 	= "Detect Cst Expression",
+	},
+	#endif
+	#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
+	{
+		.func 	= irNormalize_simplify_instruction_std,
+		.name 	= "Simplify Instruction",
+	},
+	#endif
+	#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
+	{
+		.func 	= irNormalize_remove_common_subexpression,
+		.name 	= "Remove Subexpression",
+	},
+	#endif
+	#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
+	{
+		.func 	= irMemory_simplify,
+		.name 	= "Simplify Memory Access",
+	},
+	#endif
+	#if IR_NORMALIZE_DISTRIBUTE_CST == 1
+	{
+		.func 	= irNormalize_distribute_cst,
+		.name 	= "Distribute Cst",
+	},
+	#endif
+	#if IR_NORMALIZE_EXPAND_VARIABLE == 1
+	{
+		.func 	= irNormalize_expand_variable,
+		.name 	= "Expand Variable",
+	},
+	#endif
+	#if IR_NORMALIZE_COALESCE_MEMORY_ACCESS == 1
+	{
+		.func 	= irMemory_coalesce,
+		.name 	= "Coalesce Memory Access"
+	},
+	#endif
+	#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
+	{
+		.func 	= irNormalize_affine_expression,
+		.name 	= "Affine Exp Simplification",
+	},
+	#endif
+	#if IR_NORMALIZE_MERGE_CST == 1
+	{
+		.func 	= irNormalize_merge_cst,
+		.name 	= "Merge Cst",
+	},
+	#endif
+};
+
 void ir_normalize(struct ir* ir){
+	uint32_t 		i;
+	uint32_t 		modif;
 	#if defined VERBOSE || defined IR_FULL_CHECK
-	uint8_t 		modification_copy;
-	#ifdef VERBOSE
-	uint32_t 		round_counter = 0;
-	double 			timer_1_elapsed_time  = 0.0;
-	double 			timer_2_elapsed_time  = 0.0;
-	double 			timer_3_elapsed_time  = 0.0;
-	double 			timer_4_elapsed_time  = 0.0;
-	double 			timer_5_elapsed_time  = 0.0;
-	double 			timer_6_elapsed_time  = 0.0;
-	double 			timer_7_elapsed_time  = 0.0;
-	double 			timer_8_elapsed_time  = 0.0;
-	double 			timer_9_elapsed_time  = 0.0;
-	double 			timer_10_elapsed_time = 0.0;
+	uint32_t 		local_modif;
 	struct timespec timer_start_time;
 	struct timespec timer_stop_time;
+	double 			timer[sizeof(normalization_mechanism) / sizeof(struct normalizationMechanism)] = {0};
 	#endif
+	#ifdef VERBOSE
+	uint32_t 		round_counter = 0;
 	#endif
-	uint8_t 		modification;
+	#if defined VERBOSE && defined IR_PRINT_STEP
+	char 			file_name[128];
+	#endif
 
 	do {
-		#ifdef IR_PRINT_STEP
-		char 	file_name[256];
-		snprintf(file_name, 256, "%u.dot", round_counter);
-		graphPrintDot_print(&(ir->graph), file_name, NULL);
-		#endif
-
-		modification = 0;
-
-		#if defined VERBOSE || defined IR_FULL_CHECK
-		modification_copy = 0;
 		#ifdef VERBOSE
 		printf("*** ROUND %u ***\n", round_counter);
 		#endif
-		#endif
 
-		#if IR_NORMALIZE_FOLD_CONSTANT == 1
-		ir_normalize_apply_rule(irNormalize_fold_constant, "fold constant", timer_1_elapsed_time);
-		#endif
+		for (i = 0, modif = 0; i < (sizeof(normalization_mechanism) / sizeof(struct normalizationMechanism)); i++){
+			#if defined VERBOSE || defined IR_FULL_CHECK
+			timer_start();
+			local_modif = normalization_mechanism[i].func(ir);
+			timer_stop(timer[i]);
 
-		#if IR_NORMALIZE_DETECT_CST_EXPRESSION == 1
-		ir_normalize_apply_rule(irNormalize_detect_cst_expression, "detect cst expression", timer_2_elapsed_time);
-		#endif
+			if (local_modif){
+				#ifdef VERBOSE
+				log_info_m("modification %s @ %u", normalization_mechanism[i].name, round_counter);
+				#endif
+				ir_normalize_check_ir(ir);
+				modif = 1;
+				#if defined VERBOSE && defined IR_PRINT_STEP
+				snprintf(file_name, sizeof(file_name), "%u_%u.dot", round_counter, i);
+				graphPrintDot_print(&(ir->graph), file_name, NULL);
+				#endif
+			}
+			#else
+			modif |= normalization_mechanism[i].func(ir);
+			#endif
+		}
 
-		#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
-		ir_normalize_apply_rule(ir_normalize_simplify_instruction_std, "simplify instruction", timer_3_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_REMOVE_SUBEXPRESSION == 1
-		ir_normalize_apply_rule(irNormalize_remove_common_subexpression, "remove subexpression", timer_4_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule(irMemory_simplify, "simplify memory", timer_5_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_DISTRIBUTE_CST == 1
-		ir_normalize_apply_rule(irNormalize_distribute_cst, "distribute cst", timer_6_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_EXPAND_VARIABLE == 1
-		ir_normalize_apply_rule(irNormalize_expand_variable, "expand variable", timer_7_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_COALESCE_MEMORY_ACCESS == 1
-		ir_normalize_apply_rule(irMemory_coalesce, "coalesce memory", timer_8_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_AFFINE_EXPRESSION == 1
-		ir_normalize_apply_rule(irNormalize_affine_expression, "affine expression", timer_9_elapsed_time);
-		#endif
-
-		#if IR_NORMALIZE_MERGE_CST == 1
-		ir_normalize_apply_rule(irNormalize_merge_cst, "merge cst", timer_10_elapsed_time);
-		#endif
-
-		#if defined VERBOSE || defined IR_FULL_CHECK
-		modification = modification_copy;
 		#ifdef VERBOSE
 		round_counter ++;
 		#endif
-		#endif
-	} while (modification);
+	} while(modif);
 
 	#if IR_NORMALIZE_SIMPLIFY_INSTRUCTION == 1
 	do {
-		timer_start();
-		modification = ir_normalize_simplify_instruction_lst(ir);
-		timer_stop(timer_1_elapsed_time);
+		/* We don't log the time for this mechanism */
+		modif = irNormalize_simplify_instruction_fin(ir);
 
 		#if defined VERBOSE || defined IR_FULL_CHECK
-		if (modification){
+		if (modif){
 			#ifdef VERBOSE
-			log_info("modification simplify instruction @ FINAL");
+			log_info("modification Simplify Instruction @ FINAL");
 			#endif
 			ir_normalize_check_ir(ir);
 		}
 		#endif
-	} while(modification);
+	} while(modif);
 	#endif
 
-	timer_print("Fold constant", 			timer_1_elapsed_time);
-	timer_print("Detect cst expression", 	timer_2_elapsed_time);
-	timer_print("Simplify instruction", 	timer_3_elapsed_time);
-	timer_print("Remove subexpression", 	timer_4_elapsed_time);
-	timer_print("Simplify memory access", 	timer_5_elapsed_time);
-	timer_print("Distribute cst", 			timer_6_elapsed_time);
-	timer_print("Expand variable", 			timer_7_elapsed_time);
-	timer_print("Coalesce memory access", 	timer_8_elapsed_time);
-	timer_print("Affine expression", 		timer_9_elapsed_time);
-	timer_print("Merge cst", 				timer_10_elapsed_time);
+	#ifdef VERBOSE
+	for (i = 0; i < (sizeof(normalization_mechanism) / sizeof(normalization_mechanism)); i++){
+		printf("%-24s %3.3f\n", normalization_mechanism[i].name, timer[i]);
+	}
+	#endif
 }
 
 void ir_normalize_concrete(struct ir* ir){
@@ -1084,86 +1199,7 @@ void ir_normalize_concrete(struct ir* ir){
 	timer_print("Remove subexpression", timer_2_elapsed_time);
 }
 
-static int32_t ir_normalize_simplify_instruction_rewrite_add    (struct ir* ir, struct node* node, uint8_t final);
-static int32_t ir_normalize_simplify_instruction_rewrite_and    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_movzx  (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_mul    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_or     (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_part1_8(struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_part2_8(struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_rol    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_shl    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_shld   (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_shr    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_shrd   (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_sub    (struct ir* ir, struct node* node);
-static int32_t ir_normalize_simplify_instruction_rewrite_xor    (struct ir* ir, struct node* node, uint8_t final);
-
 static int32_t ir_normalize_simplify_instruction_symbolic_xor(struct ir* ir, struct node* node);
-
-typedef int32_t(*simplify_instruction_ptr)(struct ir*,struct node*,uint8_t);
-
-static const simplify_instruction_ptr rewrite_simplify[NB_IR_OPCODE] = {
-	NULL, 																			/* 0  IR_ADC 			*/
-	ir_normalize_simplify_instruction_rewrite_add, 									/* 1  IR_ADD 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_and, 		/* 2  IR_AND 			*/
-	NULL, 																			/* 3  IR_CMOV 			*/
-	NULL, 																			/* 4  IR_DIVQ  			*/
-	NULL, 																			/* 5  IR_DIVR  			*/
-	NULL, 																			/* 6  IR_IDIVQ 			*/
-	NULL, 																			/* 7  IR_IDIVR 			*/
-	NULL, 																			/* 8  IR_IMUL 			*/
-	NULL, 																			/* 9  IR_LEA 			*/
-	NULL, 																			/* 10 IR_MOV 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_movzx, 		/* 11 IR_MOVZX 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_mul, 		/* 12 IR_MUL 			*/
-	NULL, 																			/* 13 IR_NEG 			*/
-	NULL, 																			/* 14 IR_NOT 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_or, 		/* 15 IR_OR 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part1_8, 	/* 16 IR_PART1_8 		*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_part2_8, 	/* 17 IR_PART2_8 		*/
-	NULL, 																			/* 18 IR_PART1_16 		*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_rol, 		/* 19 IR_ROL 			*/
-	NULL, 																			/* 20 IR_ROR 			*/
-	NULL, 																			/* 21 IR_SBB 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shl, 		/* 22 IR_SHL 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shld, 		/* 23 IR_SHLD 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shr, 		/* 24 IR_SHR 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_shrd, 		/* 25 IR_SHRD 			*/
-	(simplify_instruction_ptr)ir_normalize_simplify_instruction_rewrite_sub, 		/* 26 IR_SUB 			*/
-	ir_normalize_simplify_instruction_rewrite_xor, 									/* 27 IR_XOR 			*/
-	NULL, 																			/* 28 IR_LOAD 			*/
-	NULL, 																			/* 29 IR_STORE 			*/
-	NULL, 																			/* 30 IR_JOKER 			*/
-	NULL 																			/* 31 IR_INVALID 		*/
-};
-
-int32_t ir_normalize_simplify_instruction(struct ir* ir, uint8_t final){
-	struct irNodeIterator 	it;
-	struct irOperation* 	operation_cursor;
-	int32_t 				result;
-
-	if (dagPartialOrder_sort_dst_src(&(ir->graph))){
-		log_err("unable to sort ir node(s)");
-		return 0;
-	}
-
-	for (irNodeIterator_get_first(ir, &it), result = 0; irNodeIterator_get_node(it) != NULL; irNodeIterator_get_next(ir, &it)){
-		operation_cursor = ir_node_get_operation(irNodeIterator_get_node(it));
-
-		if (operation_cursor->type == IR_OPERATION_TYPE_INST){
-			if (rewrite_simplify[operation_cursor->operation_type.inst.opcode] != NULL){
-				result |= rewrite_simplify[operation_cursor->operation_type.inst.opcode](ir, irNodeIterator_get_node(it), final);
-			}
-		}
-	}
-
-	#ifdef IR_FULL_CHECK
-	ir_check_order(ir);
-	#endif
-
-	return result;
-}
 
 int32_t ir_normalize_simplify_concrete_instruction(struct ir* ir){
 	struct irNodeIterator 	it;

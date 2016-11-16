@@ -1049,7 +1049,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_CBC_AES" active="no"> <!-- only dec (we have no signatures for PP_AES enc). Does not work because the primitive is process and XOR (parasitic detections) -->
+	<recipe name="PP_CBC_AES" active="no"> <!-- Does not work because the primitive is process and XOR (numerous parasitic detections) -->
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_cbc_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_cbc_aes">
 			<arg value="-m"/>
