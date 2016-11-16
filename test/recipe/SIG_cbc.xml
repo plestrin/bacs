@@ -879,7 +879,7 @@
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
-			<algo name="dec_cbc_cfb_v2" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
 		</result>
 	</recipe>
 
@@ -912,7 +912,7 @@
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v3" number="32"/>
 			<algo name="enc_cbc_cfb" number="3"/>
-			<algo name="dec_cbc_cfb_v2" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
 		</result>
 	</recipe>
 

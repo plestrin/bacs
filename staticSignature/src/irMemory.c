@@ -187,7 +187,7 @@ static void accessFragment_merge(struct accessFragment* access_frag_buffer, cons
 			access_frag_buffer[i].token 		= new_frag->token;
 			access_frag_buffer[i].size 			= local_size;
 			access_frag_buffer[i].offset_src 	= local_offset;
-			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + local_offset;
+			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + (local_offset - new_frag->offset_src);
 
 			local_size = 0;
 		}
@@ -197,7 +197,7 @@ static void accessFragment_merge(struct accessFragment* access_frag_buffer, cons
 			access_frag_buffer[i].token 		= new_frag->token;
 			access_frag_buffer[i].size 			= min(local_size, access_frag_buffer[i + 1].offset_src - local_offset);
 			access_frag_buffer[i].offset_src 	= local_offset;
-			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + local_offset;
+			access_frag_buffer[i].offset_dst 	= new_frag->offset_dst + (local_offset - new_frag->offset_src);
 
 			local_size -= access_frag_buffer[i].size;
 			local_offset += access_frag_buffer[i].size;

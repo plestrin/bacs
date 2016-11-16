@@ -1,7 +1,8 @@
 # This file define the following signature(s):
 #	- enc_cbc_cfb: 			RAS
 #	- dec_cbc_cfb_v1: 		second block input is used directly for the first block XOR
-#	- dec_cbc_cfb_v1: 		additional instruction between the second block input and the first block XOR (Like BSWAP)
+#	- dec_cbc_cfb_v2: 		additional instruction(s) between the plaintext and the XOR
+#	- dec_cbc_cfb_v3: 		additional instruction(s) between the plaintext and the XOR and between the ciphertext and the input of the block cipher (Like BSWAP)
 #	- ctr_v1 				RAS
 # 	- ctr_v2  				input is the same. Useful for large block when the addition is done with conditional statements. one part of the block stay unchanged.
 # 	- hmac_v1 				RAS
@@ -27,6 +28,16 @@
 
 
 "dec_cbc_cfb_v2"
+
+1 (block_cipher) -> (O0) 2 (*)
+2 -> 3 (*)
+4 (*) -> (I1) 1
+4 -> (I1) 5 (block_cipher)
+6 (*) -> (I0) 5
+6 -> 3
+
+
+"dec_cbc_cfb_v3"
 
 1 (block_cipher) -> (O0) 2 (*)
 2 -> 3 (*)

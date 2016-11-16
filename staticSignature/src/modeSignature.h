@@ -2,6 +2,7 @@
 #define MODESIGNATURE_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "signatureCollection.h"
 #include "synthesisGraph.h"
