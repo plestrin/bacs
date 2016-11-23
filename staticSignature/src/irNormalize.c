@@ -1138,8 +1138,8 @@ void ir_normalize(struct ir* ir){
 	#endif
 
 	#ifdef VERBOSE
-	for (i = 0; i < (sizeof(normalization_mechanism) / sizeof(normalization_mechanism)); i++){
-		printf("%-24s %3.3f\n", normalization_mechanism[i].name, timer[i]);
+	for (i = 0; i < (sizeof(normalization_mechanism) / sizeof(struct normalizationMechanism)); i++){
+		printf("%-25s %3.3f s\n", normalization_mechanism[i].name, timer[i]);
 	}
 	#endif
 }

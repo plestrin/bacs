@@ -346,7 +346,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_AES" active="yes"> <!-- decryption only, encryption is done using SSE -->
+	<recipe name="PP_AES" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes"/>
 		<search>
@@ -354,7 +354,7 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<!--<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>-->
+			<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>
 			<arg value="export callGraph _ZThn4_NK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
@@ -362,10 +362,10 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="792"/>
-			<algo name="aes_r9" number="216"/>
-			<algo name="aes_r11" number="96"/>
-			<algo name="aes_r13" number="24"/>
+			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
+			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
+			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
 		</result>
 	</recipe>
 
