@@ -8,9 +8,10 @@
 
 #define SUBGRAPHISOMORPHISM_JOKER_LABEL 0xffffffff
 
-#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_CONNECTIVITY 	0
 #define SUBGRAPHISOMORPHISM_OPTIM_MIN_DST 		1
 #define SUBGRAPHISOMORPHISM_OPTIM_SORT 			1
+#define SUBGRAPHISOMORPHISM_OPTIM_FAST_STEP 	1
 
 struct nodeTab{
 	uint32_t 		label;
@@ -63,9 +64,6 @@ struct subGraphIsoHandle{
 	struct edgeTab* 		edge_tab;
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	uint32_t* 				dst;
-	#endif
-	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
-	uint32_t* 				node_order;
 	#endif
 };
 
