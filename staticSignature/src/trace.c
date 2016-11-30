@@ -549,7 +549,7 @@ int32_t trace_register_code_signature_result(void* signature, struct array* assi
 	return return_value;
 }
 
-void trace_push_code_signature_result(int32_t idx, void* arg){
+void trace_push_code_signature_result(int32_t idx, struct graphLayer* graph_layer, void* arg){
 	struct trace* 	trace = (struct trace*)arg;
 
 	if (trace->type != FRAGMENT_TRACE){
@@ -558,14 +558,14 @@ void trace_push_code_signature_result(int32_t idx, void* arg){
 	}
 
 	if (idx >= 0){
-		result_push((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), trace->trace_type.frag.ir);
+		result_push((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), graph_layer, trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("incorrect index value %d", idx);
 	}
 }
 
-void trace_pop_code_signature_result(int32_t idx, void* arg){
+void trace_pop_code_signature_result(int32_t idx, struct graphLayer* graph_layer, void* arg){
 	struct trace* trace = (struct trace*)arg;
 
 	if (trace->type != FRAGMENT_TRACE){
@@ -574,7 +574,7 @@ void trace_pop_code_signature_result(int32_t idx, void* arg){
 	}
 
 	if (idx >= 0){
-		result_pop((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), trace->trace_type.frag.ir);
+		result_pop((struct result*)array_get(&(trace->trace_type.frag.result_array), idx), graph_layer, trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("incorrect index value %d", idx);
@@ -705,7 +705,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 
 	for (i = 0; i < nb_exported_result; i++){
 		result = (struct result*)array_get(&(trace->trace_type.frag.result_array), exported_result[i]);
-		result_push(result, trace->trace_type.frag.ir);
+		result_push(result, NULL, trace->trace_type.frag.ir);
 
 		for (j = 0; j < result->nb_occurrence; j++){
 			result_get_node_footprint(result, j, node_set);

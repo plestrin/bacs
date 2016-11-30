@@ -6,13 +6,40 @@
 #include "base.h"
 
 /* ===================================================================== */
+/* virtualNode routines													 */
+/* ===================================================================== */
+
+
+static void virtualNode_connect_intern(struct virtualNode* virtual_node, struct graphLayer* graph_layer, struct node* symbol_node){
+	uint32_t i;
+
+	if (virtual_node->node == NULL){
+		if (virtual_node->result->symbol_node_buffer[virtual_node->index] == NULL){
+			for (i = 0; i < virtual_node->result->nb_node_intern; i++){
+				virtualNode_connect_intern(virtual_node->result->intern_node_buffer + virtual_node->index * virtual_node->result->nb_node_intern + i, graph_layer, symbol_node);
+			}
+		}
+		else{
+			if (graphLayer_add_edge_(graph_layer, symbol_node, virtual_node->result->symbol_node_buffer[virtual_node->index]) == NULL){
+				log_err("unable to add edge to graphLayer");
+			}
+		}
+	}
+	else{
+		if (graphLayer_add_edge_(graph_layer, symbol_node, virtual_node->node) == NULL){
+			log_err("unable to add edge to graphLayer");
+		}
+	}
+}
+
+/* ===================================================================== */
 /* result routines														 */
 /* ===================================================================== */
 
-int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array){
+int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignment_array){
 	uint32_t 					i;
 	uint32_t 					j;
-	struct node**				assignement;
+	struct node**				assignment;
 	uint32_t 					nb_input;
 	uint32_t 					nb_output;
 	uint32_t 					nb_intern;
@@ -20,7 +47,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	struct irOperation* 		operation;
 
 	result->code_signature 		= code_signature;
-	result->nb_occurrence 		= array_get_length(assignement_array);
+	result->nb_occurrence 		= array_get_length(assignment_array);
 	result->nb_node_in 			= codeSignature_get_nb_frag_in(code_signature);
 	result->nb_node_ou 			= codeSignature_get_nb_frag_ou(code_signature);
 	result->nb_node_intern 		= code_signature->signature.graph.nb_node - (result->nb_node_in + result->nb_node_ou);
@@ -50,14 +77,14 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	}
 
 	for (i = 0; i < result->nb_occurrence; i++){
-		assignement = (struct node**)array_get(assignement_array, i);
+		assignment = (struct node**)array_get(assignment_array, i);
 		nb_input 	= 0;
 		nb_output 	= 0;
 		nb_intern 	= 0;
 
 		for (j = 0; j < code_signature->signature.graph.nb_node; j++){
 			sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[j].node);
-			operation = ir_node_get_operation(assignement[j]);
+			operation = ir_node_get_operation(assignment[j]);
 
 			if (operation->type == IR_OPERATION_TYPE_SYMBOL && operation->operation_type.symbol.result != NULL){
 				if (sig_node->input_number > 0){
@@ -85,21 +112,21 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 			}
 			else{
 				if (sig_node->input_number > 0){
-					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.node 		= assignement[j];
+					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.node 		= assignment[j];
 					result->in_mapping_buffer[i * result->nb_node_in + nb_input].virtual_node.result 	= NULL;
 					result->in_mapping_buffer[i * result->nb_node_in + nb_input].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_INPUT(sig_node->input_frag_order, sig_node->input_number);
 					nb_input ++;
 				}
 
 				if (sig_node->output_number > 0){
-					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.node 	= assignement[j];
+					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.node 	= assignment[j];
 					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].virtual_node.result 	= NULL;
 					result->ou_mapping_buffer[i * result->nb_node_ou + nb_output].edge_desc = IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(sig_node->output_frag_order, sig_node->output_number);
 					nb_output ++;
 				}
 
 				if (sig_node->input_number == 0 && sig_node->output_number == 0){
-					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= assignement[j];
+					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= assignment[j];
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].result 			= NULL;
 					nb_intern ++;
 				}
@@ -122,7 +149,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	return 0;
 }
 
-void result_push(struct result* result, struct ir* ir){
+void result_push(struct result* result, struct graphLayer* graph_layer, struct ir* ir){
 	uint32_t i;
 	uint32_t j;
 
@@ -156,16 +183,33 @@ void result_push(struct result* result, struct ir* ir){
 				log_err("unable to add dependence to IR");
 			}
 		}
+
+		if (graph_layer != NULL){
+			for (j = 0; j < result->nb_node_intern; j++){
+				virtualNode_connect_intern(result->intern_node_buffer + i * result->nb_node_intern + j, graph_layer, result->symbol_node_buffer[i]);
+			}
+		}
 	}
 }
 
-void result_pop(struct result* result, struct ir* ir){
-	uint32_t i;
-	uint32_t j;
+void result_pop(struct result* result, struct graphLayer* graph_layer, struct ir* ir){
+	uint32_t 		i;
+	uint32_t 		j;
+	struct edge* 	edge_cursor;
 
 	for (i = 0; i < result->nb_occurrence; i++){
 		if (result->symbol_node_buffer[i] != NULL){
-			ir_remove_node(ir, result->symbol_node_buffer[i]);
+			if (graph_layer != NULL){
+				for (edge_cursor = graphLayer_node_get_head_edge_dst(result->symbol_node_buffer[i]); edge_cursor!= NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+					if (graphLayer_copy_src_edge(graph_layer, graphLayer_edge_get_src(edge_cursor), result->symbol_node_buffer[i])){
+						log_err("unable to copy src edge from graphLayer");
+					}
+				}
+				graphLayer_remove_master_node(graph_layer, result->symbol_node_buffer[i]);
+			}
+			else{
+				ir_remove_node(ir, result->symbol_node_buffer[i]);
+			}
 		}
 		result->symbol_node_buffer[i] = NULL;
 
@@ -485,7 +529,7 @@ static struct symbolMapping* symbolMapping_create(uint32_t nb_para_in, uint32_t 
 	size = 2 * sizeof(struct symbolMapping) + (nb_para_in + nb_para_ou) * sizeof(struct parameterMapping);
 
 	mapping[0].nb_parameter 	= nb_para_in;
-	mapping[0].mapping_buffer 	= (struct parameterMapping*)(mapping + 2); 
+	mapping[0].mapping_buffer 	= (struct parameterMapping*)(mapping + 2);
 
 	for (i = 0; i < nb_para_in; i++){
 		mapping[0].mapping_buffer[i].nb_fragment 	= nb_frag_in[i];
@@ -494,7 +538,7 @@ static struct symbolMapping* symbolMapping_create(uint32_t nb_para_in, uint32_t 
 	}
 
 	mapping[1].nb_parameter 	= nb_para_ou;
-	mapping[1].mapping_buffer 	= mapping[0].mapping_buffer + nb_para_in; 
+	mapping[1].mapping_buffer 	= mapping[0].mapping_buffer + nb_para_in;
 
 	for (i = 0; i < nb_para_ou; i++){
 		mapping[1].mapping_buffer[i].nb_fragment 	= nb_frag_ou[i];

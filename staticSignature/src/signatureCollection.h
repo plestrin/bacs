@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "graph.h"
+#include "graphLayer.h"
 #include "subGraphIsomorphism.h"
 #include "array.h"
 
@@ -74,8 +75,8 @@ int32_t signatureCollection_add(struct signatureCollection* collection, void* cu
 struct graphSearcher{
 	struct graph* 	graph;
 	int32_t(*result_register)(void*,struct array*,void*);
-	void(*result_push)(int32_t,void*);
-	void(*result_pop)(int32_t,void*);
+	void(*result_push)(int32_t,struct graphLayer*,void*);
+	void(*result_pop)(int32_t,struct graphLayer*,void*);
 	void* 			arg;
 };
 

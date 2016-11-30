@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "codeSignature.h"
+#include "graphLayer.h"
 #include "set.h"
 
 struct virtualNode{
@@ -13,6 +14,9 @@ struct virtualNode{
 };
 
 #define virtualNode_get_node(virtual_node) (virtual_node).result->symbol_node_buffer[(virtual_node).index];
+
+/* Push and Pop mechanisms seem to be quite buggy. They have never been executed. */
+
 #define virtualNode_push(virtual_node) 								\
 	if ((virtual_node).node == NULL){ 								\
 		(virtual_node).node = virtualNode_get_node(virtual_node); 	\
@@ -40,10 +44,10 @@ struct result{
 	struct node** 			symbol_node_buffer;
 };
 
-int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
+int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignment_array);
 
-void result_push(struct result* result, struct ir* ir);
-void result_pop(struct result* result, struct ir* ir);
+void result_push(struct result* result, struct graphLayer* graph_layer, struct ir* ir);
+void result_pop(struct result* result, struct graphLayer* graph_layer, struct ir* ir);
 void result_get_node_footprint(struct result* result, uint32_t index, struct set* set);
 void result_remove_edge_footprint(struct result* result, struct ir* ir);
 void result_print(struct result* result);
