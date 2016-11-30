@@ -90,10 +90,10 @@ test_array.o: ../array.h
 test_multiColumn.o: ../multiColumn.h ../base.h
 test_inputParser.o: ../inputParser.h ../base.h
 test_mapFile.o: ../mapFile.h ../base.h
-test_graph.o: ../graph.h ../graphPrintDot.h ../base.h
-test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
-test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
-test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
+test_graph.o: ../graph.h ../graphLayer.h ../graphPrintDot.h ../base.h
+test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphLayer.h ../graphPrintDot.h ../array.h ../base.h
+test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphLayer.h ../graphPrintDot.h ../array.h ../base.h
+test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphLayer.h ../graphPrintDot.h ../base.h
 test_set.o: ../set.h ../base.h
 test_list.o: ../list.h ../base.h
 test_graphReader.o: ../graphReader.h ../mapFile.h ../graph.h ../graphPrintDot.h ../base.h
@@ -107,7 +107,7 @@ printBuffer.o: ../printBuffer.h
 readBuffer.o: ../readBuffer.h ../base.h
 mapFile.o: ../mapFile.h ../base.h
 graph.o: ../graph.h ../base.h
-graphPrintDot.o: ../graph.h ../graphPrintDot.h ../base.h
+graphPrintDot.o: ../graph.h ../graphLayer.h ../graphPrintDot.h ../base.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
 dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
