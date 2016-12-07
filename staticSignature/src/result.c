@@ -83,7 +83,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 		nb_intern 	= 0;
 
 		for (j = 0; j < code_signature->signature.graph.nb_node; j++){
-			sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->node_tab[j].node);
+			sig_node = (struct codeSignatureNode*)node_get_data(code_signature->signature.sub_graph_handle->sub_node_tab[j].node);
 			operation = ir_node_get_operation(assignment[j]);
 
 			if (operation->type == IR_OPERATION_TYPE_SYMBOL && operation->operation_type.symbol.result != NULL){

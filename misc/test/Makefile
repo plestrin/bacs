@@ -15,7 +15,7 @@ TEST_ARRAYMINCOVERAGE 	:= test_arrayMinCoverage
 
 CC						:= gcc
 # gcc FLAGS
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -O1 -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -O0 -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 # clang FLAGS
 ##CFLAGS 				:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 LDFLAGS					:=
@@ -52,7 +52,7 @@ $(TEST_MAPFILE): test_mapFile.o mapFile.o
 $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o dijkstra.o
+$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o array.o
@@ -108,7 +108,7 @@ readBuffer.o: ../readBuffer.h ../base.h
 mapFile.o: ../mapFile.h ../base.h
 graph.o: ../graph.h ../base.h
 graphPrintDot.o: ../graph.h ../graphLayer.h ../graphPrintDot.h ../base.h
-subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
+subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../base.h
 dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
 set.o: ../set.h ../base.h

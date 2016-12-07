@@ -228,20 +228,20 @@ int main(){
 		log_err("unable to create subGraphHandle");
 		return -1;
 	}
-	
+
 	assignement_array = graphIso_search(graph_handle, sub_graph_handle);
 	if (assignement_array == NULL){
-		log_err("the subgraph isomorphism routine");
+		log_err("the subgraph isomorphism routine returns a NULL pointer");
 	}
 	else{
 		log_info_m("found %u subgraph instance -> printing", array_get_length(assignement_array));
-	
+
 		for (i = 0; i < array_get_length(assignement_array); i++){
 			assignement = (struct node**)array_get(assignement_array, i);
-			printf("Assignement %u:\n", i + 1);
+			printf("Assignment %u:\n", i + 1);
 
 			for (j = 0; j < sub_graph->nb_node; j++){
-				printf("\t %u - %p -> %p (%c)\n", j, node_get_data(sub_graph_handle->node_tab[j].node), node_get_data(assignement[j]), (char)(sub_graph_handle->node_tab[j].label));
+				printf("\t %u - %p -> %p (%c)\n", j, node_get_data(sub_graph_handle->sub_node_tab[j].node), node_get_data(assignement[j]), (char)(sub_graph_handle->sub_node_tab[j].label));
 			}
 
 			sta_assignement.nb_node = sub_graph->nb_node;
@@ -258,9 +258,9 @@ int main(){
 
 	graphIso_delete_graph_handle(graph_handle);
 	graphIso_delete_subGraph_handle(sub_graph_handle);
-	
+
 	graph_delete(sub_graph);
 	graph_delete(graph);
-	
+
 	return 0;
 }
