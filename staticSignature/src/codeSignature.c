@@ -190,24 +190,10 @@ uint32_t codeSignatureNode_get_label(struct node* node){
 uint32_t irEdge_get_label(struct edge* edge){
 	struct irDependence* dependence = ir_edge_get_dependence(edge);
 
-	switch(dependence->type){
-		case IR_DEPENDENCE_TYPE_SHIFT_DISP 	: {
-			return IR_DEPENDENCE_TYPE_DIRECT;
-		}
-		case IR_DEPENDENCE_TYPE_DIVISOR 	: {
-			return IR_DEPENDENCE_TYPE_DIRECT;
-		}
-		case IR_DEPENDENCE_TYPE_ROUND_OFF 	: {
-			return IR_DEPENDENCE_TYPE_DIRECT;
-		}
-		case IR_DEPENDENCE_TYPE_SUBSTITUTE 	: {
-			return IR_DEPENDENCE_TYPE_DIRECT;
-		}
-		case IR_DEPENDENCE_TYPE_MACRO 		: {
-			return dependence->type | dependence->dependence_type.macro;
-		}
-		default 							: {
-			return dependence->type;
-		}
+	if (dependence->type == IR_DEPENDENCE_TYPE_MACRO){
+		return dependence->type | dependence->dependence_type.macro;
+	}
+	else{
+		return dependence->type;
 	}
 }

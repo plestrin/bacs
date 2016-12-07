@@ -20,7 +20,7 @@ struct codeSignatureBuilder{
 
 static int32_t codeSignatureBuilder_init(struct codeSignatureBuilder* builder, struct signatureCollection* collection){
 	graph_init(&(builder->code_signature.signature.graph), sizeof(struct codeSignatureNode), sizeof(struct codeSignatureEdge));
-	
+
 	builder->is_name_set = 0;
 	builder->collection = collection;
 
@@ -171,12 +171,12 @@ static void codeSignatureReader_handle_node_label(const char* str, size_t str_le
 
 	memset(symbol, 0, SIGNATURE_NAME_MAX_SIZE);
 	memcpy(symbol, str, min(SIGNATURE_NAME_MAX_SIZE - 1, str_len));
-	
+
 	if ((uint32_t)(code_signature_node->node_type.symbol = (void*)set_add_unique(builder->symbol_set, symbol)) & 0x80000000){
 		log_err("unable to add element to array");
 	}
 	else{
-		code_signature_node->type = CODESIGNATURE_NODE_TYPE_SYMBOL;	
+		code_signature_node->type = CODESIGNATURE_NODE_TYPE_SYMBOL;
 	}
 }
 
@@ -249,7 +249,11 @@ static void codeSignatureReader_handle_edge_label(const char* str, size_t str_le
 		code_signature_edge->type = IR_DEPENDENCE_TYPE_ADDRESS;
 		return;
 	}
-	
+	if (str_len == 1 && str[0] == '-'){
+		code_signature_edge->type = IR_DEPENDENCE_TYPE_SUBSTITUTE;
+		return;
+	}
+
 	if (str_len >= 4 && (str[0] == 'I' || str[0] == 'O')){
 		uint32_t nb_digit1;
 		uint32_t nb_digit2;
@@ -307,7 +311,7 @@ static void codeSignatureReader_handle_flush_graph(void* arg){
 	symbol_table->nb_symbol = set_get_length(builder->symbol_set);
 	for (symbol_ptr = (char*)setIterator_get_first(builder->symbol_set, &iterator), i = 0; symbol_ptr != NULL; symbol_ptr = setIterator_get_next(&iterator), i++){
 		symbol_table->symbols[i].id = SIGNATURESYMBOL_RAW_ID;
-		memcpy(symbol_table->symbols[i].name, symbol_ptr, SIGNATURE_NAME_MAX_SIZE);	
+		memcpy(symbol_table->symbols[i].name, symbol_ptr, SIGNATURE_NAME_MAX_SIZE);
 	}
 
 	for (node_cursor = graph_get_head_node(&(builder->code_signature.signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){

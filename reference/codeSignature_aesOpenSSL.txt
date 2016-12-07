@@ -1,7 +1,7 @@
 # This file define the following signature(s):
 #	- aes_open_mixColumn 	: OpenSSL (encryption) mix column for 1 column
 # 	- aes_open_subMixAdd 	: OpenSSL (encryption) sub byte ; mix column ; add round key for 1 column
-#	- ase_open_r9 			: OpenSSL (encryption) 9 rounds
+#	- aes_open_r9 			: OpenSSL (encryption) 9 rounds
 # 	- aes_open_r11			: OpenSSL (encryption) 11 rounds
 # 	- aes_open_r13 			: OpenSSL (encryption) 13 rounds
 # 	- aes_open_128 			: OpenSSL (encryption) full 128 signature
