@@ -13,7 +13,8 @@
 #define SUBGRAPHISOMORPHISM_OPTIM_COMPACT 		1
 #define SUBGRAPHISOMORPHISM_OPTIM_GLOBAL 		1
 #define SUBGRAPHISOMORPHISM_OPTIM_LAZY_DUP 		1
-// #define SUBGRAPHISOMORPHISM_OPTIM_FAST_STEP 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_FAST_STEP 	1
+#define SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED 1
 // #define SUBGRAPHISOMORPHISM_OPTIM_LAYER 		1
 
 #define assignment_get_size(nb_node, nb_edge) ((nb_node) * sizeof(struct node*) + (nb_edge) * sizeof(struct edge*))
@@ -32,7 +33,6 @@ struct subNodeTab{
 	uint32_t 		nb_src;
 	uint32_t 		off_dst;
 	uint32_t 		nb_dst;
-	uint32_t 		restart_ctr;
 };
 
 struct edgeTab{
