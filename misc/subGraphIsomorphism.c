@@ -822,7 +822,7 @@ static int32_t possibleAssignment_duplicate_light(struct possibleAssignment* pos
 	idx_new_dst = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
 
 	for (i = nb_assignment + 1; i < possible_assignment->nb_edge; i++){
-		size = possibleAssignment_size(possible_assignment, nb_assignment, i);
+		size = possibleAssignment_size(possible_assignment, i);
 		offset = possibleAssignment_offset(possible_assignment, i);
 
 		idx_possible_src = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, i)].src;
@@ -1099,34 +1099,60 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	uint32_t* 	restart_idx_ou;
 	uint32_t* 	restart_idx_tp;
 
-	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2); /***/
-	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
+	#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
+	uint32_t 	nb_node_assigned;
+
+	for (i = 0, nb_node_assigned = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
+		if (possible_assignment->node_meta_buffer[i].assigned >= nb_assignment){
+			possible_assignment->node_meta_buffer[i].restart_ctr = 0;
+			possible_assignment->node_meta_buffer[i].assigned = 0xffffffff;
+		}
+		else{
+			nb_node_assigned ++;
+		}
+	}
+
+	if (nb_node_assigned == subGraphIsoHandle_get_nb_node(sub_graph_handle)){
+		return 0;
+	}
+
+	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * (subGraphIsoHandle_get_nb_node(sub_graph_handle) - nb_node_assigned) * 2);
+	restart_idx_ou = restart_idx_in + (subGraphIsoHandle_get_nb_node(sub_graph_handle) - nb_node_assigned);
+
+	{
+		uint32_t __index__;
+
+		nb_restart_in = 0;
+
+		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
+		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
+			restart_idx_in[nb_restart_in ++] = __index__;
+			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
+			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
+		}
+
+		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
+		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
+			restart_idx_in[nb_restart_in ++] = __index__;
+			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
+			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
+		}
+	}
+
+	#else
 
 	for (i = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
 		possible_assignment->node_meta_buffer[i].restart_ctr = 0;
-		#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
-		if (possible_assignment->node_meta_buffer[i].assigned >= nb_assignment){
-			possible_assignment->node_meta_buffer[i].assigned = 0xffffffff;
-		}
-		#endif
 	}
 
-	#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
-	nb_restart_in = 0;
-	restart_idx_in[nb_restart_in] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
-	if (!possibleAssignment_is_assigned(possible_assignment, restart_idx_in[nb_restart_in])){
-		nb_restart_in ++;
-	}
-	restart_idx_in[nb_restart_in] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
-	if (!possibleAssignment_is_assigned(possible_assignment, restart_idx_in[nb_restart_in])){
-		nb_restart_in ++;
-	}
-	#else
+	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2);
+	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
+
 	restart_idx_in[0] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
 	restart_idx_in[1] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
 	nb_restart_in = 2;
-	#endif
 
+	#endif
 
 	for (restart_ctr = 1; nb_restart_in; restart_ctr++){
 		nb_restart_ou = nb_restart_in;
@@ -1235,22 +1261,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 
 	assignment_edge(assignment, subGraphIsoHandle_get_nb_node(sub_graph_handle), possibleAssignment_order(possible_assignment, nb_assignment)) = graph_handle->edge_tab[new_value].edge;
 
-	#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
-	{
-		uint32_t __index__;
-
-		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
-		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
-			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
-			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
-		}
-		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
-		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
-			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
-			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
-		}
-	}
-	#else
+	#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED != 1
 	assignment_node(assignment, sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src) = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
 	assignment_node(assignment, sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst) = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
 	#endif
