@@ -248,7 +248,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	struct edge* 				edge_cursor;
 	struct signature* 			signature_cursor;
 	struct signature*			child;
-	struct signature**			signature_buffer 	= NULL;
+	struct signature**			signature_buffer;
 	uint32_t 					nb_signature;
 	struct graphIsoHandle* 		graph_handle;
 	struct timespec 			timer1_start_time;
@@ -259,20 +259,11 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	struct multiColumnPrinter* 	printer 			= NULL;
 	struct array* 				assignment_array;
 	uint32_t 					nb_searched;
-	struct graphLayer* 			graph_layer_buffer 	= NULL;
+	struct ugraph 				graph_layer;
 
 	if ((signature_buffer = (struct signature**)malloc(sizeof(struct signature*) * signatureCollection_get_nb_signature(collection))) == NULL){
 		log_err("unable to allocate memory");
-		goto exit;
-	}
-
-	if ((graph_layer_buffer = (struct graphLayer*)malloc(sizeof(struct graphLayer) * nb_graph_searcher)) == NULL){
-		log_err("unable to allocate memory");
-		goto exit;
-	}
-
-	for (i = 0; i < nb_graph_searcher; i++){
-		graphLayer_init(graph_layer_buffer + i, graph_searcher_buffer[i].graph, sizeof(uint64_t), 0);
+		return;
 	}
 
 	if ((printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL)) == NULL){
@@ -294,6 +285,11 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	}
 
 	for (i = 0; i < nb_graph_searcher; i++){
+		ugraph_init(&graph_layer, sizeof(struct layerNodeData), 0);
+		ugraph_register_node_clean_call_back(&graph_layer, layerNodeData_clean_unode);
+		ugraph_register_dotPrint_callback(&graph_layer, layerNodeData_printDot, NULL);
+		graphIso_prepare_layer(graph_searcher_buffer[i].graph);
+
 		for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			signature_cursor = signatureCollection_node_get_signature(node_cursor);
 			signature_cursor->state = 0;
@@ -352,7 +348,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 					child = signatureCollection_node_get_signature(edge_get_src(edge_cursor));
 					if (signature_state_is_found(child) && !signature_state_is_pushed(child)){
 						if (graph_searcher_buffer[i].result_push != NULL){
-							graph_searcher_buffer[i].result_push(child->result_index, graph_layer_buffer + i, graph_searcher_buffer[i].arg);
+							graph_searcher_buffer[i].result_push(child->result_index, &graph_layer, graph_searcher_buffer[i].arg);
 						}
 						signature_state_set_pushed(child);
 					}
@@ -362,49 +358,52 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 			}
 
 			if (nb_signature){
-				graph_handle = graphIso_create_graph_handle(graph_searcher_buffer[i].graph, graphNode_get_label, graphEdge_get_label);
-				if (graph_handle == NULL){
-					log_err("unable to create graphHandle");
-					break;
-				}
+				if ((graph_handle = graphIso_create_graph_handle(graph_searcher_buffer[i].graph, graphNode_get_label, graphEdge_get_label)) != NULL){
+					#ifdef EXTRA_CHECK
+					graphIso_check_layer(&graph_layer);
+					#endif
 
-				for (j = 0; j < nb_signature; j++){
-					if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
-						log_err("clock_gettime fails");
-					}
+					for (j = 0; j < nb_signature; j++){
+						if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_start_time)){
+							log_err("clock_gettime fails");
+						}
 
-					assignment_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
+						assignment_array = graphIso_search(graph_handle, signature_buffer[j]->sub_graph_handle);
 
-					if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
-						log_err("clock_gettime fails");
-					}
-					timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
+						if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer2_stop_time)){
+							log_err("clock_gettime fails");
+						}
+						timer2_elapsed_time = ((timer2_stop_time.tv_sec - timer2_start_time.tv_sec) + (timer2_stop_time.tv_nsec - timer2_start_time.tv_nsec) / 1000000000.);
 
-					signature_state_set_search(signature_buffer[j]);
-					if (assignment_array == NULL){
-						log_err("the subgraph isomorphism routine fails");
-					}
-					else if (array_get_length(assignment_array)){
-						if (graph_searcher_buffer[i].result_register != NULL){
-							signature_buffer[j]->result_index = graph_searcher_buffer[i].result_register(signature_buffer[j], assignment_array, graph_searcher_buffer[i].arg);
-							if (signature_buffer[j]->result_index < 0){
-								log_err("unable to add element to array");
+						signature_state_set_search(signature_buffer[j]);
+						if (assignment_array == NULL){
+							log_err("the subgraph isomorphism routine fails");
+						}
+						else if (array_get_length(assignment_array)){
+							if (graph_searcher_buffer[i].result_register != NULL){
+								signature_buffer[j]->result_index = graph_searcher_buffer[i].result_register(signature_buffer[j], assignment_array, graph_searcher_buffer[i].arg);
+								if (signature_buffer[j]->result_index < 0){
+									log_err("unable to add element to array");
+								}
 							}
+							else{
+								signature_buffer[j]->result_index = -1;
+							}
+
+							signature_state_set_found(signature_buffer[j]);
+							multiColumnPrinter_print(printer, signature_buffer[j]->symbol.name, array_get_length(assignment_array), timer2_elapsed_time, NULL);
+							array_delete(assignment_array);
 						}
 						else{
-							signature_buffer[j]->result_index = -1;
+							array_delete(assignment_array);
 						}
+					}
 
-						signature_state_set_found(signature_buffer[j]);
-						multiColumnPrinter_print(printer, signature_buffer[j]->symbol.name, array_get_length(assignment_array), timer2_elapsed_time, NULL);
-						array_delete(assignment_array);
-					}
-					else{
-						array_delete(assignment_array);
-					}
+					graphIso_delete_graph_handle(graph_handle);
 				}
-
-				graphIso_delete_graph_handle(graph_handle);
+				else{
+					log_err("unable to create graphHandle");
+				}
 			}
 
 			for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
@@ -421,13 +420,16 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 				}
 
 				if (graph_searcher_buffer[i].result_pop != NULL){
-					graph_searcher_buffer[i].result_pop(signature_cursor->result_index, graph_layer_buffer + i, graph_searcher_buffer[i].arg);
+					graph_searcher_buffer[i].result_pop(signature_cursor->result_index, &graph_layer, graph_searcher_buffer[i].arg);
 				}
 				signature_state_set_poped(signature_cursor);
 
 				next2:;
 			}
 		}
+		ugraph_clean(&graph_layer);
+
+
 		multiColumnPrinter_print_horizontal_separator(printer);
 	}
 
@@ -442,15 +444,7 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	if (printer != NULL){
 		multiColumnPrinter_delete(printer);
 	}
-	if (graph_layer_buffer != NULL){
-		for (i = 0; i < nb_graph_searcher; i++){
-			graphLayer_clean(graph_layer_buffer + i);
-		}
-		free(graph_layer_buffer);
-	}
-	if (signature_buffer != NULL){
-		free(signature_buffer);
-	}
+	free(signature_buffer);
 }
 
 void signatureCollection_printDot(struct signatureCollection* collection){

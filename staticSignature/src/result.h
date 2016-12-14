@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "codeSignature.h"
-#include "graphLayer.h"
 #include "set.h"
 
 struct virtualNode{
@@ -27,6 +26,12 @@ struct virtualNode{
 		(virtual_node).node = NULL; 								\
 	}
 
+struct virtualEdge{
+	struct edge* 	edge;
+	struct result* 	result;
+	uint32_t 		index;
+};
+
 struct signatureLink{
 	struct virtualNode 		virtual_node;
 	uint32_t 				edge_desc;
@@ -38,17 +43,20 @@ struct result{
 	uint32_t 				nb_node_in;
 	uint32_t 				nb_node_ou;
 	uint32_t 				nb_node_intern;
+	uint32_t 				nb_edge;
 	struct signatureLink* 	in_mapping_buffer;
 	struct signatureLink* 	ou_mapping_buffer;
 	struct virtualNode*		intern_node_buffer;
+	struct virtualEdge* 	edge_buffer;
 	struct node** 			symbol_node_buffer;
 };
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignment_array);
 
-void result_push(struct result* result, struct graphLayer* graph_layer, struct ir* ir);
-void result_pop(struct result* result, struct graphLayer* graph_layer, struct ir* ir);
-void result_get_node_footprint(struct result* result, uint32_t index, struct set* set);
+void result_push(struct result* result, struct ugraph* graph_layer, struct ir* ir);
+void result_pop(struct result* result, struct ugraph* graph_layer, struct ir* ir);
+void result_get_intern_node_footprint(const struct result* result, uint32_t index, struct set* set);
+void result_get_edge_footprint(const struct result* result, uint32_t index, struct set* set);
 void result_remove_edge_footprint(struct result* result, struct ir* ir);
 void result_print(struct result* result);
 
@@ -56,6 +64,7 @@ void result_print(struct result* result);
 	free((result)->in_mapping_buffer); 								\
 	free((result)->ou_mapping_buffer); 								\
 	free((result)->intern_node_buffer); 							\
+	free((result)->edge_buffer); 									\
 	free((result)->symbol_node_buffer);
 
 enum parameterSimilarity{

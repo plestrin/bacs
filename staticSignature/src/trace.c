@@ -549,7 +549,7 @@ int32_t trace_register_code_signature_result(void* signature, struct array* assi
 	return return_value;
 }
 
-void trace_push_code_signature_result(int32_t idx, struct graphLayer* graph_layer, void* arg){
+void trace_push_code_signature_result(int32_t idx, struct ugraph* graph_layer, void* arg){
 	struct trace* 	trace = (struct trace*)arg;
 
 	if (trace->type != FRAGMENT_TRACE){
@@ -565,7 +565,7 @@ void trace_push_code_signature_result(int32_t idx, struct graphLayer* graph_laye
 	}
 }
 
-void trace_pop_code_signature_result(int32_t idx, struct graphLayer* graph_layer, void* arg){
+void trace_pop_code_signature_result(int32_t idx, struct ugraph* graph_layer, void* arg){
 	struct trace* trace = (struct trace*)arg;
 
 	if (trace->type != FRAGMENT_TRACE){
@@ -708,7 +708,7 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		result_push(result, NULL, trace->trace_type.frag.ir);
 
 		for (j = 0; j < result->nb_occurrence; j++){
-			result_get_node_footprint(result, j, node_set);
+			result_get_intern_node_footprint(result, j, node_set);
 		}
 	}
 

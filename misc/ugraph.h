@@ -36,7 +36,7 @@ struct unode{
 
 #define unode_get_next(unode) 		((unode)->next)
 #define unode_get_prev(unode) 		((unode)->prev)
-#define unode_get_head_edge(node) 	((unode)->uedge_linkedList)
+#define unode_get_head_edge(unode) 	((unode)->uedge_linkedList)
 #define unode_get_data(unode_) 		((void*)((struct unode*)(unode_) + 1))
 
 struct ugraph{
@@ -65,8 +65,8 @@ struct ugraph* ugraph_create(size_t unode_data_size, size_t uedge_data_size);
 	(ugraph)->uedge_clean_data 			= NULL;
 
 #define ugraph_register_dotPrint_callback(ugraph, node_data, edge_data) 										\
-	(ugraph)->dotPrint_node_data = (node_data); 																\
-	(ugraph)->dotPrint_edge_data = (edge_data); 																\
+	(ugraph)->dotPrint_node_data = (void(*)(void*,FILE*,void*))(node_data); 									\
+	(ugraph)->dotPrint_edge_data = (void(*)(void*,FILE*,void*))(edge_data); 									\
 
 #define ugraph_register_node_clean_call_back(ugraph, callback) ((ugraph)->unode_clean_data = callback)
 #define ugraph_register_edge_clean_call_back(ugraph, callback) ((ugraph)->uedge_clean_data = callback)

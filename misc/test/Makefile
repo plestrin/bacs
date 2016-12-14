@@ -97,7 +97,7 @@ test_inputParser.o: ../inputParser.h ../base.h
 test_mapFile.o: ../mapFile.h ../base.h
 test_graph.o: ../graph.h ../graphPrintDot.h ../base.h
 test_ugraph.o: ../ugraph.h ../graphPrintDot.h ../base.h
-test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphLayer.h ../graphPrintDot.h ../array.h ../base.h
+test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
 test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
 test_set.o: ../set.h ../base.h

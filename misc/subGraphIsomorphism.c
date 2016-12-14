@@ -5,10 +5,6 @@
 #include "subGraphIsomorphism.h"
 #include "base.h"
 
-// #if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
-// #include "graphLayer.h"
-// #endif
-
 static struct nodeTab* graphIso_create_nodeTab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 static struct subNodeTab* graphIso_create_subNodeTab(struct graph* graph, uint32_t(*node_get_label)(struct node*));
 static struct edgeTab* graphIso_create_edgeTab(struct graph* graph, uint32_t(*edge_get_label)(struct edge*));
@@ -69,9 +65,9 @@ struct possibleAssignment{
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	uint32_t* 			order;
 	#endif
-	/*#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
-	uint64_t 			seed;
-	#endif*/
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	uint32_t 			seed;
+	#endif
 };
 
 #if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
@@ -129,6 +125,146 @@ static void possibleAssignment_choose_next(struct possibleAssignment* possible_a
 #define possibleAssignment_is_assigned(possible_assignment, i) ((possible_assignment)->node_meta_buffer[(i)].assigned != 0xffffffff)
 #else
 #define possibleAssignment_is_assigned(possible_assignment, i) 0
+#endif
+
+#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+static void assignment_init_layerNodeData(struct edge* edge){
+	struct unode* layer_node;
+
+	if (edge->ptr != NULL){
+		layer_node = (struct unode*)edge->ptr;
+		if (!layer_node->nb_edge){
+			edge->ptr = NULL; /* Ideally one should remove this layer_node from the graphLayer */
+		}
+		else{
+			unode_get_layerNodeData(layer_node)->selected = 0xffffffff;
+			unode_get_layerNodeData(layer_node)->disabled = 0xffffffff;
+		}
+	}
+}
+
+static void assignment_mark_collision(struct edge* edge, uint32_t seed){
+	struct layerNodeData* 	data;
+	struct uedge* 			edge_cursor;
+
+	if (edge->ptr != NULL){
+		data = unode_get_layerNodeData(edge->ptr);
+		if (data->selected > seed){
+			data->selected = seed;
+			data->disabled = 0xffffffff;
+
+			for (edge_cursor = unode_get_head_edge((struct unode*)edge->ptr); edge_cursor != NULL; edge_cursor = uedge_get_next(edge_cursor)){
+				data = unode_get_layerNodeData(uedge_get_endp(edge_cursor));
+				if (data->disabled > seed){
+					data->disabled = seed;
+				}
+			}
+		}
+	}
+}
+
+static inline int32_t assignment_is_collision(struct edge* edge, uint32_t seed){
+	struct layerNodeData* data;
+
+	if (edge->ptr != NULL){
+		data = unode_get_layerNodeData(edge->ptr);
+
+		if (data->disabled <= seed){
+			return 1;
+		}
+		data->disabled = 0xffffffff;
+		if (data->selected > seed){
+			data->selected = 0xffffffff;
+		}
+	}
+
+	return 0;
+}
+
+void graphIso_prepare_layer(struct graph* graph){
+	struct node* node_cursor;
+	struct edge* edge_cursor;
+
+	for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+			edge_cursor->ptr = NULL;
+		}
+	}
+}
+
+void graphIso_check_layer(struct ugraph* graph_layer){
+	struct unode* 	unode_cursor;
+	struct uedge* 	uedge_cursor1;
+	struct uedge* 	uedge_cursor2;
+	uint32_t 		nb_local_edge;
+
+	for (unode_cursor = ugraph_get_head_node(graph_layer); unode_cursor != NULL; unode_cursor = unode_get_next(unode_cursor)){
+		for (uedge_cursor1 = unode_get_head_edge(unode_cursor), nb_local_edge = 0; uedge_cursor1 != NULL; uedge_cursor1 = uedge_get_next(uedge_cursor1)){
+			nb_local_edge ++;
+
+			if (((struct layerNodeData*)unode_get_data(unode_cursor))->type == LAYERNODE_TYPE_PRIM && ((struct layerNodeData*)unode_get_data(uedge_get_endp(uedge_cursor1)))->type == LAYERNODE_TYPE_PRIM){
+				log_err("incorrect edge from PRIM to PRIM");
+				continue;
+			}
+
+			for (uedge_cursor2 = uedge_get_next(uedge_cursor1); uedge_cursor2 != NULL; uedge_cursor2 = uedge_get_next(uedge_cursor2)){
+				if (uedge_get_endp(uedge_cursor1) == uedge_get_endp(uedge_cursor2)){
+					log_err("two uedges point to the same endpoint");
+				}
+			}
+
+			#if SUBGRAPHISOMORPHISM_OPTIM_COMPACT_LAYER == 1
+			if (unode_get_layerNodeData(unode_cursor)->type == LAYERNODE_TYPE_PRIM){
+				uint32_t 				i;
+				struct layerNodeData* 	data;
+
+				for (i = 0, data = unode_get_layerNodeData(unode_cursor); i < data->nb_edge; i++){
+					if (data->edge_buffer[i]->ptr != unode_cursor){
+						log_err("edge is in unode buffer but its ptr attribute does not point to unode");
+					}
+				}
+			}
+			#endif
+		}
+
+		if (nb_local_edge != unode_cursor->nb_edge){
+			log_err("incorrect number of edges");
+		}
+	}
+}
+
+void layerNodeData_printDot(void* data, FILE* file){
+	struct layerNodeData* layer_node_data = data;
+
+	switch (layer_node_data->type){
+		case LAYERNODE_TYPE_PRIM 	: {
+			#if SUBGRAPHISOMORPHISM_OPTIM_COMPACT_LAYER == 1
+			fprintf(file, "[label=\"p:%u\"]", layer_node_data->nb_edge);
+			#else
+			fprintf(file, "[label=\"p\"]");
+			#endif
+			break;
+		}
+		case LAYERNODE_TYPE_MACRO 	: {
+			fprintf(file, "[label=\"m\"]");
+			break;
+		}
+	}
+}
+
+#if SUBGRAPHISOMORPHISM_OPTIM_COMPACT_LAYER == 1
+
+void layerNodeData_clean_unode(struct unode* unode){
+	struct layerNodeData* data;
+
+	data = unode_get_layerNodeData(unode);
+	if (data->type == LAYERNODE_TYPE_PRIM && data->edge_buffer != NULL){
+		free(data->edge_buffer);
+	}
+}
+
+#endif
+
 #endif
 
 #define possibleAssignment_delete(possible_assignment) free(possible_assignment)
@@ -392,7 +528,7 @@ static void graphIso_assign_recursive_edge(struct graphIsoHandle* graph_handle, 
 	uint32_t size;
 
 	if (nb_assignment == subGraphIsoHandle_get_nb_edge(sub_graph_handle)){
-		/* check that every nodes have been affected - later */
+		/* check that every node has been assigned - later */
 		if (array_add(assignment_array, assignment) < 0){
 			log_err("unable to add element to array");
 		}
@@ -423,7 +559,16 @@ static void graphIso_assign_recursive_edge(struct graphIsoHandle* graph_handle, 
 	possibleAssignment_offset(possible_assignment, nb_assignment) += size;
 	possibleAssignment_size(possible_assignment, nb_assignment) = 1;
 
-	for (i = 0; i < size; i++){
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	possible_assignment->seed += size;
+	#endif
+
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	for (i = 0; i < size; i++, possible_assignment->seed--)
+	#else
+	for (i = 0; i < size; i++)
+	#endif
+	{
 		possibleAssignment_offset(possible_assignment, nb_assignment)--;
 		new_value = possibleAssignment_assignment(possible_assignment, nb_assignment, 0);
 
@@ -633,9 +778,9 @@ static struct possibleAssignment* possibleAssignment_create(struct graphIsoHandl
 	}
 	#endif
 
-// 		#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
-// 		possible_assignment->seed = 1;
-// 		#endif
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	possible_assignment->seed = 1;
+	#endif
 
 	for	(i = 0, k = 0; i < subGraphIsoHandle_get_nb_edge(sub_graph_handle); i++, k += j){
 		possible_assignment->edge_meta_buffer[i].offset = k;
@@ -647,6 +792,12 @@ static struct possibleAssignment* possibleAssignment_create(struct graphIsoHandl
 	}
 
 	free(edge_loc_buffer);
+
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	for	(i = 0; i < graphIsoHandle_get_nb_edge(graph_handle); i++){
+		assignment_init_layerNodeData(graph_handle->edge_tab[i].edge);
+	}
+	#endif
 
 	return possible_assignment;
 }
@@ -729,6 +880,22 @@ static int32_t possibleAssignment_duplicate_light_lazy(struct possibleAssignment
 
 #else
 
+
+#define __generic_remove__() 																								\
+	{ 																														\
+		uint32_t __tmp__; 																									\
+																															\
+		if (!(--size)){ 																									\
+			return -1; 																										\
+		} 																													\
+																															\
+		__tmp__ = possible_assignment->assignment_buffer[offset + j]; 														\
+		possible_assignment->assignment_buffer[offset + j] = possible_assignment->assignment_buffer[offset + size]; 		\
+		possible_assignment->assignment_buffer[offset + size] = __tmp__; 													\
+																															\
+		continue; 																											\
+	}
+
 static int32_t possibleAssignment_duplicate(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint32_t nb_assignment, uint32_t new_value){
 	uint32_t 		i;
 	uint32_t 		j;
@@ -742,7 +909,10 @@ static int32_t possibleAssignment_duplicate(struct possibleAssignment* possible_
 	uint32_t 		idx_new_dst;
 	uint32_t 		idx_possible_src;
 	uint32_t 		idx_possible_dst;
-	uint32_t 		tmp;
+
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	assignment_mark_collision(graph_handle->edge_tab[new_value].edge, possible_assignment->seed);
+	#endif
 
 	node_new_src = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
 	node_new_dst = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
@@ -759,38 +929,32 @@ static int32_t possibleAssignment_duplicate(struct possibleAssignment* possible_
 
 		for (j = 0; j < size; ){
 			if (possible_assignment->assignment_buffer[offset + j] == new_value){
-				goto remove;
+				__generic_remove__()
 			}
+
+			#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+			if (assignment_is_collision(graph_handle->edge_tab[possible_assignment->assignment_buffer[offset + j]].edge, possible_assignment->seed)){
+				__generic_remove__()
+			}
+			#endif
 
 			node_possible_src = graphIsoHandle_edge_get_src(graph_handle, possible_assignment->assignment_buffer[offset + j]).node;
 			node_possible_dst = graphIsoHandle_edge_get_dst(graph_handle, possible_assignment->assignment_buffer[offset + j]).node;
 
 			if (node_new_src == node_possible_src && idx_new_src != idx_possible_src){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_src == node_possible_dst && idx_new_src != idx_possible_dst){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_dst == node_possible_src && idx_new_dst != idx_possible_src){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_dst == node_possible_dst && idx_new_dst != idx_possible_dst){
-				goto remove;
+				__generic_remove__()
 			}
 
 			j++;
-
-			continue;
-
-			remove:
-
-			if (!(--size)){
-				return -1;
-			}
-
-			tmp = possible_assignment->assignment_buffer[offset + j];
-			possible_assignment->assignment_buffer[offset + j] = possible_assignment->assignment_buffer[offset + size];
-			possible_assignment->assignment_buffer[offset + size] = tmp;
 		}
 		possibleAssignment_size(possible_assignment, i) = size;
 	}
@@ -813,7 +977,10 @@ static int32_t possibleAssignment_duplicate_light(struct possibleAssignment* pos
 	uint32_t 		idx_new_dst;
 	uint32_t 		idx_possible_src;
 	uint32_t 		idx_possible_dst;
-	uint32_t 		tmp;
+
+	#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+	assignment_mark_collision(graph_handle->edge_tab[new_value].edge, possible_assignment->seed);
+	#endif
 
 	node_new_src = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
 	node_new_dst = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
@@ -830,38 +997,32 @@ static int32_t possibleAssignment_duplicate_light(struct possibleAssignment* pos
 
 		for (j = 0; j < size; ){
 			if (possible_assignment->assignment_buffer[offset + j] == new_value){
-				goto remove;
+				__generic_remove__()
 			}
+
+			#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
+			if (assignment_is_collision(graph_handle->edge_tab[possible_assignment->assignment_buffer[offset + j]].edge, possible_assignment->seed)){
+				__generic_remove__()
+			}
+			#endif
 
 			node_possible_src = graphIsoHandle_edge_get_src(graph_handle, possible_assignment->assignment_buffer[offset + j]).node;
 			node_possible_dst = graphIsoHandle_edge_get_dst(graph_handle, possible_assignment->assignment_buffer[offset + j]).node;
 
 			if (node_new_src == node_possible_src && idx_new_src != idx_possible_src){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_src == node_possible_dst && idx_new_src != idx_possible_dst){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_dst == node_possible_src && idx_new_dst != idx_possible_src){
-				goto remove;
+				__generic_remove__()
 			}
 			else if (node_new_dst == node_possible_dst && idx_new_dst != idx_possible_dst){
-				goto remove;
+				__generic_remove__()
 			}
 
 			j++;
-
-			continue;
-
-			remove:
-
-			if (!(--size)){
-				return -1;
-			}
-
-			tmp = possible_assignment->assignment_buffer[offset + j];
-			possible_assignment->assignment_buffer[offset + j] = possible_assignment->assignment_buffer[offset + size];
-			possible_assignment->assignment_buffer[offset + size] = tmp;
 		}
 		possibleAssignment_size(possible_assignment, i) = size;
 	}
@@ -1113,6 +1274,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	}
 
 	if (nb_node_assigned == subGraphIsoHandle_get_nb_node(sub_graph_handle)){
+		assignment_edge(assignment, subGraphIsoHandle_get_nb_node(sub_graph_handle), possibleAssignment_order(possible_assignment, nb_assignment)) = graph_handle->edge_tab[new_value].edge;
 		return 0;
 	}
 
@@ -1400,48 +1562,9 @@ static void possibleAssignment_compact(struct possibleAssignment* possible_assig
 }
 #endif
 
-// #if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
-// static void possibleAssignment_mark_collision_layer_src_dst(uint64_t seed, struct node* node_layer){
-// 	struct edge* 	edge_cursor;
-// 	uint64_t* 		data;
-
-// 	data = (uint64_t*)node_get_data(node_layer);
-// 	if (*data == seed){
-// 		return;
-// 	}
-
-// 	*data = seed;
-
-// 	for (edge_cursor = node_get_head_edge_dst(node_layer); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-// 		possibleAssignment_mark_collision_layer_dst(seed, edge_get_src(edge_cursor));
-// 	}
-// 	for (edge_cursor = node_get_head_edge_src(node_layer); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
-// 		possibleAssignment_mark_collision_layer_src_dst(seed, edge_get_dst(edge_cursor));
-// 	}
-
-// }
-
-// static void possibleAssignment_mark_collision_layer_dst(uint64_t seed, struct node* node_layer){
-// 	struct edge* 	edge_cursor;
-// 	uint64_t* 		data;
-
-// 	data = (uint64_t*)node_get_data(node_layer);
-// 	if (*data == seed){
-// 		return;
-// 	}
-
-// 	*data = seed;
-
-// 	for (edge_cursor = node_get_head_edge_dst(node_layer); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-// 		possibleAssignment_mark_collision_layer_dst(seed, edge_get_src(edge_cursor));
-// 	}
-// }
-// #endif
-
-
-// /* ===================================================================== */
-// /* Compare routines 													 */
-// /* ===================================================================== */
+/* ===================================================================== */
+/* Compare routines 													 */
+/* ===================================================================== */
 
 static void* bsearch_r(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*, void*), void* arg){
 	int32_t result;
