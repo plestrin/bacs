@@ -1408,7 +1408,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 		possible_assignment->node_meta_buffer[i].restart_ctr = 0;
 	}
 
-	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * (subGraphIsoHandle_get_nb_node(sub_graph_handle) - nb_node_assigned) * 2);
+	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2);
 	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
 
 	restart_idx_in[0] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
