@@ -1042,51 +1042,233 @@ static void possibleAssignment_save(struct possibleAssignment* possible_assignme
 	}
 }
 
-#define __generic_fill_restart_buffer_first__() 																													\
-	if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr < restart_ctr){ 													\
-		possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr = restart_ctr; 													\
-		restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].src; 																					\
-	} 																																								\
-	if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr < restart_ctr){ 													\
-		possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr = restart_ctr; 													\
-		restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].dst; 																					\
+static int32_t uint32_t_compare(const void* arg1, const void* arg2){
+	return *(const uint32_t*)arg1 - *(const uint32_t*)arg2;
+}
+
+static uint32_t uint32_t_remove_duplicate(uint32_t* buffer, uint32_t buffer_size){
+	uint32_t i;
+	uint32_t j;
+
+	for (i = 1, j = 1; i < buffer_size; i++){
+		if (buffer[i - 1] != buffer[i]){
+			buffer[j ++] = buffer[i];
+		}
 	}
 
-#define __generic_update_first__() 																																	\
-	if (m == possible_assignment->edge_meta_buffer[edge2].size){ 																									\
-		uint32_t __off__; 																																			\
-																																									\
-		if (!(--possible_assignment->edge_meta_buffer[edge1].size)){ 																								\
-			return -1; 																																				\
-		} 																																							\
-																																									\
-		__off__ = possible_assignment->edge_meta_buffer[edge1].offset; 																								\
-		possible_assignment->assignment_buffer[__off__ + l] = possible_assignment->assignment_buffer[__off__ + possible_assignment->edge_meta_buffer[edge1].size]; 	\
-																																									\
-		__generic_fill_restart_buffer_first__() 																													\
-	} 																																								\
-	else{ 																																							\
-		l ++; 																																						\
+	return j;
+}
+
+static uint32_t uint32_t_intersect_buffer(uint32_t* dst, uint32_t dst_size, const uint32_t* src, uint32_t src_size){
+	uint32_t i;
+	uint32_t j;
+	uint32_t k;
+
+	for (i = 0, j = 0, k = 0; i < dst_size && j < src_size; ){
+		if ((int32_t)(dst[i] - src[j]) < 0){
+			i++;
+		}
+		else if ((int32_t)(dst[i] - src[j]) > 0){
+			j++;
+		}
+		else{
+			dst[k ++] = dst[i];
+			i ++;
+			j ++;
+		}
 	}
 
-static int32_t possibleAssignment_global_update_first(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
+	return k;
+}
+
+static uint32_t possibleAssignment_intersect_src_endpoint(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, uint32_t* buffer, uint32_t buffer_size, uint32_t edge){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint32_t* 	local_buffer;
+	uint32_t 	local_buffer_size;
+
+	local_buffer_size = possible_assignment->edge_meta_buffer[edge].size;
+	local_buffer = (uint32_t*)alloca(local_buffer_size * sizeof(uint32_t));
+
+	for (i = 0, j = possible_assignment->edge_meta_buffer[edge].offset; i < local_buffer_size; i++, j++){
+		local_buffer[i] = graph_handle->edge_tab[possible_assignment->assignment_buffer[j]].src;
+	}
+
+	qsort(local_buffer, local_buffer_size, sizeof(uint32_t), uint32_t_compare);
+
+	return uint32_t_intersect_buffer(buffer, buffer_size, local_buffer, local_buffer_size);
+}
+
+static uint32_t possibleAssignment_intersect_dst_endpoint(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, uint32_t* buffer, uint32_t buffer_size, uint32_t edge){
+	uint32_t 	i;
+	uint32_t 	j;
+	uint32_t* 	local_buffer;
+	uint32_t 	local_buffer_size;
+
+	local_buffer_size = possible_assignment->edge_meta_buffer[edge].size;
+	local_buffer = (uint32_t*)alloca(local_buffer_size * sizeof(uint32_t));
+
+	for (i = 0, j = possible_assignment->edge_meta_buffer[edge].offset; i < local_buffer_size; i++, j++){
+		local_buffer[i] = graph_handle->edge_tab[possible_assignment->assignment_buffer[j]].dst;
+	}
+
+	qsort(local_buffer, local_buffer_size, sizeof(uint32_t), uint32_t_compare);
+
+	return uint32_t_intersect_buffer(buffer, buffer_size, local_buffer, local_buffer_size);
+}
+
+static uint32_t possibleAssignment_filter_based_on_src(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, uint32_t* buffer, uint32_t buffer_size, uint32_t edge){
+	uint32_t i;
+	uint32_t j;
+	uint32_t size;
+
+	for (i = 0, j = possible_assignment->edge_meta_buffer[edge].offset, size = possible_assignment->edge_meta_buffer[edge].size; i < size; ){
+		if (bsearch(&(graph_handle->edge_tab[possible_assignment->assignment_buffer[j]].src), buffer, buffer_size, sizeof(uint32_t), uint32_t_compare) == NULL){
+			size --;
+			possible_assignment->assignment_buffer[j] = possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge].offset + size];
+		}
+		else{
+			i ++;
+			j ++;
+		}
+	}
+
+	return size;
+}
+
+static uint32_t possibleAssignment_filter_based_on_dst(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, uint32_t* buffer, uint32_t buffer_size, uint32_t edge){
+	uint32_t i;
+	uint32_t j;
+	uint32_t size;
+
+	for (i = 0, j = possible_assignment->edge_meta_buffer[edge].offset, size = possible_assignment->edge_meta_buffer[edge].size; i < size; ){
+		if (bsearch(&(graph_handle->edge_tab[possible_assignment->assignment_buffer[j]].dst), buffer, buffer_size, sizeof(uint32_t), uint32_t_compare) == NULL){
+			size --;
+			possible_assignment->assignment_buffer[j] = possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge].offset + size];
+		}
+		else{
+			i ++;
+			j ++;
+		}
+	}
+
+	return size;
+}
+
+static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, int32_t index, uint32_t* restart_idx_in, uint32_t* nb_restart_in, uint32_t restart_ctr){
 	uint32_t 	i;
 	uint32_t 	j;
 	uint32_t 	k;
-	uint32_t 	l;
-	uint32_t 	m;
-	uint32_t 	edge1;
-	uint32_t 	edge2;
-	uint32_t 	assign1;
-	uint32_t 	assign2;
+	uint32_t* 	buffer;
+	uint32_t 	buffer_size;
+	uint32_t 	restart;
+	uint32_t 	edge;
+	uint32_t 	size;
+
+	if (sub_graph_handle->sub_node_tab[index].nb_src + sub_graph_handle->sub_node_tab[index].nb_dst == 1){
+		return 0;
+	}
+
+	for (i = 0, buffer = NULL; i < sub_graph_handle->sub_node_tab[index].nb_src; i++){
+		edge = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[index].off_src + i];
+
+		if (buffer == NULL){
+			buffer_size = possible_assignment->edge_meta_buffer[edge].size;
+			buffer = (uint32_t*)alloca(buffer_size * sizeof(uint32_t));
+
+			for (j = 0, k = possible_assignment->edge_meta_buffer[edge].offset; j < buffer_size; j++, k++){
+				buffer[j] = graph_handle->edge_tab[possible_assignment->assignment_buffer[k]].src;
+			}
+
+			qsort(buffer, buffer_size, sizeof(uint32_t), uint32_t_compare);
+			buffer_size = uint32_t_remove_duplicate(buffer, buffer_size);
+		}
+		else{
+			if ((buffer_size = possibleAssignment_intersect_src_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge)) == 0){
+				return -1;
+			}
+		}
+	}
+
+	for (i = 0; i < sub_graph_handle->sub_node_tab[index].nb_dst; i++){
+		edge = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[index].off_dst + i];
+
+		if (buffer == NULL){
+			buffer_size = possible_assignment->edge_meta_buffer[edge].size;
+			buffer = (uint32_t*)alloca(buffer_size * sizeof(uint32_t));
+
+			for (j = 0, k = possible_assignment->edge_meta_buffer[edge].offset; j < buffer_size; j++, k++){
+				buffer[j] = graph_handle->edge_tab[possible_assignment->assignment_buffer[k]].dst;
+			}
+
+			qsort(buffer, buffer_size, sizeof(uint32_t), uint32_t_compare);
+			buffer_size = uint32_t_remove_duplicate(buffer, buffer_size);
+		}
+		else{
+			if ((buffer_size = possibleAssignment_intersect_dst_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge)) == 0){
+				return -1;
+			}
+		}
+	}
+
+	for (i = 0, restart = 0; i < sub_graph_handle->sub_node_tab[index].nb_src; i++){
+		edge = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[index].off_src + i];
+		size = possibleAssignment_filter_based_on_src(possible_assignment, graph_handle, buffer, buffer_size, edge);
+
+		if (size != possible_assignment->edge_meta_buffer[edge].size){
+			possible_assignment->edge_meta_buffer[edge].size = size;
+			restart = 1;
+
+			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart_ctr < restart_ctr && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_dst > 1){
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart_ctr = restart_ctr;
+				restart_idx_in[*nb_restart_in] = sub_graph_handle->edge_tab[edge].dst;
+				*nb_restart_in = *nb_restart_in + 1;
+			}
+		}
+	}
+
+	for (i = 0; i < sub_graph_handle->sub_node_tab[index].nb_dst; i++){
+		edge = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[index].off_dst + i];
+		size = possibleAssignment_filter_based_on_dst(possible_assignment, graph_handle, buffer, buffer_size, edge);
+
+		if (size != possible_assignment->edge_meta_buffer[edge].size){
+			possible_assignment->edge_meta_buffer[edge].size = size;
+			restart = 1;
+
+			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart_ctr < restart_ctr && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_dst > 1){
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart_ctr = restart_ctr;
+				restart_idx_in[*nb_restart_in] = sub_graph_handle->edge_tab[edge].src;
+				*nb_restart_in = *nb_restart_in + 1;
+			}
+		}
+	}
+
+	if (restart && possible_assignment->node_meta_buffer[index].restart_ctr < restart_ctr){
+		possible_assignment->node_meta_buffer[index].restart_ctr = restart_ctr;
+		restart_idx_in[*nb_restart_in] = index;
+		*nb_restart_in = *nb_restart_in + 1;
+	}
+
+	return 0;
+}
+
+
+static int32_t possibleAssignment_global_update_first(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle){
+	uint32_t 	i;
 	uint32_t 	nb_restart_in;
 	uint32_t 	nb_restart_ou;
 	uint32_t 	restart_ctr;
+	uint32_t* 	restart_idx_root;
 	uint32_t* 	restart_idx_in;
 	uint32_t* 	restart_idx_ou;
 	uint32_t* 	restart_idx_tp;
 
-	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2);
+	if ((restart_idx_root = (uint32_t*)malloc(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2)) == NULL){
+		log_err("unable to allocate memory");
+		return -1;
+	}
+
+	restart_idx_in = restart_idx_root;
 	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
 
 	for (i = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
@@ -1106,139 +1288,53 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 		restart_idx_ou = restart_idx_tp;
 
 		for (i = 0; i < nb_restart_ou; i++){
-			for (j = 0; j < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src; j++){
-				edge1 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + j];
-
-				/* SRC - SRC */
-				if (sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src > 1){
-					for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src; k++){
-						if (j == k){
-							continue;
-						}
-						edge2 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + k];
-
-						for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
-							assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].src;
-
-							for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
-								assign2 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge2].offset + m]].src;
-
-								if (assign1 == assign2){
-									break;
-								}
-							}
-
-							__generic_update_first__()
-						}
-					}
-				}
-
-				/* SRC - DST */
-				for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst; k++){
-					edge2 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + k];
-
-					for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
-						assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].src;
-
-						for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
-							assign2 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge2].offset + m]].dst;
-
-							if (assign1 == assign2){
-								break;
-							}
-						}
-
-						__generic_update_first__()
-					}
-				}
-			}
-
-			for (j = 0; j < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst; j++){
-				edge1 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + j];
-
-				/* DST - SRC */
-				for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src; k++){
-					edge2 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + k];
-
-					for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
-						assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].dst;
-
-						for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
-							assign2 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge2].offset + m]].src;
-
-							if (assign1 == assign2){
-								break;
-							}
-						}
-
-						__generic_update_first__()
-					}
-				}
-
-				/* DST - DST */
-				if (sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst > 1){
-					for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst; k++){
-						if (j == k){
-							continue;
-						}
-						edge2 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + k];
-
-						for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
-							assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].dst;
-
-							for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
-								assign2 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge2].offset + m]].dst;
-
-								if (assign1 == assign2){
-									break;
-								}
-							}
-
-							__generic_update_first__()
-						}
-					}
-				}
+			if (possibleAssignment_fast_compare_node(possible_assignment, graph_handle, sub_graph_handle, restart_idx_ou[i], restart_idx_in, &nb_restart_in, restart_ctr)){
+				free(restart_idx_root);
+				return -1;
 			}
 		}
 	}
 
+	free(restart_idx_root);
 	possibleAssignment_compact(possible_assignment);
 
 	return 0;
 }
 
-#define __generic_fill_restart_buffer__() 																															\
-	if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].src)){ 																\
-		if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr < restart_ctr){ 												\
-			possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr = restart_ctr; 												\
-			restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].src; 																				\
-		} 																																							\
-	} 																																								\
-	if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].dst)){ 																\
-		if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr < restart_ctr){ 												\
-			possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr = restart_ctr; 												\
-			restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].dst; 																				\
-		} 																																							\
+#define __generic_fill_restart_buffer__() 																										\
+	if (size1 != possible_assignment->edge_meta_buffer[edge1].size){ 																			\
+		possible_assignment->edge_meta_buffer[edge1].size = size1; 																				\
+																																				\
+		if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].src)){ 										\
+			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr < restart_ctr){ 						\
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr = restart_ctr; 						\
+				restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].src; 														\
+			} 																																	\
+		} 																																		\
+		if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].dst)){ 										\
+			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr < restart_ctr){ 						\
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr = restart_ctr; 						\
+				restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].dst; 														\
+			} 																																	\
+		} 																																		\
 	}
 
-#define __generic_update__() 																																		\
-	if (m == possible_assignment->edge_meta_buffer[edge2].size){ 																									\
-		uint32_t __off__; 																																			\
-		uint32_t __tmp__; 																																			\
-																																									\
-		if (!(--possible_assignment->edge_meta_buffer[edge1].size)){ 																								\
-			return -1; 																																				\
-		} 																																							\
-																																									\
-		__off__ = possible_assignment->edge_meta_buffer[edge1].offset; 																								\
-		__tmp__ = possible_assignment->assignment_buffer[__off__ + l]; 																								\
-		possible_assignment->assignment_buffer[__off__ + l] = possible_assignment->assignment_buffer[__off__ + possible_assignment->edge_meta_buffer[edge1].size]; 	\
-		possible_assignment->assignment_buffer[__off__ + possible_assignment->edge_meta_buffer[edge1].size] = __tmp__; 												\
-																																									\
-		__generic_fill_restart_buffer__() 																															\
-	} 																																								\
-	else{ 																																							\
-		l ++; 																																						\
+#define __generic_update__() 																													\
+	if (m == possible_assignment->edge_meta_buffer[edge2].size){ 																				\
+		uint32_t __off__; 																														\
+		uint32_t __tmp__; 																														\
+																																				\
+		if (!(--size1)){ 																														\
+			return -1; 																															\
+		} 																																		\
+																																				\
+		__off__ = possible_assignment->edge_meta_buffer[edge1].offset; 																			\
+		__tmp__ = possible_assignment->assignment_buffer[__off__ + l]; 																			\
+		possible_assignment->assignment_buffer[__off__ + l] = possible_assignment->assignment_buffer[__off__ + size1]; 							\
+		possible_assignment->assignment_buffer[__off__ + size1] = __tmp__; 																		\
+	} 																																			\
+	else{ 																																		\
+		l ++; 																																	\
 	}
 
 #if SUBGRAPHISOMORPHISM_OPTIM_GLOBAL == 1
@@ -1253,6 +1349,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	uint32_t 	edge2;
 	uint32_t 	assign1;
 	uint32_t 	assign2;
+	uint32_t 	size1;
 	uint32_t 	nb_restart_in;
 	uint32_t 	nb_restart_ou;
 	uint32_t 	restart_ctr;
@@ -1288,14 +1385,18 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 
 		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
 		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
-			restart_idx_in[nb_restart_in ++] = __index__;
+			if (sub_graph_handle->sub_node_tab[__index__].nb_src + sub_graph_handle->sub_node_tab[__index__].nb_dst > 1){
+				restart_idx_in[nb_restart_in ++] = __index__;
+			}
 			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
 			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
 		}
 
 		__index__ = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
 		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
-			restart_idx_in[nb_restart_in ++] = __index__;
+			if (sub_graph_handle->sub_node_tab[__index__].nb_src + sub_graph_handle->sub_node_tab[__index__].nb_dst > 1){
+				restart_idx_in[nb_restart_in ++] = __index__;
+			}
 			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
 			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
 		}
@@ -1307,7 +1408,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 		possible_assignment->node_meta_buffer[i].restart_ctr = 0;
 	}
 
-	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2);
+	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * (subGraphIsoHandle_get_nb_node(sub_graph_handle) - nb_node_assigned) * 2);
 	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
 
 	restart_idx_in[0] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].src;
@@ -1327,6 +1428,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 		for (i = 0; i < nb_restart_ou; i++){
 			for (j = 0; j < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src; j++){
 				edge1 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + j];
+				size1 = possible_assignment->edge_meta_buffer[edge1].size;
 
 				/* SRC - SRC */
 				if (sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src > 1){
@@ -1336,7 +1438,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 						}
 						edge2 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + k];
 
-						for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
+						for (l = 0; l < size1; ){
 							assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].src;
 
 							for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
@@ -1356,7 +1458,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 				for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst; k++){
 					edge2 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + k];
 
-					for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
+					for (l = 0; l < size1; ){
 						assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].src;
 
 						for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
@@ -1370,16 +1472,19 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 						__generic_update__()
 					}
 				}
+
+				__generic_fill_restart_buffer__()
 			}
 
 			for (j = 0; j < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_dst; j++){
 				edge1 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + j];
+				size1 = possible_assignment->edge_meta_buffer[edge1].size;
 
 				/* DST - SRC */
 				for (k = 0; k < sub_graph_handle->sub_node_tab[restart_idx_ou[i]].nb_src; k++){
 					edge2 = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_src + k];
 
-					for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
+					for (l = 0; l < size1; ){
 						assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].dst;
 
 						for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
@@ -1402,7 +1507,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 						}
 						edge2 = sub_graph_handle->dst_fast[sub_graph_handle->sub_node_tab[restart_idx_ou[i]].off_dst + k];
 
-						for (l = 0; l < possible_assignment->edge_meta_buffer[edge1].size; ){
+						for (l = 0; l < size1; ){
 							assign1 = graph_handle->edge_tab[possible_assignment->assignment_buffer[possible_assignment->edge_meta_buffer[edge1].offset + l]].dst;
 
 							for (m = 0; m < possible_assignment->edge_meta_buffer[edge2].size; m++){
@@ -1417,6 +1522,8 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 						}
 					}
 				}
+
+				__generic_fill_restart_buffer__()
 			}
 		}
 	}
