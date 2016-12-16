@@ -16,17 +16,17 @@ int main(void){
 	unsigned char 	iv[TEA_BLOCK_NB_BYTE] = {0x01, 0xff, 0x83, 0xf2, 0xf9, 0x98, 0xba, 0xa4};
 	unsigned char 	ciphertext[sizeof(plaintext)];
 	unsigned char 	deciphertext[sizeof(plaintext)];
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, TEA_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)iv, TEA_BLOCK_NB_BYTE);
 	printf("\nKey:            ");
-	printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
 
 	mode_enc_cbc((blockCipher)xtea_encrypt, TEA_BLOCK_NB_BYTE, (uint8_t*)plaintext, (uint8_t*)ciphertext, sizeof(plaintext), (void*)key, iv);
 
 	printf("\nCiphertext CBC: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
  	mode_dec_cbc((blockCipher)xtea_decrypt, TEA_BLOCK_NB_BYTE, (uint8_t*)ciphertext, (uint8_t*)deciphertext, sizeof(plaintext), (void*)key, iv);
 

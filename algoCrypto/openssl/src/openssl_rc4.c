@@ -26,7 +26,7 @@ int main(){
 		RC4(&rc4_key_enc, strlen(plaintext), (unsigned char*)plaintext, (unsigned char*)ciphertext);
 
 		printf("Ciphertext: ");
-		printBuffer_raw(stdout, ciphertext, strlen(plaintext));
+		fprintBuffer_raw(stdout, ciphertext, strlen(plaintext));
 		printf("\n");
 
 		RC4_set_key(&rc4_key_dec, strlen(key), (unsigned char*)key);

@@ -19,16 +19,16 @@ int main(void){
 	unsigned char deciphertext[SERPENT_BLOCK_NB_BYTE];
 
 	printf("Plaintext:  ");
-	printBuffer_raw(stdout, (char*)plaintext, SERPENT_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)plaintext, SERPENT_BLOCK_NB_BYTE);
 
 	printf("\nKey:        ");
-	printBuffer_raw(stdout, (char*)key, KEY_SIZE);
+	fprintBuffer_raw(stdout, (char*)key, KEY_SIZE);
 
 	serpent_key_expand((uint32_t*)key, KEY_SIZE * 8, (uint32_t*)round_key);
 	serpent_encrypt((uint32_t*)plaintext, (uint32_t*)round_key, (uint32_t*)ciphertext);
 
 	printf("\nCiphertext: ");
-	printBuffer_raw(stdout, (char*)ciphertext, SERPENT_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)ciphertext, SERPENT_BLOCK_NB_BYTE);
 
 	serpent_decrypt((uint32_t*)ciphertext, (uint32_t*)round_key, (uint32_t*)deciphertext);
 

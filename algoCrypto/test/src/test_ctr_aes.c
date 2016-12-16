@@ -17,18 +17,18 @@ int main(void){
 	unsigned char 	round_key_128[AES_128_NB_BYTE_ROUND_KEY];
 	unsigned char 	ciphertext[sizeof(plaintext)];
 	unsigned char 	deciphertext[sizeof(plaintext)];
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, AES_128_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)iv, AES_128_NB_BYTE_KEY);
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
 
 	aes128_key_expand_encrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
 	mode_enc_ctr((blockCipher)aes128_encrypt, AES_BLOCK_NB_BYTE, (uint8_t*)plaintext, (uint8_t*)ciphertext, sizeof(plaintext), (void*)round_key_128, (uint8_t*)iv);
 
 	printf("\nCiphertext CTR: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
  	mode_dec_ctr((blockCipher)aes128_encrypt, AES_BLOCK_NB_BYTE, (uint8_t*)ciphertext, (uint8_t*)deciphertext, sizeof(plaintext), (void*)round_key_128, (uint8_t*)iv);
 

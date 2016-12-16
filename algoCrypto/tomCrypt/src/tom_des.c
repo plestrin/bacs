@@ -22,11 +22,11 @@ int main(){
 	}
 
 	printf("Plaintext:  ");
-	printBuffer_raw(stdout, (char*)pt, 8);
+	fprintBuffer_raw(stdout, (char*)pt, 8);
 	printf("\nKey:        ");
-	printBuffer_raw(stdout, (char*)key, 8);
+	fprintBuffer_raw(stdout, (char*)key, 8);
 	printf("\nCiphertext: ");
-	printBuffer_raw(stdout, (char*)ct, 8);
+	fprintBuffer_raw(stdout, (char*)ct, 8);
 
 	if (des_ecb_decrypt(ct, vt, &skey) != CRYPT_OK){
 		printf("ERROR: in %s, unable to decrypt DES\n", __func__);

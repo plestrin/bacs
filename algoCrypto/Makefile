@@ -24,8 +24,8 @@ gladman:
 openssl:
 	@ cd $(OPENSSL_DIRECTORY) && $(MAKE)
 
-go:
-	@ cd $(GO_DIRECTORY) && $(MAKE)
+# go:
+# 	@ cd $(GO_DIRECTORY) && $(MAKE)
 
 botan:
 	@ cd $(BOTAN_DIRECTORY) && $(MAKE)

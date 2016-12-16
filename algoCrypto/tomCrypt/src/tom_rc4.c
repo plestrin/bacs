@@ -29,7 +29,7 @@ int main(){
 		rc4_done(&prng);
 
 		printf("Ciphertext: ");
-		printBuffer_raw(stdout, ciphertext, plaintext_length);
+		fprintBuffer_raw(stdout, ciphertext, plaintext_length);
 		printf("\n");
 
 		memcpy(deciphertext, ciphertext, plaintext_length);

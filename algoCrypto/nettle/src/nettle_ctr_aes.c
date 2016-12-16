@@ -16,12 +16,12 @@ int main(){
 	uint8_t ciphertext[sizeof(plaintext)];
 	uint8_t deciphertext[sizeof(plaintext)];
 	struct CTR_CTX(struct aes_ctx, AES_BLOCK_SIZE) ctx;
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, sizeof(iv));
+	fprintBuffer_raw(stdout, (char*)iv, sizeof(iv));
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	CTR_SET_COUNTER(&ctx, iv);
 	CTR_SET_KEY(&ctx, key);
@@ -32,7 +32,7 @@ int main(){
 	CTR_CRYPT(&ctx, aes_encrypt, sizeof(ciphertext), deciphertext, ciphertext);
 
 	printf("\nCiphertext CTR: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

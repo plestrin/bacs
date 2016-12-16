@@ -16,16 +16,16 @@ int main(void){
 	unsigned char 	round_key_128[AES_128_NB_BYTE_ROUND_KEY];
 	unsigned char 	ciphertext[sizeof(plaintext)];
 	unsigned char 	deciphertext[sizeof(plaintext)];
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("Key 128:        ");
-	printBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
 
 	aes128_key_expand_encrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
 	mode_enc_ecb((blockCipher)aes128_encrypt, AES_BLOCK_NB_BYTE, (uint8_t*)plaintext, (uint8_t*)ciphertext, sizeof(plaintext), (void*)round_key_128);
 
 	printf("\nCiphertext ECB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
  	aes128_key_expand_decrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
  	mode_dec_ecb((blockCipher)aes128_decrypt, AES_BLOCK_NB_BYTE, (uint8_t*)ciphertext, (uint8_t*)deciphertext, sizeof(plaintext), (void*)round_key_128);

@@ -15,7 +15,7 @@ int main(){
 	unsigned char 	vt[16];
 	unsigned char 	pt[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
 	struct aes_ctx 	ctx;
-	
+
 
 	/* AES 128 */
 	aes_set_encrypt_key(&ctx, sizeof(key128), key128);
@@ -24,11 +24,11 @@ int main(){
 	aes_decrypt(&ctx, sizeof(ct), vt, ct);
 
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
+	fprintBuffer_raw(stdout, (char*)pt, 16);
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key128, 16);
+	fprintBuffer_raw(stdout, (char*)key128, 16);
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 128:   OK\n");
@@ -44,9 +44,9 @@ int main(){
 	aes_decrypt(&ctx, sizeof(ct), vt, ct);
 
 	printf("Key 192:        ");
-	printBuffer_raw(stdout, (char*)key192, 24);
+	fprintBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 192:   OK\n");
@@ -63,9 +63,9 @@ int main(){
 	aes_decrypt(&ctx, sizeof(ct), vt, ct);
 
 	printf("Key 256:        ");
-	printBuffer_raw(stdout, (char*)key256, 32);
+	fprintBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 256:   OK\n");

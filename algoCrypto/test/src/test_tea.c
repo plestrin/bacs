@@ -16,15 +16,15 @@ int main(void){
 	unsigned char 	key[TEA_KEY_NB_BYTE]	 			= {0x12, 0x45, 0xf0, 0x6a, 0x45, 0x89, 0xfe, 0x60, 0x50, 0xAA, 0x78, 0x59, 0xf5, 0x69, 0x41, 0xbb};
 		
 	printf("Plaintext:       ");
-	printBuffer_raw(stdout, (char*)plaintext, TEA_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)plaintext, TEA_BLOCK_NB_BYTE);
 	printf("\nKey:             ");
-	printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
 
 	tea_encrypt((uint32_t*)plaintext, (uint32_t*)key, (uint32_t*)ciphertext);
 	tea_decrypt((uint32_t*)ciphertext, (uint32_t*)key, (uint32_t*)deciphertext);
 	
 	printf("\nCiphertext TEA:  ");
-	printBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
 		
 	if (memcmp(plaintext, deciphertext, TEA_BLOCK_NB_BYTE) == 0){
 		printf("\nRecovery:        OK\n");
@@ -37,7 +37,7 @@ int main(void){
 	xtea_decrypt((uint32_t*)ciphertext, (uint32_t*)key, (uint32_t*)deciphertext);
 
 	printf("Ciphertext XTEA: ");
-	printBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, ciphertext, TEA_BLOCK_NB_BYTE);
 	
 	if (memcmp(plaintext, deciphertext, TEA_BLOCK_NB_BYTE) == 0){
 		printf("\nRecovery:        OK\n");

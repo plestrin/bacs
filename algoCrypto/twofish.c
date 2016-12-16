@@ -324,7 +324,7 @@ void twofish192_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	}
 
 	for (i = 0; i < TWOFISH_NB_ROUND_KEY / 2; i++){
-		a = h_func(2*i + 0, (const uint8_t*)key, TWOFISH_192_K, 0); 
+		a = h_func(2*i + 0, (const uint8_t*)key, TWOFISH_192_K, 0);
 		b = h_func(2*i + 1, (const uint8_t*)key, TWOFISH_192_K, 1);
 		b = ROLc(b ,8);
 
@@ -422,7 +422,7 @@ void twofish_decrypt(const uint32_t* input, const struct twofishKey* twofish_key
 		tmp1 = twofish_key->sbox[0][(c >> 0 ) & 0x000000ff] ^ twofish_key->sbox[1][(c >> 8 ) & 0x000000ff] ^ twofish_key->sbox[2][(c >> 16) & 0x000000ff] ^ twofish_key->sbox[3][(c >> 24) & 0x000000ff];
 		tmp2 = twofish_key->sbox[1][(d >> 0 ) & 0x000000ff] ^ twofish_key->sbox[2][(d >> 8 ) & 0x000000ff] ^ twofish_key->sbox[3][(d >> 16) & 0x000000ff] ^ twofish_key->sbox[0][(d >> 24) & 0x000000ff];
 
-		
+
 		a = ROLc(a, 1) ^ (tmp1 + tmp2 + twofish_key->ks[8 + 4*(r - 1) + 2]);
 		b = RORc((2*tmp2 + tmp1 + twofish_key->ks[8 + 4*(r - 1) + 3]) ^ b, 1);
 

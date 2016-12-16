@@ -12,7 +12,7 @@
 
 #define SHA1_DATA_SIZE_TO_NB_BLOCK(size) ((((size) * 8 + 65) / SHA1_BLOCK_NB_BIT) + ((((size) * 8 + 65) % SHA1_BLOCK_NB_BIT == 0)?0:1))
 
-/* 
+/*
  * Make sur the data buffer is large enough to hold the padding. Use the macro above to compute the size of the data buffer
  * - data			: input message
  * - data_length 	: size of the input message

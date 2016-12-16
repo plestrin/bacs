@@ -16,8 +16,8 @@ int main(void){
 	char*	ciphertext;
 	char* 	deciphertext;
 
-	size_t 	plaintext_length = strlen(plaintext);
-	uint8_t key_length = strlen(key);
+	size_t plaintext_length = strlen(plaintext);
+	size_t key_length = strlen(key);
 
 	ciphertext = (char*)malloc(plaintext_length);
 	deciphertext = (char*)malloc(plaintext_length);
@@ -29,7 +29,7 @@ int main(void){
 		rc4((uint8_t*)plaintext, plaintext_length, (uint8_t*)key, key_length, (uint8_t*)ciphertext);
 
 		printf("Ciphertext: ");
-		printBuffer_raw(stdout, ciphertext, plaintext_length);
+		fprintBuffer_raw(stdout, ciphertext, plaintext_length);
 		printf("\n");
 
 		rc4((uint8_t*)ciphertext, plaintext_length, (uint8_t*)key, key_length, (uint8_t*)deciphertext);

@@ -18,7 +18,7 @@ int main(void){
 	arcfour_crypt(&ctx, strlen(pt), (uint8_t*)ct, (uint8_t*)pt);
 
 	printf("Ciphertext: ");
-	printBuffer_raw(stdout, ct, strlen(pt));
+	fprintBuffer_raw(stdout, ct, strlen(pt));
 	puts("\nCheck:      OK");
 
 	return EXIT_SUCCESS;

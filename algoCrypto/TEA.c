@@ -9,15 +9,15 @@ void tea_encrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t z;
 	uint32_t s;
 	uint32_t j;
-	
+
 	y = data[0];
 	z = data[1];
-		
+
 	for (j = 0, s = DELTA; j < TEA_NB_ROUND; j++, s += DELTA){
 		y += ((z << 4) + key[0]) ^ (z + s) ^ ((z >> 5) + key[1]);
 		z += ((y << 4) + key[2]) ^ (y + s) ^ ((y >> 5) + key[3]);
 	}
-		
+
 	output[0] = y;
 	output[1] = z;
 }
@@ -27,15 +27,15 @@ void tea_decrypt(const uint32_t* data, const uint32_t* key, uint32_t* output){
 	uint32_t z;
 	uint32_t s;
 	uint32_t j;
-	
+
 	y = data[0];
 	z = data[1];
-		
+
 	for (j = 0, s = 0xC6EF3720; j < TEA_NB_ROUND; j++, s -= DELTA){
 		z -= ((y << 4) + key[2]) ^ (y + s) ^ ((y >> 5) + key[3]);
 		y -= ((z << 4) + key[0]) ^ (z + s) ^ ((z >> 5) + key[1]);
 	}
-		
+
 	output[0] = y;
 	output[1] = z;
 }

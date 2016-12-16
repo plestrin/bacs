@@ -3,7 +3,7 @@ MISC_DIRECTORY 			:= ../../misc/
 GCC_CC					:= gcc
 GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra -std=gnu99
 CLANG_CC 				:= clang
-CLANG_CFLAGS 			:= -pedantic -Weverything -Wno-cast-align -Wno-newline-eof -Wno-unused-macros
+CLANG_CFLAGS 			:= -pedantic -Weverything -Wno-cast-align -Wno-unused-macros
 
 TEA_TEST_NAME			:= test_tea
 ECB_TEA_TEST_NAME 		:= test_ecb_tea

@@ -20,13 +20,13 @@ int main(){
 		printf("Error: in %s, unable to register cipher\n", __func__);
 		return EXIT_FAILURE;
 	}
-	
+
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)plaintext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)plaintext, sizeof(plaintext));
 	printf("\nIV:             ");
-	printBuffer_raw(stdout, (char*)iv, sizeof(iv));
+	fprintBuffer_raw(stdout, (char*)iv, sizeof(iv));
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	if ((err = ocb_encrypt_authenticate_memory(find_cipher("aes"), key, sizeof(key), iv, plaintext, sizeof(plaintext), ciphertext, tag, &tag_length)) != CRYPT_OK){
 		printf("ERROR: in %s, %s\n", __func__, error_to_string(err));
@@ -34,9 +34,9 @@ int main(){
 	}
 
 	printf("\nCiphertext OCB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 	printf("\nTag:            ");
-	printBuffer_raw(stdout, (char*)tag, tag_length);
+	fprintBuffer_raw(stdout, (char*)tag, tag_length);
 	printf("\n");
 
 	return EXIT_SUCCESS;

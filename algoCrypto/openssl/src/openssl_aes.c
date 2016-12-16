@@ -30,11 +30,11 @@ int main(){
 	AES_encrypt(pt, ct, &ekey128);
 
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
+	fprintBuffer_raw(stdout, (char*)pt, 16);
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key128, 16);
+	fprintBuffer_raw(stdout, (char*)key128, 16);
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (AES_set_decrypt_key(key128, 128, &dkey128)){
 		printf("ERROR: in %s, unable to setup AES 128 decrypt key\n", __func__);
@@ -59,9 +59,9 @@ int main(){
 	AES_encrypt(pt, ct, &ekey192);
 
 	printf("Key 192:        ");
-	printBuffer_raw(stdout, (char*)key192, 24);
+	fprintBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (AES_set_decrypt_key(key192, 192, &dkey192)){
 		printf("ERROR: in %s, unable to setup AES 192 decrypt key\n", __func__);
@@ -86,9 +86,9 @@ int main(){
 	AES_encrypt(pt, ct, &ekey256);
 
 	printf("Key 256:        ");
-	printBuffer_raw(stdout, (char*)key256, 32);
+	fprintBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (AES_set_decrypt_key(key256, 256, &dkey256)){
 		printf("ERROR: in %s, unable to setup AES 256 decrypt key\n", __func__);

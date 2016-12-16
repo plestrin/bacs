@@ -31,7 +31,7 @@
 #define AES_BLOCK_NB_BYTE 			16
 #define AES_BLOCK_NB_DWORD 			4
 
-/* 
+/*
  * Key schedule - normally the same round key is used for encryption and decryption but here it's a little bit tricky due to our implementation
  * - key			: 128, 192 or 256 bits
  * - round_key 		: 44, 52, 60 words
@@ -46,7 +46,7 @@ void aes192_key_expand_decrypt(const uint32_t* key, uint32_t* round_key);
 void aes256_key_expand_encrypt(const uint32_t* key, uint32_t* round_key);
 void aes256_key_expand_decrypt(const uint32_t* key, uint32_t* round_key);
 
-/* 
+/*
  * Encrypt / decrypt one block of data (128 bits)
  * - input			: 128 bits (plaintext for encryption and ciphertext for decryption)
  * - round_key 		: 44, 52, 60 words

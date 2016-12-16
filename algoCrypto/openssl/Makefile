@@ -1,7 +1,7 @@
 MISC_DIRECTORY 	:= ../../misc/
 
 CC				:= gcc
-CFLAGS			:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2
+CFLAGS			:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2 -std=gnu99
 LDFLAGS			:= -lcrypto
 
 AES_OPENSSL_EXAMPLE_NAME 		:= openssl_aes

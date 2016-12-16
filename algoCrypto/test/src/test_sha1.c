@@ -26,7 +26,7 @@ int main(void){
 
 		printf("Plaintext: \"%s\"\n", message);
 		printf("SHA1 hash: ");
-		printBuffer_raw(stdout, (char*)hash, SHA1_HASH_NB_BYTE);
+		fprintBuffer_raw(stdout, (char*)hash, SHA1_HASH_NB_BYTE);
 		printf("\n");
 
 		free(padded_message);

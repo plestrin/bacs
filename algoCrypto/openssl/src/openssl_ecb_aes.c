@@ -32,17 +32,17 @@ int main(){
 	unsigned char 	deciphertext[sizeof(plaintext)];
 	AES_KEY 		ekey;
 	AES_KEY 		dkey;
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("Key 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	/* ENCRYPT */
 	if (AES_set_encrypt_key(key, 128, &ekey)){
 		printf("ERROR: in %s, unable to setup AES encryption key\n", __func__);
 		return EXIT_FAILURE;
 	}
-	
+
 	wrapper_aes_ecb_encrypt((unsigned char*)plaintext, ciphertext, sizeof(plaintext), &ekey);
 
 	/* DECRYPT */
@@ -54,7 +54,7 @@ int main(){
 	wrapper_aes_ecb_decrypt(ciphertext, deciphertext, sizeof(ciphertext), &dkey);
 
 	printf("\nCiphertext ECB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");
