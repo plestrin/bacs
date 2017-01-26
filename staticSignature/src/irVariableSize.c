@@ -219,7 +219,7 @@ static void irVariableSize_add_size_convertor(struct ir* ir){
 				}
 				else{
 					ir_add_dependence_check(ir, operand_node, new_ins, IR_DEPENDENCE_TYPE_DIRECT)
-					ir_add_dependence_check(ir, new_ins, node_cursor, IR_DEPENDENCE_TYPE_DIRECT)
+					ir_add_dependence_check(ir, new_ins, node_cursor, ir_edge_get_dependence(edge_current)->type)
 					ir_remove_dependence(ir, edge_current);
 				}
 			}

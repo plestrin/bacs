@@ -141,7 +141,7 @@ For now on, only two operations are affected  by constant merging: ADD and AND. 
 | ----- | ----- | ------- |
 | Constant Folding | DST -> SRC | Safe node iteration (only deletes operands). |
 | Dead Code Removal | DST -> SRC | Mandatory to delete everything in a single pass. |
-| Cst Exp Detection | DST -> SRC | Safe node iteration (only deletes operands). |
+| Cst Exp Detection | DST -> SRC | Influence mask computation and safe node iteration (only deletes operands). |
 | Cst Distribution | No |Does not require any ordering, does not preserve ordering. |
 | Cst Merging | No | Does not require any ordering, does not preserve ordering. |
 | Misc Rewrite Rules | DST -> SRC | Safe node iteration. |

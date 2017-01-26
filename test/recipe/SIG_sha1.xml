@@ -94,7 +94,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO0" active="no">
+	<recipe name="TEST_SHA1_CO0" active="no"> <!-- does not work because of rotations: they are implemented using SHR, SHL and OR -->
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
 		<search>
@@ -189,7 +189,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_WD" active="no">
+	<recipe name="TEST_SHA1_WD" active="no"> <!-- does not work because of rotations: they are implemented using SHR, SHL and OR -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -247,7 +247,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_SHA1" active="no">
+	<recipe name="PP_SHA1" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
 		<search>
@@ -262,7 +262,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<!-- The message expand is not separated from the compression phase -->
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 

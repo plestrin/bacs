@@ -9,7 +9,7 @@ from recipe import recipe
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/plt/Documents/tool/pin-3.0-76991-gcc-linux/pin"
+PIN_PATH 				= "/home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin"
 TOOL_PATH 				= "../lightTracer_pin/obj-ia32/lightTracer.so"
 TOOL_SRC_PATH 			= "../lightTracer_pin/"
 WHITELIST_PATH 			= "./whiteList/"
