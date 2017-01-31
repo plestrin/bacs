@@ -1,7 +1,6 @@
 algoCrypto/botan/build/
 algoCrypto/cryptopp/build/
 algoCrypto/gladman/build/
-algoCrypto/go/build/
 algoCrypto/nettle/build/
 algoCrypto/openssl/build/
 algoCrypto/test/build/

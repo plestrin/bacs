@@ -55,7 +55,6 @@ ckeck_list = [
 		r'openssl/build/openssl_md5',
 		r'cryptopp/build/cryptopp_md5',
 		r'tomCrypt/build/tom_md5',
-		r'go/build/go_md5',
 		r'nettle/build/net_md5'
 	],
 
@@ -77,7 +76,6 @@ ckeck_list = [
 		r'tomCrypt/build/tom_rc4',
 		r'botan/build/bot_rc4',
 		r'nettle/build/net_rc4',
-		r'go/build/go_rc4'
 	],
 
 	# AES
@@ -145,7 +143,6 @@ ckeck_list = [
 		r'tomCrypt/build/tom_sha1',
 		r'botan/build/bot_sha1',
 		r'nettle/build/net_sha1',
-		r'go/build/go_sha1'
 	],
 
 	# SHA1 HMAC
@@ -228,4 +225,3 @@ if __name__=='__main__':
 		for output, file_name in zip(output_list[1:], file_list[1:]):
 			diff = difflib.unified_diff(output_list[0].split('\n'), output.split('\n'), fromfile=file_list[0], tofile=file_name)
 			sys.stdout.writelines('\n'.join(diff))
-		

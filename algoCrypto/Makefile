@@ -3,7 +3,6 @@ TOMCRYPT_DIRECTORY 		:= tomCrypt/
 CRYPTOPP_DIRECTORY 		:= cryptopp/
 GLADMAN_DIRECTORY 		:= gladman/
 OPENSSL_DIRECTORY 		:= openssl/
-GO_DIRECTORY 			:= go/
 BOTAN_DIRECTORY 		:= botan/
 NETTLE_DIRECTORY 		:= nettle/
 
@@ -23,9 +22,6 @@ gladman:
 
 openssl:
 	@ cd $(OPENSSL_DIRECTORY) && $(MAKE)
-
-# go:
-# 	@ cd $(GO_DIRECTORY) && $(MAKE)
 
 botan:
 	@ cd $(BOTAN_DIRECTORY) && $(MAKE)
