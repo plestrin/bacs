@@ -20,6 +20,7 @@
 			<algo name="md5_p4_v1" number="192"/>
 			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
 			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
 
@@ -255,7 +256,7 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph md5"/>
+			<arg value="export callGraph _md5"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -279,7 +280,7 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph md5"/>
+			<arg value="export callGraph _md5"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -296,16 +297,65 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
+	<recipe name="BOT_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
 		<search>
-			<arg value="load trace traceTOM_MD5"/>
+			<arg value="load trace traceBOT_MD5"/>
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph md5_process"/>
-			<arg value="export callGraph md5_done"/>
+			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="96"/> <!-- only 1 distinct fragments -->
+			<algo name="md5_p2_v1" number="96"/>
+			<algo name="md5_p3_v1" number="192"/>
+			<algo name="md5_p4_v1" number="96"/>
+			<algo name="md5_slice" number="64"/>
+			<algo name="md5_v1" number="2"/>
+			<algo name="md5_compress" number="1"/> <!-- md5_compress might not be detected because of aliasing issues -->
+		</result>
+	</recipe>
+
+	<recipe name="PP_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
+		<search>
+			<arg value="load trace tracePP_MD5"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="md5_p1_v1" number="192"/>
+			<algo name="md5_p2_v1" number="192"/>
+			<algo name="md5_p3_v1" number="384"/>
+			<algo name="md5_p4_v1" number="192"/>
+			<algo name="md5_slice" number="128"/>
+			<algo name="md5_v1" number="4"/>
+			<algo name="md5_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
+		<search>
+			<arg value="load trace traceNET_MD5"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_md5_compress"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -337,7 +387,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="md5_p1_v1" number="96"/>
+			<algo name="md5_p1_v1" number="96"/> <!-- only 1 distinct fragments -->
 			<algo name="md5_p2_v1" number="96"/>
 			<algo name="md5_p3_v1" number="192"/>
 			<algo name="md5_p4_v1" number="96"/>
@@ -347,65 +397,16 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_md5"/>
+	<recipe name="TOM_MD5" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_md5"/>
 		<search>
-			<arg value="load trace tracePP_MD5"/>
+			<arg value="load trace traceTOM_MD5"/>
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN8CryptoPP16IteratedHashBaseIjNS_18HashTransformationEE18HashMultipleBlocksEPKjj"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="md5_p1_v1" number="192"/>
-			<algo name="md5_p2_v1" number="192"/>
-			<algo name="md5_p3_v1" number="384"/>
-			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
-			<algo name="md5_compress" number="2"/>
-		</result>
-	</recipe>
-
-	<recipe name="BOT_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_md5"/>
-		<search>
-			<arg value="load trace traceBOT_MD5"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN5Botan3MD510compress_nEPKhj"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="md5_p1_v1" number="96"/> <!-- only 1 distinct fragments -->
-			<algo name="md5_p2_v1" number="96"/>
-			<algo name="md5_p3_v1" number="192"/>
-			<algo name="md5_p4_v1" number="96"/>
-			<algo name="md5_slice" number="64"/>
-			<algo name="md5_v1" number="2"/>
-			<algo name="md5_compress" number="1"/> <!-- md5_compress might not be detected because of aliasing issues -->
-		</result>
-	</recipe>
-
-	<recipe name="NET_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_md5"/>
-		<search>
-			<arg value="load trace traceNET_MD5"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_md5.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _nettle_md5_compress"/>
+			<arg value="export callGraph md5_process"/>
+			<arg value="export callGraph md5_done"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

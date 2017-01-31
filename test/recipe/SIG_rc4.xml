@@ -14,7 +14,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -34,7 +34,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -54,7 +54,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -74,7 +74,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -94,7 +94,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -114,7 +114,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -134,7 +134,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -154,7 +154,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -174,7 +174,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -194,7 +194,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -214,7 +214,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -234,31 +234,12 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/>
+			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
 
-	<recipe name="TOM_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
-		<search>
-			<arg value="load trace traceTOM_RC4"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph rc4_read"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="rc4_prga_v2" number="24"/>
-		</result>
-	</recipe>
-
-	<recipe name="BOT_RC4" active="no">
+	<recipe name="BOT_RC4" active="no"> <!-- There are several issues: the right function is too big and it does not contains XOR operations -->
 		<build cmd="make -C /home/plt/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
 		<search>
@@ -266,7 +247,7 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph rc4"/> <!-- Modify this value -->
+			<arg value="export callGraph _ZN5Botan4ARC48generateEv"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -297,6 +278,25 @@
 		</result>
 	</recipe>
 
+	<recipe name="NET_RC4" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_rc4"/>
+		<search>
+			<arg value="load trace traceNET_RC4"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph nettle_arcfour_crypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="rc4_prga_v3" number="12"/> <!-- we only export the encryption rtn -->
+		</result>
+	</recipe>
+
 	<recipe name="OPEN_RC4" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_rc4"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
@@ -316,22 +316,22 @@
 		</result>
 	</recipe>
 
-	<recipe name="NET_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_rc4"/>
+	<recipe name="TOM_RC4" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
 		<search>
-			<arg value="load trace traceNET_RC4"/>
+			<arg value="load trace traceTOM_RC4"/>
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_rc4.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph nettle_arcfour_crypt"/>
+			<arg value="export callGraph rc4_read"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v3" number="12"/>
+			<algo name="rc4_prga_v2" number="12"/>
 		</result>
 	</recipe>
 </xml>

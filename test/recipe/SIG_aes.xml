@@ -369,7 +369,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="BOT_AES" active="yes">
+	<recipe name="BOT_AES" active="yes"> <!-- The first round use only one table, apparently to mitigate timing attacks -->
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_aes"/>
 		<search>
