@@ -473,12 +473,12 @@ static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
 
 	pc = strtoul(arg, NULL, 16);
 
-	printf("Instance of EIP " PRINTF_ADDR ": ", pc);
+	printf("Instance of PC " PRINTF_ADDR ": ", pc);
 	codeMap_fprint_address_info(analysis->code_map, pc, stdout);
 	putchar('\n');
 
 	for (return_code = assembly_get_first_pc(&(analysis->trace->assembly), &it, pc); return_code == 0; return_code = assembly_get_next_pc(&(analysis->trace->assembly), &it)){
-		printf("\t- Found EIP in trace at offset: %u (last occurence is %u instruction(s) back)\n", it.instruction_index, it.instruction_index - last_index);
+		printf("\t- Found PC in trace at offset: %u (last occurence is %u instruction(s) back)\n", it.instruction_index, it.instruction_index - last_index);
 		last_index = it.instruction_index;
 	}
 	if (return_code < 0){

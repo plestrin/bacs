@@ -21,9 +21,9 @@ int main(){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, sizeof(iv));
+	fprintBuffer_raw(stdout, (char*)iv, sizeof(iv));
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	/* ENCRYPT */
 	if ((err = ctr_start(find_cipher("aes"), iv, key, sizeof(key), 0, CTR_COUNTER_LITTLE_ENDIAN, &ctr)) != CRYPT_OK){
@@ -58,7 +58,7 @@ int main(){
 	}
 
 	printf("\nCiphertext CTR: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

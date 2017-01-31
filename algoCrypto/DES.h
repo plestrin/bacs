@@ -33,5 +33,4 @@ void des_key_expand(const uint8_t* key, uint8_t* round_key);
 void des_encrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output);
 void des_decrypt(const uint32_t* input, const uint32_t* round_key, uint32_t* output);
 
-
 #endif

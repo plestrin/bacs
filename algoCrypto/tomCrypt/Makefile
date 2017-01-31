@@ -1,7 +1,7 @@
 MISC_DIRECTORY 					:= ../../misc/
 
 CC								:= gcc
-CFLAGS							:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -g
+CFLAGS							:= -W -Wall -pedantic -Wextra -I$(MISC_DIRECTORY) -O2 -std=gnu99
 LDFLAGS							:= -ltomcrypt
 
 TEA_TOMCRYPT_EXAMPLE_NAME 		:= tom_tea

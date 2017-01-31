@@ -18,11 +18,11 @@ int main(){
 	DES_ecb_encrypt((DES_cblock*)pt, (DES_cblock*)ct, &key_schedule, DES_ENCRYPT);
 
 	printf("Plaintext:  ");
-	printBuffer_raw(stdout, (char*)pt, 8);
+	fprintBuffer_raw(stdout, (char*)pt, 8);
 	printf("\nKey:        ");
-	printBuffer_raw(stdout, (char*)key, 8);
+	fprintBuffer_raw(stdout, (char*)key, 8);
 	printf("\nCiphertext: ");
-	printBuffer_raw(stdout, (char*)ct, 8);
+	fprintBuffer_raw(stdout, (char*)ct, 8);
 
 	DES_ecb_encrypt((DES_cblock*)ct, (DES_cblock*)vt, &key_schedule, DES_DECRYPT);
 

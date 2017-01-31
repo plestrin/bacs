@@ -31,12 +31,13 @@
 	(graph)->nb_node ++;
 
 #define graph_connect_edge(graph, node_src, node_dst, edge) 			\
-	(edge)->src_node = (node_src); 										\
-	(edge)->dst_node = (node_dst); 										\
-	(edge)->src_prev = NULL; 											\
-	(edge)->src_next = (node_src)->src_edge_linkedList; 				\
-	(edge)->dst_prev = NULL; 											\
-	(edge)->dst_next = (node_dst)->dst_edge_linkedList; 				\
+	(edge)->src_node 	= (node_src); 									\
+	(edge)->dst_node 	= (node_dst); 									\
+	(edge)->src_prev 	= NULL; 										\
+	(edge)->src_next 	= (node_src)->src_edge_linkedList; 				\
+	(edge)->dst_prev 	= NULL; 										\
+	(edge)->dst_next 	= (node_dst)->dst_edge_linkedList; 				\
+	(edge)->ptr 		= NULL; 										\
 																		\
 	if ((edge)->src_next != NULL){ 										\
 		(edge)->src_next->src_prev = (edge); 							\

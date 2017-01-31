@@ -3,6 +3,7 @@ TEST_MULTICOLUMN 		:= test_multiColumn
 TEST_INPUTPARSER 		:= test_inputParser
 TEST_MAPFILE 			:= test_mapFile
 TEST_GRAPH 				:= test_graph
+TEST_UGRAPH 			:= test_ugraph
 TEST_SUBGRAPHISO 		:= test_subGraphIso
 TEST_DIJKSTRA 			:= test_dijkstra
 TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
@@ -15,9 +16,9 @@ TEST_ARRAYMINCOVERAGE 	:= test_arrayMinCoverage
 
 CC						:= gcc
 # gcc FLAGS
-CFLAGS					:= -W -Wall -pedantic -Wextra -g -O1 -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS					:= -W -Wall -pedantic -Wextra -g -O0 -std=gnu99 -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 # clang FLAGS
-##CFLAGS 				:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
+# CFLAGS 				:= -g -pedantic -Weverything -Wno-newline-eof -Wno-reserved-id-macro -Wno-gnu-zero-variadic-macro-arguments -Wno-switch-enum -DINTERACTIVE -DCOLOR -DVERBOSE -D_GNU_SOURCE
 LDFLAGS					:=
 
 all: 										\
@@ -26,6 +27,7 @@ all: 										\
 	$(TEST_INPUTPARSER) 					\
 	$(TEST_MAPFILE) 						\
 	$(TEST_GRAPH) 							\
+	$(TEST_UGRAPH) 							\
 	$(TEST_SUBGRAPHISO) 					\
 	$(TEST_DIJKSTRA) 						\
 	$(TEST_DAGPARTIALORDER) 				\
@@ -52,7 +54,10 @@ $(TEST_MAPFILE): test_mapFile.o mapFile.o
 $(TEST_GRAPH): test_graph.o graph.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o dijkstra.o
+$(TEST_UGRAPH): test_ugraph.o ugraph.o graphPrintDot.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+$(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o array.o
@@ -91,6 +96,7 @@ test_multiColumn.o: ../multiColumn.h ../base.h
 test_inputParser.o: ../inputParser.h ../base.h
 test_mapFile.o: ../mapFile.h ../base.h
 test_graph.o: ../graph.h ../graphPrintDot.h ../base.h
+test_ugraph.o: ../ugraph.h ../graphPrintDot.h ../base.h
 test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
 test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
@@ -107,8 +113,9 @@ printBuffer.o: ../printBuffer.h
 readBuffer.o: ../readBuffer.h ../base.h
 mapFile.o: ../mapFile.h ../base.h
 graph.o: ../graph.h ../base.h
-graphPrintDot.o: ../graph.h ../graphPrintDot.h ../base.h
-subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../dijkstra.h ../base.h
+ugraph.o: ../ugraph.h ../base.h
+graphPrintDot.o: ../graph.h ../ugraph.h ../graphPrintDot.h ../base.h
+subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../base.h
 dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
 set.o: ../set.h ../base.h
@@ -126,6 +133,7 @@ clean:
 	@ rm -f $(TEST_INPUTPARSER)
 	@ rm -f $(TEST_MAPFILE)
 	@ rm -f $(TEST_GRAPH)
+	@ rm -f $(TEST_UGRAPH)
 	@ rm -f $(TEST_SUBGRAPHISO)
 	@ rm -f $(TEST_DIJKSTRA)
 	@ rm -f $(TEST_DAGPARTIALORDER)

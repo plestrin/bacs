@@ -35,7 +35,7 @@ int main(){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("Key 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	/* ENCRYPT */
 	if (AES_set_encrypt_key(key, 128, &ekey)){
@@ -54,7 +54,7 @@ int main(){
 	wrapper_aes_ecb_decrypt(ciphertext, deciphertext, sizeof(ciphertext), &dkey);
 
 	printf("\nCiphertext ECB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

@@ -13,6 +13,9 @@ struct virtualNode{
 };
 
 #define virtualNode_get_node(virtual_node) (virtual_node).result->symbol_node_buffer[(virtual_node).index];
+
+/* Push and Pop mechanisms seem to be quite buggy. They have never been executed. */
+
 #define virtualNode_push(virtual_node) 								\
 	if ((virtual_node).node == NULL){ 								\
 		(virtual_node).node = virtualNode_get_node(virtual_node); 	\
@@ -22,6 +25,12 @@ struct virtualNode{
 	if ((virtual_node).result != NULL){ 							\
 		(virtual_node).node = NULL; 								\
 	}
+
+struct virtualEdge{
+	struct edge* 	edge;
+	struct result* 	result;
+	uint32_t 		index;
+};
 
 struct signatureLink{
 	struct virtualNode 		virtual_node;
@@ -34,17 +43,20 @@ struct result{
 	uint32_t 				nb_node_in;
 	uint32_t 				nb_node_ou;
 	uint32_t 				nb_node_intern;
+	uint32_t 				nb_edge;
 	struct signatureLink* 	in_mapping_buffer;
 	struct signatureLink* 	ou_mapping_buffer;
 	struct virtualNode*		intern_node_buffer;
+	struct virtualEdge* 	edge_buffer;
 	struct node** 			symbol_node_buffer;
 };
 
-int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignement_array);
+int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignment_array);
 
-void result_push(struct result* result, struct ir* ir);
-void result_pop(struct result* result, struct ir* ir);
-void result_get_node_footprint(struct result* result, uint32_t index, struct set* set);
+void result_push(struct result* result, struct ugraph* graph_layer, struct ir* ir);
+void result_pop(struct result* result, struct ugraph* graph_layer, struct ir* ir);
+void result_get_intern_node_footprint(const struct result* result, uint32_t index, struct set* set);
+void result_get_edge_footprint(const struct result* result, uint32_t index, struct set* set);
 void result_remove_edge_footprint(struct result* result, struct ir* ir);
 void result_print(struct result* result);
 
@@ -52,6 +64,7 @@ void result_print(struct result* result);
 	free((result)->in_mapping_buffer); 								\
 	free((result)->ou_mapping_buffer); 								\
 	free((result)->intern_node_buffer); 							\
+	free((result)->edge_buffer); 									\
 	free((result)->symbol_node_buffer);
 
 enum parameterSimilarity{

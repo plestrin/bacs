@@ -31,7 +31,7 @@ int main(void){
 		printf("Plaintext: \"%s\"\n", message);
 		printf("Key:       \"%s\"\n", key);
 		printf("MD5 HMAC:  ");
-		printBuffer_raw(stdout, hash_mac, MD5_HASH_NB_BYTE);
+		fprintBuffer_raw(stdout, hash_mac, MD5_HASH_NB_BYTE);
 		printf("\n");
 	}
 

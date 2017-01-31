@@ -150,21 +150,27 @@ int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffe
 		struct dijkstraInternal* 	next;
 	};
 
-	struct dijkstraInternal* 	internals;
-	struct dijkstraInternal* 	curr_orbital = NULL;
+	struct dijkstraInternal* 	internals 		= NULL;
+	struct dijkstraInternal* 	curr_orbital 	= NULL;
 	struct dijkstraInternal* 	next_orbital;
 	uint32_t 					i;
 	struct node* 				node_cursor;
 	struct edge*				edge_cursor;
 	struct dijkstraInternal* 	internal_cursor;
+	void** 						ptr_save_buffer = NULL;
 
-	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
-	if (internals == NULL){
+	if ((internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
-		return -1;
+		goto exit;
+	}
+
+	if ((ptr_save_buffer = (void**)malloc(sizeof(void*) * graph->nb_node)) == NULL){
+		log_err("unable to allocate memory");
+		goto exit;
 	}
 
 	for (node_cursor = graph_get_head_node(graph), i = 0; i < graph->nb_node && node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+		ptr_save_buffer[i] = node_cursor->ptr;
 		node_cursor->ptr = internals + i;
 
 		if (node_cursor != node){
@@ -183,8 +189,7 @@ int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffe
 
 	if (curr_orbital == NULL){
 		log_err("unable to find the given node");
-		free(internals);
-		return -1;
+		goto exit;
 	}
 
 	for(i = 0; curr_orbital != NULL; curr_orbital = next_orbital, i++){
@@ -218,8 +223,19 @@ int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffe
 		dst_buffer[i] = internal_cursor->dst;
 	}
 
+	exit:
 
-	free(internals);
+	if (ptr_save_buffer != NULL){
+		for (node_cursor = graph_get_head_node(graph), i = 0; i < graph->nb_node && node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+			node_cursor->ptr = ptr_save_buffer[i];
+		}
+
+		free(ptr_save_buffer);
+	}
+
+	if (internals != NULL){
+		free(internals);
+	}
 
 	return 0;
 }

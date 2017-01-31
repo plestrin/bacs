@@ -17,6 +17,7 @@ misc/test/test_arrayMinCoverage
 misc/test/test_dagPartialOrder
 misc/test/test_dijkstra
 misc/test/test_graph
+misc/test/test_ugraph
 misc/test/test_graphReader
 misc/test/test_inputParser
 misc/test/test_mapFile

@@ -28,11 +28,11 @@ int main(void){
 	twofish_decrypt((uint32_t*)ct, &twofish_key128, (uint32_t*)vt);
 
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
+	fprintBuffer_raw(stdout, (char*)pt, 16);
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key128, 16);
+	fprintBuffer_raw(stdout, (char*)key128, 16);
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 128:   OK\n");
@@ -47,9 +47,9 @@ int main(void){
 	twofish_decrypt((uint32_t*)ct, &twofish_key192, (uint32_t*)vt);
 
 	printf("Key 192:        ");
-	printBuffer_raw(stdout, (char*)key192, 24);
+	fprintBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 192:   OK\n");
@@ -64,9 +64,9 @@ int main(void){
 	twofish_decrypt((uint32_t*)ct, &twofish_key256, (uint32_t*)vt);
 
 	printf("Key 256:        ");
-	printBuffer_raw(stdout, (char*)key256, 32);
+	fprintBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (!memcmp(vt, pt, 16)){
 		printf("\nRecovery 256:   OK\n");

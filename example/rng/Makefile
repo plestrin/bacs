@@ -3,9 +3,11 @@ CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99
 LDFLAGS	:= -lcrypto
 PROG 	:= build/rng
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tool/pin-3.0-76991-gcc-linux/pin
+PIN 	:= /home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../staticSignature/signature 
+
+all: build $(PROG) trace search
 
 build:
 	mkdir -p build

@@ -10,16 +10,16 @@
 
 static void print_raw_buffer(Botan::byte* buffer, int buffer_length);
 
-static void botan_patch();
-static void botan_rc4();
+static void botan_patch(void);
+static void botan_rc4(void);
 
-int main() {
+int main(void) {
 	botan_patch();
 	botan_rc4();
-	return 0;
+	return EXIT_SUCCESS;
 }
 
-static void botan_patch(){
+static void botan_patch(void){
 	void* 	lib_handle;
 	char* 	func_addr;
 	int32_t page_size;
@@ -56,39 +56,22 @@ static void botan_patch(){
 	}
 }
 
-static void botan_rc4() {
-	unsigned char 	plaintext[] = "Hello World!";
+static void botan_rc4(void) {
+	unsigned char 	pt[] = "Hello World!";
 	unsigned char 	key[] = "Key";
-	unsigned char* 	ciphertext;
-	unsigned char* 	deciphertext;
-	Botan::ARC4 	rc4_enc;
-	Botan::ARC4 	rc4_dec;
-	unsigned int 	plaintext_length = sizeof(plaintext) - 1;
+	unsigned char 	ct[sizeof(pt)];
+	Botan::ARC4 	rc4;
+	unsigned int 	plaintext_length = sizeof(pt) - 1;
 
-	ciphertext = (unsigned char*)malloc(plaintext_length);
-	deciphertext = (unsigned char*)malloc(plaintext_length);
+	std::cout << "Plaintext:  \"" << pt << "\"" << std::endl;
+	std::cout << "Key:        \"" << key << "\"" << std::endl;
 
-	if (ciphertext != NULL && deciphertext != NULL){
-		std::cout << "Plaintext:  \"" << plaintext << "\"" << std::endl;
-		std::cout << "Key:        \"" << key << "\"" << std::endl;
+	rc4.set_key((Botan::byte*)key, sizeof(key) - 1);
+	rc4.cipher((Botan::byte*)pt, (Botan::byte*)ct, plaintext_length);
 
-		rc4_enc.set_key((Botan::byte*)key, sizeof(key) - 1);
-		rc4_enc.cipher((Botan::byte*)plaintext, (Botan::byte*)ciphertext, plaintext_length);
-
-		rc4_dec.set_key((Botan::byte*)key, sizeof(key) - 1);
-		rc4_dec.cipher((Botan::byte*)ciphertext, (Botan::byte*)deciphertext, plaintext_length);
-
-		if (!memcmp(plaintext, deciphertext, plaintext_length)){
-			std::cout << "Ciphertext: ";
-			print_raw_buffer((Botan::byte*)ciphertext, plaintext_length);
-			std::cout << std::endl << "Check:      OK" << std::endl;
-		}
-		else{
-			std::cout << "Ciphertext: ";
-			print_raw_buffer((Botan::byte*)ciphertext, plaintext_length);
-			std::cout << std::endl << "Check:      FAIL" << std::endl;
-		}
-	}
+	std::cout << "Ciphertext: ";
+	print_raw_buffer((Botan::byte*)ct, plaintext_length);
+	std::cout << std::endl;
 }
 
 static void print_raw_buffer(Botan::byte* buffer, int buffer_length){

@@ -7,46 +7,23 @@
 
 void print_raw_buffer(byte* buffer, int buffer_length);
 
-int main() {
-	byte 					plaintext[] = "Hello World!";
+int main(void){
+	byte 					pt[] = "Hello World!";
 	byte					key[] = "Key";
-	byte* 					ciphertext;
-	byte* 					deciphertext;
-	CryptoPP::Weak::ARC4* 	rc4_enc;
-	CryptoPP::Weak::ARC4* 	rc4_dec;
+	byte 					ct[sizeof(pt)];
+	CryptoPP::Weak::ARC4* 	rc4;
 
-	ciphertext = (byte*)malloc(strlen((char*)plaintext));
-	deciphertext = (byte*)malloc(strlen((char*)plaintext));
+	std::cout << "Plaintext:  \"" << pt << "\"" << std::endl;
+	std::cout << "Key:        \"" << key << "\"" << std::endl;
 
-	if (ciphertext != NULL && deciphertext != NULL){
-		std::cout << "Plaintext:  \"" << plaintext << "\"" << std::endl;
-		std::cout << "Key:        \"" << key << "\"" << std::endl;
+	rc4 = new CryptoPP::Weak::ARC4(key, strlen((char*)key));
+	rc4->ProcessData(ct, pt, strlen((char*)pt));
 
-		rc4_enc = new CryptoPP::Weak::ARC4(key, strlen((char*)key));
-		rc4_enc->ProcessData(ciphertext, plaintext, strlen((char*)plaintext));
+	std::cout << "Ciphertext: ";
+	print_raw_buffer(ct, strlen((char*)pt));
+	std::cout << std::endl;
 
-		std::cout << "Ciphertext: ";
-		print_raw_buffer(ciphertext, strlen((char*)plaintext));
-		std::cout << std::endl;
-
-		rc4_dec = new CryptoPP::Weak::ARC4(key, strlen((char*)key));
-		rc4_dec->ProcessData(deciphertext, ciphertext, strlen((char*)plaintext));
-
-		if (memcmp(plaintext, deciphertext, strlen((char*)plaintext)) == 0){
-			std::cout << "Check:      OK" << std::endl;
-		}
-		else{
-			std::cout << "Check:      FAIL" << std::endl;
-		}
-
-		free(ciphertext);
-		free(deciphertext);
-	}
-	else{
-		std:: cout << "ERROR: in " <<__func__ << ", unable to allocate memory" << std::endl;
-	}
-
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 void print_raw_buffer(byte* buffer, int buffer_length){

@@ -8,9 +8,10 @@
 #include "ir.h"
 #include "codeMap.h"
 #include "array.h"
-#include "base.h"
 #include "memTrace.h"
 #include "synthesisGraph.h"
+#include "ugraph.h"
+#include "base.h"
 
 #define TRACE_TAG_LENGTH 32
 #define TRACE_PATH_MAX_LENGTH 	256
@@ -110,8 +111,8 @@ static inline void trace_print_aliasing_ir(struct trace* trace){
 
 void trace_search_buffer_signature(struct trace* trace);
 int32_t trace_register_code_signature_result(void* signature, struct array* assignement_array, void* arg);
-void trace_push_code_signature_result(int32_t idx, void* arg);
-void trace_pop_code_signature_result(int32_t idx, void* arg);
+void trace_push_code_signature_result(int32_t idx, struct ugraph* graph_layer, void* arg);
+void trace_pop_code_signature_result(int32_t idx, struct ugraph* graph_layer, void* arg);
 
 void trace_create_synthesis(struct trace* trace);
 

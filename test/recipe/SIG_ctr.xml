@@ -23,7 +23,7 @@
 		<result>
 			<algo name="xtea_enc" number="440"/>
 			<algo name="xtea_enc_32_v2" number="8"/>
-			<algo name="ctr_v1" number="13"/>
+			<algo name="ctr_v1" number="13"/> <!-- 13 = 7 + 6 (first 32 bits linked by add to first block ; second 32 bits chained by adc ) -->
 		</result>
 	</recipe>
 

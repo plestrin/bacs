@@ -17,9 +17,9 @@ int main(){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, sizeof(iv));
+	fprintBuffer_raw(stdout, (char*)iv, sizeof(iv));
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	if (AES_set_encrypt_key(key, 128, &ekey)){
 		printf("ERROR: in %s, unable to setup AES encryption key\n", __func__);
@@ -33,7 +33,7 @@ int main(){
 	AES_cfb128_encrypt(ciphertext, deciphertext, sizeof(ciphertext), &ekey, iv_tmp, &num, AES_DECRYPT);
 
 	printf("\nCiphertext CFB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

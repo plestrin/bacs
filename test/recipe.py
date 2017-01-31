@@ -133,7 +133,7 @@ class recipe(object):
 		self.log.write(output_val[1])
 
 		if process.returncode == 0:
-			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(time_stop - time_start) + "s\n")
+			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(round(time_stop - time_start, 2)) + " s\n")
 
 			regex = re.compile("[a-zA-Z0-9_]+ +\| [0-9]+ +\| [0-9]+\.[0-9]+ *")
 			detected_signature = {}

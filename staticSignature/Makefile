@@ -14,11 +14,11 @@ else
 PROG_NAME 		:= $(BUILD_DIR)../$(PROG_NAME)
 endif
 ifeq ($(IOREL),)
-IOREL 			:= 1
+IOREL 			:= 0
 endif
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/plt/Documents/tool/xed-2016-02-02-lin-ia32/
+XED_DIR 		:= /home/plt/Documents/tools/xed-2016-02-02-lin-ia32/
 INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
 INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
 
@@ -58,6 +58,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)inputParser.o			\
 					$(BUILD_DIR)mapFile.o				\
 					$(BUILD_DIR)graph.o 				\
+					$(BUILD_DIR)ugraph.o 				\
 					$(BUILD_DIR)graphPrintDot.o 		\
 					$(BUILD_DIR)subGraphIsomorphism.o 	\
 					$(BUILD_DIR)graphReader.o 			\

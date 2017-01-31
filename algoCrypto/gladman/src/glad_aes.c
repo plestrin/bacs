@@ -114,11 +114,11 @@ int main(void){
 	}
 	
 	printf("\nPlaintext:      ");
-	printBuffer_raw(stdout, (char*)plaintext, 16);
+	fprintBuffer_raw(stdout, (char*)plaintext, 16);
 
 	/* 128 bits AES */
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key_128, 16);
+	fprintBuffer_raw(stdout, (char*)key_128, 16);
 
 	if (aes_encrypt_key128(key_128, &enc_ctx_128) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_encrypt_key128 failed\n", __func__);
@@ -131,7 +131,7 @@ int main(void){
 	}
 
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ciphertext, 16);
+	fprintBuffer_raw(stdout, (char*)ciphertext, 16);
 
 	if (aes_decrypt_key128(key_128, &dec_ctx_128) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_decrypt_key128 failed\n", __func__);
@@ -152,7 +152,7 @@ int main(void){
 
 	/* 192 bits AES */
 	printf("\nKey 192:        ");
-	printBuffer_raw(stdout, (char*)key_192, 24);
+	fprintBuffer_raw(stdout, (char*)key_192, 24);
 
 	if (aes_encrypt_key192(key_192, &enc_ctx_192) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_encrypt_key192 failed\n", __func__);
@@ -165,7 +165,7 @@ int main(void){
 	}
 
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ciphertext, 16);
+	fprintBuffer_raw(stdout, (char*)ciphertext, 16);
 
  	if (aes_decrypt_key192(key_192, &dec_ctx_192) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_decrypt_key192 failed\n", __func__);
@@ -186,7 +186,7 @@ int main(void){
 
 	/* 256 bits AES */
 	printf("\nKey 256:        ");
-	printBuffer_raw(stdout, (char*)key_256, 32);
+	fprintBuffer_raw(stdout, (char*)key_256, 32);
 
 	if (aes_encrypt_key256(key_256, &enc_ctx_256) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_encrypt_key256 failed\n", __func__);
@@ -199,7 +199,7 @@ int main(void){
 	}
 
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ciphertext, 16);
+	fprintBuffer_raw(stdout, (char*)ciphertext, 16);
 
 	if (aes_decrypt_key256(key_256, &dec_ctx_256) != EXIT_SUCCESS){
 		printf("ERROR: in %s, aes_decrypt_key256 failed\n", __func__);

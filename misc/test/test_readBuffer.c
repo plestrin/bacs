@@ -32,11 +32,10 @@ int main(){
 		log_err("readBuffer return NULL");
 	}
 	else{
-		printBuffer_raw(stdout, buffer, buffer_size);
+		fprintBuffer_raw(stdout, buffer, buffer_size);
 		printf("\n");
 		free(buffer);
 	}
-
 
 	return 0;
 }

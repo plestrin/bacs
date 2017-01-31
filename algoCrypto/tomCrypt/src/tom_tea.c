@@ -5,7 +5,7 @@
 
 #include "printBuffer.h"
 
-int main(){
+int main(void){
 	unsigned char 	pt[8]		= {0x45, 0xb7, 0x28, 0xba, 0xd7, 0x8f, 0x1a, 0x1f};
 	unsigned char 	ct[8];
 	unsigned char 	vt[8];
@@ -13,9 +13,9 @@ int main(){
 	symmetric_key 	skey;
 
 	printf("Plaintext:       ");
-	printBuffer_raw(stdout, (char*)pt, 8);
+	fprintBuffer_raw(stdout, (char*)pt, 8);
 	printf("\nKey:             ");
-	printBuffer_raw(stdout, (char*)key, 16);
+	fprintBuffer_raw(stdout, (char*)key, 16);
 
 	if (xtea_setup(key, 16, 32, &skey) != CRYPT_OK){
 		printf("ERROR: unable to setup xtea key\n");
@@ -33,7 +33,7 @@ int main(){
 	}
 
 	printf("\nCiphertext XTEA: ");
-	printBuffer_raw(stdout, (char*)ct, 8);
+	fprintBuffer_raw(stdout, (char*)ct, 8);
 
 	if (memcmp(pt, vt, 8) == 0){
 		printf("\nRecovery:        OK\n");

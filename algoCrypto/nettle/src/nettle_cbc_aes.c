@@ -20,9 +20,9 @@ int main(){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, sizeof(iv));
+	fprintBuffer_raw(stdout, (char*)iv, sizeof(iv));
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	CBC_SET_IV(&ctx, iv);
 	CBC_SET_ENC_KEY(&ctx, key);
@@ -33,7 +33,7 @@ int main(){
 	CBC_DECRYPT(&ctx, aes_decrypt, sizeof(ciphertext), deciphertext, ciphertext);
 
 	printf("\nCiphertext CBC: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

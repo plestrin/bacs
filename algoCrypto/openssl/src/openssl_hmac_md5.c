@@ -20,7 +20,7 @@ int main(){
 	printf("Plaintext: \"%s\"\n", message);
 	printf("Key:       \"%s\"\n", key);
 	printf("MD5 HMAC:  ");
-	printBuffer_raw(stdout, hash_mac, hash_mac_length);
+	fprintBuffer_raw(stdout, hash_mac, hash_mac_length);
 	printf("\n");
 
 	return EXIT_SUCCESS;

@@ -20,7 +20,7 @@ int main(){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("Key:            ");
-	printBuffer_raw(stdout, (char*)key, sizeof(key));
+	fprintBuffer_raw(stdout, (char*)key, sizeof(key));
 
 	/* ENCRYPT */
 	if ((err = ecb_start(find_cipher("xtea"), key, sizeof(key), 0, &ecb)) != CRYPT_OK){
@@ -55,7 +55,7 @@ int main(){
 	}
 
 	printf("\nCiphertext ECB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
 		printf("\nRecovery:       OK\n");

@@ -29,11 +29,11 @@ int main(){
 	}
 
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)pt, 16);
+	fprintBuffer_raw(stdout, (char*)pt, 16);
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key128, 16);
+	fprintBuffer_raw(stdout, (char*)key128, 16);
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (aes_ecb_decrypt(ct, vt, &skey128) != CRYPT_OK){
 		printf("ERROR: in %s, unable to decrypt AES 128\n", __func__);
@@ -60,9 +60,9 @@ int main(){
 	}
 
 	printf("Key 192:        ");
-	printBuffer_raw(stdout, (char*)key192, 24);
+	fprintBuffer_raw(stdout, (char*)key192, 24);
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (aes_ecb_decrypt(ct, vt, &skey192) != CRYPT_OK){
 		printf("ERROR: in %s, unable to decrypt AES 192\n", __func__);
@@ -89,9 +89,9 @@ int main(){
 	}
 
 	printf("Key 256:        ");
-	printBuffer_raw(stdout, (char*)key256, 32);
+	fprintBuffer_raw(stdout, (char*)key256, 32);
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ct, 16);
+	fprintBuffer_raw(stdout, (char*)ct, 16);
 
 	if (aes_ecb_decrypt(ct, vt, &skey256) != CRYPT_OK){
 		printf("ERROR: in %s, unable to decrypt AES 256\n", __func__);

@@ -19,11 +19,11 @@ int main(void){
 	des_decrypt((uint32_t*)ct, (uint32_t*)round_key, (uint32_t*)vt);
 
 	printf("Plaintext:  ");
-	printBuffer_raw(stdout, (char*)pt, DES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)pt, DES_BLOCK_NB_BYTE);
 	printf("\nKey:        ");
-	printBuffer_raw(stdout, (char*)key, DES_KEY_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)key, DES_KEY_NB_BYTE);
 	printf("\nCiphertext: ");
-	printBuffer_raw(stdout, (char*)ct, DES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)ct, DES_BLOCK_NB_BYTE);
 
 	if (!memcmp(vt, pt, 8)){
 		printf("\nRecovery:   OK\n");

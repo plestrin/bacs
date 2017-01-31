@@ -27,17 +27,17 @@ int main(void){
 
 
 	printf("Plaintext:      ");
-	printBuffer_raw(stdout, (char*)plaintext, AES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)plaintext, AES_BLOCK_NB_BYTE);
 
 	/* 128 bits AES */
 	printf("\nKey 128:        ");
-	printBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)key_128, AES_128_NB_BYTE_KEY);
 
 	aes128_key_expand_encrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
 	aes128_encrypt((uint32_t*)plaintext, (uint32_t*)round_key_128, (uint32_t*)ciphertext);
 
 	printf("\nCiphertext 128: ");
-	printBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
 
  	aes128_key_expand_decrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
 	aes128_decrypt((uint32_t*)ciphertext, (uint32_t*)round_key_128, (uint32_t*)deciphertext);
@@ -51,13 +51,13 @@ int main(void){
 
 	/* 192 bits AES */
 	printf("\nKey 192:        ");
-	printBuffer_raw(stdout, (char*)key_192, AES_192_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)key_192, AES_192_NB_BYTE_KEY);
 
 	aes192_key_expand_encrypt((uint32_t*)key_192, (uint32_t*)round_key_192);
 	aes192_encrypt((uint32_t*)plaintext, (uint32_t*)round_key_192, (uint32_t*)ciphertext);
 
 	printf("\nCiphertext 192: ");
-	printBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
 
  	aes192_key_expand_decrypt((uint32_t*)key_192, (uint32_t*)round_key_192);
 	aes192_decrypt((uint32_t*)ciphertext, (uint32_t*)round_key_192, (uint32_t*)deciphertext);
@@ -71,13 +71,13 @@ int main(void){
 
 	/* 256 bits AES */
 	printf("\nKey 256:        ");
-	printBuffer_raw(stdout, (char*)key_256, AES_256_NB_BYTE_KEY);
+	fprintBuffer_raw(stdout, (char*)key_256, AES_256_NB_BYTE_KEY);
 
 	aes256_key_expand_encrypt((uint32_t*)key_256, (uint32_t*)round_key_256);
 	aes256_encrypt((uint32_t*)plaintext, (uint32_t*)round_key_256, (uint32_t*)ciphertext);
 
 	printf("\nCiphertext 256: ");
-	printBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)ciphertext, AES_BLOCK_NB_BYTE);
 
 	aes256_key_expand_decrypt((uint32_t*)key_256, (uint32_t*)round_key_256);
 	aes256_decrypt((uint32_t*)ciphertext, (uint32_t*)round_key_256, (uint32_t*)deciphertext);

@@ -19,14 +19,14 @@ int main(void){
 
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
-	printBuffer_raw(stdout, (char*)iv, TEA_BLOCK_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)iv, TEA_BLOCK_NB_BYTE);
 	printf("\nKey:            ");
-	printBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
+	fprintBuffer_raw(stdout, (char*)key, TEA_KEY_NB_BYTE);
 
 	mode_enc_ofb((blockCipher)xtea_encrypt, TEA_BLOCK_NB_BYTE, (uint8_t*)plaintext, (uint8_t*)ciphertext, sizeof(plaintext), (void*)key, iv);
 
 	printf("\nCiphertext OFB: ");
-	printBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
+	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
  	mode_dec_ofb((blockCipher)xtea_encrypt, TEA_BLOCK_NB_BYTE, (uint8_t*)ciphertext, (uint8_t*)deciphertext, sizeof(plaintext), (void*)key, iv);
 

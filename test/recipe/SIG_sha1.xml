@@ -94,7 +94,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO0" active="no">
+	<recipe name="TEST_SHA1_CO0" active="no"> <!-- does not work because of rotations: they are implemented using SHR, SHL and OR -->
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
 		<search>
@@ -189,7 +189,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_WD" active="no">
+	<recipe name="TEST_SHA1_WD" active="no"> <!-- does not work because of rotations: they are implemented using SHR, SHL and OR -->
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
@@ -227,45 +227,6 @@
 		</result>
 	</recipe>
 
-	<recipe name="TOM_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
-		<search>
-			<arg value="load trace traceTOM_SHA1"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1_process"/>
-			<arg value="export callGraph sha1_done"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="sha1_ms" number="2"/>
-		</result>
-	</recipe>
-
-	<recipe name="PP_SHA1" active="no">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
-		<search>
-			<arg value="load trace tracePP_SHA1"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN8CryptoPP4SHA19TransformEPjPKj"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<!-- The message expand is not separated from the compression phase -->
-		</result>
-	</recipe>
-
 	<recipe name="BOT_SHA1" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
 		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_sha1"/>
@@ -282,6 +243,44 @@
 		</search>
 		<result>
 			<algo name="sha1_ms" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
+		<search>
+			<arg value="load trace tracePP_SHA1"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP4SHA19TransformEPjPKj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_ms" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_sha1"/>
+		<search>
+			<arg value="load trace traceNET_SHA1"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_ms" number="2"/>
 		</result>
 	</recipe>
 
@@ -307,15 +306,16 @@
 		</result>
 	</recipe>
 
-	<recipe name="NET_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_sha1"/>
+	<recipe name="TOM_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
 		<search>
-			<arg value="load trace traceNET_SHA1"/>
+			<arg value="load trace traceTOM_SHA1"/>
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _nettle_sha1_compress"/>
+			<arg value="export callGraph sha1_process"/>
+			<arg value="export callGraph sha1_done"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

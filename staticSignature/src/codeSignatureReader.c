@@ -249,6 +249,10 @@ static void codeSignatureReader_handle_edge_label(const char* str, size_t str_le
 		code_signature_edge->type = IR_DEPENDENCE_TYPE_ADDRESS;
 		return;
 	}
+	if (str_len == 1 && str[0] == '-'){
+		code_signature_edge->type = IR_DEPENDENCE_TYPE_SUBSTITUTE;
+		return;
+	}
 
 	if (str_len >= 4 && (str[0] == 'I' || str[0] == 'O')){
 		uint32_t nb_digit1;
