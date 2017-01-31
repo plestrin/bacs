@@ -23,7 +23,7 @@ int main(void){
 
 	printf("Ciphertext: ");
 	fprintBuffer_raw(stdout, ct, strlen(pt));
-	puts("\nCheck:      OK");
+	putchar('\n');
 
 	return EXIT_SUCCESS;
 }
