@@ -14,7 +14,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -34,7 +34,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -54,7 +54,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -74,7 +74,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -94,7 +94,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -114,7 +114,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -134,7 +134,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -154,7 +154,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -174,7 +174,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -194,7 +194,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -214,7 +214,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -234,7 +234,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v1" number="1"/> <!-- only one of two fragments is processed -->
+			<algo name="rc4_prga_v1" number="1"/>
 			<algo name="rc4_prga_v2" number="11"/>
 		</result>
 	</recipe>
@@ -274,7 +274,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v3" number="24"/>
+			<algo name="rc4_prga_v3" number="12"/>
 		</result>
 	</recipe>
 
@@ -293,7 +293,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v3" number="12"/> <!-- we only export the encryption rtn -->
+			<algo name="rc4_prga_v3" number="12"/>
 		</result>
 	</recipe>
 
@@ -312,7 +312,7 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="rc4_prga_v4" number="24"/>
+			<algo name="rc4_prga_v4" number="12"/>
 		</result>
 	</recipe>
 

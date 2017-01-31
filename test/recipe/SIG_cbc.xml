@@ -944,7 +944,7 @@
 			<algo name="enc_cbc_cfb" number="3"/>
 			<algo name="dec_cbc_cfb_v1" number="3"/>
 			<algo name="aes128_v2" number="192"/>
-			<algo name="aes_last_v4" number="96"/>
+			<algo name="aes_last_v5" number="96"/>
 			<algo name="aes_r9" number="384"/>
 			<algo name="aes_t4" number="1824"/>
 		</result>
