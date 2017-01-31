@@ -16,7 +16,7 @@ int main(){
 	uint8_t ciphertext[sizeof(plaintext)];
 	uint8_t deciphertext[sizeof(plaintext)];
 	struct CTR_CTX(struct aes_ctx, AES_BLOCK_SIZE) ctx;
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
 	printBuffer_raw(stdout, (char*)iv, sizeof(iv));

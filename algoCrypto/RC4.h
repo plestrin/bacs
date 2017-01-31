@@ -6,7 +6,7 @@
 #define RC4_KEY_MAX_NB_BYTE 	256
 #define RC4_KEY_MIN_NB_BYTE 	1
 
-/* 
+/*
  * Operands description:
  * - input			: input message. No constrain on the length
  * - input_length 	: size of the input

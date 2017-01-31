@@ -30,7 +30,7 @@ struct twofishKey{
 	uint32_t 	sbox[4][256];
 };
 
-/* 
+/*
  * Key schedule
  * - key			: 128, 192 or 256 bits
  * - twofish_key 	: pointer to the structure containing the round keys and the SBOX derived from the key
@@ -40,7 +40,7 @@ void twofish128_key_init(const uint32_t* key, struct twofishKey* twofish_key);
 void twofish192_key_init(const uint32_t* key, struct twofishKey* twofish_key);
 void twofish256_key_init(const uint32_t* key, struct twofishKey* twofish_key);
 
-/* 
+/*
  * Encrypt / decrypt one block of data (128 bits)
  * - input			: 128 bits (plaintext for encryption and ciphertext for decryption)
  * - twofish_key 	: pointer to the structure containing the round keys and the SBOX derived from the key

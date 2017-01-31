@@ -18,7 +18,7 @@ int main(){
 		printf("Error: in %s, unable to register cipher\n", __func__);
 		return 0;
 	}
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
 	printBuffer_raw(stdout, (char*)iv, sizeof(iv));

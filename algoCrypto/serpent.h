@@ -17,7 +17,7 @@
 
 #define SERPENT_NB_ROUND 			32
 
-/* 
+/*
  * Key schedule
  * - key			: any size up to 256 bits. The buffer must be at least 256 bits large
  * - key_length 	: the key length in bit
@@ -26,7 +26,7 @@
 
 void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key);
 
-/* 
+/*
  * Encrypt / decrypt one block of data (128 bits)
  * - input			: 128 bits (plaintext for encryption and ciphertext for decryption)
  * - round_key 		: 132 words

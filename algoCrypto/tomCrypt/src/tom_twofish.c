@@ -16,7 +16,7 @@ int main(){
 	symmetric_key 	skey128;
 	symmetric_key 	skey192;
 	symmetric_key 	skey256;
-	
+
 
 	/* TWOFISH 128 */
 	if (twofish_setup(key128, 16, 0, &skey128) != CRYPT_OK){

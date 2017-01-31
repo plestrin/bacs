@@ -259,7 +259,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 		log_err("unable to create labelFastAccess");
 		goto error;
 	}
-		
+
 	handle->graph 			= graph;
 	handle->nb_label 		= nb_label;
 	handle->edge_get_label 	= edge_get_label;
@@ -302,13 +302,13 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 	if (sub_graph_handle->graph->nb_node == 0){
 		return NULL;
 	}
-	
+
 	assignment_array = array_create(sizeof(struct node*) * sub_graph_handle->graph->nb_node);
 	if (assignment_array == NULL){
 		log_err("unable to create array");
 		return NULL;
 	}
-	
+
 	possible_assignment = possibleAssignment_create_init_first(graph_handle, sub_graph_handle, &error);
 	if (possible_assignment == NULL){
 		if (error){
@@ -316,7 +316,7 @@ struct array* graphIso_search(struct graphIsoHandle* graph_handle, struct subGra
 		}
 		return assignment_array;
 	}
-				
+
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	for (i = 0; i < sub_graph_handle->graph->nb_node; i++){
 		sub_graph_handle->node_order[2*i] = i;
@@ -455,7 +455,7 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 		log_err("unable to allocate memory");
 		return NULL;
 	}
-		
+
 	#if SUBGRAPHISOMORPHISM_OPTIM_MIN_DST == 1
 	if ((handle->dst = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_node * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
@@ -473,7 +473,7 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 		log_err("unable to create labelTab");
 		goto error;
 	}
-		
+
 	#if SUBGRAPHISOMORPHISM_OPTIM_SORT == 1
 	if ((handle->node_order = (uint32_t*)malloc(2 * sizeof(uint32_t) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
@@ -487,7 +487,7 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 	}
 
 	handle->graph = graph;
-	
+
 	return handle;
 
 	error:
@@ -886,7 +886,7 @@ static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, st
 
 	while(restart){
 		restart = 0;
-		
+
 		for (i = 0; i < sub_graph_handle->graph->nb_edge; i++){
 			src = sub_graph_handle->edge_tab[i].src;
 			dst = sub_graph_handle->edge_tab[i].dst;
@@ -947,7 +947,7 @@ static int32_t possibleAssignment_update(struct graphIsoHandle* graph_handle, st
 						possible_assignment->headers[dst].nb_possible_assignment --;
 						restart = 1;
 					}
-					
+
 					j += match;
 				}
 

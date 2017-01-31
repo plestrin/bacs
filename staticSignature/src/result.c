@@ -485,7 +485,7 @@ static struct symbolMapping* symbolMapping_create(uint32_t nb_para_in, uint32_t 
 	size = 2 * sizeof(struct symbolMapping) + (nb_para_in + nb_para_ou) * sizeof(struct parameterMapping);
 
 	mapping[0].nb_parameter 	= nb_para_in;
-	mapping[0].mapping_buffer 	= (struct parameterMapping*)(mapping + 2); 
+	mapping[0].mapping_buffer 	= (struct parameterMapping*)(mapping + 2);
 
 	for (i = 0; i < nb_para_in; i++){
 		mapping[0].mapping_buffer[i].nb_fragment 	= nb_frag_in[i];
@@ -494,7 +494,7 @@ static struct symbolMapping* symbolMapping_create(uint32_t nb_para_in, uint32_t 
 	}
 
 	mapping[1].nb_parameter 	= nb_para_ou;
-	mapping[1].mapping_buffer 	= mapping[0].mapping_buffer + nb_para_in; 
+	mapping[1].mapping_buffer 	= mapping[0].mapping_buffer + nb_para_in;
 
 	for (i = 0; i < nb_para_ou; i++){
 		mapping[1].mapping_buffer[i].nb_fragment 	= nb_frag_ou[i];

@@ -9,7 +9,7 @@ int main(){
 	char 			message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	uint32_t 		hash[4];
 	struct md5_ctx 	ctx;
-	
+
 	md5_init(&ctx);
 	md5_update(&ctx, strlen(message), (uint8_t*)message);
 	md5_digest(&ctx, sizeof(hash), (uint8_t*)hash);

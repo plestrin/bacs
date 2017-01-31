@@ -16,7 +16,7 @@ int main(void){
 	unsigned char 	iv[TEA_BLOCK_NB_BYTE] = {0x01, 0xff, 0x83, 0xf2, 0xf9, 0x98, 0xba, 0xa4};
 	unsigned char 	ciphertext[sizeof(plaintext)];
 	unsigned char 	deciphertext[sizeof(plaintext)];
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
 	printBuffer_raw(stdout, (char*)iv, TEA_BLOCK_NB_BYTE);

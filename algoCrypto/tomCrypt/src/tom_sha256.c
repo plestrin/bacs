@@ -9,7 +9,7 @@ int main(){
 	char 		message[] = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
 	uint32_t 	hash[8];
 	hash_state 	md;
-	
+
 	sha256_init(&md);
 	sha256_process(&md, (unsigned char*)message, strlen(message));
 	sha256_done(&md, (unsigned char*)hash);

@@ -12,7 +12,7 @@ int main(){
 	char 		input[BUFFER_SIZE];
 	char* 		buffer;
 	uint32_t 	input_size;
-	size_t 		buffer_size;	
+	size_t 		buffer_size;
 
 	printf("Enter some hexa string: ");
 	fflush(stdout);
@@ -27,7 +27,7 @@ int main(){
 
 	buffer_size = READBUFFER_RAW_GET_LENGTH(input_size);
 	buffer = readBuffer_raw(input, input_size, NULL, &buffer_size);
-	
+
 	if (buffer == NULL){
 		log_err("readBuffer return NULL");
 	}

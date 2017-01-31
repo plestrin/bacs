@@ -9,7 +9,7 @@ int main(){
 	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	uint32_t 	hash[4];
 	hash_state 	md;
-	
+
 	md5_init(&md);
 	md5_process(&md, (unsigned char*)message, strlen(message));
 	md5_done(&md, (unsigned char*)hash);

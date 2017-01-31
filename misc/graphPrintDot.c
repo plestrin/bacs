@@ -29,7 +29,7 @@ int32_t graphPrintDot_print(struct graph* graph, const char* name, void* arg){
 	FILE* 			file;
 	struct node* 	node;
 	struct edge* 	edge;
-	
+
 	if (graph != NULL){
 		if (name == NULL){
 			#ifdef VERBOSE
@@ -45,7 +45,7 @@ int32_t graphPrintDot_print(struct graph* graph, const char* name, void* arg){
 			fprintf(file, "digraph G {\n");
 
 			graphPrintDot_print_prologue(graph, file, arg)
-			
+
 			for(node = graph_get_head_node(graph); node != NULL; node = node_get_next(node)){
 				fprintf(file, "%u ", (uint32_t)node);
 				graphPrintDot_print_node_data(graph, node, file, arg)

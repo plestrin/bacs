@@ -17,7 +17,7 @@ int main(void){
 	unsigned char 	round_key_128[AES_128_NB_BYTE_ROUND_KEY];
 	unsigned char 	ciphertext[sizeof(plaintext)];
 	unsigned char 	deciphertext[sizeof(plaintext)];
-	
+
 	printf("Plaintext:      \"%s\"\n", plaintext);
 	printf("IV:             ");
 	printBuffer_raw(stdout, (char*)iv, AES_128_NB_BYTE_KEY);

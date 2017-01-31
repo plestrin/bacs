@@ -20,7 +20,7 @@ int main(){
 		printf("Error: in %s, unable to register cipher\n", __func__);
 		return EXIT_FAILURE;
 	}
-	
+
 	printf("Plaintext:      ");
 	printBuffer_raw(stdout, (char*)plaintext, sizeof(plaintext));
 	printf("\nIV:             ");

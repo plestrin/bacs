@@ -531,4 +531,3 @@ uint32_t dijkstraPath_get_nb_dir_change(struct dijkstraPath* path){
 
 	return nb_dir_change;
 }
-
