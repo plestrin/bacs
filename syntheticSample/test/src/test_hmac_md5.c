@@ -21,7 +21,7 @@ int main(void){
 	hash.hash_size 	= MD5_HASH_NB_BYTE;
 	hash.state 		= &md5_state;
 	hash.func_init 	= (void(*)(void*))md5_init;
-	hash.func_feed 	= (void(*)(void*,void*,uint64_t))md5_feed;
+	hash.func_feed 	= (void(*)(void*,const void*,size_t))md5_feed;
 	hash.func_hash 	= (void(*)(void*,void*))md5_hash;
 
 	if (hmac(&hash, (uint8_t*)message, (uint8_t*)hash_mac, strlen(message), (uint8_t*)key, strlen(key))){

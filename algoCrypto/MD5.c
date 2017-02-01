@@ -230,7 +230,7 @@ static void md5_compress(struct md5State* md5_state){
 	md5_state->state[3] += D;
 }
 
-void md5_feed(struct md5State* md5_state, uint32_t* data, uint64_t data_length){
+void md5_feed(struct md5State* md5_state, const uint32_t* data, size_t data_length){
 	md5_state->global_size += data_length * 8;
 
 	while(md5_state->local_size + data_length >= MD5_BLOCK_NB_BYTE){

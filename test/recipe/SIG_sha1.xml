@@ -7,7 +7,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -26,7 +27,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -45,7 +47,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -64,7 +67,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -83,7 +87,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -102,7 +107,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -121,7 +127,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -140,7 +147,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -159,7 +167,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
@@ -178,7 +187,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_feed"/>
+			<arg value="export callGraph sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

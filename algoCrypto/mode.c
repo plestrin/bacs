@@ -176,7 +176,7 @@ void mode_dec_ctr(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 #define IPAD 0x36
 #define OPAD 0x5c
 
-int32_t hmac(struct hash* hash, uint8_t* input, uint8_t* output, uint64_t size, uint8_t* key, size_t key_size){
+int32_t hmac(const struct hash* hash, const uint8_t* input, uint8_t* output, size_t size, const uint8_t* key, size_t key_size){
 	uint8_t* block;
 	uint32_t i;
 

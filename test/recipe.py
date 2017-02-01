@@ -71,7 +71,7 @@ class recipe(object):
 			return_value = subprocess.call(self.build.split(' '), stdout = self.log, stderr = self.log)
 			time_stop  = time.time()
 			if return_value == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(round(time_stop - time_start, 2)) + " s\n")
 			else:
 				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(return_value) + ")\n")
 		else:
@@ -102,7 +102,7 @@ class recipe(object):
 			time_stop = time.time()
 
 			if process.returncode == 0:
-				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(time_stop - time_start) + "s\n")
+				sys.stdout.write("\x1b[32mOK\x1b[0m - "+ str(round(time_stop - time_start, 2)) + " s\n")
 			else:
 				sys.stdout.write("\x1b[31mFAIL\x1b[0m\x1b[0m (return code: " + str(process.returncode) + ")\n")
 		else:

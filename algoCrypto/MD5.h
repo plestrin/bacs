@@ -31,7 +31,7 @@ struct md5State{
 };
 
 void md5_init(struct md5State* md5_state);
-void md5_feed(struct md5State* md5_state, uint32_t* data, uint64_t data_length);
+void md5_feed(struct md5State* md5_state, const uint32_t* data, size_t data_length);
 void md5_hash(struct md5State* md5_state, uint32_t* hash);
 
 #endif

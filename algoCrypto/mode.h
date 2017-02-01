@@ -35,10 +35,10 @@ struct hash{
 	uint32_t 	hash_size;
 	void* 		state;
 	void(*func_init)(void*);
-	void(*func_feed)(void*,void*,uint64_t);
+	void(*func_feed)(void*,const void*,size_t);
 	void(*func_hash)(void*,void*);
 };
 
-int32_t hmac(struct hash* hash, uint8_t* input, uint8_t* output, uint64_t size, uint8_t* key, size_t key_size);
+int32_t hmac(const struct hash* hash, const uint8_t* input, uint8_t* output, size_t size, const uint8_t* key, size_t key_size);
 
 #endif
