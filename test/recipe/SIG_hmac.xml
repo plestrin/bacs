@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_HMAC_MD5_GO0" active="no"> <!-- since the MD5 signature is not correctly detected, we skip this case -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_go0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -35,8 +35,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_go1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -70,8 +70,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_go2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -105,8 +105,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_go3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -141,8 +141,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_gos">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -176,8 +176,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_CO0" active="no"> <!-- since the MD5 signature is not correctly detected, we skip this case -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_co0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -211,8 +211,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_co1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -246,8 +246,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_co2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -281,8 +281,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_co3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -316,8 +316,8 @@
 	</recipe>
 
 	<recipe name="TEST_HMAC_MD5_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_hmac_md5_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_hmac_md5_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_hmac_md5_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_hmac_md5_coz">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -351,8 +351,8 @@
 	</recipe>
 
 	<recipe name="TOM_HMAC_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_hmac_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_hmac_md5">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_hmac_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_hmac_md5">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -390,8 +390,8 @@
 	</recipe>
 
 	<recipe name="OPEN_HMAC_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_hmac_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_hmac_md5">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_hmac_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_hmac_md5">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -426,8 +426,8 @@
 	</recipe>
 
 	<recipe name="NET_HMAC_MD5" active="yes"> <!-- must be investigated -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_hmac_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_hmac_md5">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_hmac_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_hmac_md5">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -464,8 +464,8 @@
 	</recipe>
 
 	<recipe name="PP_HMAC_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_hmac_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_hmac_md5">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_hmac_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_hmac_md5">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -501,8 +501,8 @@
 	</recipe>
 
 	<recipe name="BOT_HMAC_MD5" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_hmac_md5"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_hmac_md5">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_hmac_md5"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_hmac_md5">
 			<arg value="-m"/>
 		</trace>
 		<search>

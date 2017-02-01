@@ -48,64 +48,64 @@ all: 	build build/$(TEA_BOTAN_EXAMPLE_NAME) 	\
 build:
 	mkdir -p build
 
-build/$(TEA_BOTAN_EXAMPLE_NAME): build/botan_tea.o
+build/$(TEA_BOTAN_EXAMPLE_NAME): build/bot_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(ECB_TEA_BOTAN_EXAMPLE_NAME): build/botan_ecb_tea.o
+build/$(ECB_TEA_BOTAN_EXAMPLE_NAME): build/bot_ecb_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CBC_TEA_BOTAN_EXAMPLE_NAME): build/botan_cbc_tea.o
+build/$(CBC_TEA_BOTAN_EXAMPLE_NAME): build/bot_cbc_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(OFB_TEA_BOTAN_EXAMPLE_NAME): build/botan_ofb_tea.o
+build/$(OFB_TEA_BOTAN_EXAMPLE_NAME): build/bot_ofb_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CFB_TEA_BOTAN_EXAMPLE_NAME): build/botan_cfb_tea.o
+build/$(CFB_TEA_BOTAN_EXAMPLE_NAME): build/bot_cfb_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CTR_TEA_BOTAN_EXAMPLE_NAME): build/botan_ctr_tea.o
+build/$(CTR_TEA_BOTAN_EXAMPLE_NAME): build/bot_ctr_tea.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(AES_BOTAN_EXAMPLE_NAME): build/botan_aes.o
+build/$(AES_BOTAN_EXAMPLE_NAME): build/bot_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(ECB_AES_BOTAN_EXAMPLE_NAME): build/botan_ecb_aes.o
+build/$(ECB_AES_BOTAN_EXAMPLE_NAME): build/bot_ecb_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CBC_AES_BOTAN_EXAMPLE_NAME): build/botan_cbc_aes.o
+build/$(CBC_AES_BOTAN_EXAMPLE_NAME): build/bot_cbc_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(OFB_AES_BOTAN_EXAMPLE_NAME): build/botan_ofb_aes.o
+build/$(OFB_AES_BOTAN_EXAMPLE_NAME): build/bot_ofb_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CFB_AES_BOTAN_EXAMPLE_NAME): build/botan_cfb_aes.o
+build/$(CFB_AES_BOTAN_EXAMPLE_NAME): build/bot_cfb_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(CTR_AES_BOTAN_EXAMPLE_NAME): build/botan_ctr_aes.o
+build/$(CTR_AES_BOTAN_EXAMPLE_NAME): build/bot_ctr_aes.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(SERPENT_BOTAN_EXAMPLE_NAME): build/botan_serpent.o
+build/$(SERPENT_BOTAN_EXAMPLE_NAME): build/bot_serpent.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(DES_BOTAN_EXAMPLE_NAME): build/botan_des.o
+build/$(DES_BOTAN_EXAMPLE_NAME): build/bot_des.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(RC4_BOTAN_EXAMPLE_NAME): build/botan_rc4.o
+build/$(RC4_BOTAN_EXAMPLE_NAME): build/bot_rc4.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(TWOFISH_BOTAN_EXAMPLE_NAME): build/botan_twofish.o
+build/$(TWOFISH_BOTAN_EXAMPLE_NAME): build/bot_twofish.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(SHA1_BOTAN_EXAMPLE_NAME): build/botan_sha1.o
+build/$(SHA1_BOTAN_EXAMPLE_NAME): build/bot_sha1.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(HMAC_SHA1_BOTAN_EXAMPLE_NAME): build/botan_hmac_sha1.o
+build/$(HMAC_SHA1_BOTAN_EXAMPLE_NAME): build/bot_hmac_sha1.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(MD5_BOTAN_EXAMPLE_NAME): build/botan_md5.o
+build/$(MD5_BOTAN_EXAMPLE_NAME): build/bot_md5.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-build/$(HMAC_MD5_BOTAN_EXAMPLE_NAME): build/botan_hmac_md5.o
+build/$(HMAC_MD5_BOTAN_EXAMPLE_NAME): build/bot_hmac_md5.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.cpp

@@ -23,25 +23,25 @@ all: build build/$(AES_NETTLE_EXAMPLE_NAME) 	\
 build:
 	mkdir -p build
 
-build/$(AES_NETTLE_EXAMPLE_NAME): build/nettle_aes.o build/printBuffer.o
+build/$(AES_NETTLE_EXAMPLE_NAME): build/net_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(CBC_AES_NETTLE_EXAMPLE_NAME): build/nettle_cbc_aes.o build/printBuffer.o
+build/$(CBC_AES_NETTLE_EXAMPLE_NAME): build/net_cbc_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(CTR_AES_NETTLE_EXAMPLE_NAME): build/nettle_ctr_aes.o build/printBuffer.o
+build/$(CTR_AES_NETTLE_EXAMPLE_NAME): build/net_ctr_aes.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(MD5_NETTLE_EXAMPLE_NAME): build/nettle_md5.o build/printBuffer.o
+build/$(MD5_NETTLE_EXAMPLE_NAME): build/net_md5.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(HMAC_MD5_NETTLE_EXAMPLE_NAME): build/nettle_hmac_md5.o build/printBuffer.o
+build/$(HMAC_MD5_NETTLE_EXAMPLE_NAME): build/net_hmac_md5.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(SHA1_NETTLE_EXAMPLE_NAME): build/nettle_sha1.o build/printBuffer.o
+build/$(SHA1_NETTLE_EXAMPLE_NAME): build/net_sha1.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-build/$(RC4_NETTLE_EXAMPLE_NAME): build/nettle_rc4.o build/printBuffer.o
+build/$(RC4_NETTLE_EXAMPLE_NAME): build/net_rc4.o build/printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 build/%.o: src/%.c
@@ -54,5 +54,3 @@ clean:
 	@ rm -f build/*
 
 .PHONY: all clean
-
-

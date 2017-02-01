@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_AES_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -23,8 +23,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -46,8 +46,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -69,8 +69,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -92,8 +92,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -115,8 +115,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -138,8 +138,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -161,8 +161,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -184,8 +184,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -207,8 +207,8 @@
 	</recipe>
 
 	<recipe name="TEST_AES_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_aes_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_aes_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -270,8 +270,8 @@
 	</recipe>
 
 	<recipe name="TOM_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_aes">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -291,8 +291,8 @@
 	</recipe>
 
 	<recipe name="PP_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_aes">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -312,8 +312,8 @@
 	</recipe>
 
 	<recipe name="BOT_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_aes">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -335,8 +335,8 @@
 	</recipe>
 
 	<recipe name="NET_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_aes">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -356,8 +356,8 @@
 	</recipe>
 
 	<recipe name="OPEN_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_aes">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -377,8 +377,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -398,8 +398,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -419,8 +419,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -440,8 +440,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -461,8 +461,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -482,8 +482,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -503,8 +503,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -524,8 +524,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -545,8 +545,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -566,8 +566,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V0_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v0_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v0_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -623,8 +623,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -644,8 +644,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -665,8 +665,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -686,8 +686,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -707,8 +707,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -728,8 +728,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -749,8 +749,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -770,8 +770,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -791,8 +791,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -812,8 +812,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V1_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v1_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v1_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -869,8 +869,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -890,8 +890,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -911,8 +911,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -932,8 +932,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -953,8 +953,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -974,8 +974,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -995,8 +995,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1016,8 +1016,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1037,8 +1037,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1058,8 +1058,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V2_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v2_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v2_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1115,8 +1115,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1136,8 +1136,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1157,8 +1157,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1178,8 +1178,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1199,8 +1199,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1220,8 +1220,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1241,8 +1241,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1262,8 +1262,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1283,8 +1283,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -1304,8 +1304,8 @@
 	</recipe>
 
 	<recipe name="GLAD_AES_V3_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/gladman/ build/glad_aes_v3_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/gladman/build/glad_aes_v3_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>

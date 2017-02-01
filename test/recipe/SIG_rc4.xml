@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_RC4_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_go0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO0"/>
 			<arg value="drop mem"/>
@@ -20,8 +20,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_go1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO1"/>
 			<arg value="drop mem"/>
@@ -40,8 +40,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_go2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO2"/>
 			<arg value="drop mem"/>
@@ -60,8 +60,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_go3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GO3"/>
 			<arg value="drop mem"/>
@@ -80,8 +80,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_gos"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_GOs"/>
 			<arg value="drop mem"/>
@@ -100,8 +100,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_co0"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO0"/>
 			<arg value="drop mem"/>
@@ -120,8 +120,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_co1"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO1"/>
 			<arg value="drop mem"/>
@@ -140,8 +140,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_co2"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO2"/>
 			<arg value="drop mem"/>
@@ -160,8 +160,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_co3"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_CO3"/>
 			<arg value="drop mem"/>
@@ -180,8 +180,8 @@
 	</recipe>
 
 	<recipe name="TEST_RC4_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_rc4_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_rc4_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_rc4_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_rc4_coz"/>
 		<search>
 			<arg value="load trace traceTEST_RC4_COz"/>
 			<arg value="drop mem"/>
@@ -241,7 +241,7 @@
 
 	<recipe name="BOT_RC4" active="no"> <!-- There are several issues: the right function is too big and it does not contains XOR operations -->
 		<build cmd="make -C /home/plt/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_rc4"/>
 		<search>
 			<arg value="load trace traceBOT_RC4"/>
 			<arg value="drop mem"/>
@@ -260,8 +260,8 @@
 	</recipe>
 
 	<recipe name="PP_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_rc4"/>
 		<search>
 			<arg value="load trace tracePP_RC4"/>
 			<arg value="drop mem"/>
@@ -279,8 +279,8 @@
 	</recipe>
 
 	<recipe name="NET_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_rc4"/>
 		<search>
 			<arg value="load trace traceNET_RC4"/>
 			<arg value="drop mem"/>
@@ -298,8 +298,8 @@
 	</recipe>
 
 	<recipe name="OPEN_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_rc4"/>
 		<search>
 			<arg value="load trace traceOPEN_RC4"/>
 			<arg value="drop mem"/>
@@ -317,8 +317,8 @@
 	</recipe>
 
 	<recipe name="TOM_RC4" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_rc4"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_rc4"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_rc4"/>
 		<search>
 			<arg value="load trace traceTOM_RC4"/>
 			<arg value="drop mem"/>

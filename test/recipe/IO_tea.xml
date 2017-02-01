@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_TEA_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -20,8 +20,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -40,8 +40,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -60,8 +60,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -80,8 +80,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_gos">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -100,8 +100,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co0">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -120,8 +120,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co1">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -140,8 +140,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co2">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -160,8 +160,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co3">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -180,8 +180,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_coz">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -234,8 +234,8 @@
 	</recipe>
 
 	<recipe name="TOM_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_tea">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -254,8 +254,8 @@
 	</recipe>
 
 	<recipe name="PP_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_tea">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>
@@ -274,8 +274,8 @@
 	</recipe>
 
 	<recipe name="BOT_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_tea">
 			<arg value="-m"/>
 			<arg value="-v"/>
 		</trace>

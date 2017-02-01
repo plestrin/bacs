@@ -1,4 +1,5 @@
 MISC_DIRECTORY 			:= ../../misc/
+CRYPTO_DIRECTORY 		:= ../../algoCrypto/
 
 GCC_CC					:= gcc
 GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra -std=gnu99
@@ -102,47 +103,47 @@ build:
 # GCC compiler
 
 build/%.go0: src/%.c
-	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -g -I$(MISC_DIRECTORY) -I../
+	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -g -I$(MISC_DIRECTORY) -I$(CRYPTO_DIRECTORY)
 
 build/%.go0: $(MISC_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -g
 
-build/%.go0: ../%.c
+build/%.go0: $(CRYPTO_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O0
 
-build/%.go1: ../%.c
+build/%.go1: $(CRYPTO_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O1
 
-build/%.go2: ../%.c
+build/%.go2: $(CRYPTO_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O2
 
-build/%.go3: ../%.c
+build/%.go3: $(CRYPTO_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -O3
 
-build/%.gos: ../%.c
+build/%.gos: $(CRYPTO_DIRECTORY)%.c
 	$(GCC_CC) -o $@ -c $< $(GCC_CFLAGS) -Os
 
 # CLANG compiler
 
 build/%.co0: src/%.c
-	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -g -I$(MISC_DIRECTORY) -I../
+	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -g -I$(MISC_DIRECTORY) -I$(CRYPTO_DIRECTORY)
 
 build/%.co0: $(MISC_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -g
 
-build/%.co0: ../%.c
+build/%.co0: $(CRYPTO_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O0
 
-build/%.co1: ../%.c
+build/%.co1: $(CRYPTO_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O1
 
-build/%.co2: ../%.c
+build/%.co2: $(CRYPTO_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O2
 
-build/%.co3: ../%.c
+build/%.co3: $(CRYPTO_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -O3
 
-build/%.coz: ../%.c
+build/%.coz: $(CRYPTO_DIRECTORY)%.c
 	$(CLANG_CC) -o $@ -c $< $(CLANG_CFLAGS) -Oz
 
 clean:

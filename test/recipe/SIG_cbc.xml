@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_CBC_TEA_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_go0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -33,8 +33,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_go1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -66,8 +66,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_go2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -99,8 +99,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_go3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -132,8 +132,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_gos">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -165,8 +165,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_co0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -198,8 +198,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_co1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -231,8 +231,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_co2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -264,8 +264,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_co3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -297,8 +297,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_TEA_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_tea_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_tea_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_tea_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_tea_coz">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -392,8 +392,8 @@
 	</recipe>
 
 	<recipe name="TOM_CBC_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_cbc_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_cbc_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -425,8 +425,8 @@
 	</recipe>
 
 	<recipe name="BOT_CBC_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_cbc_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_cbc_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_cbc_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_cbc_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -458,8 +458,8 @@
 	</recipe>
 
 	<recipe name="PP_CBC_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_cbc_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_cbc_tea">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_cbc_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_cbc_tea">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -501,8 +501,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_go0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -536,8 +536,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_go1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -571,8 +571,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_go2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -606,8 +606,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_go3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_go3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -641,8 +641,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_gos">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_gos">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -676,8 +676,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co0">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_co0">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -711,8 +711,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co1">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_co1">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -746,8 +746,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co2">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_co2">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -781,8 +781,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_co3">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_co3">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -816,8 +816,8 @@
 	</recipe>
 
 	<recipe name="TEST_CBC_AES_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_cbc_aes_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_cbc_aes_coz">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_cbc_aes_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_cbc_aes_coz">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -917,8 +917,8 @@
 	</recipe>
 
 	<recipe name="TOM_CBC_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_cbc_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_cbc_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_cbc_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -951,8 +951,8 @@
 	</recipe>
 
 	<recipe name="NET_CBC_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_cbc_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_cbc_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_cbc_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -985,8 +985,8 @@
 	</recipe>
 
 	<recipe name="BOT_CBC_AES" active="no"> <!-- we are not able to detect aes128 -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_cbc_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_cbc_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_cbc_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -1015,8 +1015,8 @@
 	</recipe>
 
 	<recipe name="OPEN_CBC_AES" active="yes"> <!-- only enc (we have no signatures for OPEN_AES dec) -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_cbc_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_cbc_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_cbc_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>
@@ -1050,8 +1050,8 @@
 	</recipe>
 
 	<recipe name="PP_CBC_AES" active="no"> <!-- Does not work because the primitive is process and XOR (numerous parasitic detections) -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_cbc_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_cbc_aes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_cbc_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_cbc_aes">
 			<arg value="-m"/>
 		</trace>
 		<search>

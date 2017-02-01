@@ -1,5 +1,5 @@
 TEST_DIRECTORY			:= test/
-TOMCRYPT_DIRECTORY 		:= tomCrypt/
+TOMCRYPT_DIRECTORY 		:= tomcrypt/
 CRYPTOPP_DIRECTORY 		:= cryptopp/
 GLADMAN_DIRECTORY 		:= gladman/
 OPENSSL_DIRECTORY 		:= openssl/

@@ -1,10 +1,10 @@
-algoCrypto/botan/build/
-algoCrypto/cryptopp/build/
-algoCrypto/gladman/build/
-algoCrypto/nettle/build/
-algoCrypto/openssl/build/
-algoCrypto/test/build/
-algoCrypto/tomCrypt/build/
+syntheticSample/botan/build/
+syntheticSample/cryptopp/build/
+syntheticSample/gladman/build/
+syntheticSample/nettle/build/
+syntheticSample/openssl/build/
+syntheticSample/test/build/
+syntheticSample/tomcrypt/build/
 
 *.o
 *.dot
@@ -50,4 +50,4 @@ example/*/trace/
 example/*/build/
 example/*/whiteList.lst
 
-doc/*html
+doc/*.html

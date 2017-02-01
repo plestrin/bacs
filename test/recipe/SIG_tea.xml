@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_TEA_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go0"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO0"/>
 			<arg value="drop mem"/>
@@ -29,8 +29,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go1"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO1"/>
 			<arg value="drop mem"/>
@@ -58,8 +58,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go2"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO2"/>
 			<arg value="drop mem"/>
@@ -87,8 +87,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_go3"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GO3"/>
 			<arg value="drop mem"/>
@@ -116,8 +116,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_gos"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_GOs"/>
 			<arg value="drop mem"/>
@@ -145,8 +145,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co0"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO0"/>
 			<arg value="drop mem"/>
@@ -174,8 +174,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co1"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO1"/>
 			<arg value="drop mem"/>
@@ -203,8 +203,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co2"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO2"/>
 			<arg value="drop mem"/>
@@ -232,8 +232,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_co3"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_CO3"/>
 			<arg value="drop mem"/>
@@ -261,8 +261,8 @@
 	</recipe>
 
 	<recipe name="TEST_TEA_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_tea_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_tea_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_tea_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_tea_coz"/>
 		<search>
 			<arg value="load trace traceTEST_TEA_COz"/>
 			<arg value="drop mem"/>
@@ -348,8 +348,8 @@
 	</recipe>
 
 	<recipe name="BOT_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_tea"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_tea"/>
 		<search>
 			<arg value="load trace traceBOT_TEA"/>
 			<arg value="drop mem"/>
@@ -377,8 +377,8 @@
 	</recipe>
 
 	<recipe name="PP_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_tea"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_tea"/>
 		<search>
 			<arg value="load trace tracePP_TEA"/>
 			<arg value="drop mem"/>
@@ -406,8 +406,8 @@
 	</recipe>
 
 	<recipe name="TOM_TEA" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_tea"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_tea"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_tea"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_tea"/>
 		<search>
 			<arg value="load trace traceTOM_TEA"/>
 			<arg value="drop mem"/>

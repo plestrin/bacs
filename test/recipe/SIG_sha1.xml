@@ -1,7 +1,7 @@
 <xml>
 	<recipe name="TEST_SHA1_GO0" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go0"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO0"/>
 			<arg value="drop mem"/>
@@ -19,8 +19,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go1"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO1"/>
 			<arg value="drop mem"/>
@@ -38,8 +38,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go2"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO2"/>
 			<arg value="drop mem"/>
@@ -57,8 +57,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_go3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_go3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go3"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO3"/>
 			<arg value="drop mem"/>
@@ -76,8 +76,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_GOs" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_gos"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_gos"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_gos"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_GOs"/>
 			<arg value="drop mem"/>
@@ -95,8 +95,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO0" active="no"> <!-- does not work because of rotations: they are implemented using SHR, SHL and OR -->
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co0"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co0"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co0"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO0"/>
 			<arg value="drop mem"/>
@@ -114,8 +114,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co1"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO1"/>
 			<arg value="drop mem"/>
@@ -133,8 +133,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO2" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co2"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co2"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co2"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO2"/>
 			<arg value="drop mem"/>
@@ -152,8 +152,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_CO3" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_co3"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_co3"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co3"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO3"/>
 			<arg value="drop mem"/>
@@ -171,8 +171,8 @@
 	</recipe>
 
 	<recipe name="TEST_SHA1_COz" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/test/ build/test_sha1_coz"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/test/build/test_sha1_coz"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_coz"/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_COz"/>
 			<arg value="drop mem"/>
@@ -228,8 +228,8 @@
 	</recipe>
 
 	<recipe name="BOT_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/botan/ build/bot_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/botan/build/bot_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_sha1"/>
 		<search>
 			<arg value="load trace traceBOT_SHA1"/>
 			<arg value="drop mem"/>
@@ -247,8 +247,8 @@
 	</recipe>
 
 	<recipe name="PP_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/cryptopp/ build/cryptopp_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/cryptopp/build/cryptopp_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_sha1"/>
 		<search>
 			<arg value="load trace tracePP_SHA1"/>
 			<arg value="drop mem"/>
@@ -266,8 +266,8 @@
 	</recipe>
 
 	<recipe name="NET_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/nettle/ build/net_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/nettle/build/net_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_sha1"/>
 		<search>
 			<arg value="load trace traceNET_SHA1"/>
 			<arg value="drop mem"/>
@@ -285,8 +285,8 @@
 	</recipe>
 
 	<recipe name="OPEN_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/openssl/ build/openssl_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/openssl/build/openssl_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_sha1"/>
 		<search>
 			<arg value="load trace traceOPEN_SHA1"/>
 			<arg value="drop mem"/>
@@ -307,8 +307,8 @@
 	</recipe>
 
 	<recipe name="TOM_SHA1" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/algoCrypto/tomCrypt/ build/tom_sha1"/>
-		<trace cmd="/home/plt/Documents/bacs/algoCrypto/tomCrypt/build/tom_sha1"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_sha1"/>
 		<search>
 			<arg value="load trace traceTOM_SHA1"/>
 			<arg value="drop mem"/>
