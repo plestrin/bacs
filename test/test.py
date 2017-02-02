@@ -13,8 +13,6 @@ PIN_PATH 				= "/home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin"
 TOOL_PATH 				= "../lightTracer_pin/obj-ia32/lightTracer.so"
 TOOL_SRC_PATH 			= "../lightTracer_pin/"
 WHITELIST_PATH 			= "./whiteList/"
-MAKEFILE_ANAL_PATH 		= "../traceAnalysis/Makefile"
-MAKEFILE_SIG_PATH 		= "../staticSignature/Makefile"
 TRACE_PATH				= ""
 LOG_PATH 				= "./log/"
 
@@ -90,11 +88,11 @@ if action == "TRACE" or action == "ALL":
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	sys.stdout.write("Building Signature program: ... ")
+	sys.stdout.write("Building analysis program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make"])
 	if return_value != 0:
-		print("ERROR: unable to build Signature program")
+		print("ERROR: unable to build analysis program")
 		exit()
 
 # SEARCH step

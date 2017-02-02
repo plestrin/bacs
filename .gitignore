@@ -29,13 +29,13 @@ misc/test/test_variableRange
 
 lightTracer_pin/obj-ia32/
 
-staticSignature/signature
+analysis/analysis
 
 test/whiteList/
 test/trace*
 test/fig/
 
-test/signature
+test/analysis
 
 asm/build/
 asm/src/*.asm

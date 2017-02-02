@@ -120,7 +120,7 @@ class recipe(object):
 		self.log.write("\n\n### SEARCH STDOUT & STDERR ###\n\n")
 		self.log.flush()
 
-		cmd = ["./signature"]
+		cmd = ["./analysis"]
 		cmd.extend(self.search_arg)
 
 		time_start = time.time()

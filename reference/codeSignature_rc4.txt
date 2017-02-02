@@ -3,9 +3,9 @@
 #	- rc4_prga_v1: pseudo random generation of 1 byte 		no 			yes 		yes 		8 bits 		-
 #	- rc4_prga_v2: pseudo random generation of 1 byte 		no 			yes 		no 			8 bits 		-
 #	- rc4_prga_v3: pseudo random generation of 1 byte 		no 			no 			no 			8 bits 		-
-#	- rc4_prga_v4: pseudo random generation of 1 byte 		no 			no 			no 			32 bits 	The message parameter has been removed to provide a better support for OpenSSL
+#	- rc4_prga_v4: pseudo random generation of 1 byte 		yes 		no 			no 			32 bits 	The message parameter has been removed to provide a better support for OpenSSL
 #
-# Help to understand the previous column title =):
+# Help to understand the previous columns' title =):
 # 	- S[i] is the computation of S[i] address in the signature? If no, it is an input parameter. It has been designed that way, in order to avoid the effect of potential constant simplification (the value of S is known and maybe so is the value of i)
 # 	- Volatile, means that S[j] is read again from memory after the swap? The other possibility is to keep it in a register from the first read.
 # 	- First, for the first iteration j = 0 and some specific simplifications are done on this basis.

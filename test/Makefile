@@ -1,11 +1,11 @@
 BIN_DIR 	:= build/
-SRC_DIR 	:= ../staticSignature/
+SRC_DIR 	:= ../analysis/
 LOG_DIR 	:= log/
 FIG_DIR 	:= fig/
 FIGURES 	:= $(shell ls $(FIG_DIR)*.dot)
 RECIPE_DIR 	:= recipe/
 RECIPES 	:= SIG_tea.xml SIG_sha1.xml SIG_rc4.xml SIG_md5.xml SIG_hmac.xml SIG_aes.xml SIG_cbc.xml SIG_ctr.xml
-EXE 		:= signature
+EXE 		:= analysis
 
 define TRACE_template
 trace_$(1): $$(RECIPE_DIR)$(1)

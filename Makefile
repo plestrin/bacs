@@ -1,4 +1,4 @@
-SUB_DIRECTORY := asm syntheticSample staticSignature lightTracer_pin misc/test doc
+SUB_DIRECTORY := analysis asm doc lightTracer_pin misc/test syntheticSample
 
 define BUILD_template
 build_$(1):
