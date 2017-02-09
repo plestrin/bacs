@@ -2,7 +2,7 @@
 #	- sha1_ms 		: message schedule
 # 	- sha1_ms_open 	: message schedule for OpenSSL
 # 	- sha1_open_v1 	: full sha1 Feistel network including the message expansion for OpenSSL: old majority function f(x,y,z) = ((x & y) + (z & (x ^ y)))
-# 	- sha1_open_v2 	: full sha1 Feistel network including the message expansion for OpenSSL: new majority fucntion f(x,y,z) = ((x ^ z) & (y ^ z)) ^ z
+# 	- sha1_open_v2 	: full sha1 Feistel network including the message expansion for OpenSSL: new majority function f(x,y,z) = ((x ^ z) & (y ^ z)) ^ z
 # 	- sha1_compress : compression function
 
 

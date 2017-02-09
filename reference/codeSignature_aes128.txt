@@ -7,7 +7,7 @@
 # 	- aes_last_v6 	: specific last aes round. Lookup results are merged before the add round key using a OR. Lookup table has 32-bit granularity.
 #	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). This is the only difference with the aes128_v2. No key binding for the last round: the offset might depend on the number of rounds.
 #	- aes128_v2 	: full aes128 encryption /decryption. No key binding for the last round: the offset might depend on the number of rounds.
-#	- aes128_v3 	: full aes128 encryption /decryption. key binding for every round, but the address is computed in weird way. {CRYPTOPP}
+#	- aes128_v3 	: full aes128 encryption /decryption. Key binding for every round, but the address is computed in weird way. {CRYPTOPP}
 # 	- ks_aes_128 	: key schedule for a 128-bit key
 
 # INPUT: 2 [4 frag, 4 frag]
