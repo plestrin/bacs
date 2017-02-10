@@ -65,7 +65,7 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file);
 #else
 
 int codeMap_check_address(struct codeMap* cm);
-void codeMap_print(struct codeMap* cm, char* str_filter);
+void codeMap_print(struct codeMap* cm, const char* str_filter);
 
 void codeMap_clean_image(struct cm_image* image);
 void codeMap_clean_section(struct cm_section* section);

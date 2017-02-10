@@ -1458,7 +1458,6 @@ static int32_t ir_normalize_simplify_instruction_rewrite_or(struct ir* ir, struc
 	uint32_t 				i;
 	int32_t 				result 				= 0;
 
-
 	operand_buffer = (struct irOperand*)alloca(sizeof(struct irOperand) * node->nb_edge_dst);
 
 	for (edge_cursor = node_get_head_edge_dst(node), nb_operand = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){

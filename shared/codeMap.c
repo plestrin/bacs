@@ -28,7 +28,7 @@ int codeMap_is_instruction_whiteListed(struct codeMap* cm, ADDRESS address){
 					for (routine_cursor = section_cursor->routines; routine_cursor != NULL; routine_cursor = routine_cursor->next){
 						if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
 							return routine_cursor->white_listed;
-						}						
+						}
 					}
 					break;
 				}
@@ -116,7 +116,7 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 			else{
 				fprintf(file, "]}");
 			}
-		}		
+		}
 	}
 }
 
@@ -147,7 +147,7 @@ static void codeMap_print_section_JSON(struct cm_section* section, FILE* file){
 			else{
 				fprintf(file, "]}");
 			}
-		}		
+		}
 	}
 }
 
@@ -357,9 +357,9 @@ int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 	multiColumnPrinter_print_header((printer));
 #else
 #error Please specify an architecture {ARCH_32 or ARCH_64}
-#endif 
+#endif
 
-void codeMap_print(struct codeMap* cm, char* str_filter){
+void codeMap_print(struct codeMap* cm, const char* str_filter){
 	struct cm_image* 			image;
 	struct multiColumnPrinter* 	printer;
 	int 						filter = 0;
@@ -392,7 +392,7 @@ void codeMap_print(struct codeMap* cm, char* str_filter){
 		}
 
 		codeMap_create_printer(printer)
-		
+
 		for (image = cm->images; image != NULL; image = image->next){
 			codeMap_print_image(printer, image, filter);
 		}
@@ -549,7 +549,7 @@ int codeMap_check_address(struct codeMap* cm){
 
 			cursor_section = cursor_image->sections;
 			while(cursor_section != NULL){
-				
+
 				if (cursor_section->address_start > cursor_section->address_stop){
 					printf("ERROR: section start address is greater thant its stop address\n");
 					return -1;

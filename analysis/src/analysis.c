@@ -30,58 +30,58 @@ struct analysis{
 	struct list					frag_list;
 };
 
-static struct analysis* analysis_create();
+static struct analysis* analysis_create(void);
 
-static void analysis_trace_load(struct analysis* analysis, char* arg);
-static void analysis_trace_change(struct analysis* analysis, char* arg);
-static void analysis_trace_load_elf(struct analysis* analysis, char* arg);
-static void analysis_trace_print(struct analysis* analysis, char* arg);
+static void analysis_trace_load(struct analysis* analysis, const char* arg);
+static void analysis_trace_change(struct analysis* analysis, const char* arg);
+static void analysis_trace_load_elf(struct analysis* analysis, const char* arg);
+static void analysis_trace_print(struct analysis* analysis, const char* arg);
 static void analysis_trace_check(struct analysis* analysis);
 static void analysis_trace_check_codeMap(struct analysis* analysis);
-static void analysis_trace_print_codeMap(struct analysis* analysis, char* arg);
-static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg);
-static void analysis_trace_export(struct analysis* analysis, char* arg);
-static void analysis_trace_search_pc(struct analysis* analysis, char* arg);
-static void analysis_trace_search_opcode(struct analysis* analysis, char* arg);
-static void analysis_trace_scan(struct analysis* analysis, char* arg);
-static void analysis_trace_search_mem(struct analysis* analysis, char* arg);
+static void analysis_trace_print_codeMap(struct analysis* analysis, const char* arg);
+static void analysis_trace_search_codeMap(struct analysis* analysis, const char* arg);
+static void analysis_trace_export(struct analysis* analysis, const char* arg);
+static void analysis_trace_search_pc(struct analysis* analysis, const char* arg);
+static void analysis_trace_search_opcode(struct analysis* analysis, const char* arg);
+static void analysis_trace_scan(struct analysis* analysis, const char* arg);
+static void analysis_trace_search_mem(struct analysis* analysis, const char* arg);
 static void analysis_trace_drop_mem(struct analysis* analysis);
 static void analysis_trace_delete(struct analysis* analysis);
 
-static void analysis_frag_print(struct analysis* analysis, char* arg);
-static void analysis_frag_locate(struct analysis* analysis, char* arg);
-static void analysis_frag_concat(struct analysis* analysis, char* arg);
-static void analysis_frag_check(struct analysis* analysis, char* arg);
-static void analysis_frag_print_result(struct analysis* analysis, char* arg);
-static void analysis_frag_export_result(struct analysis* analysis, char* arg);
-static void analysis_frag_filter_size(struct analysis* analysis, char* arg);
-static void analysis_frag_filter_selection(struct analysis* analysis, char* arg);
+static void analysis_frag_print(struct analysis* analysis, const char* arg);
+static void analysis_frag_locate(struct analysis* analysis, const char* arg);
+static void analysis_frag_concat(struct analysis* analysis, const char* arg);
+static void analysis_frag_check(struct analysis* analysis, const char* arg);
+static void analysis_frag_print_result(struct analysis* analysis, const char* arg);
+static void analysis_frag_export_result(struct analysis* analysis, const char* arg);
+static void analysis_frag_filter_size(struct analysis* analysis, const char* arg);
+static void analysis_frag_filter_selection(struct analysis* analysis, const char* arg);
 #ifdef IOREL
-static void analysis_frag_search_io(struct analysis* analysis, char* arg);
+static void analysis_frag_search_io(struct analysis* analysis, const char* arg);
 #endif
 static void analysis_frag_clean(struct analysis* analysis);
 
-static void analysis_frag_create_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg);
-static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg);
+static void analysis_frag_create_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_create_compound_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_printDot_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_normalize_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_print_aliasing_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, const char* arg);
 
-static void analysis_code_signature_search(struct analysis* analysis, char* arg);
+static void analysis_code_signature_search(struct analysis* analysis, const char* arg);
 static void analysis_code_signature_clean(struct analysis* analysis);
-static void analysis_mode_signature_search(struct analysis* analysis, char* arg);
-static void analysis_buffer_signature_search(struct analysis* analysis, char* arg);
+static void analysis_mode_signature_search(struct analysis* analysis, const char* arg);
+static void analysis_buffer_signature_search(struct analysis* analysis, const char* arg);
 
-static void analysis_call_create(struct analysis* analysis, char* arg);
+static void analysis_call_create(struct analysis* analysis, const char* arg);
 static void analysis_call_printDot(struct analysis* analysis);
 static void analysis_call_check(struct analysis* analysis);
-static void analysis_call_export(struct analysis* analysis, char* arg);
-static void analysis_call_print_stack(struct analysis* analysis, char* arg);
-static void analysis_call_print_frame(struct analysis* analysis, char* arg);
+static void analysis_call_export(struct analysis* analysis, const char* arg);
+static void analysis_call_print_stack(struct analysis* analysis, const char* arg);
+static void analysis_call_print_frame(struct analysis* analysis, const char* arg);
 
-static void analysis_synthesis_create(struct analysis* analysis, char* arg);
-static void analysis_synthesis_printDot(struct analysis* analysis, char* arg);
+static void analysis_synthesis_create(struct analysis* analysis, const char* arg);
+static void analysis_synthesis_printDot(struct analysis* analysis, const char* arg);
 
 static void analysis_delete(struct analysis* analysis);
 
@@ -226,7 +226,7 @@ int main(int argc, char** argv){
 /* Analysis functions						                             */
 /* ===================================================================== */
 
-static struct analysis* analysis_create(){
+static struct analysis* analysis_create(void){
 	struct analysis* 			analysis;
 	struct signatureCallback 	callback;
 
@@ -285,7 +285,7 @@ static void analysis_delete(struct analysis* analysis){
 /* Trace functions						                                 */
 /* ===================================================================== */
 
-static void analysis_trace_load(struct analysis* analysis, char* arg){
+static void analysis_trace_load(struct analysis* analysis, const char* arg){
 	if (analysis->trace != NULL){
 		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
@@ -312,7 +312,7 @@ static void analysis_trace_load(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_change(struct analysis* analysis, char* arg){
+static void analysis_trace_change(struct analysis* analysis, const char* arg){
 	char* 		t_index_ptr;
 	uint32_t 	prev_pid;
 
@@ -344,7 +344,7 @@ static void analysis_trace_change(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_load_elf(struct analysis* analysis, char* arg){
+static void analysis_trace_load_elf(struct analysis* analysis, const char* arg){
 	if (analysis->trace != NULL){
 		log_warn("deleting previous trace");
 		trace_delete(analysis->trace);
@@ -366,7 +366,7 @@ static void analysis_trace_load_elf(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_print(struct analysis* analysis, char* arg){
+static void analysis_trace_print(struct analysis* analysis, const char* arg){
 	uint32_t start;
 	uint32_t stop;
 
@@ -404,7 +404,7 @@ static void analysis_trace_check_codeMap(struct analysis* analysis){
 	}
 }
 
-static void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
+static void analysis_trace_print_codeMap(struct analysis* analysis, const char* arg){
 	if (analysis->code_map != NULL){
 		codeMap_print(analysis->code_map, arg);
 	}
@@ -413,7 +413,7 @@ static void analysis_trace_print_codeMap(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
+static void analysis_trace_search_codeMap(struct analysis* analysis, const char* arg){
 	if (analysis->code_map != NULL){
 		codeMap_search_and_print_symbol(analysis->code_map, arg);
 	}
@@ -422,7 +422,7 @@ static void analysis_trace_search_codeMap(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_export(struct analysis* analysis, char* arg){
+static void analysis_trace_export(struct analysis* analysis, const char* arg){
 	uint32_t 			start;
 	uint32_t 			stop;
 	struct trace 		new_fragment;
@@ -460,7 +460,7 @@ static void analysis_trace_export(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
+static void analysis_trace_search_pc(struct analysis* analysis, const char* arg){
 	ADDRESS 					pc;
 	struct instructionIterator 	it;
 	int32_t 					return_code;
@@ -486,7 +486,7 @@ static void analysis_trace_search_pc(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_trace_search_opcode(struct analysis* analysis, char* arg){
+static void analysis_trace_search_opcode(struct analysis* analysis, const char* arg){
 	uint8_t* 	opcode;
 	size_t 		opcode_length = 0;
 
@@ -506,7 +506,7 @@ static void analysis_trace_search_opcode(struct analysis* analysis, char* arg){
 	free(opcode);
 }
 
-static void analysis_trace_scan(struct analysis* analysis, char* arg){
+static void analysis_trace_scan(struct analysis* analysis, const char* arg){
 	uint32_t 	filters = 0;
 	size_t 		i;
 
@@ -532,9 +532,9 @@ static void analysis_trace_scan(struct analysis* analysis, char* arg){
 	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, analysis->code_map, filters);
 }
 
-static void analysis_trace_search_mem(struct analysis* analysis, char* arg){
-	char* 				token1;
-	char* 				token2;
+static void analysis_trace_search_mem(struct analysis* analysis, const char* arg){
+	const char* 		token1;
+	const char* 		token2;
 	struct trace* 		trace;
 	uint32_t 			index;
 	struct listIterator it;
@@ -598,7 +598,7 @@ static void analysis_trace_delete(struct analysis* analysis){
 /* frag functions						                                 */
 /* ===================================================================== */
 
-static void analysis_frag_print(struct analysis* analysis, char* arg){
+static void analysis_frag_print(struct analysis* analysis, const char* arg){
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					index;
 	struct trace*				fragment;
@@ -660,7 +660,7 @@ static void analysis_frag_print(struct analysis* analysis, char* arg){
 	#undef IRDESCRIPTOR_MAX_LENGTH
 }
 
-static void analysis_frag_locate(struct analysis* analysis, char* arg){
+static void analysis_frag_locate(struct analysis* analysis, const char* arg){
 	if (analysis->code_map != NULL){
 		apply_to_multiple_frags_args(analysis, trace_print_location, arg, analysis->code_map)
 	}
@@ -669,7 +669,7 @@ static void analysis_frag_locate(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_frag_concat(struct analysis* analysis, char* arg){
+static void analysis_frag_concat(struct analysis* analysis, const char* arg){
 	uint32_t 			i;
 	uint32_t 			nb_index;
 	uint8_t 			start_index;
@@ -734,20 +734,20 @@ static void analysis_frag_concat(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_frag_check(struct analysis* analysis, char* arg){
+static void analysis_frag_check(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_check, arg)
 }
 
-static void analysis_frag_print_result(struct analysis* analysis, char* arg){
+static void analysis_frag_print_result(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags_args(analysis, trace_print_result, arg, arg)
 }
 
-static void analysis_frag_export_result(struct analysis* analysis, char* arg){
+static void analysis_frag_export_result(struct analysis* analysis, const char* arg){
 	void** 					signature_buffer;
 	uint32_t 				nb_signature;
 	struct node* 			node_cursor;
 	struct codeSignature* 	signature_cursor;
-	char* 					ptr;
+	const char* 			ptr;
 
 	if ((signature_buffer = (void**)malloc(sizeof(void*) * signatureCollection_get_nb_signature(&(analysis->code_signature_collection)))) == NULL){
 		log_err("unable to allocate memory");
@@ -776,7 +776,7 @@ static void analysis_frag_export_result(struct analysis* analysis, char* arg){
 	free(signature_buffer);
 }
 
-static void analysis_frag_filter_size(struct analysis* analysis, char* arg){
+static void analysis_frag_filter_size(struct analysis* analysis, const char* arg){
 	struct listIterator it;
 	struct trace* 		fragment;
 	uint32_t 			size;
@@ -792,7 +792,7 @@ static void analysis_frag_filter_size(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_frag_filter_selection(struct analysis* analysis, char* arg){
+static void analysis_frag_filter_selection(struct analysis* analysis, const char* arg){
 	uint32_t 			start = 0;
 	uint32_t 			stop  = list_get_length(&(analysis->frag_list));
 	struct listIterator it;
@@ -821,7 +821,7 @@ static void analysis_frag_filter_selection(struct analysis* analysis, char* arg)
 }
 
 #ifdef IOREL
-static void analysis_frag_search_io(struct analysis* analysis, char* arg){
+static void analysis_frag_search_io(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_search_io, arg)
 }
 #endif
@@ -839,11 +839,11 @@ static void analysis_frag_clean(struct analysis* analysis){
 /* ir functions						                                	 */
 /* ===================================================================== */
 
-static void analysis_frag_create_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_create_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_create_ir, arg)
 }
 
-static void analysis_frag_create_compound_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_create_compound_ir(struct analysis* analysis, const char* arg){
 	uint32_t 			start;
 	uint32_t 			stop;
 	struct trace* 		selected_trace;
@@ -888,19 +888,19 @@ static void analysis_frag_create_compound_ir(struct analysis* analysis, char* ar
 	}
 }
 
-static void analysis_frag_printDot_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_printDot_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_printDot_ir, arg)
 }
 
-static void analysis_frag_normalize_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_normalize_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_normalize_ir, arg)
 }
 
-static void analysis_frag_print_aliasing_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_print_aliasing_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_print_aliasing_ir, arg)
 }
 
-static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* arg){
+static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_normalize_concrete_ir, arg)
 }
 
@@ -908,7 +908,7 @@ static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, char* 
 /* signature functions										             */
 /* ===================================================================== */
 
-static void analysis_code_signature_search(struct analysis* analysis, char* arg){
+static void analysis_code_signature_search(struct analysis* analysis, const char* arg){
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
@@ -979,7 +979,7 @@ static void analysis_code_signature_clean(struct analysis* analysis){
 	signatureCollection_empty(&(analysis->code_signature_collection));
 }
 
-static void analysis_mode_signature_search(struct analysis* analysis, char* arg){
+static void analysis_mode_signature_search(struct analysis* analysis, const char* arg){
 	uint32_t 				index;
 	uint32_t 				start;
 	uint32_t 				stop;
@@ -1038,7 +1038,7 @@ static void analysis_mode_signature_search(struct analysis* analysis, char* arg)
 	free(graph_searcher_buffer);
 }
 
-static void analysis_buffer_signature_search(struct analysis* analysis, char* arg){
+static void analysis_buffer_signature_search(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_search_buffer_signature, arg)
 }
 
@@ -1046,7 +1046,7 @@ static void analysis_buffer_signature_search(struct analysis* analysis, char* ar
 /* call graph functions						    	                     */
 /* ===================================================================== */
 
-static void analysis_call_create(struct analysis* analysis, char* arg){
+static void analysis_call_create(struct analysis* analysis, const char* arg){
 	uint32_t start;
 	uint32_t stop;
 
@@ -1104,7 +1104,7 @@ static void analysis_call_check(struct analysis* analysis){
 	}
 }
 
-static void analysis_call_export(struct analysis* analysis, char* arg){
+static void analysis_call_export(struct analysis* analysis, const char* arg){
 	struct cm_routine* 			rtn;
 	struct instructionIterator 	it;
 	int32_t 					return_code;
@@ -1138,7 +1138,7 @@ static void analysis_call_export(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_call_print_stack(struct analysis* analysis, char* arg){
+static void analysis_call_print_stack(struct analysis* analysis, const char* arg){
 	if (analysis->call_graph == NULL){
 		log_err("callGraph is NULL cannot print stack");
 	}
@@ -1147,7 +1147,7 @@ static void analysis_call_print_stack(struct analysis* analysis, char* arg){
 	}
 }
 
-static void analysis_call_print_frame(struct analysis* analysis, char* arg){
+static void analysis_call_print_frame(struct analysis* analysis, const char* arg){
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 	}
@@ -1160,13 +1160,13 @@ static void analysis_call_print_frame(struct analysis* analysis, char* arg){
 /* synthesis graph functions								             */
 /* ===================================================================== */
 
-static void analysis_synthesis_create(struct analysis* analysis, char* arg){
+static void analysis_synthesis_create(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_create_synthesis, arg)
 }
 
-static void analysis_synthesis_printDot(struct analysis* analysis, char* arg){
+static void analysis_synthesis_printDot(struct analysis* analysis, const char* arg){
 	uint32_t 			index;
-	char* 				name = NULL;
+	const char* 		name = NULL;
 	size_t 				offset;
 	struct listIterator it;
 

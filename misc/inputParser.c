@@ -11,7 +11,7 @@ int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
 uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
 #endif
 
-static void inputParser_print_help(struct inputParser* parser);
+static void inputParser_print_help(struct inputParser* parser, const char* arg);
 static void inputParser_exit(struct inputParser* parser);
 
 static char* inputParser_get_argument(const char* cmd, char* line);
@@ -29,8 +29,8 @@ struct inputParser* inputParser_create(void){
 	else{
 		log_err("unable to allocate memory");
 	}
-	
-	return parser;	
+
+	return parser;
 }
 
 int inputParser_init(struct inputParser* parser){
@@ -39,7 +39,7 @@ int inputParser_init(struct inputParser* parser){
 		return -1;
 	}
 	else{
-		if (inputParser_add_cmd(parser, "help", "Display this help", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser,  (void(*)(void))inputParser_print_help)){
+		if (inputParser_add_cmd(parser, "help", "Display this help", "str", INPUTPARSER_CMD_TYPE_OPT_ARG, parser,  (void(*)(void))inputParser_print_help)){
 			log_warn("unable to add help entry in the input parser");
 		}
 		if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit)){
@@ -236,7 +236,7 @@ uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t
 }
 #endif
 
-static void inputParser_print_help(struct inputParser* parser){
+static void inputParser_print_help(struct inputParser* parser, const char* arg){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 	struct cmdEntry* 			entry;
@@ -263,6 +263,11 @@ static void inputParser_print_help(struct inputParser* parser){
 
 	for (i = 0; i < array_get_length(&(parser->cmd_array)); i++){
 		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
+
+		if (arg != NULL && strstr(entry->name, arg) == NULL){
+			continue;
+		}
+
 		if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
 			multiColumnPrinter_print(printer, entry->name, "ARG", entry->cmd_desc, entry->arg_desc);
 		}
