@@ -526,7 +526,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -561,7 +561,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -596,7 +596,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -631,7 +631,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -666,7 +666,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -701,7 +701,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -736,7 +736,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
@@ -771,7 +771,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
@@ -806,7 +806,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
@@ -841,7 +841,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v2" number="32"/>
@@ -874,7 +874,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v1" number="32"/>
@@ -907,7 +907,7 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes128_v2" number="16"/>
 			<algo name="aes_last_v3" number="32"/>
@@ -945,7 +945,7 @@
 			<algo name="dec_cbc_cfb_v1" number="3"/>
 			<algo name="aes128_v2" number="192"/>
 			<algo name="aes_last_v5" number="96"/>
-			<algo name="aes_r9" number="384"/>
+			<algo name="aes_r10" number="192"/>
 			<algo name="aes_t4" number="1824"/>
 		</result>
 	</recipe>
@@ -979,7 +979,7 @@
 			<algo name="dec_cbc_cfb_v2" number="3"/>
 			<algo name="aes128_v1" number="8"/>
 			<algo name="aes_last_v2" number="32"/>
-			<algo name="aes_r9" number="224"/>
+			<algo name="aes_r10" number="32"/>
 			<algo name="aes_t4" number="1728"/>
 		</result>
 	</recipe>
@@ -1067,11 +1067,11 @@
 			<arg value="export result aes128_v1"/>
 			<arg value="export callGraph _ZN8CryptoPP14CBC_Decryption11ProcessDataEPhPKhj"/>
 			<arg value="create compound ir 4"/>
-			<!-- a completer -->
+			<!-- incomplete -->
 			<arg value="exit"/>
 		</search>
 		<result>
-			<!-- a completer -->
+			<!-- incomplete -->
 		</result>
 	</recipe>
 </xml>

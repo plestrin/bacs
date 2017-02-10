@@ -19,10 +19,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -46,10 +47,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -73,10 +75,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -100,10 +103,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -127,10 +131,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -154,10 +159,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -181,10 +187,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v2" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -208,10 +215,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v2" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -235,10 +243,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v2" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -262,10 +271,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v2" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -289,10 +299,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v1" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -316,60 +327,15 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v3" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
-	<recipe name="TOM_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_aes"/>
-		<search>
-			<arg value="load trace traceTOM_AES"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph rijndael_ecb_encrypt"/>
-			<arg value="export callGraph rijndael_ecb_decrypt"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="aes_t4" number="1656"/> <!-- 1656 = (9 + 11 + 13 + 10 + 12 + 14) * 24 -->
-			<algo name="aes_r9" number="504"/> <!-- 504 = 24 * (3 + 7 + 11) -->
-			<algo name="aes_r11" number="240"/> <!-- 240 = 24 * (3 + 7) -->
-			<algo name="aes_r13" number="72"/> <!-- 72 = 24 * 3 -->
-		</result>
-	</recipe>
-
-	<recipe name="PP_AES" active="yes">
-		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_aes"/>
-		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_aes"/>
-		<search>
-			<arg value="load trace tracePP_AES"/>
-			<arg value="drop mem"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
-			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>
-			<arg value="export callGraph _ZThn4_NK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
-			<arg value="create ir"/>
-			<arg value="normalize ir"/>
-			<arg value="search code signature"/>
-			<arg value="exit"/>
-		</search>
-		<result>
-			<algo name="aes_t4" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
-		</result>
-	</recipe>
-
-	<recipe name="BOT_AES" active="yes"> <!-- The first round use only one table, apparently to mitigate timing attacks -->
+	<recipe name="BOT_AES" active="yes"> <!-- The first round use only one table, apparently to mitigate timing attacks, the last round is not detected due to aliasing (no memory coalescing) -->
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_aes"/>
 		<search>
@@ -391,9 +357,34 @@
 		<result>
 			<algo name="aes_t4" number="1440"/> <!-- 1440 = (8 + 10 + 12 + 8 + 10 + 12) * 24 -->
 			<algo name="aes_t1_v2" number="24"/> <!-- 24 = (1 + 1 + 1 + 1 + 1 + 1) * 4-->
-			<algo name="aes_r9" number="312"/> <!-- 312 = 24 * (4 + 2 + 4 + 2) + 4 * (1 + 1 + 1 + 1 + 1 + 1) -->
-			<algo name="aes_r11" number="112"/> <!-- 112 = 24 * (2 + 2) + 4 * (1 + 1 + 1 + 1) -->
-			<algo name="aes_r13" number="8"/> <!-- 8 = 4 * (1 + 1) -->
+			<algo name="aes_r10" number="312"/> <!-- 312 = 24 * (4 + 2 + 4 + 2) + 4 * (1 + 1 + 1 + 1 + 1 + 1) -->
+			<algo name="aes_r12" number="112"/> <!-- 112 = 24 * (2 + 2) + 4 * (1 + 1 + 1 + 1) -->
+			<algo name="aes_r14" number="8"/> <!-- 8 = 4 * (1 + 1) -->
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES" active="yes"> <!-- Encryption is process and XOR, unable to correctly identify the last round key -->
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_aes"/>
+		<search>
+			<arg value="load trace tracePP_AES"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>
+			<arg value="export callGraph _ZThn4_NK8CryptoPP8Rijndael3Dec18ProcessAndXorBlockEPKhS3_Ph"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= (9 + 11 + 13) * 24 * 2 -->
+			<algo name="aes_r10" number="492"/> 	<!-- 492 	= 4 + 24 * 4 + 4  +24 * 2 + 4 + 64 + 24 * 4 + 64 + 24 * 2 + 64 -->
+			<algo name="aes_r12" number="232"/> 	<!-- 232 	= 4 + 24 * 2 + 4 + 64 + 24 * 2 + 64 -->
+			<algo name="aes_r14" number="68"/> 		<!-- 68 	= 4 + 64 -->
+			<algo name="aes_last_v4" number="192"/> <!-- 192 	= 4 * 16 * (1 + 1 + 1) Encryption -->
+			<algo name="aes_last_v6" number="12"/> 	<!-- 12 	= 4 * (1 + 1 + 1) Decryption -->
 		</result>
 	</recipe>
 
@@ -413,10 +404,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t4" number="1584"/>
-			<algo name="aes_r9" number="432"/>
-			<algo name="aes_r11" number="192"/>
-			<algo name="aes_r13" number="48"/>
+			<algo name="aes_t4" number="1584"/> 	<!-- 1584 	= 24 * 2 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + (24 * 2 + 4) + (24*4 + 4)) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + (24 * 2 + 4)) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v2" number="24"/> 	<!-- 24 	= 2 * 4 * 3 -->
 		</result>
 	</recipe>
 
@@ -449,6 +441,30 @@
 		</result>
 	</recipe>
 
+	<recipe name="TOM_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_aes"/>
+		<search>
+			<arg value="load trace traceTOM_AES"/>
+			<arg value="drop mem"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph rijndael_ecb_encrypt"/>
+			<arg value="export callGraph rijndael_ecb_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1656"/> 	<!-- 1656 	= 24 * (9 + 11 + 13 + 10 + 12 + 14) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (1 + 3 + 5) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (1 + 3) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v5" number="72"/> 	<!-- 12 	= 24 * (1 + 1 + 1) Decryption only -->
+		</result>
+	</recipe>
+
 	<recipe name="GLAD_AES_V0_GO0" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go0"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go0"/>
@@ -466,9 +482,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -489,9 +505,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -512,9 +528,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -535,9 +551,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -558,9 +574,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -581,9 +597,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -604,9 +620,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -627,9 +643,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -650,9 +666,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -673,9 +689,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -696,9 +712,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -719,9 +735,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -742,9 +758,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -765,9 +781,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -788,9 +804,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -811,9 +827,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -834,9 +850,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -857,9 +873,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -880,9 +896,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -903,9 +919,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -926,9 +942,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -949,9 +965,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -972,9 +988,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -995,9 +1011,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1018,9 +1034,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1041,9 +1057,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1064,9 +1080,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1087,9 +1103,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1110,9 +1126,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1133,9 +1149,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1156,9 +1172,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1179,9 +1195,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1202,9 +1218,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1225,9 +1241,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1248,9 +1264,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1271,9 +1287,9 @@
 		</search>
 		<result>
 			<algo name="aes_t4" number="1728"/>
-			<algo name="aes_r9" number="576"/>
-			<algo name="aes_r11" number="288"/>
-			<algo name="aes_r13" number="96"/>
+			<algo name="aes_r10" number="432"/>
+			<algo name="aes_r12" number="192"/>
+			<algo name="aes_r14" number="48"/>
 		</result>
 	</recipe>
 
@@ -1293,10 +1309,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1316,10 +1333,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1339,10 +1357,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1362,10 +1381,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1385,10 +1405,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1408,10 +1429,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1431,10 +1453,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1454,10 +1477,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1477,10 +1501,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1500,10 +1525,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1523,10 +1549,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="432"/> 	<!-- 432 	= 2 * 24 * (5 + 3 + 1) -->
+			<algo name="aes_r12" number="192"/> 	<!-- 192 	= 2 * 24 * (3 + 1) -->
+			<algo name="aes_r14" number="48"/> 		<!-- 48 	= 2 * 24 -->
+			<algo name="aes_last_v7" number="144"/> <!-- 144 	= 2 * 24 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 
@@ -1546,10 +1573,11 @@
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="aes_t1_v1" number="1584"/> <!-- 1584 = (9 + 11 + 13) * 24 * 2 -->
-			<algo name="aes_r9" number="432"/> <!-- 432 = 24 * (2 + 6 + 10) -->
-			<algo name="aes_r11" number="192"/> <!-- 192 = 24 * (2 + 6) -->
-			<algo name="aes_r13" number="48"/> <!-- 48 = 24 * 2 -->
+			<algo name="aes_t1_v1" number="1584"/> 	<!-- 1584 	= 2 * 24 * (9 + 11 + 13) -->
+			<algo name="aes_r10" number="312"/> 	<!-- 312 	= 2 * (4 + 24 * 4 + 4 + 24 * 2 + 4) -->
+			<algo name="aes_r12" number="112"/> 	<!-- 112 	= 2 * (4 + 24 * 2 + 4) -->
+			<algo name="aes_r14" number="8"/> 		<!-- 8 		= 2 * 4 -->
+			<algo name="aes_last_v8" number="24"/> 	<!-- 24 	= 2 * 4 * (1 + 1 + 1) -->
 		</result>
 	</recipe>
 </xml>
