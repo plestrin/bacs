@@ -5,7 +5,7 @@ PROG 	:= build/asa
 WHL 	:= whiteList.lst
 PIN 	:= /home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
-ANAL 	:= ../../test/signature 
+ANAL 	:= ../../test/analysis 
 
 all: build $(PROG) trace search
 

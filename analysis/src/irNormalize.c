@@ -654,9 +654,8 @@ static int32_t irNormalize_remove_common_subexpression(struct ir* ir){
 
 				/* CASE 1 */
 				if (nb_match > 0 && nb_match == nb_edge_node1 && nb_match == nb_edge_node2){
-					graph_transfert_src_edge(&(ir->graph), node1, node2);
 					operation1->index = min(operation2->index, operation1->index);
-					ir_remove_node(ir, node2);
+					ir_merge_equivalent_node(ir, node1, node2);
 
 					result = 1;
 					edge_cursor2 = prev_edge_cursor2;

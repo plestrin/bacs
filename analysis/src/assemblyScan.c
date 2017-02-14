@@ -18,7 +18,7 @@ static const xed_iclass_enum_t crypto_instruction[] = {
 	XED_ICLASS_AESENCLAST,
 	XED_ICLASS_AESIMC,
 	XED_ICLASS_AESKEYGENASSIST,
-	XED_ICLASS_PCLMULQDQ
+	XED_ICLASS_PCLMULQDQ,
 };
 
 #define nb_crypto_instruction (sizeof(crypto_instruction) / sizeof(xed_iclass_enum_t))
@@ -109,6 +109,14 @@ static const uint32_t TEA[TEA_NB_ELEMENT] = {
 	0x9e3779b9, 0x61c88647, 0xc6ef3720
 };
 
+#define CRC32_NB_ELEMENT 	1
+#define CRC32_NAME 			"CRC32"
+#define CRC32_FLAG 			0x00000010
+
+static const uint32_t CRC32[CRC32_NB_ELEMENT] = {
+	0xedb88320
+};
+
 static uint32_t assemblySan_search_cst(struct asmBlock* block, uint32_t verbose){
 	uint32_t 				offset;
 	xed_decoded_inst_t 		xedd;
@@ -172,6 +180,16 @@ static uint32_t assemblySan_search_cst(struct asmBlock* block, uint32_t verbose)
 					result |= TEA_FLAG;
 					if (verbose){
 						printf("  - " TEA_NAME " constant @ 0x%08x\n", block->header.address + offset);
+					}
+					break;
+				}
+			}
+
+			for (j = 0; j < CRC32_NB_ELEMENT; j++){
+				if ((uint32_t)value == CRC32[j]){
+					result |= CRC32_FLAG;
+					if (verbose){
+						printf("  - " CRC32_NAME " constant @ 0x%08x\n", block->header.address + offset);
 					}
 					break;
 				}
@@ -438,6 +456,9 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		}
 		if (macro_block.flag & TEA_FLAG){
 			fputs(" " ANSI_COLOR_BOLD_YELLOW TEA_NAME ANSI_COLOR_RESET, stdout);
+		}
+		if (macro_block.flag & CRC32_FLAG){
+			fputs(" " ANSI_COLOR_BOLD_YELLOW CRC32_NAME ANSI_COLOR_RESET, stdout);
 		}
 		fputc('\n', stdout);
 
