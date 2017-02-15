@@ -44,7 +44,7 @@ void variableRange_and_value(struct variableRange* range, uint64_t value){
 			range->scale += ctz;
 
 			value >>= ctz;
-			
+
 			range->index = min(value, range->index + (range->disp >> range->scale));
 			range->disp &= bitmask64(range->scale);
 		}
@@ -234,7 +234,7 @@ void variableRange_add_range(struct variableRange* range1, const struct variable
 			index1 = (range1->mask & mask) >> range1->scale;
 			disp1 &= ~(0xffffffffffffffff << range1->scale);
 		}
-		
+
 		if (range2->mask < mask && ((range2->index > (range2->mask >> range2->scale)) || variableRange_is_overflow(range2))){
 			index2 = (range2->mask & mask) >> range2->scale;
 			disp2 &= ~(0xffffffffffffffff << range2->scale);
@@ -336,11 +336,11 @@ void variableRange_or_range(struct variableRange* range1, const struct variableR
 			}
 			index_b = (range1->index << (range1->scale - (range2->scale + scale))) + (range1->disp >> (range2->scale + scale));
 
-			range1->scale = range2->scale + scale;	
+			range1->scale = range2->scale + scale;
 		}
 
 		range1->mask = bitmask64(size_bit);
-		range1->index = (0xffffffffffffffff >> __builtin_ctzll(index_a | index_b)) & (range1->mask >> range1->scale);
+		range1->index = (0xffffffffffffffff >> __builtin_clzll(index_a | index_b)) & (range1->mask >> range1->scale);
 		range1->disp = (range1->disp | range2->disp) & ~(0xffffffffffffffff << range1->scale) & range1->mask;
 	}
 }
