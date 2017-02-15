@@ -18,8 +18,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="120"/> <!-- 120 = 4 * (14 + 16) -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -43,8 +42,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -68,8 +66,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -93,8 +90,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -118,8 +114,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -143,8 +138,7 @@
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="128"/>
 			<algo name="md5_p4_v2" number="64"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
 
@@ -167,8 +161,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -192,8 +185,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -217,8 +209,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -242,8 +233,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="116"/>  <!-- 116 = 4 * (12 + 16) + 2 * 2 -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 			<algo name="md5_compress" number="1"/>
 		</result>
 	</recipe>
@@ -267,8 +257,7 @@
 			<algo name="md5_p2_v2" number="64"/>
 			<algo name="md5_p3_v2" number="128"/>
 			<algo name="md5_p4_v2" number="64"/>
-			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
 
@@ -292,8 +281,7 @@
 			<algo name="md5_p3_v2" number="120"/>
 			<algo name="md5_p3_v1" number="24"/>
 			<algo name="md5_p4_v2" number="64"/>
-			<algo name="md5_slice" number="56"/> <!-- 56 = 32 + (32 - 4*2) -->
-			<algo name="md5_v1" number="2"/> <!-- the first iteration is not detected - cst propagation -->
+			<algo name="md5_enc" number="2"/> <!-- the first iteration is not detected - cst propagation -->
 		</result>
 	</recipe>
 
@@ -316,8 +304,7 @@
 			<algo name="md5_p2_v1" number="96"/>
 			<algo name="md5_p3_v1" number="192"/>
 			<algo name="md5_p4_v1" number="96"/>
-			<algo name="md5_slice" number="64"/>
-			<algo name="md5_v1" number="2"/>
+			<algo name="md5_enc" number="2"/>
 			<algo name="md5_compress" number="1"/> <!-- md5_compress might not be detected because of aliasing issues -->
 		</result>
 	</recipe>
@@ -341,8 +328,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 		</result>
 	</recipe>
@@ -366,8 +352,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 		</result>
 	</recipe>
@@ -392,8 +377,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 		</result>
 	</recipe>
@@ -418,8 +402,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 		</result>
 	</recipe>

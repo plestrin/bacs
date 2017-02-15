@@ -27,8 +27,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -62,8 +61,7 @@
 			<algo name="md5_p2_v1" number="288"/>
 			<algo name="md5_p3_v1" number="576"/>
 			<algo name="md5_p4_v1" number="288"/>
-			<algo name="md5_slice" number="192"/>
-			<algo name="md5_v1" number="6"/>
+			<algo name="md5_enc" number="6"/>
 			<algo name="md5_compress" number="3"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -97,8 +95,7 @@
 			<algo name="md5_p2_v1" number="288"/>
 			<algo name="md5_p3_v1" number="576"/>
 			<algo name="md5_p4_v1" number="288"/>
-			<algo name="md5_slice" number="192"/>
-			<algo name="md5_v1" number="6"/>
+			<algo name="md5_enc" number="6"/>
 			<algo name="md5_compress" number="3"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -133,8 +130,7 @@
 			<algo name="md5_p2_v1" number="384"/>
 			<algo name="md5_p3_v1" number="768"/>
 			<algo name="md5_p4_v1" number="384"/>
-			<algo name="md5_slice" number="256"/>
-			<algo name="md5_v1" number="8"/>
+			<algo name="md5_enc" number="8"/>
 			<algo name="md5_compress" number="4"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -168,8 +164,7 @@
 			<algo name="md5_p2_v1" number="288"/>
 			<algo name="md5_p3_v1" number="576"/>
 			<algo name="md5_p4_v1" number="288"/>
-			<algo name="md5_slice" number="192"/>
-			<algo name="md5_v1" number="6"/>
+			<algo name="md5_enc" number="6"/>
 			<algo name="md5_compress" number="3"/>
 			<algo name="hmac_v2" number="1"/>
 		</result>
@@ -203,8 +198,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -238,8 +232,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -273,8 +266,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -308,8 +300,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -343,8 +334,7 @@
 			<algo name="md5_p2_v1" number="192"/>
 			<algo name="md5_p3_v1" number="384"/>
 			<algo name="md5_p4_v1" number="192"/>
-			<algo name="md5_slice" number="128"/>
-			<algo name="md5_v1" number="4"/>
+			<algo name="md5_enc" number="4"/>
 			<algo name="md5_compress" number="2"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -382,8 +372,7 @@
 			<algo name="md5_p2_v1" number="480"/>
 			<algo name="md5_p3_v1" number="960"/>
 			<algo name="md5_p4_v1" number="480"/>
-			<algo name="md5_slice" number="320"/>
-			<algo name="md5_v1" number="10"/>
+			<algo name="md5_enc" number="10"/>
 			<algo name="md5_compress" number="5"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -418,8 +407,7 @@
 			<algo name="md5_p2_v1" number="480"/>
 			<algo name="md5_p3_v1" number="960"/>
 			<algo name="md5_p4_v1" number="480"/>
-			<algo name="md5_slice" number="320"/>
-			<algo name="md5_v1" number="10"/>
+			<algo name="md5_enc" number="10"/>
 			<algo name="md5_compress" number="5"/>
 			<algo name="hmac_v3" number="1"/>
 		</result>
@@ -456,8 +444,7 @@
 			<algo name="md5_p2_v1" number="384"/>
 			<algo name="md5_p3_v1" number="768"/>
 			<algo name="md5_p4_v1" number="384"/>
-			<algo name="md5_slice" number="256"/>
-			<algo name="md5_v1" number="8"/>
+			<algo name="md5_enc" number="8"/>
 			<algo name="md5_compress" number="4"/>
 			<algo name="hmac_v2" number="1"/>
 		</result>
@@ -493,8 +480,7 @@
 			<algo name="md5_p2_v1" number="384"/>
 			<algo name="md5_p3_v1" number="768"/>
 			<algo name="md5_p4_v1" number="384"/>
-			<algo name="md5_slice" number="256"/>
-			<algo name="md5_v1" number="8"/>
+			<algo name="md5_enc" number="8"/>
 			<algo name="md5_compress" number="4"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
@@ -531,8 +517,7 @@
 			<algo name="md5_p2_v1" number="480"/>
 			<algo name="md5_p3_v1" number="960"/>
 			<algo name="md5_p4_v1" number="480"/>
-			<algo name="md5_slice" number="320"/>
-			<algo name="md5_v1" number="10"/>
+			<algo name="md5_enc" number="10"/>
 			<algo name="md5_compress" number="5"/>
 			<algo name="hmac_v1" number="1"/>
 		</result>
