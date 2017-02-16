@@ -131,12 +131,18 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 
 			#ifdef INTERACTIVE
 			if (termReader_get_line(&(parser->term), line, INPUTPARSER_LINE_SIZE)){
-				log_err("EOF");
+				#ifdef COLOR
+				printf(ANSI_COLOR_RESET);
+				fflush(stdout);
+				#endif
 				return;
 			}
 			#else
 			if (fgets(line, INPUTPARSER_LINE_SIZE, stdin) == NULL){
-				log_err("EOF");
+				#ifdef COLOR
+				printf(ANSI_COLOR_RESET);
+				fflush(stdout);
+				#endif
 				return;
 			}
 			else{

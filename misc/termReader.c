@@ -6,8 +6,9 @@
 #include "termReader.h"
 #include "base.h"
 
-#define TERMREADER_SPECIAL_CHAR_DEL 0x7F
+#define TERMREADER_SPECIAL_CHAR_EOT 0x04
 #define TERMREADER_SPECIAL_CHAR_TAB 0x09
+#define TERMREADER_SPECIAL_CHAR_DEL 0x7F
 
 static void termReader_remove_last_blank(char* buffer, uint32_t length);
 
@@ -178,6 +179,9 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 	do{
 		character = fgetc(stdin);
 		switch(character){
+			case TERMREADER_SPECIAL_CHAR_EOT : {
+				return -1;
+			}
 			case '\n' 	: {
 				if (term->is_tty){
 					#pragma GCC diagnostic ignored "-Wunused-result"
@@ -212,7 +216,6 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 				break;
 			}
 			case EOF	: {
-				log_err("fgetc returns EOF on stdin");
 				return - 1;
 			}
 			default 	: {

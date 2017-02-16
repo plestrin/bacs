@@ -17,16 +17,16 @@ TRACE_PATH				= ""
 LOG_PATH 				= "./log/"
 
 if len(sys.argv) < 3:
-	print("ERROR: incorrect number of argument")
-	print("- 1 arg: recipe file name")
-	print("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL or WHL")
-	print("- 3 arg: name of specific test case [OPT]")
+	sys.stderr.write("ERROR: incorrect number of argument\n")
+	sys.stderr.write("- 1 arg: recipe file name\n")
+	sys.stderr.write("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL or WHL\n")
+	sys.stderr.write("- 3 arg: name of specific test case [OPT]\n")
 	exit()
 
 file_name = sys.argv[1]
 action = sys.argv[2]
 if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == "SEARCH" or action == "ALL" or action == "WHL"):
-	print("ERROR: incorrect action type")
+	sys.stderr.write("ERROR: incorrect action type\n")
 	exit()
 
 recipes = []
@@ -45,7 +45,7 @@ try:
 		else:
 			print("\x1b[35mWARNING: " + r.name + " is desactivated\x1b[0m")
 except IOError:
-	print("ERROR: unable to access recipe file: \"" + file_name + "\"")
+	sys.stderr.write("ERROR: unable to access recipe file: \"" + file_name + "\"\n")
 	exit()
 
 
@@ -63,9 +63,9 @@ if action == "PRINT":
 				else:
 					sys.stdout.flush()
 		else:
-			print("ERROR: incorrect test case name: " + sys.argv[3])
+			sys.stderr.write("ERROR: incorrect test case name: " + sys.argv[3] + "\n")
 	else:
-		print("ERROR: a third argument is expected (name of a specific test case)")
+		sys.stderr.write("ERROR: a third argument is expected (name of a specific test case)\n")
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
@@ -78,7 +78,7 @@ if action == "TRACE" or action == "ALL":
 	sys.stdout.flush()
 	return_value = subprocess.call(["make", "-C", TOOL_SRC_PATH])
 	if return_value != 0:
-		print("ERROR: unable to build Trace program")
+		sys.stderr.write("ERROR: unable to build Trace program\n")
 		exit()
 
 # TRACE step
@@ -92,7 +92,7 @@ if action == "SEARCH" or action == "ALL":
 	sys.stdout.flush()
 	return_value = subprocess.call(["make"])
 	if return_value != 0:
-		print("ERROR: unable to build analysis program")
+		sys.stderr.write("ERROR: unable to build analysis program\n")
 		exit()
 
 # SEARCH step
