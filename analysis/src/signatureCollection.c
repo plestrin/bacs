@@ -403,6 +403,10 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 				}
 				else{
 					log_err("unable to create graphHandle");
+
+					for (j = 0; j < nb_signature; j++){
+						signature_state_set_search(signature_buffer[j]);
+					}
 				}
 			}
 
