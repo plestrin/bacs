@@ -82,7 +82,6 @@ struct parameterMapping{
 	enum parameterSimilarity 	similarity;
 };
 
-enum parameterSimilarity parameterMapping_get_similarity(const struct parameterMapping* parameter_mapping1, const struct parameterMapping* parameter_mapping2);
 void parameterMapping_print_location(const struct parameterMapping* mapping);
 
 struct symbolMapping{

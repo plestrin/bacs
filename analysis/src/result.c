@@ -658,43 +658,68 @@ void result_print(struct result* result){
 /* ===================================================================== */
 /* parameterMapping & symbolMapping routines							 */
 /* ===================================================================== */
-enum parameterSimilarity parameterMapping_get_similarity(const struct parameterMapping* parameter_mapping1, const struct parameterMapping* parameter_mapping2){
+
+static enum parameterSimilarity parameterMapping_get_similarity(const struct parameterMapping* parameter_mapping1, const struct parameterMapping* parameter_mapping2){
 	uint32_t 					i;
 	uint32_t 					j;
 	enum parameterSimilarity 	result;
 	uint32_t 					nb_found;
 
 	if (parameter_mapping1->nb_fragment == parameter_mapping2->nb_fragment){
-		result = PARAMETER_EQUAL;
+		for (i = 0, nb_found = 0, result = PARAMETER_EQUAL; i < parameter_mapping1->nb_fragment; i++){
+			for (j = 0; j < parameter_mapping2->nb_fragment; j++){
+				if (parameter_mapping1->ptr_buffer[i] == parameter_mapping2->ptr_buffer[j]){
+					nb_found ++;
+					if (i != j){
+						result = PARAMETER_PERMUT;
+					}
+					break;
+				}
+			}
+		}
+
+		if (nb_found && parameter_mapping1->nb_fragment != nb_found){
+			return PARAMETER_OVERLAP;
+		}
 	}
 	else if (parameter_mapping1->nb_fragment < parameter_mapping2->nb_fragment){
+		for (i = 0, nb_found = 0; i < parameter_mapping1->nb_fragment; i++){
+			for (j = 0; j < parameter_mapping2->nb_fragment; j++){
+				if (parameter_mapping1->ptr_buffer[i] == parameter_mapping2->ptr_buffer[j]){
+					nb_found ++;
+					break;
+				}
+			}
+		}
+
+		if (nb_found && parameter_mapping1->nb_fragment != nb_found){
+			return PARAMETER_OVERLAP;
+		}
+
 		result = PARAMETER_SUPERSET;
 	}
 	else{
-		result = PARAMETER_SUBSET;
-	}
-
-	for (i = 0, nb_found = 0; i < parameter_mapping1->nb_fragment; i++){
-		for (j = 0; j < parameter_mapping2->nb_fragment; j++){
-			if (parameter_mapping1->ptr_buffer[i] == parameter_mapping2->ptr_buffer[j]){
-				nb_found ++;
-				if (i != j){
-					result |= PARAMETER_PERMUT;
+		for (i = 0, nb_found = 0; i < parameter_mapping2->nb_fragment; i++){
+			for (j = 0; j < parameter_mapping1->nb_fragment; j++){
+				if (parameter_mapping2->ptr_buffer[i] == parameter_mapping1->ptr_buffer[j]){
+					nb_found ++;
+					break;
 				}
-				break;
 			}
 		}
-		if (j == parameter_mapping2->nb_fragment && nb_found != 0){
+
+		if (nb_found && parameter_mapping2->nb_fragment != nb_found){
 			return PARAMETER_OVERLAP;
 		}
+
+		result = PARAMETER_SUBSET;
 	}
 
 	if (nb_found == 0){
 		return PARAMETER_DISJOINT;
 	}
-	else{
-		return result;
-	}
+
+	return result;
 }
 
 void parameterMapping_print_location(const struct parameterMapping* mapping){
@@ -941,7 +966,6 @@ struct symbolMapping* symbolMapping_create_from_result(struct result* result, ui
 	return mapping;
 }
 
-
 struct symbolMapping* symbolMapping_create_from_ir(struct node* node){
 	struct edge* 			edge_cursor;
 	uint32_t 				nb_para_in;
@@ -1048,11 +1072,11 @@ int32_t symbolMapping_may_append(struct symbolMapping* mapping_dst, struct symbo
 	}
 
 	for (i = 0; i < mapping_src[0].nb_parameter; i++){
-		mapping_src[0].mapping_buffer[i].similarity |= in_similarity[i];
+		mapping_dst[0].mapping_buffer[i].similarity |= in_similarity[i];
 	}
 
 	for (i = 0; i < mapping_src[1].nb_parameter; i++){
-		mapping_src[1].mapping_buffer[i].similarity |= ou_similarity[i];
+		mapping_dst[1].mapping_buffer[i].similarity |= ou_similarity[i];
 	}
 
 	return 0;
