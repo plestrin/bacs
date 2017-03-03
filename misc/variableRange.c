@@ -216,7 +216,7 @@ void variableRange_add_range(struct variableRange* range1, const struct variable
 	uint64_t mask = bitmask64(size_bit);
 
 	if (variableRange_is_cst(range2)){
-		variableRange_add_value(range1, variableRange_get_cst(range2),  size_bit);
+		variableRange_add_value(range1, variableRange_get_cst(range2), size_bit);
 	}
 	else if (variableRange_is_cst(range1)){
 		uint64_t cst = variableRange_get_cst(range1);
@@ -226,7 +226,7 @@ void variableRange_add_range(struct variableRange* range1, const struct variable
 	else{
 		uint64_t index1 	= range1->index;
 		uint64_t disp1 		= range1->disp & range1->mask;
-		uint64_t index2  	= range2->index;
+		uint64_t index2 	= range2->index;
 		uint64_t disp2 		= range2->disp & range2->mask;
 		uint32_t scale 		= min(range1->scale, range2->scale);
 
@@ -387,46 +387,43 @@ void variableRange_xor_range(struct variableRange* range1, const struct variable
 		uint64_t index;
 
 		if (range1->scale < range2->scale){
-			range1->disp = (range1->disp  ^ range2->disp) & ~(0xffffffffffffffff << range1->scale);
-
 			if (variableRange_is_overflow(range1)){
 				index = range1->mask >> range1->scale;
 			}
 			else{
-				index = range1->index;
+				index = range1->index + (range1->disp >> range1->scale);
 			}
 
 			if (variableRange_is_overflow(range2)){
 				index |= range2->mask >> range1->scale;
 			}
 			else{
-				index |= range2->index << (range2->scale - range1->scale);
+				index |= (range2->index << (range2->scale - range1->scale)) + (range2->disp >> range1->scale);
 			}
 
-			range1->mask = bitmask64(size_bit);
-			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
+			range1->disp = (range1->disp & ~(0xffffffffffffffff << range1->scale)) ^ (range2->disp & ~(0xffffffffffffffff << range1->scale));
 		}
 		else{
-			range1->disp = (range1->disp  ^ range2->disp) & ~(0xffffffffffffffff << range2->scale);
-
 			if (variableRange_is_overflow(range1)){
 				index = range1->mask >> range2->scale;
 			}
 			else{
-				index = range1->index << (range1->scale - range2->scale);
+				index = (range1->index << (range1->scale - range2->scale)) + (range1->disp >> range2->scale);
 			}
 
 			if (variableRange_is_overflow(range2)){
 				index |= range2->mask >> range2->scale;
 			}
 			else{
-				index |= range2->index;
+				index |= range2->index + (range2->disp >> range2->scale);
 			}
 
+			range1->disp = (range1->disp & ~(0xffffffffffffffff << range2->scale)) ^ (range2->disp & ~(0xffffffffffffffff << range2->scale));
 			range1->scale = range2->scale;
-			range1->mask = bitmask64(size_bit);
-			range1->index = (0xffffffffffffffff >>  __builtin_ctzll(index)) & (range1->mask >> range1->scale);
 		}
+
+		range1->mask = bitmask64(size_bit);
+		range1->index = (0xffffffffffffffff >> __builtin_clzll(index)) & (range1->mask >> range1->scale);
 	}
 }
 

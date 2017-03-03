@@ -18,9 +18,9 @@
 
 #define ENABLE_RANGE_TEST_ADD 0
 #define ENABLE_RANGE_TEST_AND 0
-#define ENABLE_RANGE_TEST_OR  1
+#define ENABLE_RANGE_TEST_OR  0
 #define ENABLE_RANGE_TEST_SUB 0
-#define ENABLE_RANGE_TEST_XOR 0
+#define ENABLE_RANGE_TEST_XOR 1
 
 static uint32_t variableRange_init_rand(struct variableRange* range){
 	uint32_t size;
