@@ -9,12 +9,13 @@ from recipe import recipe
 # 	- print a report in HTML
 #	- archive previous reports
 
-PIN_PATH 				= "/home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin"
-TOOL_PATH 				= "../lightTracer_pin/obj-ia32/lightTracer.so"
-TOOL_SRC_PATH 			= "../lightTracer_pin/"
-WHITELIST_PATH 			= "./whiteList/"
-TRACE_PATH				= ""
-LOG_PATH 				= "./log/"
+PATH 					= "/home/plt/Documents/bacs/"
+PIN_PATH 				= "/home/plt/Documents/tools/pin-3.2-81205-gcc-linux/pin"
+TOOL_PATH 				= PATH + "lightTracer_pin/obj-ia32/lightTracer.so"
+TOOL_SRC_PATH 			= PATH + "lightTracer_pin/"
+WHITELIST_PATH 			= PATH + "test/whiteList/"
+TRACE_PATH				= PATH + "test/"
+LOG_PATH 				= PATH + "test/log/"
 
 if len(sys.argv) < 3:
 	sys.stderr.write("ERROR: incorrect number of argument\n")

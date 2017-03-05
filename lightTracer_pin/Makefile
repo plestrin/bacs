@@ -1,4 +1,4 @@
-PIN_ROOT 		:= /home/plt/Documents/tools/pin-3.0-76991-gcc-linux
+PIN_ROOT 		:= /home/plt/Documents/tools/pin-3.2-81205-gcc-linux
 CONFIG_ROOT 	:= $(PIN_ROOT)/source/tools/Config
 SOURCE_DIR 		:= src/
 MISC_DIR		:= ../misc/

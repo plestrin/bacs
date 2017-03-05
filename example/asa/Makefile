@@ -3,7 +3,7 @@ CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99
 LDFLAGS	:=
 PROG 	:= build/asa
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tools/pin-3.0-76991-gcc-linux/pin
+PIN 	:= /home/plt/Documents/tools/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis 
 

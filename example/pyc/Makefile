@@ -1,6 +1,6 @@
 PROG 	:= python_cbc_aes.py
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tool/pin-3.0-76991-gcc-linux/pin
+PIN 	:= /home/plt/Documents/tool/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis 
 

@@ -240,7 +240,7 @@
 	</recipe>
 
 	<recipe name="BOT_RC4" active="no"> <!-- There are several issues: the right function is too big and it does not contains XOR operations -->
-		<build cmd="make -C /home/plt/Documents/bacs/algocrypto/botan/ build/bot_rc4"/>
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_rc4"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_rc4"/>
 		<search>
 			<arg value="load trace traceBOT_RC4"/>
