@@ -44,7 +44,7 @@ static int32_t compare_fast_dst(const void* arg1, const void* arg2, void* arg);
 #define subGraphIsoHandle_edge_get_dst(sub_graph_handle, edge_index) ((sub_graph_handle)->sub_node_tab[(sub_graph_handle)->edge_tab[(edge_index)].dst])
 
 struct nodeMeta{
-	uint32_t restart_ctr;
+	uint32_t restart;
 	#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
 	uint32_t assigned;
 	#endif
@@ -1155,13 +1155,12 @@ static uint32_t possibleAssignment_filter_based_on_dst(struct possibleAssignment
 	return size;
 }
 
-static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, int32_t index, uint32_t* restart_idx_in, uint32_t* nb_restart_in, uint32_t restart_ctr){
+static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* possible_assignment, struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, int32_t index, uint32_t* restart_idx_in, uint32_t* nb_restart_in){
 	uint32_t 	i;
 	uint32_t 	j;
 	uint32_t 	k;
 	uint32_t* 	buffer;
 	uint32_t 	buffer_size;
-	uint32_t 	restart;
 	uint32_t 	edge;
 	uint32_t 	size;
 
@@ -1211,16 +1210,15 @@ static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* p
 		}
 	}
 
-	for (i = 0, restart = 0; i < sub_graph_handle->sub_node_tab[index].nb_src; i++){
+	for (i = 0; i < sub_graph_handle->sub_node_tab[index].nb_src; i++){
 		edge = sub_graph_handle->src_fast[sub_graph_handle->sub_node_tab[index].off_src + i];
 		size = possibleAssignment_filter_based_on_src(possible_assignment, graph_handle, buffer, buffer_size, edge);
 
 		if (size != possible_assignment->edge_meta_buffer[edge].size){
 			possible_assignment->edge_meta_buffer[edge].size = size;
-			restart = 1;
 
-			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart_ctr < restart_ctr && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_dst > 1){
-				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart_ctr = restart_ctr;
+			if (!possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].dst].nb_dst > 1){
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].dst].restart = 1;
 				restart_idx_in[*nb_restart_in] = sub_graph_handle->edge_tab[edge].dst;
 				*nb_restart_in = *nb_restart_in + 1;
 			}
@@ -1233,21 +1231,16 @@ static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* p
 
 		if (size != possible_assignment->edge_meta_buffer[edge].size){
 			possible_assignment->edge_meta_buffer[edge].size = size;
-			restart = 1;
 
-			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart_ctr < restart_ctr && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_dst > 1){
-				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart_ctr = restart_ctr;
+			if (!possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart && sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_src + sub_graph_handle->sub_node_tab[sub_graph_handle->edge_tab[edge].src].nb_dst > 1){
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge].src].restart = 1;
 				restart_idx_in[*nb_restart_in] = sub_graph_handle->edge_tab[edge].src;
 				*nb_restart_in = *nb_restart_in + 1;
 			}
 		}
 	}
 
-	if (restart && possible_assignment->node_meta_buffer[index].restart_ctr < restart_ctr){
-		possible_assignment->node_meta_buffer[index].restart_ctr = restart_ctr;
-		restart_idx_in[*nb_restart_in] = index;
-		*nb_restart_in = *nb_restart_in + 1;
-	}
+	possible_assignment->node_meta_buffer[index].restart = 0;
 
 	return 0;
 }
@@ -1257,7 +1250,6 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 	uint32_t 	i;
 	uint32_t 	nb_restart_in;
 	uint32_t 	nb_restart_ou;
-	uint32_t 	restart_ctr;
 	uint32_t* 	restart_idx_root;
 	uint32_t* 	restart_idx_in;
 	uint32_t* 	restart_idx_ou;
@@ -1272,14 +1264,14 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 	restart_idx_ou = restart_idx_in + subGraphIsoHandle_get_nb_node(sub_graph_handle);
 
 	for (i = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
-		possible_assignment->node_meta_buffer[i].restart_ctr 	= 0;
+		possible_assignment->node_meta_buffer[i].restart 	= 1;
 		#if SUBGRAPHISOMORPHISM_OPTIM_MARK_ASSIGNED == 1
 		possible_assignment->node_meta_buffer[i].assigned 		= 0xffffffff;
 		#endif
 		restart_idx_in[i] = i;
 	}
 
-	for (restart_ctr = 1, nb_restart_in = subGraphIsoHandle_get_nb_node(sub_graph_handle); nb_restart_in; restart_ctr++){
+	for (nb_restart_in = subGraphIsoHandle_get_nb_node(sub_graph_handle); nb_restart_in; ){
 		nb_restart_ou = nb_restart_in;
 		nb_restart_in = 0;
 
@@ -1288,7 +1280,7 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 		restart_idx_ou = restart_idx_tp;
 
 		for (i = 0; i < nb_restart_ou; i++){
-			if (possibleAssignment_fast_compare_node(possible_assignment, graph_handle, sub_graph_handle, restart_idx_ou[i], restart_idx_in, &nb_restart_in, restart_ctr)){
+			if (possibleAssignment_fast_compare_node(possible_assignment, graph_handle, sub_graph_handle, restart_idx_ou[i], restart_idx_in, &nb_restart_in)){
 				free(restart_idx_root);
 				return -1;
 			}
@@ -1306,14 +1298,14 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 		possible_assignment->edge_meta_buffer[edge1].size = size1; 																				\
 																																				\
 		if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].src)){ 										\
-			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr < restart_ctr){ 						\
-				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart_ctr = restart_ctr; 						\
+			if (!possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart){ 										\
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].src].restart = 1; 										\
 				restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].src; 														\
 			} 																																	\
 		} 																																		\
 		if (!possibleAssignment_is_assigned(possible_assignment, sub_graph_handle->edge_tab[edge1].dst)){ 										\
-			if (possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr < restart_ctr){ 						\
-				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart_ctr = restart_ctr; 						\
+			if (!possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart){ 										\
+				possible_assignment->node_meta_buffer[sub_graph_handle->edge_tab[edge1].dst].restart = 1; 										\
 				restart_idx_in[nb_restart_in ++] = sub_graph_handle->edge_tab[edge1].dst; 														\
 			} 																																	\
 		} 																																		\
@@ -1352,7 +1344,6 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	uint32_t 	size1;
 	uint32_t 	nb_restart_in;
 	uint32_t 	nb_restart_ou;
-	uint32_t 	restart_ctr;
 	uint32_t* 	restart_idx_in;
 	uint32_t* 	restart_idx_ou;
 	uint32_t* 	restart_idx_tp;
@@ -1362,7 +1353,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 
 	for (i = 0, nb_node_assigned = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
 		if (possible_assignment->node_meta_buffer[i].assigned >= nb_assignment){
-			possible_assignment->node_meta_buffer[i].restart_ctr = 0;
+			possible_assignment->node_meta_buffer[i].restart = 0;
 			possible_assignment->node_meta_buffer[i].assigned = 0xffffffff;
 		}
 		else{
@@ -1387,6 +1378,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
 			if (sub_graph_handle->sub_node_tab[__index__].nb_src + sub_graph_handle->sub_node_tab[__index__].nb_dst > 1){
 				restart_idx_in[nb_restart_in ++] = __index__;
+				possible_assignment->node_meta_buffer[__index__].restart = 1;
 			}
 			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_src(graph_handle, new_value).node;
 			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
@@ -1396,6 +1388,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 		if (!possibleAssignment_is_assigned(possible_assignment, __index__)){
 			if (sub_graph_handle->sub_node_tab[__index__].nb_src + sub_graph_handle->sub_node_tab[__index__].nb_dst > 1){
 				restart_idx_in[nb_restart_in ++] = __index__;
+				possible_assignment->node_meta_buffer[__index__].restart = 1;
 			}
 			assignment_node(assignment, __index__) = graphIsoHandle_edge_get_dst(graph_handle, new_value).node;
 			possible_assignment->node_meta_buffer[__index__].assigned = nb_assignment;
@@ -1405,7 +1398,7 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	#else
 
 	for (i = 0; i < subGraphIsoHandle_get_nb_node(sub_graph_handle); i++){
-		possible_assignment->node_meta_buffer[i].restart_ctr = 0;
+		possible_assignment->node_meta_buffer[i].restart = 0;
 	}
 
 	restart_idx_in = (uint32_t*)alloca(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2);
@@ -1415,9 +1408,12 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 	restart_idx_in[1] = sub_graph_handle->edge_tab[possibleAssignment_order(possible_assignment, nb_assignment)].dst;
 	nb_restart_in = 2;
 
+	possible_assignment->node_meta_buffer[restart_idx_in[0]].restart = 1;
+	possible_assignment->node_meta_buffer[restart_idx_in[1]].restart = 1;
+
 	#endif
 
-	for (restart_ctr = 1; nb_restart_in; restart_ctr++){
+	for (; nb_restart_in; ){
 		nb_restart_ou = nb_restart_in;
 		nb_restart_in = 0;
 
@@ -1525,6 +1521,8 @@ static int32_t possibleAssignment_global_update(struct possibleAssignment* possi
 
 				__generic_fill_restart_buffer__()
 			}
+
+			possible_assignment->node_meta_buffer[restart_idx_ou[i]].restart = 1;
 		}
 	}
 

@@ -49,7 +49,6 @@ except IOError:
 	sys.stderr.write("ERROR: unable to access recipe file: \"" + file_name + "\"\n")
 	exit()
 
-
 # PRINT step
 if action == "PRINT":
 	if len(sys.argv) == 4:
@@ -89,11 +88,11 @@ if action == "TRACE" or action == "ALL":
 
 # COMPILE SEARCH step
 if action == "SEARCH" or action == "ALL":
-	sys.stdout.write("Building analysis program: ... ")
+	sys.stdout.write("Building Analysis program: ... ")
 	sys.stdout.flush()
 	return_value = subprocess.call(["make"])
 	if return_value != 0:
-		sys.stderr.write("ERROR: unable to build analysis program\n")
+		sys.stderr.write("ERROR: unable to build Analysis program\n")
 		exit()
 
 # SEARCH step
