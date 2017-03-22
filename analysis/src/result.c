@@ -540,6 +540,7 @@ void result_get_edge_footprint(const struct result* result, uint32_t index, stru
 	for (i = 0; i < result->nb_edge; i++){
 		if (result->edge_buffer[index * result->nb_edge + i].edge == NULL){
 			if (result->edge_buffer[index * result->nb_edge + i].result == NULL){
+				log_err("both the edge and the result are NULL");
 				return;
 			}
 			else{
