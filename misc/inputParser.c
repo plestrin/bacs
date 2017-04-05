@@ -246,6 +246,9 @@ static void inputParser_print_help(struct inputParser* parser, const char* arg){
 	uint32_t 					i;
 	struct multiColumnPrinter* 	printer;
 	struct cmdEntry* 			entry;
+	size_t 						dyn_col_size_name;
+	size_t 						dyn_col_size_desc;
+	size_t 						local_size;
 
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer == NULL){
@@ -258,12 +261,28 @@ static void inputParser_print_help(struct inputParser* parser, const char* arg){
 	multiColumnPrinter_set_title(printer, 2, "CMD DESC");
 	multiColumnPrinter_set_title(printer, 3, "ARG DESC");
 
-	multiColumnPrinter_set_column_size(printer, 0, 24);
-	multiColumnPrinter_set_column_size(printer, 1, 3);
-	multiColumnPrinter_set_column_size(printer, 2, 48);
-	multiColumnPrinter_set_column_size(printer, 3, 32);
+	for (i = 0, dyn_col_size_name = 0, dyn_col_size_desc = 0; i < array_get_length(&(parser->cmd_array)); i++){
+		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
 
-	printf("List of available command(s):\n");
+		local_size = strlen(entry->name);
+		if (local_size > dyn_col_size_name){
+			dyn_col_size_name = local_size;
+		}
+
+		local_size = strlen(entry->cmd_desc);
+		if (local_size > dyn_col_size_desc){
+			dyn_col_size_desc = local_size;
+		}
+	}
+
+	multiColumnPrinter_set_column_size(printer, 0, (dyn_col_size_name > 24) ? 24 : dyn_col_size_name);
+	multiColumnPrinter_set_column_size(printer, 1, 3);
+	multiColumnPrinter_set_column_size(printer, 2, (dyn_col_size_desc > 48) ? 48 : dyn_col_size_desc);
+
+
+	multiColumnPrinter_set_column_type(printer, 3, MULTICOLUMN_TYPE_UNBOUND_STRING);
+
+	puts("List of available command(s):");
 
 	multiColumnPrinter_print_header(printer);
 

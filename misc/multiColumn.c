@@ -10,9 +10,9 @@
 #include "windowsComp.h"
 #endif
 
-static void multiColumnPrinter_constrain_string(const char* src, char* dst, size_t size);
+static void multiColumnPrinter_constrain_string(char* dst, const char* src, size_t size);
 
-struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, enum multiColumnType* types, char* separator){
+struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, const size_t* sizes, const enum multiColumnType* types, const char* separator){
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					i;
 
@@ -62,7 +62,6 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 				printer->columns[i].type = MULTICOLUMN_DEFAULT_TYPE;
 			}
 
-			memset(printer->columns[i].title, '\0', MULTICOLUMN_STRING_MAX_SIZE);
 			snprintf(printer->columns[i].title, MULTICOLUMN_STRING_MAX_SIZE, "TITLE %u", i);
 		}
 	}
@@ -73,7 +72,7 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 	return printer;
 }
 
-void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, uint32_t size){
+void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, size_t size){
 	if (printer->nb_column > column){
 		if (size >= MULTICOLUMN_STRING_MAX_SIZE){
 			log_warn_m("required size for column %u exceeds MULTICOLUMN_STRING_MAX_SIZE, please increment", column);
@@ -114,12 +113,12 @@ void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t c
 	}
 }
 
-void multiColumnPrinter_print_header(struct multiColumnPrinter* printer){
+void multiColumnPrinter_print_header(const struct multiColumnPrinter* printer){
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	uint32_t	i;
 
 	for (i = 0; i < printer->nb_column; i++){
-		multiColumnPrinter_constrain_string(printer->columns[i].title, print_value, printer->columns[i].size);
+		multiColumnPrinter_constrain_string(print_value, printer->columns[i].title, printer->columns[i].size);
 
 		if (i == printer->nb_column - 1){
 			fprintf(printer->file, "%s\n", print_value);
@@ -132,7 +131,7 @@ void multiColumnPrinter_print_header(struct multiColumnPrinter* printer){
 	multiColumnPrinter_print_horizontal_separator(printer);
 }
 
-void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* printer){
+void multiColumnPrinter_print_horizontal_separator(const struct multiColumnPrinter* printer){
 	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
 	uint32_t	i;
 
@@ -149,7 +148,7 @@ void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* pr
 	}
 }
 
-void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
+void multiColumnPrinter_print(const struct multiColumnPrinter* printer, ...){
 	const char* value_str = NULL;
 	int8_t 		value_int8;
 	int32_t 	value_int32;
@@ -225,7 +224,7 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 			}
 
 			if (printer->columns[i].type != MULTICOLUMN_TYPE_UNBOUND_STRING){
-				multiColumnPrinter_constrain_string(value_str, print_value, printer->columns[i].size);
+				multiColumnPrinter_constrain_string(print_value, value_str, printer->columns[i].size);
 			}
 
 			if (i == printer->nb_column - 1){
@@ -245,25 +244,7 @@ void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...){
 	}
 }
 
-void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size){
-	char 		print_value[MULTICOLUMN_STRING_MAX_SIZE];
-	uint32_t	i;
-
-	fputc('\r', printer->file);
-	for (i = 0; i < printer->nb_column; i++){
-		multiColumnPrinter_constrain_string(string + (i * string_size), print_value, printer->columns[i].size);
-
-		if (i == printer->nb_column - 1){
-			fputs(print_value, printer->file);
-		}
-		else{
-			fprintf(printer->file, "%s%s", print_value, printer->separator);
-		}
-	}
-	fflush(printer->file);
-}
-
-static void multiColumnPrinter_constrain_string(const char* src, char* dst, size_t size){
+static void multiColumnPrinter_constrain_string(char* dst, const char* src, size_t size){
 	size_t length;
 
 	strncpy(dst, src, size);

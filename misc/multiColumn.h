@@ -24,9 +24,9 @@ enum multiColumnType{
 #define MULTICOLUMN_TYPE_IS_VALID(type) ((type) <= MULTICOLUMN_TYPE_BOOL)
 
 struct multiColumnColumn{
-	uint32_t 					size;
-	char 						title[MULTICOLUMN_STRING_MAX_SIZE];
-	enum multiColumnType 		type;
+	size_t 					size;
+	char 					title[MULTICOLUMN_STRING_MAX_SIZE];
+	enum multiColumnType 	type;
 };
 
 struct multiColumnPrinter{
@@ -36,14 +36,15 @@ struct multiColumnPrinter{
 	struct multiColumnColumn 	columns[1];
 };
 
-struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, uint32_t* sizes, enum multiColumnType* types, char* separator);
-void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, uint32_t size);
+struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_column, const size_t* sizes, const enum multiColumnType* types, const char* separator);
+
+void multiColumnPrinter_set_column_size(struct multiColumnPrinter* printer, uint32_t column, size_t size);
 void multiColumnPrinter_set_column_type(struct multiColumnPrinter* printer, uint32_t column, enum multiColumnType);
 void multiColumnPrinter_set_title(struct multiColumnPrinter* printer, uint32_t column, const char* title);
-void multiColumnPrinter_print_header(struct multiColumnPrinter* printer);
-void multiColumnPrinter_print_horizontal_separator(struct multiColumnPrinter* printer);
-void multiColumnPrinter_print(struct multiColumnPrinter* printer, ...);
-void multiColumnPrinter_print_string_line(struct multiColumnPrinter* printer, char* string, uint32_t string_size);
+
+void multiColumnPrinter_print_header(const struct multiColumnPrinter* printer);
+void multiColumnPrinter_print_horizontal_separator(const struct multiColumnPrinter* printer);
+void multiColumnPrinter_print(const struct multiColumnPrinter* printer, ...);
 
 #define multiColumnPrinter_delete(printer) free(printer)
 
