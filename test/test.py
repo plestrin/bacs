@@ -4,6 +4,7 @@ import sys
 import subprocess
 import xml.etree.ElementTree as ET
 from recipe import recipe
+import re
 
 # How to improve this script:
 # 	- print a report in HTML
@@ -21,7 +22,7 @@ if len(sys.argv) < 3:
 	sys.stderr.write("ERROR: incorrect number of argument\n")
 	sys.stderr.write("- 1 arg: recipe file name\n")
 	sys.stderr.write("- 2 arg: action type: PRINT or BUILD or TRACE or SEARCH or ALL or WHL\n")
-	sys.stderr.write("- 3 arg: name of specific test case [OPT]\n")
+	sys.stderr.write("- 3 arg: regex to filter the synthetic samples [OPT]\n")
 	exit()
 
 file_name = sys.argv[1]
@@ -32,14 +33,17 @@ if not(action == "PRINT" or action == "BUILD" or action == "TRACE" or action == 
 
 recipes = []
 
+if len(sys.argv) >= 4:
+	sys.argv[3] = re.compile(sys.argv[3])
+
 # PARSE step
 try:
 	tree = ET.parse(file_name)
 	root = tree.getroot()
 	for xml_recipe in root.findall("recipe"):
 		r = recipe(xml_recipe)
-		if len(sys.argv) == 4:
-			if r.name == sys.argv[3]:
+		if len(sys.argv) >= 4:
+			if sys.argv[3].match(r.name) != None:
 				recipes.append(r)
 		elif r.active:
 			recipes.append(r)
@@ -51,21 +55,18 @@ except IOError:
 
 # PRINT step
 if action == "PRINT":
-	if len(sys.argv) == 4:
-		if len(recipes) == 1:
-			sys.stdout.write(str(recipes[0]))
-			sys.stdout.flush()
-			while True:
-				cmd = sys.stdin.readline()
-				sys.stdout.write(cmd)
-				if cmd[:-1] == "exit":
-					break
-				else:
-					sys.stdout.flush()
-		else:
-			sys.stderr.write("ERROR: incorrect test case name: " + sys.argv[3] + "\n")
+	if len(recipes) == 1:
+		sys.stdout.write(str(recipes[0]))
+		sys.stdout.flush()
+		while True:
+			cmd = sys.stdin.readline()
+			sys.stdout.write(cmd)
+			if cmd[:-1] == "exit":
+				break
+			else:
+				sys.stdout.flush()
 	else:
-		sys.stderr.write("ERROR: a third argument is expected (name of a specific test case)\n")
+		sys.stderr.write("ERROR: incorrect number of synthetic samples: " + str(len(recipes)) + "\n")
 
 # BUILD step
 if action == "BUILD" or action == "ALL":
