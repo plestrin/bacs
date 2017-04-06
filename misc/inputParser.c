@@ -6,9 +6,9 @@
 #include "multiColumn.h"
 #include "base.h"
 
-int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
+static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
 #ifdef INTERACTIVE
-uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
+static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
 #endif
 
 static void inputParser_print_help(struct inputParser* parser, const char* arg);
@@ -118,8 +118,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 	uint32_t 			cmd_counter = 0;
 	char* 				cmd_arg;
 
-	parser->exit = 0;
-	while(!parser->exit){
+	for (parser->exit = 0; !parser->exit; ){
 		if (cmd_counter < argc){
 			strncpy(line, argv[cmd_counter], INPUTPARSER_LINE_SIZE);
 			cmd_counter ++;
@@ -189,7 +188,7 @@ void inputParser_clean(struct inputParser* parser){
 	#endif
 }
 
-int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
+static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
 	uint32_t 			i;
 	int32_t 			compare_result;
 	struct cmdEntry* 	entry;
@@ -212,7 +211,7 @@ int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
 }
 
 #ifdef INTERACTIVE
-uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser){
+static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser){
 	uint32_t 			i;
 	uint32_t 			j;
 	struct cmdEntry* 	entry;

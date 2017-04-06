@@ -703,9 +703,9 @@ struct cm_routine* codeMap_search_approx_symbol(struct codeMap* cm, struct cm_ro
 	struct cm_routine* 	routine_cursor;
 
 	if (last == NULL){
-		for (image_cursor = cm->images; image_cursor; image_cursor = image_cursor->next){
-			for (section_cursor = image_cursor->sections; section_cursor; section_cursor = section_cursor->next){
-				for (routine_cursor = section_cursor->routines; routine_cursor; routine_cursor = routine_cursor->next){
+		for (image_cursor = cm->images; image_cursor != NULL; image_cursor = image_cursor->next){
+			for (section_cursor = image_cursor->sections; section_cursor != NULL; section_cursor = section_cursor->next){
+				for (routine_cursor = section_cursor->routines; routine_cursor != NULL; routine_cursor = routine_cursor->next){
 					if (strcasestr(routine_cursor->name, symbol) != NULL){
 						return routine_cursor;
 					}
@@ -718,9 +718,9 @@ struct cm_routine* codeMap_search_approx_symbol(struct codeMap* cm, struct cm_ro
 		section_cursor 	= last->parent;
 		image_cursor 	= section_cursor->parent;
 
-		for ( ; image_cursor; image_cursor = image_cursor->next, section_cursor = (image_cursor != NULL) ? image_cursor->sections : NULL){
-			for ( ; section_cursor; section_cursor = section_cursor->next, routine_cursor = (section_cursor != NULL) ? section_cursor->routines : NULL){
-				for ( ; routine_cursor; routine_cursor = routine_cursor->next){
+		for ( ; image_cursor != NULL; image_cursor = image_cursor->next, section_cursor = (image_cursor != NULL) ? image_cursor->sections : NULL, routine_cursor = (section_cursor != NULL) ? section_cursor->routines : NULL){
+			for ( ; section_cursor != NULL; section_cursor = section_cursor->next, routine_cursor = (section_cursor != NULL) ? section_cursor->routines : NULL){
+				for ( ; routine_cursor != NULL; routine_cursor = routine_cursor->next){
 					if (strcasestr(routine_cursor->name, symbol) != NULL){
 						return routine_cursor;
 					}
@@ -738,7 +738,7 @@ void codeMap_search_and_print_symbol(struct codeMap* cm, const char* symbol){
 
 	codeMap_create_printer(printer)
 
-	for (ptr = codeMap_search_approx_symbol(cm, NULL, symbol); ptr; ptr = codeMap_search_approx_symbol(cm, ptr, symbol)){
+	for (ptr = codeMap_search_approx_symbol(cm, NULL, symbol); ptr != NULL; ptr = codeMap_search_approx_symbol(cm, ptr, symbol)){
 		multiColumnPrinter_print(printer, ptr->parent->parent->name, ptr->parent->name, ptr->name, ptr->address_start, ptr->address_stop, codeMap_filter_routine_whitelisted(ptr), codeMap_filter_routine_executed(ptr), NULL);
 	}
 

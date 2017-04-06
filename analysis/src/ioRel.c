@@ -98,14 +98,14 @@ static struct searchableMemory* searchableMemory_create(struct concreteMemAccess
 	return mem;
 }
 
-static void searchableMemory_print(const struct searchableMemory* mem){
+static void searchableMemory_print(const struct searchableMemory* mem, const char* desc){
 	uint32_t i;
 
-	printf("*** SEARCHABLE MEMORY ***\n");
+	printf("*** SEARCHABLE MEMORY %s ***\n", desc);
 
 	for (i = 0; i < mem->nb_segment; i++){
 		printf("\t[" PRINTF_ADDR " : " PRINTF_ADDR "] ", mem->headers[i].address, mem->headers[i].address + mem->headers[i].size);
-		printBuffer_raw(stdout, (char*)mem->headers[i].ptr, mem->headers[i].size);
+		fprintBuffer_raw(stdout, (char*)mem->headers[i].ptr, mem->headers[i].size);
 		printf("\n");
 	}
 }
@@ -374,8 +374,8 @@ void trace_search_io(struct trace* trace){
 			found |= std_prim_search_aes256_enc(mem_read, mem_writ);
 
 			if (!found){
-				searchableMemory_print(mem_read);
-				searchableMemory_print(mem_writ);
+				searchableMemory_print(mem_read, "INPUT");
+				searchableMemory_print(mem_writ, "OUTPUT");
 			}
 		}
 	}
