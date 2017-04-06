@@ -226,7 +226,8 @@
 			<arg value="drop mem"/>
 			<arg value="load code signature ../reference/codeSignature_sha1.txt"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph _sha1"/>
+			<arg value="export callGraph _sha1_feed"/>
+			<arg value="export callGraph _sha1_hash"/>
 			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>

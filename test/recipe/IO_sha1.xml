@@ -1,5 +1,5 @@
 <xml>
-	<recipe name="TEST_SHA1_GO0" active="no">
+	<recipe name="TEST_SHA1_GO0" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go0"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go0">
 			<arg value="-m"/>
@@ -8,16 +8,16 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO0"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO1" active="no">
+	<recipe name="TEST_SHA1_GO1" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go1"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go1">
 			<arg value="-m"/>
@@ -26,7 +26,7 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO1"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
@@ -35,7 +35,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO2" active="no">
+	<recipe name="TEST_SHA1_GO2" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go2"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go2">
 			<arg value="-m"/>
@@ -44,7 +44,7 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO2"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
@@ -53,7 +53,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GO3" active="no">
+	<recipe name="TEST_SHA1_GO3" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go3"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go3">
 			<arg value="-m"/>
@@ -62,7 +62,7 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_GO3"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
@@ -71,7 +71,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_GOs" active="no">
+	<recipe name="TEST_SHA1_GOs" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_gos"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_gos">
 			<arg value="-m"/>
@@ -80,7 +80,7 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_GOs"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
@@ -89,7 +89,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO0" active="no">
+	<recipe name="TEST_SHA1_CO0" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co0"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co0">
 			<arg value="-m"/>
@@ -98,16 +98,16 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO0"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO1" active="no">
+	<recipe name="TEST_SHA1_CO1" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co1"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co1">
 			<arg value="-m"/>
@@ -116,16 +116,16 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO1"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO2" active="no">
+	<recipe name="TEST_SHA1_CO2" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co2"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co2">
 			<arg value="-m"/>
@@ -134,16 +134,16 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO2"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_CO3" active="no">
+	<recipe name="TEST_SHA1_CO3" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co3"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co3">
 			<arg value="-m"/>
@@ -152,16 +152,16 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_CO3"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_COz" active="no">
+	<recipe name="TEST_SHA1_COz" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_coz"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_coz">
 			<arg value="-m"/>
@@ -170,22 +170,23 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_COz"/>
 			<arg value="create callGraph LINUX"/>
-			<arg value="export callGraph sha1"/>
+			<arg value="export callGraph sha1_compress"/>
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
 		<result>
-			<algo name="sha1_compress" number="2"/>
+			<algo name="sha1_compress" number="1"/> <!-- the second frag is equivalent to the first -->
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_WD" active="no">
+	<recipe name="TEST_SHA1_WD" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_WD"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph _sha1"/>
+			<arg value="export callGraph 279650"/> <!-- no sha1_compress symbol unfortunately -->
+			<arg value="export callGraph 285304"/> <!-- no sha1_compress symbol unfortunately -->
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
@@ -194,13 +195,13 @@
 		</result>
 	</recipe>
 
-	<recipe name="TEST_SHA1_WR" active="no">
+	<recipe name="TEST_SHA1_WR" active="yes">
 		<build cmd=""/>
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_SHA1_WR"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph _sha1"/>
+			<arg value="export callGraph _sha1_hash_compress"/>  <!-- function sha1_compress inlined -->
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>
