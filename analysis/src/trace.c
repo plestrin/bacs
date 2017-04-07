@@ -826,14 +826,14 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 
 	mem_access_index = ins_it.mem_access_index;
 
-	log_info("Backward search");
+	log_info_m("backward search from %u (stop when a WRITE is reached)", offset);
 
 	if (memTraceIterator_init(&mem_it, trace->mem_trace, mem_access_index)){
 		log_err("unable to init memTraceIterator");
 		return;
 	}
 
-	for (return_code = memTraceIterator_get_prev_addr(&mem_it, addr); return_code == 0; return_code = memTraceIterator_get_prev_addr(&mem_it, addr)){
+	for (return_code = memTraceIterator_get_prev_addr(&mem_it, addr); !return_code; return_code = memTraceIterator_get_prev_addr(&mem_it, addr)){
 		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
 			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
 			break;
@@ -861,14 +861,14 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 
 	memTraceIterator_clean(&mem_it);
 
-	log_info("Forward search");
+	log_info_m("forward search from %u (stop when a WRITE is reached)", offset);
 
 	if (memTraceIterator_init(&mem_it, trace->mem_trace, mem_access_index)){
 		log_err("unable to init memTraceIterator");
 		return;
 	}
 
-	for (return_code = memTraceIterator_get_next_addr(&mem_it, addr); return_code == 0; return_code = memTraceIterator_get_next_addr(&mem_it, addr)){
+	for (return_code = memTraceIterator_get_next_addr(&mem_it, addr); !return_code; return_code = memTraceIterator_get_next_addr(&mem_it, addr)){
 		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
 			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
 			break;

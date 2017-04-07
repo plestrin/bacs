@@ -201,7 +201,8 @@
 		<search>
 			<arg value="load trace traceTEST_SHA1_WR"/>
 			<arg value="create callGraph WINDOWS"/>
-			<arg value="export callGraph _sha1_hash_compress"/>  <!-- function sha1_compress inlined -->
+			<arg value="export callGraph _sha1_feed"/>  <!-- function sha1_compress inlined -->
+			<arg value="export callGraph _sha1_hash"/>  <!-- function sha1_compress inlined -->
 			<arg value="search iorel"/>
 			<arg value="exit"/>
 		</search>

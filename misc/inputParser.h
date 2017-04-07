@@ -8,7 +8,6 @@
 
 #define INPUTPARSER_NAME_SIZE 64
 #define INPUTPARSER_DESC_SIZE 256
-#define INPUTPARSER_LINE_SIZE 512 /* must be at least larger or equal than INPUTPARSER_NAME_SIZE */
 
 enum cmdEntryType{
 	INPUTPARSER_CMD_TYPE_NO_ARG 		 = 0,

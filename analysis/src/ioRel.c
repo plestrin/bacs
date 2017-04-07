@@ -196,6 +196,7 @@ void trace_search_io(struct trace* trace){
 		uint32_t 				nb_write_mem;
 		uint32_t 				nb_mem;
 		uint32_t 				mem_descriptor;
+		uint32_t 				offset;
 
 		if (xed_decoded_inst_get_iclass(&(it.xedd)) == XED_ICLASS_NOP){
 			goto next;
@@ -207,7 +208,7 @@ void trace_search_io(struct trace* trace){
 		}
 
 		xi = xed_decoded_inst_inst(&(it.xedd));
-		for (i = 0, nb_read_mem = 0, nb_write_mem = 0, nb_mem = 0; i < xed_inst_noperands(xi); i++){
+		for (i = 0, nb_read_mem = 0, nb_mem = 0; i < xed_inst_noperands(xi); i++){
 			xed_op = xed_inst_operand(xi, i);
 
 			switch (xed_operand_name(xed_op)){
@@ -222,7 +223,7 @@ void trace_search_io(struct trace* trace){
 						cma.type 	= CONCRETE_READ;
 
 						for (j = 0; j < xed_decoded_inst_get_memory_operand_length(&(it.xedd), nb_mem); j++){
-							cma.value = trace->mem_trace->mem_valu_buffer[(instructionIterator_get_mem_addr_index(&it) + nb_mem) * MEMVALUE_PADDING + j];
+							cma.value = trace->mem_trace->mem_valu_buffer[(instructionIterator_get_mem_addr_index(&it) + nb_read_mem) * MEMVALUE_PADDING + j];
 							if (array_add(cma_array, &cma) < 0){
 								log_err("unable to add element to array");
 							}
@@ -231,24 +232,7 @@ void trace_search_io(struct trace* trace){
 
 						nb_read_mem ++;
 					}
-					if (xed_operand_written(xed_op)){
-						mem_descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
-						memAddress_descriptor_set_write(mem_descriptor, nb_write_mem);
 
-						cma.address = memAddress_get_and_check(trace->mem_trace->mem_addr_buffer + instructionIterator_get_mem_addr_index(&it) + nb_mem, mem_descriptor);
-						cma.order 	= order;
-						cma.type 	= CONCRETE_WRITE;
-
-						for (j = 0; j < xed_decoded_inst_get_memory_operand_length(&(it.xedd), nb_mem); j++){
-							cma.value = trace->mem_trace->mem_valu_buffer[(instructionIterator_get_mem_addr_index(&it) + nb_mem) * MEMVALUE_PADDING + MEMVALUE_READ_PADDING + j];
-							if (array_add(cma_array, &cma) < 0){
-								log_err("unable to add element to array");
-							}
-							cma.address ++;
-						}
-
-						nb_write_mem ++;
-					}
 					nb_mem ++;
 					break;
 				}
@@ -270,6 +254,52 @@ void trace_search_io(struct trace* trace){
 				}
 				default 				: {
 					log_err_m("operand type not supported: %s for instruction %s", xed_operand_enum_t2str(xed_operand_name(xed_op)), xed_iclass_enum_t2str(xed_decoded_inst_get_iclass(&(it.xedd))));
+					break;
+				}
+			}
+		}
+		for (i = 0, nb_write_mem = 0, nb_mem = 0; i < xed_inst_noperands(xi); i++){
+			xed_op = xed_inst_operand(xi, i);
+
+			switch (xed_operand_name(xed_op)){
+				case XED_OPERAND_MEM0 	:
+				case XED_OPERAND_MEM1 	: {
+					if (xed_operand_written(xed_op)){
+						mem_descriptor = MEMADDRESS_DESCRIPTOR_CLEAN;
+						memAddress_descriptor_set_write(mem_descriptor, nb_write_mem);
+
+						cma.address = memAddress_get_and_check(trace->mem_trace->mem_addr_buffer + instructionIterator_get_mem_addr_index(&it) + nb_mem, mem_descriptor);
+						cma.order 	= order;
+						cma.type 	= CONCRETE_WRITE;
+
+						/* This is relatively complex. Refer to lightTracer.cpp */
+						if (!nb_read_mem){
+							offset = 0;
+						}
+						else if (xed_operand_read(xed_op)){
+							offset = 0;
+						}
+						else if (nb_read_mem == 1){
+							offset = 1;
+						}
+						else{
+							offset = 2;
+						}
+
+						for (j = 0; j < xed_decoded_inst_get_memory_operand_length(&(it.xedd), nb_mem); j++){
+							cma.value = trace->mem_trace->mem_valu_buffer[(instructionIterator_get_mem_addr_index(&it) + offset) * MEMVALUE_PADDING + (MEMVALUE_PADDING / 2) + j];
+							if (array_add(cma_array, &cma) < 0){
+								log_err("unable to add element to array");
+							}
+							cma.address ++;
+						}
+
+						nb_write_mem ++;
+					}
+					nb_mem ++;
+					break;
+				}
+				default 				: {
 					break;
 				}
 			}
@@ -316,7 +346,7 @@ void trace_search_io(struct trace* trace){
 			}
 			#ifdef EXTRA_CHECK
 			else if (cma_buffer[nb_cma].type == CONCRETE_READ && cma_buffer[nb_cma - 1].value != cma_buffer[nb_cma].value){
-				log_err_m("found inconsistency at address " PRINTF_ADDR " %02x - %02x", cma_buffer[nb_cma].address, cma_buffer[nb_cma - 1].value, cma_buffer[nb_cma].value);
+				log_err_m("found inconsistency at address " PRINTF_ADDR " (v1: %02x, o1: %u) - (v1: %02x, o1: %u)", cma_buffer[nb_cma].address, cma_buffer[nb_cma - 1].value, cma_buffer[nb_cma - 1].order, cma_buffer[nb_cma].value, cma_buffer[nb_cma].order);
 				goto exit;
 			}
 			#endif

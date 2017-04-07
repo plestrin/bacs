@@ -6,6 +6,8 @@
 #include "multiColumn.h"
 #include "base.h"
 
+#define INPUTPARSER_LINE_SIZE 512 /* must be at least larger or equal than INPUTPARSER_NAME_SIZE */
+
 static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
 #ifdef INTERACTIVE
 static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);

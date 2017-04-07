@@ -36,8 +36,8 @@ struct toolThreadData{
 	FILE* 		mem_add_file;
 	FILE* 		mem_val_file;
 	uint32_t 	mem_flag;
-	char 		r_mem1[MEMVALUE_READ_PADDING];
-	char 		r_mem2[MEMVALUE_READ_PADDING];
+	char 		r_mem1[MEMVALUE_PADDING / 2];
+	char 		r_mem2[MEMVALUE_PADDING / 2];
 	ADDRINT 	w_mem1;
 	ADDRINT 	w_mem2;
 	uint32_t 	size_w_mem1;
@@ -91,7 +91,7 @@ static void INS_trace_memory_w_mem2(ADDRINT address, UINT32 size, THREADID tid){
 
 static void INS_trace_memory_flush(THREADID tid){
 	struct toolThreadData* 	data = (struct toolThreadData*)PIN_GetThreadData(light_tracer.thread_key, tid);
-	char 					value[MEMVALUE_WRITE_PADDING];
+	char 					value[MEMVALUE_PADDING / 2];
 
 	if (data->mem_val_file == NULL){
 		char file_name[TRACEFILE_NAME_MAX_LENGTH];
@@ -103,21 +103,22 @@ static void INS_trace_memory_flush(THREADID tid){
 	if (data->mem_val_file != NULL){
 		/* 1 is packed */
 		if (data->mem_flag & MEM_FLAG_MEM_1){
-			fwrite(data->r_mem1, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
+			fwrite(data->r_mem1, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
 			if (data->mem_flag & MEM_FLAG_W_MEM_1){
 				PIN_SafeCopy(value, (void*)data->w_mem1, data->size_w_mem1);
 			}
-			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+			fwrite(value, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
 		}
 		/* 2 is not */
 		if (data->mem_flag & MEM_FLAG_R_MEM_2){
-			fwrite(data->r_mem2, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
-			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+			fwrite(data->r_mem2, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
+			fwrite(value, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
 		}
+		/* 3 is not */
 		if (data->mem_flag & MEM_FLAG_W_MEM_2){
-			fwrite(data->r_mem2, MEMVALUE_READ_PADDING, 1, data->mem_val_file);
+			fwrite(data->r_mem2, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
 			PIN_SafeCopy(value, (void*)data->w_mem2, data->size_w_mem2);
-			fwrite(value, MEMVALUE_WRITE_PADDING, 1, data->mem_val_file);
+			fwrite(value, MEMVALUE_PADDING / 2, 1, data->mem_val_file);
 		}
 	}
 
