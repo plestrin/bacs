@@ -165,6 +165,62 @@ int32_t array_add(struct array* array, const void* element){
 	return result;
 }
 
+void* array_inc(struct array* array){
+	void* 				result;
+	char* 				buffer;
+	uint32_t 			nb_allocated_byte;
+	struct arrayPage 	page;
+
+	nb_allocated_byte = array->nb_allocated_byte;
+	if (array->nb_filled_byte + array->element_size > nb_allocated_byte){
+		while (array->nb_filled_byte + array->element_size > nb_allocated_byte){
+			nb_allocated_byte += ARRAY_DEFAULT_ALLOC_SIZE;
+		}
+
+		if (nb_allocated_byte > ARRAY_DEFAULT_PAGE_SIZE){
+			page.buffer = array->buffer;
+			page.nb_allocated_byte = array->nb_allocated_byte;
+			page.nb_filled_byte = array->nb_filled_byte;
+
+			if (_array_add(&(array->pages), &page) < 0){
+				log_err("unable to archive page");
+				return NULL;
+			}
+
+			nb_allocated_byte = ARRAY_DEFAULT_ALLOC_SIZE;
+			array->nb_filled_byte = 0;
+
+			while (array->nb_filled_byte + array->element_size > nb_allocated_byte){
+				nb_allocated_byte += ARRAY_DEFAULT_ALLOC_SIZE;
+			}
+
+			array->buffer = (char*)malloc(nb_allocated_byte);
+			if (array->buffer == NULL){
+				log_err("unable to realloc memory");
+				return NULL;
+			}
+
+			array->nb_allocated_byte = nb_allocated_byte;
+		}
+		else{
+			buffer = (char*)realloc(array->buffer, nb_allocated_byte);
+			if (buffer == NULL){
+				log_err("unable to realloc memory");
+				return NULL;
+			}
+
+			array->buffer = buffer;
+			array->nb_allocated_byte = nb_allocated_byte;
+		}
+	}
+
+	result = (void*)(array->buffer + array->nb_filled_byte);
+	array->nb_filled_byte += array->element_size;
+	array->nb_element ++;
+
+	return result;
+}
+
 uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* element1, void* element2)){
 	uint32_t* 	mapping;
 	uint32_t 	i;

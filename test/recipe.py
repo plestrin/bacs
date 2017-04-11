@@ -135,16 +135,13 @@ class recipe(object):
 		if process.returncode == 0:
 			sys.stdout.write("\x1b[32mOK\x1b[0m - " + str(round(time_stop - time_start, 2)) + " s\n")
 
-			regex = re.compile("[a-zA-Z0-9_]+ +\| [0-9]+ +\| [0-9]+\.[0-9]+ *")
+			regex = re.compile("([a-zA-Z0-9_]+) +\| ([0-9]+) +\| [0-9]+\.[0-9]+ *")
 			detected_signature = {}
-			for i in regex.findall(output_val[0]):
-				name = i[:i.find(' ')].strip()
-				occu = int(i[35: 35 + i[35:].find(' ')])
-
+			for (name, occu) in regex.findall(output_val[0]):
 				if name in detected_signature:
-					detected_signature[name] = occu + detected_signature.get(name)
+					detected_signature[name] = int(occu) + detected_signature.get(name)
 				else:
-					detected_signature[name] = occu
+					detected_signature[name] = int(occu)
 
 			for i in self.algo:
 				if i in detected_signature:
