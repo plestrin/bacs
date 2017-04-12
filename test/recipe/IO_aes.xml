@@ -7,7 +7,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_GO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -30,7 +29,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_GO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -53,7 +51,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_GO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -76,7 +73,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_GO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -99,7 +95,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_GOs"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -122,7 +117,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_CO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -145,7 +139,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_CO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -168,7 +161,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_CO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -191,7 +183,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_CO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -214,7 +205,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTEST_AES_COz"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes128_encrypt"/>
 			<arg value="export callGraph aes192_encrypt"/>
@@ -234,7 +224,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_AES_WD"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes128_encrypt"/>
 			<arg value="export callGraph _aes192_encrypt"/>
@@ -254,7 +243,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceTEST_AES_WR"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes128_encrypt"/>
 			<arg value="export callGraph _aes192_encrypt"/>
@@ -277,7 +265,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceTOM_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rijndael_ecb_encrypt"/>
 			<arg value="search iorel"/>
@@ -298,7 +285,6 @@
 		</trace>
 		<search>
 			<arg value="load trace tracePP_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>
 			<arg value="search iorel"/>
@@ -319,7 +305,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceBOT_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _ZNK5Botan7AES_1289encrypt_nEPKhPhj"/>
 			<arg value="export callGraph _ZNK5Botan7AES_1929encrypt_nEPKhPhj"/>_
@@ -342,7 +327,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceNET_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph _nettle_aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -363,7 +347,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceOPEN_AES"/>
-			<arg value="load code signature ../reference/codeSignature_aesOpenSSL.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph AES_encrypt"/> <!-- this is a wrapper function, if we export the asm function, iorel is not detected anymore -->
 			<arg value="search iorel"/>
@@ -384,7 +367,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -405,7 +387,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -426,7 +407,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -447,7 +427,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -468,7 +447,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_GOs"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -489,7 +467,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -510,7 +487,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -531,7 +507,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -552,7 +527,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_CO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -573,7 +547,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_COz"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -591,7 +564,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_WD"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -609,7 +581,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V0_WR"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -630,7 +601,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -651,7 +621,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -672,7 +641,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -693,7 +661,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -714,7 +681,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_GOs"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -735,7 +701,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -756,7 +721,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -777,7 +741,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -798,7 +761,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_CO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -819,7 +781,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_COz"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -837,7 +798,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_WD"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -855,7 +815,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V1_WR"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -876,7 +835,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -897,7 +855,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -918,7 +875,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -939,7 +895,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -960,7 +915,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_GOs"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -981,7 +935,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1002,7 +955,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1023,7 +975,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1044,7 +995,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_CO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1065,7 +1015,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_COz"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1083,7 +1032,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_WD"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1101,7 +1049,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V2_WR"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_ecb_encrypt"/>
 			<arg value="search iorel"/>
@@ -1122,7 +1069,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1143,7 +1089,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1164,7 +1109,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1185,7 +1129,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1206,7 +1149,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_GOs"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1227,7 +1169,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO0"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1248,7 +1189,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO1"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1269,7 +1209,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO2"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1290,7 +1229,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_CO3"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1311,7 +1249,6 @@
 		</trace>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_COz"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1329,7 +1266,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_WD"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_encrypt"/>
 			<arg value="search iorel"/>
@@ -1347,7 +1283,6 @@
 		<trace cmd=""/>
 		<search>
 			<arg value="load trace traceGLAD_AES_V3_WR"/>
-			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
 			<arg value="create callGraph WINDOWS"/>
 			<arg value="export callGraph _aes_ecb_encrypt"/>
 			<arg value="search iorel"/>

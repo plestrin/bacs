@@ -6,6 +6,9 @@
 #include "trace.h"
 #include "assemblyElfLoader.h"
 #include "result.h"
+#ifdef IOREL
+#include "ioRel.h"
+#endif
 #include "base.h"
 
 int32_t traceIdentifier_add(struct traceIdentifier* identifier, uint32_t pid, uint32_t tid){
@@ -517,10 +520,17 @@ void trace_normalize_concrete_ir(struct trace* trace){
 }
 
 void trace_search_buffer_signature(struct trace* trace){
+	uint32_t 					nb_prim_para;
+	struct primitiveParameter* 	prim_para_buffer;
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
 		trace_reset_synthesis(trace);
 		trace_reset_result(trace);
-		ir_search_buffer_signature(trace->trace_type.frag.ir);
+		if ((prim_para_buffer = ir_search_buffer_signature(trace->trace_type.frag.ir, &nb_prim_para)) != NULL){
+			#ifdef IOREL
+			trace_check_io(trace, prim_para_buffer, nb_prim_para);
+			#endif
+			free(prim_para_buffer);
+		}
 	}
 	else{
 		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);

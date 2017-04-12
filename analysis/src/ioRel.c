@@ -8,6 +8,8 @@
 #include "printBuffer.h"
 #include "base.h"
 
+static void change_endianness(uint32_t* dst, const uint32_t* src, size_t size);
+
 struct concreteMemAccess{
 	ADDRESS 	address;
 	uint32_t 	order;
@@ -53,8 +55,8 @@ struct searchableMemoryHeader{
 };
 
 struct searchableMemory{
-	uint32_t 					nb_segment;
-	struct searchableMemoryHeader* headers;
+	uint32_t 						nb_segment;
+	struct searchableMemoryHeader* 	headers;
 };
 
 static struct searchableMemory* searchableMemory_create(struct concreteMemAccess* cma_buffer, uint32_t nb_cma){
@@ -152,41 +154,37 @@ static const uint8_t* smIterator_get_next(struct smIterator* it, size_t size){
 	return NULL;
 }
 
-static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_aes128_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_aes192_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-static uint32_t std_prim_search_aes256_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
-
-void trace_search_io(struct trace* trace){
+static uint32_t trace_create_searchableMemory(struct trace* trace, struct searchableMemory** mem_read, struct searchableMemory** mem_writ){
 	uint32_t 					i;
 	uint32_t 					j;
 	struct concreteMemAccess 	cma;
-	struct array* 				cma_array 		= NULL;
-	uint32_t* 					cma_mapping 	= NULL;
+	struct array* 				cma_array;
+	uint32_t* 					cma_mapping;
 	struct instructionIterator 	it;
 	uint32_t 					order;
-	struct concreteMemAccess* 	cma_buffer 		= NULL;
-	struct concreteMemAccess* 	cma_read_buffer = NULL;
-	struct concreteMemAccess* 	cma_writ_buffer = NULL;
-	struct searchableMemory* 	mem_read 		= NULL;
-	struct searchableMemory* 	mem_writ 		= NULL;
+	struct concreteMemAccess* 	cma_buffer;
+	struct concreteMemAccess* 	cma_read_buffer;
+	struct concreteMemAccess* 	cma_writ_buffer;
+	uint32_t 					nb_cma;
+	uint32_t 					nb_read_cma;
+	uint32_t 					nb_writ_cma;
+
+	*mem_read = NULL;
+	*mem_writ = NULL;
 
 	if (trace->mem_trace == NULL || trace->mem_trace->mem_addr_buffer == NULL || trace->mem_trace->mem_valu_buffer == NULL){
 		log_err("missing address or value");
-		return;
+		return -1;
 	}
 
 	if (assembly_get_first_instruction(&(trace->assembly), &it)){
 		log_err("unable to fetch first instruction from the assembly");
-		return;
+		return -1;
 	}
 
 	if ((cma_array = array_create(sizeof(struct concreteMemAccess))) == NULL){
 		log_err("unable to create array");
-		return;
+		return -1;
 	}
 
 	for (order = 0; ; order ++){
@@ -312,125 +310,350 @@ void trace_search_io(struct trace* trace){
 		else{
 			if (assembly_get_next_instruction(&(trace->assembly), &it)){
 				log_err("unable to fetch next instruction from the assembly");
-				break;;
+				break;
 			}
 		}
 	}
 
-	if (array_get_length(cma_array)){
-		uint32_t nb_cma;
-		uint32_t nb_read_cma;
-		uint32_t nb_writ_cma;
-
-		if ((cma_mapping = array_create_mapping(cma_array, concreteMemAccess_compare)) == NULL){
-			log_err("unable to create mapping");
-			goto exit;
-		}
-
-		if ((cma_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * array_get_length(cma_array))) == NULL){
-			log_err("unable to allocate memory");
-			goto exit;
-		}
-
-		memcpy(cma_buffer, array_get(cma_array, cma_mapping[0]), sizeof(struct concreteMemAccess));
-		for (i = 1, nb_cma = 1; i < array_get_length(cma_array); i++){
-			memcpy(cma_buffer + nb_cma, array_get(cma_array, cma_mapping[i]), sizeof(struct concreteMemAccess));
-			if (cma_buffer[nb_cma - 1].address != cma_buffer[nb_cma].address){
-				nb_cma ++;
-			}
-			else if (cma_buffer[nb_cma - 1].type == CONCRETE_READ && cma_buffer[nb_cma].type == CONCRETE_WRITE){
-				nb_cma ++;
-			}
-			else if (cma_buffer[nb_cma - 1].type == CONCRETE_WRITE && cma_buffer[nb_cma].type == CONCRETE_WRITE){
-				memcpy(cma_buffer + nb_cma - 1, cma_buffer + nb_cma, sizeof(struct concreteMemAccess));
-			}
-			#ifdef EXTRA_CHECK
-			else if (cma_buffer[nb_cma].type == CONCRETE_READ && cma_buffer[nb_cma - 1].value != cma_buffer[nb_cma].value){
-				log_err_m("found inconsistency at address " PRINTF_ADDR " (v1: %02x, o1: %u) - (v1: %02x, o1: %u)", cma_buffer[nb_cma].address, cma_buffer[nb_cma - 1].value, cma_buffer[nb_cma - 1].order, cma_buffer[nb_cma].value, cma_buffer[nb_cma].order);
-				goto exit;
-			}
-			#endif
-		}
-
-		free(cma_mapping);
-		cma_mapping = NULL;
+	if (!array_get_length(cma_array)){
 		array_delete(cma_array);
-		cma_array = NULL;
+		return 0;
+	}
 
-		cma_read_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * nb_cma);
-		cma_writ_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * nb_cma);
+	if ((cma_mapping = array_create_mapping(cma_array, concreteMemAccess_compare)) == NULL){
+		log_err("unable to create mapping");
+		array_delete(cma_array);
+		return -1;
+	}
 
-		if (cma_read_buffer == NULL || cma_writ_buffer == NULL){
-			log_err("unable to allocate memory");
-			goto exit;
+	if ((cma_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * array_get_length(cma_array))) == NULL){
+		log_err("unable to allocate memory");
+		free(cma_mapping);
+		array_delete(cma_array);
+		return -1;
+	}
+
+	memcpy(cma_buffer, array_get(cma_array, cma_mapping[0]), sizeof(struct concreteMemAccess));
+	for (i = 1, nb_cma = 1; i < array_get_length(cma_array); i++){
+		memcpy(cma_buffer + nb_cma, array_get(cma_array, cma_mapping[i]), sizeof(struct concreteMemAccess));
+		if (cma_buffer[nb_cma - 1].address != cma_buffer[nb_cma].address){
+			nb_cma ++;
 		}
-
-		for (i = 0, nb_read_cma = 0, nb_writ_cma = 0; i < nb_cma; i++){
-			if (cma_buffer[i].type == CONCRETE_READ){
-				memcpy(cma_read_buffer + nb_read_cma, cma_buffer + i, sizeof(struct concreteMemAccess));
-				nb_read_cma ++;
-			}
-			else{
-				memcpy(cma_writ_buffer + nb_writ_cma, cma_buffer + i, sizeof(struct concreteMemAccess));
-				nb_writ_cma ++;
-			}
+		else if (cma_buffer[nb_cma - 1].type == CONCRETE_READ && cma_buffer[nb_cma].type == CONCRETE_WRITE){
+			nb_cma ++;
 		}
+		else if (cma_buffer[nb_cma - 1].type == CONCRETE_WRITE && cma_buffer[nb_cma].type == CONCRETE_WRITE){
+			memcpy(cma_buffer + nb_cma - 1, cma_buffer + nb_cma, sizeof(struct concreteMemAccess));
+		}
+		#ifdef EXTRA_CHECK
+		else if (cma_buffer[nb_cma].type == CONCRETE_READ && cma_buffer[nb_cma - 1].value != cma_buffer[nb_cma].value){
+			log_err_m("found inconsistency at address " PRINTF_ADDR " (v1: %02x, o1: %u) - (v1: %02x, o1: %u)", cma_buffer[nb_cma].address, cma_buffer[nb_cma - 1].value, cma_buffer[nb_cma - 1].order, cma_buffer[nb_cma].value, cma_buffer[nb_cma].order);
+			free(cma_buffer);
+			free(cma_mapping);
+			array_delete(cma_array);
+			return -1;
+		}
+		#endif
+	}
 
-		free(cma_buffer);
-		cma_buffer = NULL;
+	free(cma_mapping);
+	array_delete(cma_array);
 
-		if (nb_read_cma && nb_writ_cma){
-			uint32_t found = 0;
+	cma_read_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * nb_cma);
+	cma_writ_buffer = (struct concreteMemAccess*)malloc(sizeof(struct concreteMemAccess) * nb_cma);
 
-			mem_read = searchableMemory_create(cma_read_buffer, nb_read_cma);
-			mem_writ = searchableMemory_create(cma_writ_buffer, nb_writ_cma);
-
-			if (mem_read == NULL || mem_writ == NULL){
-				log_err("unable to create searchableMemory");
-				goto exit;
-			}
-
+	if (cma_read_buffer == NULL || cma_writ_buffer == NULL){
+		log_err("unable to allocate memory");
+		if (cma_read_buffer != NULL){
 			free(cma_read_buffer);
-			cma_read_buffer = NULL;
+		}
+		if (cma_writ_buffer != NULL){
 			free(cma_writ_buffer);
-			cma_writ_buffer = NULL;
+		}
+		free(cma_buffer);
 
-			found |= std_prim_search_xtea_enc(mem_read, mem_writ);
-			found |= std_prim_search_xtea_dec(mem_read, mem_writ);
-			found |= std_prim_search_md5_comp(mem_read, mem_writ);
-			found |= std_prim_search_sha_comp(mem_read, mem_writ);
-			found |= std_prim_search_aes128_enc(mem_read, mem_writ);
-			found |= std_prim_search_aes192_enc(mem_read, mem_writ);
-			found |= std_prim_search_aes256_enc(mem_read, mem_writ);
+		return -1;
+	}
 
-			if (!found){
-				searchableMemory_print(mem_read, "INPUT");
-				searchableMemory_print(mem_writ, "OUTPUT");
-			}
+	for (i = 0, nb_read_cma = 0, nb_writ_cma = 0; i < nb_cma; i++){
+		if (cma_buffer[i].type == CONCRETE_READ){
+			memcpy(cma_read_buffer + nb_read_cma, cma_buffer + i, sizeof(struct concreteMemAccess));
+			nb_read_cma ++;
+		}
+		else{
+			memcpy(cma_writ_buffer + nb_writ_cma, cma_buffer + i, sizeof(struct concreteMemAccess));
+			nb_writ_cma ++;
 		}
 	}
 
-	exit:
+	free(cma_buffer);
+
+	if (!nb_read_cma || !nb_writ_cma){
+		free(cma_read_buffer);
+		free(cma_writ_buffer);
+		return 0;
+	}
+
+	*mem_read = searchableMemory_create(cma_read_buffer, nb_read_cma);
+	*mem_writ = searchableMemory_create(cma_writ_buffer, nb_writ_cma);
+
+	free(cma_read_buffer);
+	free(cma_writ_buffer);
+
+	if (*mem_read == NULL || *mem_writ == NULL){
+		log_err("unable to create searchableMemory");
+		if (*mem_read != NULL){
+			free(*mem_read);
+			*mem_read = NULL;
+		}
+		if (*mem_writ != NULL){
+			free(*mem_writ);
+			*mem_writ = NULL;
+		}
+		return -1;
+	}
+
+	return 0;
+}
+
+static uint32_t std_prim_search_xtea_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_xtea_dec(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_md5_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_sha_comp(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes128_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes192_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+static uint32_t std_prim_search_aes256_enc(const struct searchableMemory* mem_read, const struct searchableMemory* mem_writ);
+
+void trace_search_io(struct trace* trace){
+	struct searchableMemory* 	mem_read;
+	struct searchableMemory* 	mem_writ;
+	uint32_t 					found;
+
+	if (trace_create_searchableMemory(trace, &mem_read, &mem_writ)){
+		log_err("unable to create searchable memory");
+		return;
+	}
+
+	if (mem_read != NULL && mem_writ != NULL){
+		found  = std_prim_search_xtea_enc(mem_read, mem_writ);
+		found |= std_prim_search_xtea_dec(mem_read, mem_writ);
+		found |= std_prim_search_md5_comp(mem_read, mem_writ);
+		found |= std_prim_search_sha_comp(mem_read, mem_writ);
+		found |= std_prim_search_aes128_enc(mem_read, mem_writ);
+		found |= std_prim_search_aes192_enc(mem_read, mem_writ);
+		found |= std_prim_search_aes256_enc(mem_read, mem_writ);
+
+		/*if (!found){*/
+			searchableMemory_print(mem_read, "INPUT");
+			searchableMemory_print(mem_writ, "OUTPUT");
+		/*}*/
+	}
+
 	if (mem_read != NULL){
 		free(mem_read);
 	}
 	if (mem_writ != NULL){
 		free(mem_writ);
 	}
-	if (cma_read_buffer != NULL){
-		free(cma_read_buffer);
+}
+
+static void primitiveParameter_recursive_search(struct primitiveParameter* prim_para, struct searchableMemory* mem_read, struct searchableMemory* mem_writ, uint32_t progress, void(*callback)(const struct primitiveParameter* prim_para)){
+	uint32_t i;
+
+	if (progress < prim_para->nb_in){
+		for (i = 0; i < mem_read->nb_segment; i++){
+			if (prim_para->mem_para_buffer[progress].addr - mem_read->headers[i].address <= mem_read->headers[i].size && prim_para->mem_para_buffer[progress].size <= mem_read->headers[i].size - (prim_para->mem_para_buffer[progress].addr - mem_read->headers[i].address)){
+				prim_para->mem_para_buffer[progress].ptr = mem_read->headers[i].ptr + (prim_para->mem_para_buffer[progress].addr - mem_read->headers[i].address);
+
+				if (progress + 1 == prim_para->nb_in + prim_para->nb_ou){
+					callback(prim_para);
+				}
+				else{
+					primitiveParameter_recursive_search(prim_para, mem_read, mem_writ, progress + 1, callback);
+				}
+			}
+		}
 	}
-	if (cma_writ_buffer != NULL){
-		free(cma_writ_buffer);
+	else{
+		for (i = 0; i < mem_writ->nb_segment; i++){
+			if (prim_para->mem_para_buffer[progress].addr - mem_writ->headers[i].address <= mem_writ->headers[i].size && prim_para->mem_para_buffer[progress].size <= mem_writ->headers[i].size - (prim_para->mem_para_buffer[progress].addr - mem_writ->headers[i].address)){
+				prim_para->mem_para_buffer[progress].ptr = mem_writ->headers[i].ptr + (prim_para->mem_para_buffer[progress].addr - mem_writ->headers[i].address);
+
+				if (progress + 1 == prim_para->nb_in + prim_para->nb_ou){
+					callback(prim_para);
+				}
+				else{
+					primitiveParameter_recursive_search(prim_para, mem_read, mem_writ, progress + 1, callback);
+				}
+			}
+		}
 	}
-	if (cma_buffer != NULL){
-		free(cma_buffer);
+}
+
+static void primitiveParameter_print_match(const struct primitiveParameter* prim_para){
+	uint32_t i;
+
+	puts("*** Content of Primitive Parameter ***");
+
+	for (i = 0; i < prim_para->nb_in; i++){
+		printf("\tIn %u [" PRINTF_ADDR " : " PRINTF_ADDR "] ", i, prim_para->mem_para_buffer[i].addr, prim_para->mem_para_buffer[i].addr + prim_para->mem_para_buffer[i].size);
+		fprintBuffer_raw(stdout, (char*)prim_para->mem_para_buffer[i].ptr, prim_para->mem_para_buffer[i].size);
+		printf("\n");
 	}
-	if (cma_mapping != NULL){
-		free(cma_mapping);
+
+	for (i = 0; i < prim_para->nb_ou; i++){
+		printf("\tOu %u [" PRINTF_ADDR " : " PRINTF_ADDR "] ", i, prim_para->mem_para_buffer[i + prim_para->nb_in].addr, prim_para->mem_para_buffer[i + prim_para->nb_in].addr + prim_para->mem_para_buffer[i + prim_para->nb_in].size);
+		fprintBuffer_raw(stdout, (char*)prim_para->mem_para_buffer[i + prim_para->nb_in].ptr, prim_para->mem_para_buffer[i + prim_para->nb_in].size);
+		printf("\n");
 	}
-	if (cma_array != NULL){
-		array_delete(cma_array);
+}
+
+static void primitiveParameter_check(const struct primitiveParameter* prim_para){
+	uint32_t found = 0;
+
+	/* MD5 */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 16 && prim_para->mem_para_buffer[1].size == 64 && prim_para->mem_para_buffer[2].size == 16){
+		uint8_t 	msg[64];
+		hash_state 	md;
+
+		memcpy(md.md5.state, prim_para->mem_para_buffer[0].ptr, sizeof(md.md5.state));
+		md.md5.curlen = 0;
+		md.md5.length = 0;
+
+		memcpy(msg, prim_para->mem_para_buffer[1].ptr, sizeof(msg));
+		if (md5_process(&md, msg, sizeof(msg)) != CRYPT_OK){
+			log_err("unable to process md5");
+		}
+		else{
+			if (!memcmp((uint8_t*)md.md5.state, prim_para->mem_para_buffer[2].ptr, sizeof(md.md5.state))){
+				puts("verifier_md5_compress            | 1            | 0.0");
+				found = 1;
+			}
+		}
+	}
+
+	/* SHA1 */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 20 && prim_para->mem_para_buffer[1].size == 64 && prim_para->mem_para_buffer[2].size == 20){
+		uint8_t 	msg[64];
+		hash_state 	md;
+
+		/* Endianness 1 */
+		memcpy(md.sha1.state, prim_para->mem_para_buffer[0].ptr, sizeof(md.sha1.state));
+		md.sha1.curlen = 0;
+		md.sha1.length = 0;
+
+		memcpy(msg, prim_para->mem_para_buffer[1].ptr, sizeof(msg));
+		if (sha1_process(&md, msg, sizeof(msg)) != CRYPT_OK){
+			log_err("unable to process sha1");
+		}
+		else{
+			if (!memcmp((uint8_t*)md.sha1.state, prim_para->mem_para_buffer[2].ptr, sizeof(md.sha1.state))){
+				puts("verifier_sha1_compress           | 1            | 0.0");
+				found = 1;
+			}
+		}
+
+		/* Endianness 2 */
+		memcpy(md.sha1.state, prim_para->mem_para_buffer[0].ptr, sizeof(md.sha1.state));
+		md.sha1.curlen = 0;
+		md.sha1.length = 0;
+
+		change_endianness((uint32_t*)msg, (uint32_t*)msg, sizeof(msg) / sizeof(uint32_t));
+		if (sha1_process(&md, msg, sizeof(msg)) != CRYPT_OK){
+			log_err("unable to process sha1");
+		}
+		else{
+			if (!memcmp((uint8_t*)md.sha1.state, prim_para->mem_para_buffer[2].ptr, sizeof(md.sha1.state))){
+				puts("verifier_sha1_compress           | 1            | 0.0");
+				found = 1;
+			}
+		}
+	}
+
+	/* XTEA */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 8 && prim_para->mem_para_buffer[1].size == 16 && prim_para->mem_para_buffer[2].size == 8){
+		symmetric_key 	skey;
+		uint8_t 		block_in[8];
+		uint8_t 		block_ou[8];
+
+		if (xtea_setup(prim_para->mem_para_buffer[1].ptr, 16, 32, &skey) != CRYPT_OK){
+			log_err("unable to setup xtea key");;
+		}
+		else{
+			/* ENC Endianness 1 */
+			memcpy(block_in, prim_para->mem_para_buffer[0].ptr, sizeof(block_in));
+			if (xtea_ecb_encrypt(block_in, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt xtea");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_xtea_enc                | 1            | 0.0");
+					found = 1;
+				}
+			}
+
+			/* DEC Endianness 1 */
+			if (xtea_ecb_decrypt(block_in, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to decrypt xtea");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_xtea_dec                | 1            | 0.0");
+					found = 1;
+				}
+			}
+
+			/* ENC Endianness 2 */
+			change_endianness((uint32_t*)block_in, (uint32_t*)block_in, sizeof(block_in) / sizeof(uint32_t));
+			if (xtea_ecb_encrypt(block_in, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt xtea");
+			}
+			else{
+				change_endianness((uint32_t*)block_ou, (uint32_t*)block_ou, sizeof(block_ou) / sizeof(uint32_t));
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_xtea_enc                | 1            | 0.0");
+					found = 1;
+				}
+			}
+
+			/* DEC Endianness 2 */
+			if (xtea_ecb_decrypt(block_in, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to decrypt xtea");
+			}
+			else{
+				change_endianness((uint32_t*)block_ou, (uint32_t*)block_ou, sizeof(block_ou) / sizeof(uint32_t));
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_xtea_dec                | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+	}
+
+	if (!found){
+		primitiveParameter_print_match(prim_para);
+	}
+}
+
+void trace_check_io(struct trace* trace, struct primitiveParameter* prim_para_buffer, uint32_t nb_prim_para){
+	struct searchableMemory* 	mem_read;
+	struct searchableMemory* 	mem_writ;
+	uint32_t 					i;
+
+	if (trace_create_searchableMemory(trace, &mem_read, &mem_writ)){
+		log_err("unable to create searchable memory");
+		return;
+	}
+
+	for (i = 0; i < nb_prim_para; i++){
+		primitiveParameter_recursive_search(prim_para_buffer + i, mem_read, mem_writ, 0, primitiveParameter_check);
+	}
+
+	if (mem_read != NULL){
+		free(mem_read);
+	}
+	if (mem_writ != NULL){
+		free(mem_writ);
 	}
 }
 

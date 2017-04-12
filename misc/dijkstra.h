@@ -26,7 +26,7 @@ struct dijkstraPathStep{
 };
 
 struct dijkstraPath{
-	struct array* 	step_array; 		/* Must be first because there is a cast to an array in the minCoverage computation */
+	struct array* 	step_array; 	/* Must be first because there is a cast to an array in the minCoverage computation */
 	struct node* 	reached_node;
 };
 

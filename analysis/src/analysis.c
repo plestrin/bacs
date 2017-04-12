@@ -155,7 +155,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "printDot mode signature", 	"Print every mode signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_printDot)
 	add_cmd_to_input_parser(parser, "clean mode signature", 	"Remove every mode signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->mode_signature_collection), signatureCollection_empty)
 	add_cmd_to_input_parser(parser, "search buffer signature", 	"Search for highly dependent buffers", 			"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_buffer_signature_search)
-	add_cmd_to_input_parser(parser, "print buffer signature", 	"Search for highly dependent buffers", 			NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	NULL, 									bufferSignature_print_buffer)
+	add_cmd_to_input_parser(parser, "print buffer signature", 	"Print the list of buffer signature(s)", 		NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	NULL, 									bufferSignature_print_buffer)
 
 	/* callGraph specific commands */
 	add_cmd_to_input_parser(parser, "create callGraph", 		"Create a call graph", 							"OS & range [opt]", 		INPUTPARSER_CMD_TYPE_ARG, 		analysis, 								analysis_call_create)

@@ -22,7 +22,7 @@ endef
 all:
 	@ if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi
 	@ if [ ! -d $(FIG_DIR) ]; then mkdir -p $(FIG_DIR); fi
-	@ cd $(SRC_DIR) && $(MAKE) VERBOSE=0 DEBUG=0 BUILD_DIR=../test/$(BIN_DIR)
+	@ cd $(SRC_DIR) && $(MAKE) VERBOSE=0 DEBUG=0 BUILD_DIR=../test/$(BIN_DIR) IOREL=1
 
 trace: $(foreach recipe,$(RECIPES),trace_$(recipe))
 
