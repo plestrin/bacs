@@ -1,0 +1,1567 @@
+<xml>
+	<recipe name="TEST_AES_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_aes_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_aes_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_AES_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes128_encrypt"/>
+			<arg value="export callGraph aes192_encrypt"/>
+			<arg value="export callGraph aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_AES_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes128_encrypt"/>
+			<arg value="export callGraph _aes192_encrypt"/>
+			<arg value="export callGraph _aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_AES_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_AES_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes128_encrypt"/>
+			<arg value="export callGraph _aes192_encrypt"/>
+			<arg value="export callGraph _aes256_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_AES"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph rijndael_ecb_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_AES"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP34Rijndael_Enc_AdvancedProcessBlocksEPvPKj"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_AES"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1289encrypt_nEPKhPhj"/>
+			<arg value="export callGraph _ZNK5Botan7AES_1929encrypt_nEPKhPhj"/>_
+			<arg value="export callGraph _ZNK5Botan7AES_2569encrypt_nEPKhPhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_AES"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_AES" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_aes"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_aes">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_AES"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph AES_encrypt"/> <!-- this is a wrapper function, if we export the asm function, iorel is not detected anymore -->
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v0_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v0_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V0_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V0_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v1_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V1_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v2_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v2_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V2_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V2_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_ecb_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_aes_v3_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_aes_v3_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_AES_V3_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_AES_V3_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_ecb_encrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize light ir"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes128" number="1"/>
+			<algo name="verifier_aes128_enc" number="1"/>
+			<algo name="aes192" number="1"/>
+			<algo name="verifier_aes192_enc" number="1"/>
+			<algo name="aes256" number="1"/>
+			<algo name="verifier_aes256_enc" number="1"/>
+		</result>
+	</recipe>
+</xml>

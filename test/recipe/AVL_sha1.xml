@@ -1,0 +1,333 @@
+<xml>
+	<recipe name="TEST_SHA1_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_GOs"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO0"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO2"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_CO3"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/test/ build/test_sha1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/test/build/test_sha1_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTEST_SHA1_COz"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_SHA1_WD"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph 279650"/>  <!-- no symbol to extract _sha1_compress -->
+			<arg value="export callGraph 285304"/>  <!-- no symbol to extract _sha1_compress -->
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="1"/>
+			<algo name="verifier_sha1_compress" number="1"/>
+			<comment value="hard coded trace segment offset"/>
+		</result>
+	</recipe>
+
+	<recipe name="TEST_SHA1_WR" active="no"> <!-- function sha1_compress inlined -->
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceTEST_SHA1_WR"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _sha1_feed"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="1"/>
+			<algo name="verifier_sha1_compress" number="1"/>
+		</result>
+	</recipe>
+
+	<recipe name="BOT_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/botan/ build/bot_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/botan/build/bot_sha1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceBOT_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN5Botan7SHA_16010compress_nEPKhj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+			<algo name="verifier_sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="PP_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_sha1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace tracePP_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _ZN8CryptoPP4SHA19TransformEPjPKj"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+			<algo name="verifier_sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="NET_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/nettle/ build/net_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/nettle/build/net_sha1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceNET_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph _nettle_sha1_compress"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+			<algo name="verifier_sha1_compress" number="2"/>
+		</result>
+	</recipe>
+
+	<recipe name="OPEN_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/openssl/ build/open_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/openssl/build/open_sha1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceOPEN_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph 452"/>
+			<arg value="export callGraph 1238"/> <!-- equivalent to the first one -->
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="1"/>
+			<algo name="verifier_sha1_compress" number="1"/>
+			<comment value="hard coded trace segment offset"/>
+		</result>
+	</recipe>
+
+	<recipe name="TOM_SHA1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_sha1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_sha1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceTOM_SHA1"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph 252"/>
+			<arg value="export callGraph 2121"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir light"/>
+			<arg value="search buffer signature"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="sha1_compress" number="2"/>
+			<algo name="verifier_sha1_compress" number="2"/>
+			<comment value="hard coded trace segment offset"/>
+		</result>
+	</recipe>
+</xml>
