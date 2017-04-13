@@ -65,6 +65,7 @@ static void analysis_frag_create_ir(struct analysis* analysis, const char* arg);
 static void analysis_frag_create_compound_ir(struct analysis* analysis, const char* arg);
 static void analysis_frag_printDot_ir(struct analysis* analysis, const char* arg);
 static void analysis_frag_normalize_ir(struct analysis* analysis, const char* arg);
+static void analysis_frag_normalize_light_ir(struct analysis* analysis, const char* arg);
 static void analysis_frag_print_aliasing_ir(struct analysis* analysis, const char* arg);
 static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, const char* arg);
 
@@ -142,6 +143,7 @@ int main(int argc, char** argv){
 	add_cmd_to_input_parser(parser, "create compound ir", 		"Create an IR, using previously created IR(s)", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_create_compound_ir)
 	add_cmd_to_input_parser(parser, "printDot ir", 				"Write the IR to a file in the dot format", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_printDot_ir)
 	add_cmd_to_input_parser(parser, "normalize ir", 			"Normalize the IR (useful for signature)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_ir)
+	add_cmd_to_input_parser(parser, "normalize light ir", 		"Normalize the IR (only few mechanims)", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_normalize_light_ir)
 	add_cmd_to_input_parser(parser, "print aliasing ir", 		"Print remaining aliasing conflict in IR", 		"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_print_aliasing_ir)
 	add_cmd_to_input_parser(parser, "simplify concrete ir", 	"Simplify memory accesses using concrete addr", "Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_simplify_concrete_ir)
 
@@ -896,12 +898,16 @@ static void analysis_frag_normalize_ir(struct analysis* analysis, const char* ar
 	apply_to_multiple_frags(analysis, trace_normalize_ir, arg)
 }
 
+static void analysis_frag_normalize_light_ir(struct analysis* analysis, const char* arg){
+	apply_to_multiple_frags(analysis, trace_normalize_light_ir, arg)
+}
+
 static void analysis_frag_print_aliasing_ir(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_print_aliasing_ir, arg)
 }
 
 static void analysis_frag_simplify_concrete_ir(struct analysis* analysis, const char* arg){
-	apply_to_multiple_frags(analysis, trace_normalize_concrete_ir, arg)
+	apply_to_multiple_frags(analysis, trace_normalize_concrete_and_light_ir, arg)
 }
 
 /* ===================================================================== */

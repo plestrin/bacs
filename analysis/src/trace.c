@@ -508,11 +508,23 @@ void trace_normalize_ir(struct trace* trace){
 	}
 }
 
-void trace_normalize_concrete_ir(struct trace* trace){
+void trace_normalize_concrete_and_light_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
 		trace_reset_synthesis(trace);
 		trace_reset_result(trace);
 		ir_normalize_concrete(trace->trace_type.frag.ir);
+		ir_normalize_light(trace->trace_type.frag.ir);
+	}
+	else{
+		log_err_m("the IR is NULL or no concrete address for fragment \"%s\"", trace->trace_type.frag.tag);
+	}
+}
+
+void trace_normalize_light_ir(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL && trace->mem_trace != NULL){
+		trace_reset_synthesis(trace);
+		trace_reset_result(trace);
+		ir_normalize_light(trace->trace_type.frag.ir);
 	}
 	else{
 		log_err_m("the IR is NULL or no concrete address for fragment \"%s\"", trace->trace_type.frag.tag);

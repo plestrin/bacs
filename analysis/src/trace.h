@@ -89,7 +89,8 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 #define componentFrag_clean_array(array) array_clean(array)
 
 void trace_normalize_ir(struct trace* trace);
-void trace_normalize_concrete_ir(struct trace* trace);
+void trace_normalize_concrete_and_light_ir(struct trace* trace);
+void trace_normalize_light_ir(struct trace* trace);
 
 static inline void trace_printDot_ir(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){

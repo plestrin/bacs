@@ -443,10 +443,10 @@ void trace_search_io(struct trace* trace){
 		found |= std_prim_search_aes192_enc(mem_read, mem_writ);
 		found |= std_prim_search_aes256_enc(mem_read, mem_writ);
 
-		/*if (!found){*/
+		if (!found){
 			searchableMemory_print(mem_read, "INPUT");
 			searchableMemory_print(mem_writ, "OUTPUT");
-		/*}*/
+		}
 	}
 
 	if (mem_read != NULL){
@@ -510,6 +510,126 @@ static void primitiveParameter_print_match(const struct primitiveParameter* prim
 
 static void primitiveParameter_check(const struct primitiveParameter* prim_para){
 	uint32_t found = 0;
+
+	/* AES 128 */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 16 && prim_para->mem_para_buffer[1].size == 160 && prim_para->mem_para_buffer[2].size == 16){
+		symmetric_key 	skey;
+		uint8_t 		key[16];
+		uint8_t 		block_ou[16];
+
+		/* Endianness 1 */
+		if (aes_setup(prim_para->mem_para_buffer[1].ptr, 16, 10, &skey) != CRYPT_OK){
+			log_err("unable to setup aes128 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes128");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes128_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+
+		/* Endianness 2 */
+		change_endianness((uint32_t*)key, (uint32_t*)prim_para->mem_para_buffer[1].ptr, sizeof(key) / sizeof(uint32_t));
+		if (aes_setup(key, sizeof(key), 10, &skey) != CRYPT_OK){
+			log_err("unable to setup aes128 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes128");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes128_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+	}
+
+	/* AES 192 */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 16 && prim_para->mem_para_buffer[1].size == 192 && prim_para->mem_para_buffer[2].size == 16){
+		symmetric_key 	skey;
+		uint8_t 		key[24];
+		uint8_t 		block_ou[16];
+
+		/* Endianness 1 */
+		if (aes_setup(prim_para->mem_para_buffer[1].ptr, 24, 12, &skey) != CRYPT_OK){
+			log_err("unable to setup aes192 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes192");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes192_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+
+		/* Endianness 2 */
+		change_endianness((uint32_t*)key, (uint32_t*)prim_para->mem_para_buffer[1].ptr, sizeof(key) / sizeof(uint32_t));
+		if (aes_setup(key, sizeof(key), 12, &skey) != CRYPT_OK){
+			log_err("unable to setup aes192 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes192");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes192_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+	}
+
+	/* AES 256 */
+	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 16 && prim_para->mem_para_buffer[1].size == 224 && prim_para->mem_para_buffer[2].size == 16){
+		symmetric_key 	skey;
+		uint8_t 		key[32];
+		uint8_t 		block_ou[16];
+
+		/* Endianness 1 */
+		if (aes_setup(prim_para->mem_para_buffer[1].ptr, 32, 14, &skey) != CRYPT_OK){
+			log_err("unable to setup aes256 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes256");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes256_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+
+		/* Endianness 2 */
+		change_endianness((uint32_t*)key, (uint32_t*)prim_para->mem_para_buffer[1].ptr, sizeof(key) / sizeof(uint32_t));
+		if (aes_setup(key, sizeof(key), 14, &skey) != CRYPT_OK){
+			log_err("unable to setup aes256 key");
+		}
+		else{
+			if (aes_ecb_encrypt(prim_para->mem_para_buffer[0].ptr, block_ou, &skey) != CRYPT_OK){
+				log_err("unable to encrypt aes256");
+			}
+			else{
+				if (!memcmp(block_ou, prim_para->mem_para_buffer[2].ptr, sizeof(block_ou))){
+					puts("verifier_aes256_enc              | 1            | 0.0");
+					found = 1;
+				}
+			}
+		}
+	}
 
 	/* MD5 */
 	if (prim_para->nb_in == 2 && prim_para->nb_ou == 1 && prim_para->mem_para_buffer[0].size == 16 && prim_para->mem_para_buffer[1].size == 64 && prim_para->mem_para_buffer[2].size == 16){

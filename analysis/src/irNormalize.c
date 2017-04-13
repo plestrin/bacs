@@ -11,17 +11,6 @@
 #include "dagPartialOrder.h"
 #include "base.h"
 
-#define IR_NORMALIZE_FOLD_CONSTANT 				1
-#define IR_NORMALIZE_DETECT_CST_EXPRESSION 		1
-#define IR_NORMALIZE_SIMPLIFY_INSTRUCTION		1
-#define IR_NORMALIZE_REMOVE_SUBEXPRESSION 		1
-#define IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS 	1
-#define IR_NORMALIZE_EXPAND_VARIABLE			1
-#define IR_NORMALIZE_DISTRIBUTE_CST 			1
-#define IR_NORMALIZE_COALESCE_MEMORY_ACCESS 	1
-#define IR_NORMALIZE_AFFINE_EXPRESSION 			1
-#define IR_NORMALIZE_MERGE_CST 					1
-
 #if IR_NORMALIZE_FOLD_CONSTANT == 1
 
 static uint64_t irNormalize_cst_gen_add(uint64_t arg1, struct irOperation* arg2){
@@ -1143,9 +1132,26 @@ void ir_normalize(struct ir* ir){
 	#endif
 }
 
+#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
 void ir_normalize_concrete(struct ir* ir){
 	#if defined VERBOSE || defined IR_FULL_CHECK
-	uint8_t 		modification_copy;
+	if (irMemory_simplify_concrete(ir)){
+		#ifdef VERBOSE
+		log_info("modification simplify concrete memory access @ START");
+		#endif
+		#ifdef IR_FULL_CHECK
+		ir_normalize_check_ir(ir);
+		#endif
+	}
+	#else
+	irMemory_simplify_concrete(ir);
+	#endif
+}
+#endif
+
+void ir_normalize_light(struct ir* ir){
+	#if defined VERBOSE || defined IR_FULL_CHECK
+	uint32_t 		modification_copy;
 	#ifdef VERBOSE
 	uint32_t 		round_counter 			= 0;
 	double 			timer_1_elapsed_time 	= 0.0;
@@ -1154,19 +1160,7 @@ void ir_normalize_concrete(struct ir* ir){
 	struct timespec timer_stop_time;
 	#endif
 	#endif
-	uint8_t 		modification;
-
-	#if IR_NORMALIZE_SIMPLIFY_MEMORY_ACCESS == 1
-	modification = irMemory_simplify_concrete(ir);
-	#if defined VERBOSE || defined IR_FULL_CHECK
-	if (modification){
-		#ifdef VERBOSE
-		log_info("modification simplify concrete memory access @ START");
-		#endif
-		ir_normalize_check_ir(ir);
-	}
-	#endif
-	#endif
+	uint32_t 		modification;
 
 	do {
 		modification = 0;

@@ -1,39 +1,211 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <search.h>
 
 #include "irBuffer.h"
 #include "signatureCollection.h"
-#include "dijkstra.h"
 #include "array.h"
 #include "set.h"
 #include "multiColumn.h"
 #include "base.h"
 
+#define TAINTED 0xff
 
-#define IRBUFFER_MIN_SIZE 64
+static int32_t taint(struct graph* graph, struct node* node, uint8_t* taint_buffer){
+	struct taintInternal{
+		uint8_t 				taint;
+		struct node*			node;
+		struct taintInternal* 	next;
+	};
+
+	#define overlap_get_mask(size) (~(0xffffffff << (size)))
+
+	struct taintInternal* 	internals;
+	struct taintInternal* 	curr_orbital = NULL;
+	struct taintInternal* 	next_orbital;
+	uint32_t 				i;
+	struct node* 			node_cursor;
+	struct edge*			edge_cursor;
+	struct taintInternal* 	internal_cursor;
+	struct irOperation* 	operation;
+	uint32_t 				mask;
+	ADDRESS 				addr;
+	uint32_t 				size;
+
+	if ((internals = (struct taintInternal*)malloc(sizeof(struct taintInternal) * graph->nb_node)) == NULL){
+		log_err("unable to allocate memory");
+		return -1;
+	}
+
+	for (node_cursor = graph_get_head_node(graph), i = 0; i < graph->nb_node && node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+		node_cursor->ptr = internals + i;
+
+		internals[i].taint 	= 0;
+		internals[i].node 	= node_cursor;
+		internals[i].next 	= NULL;
+	}
+
+	curr_orbital = (struct taintInternal*)node->ptr;
+	curr_orbital->taint = TAINTED;
+
+	operation = ir_node_get_operation(node);
+	if (operation->type == IR_OPERATION_TYPE_IN_MEM){
+		mask = overlap_get_mask(operation->size / 8);
+		addr = operation->operation_type.mem.con_addr;
+		size = operation->size / 8;
+
+		/* BACKWARD */
+		for (node_cursor = operation->operation_type.mem.prev; node_cursor != NULL && mask; node_cursor = operation->operation_type.mem.prev){
+			operation = ir_node_get_operation(node_cursor);
+
+			if (operation->operation_type.mem.con_addr <= addr && operation->operation_type.mem.con_addr + operation->size / 8 > addr){
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+					mask &= 0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr);
+				}
+				else if(mask & ~(0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr))){
+					internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+					internal_cursor->taint = TAINTED;
+					internal_cursor->next = curr_orbital;
+					curr_orbital = internal_cursor;
+				}
+			}
+			else if (addr <= operation->operation_type.mem.con_addr && addr + size > operation->operation_type.mem.con_addr){
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+					mask &= overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr);
+				}
+				else if (mask & ~(overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr))){
+					internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+					internal_cursor->taint = TAINTED;
+					internal_cursor->next = curr_orbital;
+					curr_orbital = internal_cursor;
+				}
+			}
+		}
+
+		/* FORWARD */
+		mask = overlap_get_mask(size);
+		for (node_cursor = ir_node_get_operation(node)->operation_type.mem.next; node_cursor != NULL && mask; node_cursor = operation->operation_type.mem.next){
+			operation = ir_node_get_operation(node_cursor);
+
+			if (operation->operation_type.mem.con_addr <= addr && operation->operation_type.mem.con_addr + operation->size / 8 > addr){
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+					mask &= 0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr);
+				}
+				else if(mask & ~(0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr))){
+					internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+					internal_cursor->taint = TAINTED;
+					internal_cursor->next = curr_orbital;
+					curr_orbital = internal_cursor;
+				}
+			}
+			else if (addr <= operation->operation_type.mem.con_addr && addr + size > operation->operation_type.mem.con_addr){
+				if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+					mask &= overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr);
+				}
+				else if (mask & ~(overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr))){
+					internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+					internal_cursor->taint = TAINTED;
+					internal_cursor->next = curr_orbital;
+					curr_orbital = internal_cursor;
+				}
+			}
+		}
+	}
+
+	for ( ; curr_orbital != NULL; curr_orbital = next_orbital){
+		for (next_orbital = NULL; curr_orbital != NULL; curr_orbital = curr_orbital->next){
+			for (edge_cursor = node_get_head_edge_src(curr_orbital->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
+				node_cursor = edge_get_dst(edge_cursor);
+				internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+				if (internal_cursor->taint == 0){
+					internal_cursor->taint = TAINTED;
+					internal_cursor->next = next_orbital;
+					next_orbital = internal_cursor;
+				}
+			}
+
+			operation = ir_node_get_operation(curr_orbital->node);
+			if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+				mask = overlap_get_mask(operation->size / 8);
+				addr = operation->operation_type.mem.con_addr;
+				size = operation->size / 8;
+
+				for (node_cursor = operation->operation_type.mem.next; node_cursor != NULL && mask; node_cursor = operation->operation_type.mem.next){
+					operation = ir_node_get_operation(node_cursor);
+
+					if (operation->operation_type.mem.con_addr <= addr && operation->operation_type.mem.con_addr + operation->size / 8 > addr){
+						if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+							mask &= 0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr);
+						}
+						else if(mask & ~(0xffffffff << (operation->operation_type.mem.con_addr + operation->size / 8 - addr))){
+							internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+							if (internal_cursor->taint == 0){
+								internal_cursor->taint = TAINTED;
+								internal_cursor->next = next_orbital;
+								next_orbital = internal_cursor;
+							}
+						}
+					}
+					else if (addr <= operation->operation_type.mem.con_addr && addr + size > operation->operation_type.mem.con_addr){
+						if (operation->type == IR_OPERATION_TYPE_OUT_MEM){
+							mask &= overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr);
+						}
+						else if (mask & ~(overlap_get_mask(size) >> (addr + size - operation->operation_type.mem.con_addr))){
+							internal_cursor = (struct taintInternal*)node_cursor->ptr;
+
+							if (internal_cursor->taint == 0){
+								internal_cursor->taint = TAINTED;
+								internal_cursor->next = next_orbital;
+								next_orbital = internal_cursor;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for (node_cursor = graph_get_head_node(graph), i = 0; i < graph->nb_node && node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+		internal_cursor = (struct taintInternal*)node_cursor->ptr;
+		taint_buffer[i] = internal_cursor->taint;
+	}
+
+	free(internals);
+
+	return 0;
+}
+
+#define IRBUFFER_MIN_SIZE 8
 
 struct memAccess{
 	struct node* 	node;
 	uint32_t 		index;
+	uint32_t 		offset;
 };
 
-static int32_t compare_memAccess_address_then_order(void* arg1, void* arg2){
-	struct memAccess* 		mem_access1 = (struct memAccess*)arg1;
-	struct memAccess* 		mem_access2 = (struct memAccess*)arg2;
-	struct irOperation* 	op1 = ir_node_get_operation(mem_access1->node);
-	struct irOperation* 	op2 = ir_node_get_operation(mem_access2->node);
+#define memAccess_get_addr(mem_access) (ir_node_get_operation((mem_access)->node)->operation_type.mem.con_addr + (mem_access)->offset)
 
-	if (op1->operation_type.mem.con_addr < op2->operation_type.mem.con_addr){
+static int32_t compare_memAccess_address_then_order(void* arg1, void* arg2){
+	struct memAccess* mem_access1 = (struct memAccess*)arg1;
+	struct memAccess* mem_access2 = (struct memAccess*)arg2;
+
+	if (memAccess_get_addr(mem_access1) < memAccess_get_addr(mem_access2)){
 		return -1;
 	}
-	else if (op1->operation_type.mem.con_addr > op2->operation_type.mem.con_addr){
+	else if (memAccess_get_addr(mem_access1) > memAccess_get_addr(mem_access2)){
 		return 1;
 	}
-	else if (op1->operation_type.mem.order > op2->operation_type.mem.order){
+	else if (mem_access1->index > mem_access2->index){
 		return -1;
 	}
-	else if (op1->operation_type.mem.order < op2->operation_type.mem.order){
+	else if (mem_access1->index < mem_access2->index){
 		return 1;
 	}
 	else{
@@ -44,16 +216,14 @@ static int32_t compare_memAccess_address_then_order(void* arg1, void* arg2){
 struct memoryBuffer{
 	ADDRESS 			address_start;
 	uint32_t 			size;
-	uint32_t 			nb_access;
 	struct memAccess* 	access;
 };
 
-#define memoryBuffer_get_size(nb_access) (sizeof(struct memoryBuffer) + sizeof(struct memAccess) * (nb_access))
+#define memoryBuffer_get_size(size) (sizeof(struct memoryBuffer) + sizeof(struct memAccess) * (size))
 
 struct subMemoryBuffer{
 	struct memoryBuffer* 	buffer;
 	uint32_t 				offset;
-	uint32_t 				length;
 	uint32_t 				size;
 };
 
@@ -70,11 +240,11 @@ enum bufferCoupleCompare{
 
 static enum bufferCoupleCompare bufferCouple_compare_subset_superset(const struct bufferCouple* couple1, const struct bufferCouple* couple2);
 
-static inline struct memoryBuffer* memoryBuffer_create(uint32_t nb_access){
+static inline struct memoryBuffer* memoryBuffer_create(uint32_t size){
 	struct memoryBuffer* mem_buf;
 
-	if ((mem_buf = (struct memoryBuffer*)malloc(memoryBuffer_get_size(nb_access))) != NULL){
-		mem_buf->nb_access = nb_access;
+	if ((mem_buf = (struct memoryBuffer*)malloc(memoryBuffer_get_size(size))) != NULL){
+		mem_buf->size 	= size;
 		mem_buf->access = (struct memAccess*)(mem_buf + 1);
 	}
 	else{
@@ -90,11 +260,10 @@ static struct array* memoryBuffer_create_array(struct array* mem_access_array, u
 	uint32_t 				k;
 	struct array* 			buffer_array;
 	uint32_t* 				mapping 		= NULL;
-	ADDRESS 				address;
-	uint32_t 				size;
-	struct irOperation* 	operation;
+	ADDRESS 				addr;
 	struct memoryBuffer* 	mem_buf;
 	uint32_t 				nb_mem_access;
+	struct memAccess* 		mem_access;
 
 	buffer_array = array_create(sizeof(struct memoryBuffer*));
 	if (buffer_array == NULL){
@@ -102,52 +271,50 @@ static struct array* memoryBuffer_create_array(struct array* mem_access_array, u
 		return NULL;
 	}
 
-	mapping = array_create_mapping(mem_access_array, compare_memAccess_address_then_order);
-	if (mapping == NULL){
+	if ((mapping = array_create_mapping(mem_access_array, compare_memAccess_address_then_order)) == NULL){
 		log_err("unable to create mapping");
 		return buffer_array;
 	}
 
+	mem_access = array_get(mem_access_array, mapping[0]);
+	addr = memAccess_get_addr(mem_access);
+
 	if (is_write){
-		operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[0]))->node);
-		address = operation->operation_type.mem.con_addr;
 		for (i = 1, j = 1; i < array_get_length(mem_access_array); i++){
-			operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[i]))->node);
-			if (operation->operation_type.mem.con_addr != address){
-				if (i != j){
-					mapping[j] = mapping[i];
-				}
-				j++;
+			mem_access = array_get(mem_access_array, mapping[i]);
+			if (memAccess_get_addr(mem_access) != addr){
+				mapping[j ++] = mapping[i];
+				addr = memAccess_get_addr(mem_access);
 			}
-			address = operation->operation_type.mem.con_addr;
 		}
 		nb_mem_access = j;
 	}
 	else{
-		nb_mem_access = array_get_length(mem_access_array);
+		for (i = 1, j = 0; i < array_get_length(mem_access_array); i++){
+			mem_access = array_get(mem_access_array, mapping[i]);
+			if (memAccess_get_addr(mem_access) != addr){
+				addr = memAccess_get_addr(mem_access);
+				j++;
+			}
+			mapping[j] = mapping[i];
+		}
+		nb_mem_access = j + 1;
 	}
 
 	for (i = 0; i < nb_mem_access; i = j){
-		operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[i]))->node);
-		address = operation->operation_type.mem.con_addr;
-		size = operation->size;
+		mem_access = array_get(mem_access_array, mapping[i]);
+		addr = memAccess_get_addr(mem_access);
+
 		for (j = i + 1; j < nb_mem_access; j++){
-			operation = ir_node_get_operation(((struct memAccess*)array_get(mem_access_array, mapping[j]))->node);
-			if (operation->operation_type.mem.con_addr < address + (size / 8)){
-				log_warn_m("found an overlapping memory access (" PRINTF_ADDR ", " PRINTF_ADDR ":%u). Make sure you have done a concrete memory simplification", address + (size / 8), operation->operation_type.mem.con_addr, operation->size / 8);
-			}
-			else if (operation->operation_type.mem.con_addr > address + (size / 8)){
+			mem_access = array_get(mem_access_array, mapping[j]);
+			if (memAccess_get_addr(mem_access) != addr + (j - i)){
 				break;
-			}
-			else{
-				size += operation->size;
 			}
 		}
 
-		if (size >= IRBUFFER_MIN_SIZE){
+		if (j - i >= IRBUFFER_MIN_SIZE){
 			if ((mem_buf = memoryBuffer_create(j - i)) != NULL){
-				mem_buf->address_start 	= address;
-				mem_buf->size 			= size;
+				mem_buf->address_start 	= addr;
 				for (k = i; k < j; k++){
 					memcpy(mem_buf->access + k - i, array_get(mem_access_array, mapping[k]), sizeof(struct memAccess));
 				}
@@ -168,17 +335,22 @@ static struct array* memoryBuffer_create_array(struct array* mem_access_array, u
 	return buffer_array;
 }
 
-static uint32_t* memoryBuffer_get_dst_from(const struct memoryBuffer* mem_buf, struct graph* graph){
-	uint32_t* 	result;
-	uint32_t 	i;
 
-	result = (uint32_t*)malloc(mem_buf->nb_access * graph->nb_node * sizeof(uint32_t));
-	if (result != NULL){
-		for (i = 0; i < mem_buf->nb_access; i++){
-			if (dijkstra_dst_from(graph, mem_buf->access[i].node, result + graph->nb_node * i)){
-				log_err("unable to compute distance from");
-				free(result);
-				return NULL;
+static uint8_t* memoryBuffer_get_taint(const struct memoryBuffer* mem_buf, struct graph* graph){
+	uint8_t* taint_buffer;
+	uint32_t i;
+
+	if ((taint_buffer = malloc(mem_buf->size * graph->nb_node)) != NULL){
+		for (i = 0; i < mem_buf->size; i++){
+			if (i && mem_buf->access[i].node == mem_buf->access[i - 1].node){
+				memcpy(taint_buffer + graph->nb_node * i, taint_buffer + graph->nb_node * (i -1), graph->nb_node);
+			}
+			else{
+				if (taint(graph, mem_buf->access[i].node, taint_buffer + graph->nb_node * i)){
+					log_err("unable to compute distance from");
+					free(taint_buffer);
+					return NULL;
+				}
 			}
 		}
 	}
@@ -186,85 +358,83 @@ static uint32_t* memoryBuffer_get_dst_from(const struct memoryBuffer* mem_buf, s
 		log_err("unable to allocate memory");
 	}
 
-	return result;
+	return taint_buffer;
 }
 
-static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct memoryBuffer* ou_buf, const uint32_t* dst_from, struct graph* graph, struct set* buffer_couple_set){
-	uint32_t 					i;
-	uint32_t 					j;
-	uint32_t 					k;
-	uint32_t 					l;
-	uint32_t 					m;
-	uint32_t 					n;
-	uint32_t 					ou_size;
-	uint32_t 					in_size;
-	struct bufferCouple 		new_couple;
-	struct bufferCouple* 		set_couple;
-	struct subSet 				buffer_couple_sub_set;
-	struct setIterator 			it;
+static void memoryBuffer_search_dependence(struct memoryBuffer* in_buf, struct memoryBuffer* ou_buf, const uint8_t* taint_buffer, struct graph* graph, struct set* buffer_couple_set){
+	uint32_t 				i;
+	uint32_t 				j;
+	uint32_t 				k;
+	uint32_t 				l;
+	uint32_t 				m;
+	struct bufferCouple 	new_couple;
+	struct bufferCouple* 	set_couple;
+	struct subSet 			buffer_couple_sub_set;
+	struct setIterator 		it;
 
 	new_couple.in.buffer = in_buf;
 	new_couple.ou.buffer = ou_buf;
 
 	subSet_init(&buffer_couple_sub_set, buffer_couple_set);
 
-	for (i = 0; i < in_buf->nb_access; i ++){
-		for (j = 0; j < ou_buf->nb_access; j ++){
-			for (k = 0, ou_size = 0; j + k < ou_buf->nb_access && dst_from[i * graph->nb_node + ou_buf->access[j + k].index] != DIJKSTRA_INVALID_DST; k++){
-				ou_size += ir_node_get_operation(ou_buf->access[j + k].node)->size;
+	for (i = 0; i < in_buf->size; i++){
+		for (j = 0; j < ou_buf->size; j++){
+			for (k = 0; j + k < ou_buf->size; k++){
+				if (taint_buffer[i * graph->nb_node + ou_buf->access[j + k].index] != TAINTED){
+					break;
+				}
 			}
-			if (ou_size < IRBUFFER_MIN_SIZE){
+			if (k < IRBUFFER_MIN_SIZE){
 				continue;
 			}
 
-			for (l = i + 1, in_size = ir_node_get_operation(in_buf->access[i].node)->size, n = k; l < in_buf->nb_access; l ++, n = m){
-				for (m = 0, ou_size = 0; m < n && dst_from[l * graph->nb_node + ou_buf->access[j + m].index] != DIJKSTRA_INVALID_DST; m ++){
-					ou_size += ir_node_get_operation(ou_buf->access[j + m].node)->size;
-				}
-
-				if (ou_size >= IRBUFFER_MIN_SIZE){
-					in_size += ir_node_get_operation(in_buf->access[l].node)->size;
-
-					if (in_size >= IRBUFFER_MIN_SIZE){
-						new_couple.in.offset 	= i;
-						new_couple.in.length 	= l + 1 - i;
-						new_couple.in.size 		= in_size;
-						new_couple.ou.offset 	= j;
-						new_couple.ou.length 	= m;
-						new_couple.ou.size 		= ou_size;
-
-						for (set_couple = subSetIterator_get_first(&buffer_couple_sub_set, &it); set_couple != NULL; set_couple = setIterator_get_next(&it)){
-							switch (bufferCouple_compare_subset_superset(&new_couple, set_couple)){
-								case BUFFERCOUPLECOMPARE_SUPERSET 	: {
-									setIterator_pop(&it);
-									break;
-								}
-								case BUFFERCOUPLECOMPARE_SUBSET 	: {
-									goto next;
-								}
-								case BUFFERCOUPLECOMPARE_NONE 		: {
-									break;
-								}
-							}
-						}
-
-						if (subSet_add(&buffer_couple_sub_set, &new_couple) < 0){
-							log_err("unable to add element to set");
-						}
-
-						next:;
+			for (l = 1; l + i < in_buf->size; l++, k = m){
+				for (m = 0; m < k; m++){
+					if (taint_buffer[(l + i) * graph->nb_node + ou_buf->access[j + m].index] != TAINTED){
+						break;
 					}
 				}
-				else{
+
+				if (m < IRBUFFER_MIN_SIZE){
 					break;
 				}
+
+				if (++l < IRBUFFER_MIN_SIZE){
+					continue;
+				}
+
+				new_couple.in.offset 	= i;
+				new_couple.in.size 		= l;
+				new_couple.ou.offset 	= j;
+				new_couple.ou.size 		= m;
+
+				for (set_couple = subSetIterator_get_first(&buffer_couple_sub_set, &it); set_couple != NULL; set_couple = setIterator_get_next(&it)){
+					switch (bufferCouple_compare_subset_superset(&new_couple, set_couple)){
+						case BUFFERCOUPLECOMPARE_SUPERSET 	: {
+							setIterator_pop(&it);
+							break;
+						}
+						case BUFFERCOUPLECOMPARE_SUBSET 	: {
+							goto next;
+						}
+						case BUFFERCOUPLECOMPARE_NONE 		: {
+							break;
+						}
+					}
+				}
+
+				if (subSet_add(&buffer_couple_sub_set, &new_couple) < 0){
+					log_err("unable to add element to set");
+				}
+
+				next:;
 			}
 		}
 	}
 }
 
 void memoryBuffer_print(const struct memoryBuffer* mem_buf){
-	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", mem_buf->address_start, mem_buf->address_start + mem_buf->size / 8, mem_buf->size);
+	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%4u", mem_buf->address_start, mem_buf->address_start + mem_buf->size, mem_buf->size * 8);
 }
 
 static void memoryBuffer_delete_array(struct array* buffer_array){
@@ -277,43 +447,11 @@ static void memoryBuffer_delete_array(struct array* buffer_array){
 
 }
 
-static inline ADDRESS subMemoryBuffer_get_start_address(const struct subMemoryBuffer* sub_mem_buf){
-	struct irOperation* op = ir_node_get_operation(sub_mem_buf->buffer->access[sub_mem_buf->offset].node);
-	return op->operation_type.mem.con_addr;
-}
-
-static inline ADDRESS subMemoryBuffer_get_stop_address(const struct subMemoryBuffer* sub_mem_buf){
-	struct irOperation* op = ir_node_get_operation(sub_mem_buf->buffer->access[sub_mem_buf->offset + sub_mem_buf->length - 1].node);
-	return op->operation_type.mem.con_addr + op->size / 8;
-}
+#define subMemoryBuffer_get_start_address(sub_mem_buf) ((sub_mem_buf)->buffer->address_start + (sub_mem_buf)->offset)
+#define subMemoryBuffer_get_stop_address(sub_mem_buf) (subMemoryBuffer_get_start_address(sub_mem_buf) + (sub_mem_buf)->size)
 
 void subMemoryBuffer_print(const struct subMemoryBuffer* sub_mem_buf){
-	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%3u", subMemoryBuffer_get_start_address(sub_mem_buf), subMemoryBuffer_get_stop_address(sub_mem_buf), sub_mem_buf->size);
-}
-
-static void subMemoryBuffer_remove_edge_footprint(const struct subMemoryBuffer* sub_mem_buf, struct ir* ir){
-	uint32_t 		i;
-	struct edge* 	cur_edge;
-	struct edge* 	nex_edge;
-
-	for (i = 0; i < sub_mem_buf->length; i++){
-		for (nex_edge = node_get_head_edge_dst(sub_mem_buf->buffer->access[sub_mem_buf->offset + i].node); nex_edge != NULL; nex_edge = edge_get_next_dst(nex_edge)){
-			if (ir_edge_get_dependence(nex_edge)->type == IR_DEPENDENCE_TYPE_DIRECT){
-				break;
-			}
-		}
-		if (nex_edge == NULL){
-			log_err("unable to find memory write value");
-			continue;
-		}
-
-		for (cur_edge = node_get_head_edge_dst(edge_get_src(nex_edge)); cur_edge != NULL; cur_edge = nex_edge){
-			nex_edge = edge_get_next_dst(cur_edge);
-			if (ir_edge_get_dependence(cur_edge)->type != IR_DEPENDENCE_TYPE_MACRO){
-				ir_remove_dependence(ir, cur_edge);
-			}
-		}
-	}
+	printf("[" PRINTF_ADDR ", " PRINTF_ADDR "] size=%4u", subMemoryBuffer_get_start_address(sub_mem_buf), subMemoryBuffer_get_stop_address(sub_mem_buf), sub_mem_buf->size * 8);
 }
 
 static enum bufferCoupleCompare bufferCouple_compare_subset_superset(const struct bufferCouple* couple1, const struct bufferCouple* couple2){
@@ -321,14 +459,14 @@ static enum bufferCoupleCompare bufferCouple_compare_subset_superset(const struc
 		return BUFFERCOUPLECOMPARE_NONE;
 	}
 
-	if (couple1->in.offset <= couple2->in.offset && couple1->in.offset + couple1->in.length >= couple2->in.offset + couple2->in.length){
-		if (couple1->ou.offset <= couple2->ou.offset && couple1->ou.offset + couple1->ou.length >= couple2->ou.offset + couple2->ou.length){
+	if (couple1->in.offset <= couple2->in.offset && couple1->in.offset + couple1->in.size >= couple2->in.offset + couple2->in.size){
+		if (couple1->ou.offset <= couple2->ou.offset && couple1->ou.offset + couple1->ou.size >= couple2->ou.offset + couple2->ou.size){
 			return BUFFERCOUPLECOMPARE_SUPERSET;
 		}
 	}
 
-	if (couple2->in.offset <= couple1->in.offset && couple2->in.offset + couple2->in.length >= couple1->in.offset + couple1->in.length){
-		if (couple2->ou.offset <= couple1->ou.offset && couple2->ou.offset + couple2->ou.length >= couple1->ou.offset + couple1->ou.length){
+	if (couple2->in.offset <= couple1->in.offset && couple2->in.offset + couple2->in.size >= couple1->in.offset + couple1->in.size){
+		if (couple2->ou.offset <= couple1->ou.offset && couple2->ou.offset + couple2->ou.size >= couple1->ou.offset + couple1->ou.size){
 			return BUFFERCOUPLECOMPARE_SUBSET;
 		}
 	}
@@ -358,18 +496,18 @@ static struct bufferSignature aes128 = {
 	},
 	.export_name 	= "block_cipher",
 	.nb_in 			= 2,
-	.in_size 		= {128,1408},
-	.ou_size 		= 128
+	.in_size 		= {16,160},
+	.ou_size 		= 16
 };
 
 static struct bufferSignature aes196 = {
 	.symbol 		= {
-		.name 		= "aes196",
+		.name 		= "aes192",
 	},
 	.export_name 	= "block_cipher",
 	.nb_in 			= 2,
-	.in_size 		= {128,1664},
-	.ou_size 		= 128
+	.in_size 		= {16,192},
+	.ou_size 		= 16
 };
 
 static struct bufferSignature aes256 = {
@@ -378,8 +516,8 @@ static struct bufferSignature aes256 = {
 	},
 	.export_name 	= "block_cipher",
 	.nb_in 			= 2,
-	.in_size 		= {128,1920},
-	.ou_size 		= 128
+	.in_size 		= {16,224},
+	.ou_size 		= 16
 };
 
 static struct bufferSignature aes128_ks = {
@@ -388,8 +526,8 @@ static struct bufferSignature aes128_ks = {
 	},
 	.export_name 	= "ks",
 	.nb_in 			= 1,
-	.in_size 		= {128},
-	.ou_size 		= 1280
+	.in_size 		= {16},
+	.ou_size 		= 160
 };
 
 static struct bufferSignature md5_compress = {
@@ -398,8 +536,8 @@ static struct bufferSignature md5_compress = {
 	},
 	.export_name 	= "compress",
 	.nb_in 			= 2,
-	.in_size 		= {128,512},
-	.ou_size 		= 128
+	.in_size 		= {16,64},
+	.ou_size 		= 16
 };
 
 static struct bufferSignature sha1_compress = {
@@ -408,8 +546,8 @@ static struct bufferSignature sha1_compress = {
 	},
 	.export_name 	= "compress",
 	.nb_in 			= 2,
-	.in_size 		= {160,512},
-	.ou_size 		= 160
+	.in_size 		= {20,64},
+	.ou_size 		= 20
 };
 
 static struct bufferSignature xtea = {
@@ -418,8 +556,8 @@ static struct bufferSignature xtea = {
 	},
 	.export_name 	= "block_cipher",
 	.nb_in 			= 2,
-	.in_size 		= {64,128},
-	.ou_size 		= 64
+	.in_size 		= {8,16},
+	.ou_size 		= 8
 };
 
 static struct bufferSignature* const buffer_signature_buffer[] = {
@@ -433,57 +571,7 @@ static struct bufferSignature* const buffer_signature_buffer[] = {
 	NULL
 };
 
-static uint32_t are_signatures_registered;
-
-static void bufferSignature_register_buffer(void){
-	uint32_t i;
-
-	for (i = 0; buffer_signature_buffer[i] != NULL; i++){
-		signatureSymbol_register(&(buffer_signature_buffer[i]->symbol), buffer_signature_buffer[i]->export_name, NULL);
-	}
-
-	are_signatures_registered = 1;
-}
-
-static int32_t bufferSignature_push(struct bufferSignature* buffer_signature, struct subMemoryBuffer** in, struct subMemoryBuffer** ou, uint32_t nb_in, struct ir* ir){
-	struct node* 	symbol;
-	uint32_t 		i;
-	uint32_t 		j;
-	struct edge* 	edge_cursor;
-
-	if ((symbol = ir_add_symbol(ir, &(buffer_signature->symbol))) == NULL){
-		log_err("unable to add symbol to IR");
-		return -1;
-	}
-
-	for (i = 0; i < nb_in; i++){
-		for (j = 0; j < in[i]->length; j++){
-			if (ir_add_macro_dependence(ir, in[i]->buffer->access[in[i]->offset + j].node, symbol, IR_DEPENDENCE_MACRO_DESC_SET_INPUT(j + 1, i + 1)) == NULL){
-				log_err("unable to add macro dependence to IR");
-			}
-		}
-	}
-
-	for (i = 0; i < ou[0]->length; i++){
-		for (edge_cursor = node_get_head_edge_dst(ou[0]->buffer->access[ou[0]->offset + i].node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-			if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_DIRECT){
-				break;
-			}
-		}
-		if (edge_cursor == NULL){
-			log_err("unable to find memory write value");
-			continue;
-		}
-
-		if (ir_add_macro_dependence(ir, symbol, edge_get_src(edge_cursor), IR_DEPENDENCE_MACRO_DESC_SET_OUTPUT(i + 1, 1)) == NULL){
-			log_err("unable to add macro dependence to IR");
-		}
-	}
-
-	return 0;
-}
-
-static uint32_t bufferSignature_recursive_match(struct bufferSignature* buffer_signature, struct set* couple_set, struct subMemoryBuffer** in, struct subMemoryBuffer** ou, uint32_t nb_in, struct ir* ir, struct subMemoryBuffer** remove_footprint, struct array* prim_para_array){
+static uint32_t bufferSignature_recursive_match(struct bufferSignature* buffer_signature, struct set* couple_set, struct subMemoryBuffer** in, struct subMemoryBuffer** ou, uint32_t nb_in, struct array* prim_para_array){
 	uint32_t 					i;
 	struct setIterator 			it;
 	uint32_t 					result;
@@ -508,24 +596,10 @@ static uint32_t bufferSignature_recursive_match(struct bufferSignature* buffer_s
 		}
 
 		if (nb_in + 1 < buffer_signature->nb_in){
-			result += bufferSignature_recursive_match(buffer_signature, couple_set, in, ou, nb_in + 1, ir, remove_footprint, prim_para_array);
+			result += bufferSignature_recursive_match(buffer_signature, couple_set, in, ou, nb_in + 1, prim_para_array);
 		}
 		else{
 			result ++;
-
-			if (bufferSignature_push(buffer_signature, in, ou, buffer_signature->nb_in, ir)){
-				log_err("unable to push bufferSignature");
-			}
-			else{
-				for (i = 0; remove_footprint[i] != NULL; i++){
-					if (!memcmp(remove_footprint[i], ou[0], sizeof(struct subMemoryBuffer))){
-						break;
-					}
-				}
-				if (remove_footprint[i] == NULL){
-					remove_footprint[i] = ou[0];
-				}
-			}
 
 			if ((match = array_inc(prim_para_array)) != NULL){
 				match->nb_in 			= buffer_signature->nb_in;
@@ -534,11 +608,11 @@ static uint32_t bufferSignature_recursive_match(struct bufferSignature* buffer_s
 
 				for (i = 0; i < buffer_signature->nb_in; i++){
 					match->mem_para_buffer[i].addr = subMemoryBuffer_get_start_address(in[i]);
-					match->mem_para_buffer[i].size = buffer_signature->in_size[i] / 8;
+					match->mem_para_buffer[i].size = buffer_signature->in_size[i];
 				}
 
 				match->mem_para_buffer[i].addr = subMemoryBuffer_get_start_address(ou[0]);
-				match->mem_para_buffer[i].size = buffer_signature->ou_size / 8;
+				match->mem_para_buffer[i].size = buffer_signature->ou_size;
 			}
 			else{
 				log_err("unable to increment array size");
@@ -549,10 +623,9 @@ static uint32_t bufferSignature_recursive_match(struct bufferSignature* buffer_s
 	return result;
 }
 
-static struct primitiveParameter* bufferSignature_search_buffer(struct set* couple_set, struct ir* ir, uint32_t* nb_prim_para){
+static struct primitiveParameter* bufferSignature_search_buffer(struct set* couple_set, uint32_t* nb_prim_para){
 	uint32_t 					i;
 	uint32_t 					j;
-	struct subMemoryBuffer** 	remove_footprint;
 	uint32_t 					nb_match;
 	struct multiColumnPrinter* 	printer 			= NULL;
 	struct subMemoryBuffer* 	in[BUFFERSIGNATURE_NB_MAX_INPUT];
@@ -563,11 +636,6 @@ static struct primitiveParameter* bufferSignature_search_buffer(struct set* coup
 	struct memParameter* 		mem_para_buffer;
 
 	if (set_get_length(couple_set) == 0){
-		return NULL;
-	}
-
-	if ((remove_footprint = (struct subMemoryBuffer**)calloc(set_get_length(couple_set), sizeof(struct subMemoryBuffer*))) == NULL){
-		log_err("unable to allocate memory");
 		return NULL;
 	}
 
@@ -591,15 +659,11 @@ static struct primitiveParameter* bufferSignature_search_buffer(struct set* coup
 	multiColumnPrinter_print_header(printer);
 
 	for (i = 0; buffer_signature_buffer[i] != NULL; i++){
-		nb_match = bufferSignature_recursive_match(buffer_signature_buffer[i], couple_set, in, ou, 0, ir, remove_footprint, prim_para_array);
+		nb_match = bufferSignature_recursive_match(buffer_signature_buffer[i], couple_set, in, ou, 0, prim_para_array);
 
 		if (nb_match){
 			multiColumnPrinter_print(printer, buffer_signature_buffer[i]->symbol.name, nb_match, "0.0", NULL);
 		}
-	}
-
-	for (i = 0; i < set_get_length(couple_set) && remove_footprint[i] != NULL; i++){
-		subMemoryBuffer_remove_edge_footprint(remove_footprint[i], ir);
 	}
 
 	if (array_get_length(prim_para_array)){
@@ -639,7 +703,6 @@ static struct primitiveParameter* bufferSignature_search_buffer(struct set* coup
 
 	exit:
 
-	free(remove_footprint);
 	if (prim_para_array != NULL){
 		array_delete(prim_para_array);
 	}
@@ -658,10 +721,6 @@ void bufferSignature_print_buffer(void){
 	struct multiColumnPrinter* 	printer;
 	char 						str_in_sizes[STR_PARA_SIZES];
 	char 						str_ou_sizes[STR_PARA_SIZES];
-
-	if (!are_signatures_registered){
-		bufferSignature_register_buffer();
-	}
 
 	printer = multiColumnPrinter_create(stdout, 4, NULL, NULL, NULL);
 	if (printer == NULL){
@@ -709,7 +768,7 @@ struct primitiveParameter* ir_search_buffer_signature(struct ir* ir, uint32_t* n
 	struct array* 				buf_ou_array 			= NULL;
 	struct memAccess 			mem_access;
 	struct set* 				couple_set 				= NULL;
-	struct primitiveParameter* 	prim_para_buffer 	= NULL;
+	struct primitiveParameter* 	prim_para_buffer 		= NULL;
 
 	read_mem_access_array = array_create(sizeof(struct memAccess));
 	write_mem_access_array = array_create(sizeof(struct memAccess));
@@ -730,8 +789,14 @@ struct primitiveParameter* ir_search_buffer_signature(struct ir* ir, uint32_t* n
 				if (operation->operation_type.mem.con_addr == MEMADDRESS_INVALID){
 					log_warn("concrete memory address is unspecified, final results might be incorrect");
 				}
-				else if (array_add(read_mem_access_array, &mem_access) < 0){
-					log_err("unable to add element to array");
+				else{
+					for (j = 0; j < operation->size / 8; j++){
+						mem_access.offset = j;
+
+						if (array_add(read_mem_access_array, &mem_access) < 0){
+						log_err("unable to add element to array");
+						}
+					}
 				}
 				break;
 			}
@@ -739,8 +804,14 @@ struct primitiveParameter* ir_search_buffer_signature(struct ir* ir, uint32_t* n
 				if (operation->operation_type.mem.con_addr == MEMADDRESS_INVALID){
 					log_warn("concrete memory address is unspecified, final results might be incorrect");
 				}
-				else if (array_add(write_mem_access_array, &mem_access) < 0){
-					log_err("unable to add element to array");
+				else{
+					for (j = 0; j < operation->size / 8; j++){
+						mem_access.offset = j;
+
+						if (array_add(write_mem_access_array, &mem_access) < 0){
+							log_err("unable to add element to array");
+						}
+					}
 				}
 				break;
 			}
@@ -784,20 +855,20 @@ struct primitiveParameter* ir_search_buffer_signature(struct ir* ir, uint32_t* n
 	}
 
 	for (i = 0; i < array_get_length(buf_in_array); i++){
-		uint32_t* 				dst_from;
+		uint8_t* 				taint_buffer;
 		struct memoryBuffer* 	in_ptr;
 		struct memoryBuffer* 	ou_ptr;
 
 		in_ptr = *(struct memoryBuffer**)array_get(buf_in_array, i);
-		if ((dst_from = memoryBuffer_get_dst_from(in_ptr, &(ir->graph))) != NULL){
+		if ((taint_buffer = memoryBuffer_get_taint(in_ptr, &(ir->graph))) != NULL){
 			for (j = 0; j < array_get_length(buf_ou_array); j++){
 				ou_ptr = *(struct memoryBuffer**)array_get(buf_ou_array, j);
-				memoryBuffer_search_dependence(in_ptr, ou_ptr, dst_from, &(ir->graph), couple_set);
+				memoryBuffer_search_dependence(in_ptr, ou_ptr, taint_buffer, &(ir->graph), couple_set);
 			}
-			free(dst_from);
+			free(taint_buffer);
 		}
 		else{
-			log_err("unable to compute distance from");
+			log_err("unable to compute taint buffer");
 		}
 	}
 
@@ -818,7 +889,7 @@ struct primitiveParameter* ir_search_buffer_signature(struct ir* ir, uint32_t* n
 	}
 	#endif
 
-	prim_para_buffer = bufferSignature_search_buffer(couple_set, ir, nb_prim_para);
+	prim_para_buffer = bufferSignature_search_buffer(couple_set, nb_prim_para);
 
 	exit:
 	if (couple_set != NULL){
