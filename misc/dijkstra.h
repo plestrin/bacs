@@ -8,10 +8,6 @@
 
 #define DIJKSTRA_INVALID_DST 0xffffffff
 
-int32_t dijkstra_dst_to(struct graph* graph, struct node* node, uint32_t* dst_buffer); 		/* not PTR safe */
-int32_t dijkstra_dst_from(struct graph* graph, struct node* node, uint32_t* dst_buffer); 	/* not PTR safe */
-int32_t dijkstra_dst(struct graph* graph, struct node* node, uint32_t* dst_buffer); 		/* PTR safe */
-
 enum dijkstraPathDirection{
 	PATH_SRC_TO_DST,
 	PATH_DST_TO_SRC,
