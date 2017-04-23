@@ -4,9 +4,11 @@
 #include "AES.h"
 #include "mode.h"
 
+static const uint32_t k1[AES_128_NB_DWORD_KEY] = {0xf00df00d, 0xf00df00d, 0xf00df00d, 0xf00df00d};
+static const uint32_t k2[AES_128_NB_DWORD_KEY] = {0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead};
+
 int32_t main(void){
-	uint32_t k1[AES_128_NB_DWORD_KEY] 		= {0xf00df00d, 0xf00df00d, 0xf00df00d, 0xf00df00d};
-	uint32_t k2[AES_128_NB_DWORD_KEY] 		= {0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead};
+
 	uint32_t rk[AES_128_NB_DWORD_ROUND_KEY];
 	uint32_t iv[AES_BLOCK_NB_DWORD];
 	char pt[48] 							= "I am a 48-byte plaintext. Here is some padding.";

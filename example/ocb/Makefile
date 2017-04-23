@@ -3,12 +3,12 @@ CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99
 LDFLAGS	:= -ltomcrypt
 PROG 	:= build/ocb
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tool/pin-3.2-81205-gcc-linux/pin
+PIN 	:= /home/plt/Documents/tools/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis
 
 
-all: build $(PROG) trace
+all: build $(PROG) trace search
 
 build:
 	mkdir -p build
