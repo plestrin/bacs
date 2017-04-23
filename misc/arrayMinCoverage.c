@@ -193,7 +193,7 @@ uint32_t arrayMinCoverage_greedy(struct array* array, uint32_t nb_category, stru
 				desc_buffer[i].choice = j;
 			}
 		}
-		
+
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
 			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
@@ -250,6 +250,9 @@ uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, str
 	uint32_t 		score;
 	uint64_t 		complexity;
 	uint32_t 		local_score;
+	#if ARRAYMINCOVERAGE_DETERMINISTIC == 0
+	uint32_t 		proba_offset;
+	#endif
 
 	for (i = 0, l = 0, score = 0, local_score = 0, complexity = 1; i < nb_category; i++){
 		complexity = complexity * (uint64_t)desc_buffer[i].nb_element;
@@ -273,6 +276,10 @@ uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, str
 			l = i;
 		}
 
+		#if ARRAYMINCOVERAGE_DETERMINISTIC == 0
+		proba_offset = 1;
+		#endif
+
 		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
 			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
 			if (array_get_length(element_array) == 0){
@@ -284,12 +291,25 @@ uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, str
 					size ++;
 				}
 			}
+			#if ARRAYMINCOVERAGE_DETERMINISTIC == 0
+			if (size < min_size || (size == min_size && !(rand() % proba_offset))){
+				if (size < min_size){
+					proba_offset = 1;
+				}
+				else{
+					proba_offset ++;
+				}
+				min_size = size;
+				desc_buffer[i].choice = j;
+			}
+			#else
 			if (size < min_size){
 				min_size = size;
 				desc_buffer[i].choice = j;
 			}
+			#endif
 		}
-		
+
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
 			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
@@ -323,7 +343,7 @@ uint32_t arrayMinCoverage_auto(struct array* array, uint32_t nb_category, struct
 	struct array* 	element_array;
 	uint32_t 		score;
 	uint64_t 		complexity;
-	
+
 	if ((complexity = categoryDesc_get_complexity_est(desc_buffer, nb_category)) <= ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD){
 		#ifdef VERBOSE
 		log_info_m("exact solution for %u categories", nb_category);

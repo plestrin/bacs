@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "array.h"
 #include "list.h"
@@ -96,6 +97,8 @@ static void analysis_delete(struct analysis* analysis);
 int main(int argc, char** argv){
 	struct analysis* 	analysis 	= NULL;
 	struct inputParser* parser 		= NULL;
+
+	srand(getpid());
 
 	if ((parser = inputParser_create()) == NULL){
 		log_err("unable to create inputParser");

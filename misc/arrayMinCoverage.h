@@ -6,6 +6,7 @@
 #include "array.h"
 
 #define ARRAYMINCOVERAGE_COMPLEXITY_THRESHOLD 0x00000000ffffffffULL
+#define ARRAYMINCOVERAGE_DETERMINISTIC 0
 
 struct categoryDesc{
 	uint32_t 	offset;
