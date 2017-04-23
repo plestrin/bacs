@@ -986,15 +986,14 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		}
 	}
 
-	if (nb_category > 0){
+	if (nb_category){
 		struct categoryDesc* 	desc_buffer;
 		int32_t 				result;
 		#ifdef VERBOSE
 		uint32_t 				score;
 		#endif
 
-		desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
-		if (desc_buffer == NULL){
+		if ((desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category)) == NULL){
 			log_err("unable to allocate memory");
 		}
 		else{

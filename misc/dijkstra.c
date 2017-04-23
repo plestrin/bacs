@@ -137,8 +137,7 @@ int32_t dijkstra_min_path(struct graph* graph, struct node** buffer_src, uint32_
 	uint32_t 					dst;
 	uint64_t 					mask;
 
-	internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node);
-	if (internals == NULL){
+	if ((internals = (struct dijkstraInternal*)malloc(sizeof(struct dijkstraInternal) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
