@@ -81,6 +81,7 @@ ckeck_list = [
 	# AES
 	[
 		r'test/build/test_aes_[gc]o[0-9sz]',
+		r'gladman/build/glad_aes_v[012345]_[gc]o[0-9sz]',
 		r'openssl/build/open_aes',
 		r'cryptopp/build/pp_aes',
 		r'tomcrypt/build/tom_aes',

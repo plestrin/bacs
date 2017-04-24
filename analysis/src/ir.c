@@ -598,23 +598,23 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 
 	switch(operation->type){
 		case IR_OPERATION_TYPE_IN_REG 		: {
-			fprintf(file, "[shape=\"box\",label=\"%s\"", irRegister_2_string(operation->operation_type.in_reg.reg));
+			fprintf(file, "[shape=box,label=\"%s\"", irRegister_2_string(operation->operation_type.in_reg.reg));
 			break;
 		}
 		case IR_OPERATION_TYPE_IN_MEM 		: {
-			fputs("[shape=\"box\",label=\"LOAD\"", file);
+			fputs("[shape=box,label=\"LOAD\"", file);
 			break;
 		}
 		case IR_OPERATION_TYPE_OUT_MEM 		: {
-			fputs("[shape=\"box\",label=\"STORE\"", file);
+			fputs("[shape=box,label=\"STORE\"", file);
 			break;
 		}
 		case IR_OPERATION_TYPE_IMM 			: {
 			if (irOperation_is_final(operation)){
-				fputs("[shape=\"Mdiamond\"", file);
+				fputs("[shape=Mdiamond", file);
 			}
 			else{
-				fputs("[shape=\"diamond\"", file);
+				fputs("[shape=diamond", file);
 			}
 			switch(operation->size){
 				case 8 	: {
@@ -642,7 +642,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 		}
 		case IR_OPERATION_TYPE_INST 		: {
 			if (irOperation_is_final(operation)){
-				fprintf(file, "[shape=\"octagon\",label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
+				fprintf(file, "[shape=octagon,label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));
 			}
 			else{
 				fprintf(file, "[label=\"%s\"", irOpcode_2_string(operation->operation_type.inst.opcode));

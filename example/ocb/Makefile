@@ -7,7 +7,6 @@ PIN 	:= /home/plt/Documents/tools/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis
 
-
 all: build $(PROG) trace search
 
 build:
@@ -22,6 +21,9 @@ build/%.o: src/%.c
 trace: $(WHL) $(PROG)
 	@ rm -rf trace
 	$(PIN) -t $(TOOL) -w $(WHL) -m -o trace -- $(PROG)
+
+$(ANAL):
+	@ cd $(dir $(ANAL)) && $(MAKE)
 
 search: $(ANAL) trace
 	@ $(ANAL) "load code signature ../../reference/codeSignature_aes.txt" 		\
@@ -39,6 +41,8 @@ search: $(ANAL) trace
 			"create synthesis [-1:]" 											\
 			"printDot synthesis 8" 												\
 			"exit"
+
+.PHONY: $(ANAL)
 
 clean:
 	@ rm -rf build

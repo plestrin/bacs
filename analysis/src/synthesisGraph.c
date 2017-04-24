@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 #include "synthesisGraph.h"
 #include "dijkstra.h"
@@ -1068,14 +1069,27 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 }
 
 struct synthesisGraph* synthesisGraph_create(struct ir* ir){
-	struct synthesisGraph* synthesis_graph;
+	struct synthesisGraph* 	synthesis_graph;
+	struct timespec 		timer_start;
+	struct timespec 		timer_stop;
 
 	synthesis_graph = (struct synthesisGraph*)malloc(sizeof(struct synthesisGraph));
 	if (synthesis_graph != NULL){
+		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start)){
+			log_err("clock_gettime fails");
+		}
+
 		if (synthesisGraph_init(synthesis_graph, ir)){
 			log_err("unable to init synthesisGraph");
 			free(synthesis_graph);
 			synthesis_graph = NULL;
+		}
+		else{
+			if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_stop)){
+				log_err("clock_gettime fails");
+			}
+
+			log_info_m("total elapsed time: %f for %u node(s) and %u edge(s)", (timer_stop.tv_sec - timer_start.tv_sec) + (timer_stop.tv_nsec - timer_start.tv_nsec) / 1000000000., ir->graph.nb_node, ir->graph.nb_edge);
 		}
 	}
 	else{

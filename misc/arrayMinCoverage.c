@@ -277,7 +277,7 @@ uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, str
 		}
 
 		#if ARRAYMINCOVERAGE_DETERMINISTIC == 0
-		proba_offset = 1;
+		proba_offset = 2;
 		#endif
 
 		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
@@ -294,7 +294,7 @@ uint32_t arrayMinCoverage_reshape(struct array* array, uint32_t nb_category, str
 			#if ARRAYMINCOVERAGE_DETERMINISTIC == 0
 			if (size < min_size || (size == min_size && !(rand() % proba_offset))){
 				if (size < min_size){
-					proba_offset = 1;
+					proba_offset = 2;
 				}
 				else{
 					proba_offset ++;
