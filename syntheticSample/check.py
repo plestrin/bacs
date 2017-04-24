@@ -100,6 +100,7 @@ ckeck_list = [
 	# AES CBC
 	[
 		r'test/build/test_cbc_aes_[gc]o[0-9sz]',
+		r'gladman/build/glad_cbc_aes_v[012345]_[gc]o[0-9sz]',
 		r'openssl/build/open_cbc_aes',
 		r'tomcrypt/build/tom_cbc_aes',
 		r'botan/build/bot_cbc_aes',
@@ -126,6 +127,7 @@ ckeck_list = [
 	# AES CTR (endianess 1)
 	[
 		r'test/build/test_ctr_aes_[gc]o[0-9sz]',
+		r'gladman/build/glad_ctr_aes_v[012345]_[gc]o[0-9sz]',
 		r'tomcrypt/build/tom_ctr_aes'
 	],
 

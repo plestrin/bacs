@@ -68,7 +68,7 @@ int main(int argc, char** argv){
 		return EXIT_FAILURE;
 	}
 
-	if (memcmp(deciphertext, plaintext, 16) == 0){
+	if (!memcmp(deciphertext, plaintext, 16)){
 		printf("\nRecovery 128:   OK");
 	}
 	else{
@@ -102,7 +102,7 @@ int main(int argc, char** argv){
 		return EXIT_FAILURE;
 	}
 
-	if (memcmp(deciphertext, plaintext, 16) == 0){
+	if (!memcmp(deciphertext, plaintext, 16)){
 		printf("\nRecovery 192:   OK");
 	}
 	else{
@@ -136,7 +136,7 @@ int main(int argc, char** argv){
 		return EXIT_FAILURE;
 	}
 
-	if (memcmp(deciphertext, plaintext, 16) == 0){
+	if (!memcmp(deciphertext, plaintext, 16)){
 		printf("\nRecovery 256:   OK\n");
 	}
 	else{

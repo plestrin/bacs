@@ -33,7 +33,7 @@ int main(void){
  	aes128_key_expand_decrypt((uint32_t*)key_128, (uint32_t*)round_key_128);
  	mode_dec_cbc((blockCipher)aes128_decrypt, AES_BLOCK_NB_BYTE, (uint8_t*)ciphertext, (uint8_t*)deciphertext, sizeof(plaintext), (void*)round_key_128, (uint8_t*)iv);
 
-	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0){
+	if (!memcmp(deciphertext, plaintext, sizeof(plaintext))){
 		printf("\nRecovery:       OK\n");
 	}
 	else{
