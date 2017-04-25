@@ -1,7 +1,7 @@
 # This file define the following signature(s):
-#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). This is the only difference with the aes128_v2. No key binding for the last round: the offset might depend on the number of rounds.
+#	- aes128_v1 	: full aes128 encryption /decryption. WARNING: the effective address of the first round key is performed without an ADD (mostly used for encryption). No key binding for the last two rounds: the offset might depend on the number of rounds.
 #	- aes128_v2 	: full aes128 encryption /decryption. No key binding for the last round: the offset might depend on the number of rounds.
-#	- aes128_v3 	: full aes128 encryption /decryption. Key binding for every round, but the address is computed in weird way. {CRYPTOPP}
+#	- aes128_v3 	: full aes128 encryption /decryption. Key binding for every round, but the address is computed in a weird way. {CRYPTOPP}
 # 	- ks_aes_128 	: key schedule for a 128-bit key
 
 
@@ -51,10 +51,6 @@
 5 -> 234 (ADD)
 5 -> 235 (ADD)
 5 -> 236 (ADD)
-5 -> 237 (ADD)
-5 -> 238 (ADD)
-5 -> 239 (ADD)
-5 -> 240 (ADD)
 
 5   -> (@) 301 (LOAD) [I:2:1]
 202 -> (@) 302 (LOAD) [I:2:2]
@@ -92,10 +88,6 @@
 234 -> (@) 334 (LOAD) [I:2:34]
 235 -> (@) 335 (LOAD) [I:2:35]
 236 -> (@) 336 (LOAD) [I:2:36]
-237 -> (@) 337 (LOAD) [I:2:37]
-238 -> (@) 338 (LOAD) [I:2:38]
-239 -> (@) 339 (LOAD) [I:2:39]
-240 -> (@) 340 (LOAD) [I:2:40]
 
 301 -> 1001
 302 -> 1002
@@ -139,10 +131,10 @@
 334 -> (I2F30) 1005
 335 -> (I2F31) 1005
 336 -> (I2F32) 1005
-337 -> (I2F33) 1005
-338 -> (I2F34) 1005
-339 -> (I2F35) 1005
-340 -> (I2F36) 1005
+337 (LOAD) [I:2:37] -> (I2F33) 1005
+338 (LOAD) [I:2:38] -> (I2F34) 1005
+339 (LOAD) [I:2:39] -> (I2F35) 1005
+340 (LOAD) [I:2:40] -> (I2F36) 1005
 
 341 (*) [I:2:41] -> (I2F37) 1005
 342 (*) [I:2:42] -> (I2F38) 1005
