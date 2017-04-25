@@ -916,6 +916,398 @@
 		</result>
 	</recipe>
 
+	<recipe name="GLAD_CBC_AES_V1_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_GO0.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_GO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_GO1.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_GO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_GO2.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_GO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_GO3.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_GO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_GOs.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_GOs.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_CO0.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_CO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_CO1.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_CO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_CO2" active="no"> <!-- dependence with a SIMD mask at the beginning of aes_encrypt -->
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_CO2.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_CO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_CO3" active="no"> <!-- dependence with a SIMD mask at the beginning of aes_encrypt -->
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_CO3.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_CO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_COz" active="no"> <!-- dependence with a SIMD mask at the beginning of aes_encrypt -->
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_cbc_aes_v1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_cbc_aes_v1_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_cbc_encrypt"/>
+			<arg value="export callGraph aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_COz.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_COz.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v3" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_cbc_encrypt"/>
+			<arg value="export callGraph _aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_WD.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_WD.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CBC_AES_V1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_CBC_AES_V1_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_cbc_encrypt"/>
+			<arg value="export callGraph _aes_cbc_decrypt"/>
+			<arg value="create ir"/>
+			<arg value="normalize ir"/>
+			<arg value="search code signature"/>
+			<arg value="export result aes128_v1"/>
+			<arg value="simplify concrete ir"/>
+			<arg value="create synthesis"/>
+			<arg value="search mode signature"/>
+			<arg value="printDot synthesis 0 fig/GLAD_CBC_AES_V1_ENC_WR.dot"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CBC_AES_V1_DEC_WR.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="1920"/>
+			<algo name="aes_r10" number="192"/>
+			<algo name="aes128_v1" number="48"/>
+			<algo name="enc_cbc_cfb" number="3"/>
+			<algo name="dec_cbc_cfb_v1" number="3"/>
+		</result>
+	</recipe>
+
 	<recipe name="TOM_CBC_AES" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_cbc_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_cbc_aes">

@@ -2051,7 +2051,7 @@ static void simd_decode_special_movsd_xmm(struct ir* ir, struct instructionItera
 	asmOperand_decode(it, &(local_simd.output_operand), 1, ASM_OPERAND_ROLE_WRITE_ALL, NULL, mem_addr);
 
 	#ifdef EXTRA_CHECK
-	if (local_simd.nb_input_operand != 0){
+	if (local_simd.nb_input_operand != 1){
 		log_err_m("incorrect MOVSD_XMM format (%u input arg(s))", local_simd.nb_input_operand);
 		return;
 	}

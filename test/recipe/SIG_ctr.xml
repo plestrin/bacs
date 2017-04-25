@@ -782,6 +782,362 @@
 		</result>
 	</recipe>
 
+	<recipe name="GLAD_CTR_AES_V1_GO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_go0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_go0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_GO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_GO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_GO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_go1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_go1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_GO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_GO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_GO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_go2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_go2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_GO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_GO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_GO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_go3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_go3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_GO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_GO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_GOs" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_gos"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_gos">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_GOs"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_GOs.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_CO0" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_co0"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_co0">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_CO0"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_CO0.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_CO1" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_co1"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_co1">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_CO1"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_CO1.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_CO2" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_co2"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_co2">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_CO2"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_CO2.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_CO3" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_co3"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_co3">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_CO3"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_CO3.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_COz" active="yes">
+		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/gladman/ build/glad_ctr_aes_v1_coz"/>
+		<trace cmd="/home/plt/Documents/bacs/syntheticSample/gladman/build/glad_ctr_aes_v1_coz">
+			<arg value="-m"/>
+		</trace>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_COz"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph LINUX"/>
+			<arg value="export callGraph aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_COz.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_WD" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_WD"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_WD.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
+	<recipe name="GLAD_CTR_AES_V1_WR" active="yes">
+		<build cmd=""/>
+		<trace cmd=""/>
+		<search>
+			<arg value="load trace traceGLAD_CTR_AES_V1_WR"/>
+			<arg value="load code signature ../reference/codeSignature_aes.txt"/>
+			<arg value="load code signature ../reference/codeSignature_aes128.txt"/>
+			<arg value="load mode signature ../reference/modeSignature.txt"/>
+			<arg value="create callGraph WINDOWS"/>
+			<arg value="export callGraph _aes_ctr_crypt"/>
+			<arg value="create ir 1"/>
+			<arg value="normalize ir 1"/>
+			<arg value="search code signature 1"/>
+			<arg value="export result 1 aes128_v1"/>
+			<arg value="simplify concrete ir 1"/>
+			<arg value="create synthesis 1"/>
+			<arg value="search mode signature 1"/>
+			<arg value="printDot synthesis 1 fig/GLAD_CTR_AES_V1_WR.dot"/>
+			<arg value="exit"/>
+		</search>
+		<result>
+			<algo name="aes_t4" number="960"/>
+			<algo name="aes_r10" number="96"/>
+			<algo name="aes128_v1" number="24"/>
+			<algo name="ctr_v2" number="12"/>
+		</result>
+	</recipe>
+
 	<recipe name="TOM_CTR_AES" active="yes">
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/tomcrypt/ build/tom_ctr_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/tomcrypt/build/tom_ctr_aes">

@@ -10,7 +10,7 @@ TRACE_DIR 	:= trace/
 WHL_DIR 	:= trace\whiteList
 PIN 		:= C:\pin-2.14-71313-msvc12-windows\pin
 TOOL 		:= E:\lightTracer_pin\obj-ia32\lightTracer.dll
-TARGETS 	:= TEST_TEA TEST_RC4 TEST_SHA1 TEST_MD5 TEST_AES GLAD_AES_V0 GLAD_AES_V1 GLAD_AES_V2 GLAD_AES_V3 TEST_CBC_TEA TEST_CBC_AES TEST_CTR_TEA TEST_CTR_AES
+TARGETS 	:= TEST_TEA TEST_RC4 TEST_SHA1 TEST_MD5 TEST_AES GLAD_AES_V0 GLAD_AES_V1 GLAD_AES_V2 GLAD_AES_V3 TEST_CBC_TEA TEST_CBC_AES TEST_CTR_TEA TEST_CTR_AES GLAD_CBC_AES_V1 GLAD_CTR_AES_V1
 TARGETS_ALL := $(foreach target,$(TARGETS),$(target)_WD $(target)_WR)
 
 all: build $(foreach target,$(TARGETS_ALL),$(BUILD_DIR)/$(shell echo $(target) | tr A-Z a-z).exe $(TRACE_DIR)trace$(target))
@@ -76,6 +76,8 @@ $(eval $(call BUILD_template,test_cbc_tea,TEA mode test_cbc_tea printBuffer))
 $(eval $(call BUILD_template,test_cbc_aes,AES mode test_cbc_aes printBuffer))
 $(eval $(call BUILD_template,test_ctr_tea,TEA mode test_ctr_tea printBuffer))
 $(eval $(call BUILD_template,test_ctr_aes,AES mode test_ctr_aes printBuffer))
+$(eval $(call BUILD_template,glad_cbc_aes_v1,aescrypt.v1 aeskey.v1 aes_modes.v1 aestab.v1 glad_cbc_aes.v1 printBuffer))
+$(eval $(call BUILD_template,glad_ctr_aes_v1,aescrypt.v1 aeskey.v1 aes_modes.v1 aestab.v1 glad_ctr_aes.v1 printBuffer))
 
 $(foreach target,$(foreach target,$(TARGETS),$(target)_WD) $(foreach target,$(TARGETS),$(target)_WR),$(eval $(call TRACE_template,$(target),$(shell echo $(target) | tr A-Z a-z))))
 

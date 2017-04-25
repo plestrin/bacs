@@ -37,7 +37,7 @@
 
 #define log_warn(M) fprintf(stdout, ANSI_COLOR_YELLOW "[WARN]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__)
 
-#define log_info(M) fprintf(stdout, ANSI_COLOR_BOLD "[INFO]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__)
+#define log_info(M) fprintf(stdout, ANSI_COLOR_BOLD "[INFO]" ANSI_COLOR_RESET " " M "\n")
 
 #define log_debug(M) fprintf(stdout, ANSI_COLOR_BLUE "[DEBUG]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__)
 
@@ -45,7 +45,7 @@
 
 #define log_warn_m(M, ...) fprintf(stdout, ANSI_COLOR_YELLOW "[WARN]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
 
-#define log_info_m(M, ...) fprintf(stdout, ANSI_COLOR_BOLD "[INFO]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
+#define log_info_m(M, ...) fprintf(stdout, ANSI_COLOR_BOLD "[INFO]" ANSI_COLOR_RESET " " M "\n", __VA_ARGS__)
 
 #define log_debug_m(M, ...) fprintf(stdout, ANSI_COLOR_BLUE "[DEBUG]" ANSI_COLOR_RESET " (%s:%d) " M "\n", __FILE__, __LINE__, __VA_ARGS__)
 
