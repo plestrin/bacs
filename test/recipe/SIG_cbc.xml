@@ -1457,8 +1457,10 @@
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="export result aes128_v1"/>
-			<arg value="export callGraph _ZN8CryptoPP14CBC_Decryption11ProcessDataEPhPKhj"/>
-			<arg value="create compound ir 4"/>
+			<!-- <arg value="export callGraph _ZN8CryptoPP14CBC_Decryption11ProcessDataEPhPKhj"/> -->
+			<!-- <arg value="create compound ir 4"/> -->
+			<arg value="create synthesis 0"/>
+
 			<!-- incomplete -->
 			<arg value="exit"/>
 		</search>

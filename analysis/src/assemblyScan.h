@@ -11,6 +11,6 @@
 #define ASSEMBLYSCAN_FILTER_CST 		0x00000010
 #define ASSEMBLYSCAN_FILTER_VERBOSE 	0x80000000
 
-void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters);
+void assemblyScan_scan(struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters);
 
 #endif

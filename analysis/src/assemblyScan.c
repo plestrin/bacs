@@ -298,28 +298,198 @@ static int32_t asmBlock_compare_address(void* arg1, void* arg2){
 	}
 }
 
-static void assemblyScan_get_function(const struct assembly* assembly, const struct asmBlock* block, struct callGraph* call_graph, struct set* function_set){
-	uint32_t 		i;
-	struct node* 	function;
+enum flagFunctionType{
+	FUNC_ALWAYS_LEAF,
+	FUNC_SOMETIMES_LEAF,
+	FUNC_NEVER_LEAF
+};
+
+struct flagFunction{
+	ADDRESS 				addr;
+	uint32_t 				index;
+	uint32_t 				nb_block;
+	uint32_t 				nb_exec;
+	enum flagFunctionType 	type;
+};
+
+static int32_t address_compare(const void* arg1, const void* arg2){
+	return memcmp(arg1, arg2, sizeof(ADDRESS));
+}
+
+static int32_t flagFunction_compare_address(const void* arg1, const void* arg2){
+	return address_compare(&((const struct flagFunction*)arg1)->addr, &((const struct flagFunction*)arg2)->addr);
+}
+
+static int32_t flagFunction_compare_address_index(const void* arg1, const void* arg2){
+	const struct flagFunction* 	flag_func1 = (const struct flagFunction*)arg1;
+	const struct flagFunction* 	flag_func2 = (const struct flagFunction*)arg2;
+	uint32_t 					result;
+
+	if (!(result = address_compare(&flag_func1->addr, &flag_func2->addr))){
+		if (flag_func1->index < flag_func2->index){
+			return -1;
+		}
+		else if (flag_func1->index > flag_func2->index){
+			return 1;
+		}
+	}
+
+	return result;
+}
+
+static struct flagFunction* assemblyScan_get_function(struct assembly* assembly, const ADDRESS* address_buffer, uint32_t nb_address, struct callGraph* call_graph, uint32_t* nb_function){
+	uint32_t 					i;
+	uint32_t 					j;
+	struct node* 				node;
+	struct flagFunction 		flag_func;
+	struct array* 				flag_func_array;
+	struct frameEstimation 		frame_est;
+	uint32_t* 					mapping 			= NULL;
+	struct flagFunction* 		flag_func_buffer 	= NULL;
+	struct assemblySnippet* 	snippet;
+	struct instructionIterator 	it;
+	int32_t 					first_snippet_index;
+	enum blockLabel* 			label_buffer 		= NULL;
+
+	if ((flag_func_array = array_create(sizeof(struct flagFunction))) == NULL){
+		log_err("unable to create array");
+		return NULL;
+	}
+
+	if (call_graph == NULL){
+		if ((label_buffer = callGraph_alloc_label_buffer(assembly)) == NULL){
+			log_err("alloc of label buffer failed");
+		}
+	}
 
 	for (i = 0; i < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_valid(assembly->dyn_blocks + i)){
-			if (assembly->dyn_blocks[i].block == block){
-				function = callGraph_get_index(call_graph, assembly->dyn_blocks[i].instruction_count);
-				if (function != NULL){
-					if (set_add_unique(function_set, &function) < 0){
-						log_err("unable to add element to set");
+			ADDRESS* addr;
+			if ((addr = bsearch(&(assembly->dyn_blocks[i].block->header.address), address_buffer, nb_address, sizeof(ADDRESS), address_compare)) != NULL){
+				if (call_graph != NULL){
+					if ((node = callGraph_get_index(call_graph, assembly->dyn_blocks[i].instruction_count)) != NULL){
+						if ((first_snippet_index = function_get_first_snippet(call_graph, callGraph_node_get_function(node))) < 0){
+							log_err("unable to get first snippet");
+							continue;
+						}
+
+						snippet = array_get(&(call_graph->snippet_array), first_snippet_index);
+
+						if (assembly_get_instruction(assembly, &it, snippet->offset)){
+							log_err_m("unable to fetch instruction @ %u", snippet->offset);
+							continue;
+						}
+
+						flag_func.addr 		= it.instruction_address;
+						flag_func.index 	= snippet->offset;
+						flag_func.nb_block 	= 1;
+						flag_func.nb_exec 	= 1;
+						flag_func.type 		= callGraphNode_is_leaf(call_graph, node, assembly) ? FUNC_ALWAYS_LEAF : FUNC_NEVER_LEAF;
+
+						if (array_add(flag_func_array, &flag_func) < 0){
+							log_err("unable to add element to array");
+						}
+
+					}
+					else{
+						log_err_m("no function for index: %u", assembly->dyn_blocks[i].instruction_count);
 					}
 				}
 				else{
-					log_err_m("no function for index: %u", assembly->dyn_blocks[i].instruction_count);
+					if (callGraph_get_frameEstimation(assembly, assembly->dyn_blocks[i].instruction_count, &frame_est, 5000, 0, label_buffer)){
+						log_warn_m("unable to get frame estimation for index %u", assembly->dyn_blocks[i].instruction_count);
+					}
+					else{
+						flag_func.addr 		= assembly->dyn_blocks[frame_est.index_start].block->header.address;
+						flag_func.index 	= frame_est.index_start;
+						flag_func.nb_block 	= 1;
+						flag_func.nb_exec 	= 1;
+						flag_func.type 		= (frame_est.is_not_leaf) ? FUNC_NEVER_LEAF : FUNC_ALWAYS_LEAF;
+
+						if (array_add(flag_func_array, &flag_func) < 0){
+							log_err("unable to add element to array");
+						}
+					}
 				}
 			}
 		}
 	}
+
+	if (!array_get_length(flag_func_array)){
+		*nb_function = 0;
+		goto exit;
+	}
+
+	if ((mapping = array_create_mapping(flag_func_array, (int32_t(*)(void*, void*))flagFunction_compare_address_index)) == NULL){
+		log_err("unable to create mapping");
+		goto exit;
+	}
+
+	/* Merge block */
+	for (i = 1, j = 0; i < array_get_length(flag_func_array); i++){
+		struct flagFunction* flag_func1 = array_get(flag_func_array, mapping[j]);
+		struct flagFunction* flag_func2 = array_get(flag_func_array, mapping[i]);
+
+		if (!flagFunction_compare_address_index(flag_func1, flag_func2)){
+			flag_func1->nb_block += flag_func2->nb_block;
+
+			#ifdef EXTRA_CHECK
+			if (flag_func1->type != flag_func2->type){
+				log_err("function type are supposed to be equal");
+			}
+			#endif
+		}
+		else{
+			mapping[++ j] = mapping[i];
+		}
+	}
+
+	*nb_function = ++ j;
+
+	for (i = 1, j = 0; i < *nb_function; i++){
+		struct flagFunction* flag_func1 = array_get(flag_func_array, mapping[j]);
+		struct flagFunction* flag_func2 = array_get(flag_func_array, mapping[i]);
+
+		if (!flagFunction_compare_address(flag_func1, flag_func2)){
+			flag_func1->nb_block = max(flag_func1->nb_block, flag_func2->nb_block);
+			flag_func1->nb_exec += flag_func2->nb_exec;
+
+			if (flag_func1->type == FUNC_ALWAYS_LEAF && flag_func2->type != FUNC_ALWAYS_LEAF){
+				flag_func1->type = FUNC_SOMETIMES_LEAF;
+			}
+			else if (flag_func1->type == FUNC_NEVER_LEAF && flag_func1->type != FUNC_NEVER_LEAF){
+				flag_func1->type = FUNC_SOMETIMES_LEAF;
+			}
+		}
+		else{
+			mapping[++ j] = mapping[i];
+		}
+	}
+
+	*nb_function = ++ j;
+
+	if ((flag_func_buffer = malloc(sizeof(struct flagFunction) * j)) == NULL){
+		log_err("unable to allocate memory");
+		goto exit;
+	}
+
+	for (i = 0; i < j; i++){
+		memcpy(flag_func_buffer + i, array_get(flag_func_array, mapping[i]), sizeof(struct flagFunction));
+	}
+
+	exit:
+	if (label_buffer != NULL){
+		free(label_buffer);
+	}
+	if (mapping != NULL){
+		free(mapping);
+	}
+	array_delete(flag_func_array);
+
+	return flag_func_buffer;
 }
 
-void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
+void assemblyScan_scan(struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters){
 	struct macroBlock{
 		uint32_t 	nb_block;
 		uint32_t 	nb_ins;
@@ -350,12 +520,14 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 	uint32_t 				j;
 	struct array* 			flag_block_array 	= NULL;
 	uint32_t* 				address_mapping 	= NULL;
-	struct set* 			function_set 		= NULL;
-	struct setIterator 		it;
-	struct node** 			func_ptr;
+	struct set* 			address_set 		= NULL;
+	ADDRESS* 				address_buffer 		= NULL;
 	double 					ratio;
 	struct flagAsmBlock* 	flag_block;
 	struct macroBlock 		macro_block;
+	uint32_t 				nb_address;
+	uint32_t 				nb_function 		= 1;
+	struct flagFunction* 	flag_func_buffer 	= NULL;
 
 	#ifdef VERBOSE
 	if (call_graph != NULL){
@@ -363,7 +535,7 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 	}
 	#endif
 
-	if ((function_set = set_create(sizeof(struct node*), 16)) == NULL){
+	if ((address_set = set_create(sizeof(ADDRESS), 32)) == NULL){
 		log_err("unable to create set");
 		goto exit;
 	}
@@ -462,8 +634,8 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 		}
 		fputc('\n', stdout);
 
-		if (call_graph != NULL){
-			assemblyScan_get_function(assembly, ((struct flagAsmBlock*)array_get(flag_block_array, address_mapping[i]))->block, call_graph, function_set); /* chaud */
+		if (set_add(address_set, &macro_block.addr_strt) < 0){
+			log_err("unable to add element to set");
 		}
 	}
 
@@ -471,27 +643,65 @@ void assemblyScan_scan(const struct assembly* assembly, void* call_graph, struct
 
 	log_info_m("%d block(s) have been scanned", array_get_length(flag_block_array));
 
-	for (func_ptr = setIterator_get_first(function_set, &it); func_ptr; func_ptr = setIterator_get_next(&it)){
-		if (callGraphNode_is_leaf(call_graph, *func_ptr, assembly)){
-			fputs("L:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET ", ", stdout);
-		}
-		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){
-			fputs("L:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET ", ", stdout);
-		}
-		else{
-			continue;
-		}
-		callGraph_fprint_node(call_graph, *func_ptr, stdout);
-		putchar('\n');
+	array_delete(flag_block_array);
+	flag_block_array = NULL;
+
+	if ((address_buffer = set_export_buffer_unique(address_set, &nb_address)) == NULL){
+		log_err("unable to export buffer unique");
+		goto exit;
 	}
 
-	log_info_m("%d dyn function(s) have been scanned", set_get_length(function_set));
+	set_delete(address_set);
+	address_set = NULL;
+
+	if ((flag_func_buffer = assemblyScan_get_function(assembly, address_buffer, nb_address, call_graph, &nb_function)) == NULL){
+		if (nb_function){
+			log_err("unable to get get function buffer");
+		}
+		goto exit;
+	}
+
+	for (i = 0; i < nb_function; i++){
+		if (flag_func_buffer[i].type == FUNC_ALWAYS_LEAF){
+			printf("- Func @ " PRINTF_ADDR ", E: %6u, # Block: %6u, Leaf:" ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET, flag_func_buffer[i].addr, flag_func_buffer[i].nb_exec, flag_func_buffer[i].nb_block);
+
+			if (cm != NULL){
+				struct cm_routine* rtn;
+
+				if ((rtn = codeMap_search_routine(cm, flag_func_buffer[i].addr)) != NULL){
+					printf(", RTN:%s+" PRINTF_ADDR_SHORT "\n", rtn->name, flag_func_buffer[i].addr - rtn->address_start);
+				}
+			}
+		}
+		else if (!(filters & ASSEMBLYSCAN_FILTER_FUNC_LEAF)){
+			if (flag_func_buffer[i].type == FUNC_NEVER_LEAF){
+				printf("- Func @ " PRINTF_ADDR ", E: %6u, # Block: %6u, Leaf:" ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET, flag_func_buffer[i].addr, flag_func_buffer[i].nb_exec, flag_func_buffer[i].nb_block);
+			}
+			else{
+				printf("- Func @ " PRINTF_ADDR ", E: %6u, # Block: %6u, Leaf: -", flag_func_buffer[i].addr, flag_func_buffer[i].nb_exec, flag_func_buffer[i].nb_block);
+			}
+
+			if (cm != NULL){
+				struct cm_routine* rtn;
+
+				if ((rtn = codeMap_search_routine(cm, flag_func_buffer[i].addr)) != NULL){
+					printf(", RTN:%s+" PRINTF_ADDR_SHORT "\n", rtn->name, flag_func_buffer[i].addr - rtn->address_start);
+				}
+			}
+		}
+	}
 
 	exit:
+	if (flag_func_buffer != NULL){
+		free(flag_func_buffer);
+	}
+	if (address_buffer != NULL){
+		free(address_buffer);
+	}
 	if (flag_block_array != NULL){
 		array_delete(flag_block_array);
 	}
-	if (function_set != NULL){
-		set_delete(function_set);
+	if (address_set != NULL){
+		set_delete(address_set);
 	}
 }

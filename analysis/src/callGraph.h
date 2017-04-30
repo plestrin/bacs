@@ -26,7 +26,7 @@ struct function{
 	struct cm_routine* 	routine;
 };
 
-#define callGraph_node_get_function(node) 	((struct function*)node_get_data(node))
+#define callGraph_node_get_function(node) ((struct function*)node_get_data(node))
 
 #define function_init_valid(func) 														\
 	(func)->type = FUNCTION_VALID; 														\
@@ -58,9 +58,29 @@ struct callGraph{
 	struct array snippet_array;
 };
 
+int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func);
+
 struct callGraph* callGraph_create(struct assembly* assembly, uint32_t index_start, uint32_t index_stop);
 int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, uint32_t start, uint32_t stop);
 
+enum blockLabel{
+	BLOCK_LABEL_UNKOWN 	= 0,
+	BLOCK_LABEL_CALL 	= 1,
+	BLOCK_LABEL_RET 	= 2,
+	BLOCK_LABEL_NONE 	= 3
+};
+
+enum blockLabel callGraph_label_block(struct asmBlock* block);
+enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly);
+enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly);
+
+struct frameEstimation{
+	uint32_t index_start;
+	uint32_t index_stop;
+	uint32_t is_not_leaf;
+};
+
+int32_t callGraph_get_frameEstimation(struct assembly* assembly, uint32_t index, struct frameEstimation* frame_est, uint64_t max_size, uint32_t verbose, enum blockLabel* label_buffer);
 void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assembly, uint32_t index, struct codeMap* code_map);
 
 void callGraph_locate_in_codeMap_linux(struct callGraph* call_graph, const struct trace* trace, struct codeMap* code_map);

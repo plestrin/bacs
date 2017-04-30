@@ -1231,7 +1231,7 @@
 		</result>
 	</recipe>
 
-	<recipe name="PP_CTR_AES" active="no">
+	<recipe name="PP_CTR_AES" active="no"> <!-- Does not work because the primitive is process and XOR (numerous parasitic detections) -->
 		<build cmd="make -C /home/plt/Documents/bacs/syntheticSample/cryptopp/ build/pp_ctr_aes"/>
 		<trace cmd="/home/plt/Documents/bacs/syntheticSample/cryptopp/build/pp_ctr_aes">
 			<arg value="-m"/>

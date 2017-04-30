@@ -6,24 +6,12 @@
 #include "callGraph.h"
 #include "base.h"
 
-enum blockLabel{
-	BLOCK_LABEL_UNKOWN 	= 0,
-	BLOCK_LABEL_CALL 	= 1,
-	BLOCK_LABEL_RET 	= 2,
-	BLOCK_LABEL_NONE 	= 3
-};
-
 #define CALLGRAPH_MAX_DEPTH 	4096
 #define CALLGRAPH_START_DEPTH 	256
 
 #define CALLGRAPH_ENABLE_LABEL_CHECK 1
 
-static enum blockLabel callGraph_label_block(struct asmBlock* block);
-static enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly);
-static enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly);
-
 static int32_t function_add_snippet(struct callGraph* call_graph, struct function* func, uint32_t start, uint32_t stop, ADDRESS expected_next_address);
-static int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func);
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void callGraph_dotPrint_node(void* data, FILE* file, void* arg){
@@ -275,37 +263,49 @@ int32_t callGraph_init(struct callGraph* call_graph, struct assembly* assembly, 
 	return result;
 }
 
-static void callGraph_print_frame_est(struct assembly* assembly, uint32_t index, struct codeMap* code_map){
-	uint32_t 			index_start;
-	uint32_t 			index_stop;
+int32_t callGraph_get_frameEstimation(struct assembly* assembly, uint32_t index, struct frameEstimation* frame_est, uint64_t max_size, uint32_t verbose, enum blockLabel* label_buffer){
 	uint32_t 			base_block_index;
 	uint32_t 			i;
-	enum blockLabel* 	label_buffer 	= NULL;
 	uint32_t 			stack;
-	uint32_t 			is_not_leaf 	= 0;
+	uint32_t 			size;
+	uint32_t 			clean_on_exit = 0;
+
+	frame_est->is_not_leaf = 0;
 
 	if (assembly_get_dyn_block_ins(assembly, index, &base_block_index)){
 		log_err_m("unable to locate the dyn block containing the index %u", index);
-		return;
+		return -1;
 	}
 
-	if ((label_buffer = callGraph_alloc_label_buffer(assembly)) == NULL){
-		log_err("alloc of label buffer failed");
-		return;
+	if (label_buffer == NULL){
+		clean_on_exit = 1;
+		if ((label_buffer = callGraph_alloc_label_buffer(assembly)) == NULL){
+			log_err("alloc of label buffer failed");
+			return -1;
+		}
 	}
 
-	for (i = base_block_index, stack = 0; i + 1 < assembly->nb_dyn_block; i++){
+	for (i = base_block_index, stack = 0, size = 0; i + 1 < assembly->nb_dyn_block; i++){
 		if (dynBlock_is_invalid(assembly->dyn_blocks + i)){
-			log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i].instruction_count);
+			if (verbose){
+				log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i].instruction_count);
+			}
 		}
 		else{
 			if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_UNKOWN){
 				label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] = callGraph_label_block(assembly->dyn_blocks[i].block);
 			}
 
+			if ((size += assembly->dyn_blocks[i].block->header.nb_ins) > max_size){
+				if (verbose){
+					log_warn_m("max size has been reached: %u", size);
+				}
+				return -1;
+			}
+
 			if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_CALL){
 				stack ++;
-				is_not_leaf ++;
+				frame_est->is_not_leaf ++;
 			}
 			else if (label_buffer[assembly->dyn_blocks[i].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_RET){
 				if (stack-- == 0){
@@ -315,15 +315,24 @@ static void callGraph_print_frame_est(struct assembly* assembly, uint32_t index,
 		}
 	}
 
-	index_stop = i;
+	frame_est->index_stop = i;
 
 	for (i = base_block_index, stack = 0; i; i--){
 		if (dynBlock_is_invalid(assembly->dyn_blocks + i - 1)){
-			log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i - 1].instruction_count);
+			if (verbose){
+				log_warn_m("found a black listed block @ %u, this case is not handled yet. Result might be incorrect", assembly->dyn_blocks[i - 1].instruction_count);
+			}
 		}
 		else{
 			if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_UNKOWN){
 				label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] = callGraph_label_block(assembly->dyn_blocks[i - 1].block);
+			}
+
+			if ((size += assembly->dyn_blocks[i - 1].block->header.nb_ins) > max_size){
+				if (verbose){
+					log_warn_m("max size has been reached: %u", size);
+				}
+				return -1;
 			}
 
 			if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_CALL){
@@ -333,33 +342,40 @@ static void callGraph_print_frame_est(struct assembly* assembly, uint32_t index,
 			}
 			else if (label_buffer[assembly->dyn_blocks[i - 1].block->header.id - FIRST_BLOCK_ID] == BLOCK_LABEL_RET){
 				stack ++;
-				is_not_leaf ++;
+				frame_est->is_not_leaf ++;
 			}
 		}
 	}
 
-	index_start = i;
+	frame_est->index_start = i;
 
-	if (dynBlock_is_invalid(assembly->dyn_blocks + index_start) || dynBlock_is_invalid(assembly->dyn_blocks + index_stop)){
-		log_err("frame boundary is a black listed block");
+	if (clean_on_exit){
+		free(label_buffer);
+	}
+
+	if (dynBlock_is_invalid(assembly->dyn_blocks + frame_est->index_start) || dynBlock_is_invalid(assembly->dyn_blocks + frame_est->index_stop)){
+		if (verbose){
+			log_err("frame boundary is a black listed block");
+		}
+		return -1;
 	}
 	else{
-		printf("Frame: index = %u, leaf = %s, size = %u", index, (is_not_leaf) ? (ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET) : (ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET), assembly->dyn_blocks[index_stop].instruction_count + assembly->dyn_blocks[index_stop].block->header.nb_ins - assembly->dyn_blocks[index_start].instruction_count);
-		if (code_map != NULL){
-			struct cm_routine* rtn;
+		return 0;
+	}
+}
 
-			if ((rtn = codeMap_search_routine(code_map, assembly->dyn_blocks[index_start].block->header.address)) != NULL){
-				printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, assembly->dyn_blocks[index_start].block->header.address - rtn->address_start);
-			}
+static void frameEstimation_print(const struct frameEstimation* frame_est, const struct assembly* assembly, struct codeMap* code_map){
+	struct cm_routine* rtn;
+
+	printf("Frame: leaf = %s, size = %u", (frame_est->is_not_leaf) ? (ANSI_COLOR_BOLD_RED "N" ANSI_COLOR_RESET) : (ANSI_COLOR_BOLD_GREEN "Y" ANSI_COLOR_RESET), assembly->dyn_blocks[frame_est->index_stop].instruction_count + assembly->dyn_blocks[frame_est->index_stop].block->header.nb_ins - assembly->dyn_blocks[frame_est->index_start].instruction_count);
+	if (code_map != NULL){
+		if ((rtn = codeMap_search_routine(code_map, assembly->dyn_blocks[frame_est->index_start].block->header.address)) != NULL){
+			printf(", RTN:%s+" PRINTF_ADDR_SHORT, rtn->name, assembly->dyn_blocks[frame_est->index_start].block->header.address - rtn->address_start);
 		}
-
-		printf("\n\t- Start: index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[index_start].instruction_count, assembly->dyn_blocks[index_start].block->header.address);
-		printf("\t- Stop : index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[index_stop].instruction_count + assembly->dyn_blocks[index_stop].block->header.nb_ins, assembly->dyn_blocks[index_stop].block->header.address + assembly->dyn_blocks[index_stop].block->header.size);
 	}
 
-	free(label_buffer);
-
-	return;
+	printf("\n\t- Start: index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[frame_est->index_start].instruction_count, assembly->dyn_blocks[frame_est->index_start].block->header.address);
+	printf("\t- Stop : index = %u , addr = " PRINTF_ADDR "\n", assembly->dyn_blocks[frame_est->index_stop].instruction_count + assembly->dyn_blocks[frame_est->index_stop].block->header.nb_ins, assembly->dyn_blocks[frame_est->index_stop].block->header.address + assembly->dyn_blocks[frame_est->index_stop].block->header.size);
 }
 
 void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assembly, uint32_t index, struct codeMap* code_map){
@@ -374,8 +390,14 @@ void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assemb
 	int32_t 					first_snippet_index;
 
 	if (call_graph == NULL){
+		struct frameEstimation frame_est;
+
 		log_warn("callGraph is NULL, using a fast estimation");
-		callGraph_print_frame_est(assembly, index, code_map);
+
+		if (!callGraph_get_frameEstimation(assembly, index, &frame_est, 0xffffffffffffffff, 1, NULL)){
+			frameEstimation_print(&frame_est, assembly, code_map);
+		}
+
 		return;
 	}
 
@@ -434,7 +456,7 @@ void callGraph_print_frame(struct callGraph* call_graph, struct assembly* assemb
 	printf("\t- Stop : index = %u , addr = " PRINTF_ADDR "\n", offset_stop, addr_stop);
 }
 
-static enum blockLabel callGraph_label_block(struct asmBlock* block){
+enum blockLabel callGraph_label_block(struct asmBlock* block){
 	xed_decoded_inst_t 	xedd;
 
 	if (asmBlock_get_last_instruction(block, &xedd)){
@@ -473,7 +495,7 @@ static enum blockLabel callGraph_label_block(struct asmBlock* block){
 	}
 }
 
-static enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly){
+enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
 	uint32_t 			nb_block;
@@ -503,13 +525,13 @@ static enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly){
 	}
 
 	if ((label_buffer = (enum blockLabel*)calloc(nb_block, sizeof(enum blockLabel))) == NULL){
-		log_err("unable to allocate memory");
+		log_err_m("unable to allocate memory (%u byte(s))", nb_block * sizeof(enum blockLabel));
 	}
 
 	return label_buffer;
 }
 
-static enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly){
+enum blockLabel* callGraph_fill_label_buffer(struct assembly* assembly){
 	uint32_t 			block_offset;
 	struct asmBlock* 	block;
 	uint32_t 			nb_block;
@@ -551,7 +573,7 @@ static int32_t function_add_snippet(struct callGraph* call_graph, struct functio
 	return 0;
 }
 
-static int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func){
+int32_t function_get_first_snippet(struct callGraph* call_graph, struct function* func){
 	int32_t 					index;
 	struct assemblySnippet* 	snippet;
 

@@ -66,7 +66,7 @@ $(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o array.o
 $(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphPrintDot.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_SET): test_set.o set.o
+$(TEST_SET): test_set.o set.o printBuffer.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_LIST): test_list.o list.o
@@ -100,7 +100,7 @@ test_ugraph.o: ../ugraph.h ../graphPrintDot.h ../base.h
 test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
 test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
-test_set.o: ../set.h ../base.h
+test_set.o: ../set.h ../base.h ../printBuffer.h
 test_list.o: ../list.h ../base.h
 test_graphReader.o: ../graphReader.h ../mapFile.h ../graph.h ../graphPrintDot.h ../base.h
 test_variableRange.o: ../variableRange.h
