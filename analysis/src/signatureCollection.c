@@ -451,6 +451,54 @@ void signatureCollection_search(struct signatureCollection* collection, struct g
 	free(signature_buffer);
 }
 
+void signatureCollection_print(struct signatureCollection* collection){
+	struct node* 				node_cursor;
+	struct signature* 			signature_cursor;
+	struct multiColumnPrinter*	printer;
+	char 						symbol_str[10];
+
+	if ((printer = multiColumnPrinter_create(stdout, 3, NULL, NULL, NULL)) == NULL){
+		log_err("unable to create multiColumnPrinter");
+		return;
+	}
+
+	multiColumnPrinter_set_column_size(printer, 0, SIGNATURE_NAME_MAX_SIZE);
+	multiColumnPrinter_set_column_size(printer, 1, 3);
+	multiColumnPrinter_set_column_size(printer, 2, sizeof(symbol_str) - 1);
+
+	multiColumnPrinter_set_title(printer, 0, "NAME");
+	multiColumnPrinter_set_title(printer, 1, "ID");
+	multiColumnPrinter_set_title(printer, 2, "RESOLVE");
+
+	multiColumnPrinter_set_column_type(printer, 1, MULTICOLUMN_TYPE_INT32);
+
+	multiColumnPrinter_print_header(printer);
+
+	for (node_cursor = graph_get_head_node(&(collection->syntax_graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		signature_cursor = signatureCollection_node_get_signature(node_cursor);
+
+		if (signature_cursor->symbol_table == NULL){
+			symbol_str[0] = '\0';
+		}
+		else{
+			uint32_t j;
+			uint32_t nb_resolved;
+
+			for (j = 0, nb_resolved = 0; j < signature_cursor->symbol_table->nb_symbol; j++){
+				if (signatureSymbol_is_resolved(signature_cursor->symbol_table->symbols + j)){
+					nb_resolved ++;
+				}
+			}
+
+			snprintf(symbol_str, sizeof(symbol_str), "%u/%u", nb_resolved, signature_cursor->symbol_table->nb_symbol);
+		}
+
+		multiColumnPrinter_print(printer, signature_cursor->symbol.name, signature_cursor->symbol.id, symbol_str, NULL);
+	}
+
+	multiColumnPrinter_delete(printer);
+}
+
 void signatureCollection_printDot(struct signatureCollection* collection){
 	struct node* 				node_cursor;
 	struct signature* 			signature_cursor;

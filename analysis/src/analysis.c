@@ -60,6 +60,7 @@ static void analysis_frag_filter_selection(struct analysis* analysis, const char
 #ifdef IOREL
 static void analysis_frag_search_io(struct analysis* analysis, const char* arg);
 #endif
+static void analysis_frag_scan(struct analysis* analysis, const char* arg);
 static void analysis_frag_clean(struct analysis* analysis);
 
 static void analysis_frag_create_ir(struct analysis* analysis, const char* arg);
@@ -139,6 +140,7 @@ int main(int argc, char** argv){
 	#ifdef IOREL
 	add_cmd_to_input_parser(parser, "search iorel", 			"Search IO relationship", 						"Frag index or Frag Range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_search_io)
 	#endif
+	add_cmd_to_input_parser(parser, "scan frag", 				"Scan traceFragment (similar to scna trace)", 	"Frag index or Frag range", INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_frag_scan)
 	add_cmd_to_input_parser(parser, "clean frag", 				"Clean the set of traceFragments", 				NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_frag_clean)
 
 	/* ir specific commands */
@@ -153,6 +155,7 @@ int main(int argc, char** argv){
 	/* signature specific commands */
 	add_cmd_to_input_parser(parser, "load code signature", 		"Load code signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->code_signature_collection), codeSignatureReader_parse)
 	add_cmd_to_input_parser(parser, "search code signature", 	"Search code signature for a given IR", 		"Frag index", 				INPUTPARSER_CMD_TYPE_OPT_ARG, 	analysis, 								analysis_code_signature_search)
+	add_cmd_to_input_parser(parser, "print code signature", 	"List code signature(s)", 						NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), signatureCollection_print)
 	add_cmd_to_input_parser(parser, "printDot code signature", 	"Print every code signature in dot format", 	NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	&(analysis->code_signature_collection), signatureCollection_printDot)
 	add_cmd_to_input_parser(parser, "clean code signature", 	"Remove every code signature", 					NULL, 						INPUTPARSER_CMD_TYPE_NO_ARG, 	analysis, 								analysis_code_signature_clean)
 	add_cmd_to_input_parser(parser, "load mode signature", 		"Load mode signature from a file", 				"File path", 				INPUTPARSER_CMD_TYPE_ARG, 		&(analysis->mode_signature_collection), modeSignatureReader_parse)
@@ -511,30 +514,37 @@ static void analysis_trace_search_opcode(struct analysis* analysis, const char* 
 	free(opcode);
 }
 
+#define assembly_scan_get_filter_from_arg(arg, filters) 																						\
+	{ 																																			\
+		size_t __i__; 																															\
+																																				\
+		(filters) = 0; 																															\
+		if ((arg) != NULL){ 																													\
+			for (__i__ = 0; __i__ < strlen(arg); __i__++){ 																						\
+				switch((arg)[__i__]){ 																											\
+					case 'C' : {(filters) |= ASSEMBLYSCAN_FILTER_CST; 		break;} 															\
+					case 'E' : {(filters) |= ASSEMBLYSCAN_FILTER_BBL_EXEC; 	break;} 															\
+					case 'L' : {(filters) |= ASSEMBLYSCAN_FILTER_FUNC_LEAF; break;} 															\
+					case 'R' : {(filters) |= ASSEMBLYSCAN_FILTER_BBL_RATIO; break;} 															\
+					case 'S' : {(filters) |= ASSEMBLYSCAN_FILTER_BBL_SIZE; 	break;} 															\
+					case 'V' : {(filters) |= ASSEMBLYSCAN_FILTER_VERBOSE; 	break;} 															\
+					default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {C: constant, E: executed, L: leaf, R: ratio, S: size, V: verbose}", (arg)[__i__]); return;} \
+				} 																																\
+			} 																																	\
+		} 																																		\
+	}
+
 static void analysis_trace_scan(struct analysis* analysis, const char* arg){
-	uint32_t 	filters = 0;
-	size_t 		i;
+	uint32_t filters;
 
 	if (analysis->trace == NULL){
 		log_err("trace is NULL");
 		return;
 	}
 
-	if (arg != NULL){
-		for (i = 0; i < strlen(arg); i++){
-			switch(arg[i]){
-				case 'C' : {filters |= ASSEMBLYSCAN_FILTER_CST; 		break;}
-				case 'E' : {filters |= ASSEMBLYSCAN_FILTER_BBL_EXEC; 	break;}
-				case 'L' : {filters |= ASSEMBLYSCAN_FILTER_FUNC_LEAF; 	break;}
-				case 'R' : {filters |= ASSEMBLYSCAN_FILTER_BBL_RATIO; 	break;}
-				case 'S' : {filters |= ASSEMBLYSCAN_FILTER_BBL_SIZE; 	break;}
-				case 'V' : {filters |= ASSEMBLYSCAN_FILTER_VERBOSE; 	break;}
-				default  : {log_err_m("incorrect filter defintion: %c. Correct filters are: {C: constant, E: executed, L: leaf, R: ratio, S: size, V: verbose}", arg[i]); return;}
-			}
-		}
-	}
+	assembly_scan_get_filter_from_arg(arg, filters)
 
-	assemblyScan_scan(&(analysis->trace->assembly), analysis->call_graph, analysis->code_map, filters);
+	trace_scan(analysis->trace, analysis->call_graph, analysis->code_map, filters);
 }
 
 static void analysis_trace_search_mem(struct analysis* analysis, const char* arg){
@@ -830,6 +840,14 @@ static void analysis_frag_search_io(struct analysis* analysis, const char* arg){
 	apply_to_multiple_frags(analysis, trace_search_io, arg)
 }
 #endif
+
+static void analysis_frag_scan(struct analysis* analysis, const char* arg){
+	uint32_t filters;
+
+	assembly_scan_get_filter_from_arg(arg, filters)
+
+	apply_to_multiple_frags_args(analysis, trace_scan, arg, analysis->call_graph, analysis->code_map, filters)
+}
 
 static void analysis_frag_clean(struct analysis* analysis){
 	struct listIterator it;

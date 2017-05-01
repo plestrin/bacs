@@ -69,6 +69,7 @@ void signatureCollection_init(struct signatureCollection* collection, size_t cus
 
 #define signatureCollection_get_nb_signature(collection) ((collection)->syntax_graph.nb_node)
 
+void signatureCollection_print(struct signatureCollection* collection);
 void signatureCollection_printDot(struct signatureCollection* collection);
 int32_t signatureCollection_add(struct signatureCollection* collection, void* custom_signature, const char* export_name);
 

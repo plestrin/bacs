@@ -8,7 +8,7 @@
 
 #define INPUTPARSER_LINE_SIZE 512 /* must be at least larger or equal than INPUTPARSER_NAME_SIZE */
 
-static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd);
+static int32_t inputParser_search_cmd(struct inputParser* parser, const char* cmd);
 #ifdef INTERACTIVE
 static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
 #endif
@@ -119,6 +119,8 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 	char 				line[INPUTPARSER_LINE_SIZE];
 	uint32_t 			cmd_counter = 0;
 	char* 				cmd_arg;
+	char* 				sep;
+	char* 				cmd;
 
 	for (parser->exit = 0; !parser->exit; ){
 		if (cmd_counter < argc){
@@ -157,25 +159,35 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 			#endif
 		}
 
-		if ((entry_index = inputParser_search_cmd(parser, line)) >= 0){
-			entry = (struct cmdEntry*)array_get(&(parser->cmd_array), (uint32_t)entry_index);
-			if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
-				((void(*)(void*,char*))(entry->function))(entry->context, inputParser_get_argument(entry->name, line));
+		for (cmd = line, sep = line; sep != NULL; cmd = sep + 1){
+			while(*cmd == ' '){
+				cmd++;
 			}
-			else if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
-				if ((cmd_arg = inputParser_get_argument(entry->name, line)) == NULL){
-					log_err_m("this command requires at least one additionnal argument: %s", entry->arg_desc);
+
+			if ((sep = strchr(line, ';')) != NULL){
+				*sep = '\0';
+			}
+
+			if ((entry_index = inputParser_search_cmd(parser, cmd)) >= 0){
+				entry = (struct cmdEntry*)array_get(&(parser->cmd_array), (uint32_t)entry_index);
+				if (entry->type == INPUTPARSER_CMD_TYPE_OPT_ARG){
+					((void(*)(void*,char*))(entry->function))(entry->context, inputParser_get_argument(entry->name, cmd));
+				}
+				else if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
+					if ((cmd_arg = inputParser_get_argument(entry->name, cmd)) == NULL){
+						log_err_m("this command requires at least one additionnal argument: %s", entry->arg_desc);
+					}
+					else{
+						((void(*)(void*,char*))(entry->function))(entry->context, cmd_arg);
+					}
 				}
 				else{
-					((void(*)(void*,char*))(entry->function))(entry->context, cmd_arg);
+					((void(*)(void*))(entry->function))(entry->context);
 				}
 			}
 			else{
-				((void(*)(void*))(entry->function))(entry->context);
+				printf("The syntax of the command is incorrect: \"%s\" (length: %u)\n", cmd, strlen(cmd));
 			}
-		}
-		else{
-			printf("The syntax of the command is incorrect: \"%s\" (length: %u)\n", line, strlen(line));
 		}
 	}
 }
@@ -190,13 +202,13 @@ void inputParser_clean(struct inputParser* parser){
 	#endif
 }
 
-static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
+static int32_t inputParser_search_cmd(struct inputParser* parser, const char* cmd){
 	uint32_t 			i;
 	int32_t 			compare_result;
 	struct cmdEntry* 	entry;
 
 	for (i = 0; i < array_get_length(&(parser->cmd_array)); i++){
-		entry = (struct cmdEntry*)array_get(&(parser->cmd_array), i);
+		entry = array_get(&(parser->cmd_array), i);
 		if (entry->type == INPUTPARSER_CMD_TYPE_NO_ARG){
 			compare_result = strncmp(entry->name, cmd, INPUTPARSER_NAME_SIZE);
 		}
@@ -204,7 +216,7 @@ static int32_t inputParser_search_cmd(struct inputParser* parser, char* cmd){
 			compare_result = strncmp(entry->name, cmd, strlen(entry->name));
 		}
 
-		if (compare_result == 0){
+		if (!compare_result){
 			return (int32_t)i;
 		}
 	}

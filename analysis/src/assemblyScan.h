@@ -13,4 +13,7 @@
 
 void assemblyScan_scan(struct assembly* assembly, void* call_graph, struct codeMap* cm, uint32_t filters);
 
+uint32_t* assemblyScan_save_block_id_and_trim(struct assembly* assembly);
+void assemblyScan_restore_block_id_and_free(struct assembly* assembly, uint32_t* block_id);
+
 #endif

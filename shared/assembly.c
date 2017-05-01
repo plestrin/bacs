@@ -86,7 +86,7 @@ uint8_t* asmBlock_search_opcode(struct asmBlock* block, const uint8_t* opcode, s
 }
 
 int32_t asmBlock_get_first_instruction(struct asmBlock* block, xed_decoded_inst_t* xedd){
-	xed_decoded_inst_zero(xedd); 
+	xed_decoded_inst_zero(xedd);
 	xed_decoded_inst_set_mode(xedd, disas.mmode, disas.stack_addr_width);
 
 	if (xed_decode(xedd, (xed_uint8_t*)block->data, min(block->header.size, 15)) != XED_ERROR_NONE){

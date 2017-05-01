@@ -126,6 +126,23 @@ static inline void trace_printDot_synthesis(struct trace* trace, const char* nam
 	}
 }
 
+static inline void trace_scan(struct trace* trace, void* call_graph, struct codeMap* code_map, uint32_t filters){
+	if (trace->type == FRAGMENT_TRACE){
+		uint32_t* block_id;
+
+		if ((block_id = assemblyScan_save_block_id_and_trim(&(trace->assembly))) != NULL){
+			assemblyScan_scan(&(trace->assembly), call_graph, code_map, filters);
+			assemblyScan_restore_block_id_and_free(&(trace->assembly), block_id);
+		}
+		else{
+			log_err("unable to save block id");
+		}
+	}
+	else{
+		assemblyScan_scan(&(trace->assembly), call_graph, code_map, filters);
+	}
+}
+
 void trace_check(struct trace* trace);
 
 void trace_print_location(const struct trace* trace, struct codeMap* cm);

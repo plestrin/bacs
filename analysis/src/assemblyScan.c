@@ -646,6 +646,10 @@ void assemblyScan_scan(struct assembly* assembly, void* call_graph, struct codeM
 	array_delete(flag_block_array);
 	flag_block_array = NULL;
 
+	if (!set_get_length(address_set)){
+		goto exit;
+	}
+
 	if ((address_buffer = set_export_buffer_unique(address_set, &nb_address)) == NULL){
 		log_err("unable to export buffer unique");
 		goto exit;
@@ -704,4 +708,40 @@ void assemblyScan_scan(struct assembly* assembly, void* call_graph, struct codeM
 	if (address_set != NULL){
 		set_delete(address_set);
 	}
+}
+
+uint32_t* assemblyScan_save_block_id_and_trim(struct assembly* assembly){
+	uint32_t 			i;
+	struct asmBlock* 	block;
+	size_t 				block_offset;
+	uint32_t* 			result;
+
+	for (block_offset = 0, i = 0; block_offset < assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, i++){
+		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
+	}
+
+	if ((result = malloc(sizeof(uint32_t) * i)) == NULL){
+		log_err("unable to allocate memory");
+		return NULL;
+	}
+
+	for (block_offset = 0, i = 0; block_offset < assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, i++){
+		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
+		result[i] = block->header.id;
+	}
+
+	return result;
+}
+
+void assemblyScan_restore_block_id_and_free(struct assembly* assembly, uint32_t* block_id){
+	uint32_t 			i;
+	struct asmBlock* 	block;
+	size_t 				block_offset;
+
+	for (block_offset = 0, i = 0; block_offset < assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, i++){
+		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
+		block->header.id = block_id[i];
+	}
+
+	free(block_id);
 }
