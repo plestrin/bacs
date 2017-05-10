@@ -728,6 +728,7 @@ uint32_t* assemblyScan_save_block_id_and_trim(struct assembly* assembly){
 	for (block_offset = 0, i = 0; block_offset < assembly->mapping_size_block; block_offset += sizeof(struct asmBlockHeader) + block->header.size, i++){
 		block = (struct asmBlock*)((char*)assembly->mapping_block + block_offset);
 		result[i] = block->header.id;
+		block->header.id = FIRST_BLOCK_ID + i;
 	}
 
 	return result;
