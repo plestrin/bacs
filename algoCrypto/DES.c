@@ -3,11 +3,11 @@
 #include "DES.h"
 
 #ifdef __GNUC__
-#   define DES_LOAD_DWORD(w)        __builtin_bswap32(w)
-#   define DES_STORE_DWORD(w)       __builtin_bswap32(w)
+# 	define DES_LOAD_DWORD(w) 	__builtin_bswap32(w)
+# 	define DES_STORE_DWORD(w) 	__builtin_bswap32(w)
 #else
-#   define DES_LOAD_DWORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
-#   define DES_STORE_DWORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+# 	define DES_LOAD_DWORD(w) 	(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+# 	define DES_STORE_DWORD(w) 	(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
 #endif
 
 

@@ -243,7 +243,7 @@ static uint32_t h_func(uint8_t x, const uint8_t* key, uint32_t k, uint32_t offse
 	tmp[2] = x;
 	tmp[3] = x;
 
-	switch(k){
+	switch (k){
 		case 4 : {
 			tmp[0] = SBOX[1][tmp[0]] ^ key[4 * (6 + offset) + 0];
 			tmp[1] = SBOX[0][tmp[1]] ^ key[4 * (6 + offset) + 1];
@@ -289,7 +289,7 @@ void twofish128_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint32_t 	j;
 	uint32_t 	a;
 	uint32_t 	b;
-	uint8_t  	S[4*TWOFISH_128_K];
+	uint8_t 	S[4*TWOFISH_128_K];
 
 	for (i = 0; i < TWOFISH_128_K; i++){
 		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);
@@ -317,7 +317,7 @@ void twofish192_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint32_t 	j;
 	uint32_t 	a;
 	uint32_t 	b;
-	uint8_t  	S[4*TWOFISH_192_K];
+	uint8_t 	S[4*TWOFISH_192_K];
 
 	for (i = 0; i < TWOFISH_192_K; i++){
 		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);
@@ -345,7 +345,7 @@ void twofish256_key_init(const uint32_t* key, struct twofishKey* twofish_key){
 	uint32_t 	j;
 	uint32_t 	a;
 	uint32_t 	b;
-	uint8_t  	S[4*TWOFISH_256_K];
+	uint8_t 	S[4*TWOFISH_256_K];
 
 	for (i = 0; i < TWOFISH_256_K; i++){
 		rs_mult((const uint8_t*)(key + 2*i), S + 4*i);

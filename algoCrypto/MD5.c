@@ -3,11 +3,11 @@
 #include "MD5.h"
 
 #ifdef MD5_FAST
-	#define F(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
-	#define G(x, y, z) ((y) ^ ((z) & ((y) ^ (x))))
+# 	define F(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
+# 	define G(x, y, z) ((y) ^ ((z) & ((y) ^ (x))))
 #else
-	#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
-	#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
+# 	define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
+# 	define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
 #endif
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define I(x, y, z) ((y) ^ ((x) | (~z)))
@@ -233,7 +233,7 @@ static void md5_compress(struct md5State* md5_state){
 void md5_feed(struct md5State* md5_state, const uint32_t* data, size_t data_length){
 	md5_state->global_size += data_length * 8;
 
-	while(md5_state->local_size + data_length >= MD5_BLOCK_NB_BYTE){
+	while (md5_state->local_size + data_length >= MD5_BLOCK_NB_BYTE){
 		memcpy((uint8_t*)md5_state->block + md5_state->local_size, data, MD5_BLOCK_NB_BYTE - md5_state->local_size);
 		md5_compress(md5_state);
 

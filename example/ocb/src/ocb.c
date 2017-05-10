@@ -37,7 +37,7 @@ int main(void){
 		return EXIT_FAILURE;
 	}
 
-	printf("\nCiphertext CBC: ");
+	printf("\nCiphertext OCB: ");
 	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof(plaintext));
 
 	if (memcmp(deciphertext, plaintext, sizeof(plaintext)) == 0 && stat){

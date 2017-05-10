@@ -32,7 +32,7 @@ static void dotPrint_node(void* data, FILE* file, void* arg){
 }
 
 static uint32_t node_get_label(struct node* node){
-	switch(*(char*)node_get_data(node)){
+	switch (*(char*)node_get_data(node)){
 		case 'a' : {return 97 ;}
 		case 'b' : {return 98 ;}
 		case 'i' : {return 105;}

@@ -36,7 +36,7 @@ int main(void){
 		s[i] = (uint8_t)i;
 	}
 
-	while(set->nb_element_tot > NB_ELEMENT_STOP){
+	while (set->nb_element_tot > NB_ELEMENT_STOP){
 		for (data_ptr = setIterator_get_first(set, &iterator), i = 0, offset = 0; data_ptr != NULL; data_ptr = setIterator_get_next(&iterator), i++){
 			memset(data, s[i], ELEMENT_SIZE);
 			if (memcmp(data, data_ptr, ELEMENT_SIZE)){

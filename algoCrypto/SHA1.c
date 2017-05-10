@@ -3,11 +3,11 @@
 #include "SHA1.h"
 
 #ifdef __GNUC__
-#   define SHA1_LOAD_DWORD(w)        __builtin_bswap32(w)
-#   define SHA1_STORE_DWORD(w)       __builtin_bswap32(w)
+# 	define SHA1_LOAD_DWORD(w) 	__builtin_bswap32(w)
+# 	define SHA1_STORE_DWORD(w) 	__builtin_bswap32(w)
 #else
-#   define SHA1_LOAD_DWORD(w)        (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
-#   define SHA1_STORE_DWORD(w)       (((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+# 	define SHA1_LOAD_DWORD(w) 	(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
+# 	define SHA1_STORE_DWORD(w) 	(((w) >> 24) | ((((w) >> 16) & 0xff) << 8) | ((((w) >> 8) & 0xff) << 16) | ((w) << 24))
 #endif
 
 #define F0(x, y, z) (((x) & (y)) | ((~(x)) & (z)))
@@ -105,7 +105,7 @@ static void sha1_compress(struct sha1State* sha1_state){
 void sha1_feed(struct sha1State* sha1_state, const uint32_t* data, size_t data_length){
 	sha1_state->global_size += data_length;
 
-	while(sha1_state->local_size + data_length >= SHA1_BLOCK_NB_BYTE){
+	while (sha1_state->local_size + data_length >= SHA1_BLOCK_NB_BYTE){
 		memcpy((uint8_t*)sha1_state->block + sha1_state->local_size, data, SHA1_BLOCK_NB_BYTE - sha1_state->local_size);
 		sha1_compress(sha1_state);
 

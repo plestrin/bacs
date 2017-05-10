@@ -17,7 +17,7 @@ static int32_t compare_uint32_t(const void* arg1, const void* arg2){
 	if (n1 < n2){
 		return -1;
 	}
-	else if(n1 > n2){
+	else if (n1 > n2){
 		return 1;
 	}
 	else{
@@ -96,7 +96,7 @@ int32_t main(void){
 
 	/* INIT */
 	nb_category = NB_CATEGORY;
-	desc = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category);
+	desc = malloc(sizeof(struct categoryDesc) * nb_category);
 	if (desc == NULL){
 		log_err("unable to allocate memory");
 		return EXIT_FAILURE;

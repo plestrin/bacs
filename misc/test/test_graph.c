@@ -100,6 +100,6 @@ int main(){
 	}
 
 	graph_delete(clone);
-	
+
 	return 0;
 }

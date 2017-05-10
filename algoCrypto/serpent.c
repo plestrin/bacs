@@ -595,7 +595,7 @@ void serpent_key_expand(uint32_t* key, uint32_t key_length, uint32_t* round_key)
 	round_key[6] = ROTATE_L(key[6] ^ round_key[1] ^ round_key[3] ^ round_key[5] ^ SERPENT_GOLDEN_RATIO ^ 6, 11);
 	round_key[7] = ROTATE_L(key[7] ^ round_key[2] ^ round_key[4] ^ round_key[6] ^ SERPENT_GOLDEN_RATIO ^ 7, 11);
 
-	for(i = 8; i < SERPENT_ROUND_KEY_NB_DWORD; i++){
+	for (i = 8; i < SERPENT_ROUND_KEY_NB_DWORD; i++){
 		round_key[i] = ROTATE_L(round_key[i - 8] ^ round_key[i - 5] ^ round_key[i - 3] ^ round_key[i - 1] ^ SERPENT_GOLDEN_RATIO ^ i, 11);
 	}
 

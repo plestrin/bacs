@@ -14,7 +14,7 @@ static inline void xor(const void* input1, const void* input2, void* output, uin
 	for (i = 0; i < size / 4; i++){
 		*((uint32_t*)(output) + i) = *((const uint32_t*)(input1) + i) ^ *((const uint32_t*)(input2) + i);
 	}
-	switch(size % 4){
+	switch (size % 4){
 		case 3 : *((uint8_t*)(output) + 4*i + 0) = *((const uint8_t*)(input1) + 4*i + 0) ^ *((const uint8_t*)(input2) + 4*i + 0);
 		case 2 : *((uint8_t*)(output) + 4*i + 1) = *((const uint8_t*)(input1) + 4*i + 1) ^ *((const uint8_t*)(input2) + 4*i + 1);
 		case 1 : *((uint8_t*)(output) + 4*i + 2) = *((const uint8_t*)(input1) + 4*i + 2) ^ *((const uint8_t*)(input2) + 4*i + 2);
@@ -41,7 +41,7 @@ void mode_enc_cbc(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
-		if (i == 0){
+		if (!i){
 			xor(iv, input, output, block_size);
 		}
 		else{
@@ -56,7 +56,7 @@ void mode_dec_cbc(blockCipher decrypt, uint32_t block_size, const uint8_t* input
 
 	for (i = 0; i < size / block_size; i++){
 		decrypt(input + i * block_size, key, output + i * block_size);
-		if (i == 0){
+		if (!i){
 			xor(iv, output, output, block_size);
 		}
 		else{
@@ -69,7 +69,7 @@ void mode_enc_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
-		if (i == 0){
+		if (!i){
 			encrypt(iv, key, output);
 		}
 		else{
@@ -84,7 +84,7 @@ void mode_dec_ofb(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
-		if (i == 0){
+		if (!i){
 			encrypt(iv, key, output);
 		}
 		else{
@@ -99,7 +99,7 @@ void mode_enc_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
-		if (i == 0){
+		if (!i){
 			encrypt(iv, key, output);
 		}
 		else{
@@ -113,7 +113,7 @@ void mode_dec_cfb(blockCipher encrypt, uint32_t block_size, const uint8_t* input
 	size_t i;
 
 	for (i = 0; i < size / block_size; i++){
-		if (i == 0){
+		if (!i){
 			encrypt(iv, key, output);
 		}
 		else{
@@ -190,8 +190,7 @@ int32_t hmac(const struct hash* hash, const uint8_t* input, uint8_t* output, siz
 		return -1;
 	}
 
-	block = (uint8_t*)malloc(hash->block_size + hash->hash_size);
-	if (block == NULL){
+	if ((block = malloc(hash->block_size + hash->hash_size)) == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 		return -1;
 	}

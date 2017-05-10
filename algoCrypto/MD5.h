@@ -12,7 +12,7 @@
 #define MD5_HASH_NB_BYTE 	16
 #define MD5_HASH_NB_DWORD 	4
 
-#define MD5_DATA_SIZE_TO_NB_BLOCK(size) ((((size) * 8 + 65) / MD5_BLOCK_NB_BIT) + ((((size) * 8 + 65) % MD5_BLOCK_NB_BIT == 0)?0:1))
+#define MD5_DATA_SIZE_TO_NB_BLOCK(size) ((((size) * 8 + 65) / MD5_BLOCK_NB_BIT) + ((!(((size) * 8 + 65) % MD5_BLOCK_NB_BIT)) ? 0 : 1))
 
 /*
  * Make sur the data buffer is large enough to hold the padding. Use the macro above to compute the size of the data buffer

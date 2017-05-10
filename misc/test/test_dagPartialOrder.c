@@ -55,8 +55,8 @@ int main(){
 
 	graph = create_graph();
 	if (graph != NULL){
-		printf("Printing node in intial order (starting from head using next):\n");
-		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		printf("Printing node in initial order (starting from head using next):\n");
+		for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}
 
@@ -65,7 +65,7 @@ int main(){
 		}
 
 		printf("Printing node in partial order DST_SRC (starting from head using next):\n");
-		for(node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
+		for (node_cursor = graph_get_head_node(graph); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 			printf("\t%u\n", *(uint32_t*)node_get_data(node_cursor));
 		}
 

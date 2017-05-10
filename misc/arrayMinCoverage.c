@@ -59,7 +59,7 @@ static struct tagMap* tagMap_create(struct array* array, uint32_t nb_category, s
 				desc_buffer[i].tagMap_gateway[j] = NULL;
 			}
 			else{
-				if ((desc_buffer[i].tagMap_gateway[j] = (void**)malloc(sizeof(void**) * array_get_length(element_array))) == NULL){
+				if ((desc_buffer[i].tagMap_gateway[j] = (void**)malloc(sizeof(void*) * array_get_length(element_array))) == NULL){
 					log_err("unable to allocate memory");
 					goto exit;
 				}

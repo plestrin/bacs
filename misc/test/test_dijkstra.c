@@ -37,7 +37,7 @@ static void path_print(struct array* array){
 
 	for (i = array_get_length(array); i > 0; i--){
 		step = (struct dijkstraPathStep*)array_get(array, i - 1);
-		switch(step->dir){
+		switch (step->dir){
 			case PATH_SRC_TO_DST : {
 				if (i == array_get_length(array)){
 					printf("%c -> %c", *(char*)node_get_data(edge_get_src(step->edge)), *(char*)node_get_data(edge_get_dst(step->edge)));
