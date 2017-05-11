@@ -9,7 +9,7 @@
 #include "arrayMinCoverage.h"
 #include "base.h"
 
-#define MIN_COVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split */
+#define MIN_COVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split, 5 is super */
 
 static const uint32_t irEdge_distance_array[NB_DEPENDENCE_TYPE] = {
 	0, 						/* DIRECT 		*/
@@ -1018,8 +1018,10 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#elif MIN_COVERAGE_STRATEGY == 4
 			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
+			#elif MIN_COVERAGE_STRATEGY == 5
+			result = arrayMinCoverage_super_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, &score);
 			#else
-			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4
+			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
 			#endif
 			#else
 			#if MIN_COVERAGE_STRATEGY == 0
@@ -1032,8 +1034,10 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
 			#elif MIN_COVERAGE_STRATEGY == 4
 			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
+			#elif MIN_COVERAGE_STRATEGY == 5
+			result = arrayMinCoverage_super_wrapper(&path_array, nb_category, desc_buffer, dijkstraPathStep_compare, NULL);
 			#else
-			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4
+			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
 			#endif
 			#endif
 
