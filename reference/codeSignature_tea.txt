@@ -3,10 +3,10 @@
 # 	- tea_enc_32: 		32 rounds of the TEA encryption algorithm
 # 	- tea_dec: 			one round of the TEA decrypt algorithm
 # 	- tea_dec_32: 		32 rounds of the TEA decryption algorithm
-#	- xtea_enc: 		one round of the XTEA encrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
+#	- xtea_enc: 		one round of the XTEA encrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt)
 #	- xtea_enc_32_v1: 	32 rounds of the XTEA encryption algorithm. No key collision, may be due to offline key schedule
 #	- xtea_enc_32_v2: 	32 rounds of the XTEA encryption algorithm. Key collision, no offline key schedule
-# 	- xtea_dec: 		one round of the XTEA decrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt) 
+# 	- xtea_dec: 		one round of the XTEA decrypt algorithm. We have removed the sum variable from the graph since it can be computed statically (ex TomCrypt)
 # 	- xtea_dec_32_v1: 	32 rounds of the XTEA decryption algorithm. No key collision, may be due to offline key schedule
 # 	- xtea_dec_32_v2: 	32 rounds of the XTEA decryption algorithm. Key collision, no offline key schedule
 
