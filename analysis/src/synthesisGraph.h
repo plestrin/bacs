@@ -38,8 +38,8 @@ struct synthesisEdge{
 #define synthesisGraph_get_synthesisNode(node) ((struct synthesisNode*)node_get_data(node))
 #define synthesisGraph_get_synthesisEdge(edge) ((struct synthesisEdge*)edge_get_data(edge))
 
-void synthesisGraph_printDot_node(void* data, FILE* file, void* arg);
-void synthesisGraph_printDot_edge(void* data, FILE* file, void* arg);
+void synthesisGraph_printDot_node(void* data, FILE* file);
+void synthesisGraph_printDot_edge(void* data, FILE* file);
 
 /* Bit map description of the edgeTag (there is not anymore the fragment notion)
 	- [0 :29] 	parameter index

@@ -86,7 +86,7 @@ void modeSignature_init(struct modeSignature* mode_signature){
 	struct node* 				node_cursor;
 	struct modeSignatureNode* 	mode_signature_node;
 
-	graph_register_dotPrint_callback(&((mode_signature)->signature.graph), NULL, modeSignature_printDot_node, modeSignature_printDot_edge, NULL);
+	graph_register_dotPrint_callback(&((mode_signature)->signature.graph), NULL, (void(*)(void*,FILE*,void*))modeSignature_printDot_node, (void(*)(void*,FILE*,void*))modeSignature_printDot_edge, NULL);
 
 	for (node_cursor = graph_get_head_node(&(mode_signature->signature.graph)); node_cursor != NULL; node_cursor = node_get_next(node_cursor)){
 		mode_signature_node = (struct modeSignatureNode*)node_get_data(node_cursor);

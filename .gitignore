@@ -14,7 +14,7 @@ syntheticSample/tomcrypt/build/
 misc/test/test_array
 misc/test/test_arrayMinCoverage
 misc/test/test_dagPartialOrder
-misc/test/test_dijkstra
+misc/test/test_graphMinPath
 misc/test/test_graph
 misc/test/test_ugraph
 misc/test/test_graphReader

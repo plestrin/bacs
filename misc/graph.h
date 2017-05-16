@@ -32,7 +32,7 @@ struct node{
 	uint32_t 		nb_edge_dst;
 	struct edge*	src_edge_linkedList;
 	struct edge*	dst_edge_linkedList;
-	void* 			ptr; 									/* Used in various algorithms: dijktra, isomosphism, dag partial ordering, graph copy */
+	void* 			ptr; 									/* Used in various algorithms: minPath, isomosphism, dag partial ordering, graph copy */
 };
 
 #define node_get_data(node_) ((void*)((struct node*)(node_) + 1))

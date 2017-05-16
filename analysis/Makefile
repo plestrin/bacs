@@ -63,7 +63,7 @@ OBJ 			:= 	$(BUILD_DIR)codeMap.o				\
 					$(BUILD_DIR)subGraphIsomorphism.o 	\
 					$(BUILD_DIR)graphReader.o 			\
 					$(BUILD_DIR)dagPartialOrder.o 		\
-					$(BUILD_DIR)dijkstra.o 				\
+					$(BUILD_DIR)graphMinPath.o 			\
 					$(BUILD_DIR)set.o 					\
 					$(BUILD_DIR)list.o 					\
 					$(BUILD_DIR)variableRange.o 		\

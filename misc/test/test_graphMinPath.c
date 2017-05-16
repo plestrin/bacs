@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../dijkstra.h"
+#include "../graphMinPath.h"
 #include "../graphPrintDot.h"
 #include "../base.h"
 
@@ -32,11 +32,11 @@ static void dotPrint_node(void* data, FILE* file, void* arg){
 }
 
 static void path_print(struct array* array){
-	uint32_t 					i;
-	struct dijkstraPathStep* 	step;
+	uint32_t 			i;
+	struct minPathStep* step;
 
 	for (i = array_get_length(array); i > 0; i--){
-		step = (struct dijkstraPathStep*)array_get(array, i - 1);
+		step = array_get(array, i - 1);
 		switch (step->dir){
 			case PATH_SRC_TO_DST : {
 				if (i == array_get_length(array)){
@@ -111,10 +111,10 @@ int main(void){
 
 	#define search_print_path(node1_, node2_) 																											\
 	{ 																																					\
-		uint32_t 				i_; 																													\
-		struct dijkstraPath* 	path_; 																													\
+		uint32_t 		i_; 																															\
+		struct minPath* path_; 																															\
 																																						\
-		if (dijkstra_min_path(graph, &(node1_), 1, &(node2_), 1, &path_array, NULL)){ 																	\
+		if (graphMinPath_bfs(graph, &(node1_), 1, &(node2_), 1, &path_array, NULL)){ 																	\
 			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 					\
 		} 																																				\
 		else if (!array_get_length(&path_array)){ 																										\
@@ -123,7 +123,7 @@ int main(void){
 		else{ 																																			\
 			log_info_m("%u path(s) between (%c, %c)", array_get_length(&path_array), *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
 			for (i_ = 0; i_ < array_get_length(&path_array); i_ ++){ 																					\
-				path_ = (struct dijkstraPath*)array_get(&path_array, i_); 																				\
+				path_ = array_get(&path_array, i_); 																									\
 				putchar('\t'); path_print(path_->step_array); putchar('\n'); 																			\
 				array_delete(path_->step_array); 																										\
 			} 																																			\
@@ -131,7 +131,7 @@ int main(void){
 		} 																																				\
 	}
 
-	if (array_init(&path_array, sizeof(struct dijkstraPath))){
+	if (array_init(&path_array, sizeof(struct minPath))){
 		log_err("unable to init array");
 		return EXIT_FAILURE;
 	}

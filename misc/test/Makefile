@@ -5,7 +5,7 @@ TEST_MAPFILE 			:= test_mapFile
 TEST_GRAPH 				:= test_graph
 TEST_UGRAPH 			:= test_ugraph
 TEST_SUBGRAPHISO 		:= test_subGraphIso
-TEST_DIJKSTRA 			:= test_dijkstra
+TEST_GRAPHMINPATH 		:= test_graphMinPath
 TEST_DAGPARTIALORDER 	:= test_dagPartialOrder
 TEST_SET 				:= test_set
 TEST_LIST 				:= test_list
@@ -29,7 +29,7 @@ all: 										\
 	$(TEST_GRAPH) 							\
 	$(TEST_UGRAPH) 							\
 	$(TEST_SUBGRAPHISO) 					\
-	$(TEST_DIJKSTRA) 						\
+	$(TEST_GRAPHMINPATH) 					\
 	$(TEST_DAGPARTIALORDER) 				\
 	$(TEST_SET) 							\
 	$(TEST_LIST) 							\
@@ -60,7 +60,7 @@ $(TEST_UGRAPH): test_ugraph.o ugraph.o graphPrintDot.o
 $(TEST_SUBGRAPHISO): test_subGraphIsomorphism.o subGraphIsomorphism.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TEST_DIJKSTRA): test_dijkstra.o dijkstra.o graph.o graphPrintDot.o array.o
+$(TEST_GRAPHMINPATH): test_graphMinPath.o graphMinPath.o graph.o graphPrintDot.o array.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(TEST_DAGPARTIALORDER): test_dagPartialOrder.o dagPartialOrder.o graph.o graphPrintDot.o
@@ -98,7 +98,7 @@ test_mapFile.o: ../mapFile.h ../base.h
 test_graph.o: ../graph.h ../graphPrintDot.h ../base.h
 test_ugraph.o: ../ugraph.h ../graphPrintDot.h ../base.h
 test_subGraphIsomorphism.o: ../subGraphIsomorphism.h ../graph.h ../graphPrintDot.h ../array.h ../base.h
-test_dijkstra.o: ../dijkstra.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
+test_graphMinPath.o: ../graphMinPath.h ../graph.h  ../graphPrintDot.h ../array.h ../base.h
 test_dagPartialOrder.o: ../dagPartialOrder.h ../graph.h  ../graphPrintDot.h ../base.h
 test_set.o: ../set.h ../base.h ../printBuffer.h
 test_list.o: ../list.h ../base.h
@@ -116,7 +116,7 @@ graph.o: ../graph.h ../base.h
 ugraph.o: ../ugraph.h ../base.h
 graphPrintDot.o: ../graph.h ../ugraph.h ../graphPrintDot.h ../base.h
 subGraphIsomorphism.o: ../graph.h ../subGraphIsomorphism.h ../array.h ../base.h
-dijkstra.o: ../graph.h ../dijkstra.h ../array.h ../base.h
+graphMinPath.o: ../graph.h ../graphMinPath.h ../array.h ../base.h
 dagPartialOrder.o: ../graph.h ../dagPartialOrder.h ../base.h
 set.o: ../set.h ../base.h
 list.o: ../list.h ../base.h
@@ -135,7 +135,7 @@ clean:
 	@ rm -f $(TEST_GRAPH)
 	@ rm -f $(TEST_UGRAPH)
 	@ rm -f $(TEST_SUBGRAPHISO)
-	@ rm -f $(TEST_DIJKSTRA)
+	@ rm -f $(TEST_GRAPHMINPATH)
 	@ rm -f $(TEST_DAGPARTIALORDER)
 	@ rm -f $(TEST_SET)
 	@ rm -f $(TEST_LIST)
