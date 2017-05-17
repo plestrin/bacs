@@ -75,6 +75,7 @@ int main(void){
 	struct node* 	node8;
 	struct node* 	node9;
 	struct node* 	node10;
+	struct node* 	node11;
 	struct array 	path_array;
 
 	graph = graph_create(1, 0);
@@ -91,30 +92,33 @@ int main(void){
 	node8  = graph_add_node(graph, "h");
 	node9  = graph_add_node(graph, "i");
 	node10 = graph_add_node(graph, "j");
+	node11 = graph_add_node(graph, "k");
 
 	/* add edges */
-	graph_add_edge_(graph, node1, node6);
-	graph_add_edge_(graph, node6, node7);
-	graph_add_edge_(graph, node7, node2);
-	graph_add_edge_(graph, node3, node4);
-	graph_add_edge_(graph, node4, node2);
-	graph_add_edge_(graph, node3, node8);
-	graph_add_edge_(graph, node8, node5);
-	graph_add_edge_(graph, node9, node3);
-	graph_add_edge_(graph, node9, node5);
-	graph_add_edge_(graph, node5, node10);
+	graph_add_edge_(graph, node1 , node6 );
+	graph_add_edge_(graph, node6 , node7 );
+	graph_add_edge_(graph, node7 , node2 );
+	graph_add_edge_(graph, node3 , node4 );
+	graph_add_edge_(graph, node4 , node2 );
+	graph_add_edge_(graph, node3 , node8 );
+	graph_add_edge_(graph, node8 , node5 );
+	graph_add_edge_(graph, node9 , node3 );
+	graph_add_edge_(graph, node9 , node5 );
+	graph_add_edge_(graph, node5 , node10);
+	graph_add_edge_(graph, node11, node9 );
+	graph_add_edge_(graph, node11, node5 );
 
 	/* print graph */
 	if (graphPrintDot_print(graph, "path.dot", NULL)){
 		log_err("unable to print graph to dot format");
 	}
 
-	#define search_print_path(node1_, node2_) 																											\
+	#define search_print_path(node1_, node2_, alpha_) 																									\
 	{ 																																					\
 		uint32_t 		i_; 																															\
 		struct minPath* path_; 																															\
 																																						\
-		if (graphMinPath_bfs(graph, &(node1_), 1, &(node2_), 1, &path_array, NULL)){ 																	\
+		if (graphMinPath_bfs(graph, &(node1_), 1, &(node2_), 1, &path_array, (alpha_), NULL)){ 															\
 			log_err_m("error while searching a path between (%c, %c)", *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 					\
 		} 																																				\
 		else if (!array_get_length(&path_array)){ 																										\
@@ -124,6 +128,9 @@ int main(void){
 			log_info_m("%u path(s) between (%c, %c)", array_get_length(&path_array), *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
 			for (i_ = 0; i_ < array_get_length(&path_array); i_ ++){ 																					\
 				path_ = array_get(&path_array, i_); 																									\
+				if (minPath_check(path_)){ 																												\
+					log_err("unable to check path"); 																									\
+				} 																																		\
 				putchar('\t'); path_print(path_->step_array); putchar('\n'); 																			\
 				array_delete(path_->step_array); 																										\
 			} 																																			\
@@ -136,13 +143,38 @@ int main(void){
 		return EXIT_FAILURE;
 	}
 
-	search_print_path(node10, node2)
-	search_print_path(node9 , node1)
-	search_print_path(node1 , node5)
-	search_print_path(node2 , node5)
-	search_print_path(node3 , node5)
-	search_print_path(node1 , node3)
-	search_print_path(node2 , node1)
+	printf("*** Alpha is equal to 0 ***\n");
+
+	search_print_path(node10, node2, 0)
+	search_print_path(node9 , node1, 0)
+	search_print_path(node1 , node5, 0)
+	search_print_path(node2 , node5, 0)
+	search_print_path(node3 , node5, 0)
+	search_print_path(node1 , node3, 0)
+	search_print_path(node2 , node1, 0)
+	search_print_path(node3 , node3, 0)
+
+	printf("*** Alpha is equal to 1 ***\n");
+
+	search_print_path(node10, node2, 1)
+	search_print_path(node9 , node1, 1)
+	search_print_path(node1 , node5, 1)
+	search_print_path(node2 , node5, 1)
+	search_print_path(node3 , node5, 1)
+	search_print_path(node1 , node3, 1)
+	search_print_path(node2 , node1, 1)
+	search_print_path(node3 , node3, 1)
+
+	printf("*** Alpha is equal to 2 ***\n");
+
+	search_print_path(node10, node2, 2)
+	search_print_path(node9 , node1, 2)
+	search_print_path(node1 , node5, 2)
+	search_print_path(node2 , node5, 2)
+	search_print_path(node3 , node5, 2)
+	search_print_path(node1 , node3, 2)
+	search_print_path(node2 , node1, 2)
+	search_print_path(node3 , node3, 2)
 
 	array_clean(&path_array);
 

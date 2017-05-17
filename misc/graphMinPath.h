@@ -26,7 +26,7 @@ struct minPath{
 	struct node* 	reached_node;
 };
 
-int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint64_t(*get_mask)(uint64_t,struct node*,struct edge*,enum minPathDirection));
+int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t alpha, uint64_t(*get_mask)(uint64_t,struct node*,struct edge*,enum minPathDirection));
 
 #define minPath_init(path) ((path)->step_array = array_create(sizeof(struct minPathStep)))
 int32_t minPath_check(struct minPath* path);

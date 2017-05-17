@@ -9,25 +9,26 @@
 #include "arrayMinCoverage.h"
 #include "base.h"
 
-#define MIN_COVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split, 5 is super */
+#define MINCOVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split, 5 is super */
+#define MINPATH_ALPHA 0
 
 static const uint32_t irEdge_distance_array[NB_DEPENDENCE_TYPE] = {
-	0, 						/* DIRECT 		*/
+	0, 							/* DIRECT 		*/
 	GRAPHMINPATH_INVALID_DST, 	/* ADDRESS 		*/
-	0, 						/* SHIFT_DISP 	*/
-	0, 						/* DIVISOR 		*/
-	0, 						/* ROUND_OFF 	*/
-	0, 						/* SUBSTITUTE 	*/
+	0, 							/* SHIFT_DISP 	*/
+	0, 							/* DIVISOR 		*/
+	0, 							/* ROUND_OFF 	*/
+	0, 							/* SUBSTITUTE 	*/
 	GRAPHMINPATH_INVALID_DST 	/* MACRO 		*/
 };
 
 static const uint32_t irNode_distance_array[NB_OPERATION_TYPE] = {
-	0, 						/* IN_REG 	*/
-	0, 						/* IN_MEM 	*/
+	0, 							/* IN_REG 	*/
+	0, 							/* IN_MEM 	*/
 	GRAPHMINPATH_INVALID_DST, 	/* OUT_MEM 	*/
 	GRAPHMINPATH_INVALID_DST, 	/* IMM 		*/
-	0, 						/* INST 	*/
-	0, 						/* SYMBOL 	*/
+	0, 							/* INST 	*/
+	0, 							/* SYMBOL 	*/
 	GRAPHMINPATH_INVALID_DST 	/* NULL 	*/
 };
 
@@ -827,7 +828,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		rrd.cluster_dst = cluster_dst_; 																										\
 		rrd.tag_dst 	= tag_dst_; 																											\
 																																				\
-		if (graphMinPath_bfs(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, irOperation_get_mask)){ 						\
+		if (graphMinPath_bfs(&(ir->graph), buffer_src, nb_src, buffer_dst, nb_dst, &path_array, MINPATH_ALPHA, irOperation_get_mask)){ 			\
 			log_err("Dijkstra min path returned an error code"); 																				\
 		} 																																		\
 		else if ((rrd.length = array_get_length(&path_array) - rrd.offset) > 0){ 																\
@@ -1008,33 +1009,33 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			}
 
 			#ifdef VERBOSE
-			#if MIN_COVERAGE_STRATEGY == 0
+			#if MINCOVERAGE_STRATEGY == 0
 			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
-			#elif MIN_COVERAGE_STRATEGY == 1
+			#elif MINCOVERAGE_STRATEGY == 1
 			result = arrayMinCoverage_greedy_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
-			#elif MIN_COVERAGE_STRATEGY == 2
+			#elif MINCOVERAGE_STRATEGY == 2
 			result = arrayMinCoverage_reshape_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
-			#elif MIN_COVERAGE_STRATEGY == 3
+			#elif MINCOVERAGE_STRATEGY == 3
 			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
-			#elif MIN_COVERAGE_STRATEGY == 4
+			#elif MINCOVERAGE_STRATEGY == 4
 			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
-			#elif MIN_COVERAGE_STRATEGY == 5
+			#elif MINCOVERAGE_STRATEGY == 5
 			result = arrayMinCoverage_super_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
 			#else
 			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
 			#endif
 			#else
-			#if MIN_COVERAGE_STRATEGY == 0
+			#if MINCOVERAGE_STRATEGY == 0
 			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
-			#elif MIN_COVERAGE_STRATEGY == 1
+			#elif MINCOVERAGE_STRATEGY == 1
 			result = arrayMinCoverage_greedy_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
-			#elif MIN_COVERAGE_STRATEGY == 2
+			#elif MINCOVERAGE_STRATEGY == 2
 			result = arrayMinCoverage_reshape_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
-			#elif MIN_COVERAGE_STRATEGY == 3
+			#elif MINCOVERAGE_STRATEGY == 3
 			result = arrayMinCoverage_exact_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
-			#elif MIN_COVERAGE_STRATEGY == 4
+			#elif MINCOVERAGE_STRATEGY == 4
 			result = arrayMinCoverage_split_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
-			#elif MIN_COVERAGE_STRATEGY == 5
+			#elif MINCOVERAGE_STRATEGY == 5
 			result = arrayMinCoverage_super_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
 			#else
 			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
@@ -1206,8 +1207,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file){
 
 				switch(operation->type){
 					case IR_OPERATION_TYPE_INST 	: {
-						fprintf(file, "%p<BR ALIGN=\"LEFT\"/>", (void*)operation);
-						// fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
+						fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
 						nb_element ++;
 						break;
 					}
@@ -1247,7 +1247,7 @@ static void synthesisGraph_clean_node(struct node* node){
 	struct synthesisNode* synthesis_node;
 
 	synthesis_node = synthesisGraph_get_synthesisNode(node);
-	if(synthesis_node->type == SYNTHESISNODETYPE_PATH){
+	if (synthesis_node->type == SYNTHESISNODETYPE_PATH){
 		free(synthesis_node->node_type.path.node_buffer);
 	}
 }
