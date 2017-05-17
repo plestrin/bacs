@@ -40,6 +40,8 @@ class recipe(object):
 				arg = "load trace /home/plt/Documents/bacs/test/" + arg[11:]
 			if arg.startswith("load code signature ../"):
 				arg = "load code signature /home/plt/Documents/bacs/" + arg[23:]
+			if arg.startswith("printDot synthesis "):
+				arg = "printDot synthesis /home/plt/Documents/bacs/test/" + arg[19:]
 			string += arg + "\n"
 		return string
 
