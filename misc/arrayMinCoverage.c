@@ -693,7 +693,7 @@ int32_t arrayMinCoverage_split_wrapper(struct array* array, uint32_t nb_category
 	uint32_t* 				order 			= NULL;
 	int32_t 				result 			= -1;
 	uint32_t 				local_score 	= 0;
-	arrayMinCoverage_search arg[] 			= {(arrayMinCoverage_search)arrayMinCoverage_auto, NULL};
+	arrayMinCoverage_search arg[] 			= {(arrayMinCoverage_search)arrayMinCoverage_split, (arrayMinCoverage_search)arrayMinCoverage_auto};
 
 	if (nb_category == 0){
 		result = 0;

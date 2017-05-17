@@ -10,7 +10,8 @@
 #include "base.h"
 
 #define MINCOVERAGE_STRATEGY 4 /* 0 is random, 1 is greedy, 2 reshape, 3 is exact, 4 is split, 5 is super */
-#define MINPATH_ALPHA 0
+#define MINPATH_ALPHA 1
+#define FALSE_POSITIVE_FILTER_HEURISTIC
 
 static const uint32_t irEdge_distance_array[NB_DEPENDENCE_TYPE] = {
 	0, 							/* DIRECT 		*/
@@ -643,8 +644,6 @@ static int32_t synthesisGraph_add_minPath(struct graph* synthesis_graph, struct 
 	return 0;
 }
 
-#define FALSE_POSITIVE_FILTER_HEURISTIC
-
 #ifdef FALSE_POSITIVE_FILTER_HEURISTIC
 #define MAX_DIRECTION_CHANGE 5
 #define synthesisGraph_false_positive_filter_heuristic(path) (minPath_get_nb_dir_change(path) > MAX_DIRECTION_CHANGE)
@@ -948,50 +947,46 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		}
 	}
 
+	#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
 	for (i = 0, nb_category = 0; i < array_get_length(&rrd_array); i++){
+		uint32_t 		length;
+		struct minPath 	tmp_path;
+
 		rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
+		length = rrd_ptr->length;
 
-		#ifdef FALSE_POSITIVE_FILTER_HEURISTIC
-		{
-			uint32_t 			length = rrd_ptr->length;
-			struct minPath tmp_path;
-
-			for (k = 0; k < length; ){
-				if (!synthesisGraph_false_positive_filter_heuristic((struct minPath*)array_get(&path_array, rrd_ptr->offset + k))){
-					k ++;
-				}
-				else{
-					if (k < length - 1){
-						memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + length - 1), sizeof(struct minPath));
-						memcpy(array_get(&path_array, rrd_ptr->offset + length - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct minPath));
-						memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct minPath));
-					}
-
-					length --;
-				}
+		for (k = 0; k < length; ){
+			if (!synthesisGraph_false_positive_filter_heuristic((struct minPath*)array_get(&path_array, rrd_ptr->offset + k))){
+				k ++;
 			}
+			else{
+				if (k < length - 1){
+					memcpy(&tmp_path, array_get(&path_array, rrd_ptr->offset + length - 1), sizeof(struct minPath));
+					memcpy(array_get(&path_array, rrd_ptr->offset + length - 1), array_get(&path_array, rrd_ptr->offset + k), sizeof(struct minPath));
+					memcpy(array_get(&path_array, rrd_ptr->offset + k), &tmp_path, sizeof(struct minPath));
+				}
 
-			if (length < rrd_ptr->length){
-				log_debug_m("filtering %u false positive path(s)", rrd_ptr->length - length);
-				rrd_ptr->length = length;
+				length --;
 			}
 		}
-		#endif
 
-		if (rrd_ptr->length == 1){
-			if (synthesisGraph_add_minPath(&(synthesis_graph->graph), rrd_ptr->cluster_src->synthesis_graph_node, rrd_ptr->tag_src, rrd_ptr->cluster_dst->synthesis_graph_node, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset))){
-				log_err("unable add path to synthesisGraph");
-			}
+		if (length < rrd_ptr->length){
+			log_warn_m("filtering %u false positive path(s)", rrd_ptr->length - length);
+			rrd_ptr->length = length;
 		}
-		else if (rrd_ptr->length > 1){
+
+		if (rrd_ptr->length){
 			nb_category ++;
 		}
 	}
+	#else
+	nb_category = array_get_length(&rrd_array);
+	#endif
 
 	if (nb_category){
 		struct categoryDesc* 	desc_buffer;
 		int32_t 				result;
-		#ifdef VERBOSE
+		#if defined VERBOSE || defined EXTRA_CHECK
 		uint32_t 				score;
 		#endif
 
@@ -1001,14 +996,14 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		else{
 			for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 				rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-				if (rrd_ptr->length > 1){
+				if (rrd_ptr->length){
 					desc_buffer[j].offset 		= rrd_ptr->offset;
 					desc_buffer[j].nb_element 	= rrd_ptr->length;
 					j ++;
 				}
 			}
 
-			#ifdef VERBOSE
+			#if defined VERBOSE || defined EXTRA_CHECK
 			#if MINCOVERAGE_STRATEGY == 0
 			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
 			#elif MINCOVERAGE_STRATEGY == 1
@@ -1023,6 +1018,11 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			result = arrayMinCoverage_super_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, &score);
 			#else
 			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
+			#endif
+			#ifdef EXTRA_CHECK
+			if (score != arrayMinCoverage_eval(&path_array, nb_category, desc_buffer, minPathStep_compare)){
+				log_err("score check does not match!");
+			}
 			#endif
 			#else
 			#if MINCOVERAGE_STRATEGY == 0
@@ -1052,7 +1052,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 
 				for (i = 0, j = 0; i < array_get_length(&rrd_array); i++){
 					rrd_ptr = (struct relationResultDescriptor*)array_get(&rrd_array, i);
-					if (rrd_ptr->length > 1){
+					if (rrd_ptr->length){
 						if (synthesisGraph_add_minPath(&(synthesis_graph->graph), rrd_ptr->cluster_src->synthesis_graph_node, rrd_ptr->tag_src, rrd_ptr->cluster_dst->synthesis_graph_node, rrd_ptr->tag_dst, array_get(&path_array, rrd_ptr->offset + desc_buffer[j].choice))){
 							log_err("unable add path to synthesisGraph");
 						}
