@@ -1,6 +1,7 @@
+include ../../path.mk
+
 PROG 	:= python_cbc_aes.py
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tool/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis 
 
@@ -8,7 +9,7 @@ all: search
 
 trace: $(WHL) $(PROG)
 	@ rm -rf trace
-	$(PIN) -t $(TOOL) -w $(WHL) -m -o trace -- python $(PROG)
+	$(PIN_BIN) -t $(TOOL) -w $(WHL) -m -o trace -- python $(PROG)
 
 $(WHL):
 	echo $$(readlink -f $(PROG)) > $(WHL)

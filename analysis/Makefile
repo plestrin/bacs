@@ -1,3 +1,5 @@
+include ../paths.mk
+
 PROG_NAME		:= analysis
 ifeq ($(DEBUG),)
 DEBUG 			:= 1
@@ -18,9 +20,8 @@ IOREL 			:= 0
 endif
 MISC_DIR 		:= ../misc/
 SHARED_DIR 		:= ../shared/
-XED_DIR 		:= /home/plt/Documents/tools/xed-2016-02-02-lin-ia32/
-INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_DIR)include/
-INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_DIR)include/
+INCLUDE_SRC		:= -I$(MISC_DIR) -I$(SHARED_DIR) -I$(XED_INCLUDE)
+INCLUDE_SHARED	:= -I$(MISC_DIR) -I$(XED_INCLUDE)
 
 LDFLAGS			:= -lyajl -lelf -lxed
 CFLAGS			:= -W -Wall -pedantic -Wextra -D$(ARCHI) -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE

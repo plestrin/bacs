@@ -1,7 +1,7 @@
 # Installation Requirements
 
 ## LightTracer PIN
-* PIN: version 3.0 or 2.14
+* PIN
 * XED
 * For Windows: Visual Studio Express 2013 MSVC 18.00, GNU Make, PIN version 2.14
 

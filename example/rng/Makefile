@@ -1,9 +1,10 @@
+include ../../paths.mk
+
 CC		:= gcc
 CFLAGS	:= -W -Wall -pedantic -Wextra -O2 -std=gnu99
 LDFLAGS	:= -lcrypto
 PROG 	:= build/rng
 WHL 	:= whiteList.lst
-PIN 	:= /home/plt/Documents/tools/pin-3.2-81205-gcc-linux/pin
 TOOL 	:= ../../lightTracer_pin/obj-ia32/lightTracer.so
 ANAL 	:= ../../test/analysis 
 
@@ -20,7 +21,10 @@ build/%.o: src/%.c
 
 trace: $(WHL) $(PROG)
 	@ rm -rf trace
-	$(PIN) -t $(TOOL) -w $(WHL) -m -o trace -- $(PROG)
+	$(PIN_BIN) -t $(TOOL) -w $(WHL) -m -o trace -- $(PROG)
+
+$(ANAL):
+	@ cd $(dir $(ANAL)) && $(MAKE)
 
 search: $(ANAL) trace
 	@ $(ANAL) "load code signature ../../reference/codeSignature_sha1.txt" 		\
