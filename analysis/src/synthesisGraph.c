@@ -1019,11 +1019,6 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 			#else
 			#error Incorrect strategy number. Valid values are: 0, 1, 2, 3, 4, 5
 			#endif
-			#ifdef EXTRA_CHECK
-			if (score != arrayMinCoverage_eval(&path_array, nb_category, desc_buffer, minPathStep_compare)){
-				log_err("score check does not match!");
-			}
-			#endif
 			#else
 			#if MINCOVERAGE_STRATEGY == 0
 			result = arrayMinCoverage_rand_wrapper(&path_array, nb_category, desc_buffer, minPathStep_compare, NULL);
@@ -1046,6 +1041,12 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 				log_err("minCoverage function returned an error code");
 			}
 			else{
+				#ifdef EXTRA_CHECK
+				if (score != arrayMinCoverage_eval(&path_array, nb_category, desc_buffer, minPathStep_compare)){
+					log_err("score check does not match!");
+				}
+				#endif
+
 				#ifdef VERBOSE
 				log_info_m("min coverage score is %u", score);
 				#endif
