@@ -56,7 +56,7 @@ static inline void minPathIntRoot_clean(struct minPathIntRoot* root, uint32_t al
 	}
 }
 
-static inline void minPathIntItem_add_step(struct minPathIntItem* int_item, struct edge* edge, enum minPathDirection dir, uint64_t mask){
+static inline void minPathIntItem_add_step(struct minPathIntItem* int_item, struct edge* edge, int32_t dir, uint64_t mask){
 	struct minPathMultiStep* multi_step;
 
 	if ((multi_step = malloc(sizeof(struct minPathMultiStep))) == NULL){
@@ -101,10 +101,10 @@ static uint32_t minPath_add_recursive(struct array* path_array, struct minPath* 
 			return nb_path;
 		}
 
-		if (step->dir == PATH_SRC_TO_DST){
+		if (step->dir == DIR_SRC_TO_DST){
 			int_root = (struct minPathIntRoot*)(edge_get_src(step->edge)->ptr);
 		}
-		else if (step->dir == PATH_DST_TO_SRC){
+		else if (step->dir == DIR_DST_TO_SRC){
 			int_root = (struct minPathIntRoot*)(edge_get_dst(step->edge)->ptr);
 		}
 		else{
@@ -179,10 +179,10 @@ static uint32_t minPath_add_recursive(struct array* path_array, struct minPath* 
 
 #ifdef EXTRA_CHECK
 #define minPath_add_(path_array, node, edge, dir, dst, nb_path, alpha) minPath_add(path_array, node, edge, dir, dst, nb_path, alpha)
-static uint32_t minPath_add(struct array* path_array, struct node* node, struct edge* edge, enum minPathDirection dir, uint32_t dst, uint32_t nb_path, uint32_t alpha)
+static uint32_t minPath_add(struct array* path_array, struct node* node, struct edge* edge, uint32_t dir, uint32_t dst, uint32_t nb_path, uint32_t alpha)
 #else
 #define minPath_add_(path_array, node, edge, dir, dst, nb_path, alpha) minPath_add(path_array, node, edge, dir, dst, nb_path)
-static uint32_t minPath_add(struct array* path_array, struct node* node, struct edge* edge, enum minPathDirection dir, uint32_t dst, uint32_t nb_path)
+static uint32_t minPath_add(struct array* path_array, struct node* node, struct edge* edge, uint32_t dir, uint32_t dst, uint32_t nb_path)
 #endif
 {
 	struct minPath 		min_path;
@@ -210,7 +210,7 @@ static uint32_t minPath_add(struct array* path_array, struct node* node, struct 
 	}
 }
 
-int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t alpha, uint64_t(*get_mask)(uint64_t,struct node*,struct edge*,enum minPathDirection)){
+int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t nb_src, struct node** buffer_dst, uint32_t nb_dst, struct array* path_array, uint32_t alpha, uint64_t(*get_mask)(uint64_t,struct edge*,uint32_t)){
 	uint8_t* 				internals;
 	struct minPathIntItem* 	curr_orbital;
 	struct minPathIntItem* 	next_orbital;
@@ -246,7 +246,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 		int_root_cursor->dst = 0;
 
 		if (int_root_cursor->sink){
-			nb_min_path = minPath_add_(path_array, buffer_src[i], NULL, PATH_INVALID, 0, nb_min_path, alpha);
+			nb_min_path = minPath_add_(path_array, buffer_src[i], NULL, DIR_INVALID, 0, nb_min_path, alpha);
 			min_dst = 0;
 		}
 		else{
@@ -261,7 +261,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 
 			for (edge_cursor = node_get_head_edge_src(curr_orbital->root->node); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 				if (get_mask != NULL){
-					mask = get_mask(curr_orbital->mask, curr_orbital->root->node, edge_cursor, PATH_SRC_TO_DST);
+					mask = get_mask(curr_orbital->mask, edge_cursor, DIR_SRC_TO_DST);
 					if (!mask){
 						continue;
 					}
@@ -274,7 +274,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 				int_root_cursor = (struct minPathIntRoot*)node_cursor->ptr;
 
 				if (int_root_cursor->sink){
-					nb_min_path = minPath_add_(path_array, node_cursor, edge_cursor, PATH_SRC_TO_DST, dst, nb_min_path, alpha);
+					nb_min_path = minPath_add_(path_array, node_cursor, edge_cursor, DIR_SRC_TO_DST, dst, nb_min_path, alpha);
 					if (min_dst == GRAPHMINPATH_INVALID_DST){
 						min_dst = dst;
 					}
@@ -282,7 +282,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 				}
 
 				if (int_root_cursor->dst == GRAPHMINPATH_INVALID_DST){
-					minPathIntItem_add_step(int_root_cursor->item_buffer, edge_cursor, PATH_SRC_TO_DST, mask);
+					minPathIntItem_add_step(int_root_cursor->item_buffer, edge_cursor, DIR_SRC_TO_DST, mask);
 
 					int_root_cursor->dst = dst;
 					int_root_cursor->item_buffer[0].next = next_orbital;
@@ -294,13 +294,13 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 						next_orbital = int_root_cursor->item_buffer + dst - int_root_cursor->dst;
 					}
 
-					minPathIntItem_add_step(int_root_cursor->item_buffer + dst - int_root_cursor->dst, edge_cursor, PATH_SRC_TO_DST, mask);
+					minPathIntItem_add_step(int_root_cursor->item_buffer + dst - int_root_cursor->dst, edge_cursor, DIR_SRC_TO_DST, mask);
 				}
 			}
 
 			for (edge_cursor = node_get_head_edge_dst(curr_orbital->root->node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 				if (get_mask != NULL){
-					mask = get_mask(curr_orbital->mask, curr_orbital->root->node, edge_cursor, PATH_DST_TO_SRC);
+					mask = get_mask(curr_orbital->mask, edge_cursor, DIR_DST_TO_SRC);
 					if (!mask){
 						continue;
 					}
@@ -313,7 +313,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 				int_root_cursor = (struct minPathIntRoot*)node_cursor->ptr;
 
 				if (int_root_cursor->sink){
-					nb_min_path = minPath_add_(path_array, node_cursor, edge_cursor, PATH_DST_TO_SRC, dst, nb_min_path, alpha);
+					nb_min_path = minPath_add_(path_array, node_cursor, edge_cursor, DIR_DST_TO_SRC, dst, nb_min_path, alpha);
 					if (min_dst == GRAPHMINPATH_INVALID_DST){
 						min_dst = dst;
 					}
@@ -321,7 +321,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 				}
 
 				if (int_root_cursor->dst == GRAPHMINPATH_INVALID_DST){
-					minPathIntItem_add_step(int_root_cursor->item_buffer, edge_cursor, PATH_DST_TO_SRC, mask);
+					minPathIntItem_add_step(int_root_cursor->item_buffer, edge_cursor, DIR_DST_TO_SRC, mask);
 
 					int_root_cursor->dst = dst;
 					int_root_cursor->item_buffer[0].next = next_orbital;
@@ -333,7 +333,7 @@ int32_t graphMinPath_bfs(struct graph* graph, struct node** buffer_src, uint32_t
 						next_orbital = int_root_cursor->item_buffer + dst - int_root_cursor->dst;
 					}
 
-					minPathIntItem_add_step(int_root_cursor->item_buffer + dst - int_root_cursor->dst, edge_cursor, PATH_DST_TO_SRC, mask);
+					minPathIntItem_add_step(int_root_cursor->item_buffer + dst - int_root_cursor->dst, edge_cursor, DIR_DST_TO_SRC, mask);
 				}
 			}
 		}
@@ -377,7 +377,7 @@ int32_t minPath_check(struct minPath* path){
 	for (i = array_get_length(path->step_array), next_node = NULL; i > 0; i--){
 		step = array_get(path->step_array, i - 1);
 		switch (step->dir){
-			case PATH_SRC_TO_DST 	: {
+			case DIR_SRC_TO_DST 	: {
 				if (next_node != NULL){
 					if (edge_get_src(step->edge) != next_node){
 						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
@@ -388,7 +388,7 @@ int32_t minPath_check(struct minPath* path){
 
 				break;
 			}
-			case PATH_DST_TO_SRC 	: {
+			case DIR_DST_TO_SRC 	: {
 				if (next_node != NULL){
 					if (edge_get_dst(step->edge) != next_node){
 						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
@@ -399,7 +399,7 @@ int32_t minPath_check(struct minPath* path){
 
 				break;
 			}
-			case PATH_INVALID 		: {
+			default					: {
 				log_err("step direction is invalid");
 				return -1;
 			}

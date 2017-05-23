@@ -38,7 +38,7 @@ static void path_print(struct array* array){
 	for (i = array_get_length(array); i > 0; i--){
 		step = array_get(array, i - 1);
 		switch (step->dir){
-			case PATH_SRC_TO_DST : {
+			case DIR_SRC_TO_DST : {
 				if (i == array_get_length(array)){
 					printf("%c -> %c", *(char*)node_get_data(edge_get_src(step->edge)), *(char*)node_get_data(edge_get_dst(step->edge)));
 				}
@@ -47,7 +47,7 @@ static void path_print(struct array* array){
 				}
 				break;
 			}
-			case PATH_DST_TO_SRC : {
+			case DIR_DST_TO_SRC : {
 				if (i == array_get_length(array)){
 					printf("%c <- %c", *(char*)node_get_data(edge_get_dst(step->edge)), *(char*)node_get_data(edge_get_src(step->edge)));
 				}
@@ -56,7 +56,7 @@ static void path_print(struct array* array){
 				}
 				break;
 			}
-			case PATH_INVALID : {
+			default 			: {
 				break;
 			}
 		}

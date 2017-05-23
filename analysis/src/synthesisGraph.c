@@ -33,114 +33,11 @@ static const uint32_t irNode_distance_array[NB_OPERATION_TYPE] = {
 	GRAPHMINPATH_INVALID_DST 	/* NULL 	*/
 };
 
-static inline uint64_t irInstruction_and_get_mask(struct node* node_dst, uint64_t mask){
-	uint64_t 			result = 0xffffffffffffffff;
-	struct edge* 		edge_cursor;
-	struct irOperation* operand;
-
-	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		operand = ir_node_get_operation(edge_get_src(edge_cursor));
-		if (operand->type == IR_OPERATION_TYPE_IMM){
-			result &= ir_imm_operation_get_unsigned_value(operand);
-		}
-	}
-
-	return result & mask;
-}
-
-static inline uint64_t irInstruction_movzx_get_mask(struct node* node_src, uint64_t mask, enum minPathDirection dir){
-	if (dir == PATH_SRC_TO_DST){
-		return mask;
-	}
-	else{
-		return mask & bitmask64(ir_node_get_operation(node_src)->size);
-	}
-}
-
-static inline uint64_t irInstruction_or_get_mask(struct node* node_dst, uint64_t mask){
-	uint64_t 			result = 0;
-	struct edge* 		edge_cursor;
-	struct irOperation* operand;
-
-	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		operand = ir_node_get_operation(edge_get_src(edge_cursor));
-		if (operand->type == IR_OPERATION_TYPE_IMM){
-			result |= ir_imm_operation_get_unsigned_value(operand);
-		}
-	}
-
-	return (~result) & mask;
-}
-
-static inline uint64_t irInstruction_part1_x_get_mask(struct node* node_dst, uint64_t mask, enum minPathDirection dir){
-	if (dir == PATH_SRC_TO_DST){
-		return mask & bitmask64(ir_node_get_operation(node_dst)->size);
-	}
-	else{
-		return mask;
-	}
-}
-
-static inline uint64_t irInstruction_part2_8_get_mask(struct node* node_dst, uint64_t mask, enum minPathDirection dir){
-	if (dir == PATH_SRC_TO_DST){
-		return (mask >> 8) & bitmask64(ir_node_get_operation(node_dst)->size);
-	}
-	else{
-		return mask << 8;
-	}
-}
-
-static inline uint64_t irInstruction_shl_get_mask(struct node* node_dst, uint64_t mask, enum minPathDirection dir){
-	uint32_t 			disp = 0;
-	struct edge* 		edge_cursor;
-	struct irOperation* operand;
-
-	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-			operand = ir_node_get_operation(edge_get_src(edge_cursor));
-			if (operand->type == IR_OPERATION_TYPE_IMM){
-				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
-			}
-			break;
-		}
-	}
-
-	if (dir == PATH_SRC_TO_DST){
-		return (mask << disp) & bitmask64(ir_node_get_operation(node_dst)->size);
-	}
-	else{
-		return mask >> disp;
-	}
-}
-
-static inline uint64_t irInstruction_rol_get_mask(struct node* node_dst, uint64_t mask, enum minPathDirection dir){
-	uint32_t 			disp = 0;
-	struct edge* 		edge_cursor;
-	struct irOperation* operand;
-
-	for (edge_cursor = node_get_head_edge_dst(node_dst); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-			operand = ir_node_get_operation(edge_get_src(edge_cursor));
-			if (operand->type == IR_OPERATION_TYPE_IMM){
-				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
-			}
-			break;
-		}
-	}
-
-	if (dir == PATH_SRC_TO_DST){
-		return ((mask << disp) & bitmask64(ir_node_get_operation(node_dst)->size)) | (mask >> (ir_node_get_operation(node_dst)->size - disp));
-	}
-	else{
-		return (mask >> disp) | ((mask << (ir_node_get_operation(node_dst)->size - disp)) & bitmask64(ir_node_get_operation(node_dst)->size));
-	}
-}
-
-static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct edge* edge, enum minPathDirection dir){
-	struct node* 			node_src;
+static uint64_t irOperation_get_mask(uint64_t mask, struct edge* edge, uint32_t dir){
 	struct node* 			node_dst;
 	struct irOperation* 	operation;
 	struct irDependence* 	dependence;
+	uint64_t 				result;
 
 	dependence = ir_edge_get_dependence(edge);
 	if (irEdge_distance_array[dependence->type] == GRAPHMINPATH_INVALID_DST){
@@ -148,39 +45,39 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 	}
 
 	switch(dir){
-		case PATH_SRC_TO_DST : {
+		case DIR_SRC_TO_DST : {
 			if (irNode_distance_array[ir_node_get_operation(edge_get_dst(edge))->type] == GRAPHMINPATH_INVALID_DST){
 				return 0;
 			}
-			node_src = node;
-			node_dst = edge_get_dst(edge);
+			result = bitmask64(ir_node_get_operation(edge_get_dst(edge))->size);
 			break;
 		}
-		case PATH_DST_TO_SRC : {
+		case DIR_DST_TO_SRC : {
 			if (irNode_distance_array[ir_node_get_operation(edge_get_src(edge))->type] == GRAPHMINPATH_INVALID_DST){
 				return 0;
 			}
-			node_src = edge_get_src(edge);
-			node_dst = node;
+			result = bitmask64(ir_node_get_operation(edge_get_src(edge))->size);
 			break;
 		}
-		default : {
+		default 			: {
 			log_err("this case is not supposed to happen");
 			return 0;
 		}
 	}
 
+	node_dst = edge_get_dst(edge);
 	operation = ir_node_get_operation(node_dst);
+
 	switch (operation->type){
 		case IR_OPERATION_TYPE_INST : {
 			switch (operation->operation_type.inst.opcode){
 				case IR_ADC 		: {break;}
 				case IR_ADD 		: {break;}
 				case IR_AND 		: {
-					return irInstruction_and_get_mask(node_dst, mask);
+					return result & irInfluenceMask_operation_and(node_dst, mask);
 				}
 				case IR_CMOV 		: {
-					return mask;
+					return result & irInfluenceMask_operation_cmov(node_dst, mask, dir);
 				}
 				case IR_DIVQ 		: {break;}
 				case IR_DIVR 		: {break;}
@@ -188,46 +85,44 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 				case IR_IDIVR 		: {break;}
 				case IR_IMUL 		: {break;}
 				case IR_MOVZX 		: {
-					return irInstruction_movzx_get_mask(node_src, mask, dir);
+					return result & irInfluenceMask_operation_movzx(node_dst, mask, dir);
 				}
 				case IR_MUL 		: {break;}
 				case IR_NEG 		: {break;}
 				case IR_NOT 		: {
-					return mask;
+					return result & irInfluenceMask_operation_not(node_dst, mask, dir);
 				}
 				case IR_OR 			: {
-					return irInstruction_or_get_mask(node_dst, mask);
+					return result & irInfluenceMask_operation_or(node_dst, mask);
 				}
 				case IR_PART1_8 	: {
-					return irInstruction_part1_x_get_mask(node_dst, mask, dir);
+					return result & irInfluenceMask_operation_part1_8(node_dst, mask, dir);
 				}
 				case IR_PART2_8 	: {
-					return irInstruction_part2_8_get_mask(node_dst, mask, dir);
+					return result & irInfluenceMask_operation_part2_8(node_dst, mask, dir);
 				}
 				case IR_PART1_16 	: {
-					return irInstruction_part1_x_get_mask(node_dst, mask, dir);
+					return result & irInfluenceMask_operation_part1_16(node_dst, mask, dir);
 				}
 				case IR_ROL 		: {
-					return irInstruction_rol_get_mask(node_dst, mask, dir);
+					return result & irInfluenceMask_operation_rol(node_dst, mask, dir);
 				}
 				case IR_ROR 		: {
-					return irInstruction_rol_get_mask(node_dst, mask, minPathDirection_invert(dir));
+					return result & irInfluenceMask_operation_ror(node_dst, mask, dir);
 				}
 				case IR_SHL 		: {
-					return irInstruction_shl_get_mask(node_dst, mask, dir);
+					return result & irInfluenceMask_operation_shl(node_dst, mask, dir);
 				}
 				case IR_SHLD 		: {break;}
 				case IR_SHR 		: {
-					return irInstruction_shl_get_mask(node_dst, mask, minPathDirection_invert(dir));
+					return result & irInfluenceMask_operation_shr(node_dst, mask, dir);
 				}
 				case IR_SHRD 		: {break;}
 				case IR_SUB 		: {break;}
 				case IR_XOR 		: {
-					return mask;
+					return result & irInfluenceMask_operation_xor(node_src, mask, dir);
 				}
-				default 			: {
-					break;
-				}
+				default 			: {break;}
 			}
 			break;
 		}
@@ -236,7 +131,7 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct node* node, struct ed
 		}
 	}
 
-	return bitmask64(operation->size);
+	return result;
 }
 
 static int32_t signatureCluster_init(struct signatureCluster* cluster, struct symbolMapping* mapping, struct node* node){
@@ -592,7 +487,7 @@ static int32_t synthesisGraph_add_minPath(struct graph* synthesis_graph, struct 
 
 	for (i = array_get_length(path->step_array); i > 0; i --){
 		step = array_get(path->step_array, i - 1);
-		if (step->dir == PATH_SRC_TO_DST){
+		if (step->dir == DIR_SRC_TO_DST){
 			if (i > 1){
 				new_node = synthesisGraph_add_ir_node(synthesis_graph, edge_get_dst(step->edge));
 				if (new_node == NULL){
@@ -683,7 +578,7 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 		}
 		else{
 			first_step = (struct minPathStep*)array_get(path->step_array, array_get_length(path->step_array) - 1);
-			if (first_step->dir == PATH_SRC_TO_DST){
+			if (first_step->dir == DIR_SRC_TO_DST){
 				starting_node = edge_get_src(first_step->edge);
 			}
 			else{
@@ -709,7 +604,7 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 
 		found:
 		step.edge = edge_cursor;
-		step.dir = PATH_DST_TO_SRC;
+		step.dir = DIR_DST_TO_SRC;
 
 		if (array_add(path->step_array, &step) < 0){
 			log_err("unable to add element to array");
@@ -759,7 +654,7 @@ static void minPath_add_input_stop(struct array* path_array, uint32_t offset, ui
 		}
 
 		step.edge = edge_cursor;
-		step.dir = PATH_SRC_TO_DST;
+		step.dir = DIR_SRC_TO_DST;
 
 		if (array_add(step_array, &step) < 0){
 			log_err("unable to add element to array");

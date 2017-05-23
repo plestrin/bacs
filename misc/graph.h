@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "base.h"
+
 /* One can use a better allocator */
 #define graph_allocate_edge(graph) 		(struct edge*)malloc(sizeof(struct edge) + (graph)->edge_data_size)
 #define graph_allocate_node(graph)		(struct node*)malloc(sizeof(struct node) + (graph)->node_data_size)
@@ -56,24 +58,24 @@ struct graph{
 
 struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size);
 
-#define graph_init(graph, node_data_size_, edge_data_size_)																				\
-	(graph)->node_linkedList_head 	= NULL; 																							\
-	(graph)->node_linkedList_tail 	= NULL; 																							\
-	(graph)->nb_node 				= 0; 																								\
-	(graph)->nb_edge 				= 0; 																								\
-	(graph)->node_data_size 		= node_data_size_; 																					\
-	(graph)->edge_data_size 		= edge_data_size_; 																					\
-	(graph)->dotPrint_prologue 		= NULL; 																							\
-	(graph)->dotPrint_node_data 	= NULL; 																							\
-	(graph)->dotPrint_edge_data 	= NULL; 																							\
-	(graph)->dotPrint_epilogue 		= NULL; 																							\
-	(graph)->node_clean_data 		= NULL; 																							\
+#define graph_init(graph, node_data_size_, edge_data_size_)														\
+	(graph)->node_linkedList_head 	= NULL; 																	\
+	(graph)->node_linkedList_tail 	= NULL; 																	\
+	(graph)->nb_node 				= 0; 																		\
+	(graph)->nb_edge 				= 0; 																		\
+	(graph)->node_data_size 		= node_data_size_; 															\
+	(graph)->edge_data_size 		= edge_data_size_; 															\
+	(graph)->dotPrint_prologue 		= NULL; 																	\
+	(graph)->dotPrint_node_data 	= NULL; 																	\
+	(graph)->dotPrint_edge_data 	= NULL; 																	\
+	(graph)->dotPrint_epilogue 		= NULL; 																	\
+	(graph)->node_clean_data 		= NULL; 																	\
 	(graph)->edge_clean_data 		= NULL;
 
-#define graph_register_dotPrint_callback(graph, prologue, node_data, edge_data, epilogue) 												\
-	(graph)->dotPrint_prologue 	= (prologue); 																							\
-	(graph)->dotPrint_node_data = (node_data); 																							\
-	(graph)->dotPrint_edge_data = (edge_data); 																							\
+#define graph_register_dotPrint_callback(graph, prologue, node_data, edge_data, epilogue) 						\
+	(graph)->dotPrint_prologue 	= (prologue); 																	\
+	(graph)->dotPrint_node_data = (node_data); 																	\
+	(graph)->dotPrint_edge_data = (edge_data); 																	\
 	(graph)->dotPrint_epilogue 	= (epilogue);
 
 #define graph_register_node_clean_call_back(graph, callback) ((graph)->node_clean_data = callback)
@@ -88,8 +90,8 @@ struct node* graph_insert_node(struct graph* graph, struct node* root, void* dat
 void graph_transfert_src_edge(struct graph* graph, struct node* node1, struct node* node2);
 void graph_transfert_dst_edge(struct graph* graph, struct node* node1, struct node* node2);
 
-#define graph_merge_node(graph, node1, node2) 																							\
-	graph_transfert_src_edge(graph, node1, node2); 																						\
+#define graph_merge_node(graph, node1, node2) 																	\
+	graph_transfert_src_edge(graph, node1, node2); 																\
 	graph_transfert_dst_edge(graph, node1, node2);
 
 int32_t graph_copy_src_edge(struct graph* graph, struct node* node1, struct node* node2);
@@ -122,13 +124,19 @@ int32_t graph_copy(struct graph* graph_dst, const struct graph* graph_src, int32
 struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
 int32_t graph_concat(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
 
-#define graph_clean(graph) 																												\
-	while((graph)->node_linkedList_head != NULL){ 																						\
-		graph_remove_node((graph), (graph)->node_linkedList_head); 																		\
+#define graph_clean(graph) 																						\
+	while((graph)->node_linkedList_head != NULL){ 																\
+		graph_remove_node((graph), (graph)->node_linkedList_head); 												\
 	}
 
-#define graph_delete(graph) 																											\
-	graph_clean(graph); 																												\
+#define graph_delete(graph) 																					\
+	graph_clean(graph); 																						\
 	free(graph);
+
+#define DIR_SRC_TO_DST 	0x55555555
+#define DIR_DST_TO_SRC 	0xaaaaaaaa
+#define DIR_INVALID 	0x00000000
+
+#define edgeDirection_invert(dir) rotatel32(dir, 1)
 
 #endif
