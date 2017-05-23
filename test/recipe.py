@@ -33,6 +33,9 @@ class recipe(object):
 
 	def __str__(self):
 		string = ""
+
+		regex_print_synthesis = re.compile(r"^printDot synthesis ([0-9]+ |)")
+
 		for arg in self.search_arg:
 			if arg == "exit":
 				continue
@@ -40,8 +43,7 @@ class recipe(object):
 				arg = "load trace /home/plt/Documents/bacs/test/" + arg[11:]
 			if arg.startswith("load code signature ../"):
 				arg = "load code signature /home/plt/Documents/bacs/" + arg[23:]
-			if arg.startswith("printDot synthesis "):
-				arg = "printDot synthesis /home/plt/Documents/bacs/test/" + arg[19:]
+			arg = regex_print_synthesis.sub(r"printDot synthesis \1/home/plt/Documents/bacs/test/", arg)
 			string += arg + "\n"
 		return string
 
