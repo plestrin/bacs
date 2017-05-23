@@ -245,52 +245,6 @@ static int32_t irNormalize_fold_constant(struct ir* ir){
 
 #if IR_NORMALIZE_DETECT_CST_EXPRESSION == 1
 
-static void irNormalize_update_mask_and(struct node* node){
-	struct edge* 		edge_cursor;
-	struct irOperation* operation_cursor;
-
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
-		if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
-			*(uint64_t*)(node->ptr) &= ir_imm_operation_get_unsigned_value(operation_cursor);
-		}
-	}
-}
-
-static void irNormalize_update_mask_shl(struct node* node){
-	struct edge* 		edge_cursor;
-	struct irOperation* operation_cursor;
-
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
-			if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
-				*(uint64_t*)(node->ptr) = *(uint64_t*)(node->ptr) >> ir_imm_operation_get_unsigned_value(operation_cursor);
-			}
-			else{
-				*(uint64_t*)(node->ptr) = bitmask64(ir_node_get_operation(node)->size);
-			}
-		}
-	}
-}
-
-static void irNormalize_update_mask_shr(struct node* node){
-	struct edge* 		edge_cursor;
-	struct irOperation* operation_cursor;
-
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
-		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
-			operation_cursor = ir_node_get_operation(edge_get_src(edge_cursor));
-			if (operation_cursor->type == IR_OPERATION_TYPE_IMM){
-				*(uint64_t*)(node->ptr) = (*(uint64_t*)(node->ptr) << ir_imm_operation_get_unsigned_value(operation_cursor)) & bitmask64(ir_node_get_operation(node)->size);
-			}
-			else{
-				*(uint64_t*)(node->ptr) = bitmask64(ir_node_get_operation(node)->size);
-			}
-		}
-	}
-}
-
 static int32_t irNormalize_detect_cst_expression(struct ir* ir){
 	uint32_t 				i;
 	struct irNodeIterator 	it;
@@ -317,7 +271,7 @@ static int32_t irNormalize_detect_cst_expression(struct ir* ir){
 		node_cursor = irNodeIterator_get_node(it);
 		operation_cursor = irNodeIterator_get_operation(it);
 
-		if (node_cursor->nb_edge_dst == 0){
+		if (!node_cursor->nb_edge_dst){
 			continue;
 		}
 
@@ -373,7 +327,7 @@ static int32_t irNormalize_detect_cst_expression(struct ir* ir){
 			switch(operation_cursor->operation_type.inst.opcode){
 				case IR_ADC 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
 				case IR_ADD 		: {break;}
-				case IR_AND 		: {irNormalize_update_mask_and(node_cursor); break;}
+				case IR_AND 		: {mask_buffer[i] = irInfluenceMask_operation_and(node_cursor, mask_buffer[i]); break;}
 				case IR_CMOV 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
 				case IR_DIVQ 		: {mask_buffer[i] = bitmask64(2 * operation_cursor->size); break;}
 				case IR_DIVR 		: {mask_buffer[i] = bitmask64(2 * operation_cursor->size); break;}
@@ -386,16 +340,16 @@ static int32_t irNormalize_detect_cst_expression(struct ir* ir){
 				case IR_MUL 		: {break;}
 				case IR_NEG 		: {break;}
 				case IR_NOT 		: {break;}
-				case IR_OR 			: {break;}
+				case IR_OR 			: {mask_buffer[i] = irInfluenceMask_operation_or(node_cursor, mask_buffer[i]); break;}
 				case IR_PART1_8 	: {break;}
-				case IR_PART2_8 	: {mask_buffer[i] = (mask_buffer[i] << 8); break;}
+				case IR_PART2_8 	: {mask_buffer[i] = irInfluenceMask_operation_part2_8(node_cursor, mask_buffer[i], DIR_DST_TO_SRC); break;}
 				case IR_PART1_16 	: {break;}
-				case IR_ROL 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
-				case IR_ROR 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
+				case IR_ROL 		: {mask_buffer[i] = irInfluenceMask_operation_rol(node_cursor, mask_buffer[i], DIR_DST_TO_SRC); break;}
+				case IR_ROR 		: {mask_buffer[i] = irInfluenceMask_operation_ror(node_cursor, mask_buffer[i], DIR_DST_TO_SRC); break;}
 				case IR_SBB 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
-				case IR_SHL 		: {irNormalize_update_mask_shl(node_cursor); break;}
+				case IR_SHL 		: {mask_buffer[i] = irInfluenceMask_operation_shl(node_cursor, mask_buffer[i], DIR_DST_TO_SRC); break;}
 				case IR_SHLD 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
-				case IR_SHR 		: {irNormalize_update_mask_shr(node_cursor); break;}
+				case IR_SHR 		: {mask_buffer[i] = irInfluenceMask_operation_shr(node_cursor, mask_buffer[i], DIR_DST_TO_SRC); break;}
 				case IR_SHRD 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
 				case IR_SUB 		: {mask_buffer[i] = bitmask64(operation_cursor->size); break;}
 				case IR_XOR 		: {break;}

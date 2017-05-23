@@ -58,15 +58,18 @@ uint64_t irInfluenceMask_operation_part2_8(struct node* node, uint64_t mask, uin
 }
 
 uint64_t irInfluenceMask_operation_rol(struct node* node, uint64_t mask, uint32_t dir){
-	uint32_t 			disp = 0;
+	uint32_t 			disp;
 	struct edge* 		edge_cursor;
 	struct irOperation* operand;
 
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+	for (edge_cursor = node_get_head_edge_dst(node), disp = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 			operand = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand->type == IR_OPERATION_TYPE_IMM){
 				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
+			}
+			else{
+				return mask ? bitmask64(ir_node_get_operation(node)->size) : 0;
 			}
 			break;
 		}
@@ -81,15 +84,18 @@ uint64_t irInfluenceMask_operation_rol(struct node* node, uint64_t mask, uint32_
 }
 
 uint64_t irInfluenceMask_operation_shl(struct node* node, uint64_t mask, uint32_t dir){
-	uint32_t 			disp = 0;
+	uint32_t 			disp;
 	struct edge* 		edge_cursor;
 	struct irOperation* operand;
 
-	for (edge_cursor = node_get_head_edge_dst(node); edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
+	for (edge_cursor = node_get_head_edge_dst(node), disp = 0; edge_cursor != NULL; edge_cursor = edge_get_next_dst(edge_cursor)){
 		if (ir_edge_get_dependence(edge_cursor)->type == IR_DEPENDENCE_TYPE_SHIFT_DISP){
 			operand = ir_node_get_operation(edge_get_src(edge_cursor));
 			if (operand->type == IR_OPERATION_TYPE_IMM){
 				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
+			}
+			else{
+				return mask ? bitmask64(ir_node_get_operation(node)->size) : 0;
 			}
 			break;
 		}
