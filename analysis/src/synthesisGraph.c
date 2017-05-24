@@ -611,7 +611,7 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 		}
 
 		#ifdef EXTRA_CHECK
-		if (minPath_check(path)){
+		if (minPath_check(path, NULL)){
 			log_err("incorrect path");
 		}
 		#endif
@@ -672,7 +672,7 @@ static void minPath_add_input_stop(struct array* path_array, uint32_t offset, ui
 		path->step_array = step_array;
 
 		#ifdef EXTRA_CHECK
-		if (minPath_check(path)){
+		if (minPath_check(path, NULL)){
 			log_err("incorrect path");
 		}
 		#endif

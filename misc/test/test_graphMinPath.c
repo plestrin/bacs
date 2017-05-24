@@ -128,7 +128,7 @@ int main(void){
 			log_info_m("%u path(s) between (%c, %c)", array_get_length(&path_array), *(char*)node_get_data(node1_), *(char*)node_get_data(node2_)); 	\
 			for (i_ = 0; i_ < array_get_length(&path_array); i_ ++){ 																					\
 				path_ = array_get(&path_array, i_); 																									\
-				if (minPath_check(path_)){ 																												\
+				if (minPath_check(path_, NULL)){ 																										\
 					log_err("unable to check path"); 																									\
 				} 																																		\
 				putchar('\t'); path_print(path_->step_array); putchar('\n'); 																			\

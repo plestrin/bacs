@@ -369,18 +369,28 @@ static int32_t minPath_add_step(struct minPath* path, struct minPathStep* step){
 	return 0;
 }
 
-int32_t minPath_check(struct minPath* path){
+int32_t minPath_check(struct minPath* path, uint64_t(*get_mask)(uint64_t,struct edge*,uint32_t)){
 	uint32_t 			i;
 	struct node* 		next_node;
 	struct minPathStep* step;
+	uint64_t 			mask;
 
-	for (i = array_get_length(path->step_array), next_node = NULL; i > 0; i--){
+	for (i = array_get_length(path->step_array), next_node = NULL, mask = 0xffffffffffffffff; i > 0; i--){
 		step = array_get(path->step_array, i - 1);
+
+		if (get_mask != NULL){
+			if (!(mask = get_mask(mask, step->edge, step->dir))){
+				log_err("mask is equal to zero");
+				return -1;
+			}
+		}
+
 		switch (step->dir){
-			case DIR_SRC_TO_DST 	: {
+			case DIR_SRC_TO_DST : {
 				if (next_node != NULL){
 					if (edge_get_src(step->edge) != next_node){
 						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
+						return -1;
 					}
 				}
 
@@ -388,10 +398,11 @@ int32_t minPath_check(struct minPath* path){
 
 				break;
 			}
-			case DIR_DST_TO_SRC 	: {
+			case DIR_DST_TO_SRC : {
 				if (next_node != NULL){
 					if (edge_get_dst(step->edge) != next_node){
 						log_err_m("found incoherence in path @ step %u/%u", i, array_get_length(path->step_array));
+						return -1;
 					}
 				}
 
@@ -399,7 +410,7 @@ int32_t minPath_check(struct minPath* path){
 
 				break;
 			}
-			default					: {
+			default				: {
 				log_err("step direction is invalid");
 				return -1;
 			}
