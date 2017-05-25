@@ -5,6 +5,7 @@
 
 #include "graph.h"
 
+uint64_t irInfluenceMask_operation_add(struct node* node, uint64_t mask, uint32_t dir);
 uint64_t irInfluenceMask_operation_and(struct node* node, uint64_t mask);
 #define  irInfluenceMask_operation_cmov(node, mask, dir) (mask)
 #define  irInfluenceMask_operation_movzx(node, mask, dir) (mask)
@@ -18,6 +19,5 @@ uint64_t irInfluenceMask_operation_rol(struct node* node, uint64_t mask, uint32_
 uint64_t irInfluenceMask_operation_shl(struct node* node, uint64_t mask, uint32_t dir);
 #define  irInfluenceMask_operation_shr(node, mask, dir) irInfluenceMask_operation_shl(node, mask, edgeDirection_invert(dir))
 #define  irInfluenceMask_operation_xor(node, mask, dir) (mask)
-
 
 #endif

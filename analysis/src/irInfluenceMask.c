@@ -14,6 +14,20 @@
 # 	define check_operation(node, opcode_)
 #endif
 
+uint64_t irInfluenceMask_operation_add(struct node* node, uint64_t mask, uint32_t dir){
+	if (mask){
+		if (dir == DIR_SRC_TO_DST){
+			return (mask | -mask) & bitmask64(ir_node_get_operation(node)->size);
+		}
+		else{
+			return 0xffffffffffffffff >> __builtin_clzll(mask);
+		}
+	}
+	else{
+		return 0;
+	}
+}
+
 uint64_t irInfluenceMask_operation_and(struct node* node, uint64_t mask){
 	struct edge* 		edge_cursor;
 	struct irOperation* operand;
@@ -94,8 +108,16 @@ uint64_t irInfluenceMask_operation_shl(struct node* node, uint64_t mask, uint32_
 			if (operand->type == IR_OPERATION_TYPE_IMM){
 				disp = (uint32_t)ir_imm_operation_get_unsigned_value(operand);
 			}
+			else if (mask){
+				if (dir == DIR_SRC_TO_DST){
+					return (mask | -mask) & bitmask64(ir_node_get_operation(node)->size);
+				}
+				else{
+					return 0xffffffffffffffff >> __builtin_clzll(mask);
+				}
+			}
 			else{
-				return mask ? bitmask64(ir_node_get_operation(node)->size) : 0;
+				return 0;
 			}
 			break;
 		}

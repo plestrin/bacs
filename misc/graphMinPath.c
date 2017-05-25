@@ -375,12 +375,12 @@ int32_t minPath_check(struct minPath* path, uint64_t(*get_mask)(uint64_t,struct 
 	struct minPathStep* step;
 	uint64_t 			mask;
 
-	for (i = array_get_length(path->step_array), next_node = NULL, mask = 0xffffffffffffffff; i > 0; i--){
+	for (i = array_get_length(path->step_array), next_node = NULL, mask = 0xffffffffffffffff; i; i--){
 		step = array_get(path->step_array, i - 1);
 
 		if (get_mask != NULL){
 			if (!(mask = get_mask(mask, step->edge, step->dir))){
-				log_err("mask is equal to zero");
+				log_err_m("mask is equal to zero @ %u/%u", i, array_get_length(path->step_array));
 				return -1;
 			}
 		}
@@ -415,6 +415,15 @@ int32_t minPath_check(struct minPath* path, uint64_t(*get_mask)(uint64_t,struct 
 				return -1;
 			}
 		}
+
+		if (i == 1 && next_node != path->reached_node){
+			log_err("incorrect reached node");
+			return -1;
+		}
+	}
+
+	if (get_mask != NULL){
+		log_debug_m("Last mask: 0x%llx", mask);
 	}
 
 	return 0;

@@ -50,6 +50,7 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct edge* edge, uint32_t 
 				return 0;
 			}
 			result = bitmask64(ir_node_get_operation(edge_get_dst(edge))->size);
+			mask &= bitmask64(ir_node_get_operation(edge_get_src(edge))->size);
 			break;
 		}
 		case DIR_DST_TO_SRC : {
@@ -57,6 +58,7 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct edge* edge, uint32_t 
 				return 0;
 			}
 			result = bitmask64(ir_node_get_operation(edge_get_src(edge))->size);
+			mask &= bitmask64(ir_node_get_operation(edge_get_dst(edge))->size);
 			break;
 		}
 		default 			: {
@@ -72,7 +74,9 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct edge* edge, uint32_t 
 		case IR_OPERATION_TYPE_INST : {
 			switch (operation->operation_type.inst.opcode){
 				case IR_ADC 		: {break;}
-				case IR_ADD 		: {break;}
+				case IR_ADD 		: {
+					return result & irInfluenceMask_operation_add(node_dst, mask, dir);
+				}
 				case IR_AND 		: {
 					return result & irInfluenceMask_operation_and(node_dst, mask);
 				}
@@ -560,15 +564,15 @@ static int32_t minPathStep_compare(const void* arg1, const void* arg2){
 }
 
 static void minPath_add_input_start(struct array* path_array, uint32_t offset, uint32_t length, struct signatureCluster* cluster, uint32_t parameter){
-	uint32_t 					i;
-	uint32_t 					j;
+	uint32_t 				i;
+	uint32_t 				j;
 	struct minPath* 		path;
-	struct edge* 				edge_cursor;
-	struct node* 				symbol;
-	struct irDependence* 		dependence;
-	struct minPathStep 	step;
+	struct edge* 			edge_cursor;
+	struct node* 			symbol;
+	struct irDependence* 	dependence;
+	struct minPathStep 		step;
 	struct minPathStep* 	first_step;
-	struct node* 				starting_node;
+	struct node* 			starting_node;
 
 	for (i = offset; i < offset + length; i++){
 		path = (struct minPath*)array_get(path_array, i);
@@ -608,6 +612,7 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 
 		if (array_add(path->step_array, &step) < 0){
 			log_err("unable to add element to array");
+			continue;
 		}
 
 		#ifdef EXTRA_CHECK
@@ -619,14 +624,14 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 }
 
 static void minPath_add_input_stop(struct array* path_array, uint32_t offset, uint32_t length, struct signatureCluster* cluster, uint32_t parameter){
-	uint32_t 					i;
-	uint32_t 					j;
+	uint32_t 				i;
+	uint32_t 				j;
 	struct minPath* 		path;
-	struct array* 				step_array;
-	struct edge* 				edge_cursor;
-	struct node* 				symbol;
-	struct irDependence* 		dependence;
-	struct minPathStep 	step;
+	struct array* 			step_array;
+	struct edge* 			edge_cursor;
+	struct node* 			symbol;
+	struct irDependence* 	dependence;
+	struct minPathStep 		step;
 
 	for (i = offset; i < offset + length; i++){
 		path = (struct minPath*)array_get(path_array, i);
@@ -670,6 +675,7 @@ static void minPath_add_input_stop(struct array* path_array, uint32_t offset, ui
 
 		array_delete(path->step_array);
 		path->step_array = step_array;
+		path->reached_node = symbol;
 
 		#ifdef EXTRA_CHECK
 		if (minPath_check(path, NULL)){
