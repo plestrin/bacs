@@ -1150,18 +1150,17 @@
 			<arg value="load mode signature ../reference/modeSignature.txt"/>
 			<arg value="create callGraph LINUX"/>
 			<arg value="export callGraph rijndael_ecb_encrypt"/>
-			<arg value="create ir 4"/>
-			<arg value="create ir 5"/>
-			<arg value="create ir 6"/>
+			<arg value="filter frag selection [0:4]"/>
+			<arg value="create ir"/>
 			<arg value="normalize ir"/>
 			<arg value="search code signature"/>
 			<arg value="export result aes128_v1"/>
 			<arg value="export callGraph ctr_encrypt"/>
-			<arg value="create compound ir 8"/>
-			<arg value="simplify concrete ir 8"/>
-			<arg value="create synthesis 8"/>
-			<arg value="search mode signature 8"/>
-			<arg value="printDot synthesis 8 fig/TOM_CTR_AES.dot"/>
+			<arg value="create compound ir 4"/>
+			<arg value="simplify concrete ir 4"/>
+			<arg value="create synthesis 4"/>
+			<arg value="search mode signature 4"/>
+			<arg value="printDot synthesis 4 fig/TOM_CTR_AES.dot"/>
 			<arg value="exit"/>
 		</search>
 		<result>
