@@ -778,7 +778,7 @@
 			<algo name="aes_r10" number="16"/>
 			<algo name="aes128_v1" number="4"/>
 			<algo name="aes_last_v3" number="16"/>
-			<algo name="ctr_v2" number="6"/>
+			<algo name="ctr_v2" number="12"/>
 		</result>
 	</recipe>
 
