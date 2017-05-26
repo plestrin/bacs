@@ -191,7 +191,9 @@ static void cisc_decode_special_inc(struct instructionIterator* it, struct asmCi
 static void cisc_decode_special_leave(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_movsx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
 static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void cisc_decode_special_popfd(struct instructionIterator* it, struct asmCiscIns* cisc);
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
+static void cisc_decode_special_pushfd(struct instructionIterator* it, struct asmCiscIns* cisc);
 static void cisc_decode_special_ret(struct instructionIterator* it, struct asmCiscIns* cisc);
 static void cisc_decode_special_setxx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr);
 static void cisc_decode_special_stosx(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr, uint32_t size);
@@ -348,6 +350,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 			cisc_decode_special_pop(it, &cisc, mem_addr);
 			break;
 		}
+		case XED_ICLASS_POPFD 		: {
+			cisc_decode_special_popfd(it, &cisc);
+			break;
+		}
 		case XED_ICLASS_PSHUFD 		: {
 			simd_decode_special_pshuf(ir, it, &cisc, mem_addr, 32);
 			break;
@@ -390,6 +396,10 @@ static void irImporter_handle_instruction(struct ir* ir, struct instructionItera
 		}
 		case XED_ICLASS_PUSH 		: {
 			cisc_decode_special_push(it, &cisc, mem_addr);
+			break;
+		}
+		case XED_ICLASS_PUSHFD 		: {
+			cisc_decode_special_pushfd(it, &cisc);
 			break;
 		}
 		case XED_ICLASS_PXOR 		: {simd_decode_generic(ir, it, &cisc, mem_addr, SIMD_TYPE_VARIABLE); break;}
@@ -1661,6 +1671,17 @@ static void cisc_decode_special_pop(struct instructionIterator* it, struct asmCi
 	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_ESP)
 }
 
+static void cisc_decode_special_popfd(struct instructionIterator* it, struct asmCiscIns* cisc){
+	cisc->type 												= CISC_TYPE_SEQ;
+	cisc->nb_ins 											= 1;
+
+	cisc->ins[0].opcode 									= IR_ADD;
+	cisc->ins[0].nb_input_operand 							= 2;
+	asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
+	asmOperand_set_imm(cisc->ins[0].input_operand[1], 32, 4)
+	asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_ESP)
+}
+
 static void cisc_decode_special_push(struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){
 	cisc->type 												= CISC_TYPE_SEQ;
 	cisc->nb_ins 											= 2;
@@ -1684,6 +1705,18 @@ static void cisc_decode_special_push(struct instructionIterator* it, struct asmC
 	asmOperand_set_reg(cisc->ins[1].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
 	asmOperand_set_imm(cisc->ins[1].input_operand[1], 32, cisc->ins[0].input_operand[0].size / 8)
 	asmOperand_set_reg(cisc->ins[1].output_operand, 32, it->instruction_index, IR_REG_ESP)
+
+}
+
+static void cisc_decode_special_pushfd(struct instructionIterator* it, struct asmCiscIns* cisc){
+	cisc->type 												= CISC_TYPE_SEQ;
+	cisc->nb_ins 											= 1;
+
+	cisc->ins[0].opcode 									= IR_SUB;
+	cisc->ins[0].nb_input_operand 							= 2;
+	asmOperand_set_reg(cisc->ins[0].input_operand[0], 32, it->instruction_index, IR_REG_ESP)
+	asmOperand_set_imm(cisc->ins[0].input_operand[1], 32, 4)
+	asmOperand_set_reg(cisc->ins[0].output_operand, 32, it->instruction_index, IR_REG_ESP)
 
 }
 
