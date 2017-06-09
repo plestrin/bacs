@@ -72,7 +72,7 @@ int codeMap_add_vdso(struct codeMap* cm, char white_listed){
 		free(line);
 	}
 
-	if (address_start == 0 && address_stop == 0){
+	if (!address_start && !address_stop){
 		LOG("ERROR: unable to locate VDSO\n");
 		return -1;
 	}
@@ -107,7 +107,7 @@ void codeMap_print_JSON(struct codeMap* cm, FILE* file){
 		fprintf(file, "{\"image\":[");
 
 		image = cm->images;
-		while(image != NULL){
+		while (image != NULL){
 			codeMap_print_image_JSON(image, file);
 			image = image->next;
 			if (image != NULL){
@@ -138,7 +138,7 @@ static void codeMap_print_section_JSON(struct cm_section* section, FILE* file){
 		fprintf(file, "{\"start\":\"" PRINTF_ADDR_SHORT "\",\"stop\":\"" PRINTF_ADDR_SHORT "\",\"name\":\"%s\",\"routine\":[", section->address_start, section->address_stop, section->name);
 
 		routine = section->routines;
-		while(routine != NULL){
+		while (routine != NULL){
 			codeMap_print_routine_JSON(routine, file);
 			routine = routine->next;
 			if (routine != NULL){
@@ -171,7 +171,7 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 		}
 
 		section = image->sections;
-		while(section != NULL){
+		while (section != NULL){
 			codeMap_print_section_JSON(section, file);
 			section = section->next;
 			if (section != NULL){
@@ -197,7 +197,7 @@ static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter);
 static void codeMap_print_image(struct multiColumnPrinter* printer, struct cm_image* image, int filter);
 
-#define codeMap_filter_routine_executed(routine) ((routine)->nb_execution != 0)
+#define codeMap_filter_routine_executed(routine) ((routine)->nb_execution)
 static int codeMap_filter_section_executed(struct cm_section* section);
 static int codeMap_filter_image_executed(struct cm_image* image);
 
@@ -210,7 +210,7 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image){
 	struct cm_image** 	cursor = &(cm->images);
 
 	if (cm != NULL){
-		new_image = (struct cm_image*)malloc(sizeof(struct cm_image));
+		new_image = malloc(sizeof(struct cm_image));
 		if (new_image == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			return -1;
@@ -221,7 +221,7 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image){
 			new_image->next = NULL;
 			new_image->parent = cm;
 
-			while(*cursor != NULL){
+			while (*cursor != NULL){
 				cursor = &((*cursor)->next);
 			}
 			*cursor = new_image;
@@ -240,7 +240,7 @@ int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section){
 
 	if (cm != NULL){
 		if (cm->current_image != NULL){
-			new_section = (struct cm_section*)malloc(sizeof(struct cm_section));
+			new_section = malloc(sizeof(struct cm_section));
 			if (new_section == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 				return -1;
@@ -252,7 +252,7 @@ int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section){
 				new_section->parent = cm->current_image;
 
 				cursor = &(cm->current_image->sections);
-				while(*cursor != NULL){
+				while (*cursor != NULL){
 					cursor = &((*cursor)->next);
 				}
 				*cursor = new_section;
@@ -275,7 +275,7 @@ int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 
 	if (cm != NULL){
 		if (cm->current_section != NULL){
-			new_routine = (struct cm_routine*)malloc(sizeof(struct cm_routine));
+			new_routine = malloc(sizeof(struct cm_routine));
 			if (new_routine == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 				return -1;
@@ -286,7 +286,7 @@ int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 				new_routine->parent = cm->current_section;
 
 				cursor = &(cm->current_section->routines);
-				while(*cursor != NULL){
+				while (*cursor != NULL){
 					cursor = &((*cursor)->next);
 				}
 				*cursor = new_routine;
@@ -372,7 +372,7 @@ void codeMap_print(struct codeMap* cm, const char* str_filter){
 	if (cm != NULL){
 		if (str_filter != NULL){
 			for (i = 0; i < strlen(str_filter); i++){
-				switch(str_filter[i]){
+				switch (str_filter[i]){
 				case CODEMAP_FILTER_WHITELIST_CMD 	: {filter |= CODEMAP_FILTER_WHITELIST; break;}
 				case CODEMAP_FILTER_EXECUTED_CMD 	: {filter |= CODEMAP_FILTER_EXECUTED; break;}
 				default 							: {printf("WARNING: in %s, unknown filter specifier '%c'\n", __func__, str_filter[i]); break;}
@@ -476,7 +476,7 @@ void codeMap_clean_routine(struct cm_routine* routine){
 static int codeMap_filter_section_executed(struct cm_section* section){
 	struct cm_routine* cursor = section->routines;
 
-	while(cursor != NULL){
+	while (cursor != NULL){
 		if (codeMap_filter_routine_executed(cursor)){
 			return 1;
 		}
@@ -489,7 +489,7 @@ static int codeMap_filter_section_executed(struct cm_section* section){
 static int codeMap_filter_image_executed(struct cm_image* image){
 	struct cm_section* cursor = image->sections;
 
-	while(cursor != NULL){
+	while (cursor != NULL){
 		if (codeMap_filter_section_executed(cursor)){
 			return 1;
 		}
@@ -540,7 +540,7 @@ int codeMap_check_address(struct codeMap* cm){
 
 	if (cm != NULL){
 		cursor_image = cm->images;
-		while(cursor_image != NULL){
+		while (cursor_image != NULL){
 
 			if (cursor_image->address_start > cursor_image->address_stop){
 				printf("ERROR: image start address is greater than its stop address\n");
@@ -548,10 +548,10 @@ int codeMap_check_address(struct codeMap* cm){
 			}
 
 			cursor_section = cursor_image->sections;
-			while(cursor_section != NULL){
+			while (cursor_section != NULL){
 
 				if (cursor_section->address_start > cursor_section->address_stop){
-					printf("ERROR: section start address is greater thant its stop address\n");
+					printf("ERROR: section start address is greater than its stop address\n");
 					return -1;
 				}
 
@@ -561,7 +561,7 @@ int codeMap_check_address(struct codeMap* cm){
 				}
 
 				cursor_routine = cursor_section->routines;
-				while(cursor_routine != NULL){
+				while (cursor_routine != NULL){
 
 					if (cursor_routine->address_start > cursor_routine->address_stop){
 						printf("ERROR: routine start address is greater than its stop address\n");
@@ -594,7 +594,7 @@ struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address){
 	if (cm != NULL){
 		image_cursor = cm->images;
 
-		while(image_cursor != NULL){
+		while (image_cursor != NULL){
 			if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
 				return image_cursor;
 			}
@@ -613,10 +613,10 @@ struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address){
 	if (cm != NULL){
 		image = codeMap_search_image(cm, address);
 
-		if(image != NULL){
+		if (image != NULL){
 			section_cursor = image->sections;
 
-			while(section_cursor != NULL){
+			while (section_cursor != NULL){
 				if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
 					return section_cursor;
 				}
@@ -639,7 +639,7 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, ADDRESS address){
 		if (section != NULL){
 			routine_cursor = section->routines;
 
-			while(routine_cursor != NULL){
+			while (routine_cursor != NULL){
 				if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
 					return routine_cursor;
 				}
@@ -748,7 +748,7 @@ void codeMap_search_and_print_symbol(struct codeMap* cm, const char* symbol){
 #endif
 
 struct codeMap* codeMap_create(void){
-	struct codeMap* cm = (struct codeMap*)malloc(sizeof(struct codeMap));
+	struct codeMap* cm = malloc(sizeof(struct codeMap));
 	if (cm == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
@@ -767,7 +767,7 @@ int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address
 	struct cm_image** 	cursor = &(cm->images);
 
 	if (cm != NULL){
-		image = (struct cm_image*)malloc(sizeof(struct cm_image));
+		image = malloc(sizeof(struct cm_image));
 		if (image == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			return -1;
@@ -781,7 +781,7 @@ int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address
 			image->next = NULL;
 			image->parent = cm;
 
-			while(*cursor != NULL){
+			while (*cursor != NULL){
 				cursor = &((*cursor)->next);
 			}
 			*cursor = image;
@@ -800,7 +800,7 @@ int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS addre
 
 	if (cm != NULL){
 		if (cm->current_image != NULL){
-			section = (struct cm_section*)malloc(sizeof(struct cm_section));
+			section = malloc(sizeof(struct cm_section));
 			if (section == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 				return -1;
@@ -814,7 +814,7 @@ int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS addre
 				section->parent = cm->current_image;
 
 				cursor = &(cm->current_image->sections);
-				while(*cursor != NULL){
+				while (*cursor != NULL){
 					cursor = &((*cursor)->next);
 				}
 				*cursor = section;
@@ -837,7 +837,7 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start
 
 	if (cm != NULL){
 		if (cm->current_section != NULL){
-			routine = (struct cm_routine*)malloc(sizeof(struct cm_routine));
+			routine = malloc(sizeof(struct cm_routine));
 			if (routine == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			}
@@ -851,7 +851,7 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start
 				routine->parent = cm->current_section;
 
 				cursor = &(cm->current_section->routines);
-				while(*cursor != NULL){
+				while (*cursor != NULL){
 					cursor = &((*cursor)->next);
 				}
 				*cursor = routine;
@@ -875,11 +875,11 @@ void codeMap_delete(struct codeMap* cm){
 
 	if (cm != NULL){
 		image = cm->images;
-		while(image != NULL){
+		while (image != NULL){
 			section = image->sections;
-			while(section != NULL){
+			while (section != NULL){
 				routine = section->routines;
-				while(routine != NULL){
+				while (routine != NULL){
 					tmp_routine = routine->next;
 					free(routine);
 					routine = tmp_routine;

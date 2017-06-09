@@ -50,7 +50,7 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 	char 				file_path[PATH_MAX];
 	struct stat 		sb;
 
-	mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace));
+	mem_trace = malloc(sizeof(struct memTrace));
 	if (mem_trace == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
@@ -59,7 +59,7 @@ struct memTrace* memTrace_create_trace(const char* directory_path, uint32_t pid,
 	mem_trace->mem_addr_buffer 	= NULL;
 	mem_trace->mem_valu_buffer 	= NULL;
 	mem_trace->nb_mem 			= assembly->dyn_blocks[assembly->nb_dyn_block - 1].mem_access_count;
-	mem_trace->allocation_type  = ALLOCATION_MMAP;
+	mem_trace->allocation_type 	= ALLOCATION_MMAP;
 
 	snprintf(file_path, PATH_MAX, "%s/memAddr%u_%u.bin", directory_path, pid, tid);
 
@@ -139,7 +139,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 		return NULL;
 	}
 
-	if ((mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace))) == NULL){
+	if ((mem_trace = malloc(sizeof(struct memTrace))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -170,7 +170,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 			size += extrude->index_stop - extrude->index_start;
 		}
 
-		new_mem_addr_buffer = (struct memAddress*)malloc((mem_trace->nb_mem - size) * sizeof(struct memAddress));
+		new_mem_addr_buffer = malloc((mem_trace->nb_mem - size) * sizeof(struct memAddress));
 		if (new_mem_addr_buffer == NULL){
 			log_err("unable to allocate memory");
 			memTrace_delete(mem_trace);
@@ -178,7 +178,7 @@ struct memTrace* memTrace_create_frag(struct memTrace* master, uint64_t index_me
 		}
 
 		if (mem_trace->mem_valu_buffer != NULL){
-			new_mem_valu_buffer = (uint8_t*)malloc((mem_trace->nb_mem - size) * MEMVALUE_PADDING);
+			new_mem_valu_buffer = malloc((mem_trace->nb_mem - size) * MEMVALUE_PADDING);
 			if (new_mem_valu_buffer == NULL){
 				log_err("unable to allocate memory");
 				mappingDesc_free_mapping(mem_trace->mapping_valu);
@@ -222,7 +222,7 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 	size_t 				j;
 	uint32_t 			copy_mem_valu_buffer;
 
-	mem_trace = (struct memTrace*)malloc(sizeof(struct memTrace));
+	mem_trace = malloc(sizeof(struct memTrace));
 	if (mem_trace == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
@@ -240,7 +240,7 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 		}
 	}
 
-	mem_trace->mem_addr_buffer = (struct memAddress*)malloc(sizeof(struct memAddress) * mem_trace->nb_mem);
+	mem_trace->mem_addr_buffer = malloc(sizeof(struct memAddress) * mem_trace->nb_mem);
 	if (mem_trace->mem_addr_buffer == NULL){
 		log_err("unable to allocate memory");
 		free(mem_trace);
@@ -248,7 +248,7 @@ struct memTrace* memTrace_create_concat(struct memTrace** mem_trace_src_buffer, 
 	}
 
 	if (copy_mem_valu_buffer){
-		mem_trace->mem_valu_buffer = (uint8_t*)malloc(MEMVALUE_PADDING * mem_trace->nb_mem);
+		mem_trace->mem_valu_buffer = malloc(MEMVALUE_PADDING * mem_trace->nb_mem);
 		if (mem_trace->mem_valu_buffer == NULL){
 			log_err("unable to allocate memory");
 		}
@@ -337,7 +337,7 @@ void memTrace_clean(struct memTrace* mem_trace){
 		close(mem_trace->file_valu);
 	}
 	if (mem_trace->mem_addr_buffer != NULL){
-		switch(mem_trace->allocation_type){
+		switch (mem_trace->allocation_type){
 			case ALLOCATION_MALLOC 	: {
 				free(mem_trace->mem_addr_buffer);
 				if (mem_trace->mem_valu_buffer != NULL){
@@ -381,7 +381,7 @@ int32_t memTraceIterator_init(struct memTraceIterator* it, struct memTrace* mast
 }
 
 int32_t memTraceIterator_get_prev_addr(struct memTraceIterator* it, ADDRESS addr){
-	if (it->mem_addr_index == 0){
+	if (!it->mem_addr_index){
 		return 1;
 	}
 
@@ -399,12 +399,12 @@ int32_t memTraceIterator_get_prev_addr(struct memTraceIterator* it, ADDRESS addr
 		}
 	}
 
-	while (it->mem_addr_sub_index != 0){
+	while (it->mem_addr_sub_index){
 		it->mem_addr_sub_index --;
 		if (it->mem_addr_buffer[it->mem_addr_sub_index].address == addr){
 			return 0;
 		}
-		if (it->mem_addr_index == 0){
+		if (!it->mem_addr_index){
 			return 1;
 		}
 		it->mem_addr_index --;

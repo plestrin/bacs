@@ -13,7 +13,7 @@
 struct disassembler{
 	uint8_t 					xed_init;
 	xed_machine_mode_enum_t 	mmode;
-    xed_address_width_enum_t 	stack_addr_width;
+	xed_address_width_enum_t 	stack_addr_width;
 };
 
 static int32_t asmBlock_compare_id(const struct asmBlock* b1, const struct asmBlock* b2);
@@ -27,7 +27,7 @@ static struct disassembler disas = {
 };
 
 #define disassembler_init() 			\
-	if (disas.xed_init == 0){ 			\
+	if (!disas.xed_init){ 				\
 		xed_tables_init(); 				\
 		disas.xed_init = 1; 			\
 	}
@@ -174,7 +174,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	assembly->mapping_block 		= buffer_block;
 	assembly->mapping_size_block 	= buffer_size_block;
 	assembly->nb_dyn_block 			= buffer_size_id / sizeof(uint32_t);
-	assembly->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
+	assembly->dyn_blocks 			= malloc(sizeof(struct dynBlock) * assembly->nb_dyn_block);
 	if (assembly->dyn_blocks == NULL){
 		log_err_m("unable to allocate memory: %zu", sizeof(struct dynBlock) * assembly->nb_dyn_block);
 		goto error;
@@ -213,7 +213,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 				goto error;
 			}
 
-			if (j == 0){
+			if (!j){
 				assembly->dyn_blocks[j].instruction_count = 0;
 				assembly->dyn_blocks[j].mem_access_count = 0;
 			}
@@ -232,7 +232,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 			assembly->dyn_blocks[j].block = *(struct asmBlock**)array_get(&asmBlock_array, buffer_id[i] - FIRST_BLOCK_ID);
 			j ++;
 		}
-		else if (i == 0 || (i != 0 && buffer_id[i - 1] != BLACK_LISTED_ID)){
+		else if (!i || buffer_id[i - 1] != BLACK_LISTED_ID){
 			dynBlock_set_invalid(assembly->dyn_blocks + j);
 			if (j){
 				assembly->dyn_blocks[j].instruction_count = assembly->dyn_blocks[j - 1].instruction_count + assembly->dyn_blocks[j - 1].block->header.nb_ins;
@@ -281,7 +281,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	if (assembly->dyn_blocks != NULL){
 		free(assembly->dyn_blocks);
 	}
-	switch(buffer_alloc_block){
+	switch (buffer_alloc_block){
 		case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
 		case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
 	}
@@ -364,7 +364,7 @@ int32_t assembly_get_instruction(const struct assembly* assembly, struct instruc
 	it->dyn_block_index 		= idx;
 	it->instruction_sub_index 	= ins_index - assembly->dyn_blocks[idx].instruction_count;
 	it->instruction_offset 		= 0;
-	if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
+	if (!it->instruction_sub_index && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
 		it->prev_black_listed 	= 1;
 	}
 	else{
@@ -455,7 +455,7 @@ int32_t assembly_get_address(const struct assembly* assembly, struct instruction
 	}
 
 	it->instruction_index += it->instruction_sub_index;
-	if (it->instruction_sub_index == 0 && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
+	if (!it->instruction_sub_index && idx > 0 && dynBlock_is_invalid(assembly->dyn_blocks + (idx - 1))){
 		it->prev_black_listed = 1;
 	}
 	else{
@@ -580,8 +580,8 @@ int32_t assembly_get_dyn_block_ins(const struct assembly* assembly, uint32_t ins
 	uint32_t down 	= 0;
 	uint32_t idx;
 
-	while(down < up){
-		idx  = (up + down) / 2;
+	while (down < up){
+		idx = (up + down) / 2;
 		if (dynBlock_is_invalid(assembly->dyn_blocks + idx)){
 			if (idx != down){
 				idx --;
@@ -613,8 +613,8 @@ int32_t assembly_get_dyn_block_mem(const struct assembly* assembly, uint64_t mem
 	uint32_t down 	= 0;
 	uint32_t idx;
 
-	while(down < up){
-		idx  = (up + down) / 2;
+	while (down < up){
+		idx = (up + down) / 2;
 		if (dynBlock_is_invalid(assembly->dyn_blocks + idx)){
 			if (idx != down){
 				idx --;
@@ -734,7 +734,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	void* 				bintree_root 		= NULL;
 	void* 				realloc_mapping;
 
-	if (length == 0){
+	if (!length){
 		log_err("unable to export 0 length segment");
 		return -1;
 	}
@@ -821,8 +821,8 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 	}
 
 	assembly_dst->nb_dyn_instruction 	= length;
-	assembly_dst->nb_dyn_block 			= idx_block_stop - idx_block_start + 1 - ((idx_ins_stop == 0) ? 1 : 0);
-	assembly_dst->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
+	assembly_dst->nb_dyn_block 			= idx_block_stop - idx_block_start + 1 - ((!idx_ins_stop) ? 1 : 0);
+	assembly_dst->dyn_blocks 			= malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
 
 	assembly_dst->allocation_type 		= ALLOCATION_MALLOC;
 	assembly_dst->mapping_size_block 	= size + sizeof(struct asmBlockHeader) * assembly_dst->nb_dyn_block;
@@ -860,7 +860,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		assembly_dst->dyn_blocks[0].block = new_block;
 	}
 	else{
-		if (idx_ins_start == 0){
+		if (!idx_ins_start){
 			memcpy(new_block, assembly_src->dyn_blocks[idx_block_start].block, sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size);
 			size = sizeof(struct asmBlockHeader) + assembly_src->dyn_blocks[idx_block_start].block->header.size;
 
@@ -869,7 +869,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		else{
 			new_block->header.id 				= possible_new_id ++;
 			new_block->header.size 				= assembly_src->dyn_blocks[idx_block_start].block->header.size - idx_ins_start;
-			new_block->header.nb_ins 			= assembly_src->dyn_blocks[idx_block_start].instruction_count +  assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins - offset;
+			new_block->header.nb_ins 			= assembly_src->dyn_blocks[idx_block_start].instruction_count + assembly_src->dyn_blocks[idx_block_start].block->header.nb_ins - offset;
 			if (assembly_src->dyn_blocks[idx_block_start].block->header.nb_mem_access == UNTRACK_MEM_ACCESS){
 				new_block->header.nb_mem_access = UNTRACK_MEM_ACCESS;
 			}
@@ -885,7 +885,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		assembly_dst->dyn_blocks[0].mem_access_count = 0;
 		assembly_dst->dyn_blocks[0].block = new_block;
 
-		if (idx_ins_stop != 0){
+		if (idx_ins_stop){
 			new_block = (struct asmBlock*)((char*)assembly_dst->mapping_block + size);
 			new_block->header.id 				= possible_new_id ++;
 			new_block->header.size 				= idx_ins_stop;
@@ -941,7 +941,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 		}
 	}
 
-	if ((idx_block_start != idx_block_stop) && (idx_ins_stop != 0)){
+	if ((idx_block_start != idx_block_stop) && idx_ins_stop){
 		if (dynBlock_is_valid(assembly_dst->dyn_blocks + (assembly_dst->nb_dyn_block - 2))){
 			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].instruction_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].instruction_count + assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_ins;
 			assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 1].mem_access_count = assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].mem_access_count + ((assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_mem_access == UNTRACK_MEM_ACCESS) ? 0 : assembly_dst->dyn_blocks[assembly_dst->nb_dyn_block - 2].block->header.nb_mem_access);
@@ -995,7 +995,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 
 	assembly_dst->nb_dyn_instruction 	= nb_dyn_instruction;
 	assembly_dst->nb_dyn_block 			= nb_dyn_block;
-	assembly_dst->dyn_blocks 			= (struct dynBlock*)malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
+	assembly_dst->dyn_blocks 			= malloc(sizeof(struct dynBlock) * assembly_dst->nb_dyn_block);
 
 	assembly_dst->allocation_type 		= ALLOCATION_MALLOC;
 	assembly_dst->mapping_size_block 	= size;
@@ -1021,7 +1021,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 		memcpy((char*)assembly_dst->mapping_block + size, assembly_src_buffer[i]->mapping_block, assembly_src_buffer[i]->mapping_size_block);
 		mapping_block_offset = size;
 
-		while(mapping_block_offset - size < assembly_src_buffer[i]->mapping_size_block){
+		while (mapping_block_offset - size < assembly_src_buffer[i]->mapping_size_block){
 			((struct asmBlock*)((char*)assembly_dst->mapping_block + mapping_block_offset))->header.id = id_generator ++;
 			mapping_block_offset += ((struct asmBlock*)((char*)assembly_dst->mapping_block + mapping_block_offset))->header.size + sizeof(struct asmBlockHeader);
 		}
@@ -1035,7 +1035,7 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 				assembly_dst->dyn_blocks[nb_dyn_block + j].block = NULL;
 			}
 
-			if (nb_dyn_block + j == 0){
+			if (!(nb_dyn_block + j)){
 				assembly_dst->dyn_blocks[nb_dyn_block + j].mem_access_count = 0;
 			}
 			else if (dynBlock_is_valid(assembly_dst->dyn_blocks + nb_dyn_block + j - 1)){
@@ -1162,8 +1162,8 @@ void assembly_print_ins(struct assembly* assembly, struct instructionIterator* i
 
 	xed_init_print_info(&print_info);
 	print_info.blen 					= ASSEMBLY_PRINT_BUFFER_SIZE;
-	print_info.buf  					= buffer;
-	print_info.context  				= NULL;
+	print_info.buf 						= buffer;
+	print_info.context 					= NULL;
 	print_info.disassembly_callback		= NULL;
 	print_info.format_options_valid 	= 0;
 	print_info.p 						= &(it->xedd);
@@ -1171,7 +1171,7 @@ void assembly_print_ins(struct assembly* assembly, struct instructionIterator* i
 	print_info.syntax 					= XED_SYNTAX_INTEL;
 
 	if (xed_format_generic(&print_info)){
-		printf("0x%08x %c %-" ASSEMBLY_PRINT_PADDING_INDEX "u ", it->instruction_address, (it->instruction_sub_index == 0) ? '*' : ' ', it->instruction_index);
+		printf("0x%08x %c %-" ASSEMBLY_PRINT_PADDING_INDEX "u ", it->instruction_address, (!it->instruction_sub_index) ? '*' : ' ', it->instruction_index);
 		assembly_print_opcode_hex(assembly->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset, it->instruction_size, ASSEMBLY_PRINT_PADDING_OPCODE);
 		printf("%-" ASSEMBLY_PRINT_PADDING_STRING "s", buffer);
 
@@ -1292,7 +1292,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 	}
 
 	for (i = 0, offset = 0, mem_access_delete_count = 0; i < assembly->nb_dyn_block; i++){
-		if (dynBlock_is_invalid(assembly->dyn_blocks + i) &&  i + 1 < assembly->nb_dyn_block){
+		if (dynBlock_is_invalid(assembly->dyn_blocks + i) && i + 1 < assembly->nb_dyn_block){
 
 			/* LINUX - resolve @ plt */
 			if (i - offset >= 4){
@@ -1481,7 +1481,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 			log_warn_m("unable to format black listed call @ %u", (i - offset > 0) ? assembly->dyn_blocks[i - offset - 1].instruction_count + assembly->dyn_blocks[i - offset - 1].block->header.nb_ins : 0);
 		}
 
-		if (i - offset == 0){
+		if (!(i - offset)){
 			assembly->dyn_blocks[i - offset].instruction_count 		= 0;
 			assembly->dyn_blocks[i - offset].mem_access_count 		= 0;
 			assembly->dyn_blocks[i - offset].block 					= assembly->dyn_blocks[i].block;
@@ -1587,7 +1587,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 
 		free(asm_block_maintainer);
 
-		switch(assembly->allocation_type){
+		switch (assembly->allocation_type){
 			case ALLOCATION_MALLOC : {
 				free(assembly->mapping_block);
 				break;
@@ -1699,7 +1699,7 @@ int32_t assembly_search_sub_sequence(const struct assembly* assembly_ext, const 
 		}
 		else{
 			while (assembly_ext->dyn_blocks[it->dyn_block_index].block->header.size - it->instruction_offset >= assembly_inn->dyn_blocks[0].block->header.size){
-				if (memcmp(assembly_ext->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset, assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size) == 0){
+				if (!memcmp(assembly_ext->dyn_blocks[it->dyn_block_index].block->data + it->instruction_offset, assembly_inn->dyn_blocks[0].block->data, assembly_inn->dyn_blocks[0].block->header.size)){
 					return 0;
 				}
 
@@ -1765,7 +1765,7 @@ int32_t assembly_compare(const struct assembly* assembly1, const struct assembly
 
 		size = min(assembly1->dyn_blocks[i1].block->header.size - offset1, assembly2->dyn_blocks[i2].block->header.size - offset2);
 		result = memcmp(assembly1->dyn_blocks[i1].block->data + offset1, assembly2->dyn_blocks[i2].block->data + offset2, size);
-		if (result != 0){
+		if (result){
 			return result;
 		}
 
@@ -1800,7 +1800,7 @@ void assembly_clean(struct assembly* assembly){
 	}
 
 	if (assembly->mapping_block != NULL){
-		switch(assembly->allocation_type){
+		switch (assembly->allocation_type){
 			case ALLOCATION_MALLOC : {
 				free(assembly->mapping_block);
 				break;
