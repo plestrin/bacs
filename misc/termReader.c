@@ -184,6 +184,8 @@ enum ansi_escape_seq{
 	ANSI_ESC_NEXT,
 	ANSI_ESC_FIRST,
 	ANSI_ESC_LAST,
+	ANSI_ESC_UP,
+	ANSI_ESC_DOWN,
 	ANSI_ESC_NONE
 };
 
@@ -197,6 +199,10 @@ static enum ansi_escape_seq termReader_get_ansi_escape_sequence(void){
 			return ANSI_ESC_FIRST;
 		case '8' :
 			return ANSI_ESC_LAST;
+		case 'A' :
+			return ANSI_ESC_UP;
+		case 'B' :
+			return ANSI_ESC_DOWN;
 		case 'D' :
 			return ANSI_ESC_PREV;
 		case 'C' :
@@ -270,6 +276,40 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 							for ( ; j != i; j++){
 								#pragma GCC diagnostic ignored "-Wunused-result"
 								write(STDIN_FILENO, TERMREADER_CODE_CURR_NEXT, sizeof TERMREADER_CODE_CURR_NEXT);
+							}
+							break;
+						}
+						case ANSI_ESC_UP 	: {
+							if (term->history_up_handler != NULL){
+								if (term->history_up_handler(buffer, term->arg)){
+									for ( ; j; j--){
+										#pragma GCC diagnostic ignored "-Wunused-result"
+										write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+									}
+									write(STDIN_FILENO, TERMREADER_CODE_CLEAN_LINE, sizeof TERMREADER_CODE_CLEAN_LINE);
+
+									i = strlen(buffer);
+									j = i;
+
+									write(STDIN_FILENO, buffer, j);
+								}
+							}
+							break;
+						}
+						case ANSI_ESC_DOWN 	: {
+							if (term->history_down_handler != NULL){
+								if (term->history_down_handler(buffer, term->arg)){
+									for ( ; j; j--){
+										#pragma GCC diagnostic ignored "-Wunused-result"
+										write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+									}
+									write(STDIN_FILENO, TERMREADER_CODE_CLEAN_LINE, sizeof TERMREADER_CODE_CLEAN_LINE);
+
+									i = strlen(buffer);
+									j = i;
+
+									write(STDIN_FILENO, buffer, j);
+								}
 							}
 							break;
 						}

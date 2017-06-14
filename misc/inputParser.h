@@ -10,9 +10,9 @@
 #define INPUTPARSER_DESC_SIZE 256
 
 enum cmdEntryType{
-	INPUTPARSER_CMD_TYPE_NO_ARG 		 = 0,
-	INPUTPARSER_CMD_TYPE_OPT_ARG		 = 1,
-	INPUTPARSER_CMD_TYPE_ARG			 = 2
+	INPUTPARSER_CMD_TYPE_NO_ARG 	= 0,
+	INPUTPARSER_CMD_TYPE_OPT_ARG 	= 1,
+	INPUTPARSER_CMD_TYPE_ARG 		= 2
 };
 
 struct cmdEntry{
@@ -33,6 +33,8 @@ struct inputParser{
 	struct array 		cmd_array;
 #ifdef INTERACTIVE
 	struct termReader 	term;
+	struct array* 		hist_array;
+	int32_t 			hist_index;
 #endif
 	int32_t 			exit;
 };

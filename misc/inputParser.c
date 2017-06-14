@@ -11,6 +11,8 @@
 static int32_t inputParser_search_cmd(struct inputParser* parser, const char* cmd);
 #ifdef INTERACTIVE
 static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser);
+static int32_t inputParser_hist_up(char* buffer, struct inputParser* parser);
+static int32_t inputParser_hist_down(char* buffer, struct inputParser* parser);
 #endif
 
 static void inputParser_print_help(struct inputParser* parser, const char* arg);
@@ -21,7 +23,7 @@ static char* inputParser_get_argument(const char* cmd, char* line);
 struct inputParser* inputParser_create(void){
 	struct inputParser* parser;
 
-	parser = (struct inputParser*)malloc(sizeof(struct inputParser));
+	parser = malloc(sizeof(struct inputParser));
 	if (parser != NULL){
 		if (inputParser_init(parser)){
 			free(parser);
@@ -41,7 +43,7 @@ int inputParser_init(struct inputParser* parser){
 		return -1;
 	}
 	else{
-		if (inputParser_add_cmd(parser, "help", "Display this help", "str", INPUTPARSER_CMD_TYPE_OPT_ARG, parser,  (void(*)(void))inputParser_print_help)){
+		if (inputParser_add_cmd(parser, "help", "Display this help", "str", INPUTPARSER_CMD_TYPE_OPT_ARG, parser, (void(*)(void))inputParser_print_help)){
 			log_warn("unable to add help entry in the input parser");
 		}
 		if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit)){
@@ -49,10 +51,19 @@ int inputParser_init(struct inputParser* parser){
 		}
 
 		#ifdef INTERACTIVE
-		if(termReader_set_raw_mode(&(parser->term))){
+		termReader_init(&(parser->term));
+		if (termReader_set_raw_mode(&(parser->term))){
 			log_err("unable to set terminal raw mode");
 		}
-		termReader_set_tab_handler(&(parser->term), inputParser_complete_cmd, parser);
+		termReader_set_tab_handler(&(parser->term), inputParser_complete_cmd, parser)
+
+		if ((parser->hist_array = array_create(INPUTPARSER_LINE_SIZE)) == NULL){
+			log_err("unable to create array");
+		}
+		else{
+			parser->hist_index = 0;
+			termReader_set_history_handler(&(parser->term), inputParser_hist_up, inputParser_hist_down, parser)
+		}
 		#endif
 	}
 
@@ -64,7 +75,7 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 	int 			result = -1;
 	int32_t 		duplicate;
 
-	if (name != NULL && cmd_desc != NULL  && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
+	if (name != NULL && cmd_desc != NULL && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
 		duplicate = inputParser_search_cmd(parser, name);
 		if (duplicate >= 0){
 			log_err_m("\"%s\" is already registered as a command", name);
@@ -159,8 +170,20 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 			#endif
 		}
 
+		#ifdef INTERACTIVE
+		if (parser->hist_array != NULL){
+			if ((parser->hist_index = array_add(parser->hist_array, line)) < 0){
+				log_err("unable to add element to array");
+				parser->hist_index = array_get_length(parser->hist_array);
+			}
+			else{
+				parser->hist_index ++;
+			}
+		}
+		#endif
+
 		for (cmd = line, sep = line; sep != NULL; cmd = sep + 1){
-			while(*cmd == ' '){
+			while (*cmd == ' '){
 				cmd++;
 			}
 
@@ -175,7 +198,7 @@ void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv){
 				}
 				else if (entry->type == INPUTPARSER_CMD_TYPE_ARG){
 					if ((cmd_arg = inputParser_get_argument(entry->name, cmd)) == NULL){
-						log_err_m("this command requires at least one additionnal argument: %s", entry->arg_desc);
+						log_err_m("this command requires at least one additional argument: %s", entry->arg_desc);
 					}
 					else{
 						((void(*)(void*,char*))(entry->function))(entry->context, cmd_arg);
@@ -196,8 +219,12 @@ void inputParser_clean(struct inputParser* parser){
 	array_clean(&(parser->cmd_array));
 
 	#ifdef INTERACTIVE
-	if(termReader_reset_mode(&(parser->term))){
+	if (termReader_reset_mode(&(parser->term))){
 		log_err("unable to reset terminal mode");
+	}
+
+	if (parser->hist_array != NULL){
+		array_delete(parser->hist_array);
 	}
 	#endif
 }
@@ -225,6 +252,7 @@ static int32_t inputParser_search_cmd(struct inputParser* parser, const char* cm
 }
 
 #ifdef INTERACTIVE
+
 static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, uint32_t offset, struct inputParser* parser){
 	uint32_t 			i;
 	uint32_t 			j;
@@ -253,6 +281,35 @@ static uint32_t inputParser_complete_cmd(char* buffer, uint32_t buffer_length, u
 
 	return completion_offset;
 }
+
+static int32_t inputParser_hist_up(char* buffer, struct inputParser* parser){
+	if (parser->hist_index){
+		parser->hist_index --;
+
+		strncpy(buffer, array_get(parser->hist_array, parser->hist_index), INPUTPARSER_LINE_SIZE);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int32_t inputParser_hist_down(char* buffer, struct inputParser* parser){
+	if ((uint32_t)parser->hist_index + 1 < array_get_length(parser->hist_array)){
+		parser->hist_index ++;
+
+		strncpy(buffer, array_get(parser->hist_array, parser->hist_index), INPUTPARSER_LINE_SIZE);
+	}
+	else if ((uint32_t)parser->hist_index + 1 == array_get_length(parser->hist_array)){
+		parser->hist_index ++;
+		buffer[0] = '\0';
+	}
+	else{
+		buffer[0] = '\0';
+	}
+
+	return 1;
+}
+
 #endif
 
 static void inputParser_print_help(struct inputParser* parser, const char* arg){
@@ -328,7 +385,7 @@ static char* inputParser_get_argument(const char* cmd, char* line){
 	char* result;
 
 	result = line + strlen(cmd);
-	while(*result == ' '){
+	while (*result == ' '){
 		result++;
 	}
 
@@ -386,7 +443,7 @@ void inputParser_extract_range(const char* input, uint32_t* start, uint32_t* sto
 					*start = atoi(input + i);
 					state = RANGE_PARSER_SEP;
 				}
-				else if(state == RANGE_PARSER_NEG_INDEX1){
+				else if (state == RANGE_PARSER_NEG_INDEX1){
 					tmp = atoi(input + i);
 					if (tmp < *stop){
 						*start = *stop - tmp;
