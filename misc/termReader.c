@@ -8,7 +8,15 @@
 
 #define TERMREADER_SPECIAL_CHAR_EOT 0x04
 #define TERMREADER_SPECIAL_CHAR_TAB 0x09
-#define TERMREADER_SPECIAL_CHAR_DEL 0x7F
+#define TERMREADER_SPECIAL_CHAR_LF 	0x0a
+#define TERMREADER_SPECIAL_CHAR_ESC 0x1b
+#define TERMREADER_SPECIAL_CHAR_DEL 0x7f
+
+#define TERMREADER_CODE_CURR_PREV 	"\x1b[D"
+#define TERMREADER_CODE_CURR_NEXT 	"\x1b[C"
+#define TERMREADER_CODE_CURR_PUSH 	"\x1b[s"
+#define TERMREADER_CODE_CURR_POP 	"\x1b[u"
+#define TERMREADER_CODE_CLEAN_LINE 	"\x1b[K"
 
 static void termReader_remove_last_blank(char* buffer, uint32_t length);
 
@@ -171,18 +179,58 @@ int32_t termReader_set_raw_mode(struct termReader* term){
 	return 0;
 }
 
+enum ansi_escape_seq{
+	ANSI_ESC_PREV,
+	ANSI_ESC_NEXT,
+	ANSI_ESC_FIRST,
+	ANSI_ESC_LAST,
+	ANSI_ESC_NONE
+};
+
+static enum ansi_escape_seq termReader_get_ansi_escape_sequence(void){
+	if (fgetc(stdin) != '['){
+		return ANSI_ESC_NONE;
+	}
+
+	switch (fgetc(stdin)){
+		case '7' :
+			return ANSI_ESC_FIRST;
+		case '8' :
+			return ANSI_ESC_LAST;
+		case 'D' :
+			return ANSI_ESC_PREV;
+		case 'C' :
+			return ANSI_ESC_NEXT;
+		default :
+			return ANSI_ESC_NONE;
+	}
+}
+
 int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buffer_length){
 	uint32_t 	i = 0;
 	uint32_t 	j = 0;
+	uint32_t 	k = 0;
 	int 		character;
 
 	do{
 		character = fgetc(stdin);
-		switch(character){
-			case TERMREADER_SPECIAL_CHAR_EOT : {
+		switch (character){
+			case TERMREADER_SPECIAL_CHAR_EOT 	: {
 				return -1;
 			}
-			case '\n' 	: {
+			case TERMREADER_SPECIAL_CHAR_TAB 	: {
+				if (term->is_tty && i == j && term->tab_handler != NULL && term->arg != NULL){
+					k = term->tab_handler(buffer, buffer_length, i, term->arg);
+					if (k > i){
+						#pragma GCC diagnostic ignored "-Wunused-result"
+						write(STDIN_FILENO, buffer + i, k - i);
+						i = k;
+						j = k;
+					}
+				}
+				break;
+			}
+			case TERMREADER_SPECIAL_CHAR_LF 	: {
 				if (term->is_tty){
 					#pragma GCC diagnostic ignored "-Wunused-result"
 					write(STDIN_FILENO, &character, 1);
@@ -193,24 +241,68 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 				}
 				break;
 			}
-			case TERMREADER_SPECIAL_CHAR_TAB : {
-				if (term->tab_handler != NULL && term->arg != NULL){
-					j = term->tab_handler(buffer, buffer_length, i, term->arg);
-					if (j > i){
-						#pragma GCC diagnostic ignored "-Wunused-result"
-						write(STDIN_FILENO, buffer + i, j - i);
-						i = j;
+			case TERMREADER_SPECIAL_CHAR_ESC : {
+				if (term->is_tty){
+					switch (termReader_get_ansi_escape_sequence()){
+						case ANSI_ESC_PREV 	: {
+							if (j){
+								j--;
+								#pragma GCC diagnostic ignored "-Wunused-result"
+								write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+							}
+							break;
+						}
+						case ANSI_ESC_NEXT 	: {
+							if (j < i){
+								j++;
+								#pragma GCC diagnostic ignored "-Wunused-result"
+								write(STDIN_FILENO, TERMREADER_CODE_CURR_NEXT, sizeof TERMREADER_CODE_CURR_NEXT);
+							}
+						}
+						case ANSI_ESC_FIRST : {
+							for ( ; j; j--){
+								#pragma GCC diagnostic ignored "-Wunused-result"
+								write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+							}
+							break;
+						}
+						case ANSI_ESC_LAST 	: {
+							for ( ; j != i; j++){
+								#pragma GCC diagnostic ignored "-Wunused-result"
+								write(STDIN_FILENO, TERMREADER_CODE_CURR_NEXT, sizeof TERMREADER_CODE_CURR_NEXT);
+							}
+							break;
+						}
+						case ANSI_ESC_NONE 	: {
+							break;
+						}
 					}
 				}
 				break;
 			}
 			case TERMREADER_SPECIAL_CHAR_DEL : {
-				if (i > 0){
-					i --;
-					if (term->is_tty){
-						character = '\b';
-						#pragma GCC diagnostic ignored "-Wunused-result"
-						write(STDIN_FILENO, &character, 1);
+				if (term->is_tty){
+					if (j){
+						if (j < i){
+							memmove(buffer + j - 1, buffer + j, i - j);
+							j --;
+							i --;
+
+							#pragma GCC diagnostic ignored "-Wunused-result"
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_PUSH, sizeof TERMREADER_CODE_CURR_PUSH);
+							write(STDIN_FILENO, TERMREADER_CODE_CLEAN_LINE, sizeof TERMREADER_CODE_CLEAN_LINE);
+							write(STDIN_FILENO, buffer + j, i - j);
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_POP, sizeof TERMREADER_CODE_CURR_POP);
+						}
+						else{
+							i --;
+							j --;
+
+							#pragma GCC diagnostic ignored "-Wunused-result"
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_PREV, sizeof TERMREADER_CODE_CURR_PREV);
+							write(STDIN_FILENO, TERMREADER_CODE_CLEAN_LINE, sizeof TERMREADER_CODE_CLEAN_LINE);
+						}
 					}
 				}
 				break;
@@ -221,19 +313,37 @@ int32_t termReader_get_line(struct termReader* term, char* buffer, uint32_t buff
 			default 	: {
 				if (valid_char[character & 0x7f]){
 					if (term->is_tty){
-						#pragma GCC diagnostic ignored "-Wunused-result"
-						write(STDIN_FILENO, &character, 1);
+						if (j < i){
+							memmove(buffer + j + 1, buffer + j, i - j);
+							buffer[j ++] = (char)character;
+							i ++;
+
+							#pragma GCC diagnostic ignored "-Wunused-result"
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_PUSH, sizeof TERMREADER_CODE_CURR_PUSH);
+							write(STDIN_FILENO, TERMREADER_CODE_CLEAN_LINE, sizeof TERMREADER_CODE_CLEAN_LINE);
+							write(STDIN_FILENO, buffer + j - 1, i - j + 1);
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_POP, sizeof TERMREADER_CODE_CURR_POP);
+							write(STDIN_FILENO, TERMREADER_CODE_CURR_NEXT, sizeof TERMREADER_CODE_CURR_NEXT);
+						}
+						else{
+							buffer[i ++] = (char)character;
+							j++;
+
+							#pragma GCC diagnostic ignored "-Wunused-result"
+							write(STDIN_FILENO, &character, 1);
+						}
 					}
 					else{
+						buffer[i ++] = (char)character;
+
 						#pragma GCC diagnostic ignored "-Wunused-result"
 						write(STDOUT_FILENO, &character, 1);
 					}
-					buffer[i ++] = (char)character;
 				}
 				break;
 			}
 		}
-	} while(character != '\n' && i < buffer_length - 1);
+	} while (character != TERMREADER_SPECIAL_CHAR_LF && i < buffer_length - 1);
 	buffer[i] = '\0';
 
 	termReader_remove_last_blank(buffer, i);
@@ -251,7 +361,7 @@ int32_t termReader_reset_mode(struct termReader* term){
 }
 
 static void termReader_remove_last_blank(char* buffer, uint32_t length){
-	while(length > 0 && buffer[length - 1] == ' '){
+	while (length > 0 && buffer[length - 1] == ' '){
 		buffer[length - 1] = '\0';
 		length--;
 	}
