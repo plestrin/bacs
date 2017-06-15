@@ -281,21 +281,17 @@ void layerNodeData_clean_unode(struct unode* unode){
 
 static void graphIso_assign_recursive_edge(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, void* assignment, uint32_t nb_assignment, struct possibleAssignment* possible_assignment, struct array* assignment_array);
 
-/* ===================================================================== */
-/* Handle routines 														 */
-/* ===================================================================== */
-
 static struct nodeTab* graphIso_create_nodeTab(struct graph* graph, uint32_t(*node_get_label)(struct node*)){
 	struct node* 		node_cursor;
 	uint32_t 			i;
 	struct nodeTab* 	node_tab;
 
-	if ((node_tab = (struct nodeTab*)malloc(sizeof(struct nodeTab) * graph->nb_node)) == NULL){
+	if ((node_tab = malloc(sizeof(struct nodeTab) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
 
-	for(node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+	for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
 		node_tab[i].label 	= node_get_label(node_cursor);
 		node_tab[i].node 	= node_cursor;
 		node_cursor->ptr = (void*)i;
@@ -309,12 +305,12 @@ static struct subNodeTab* graphIso_create_subNodeTab(struct graph* graph, uint32
 	uint32_t 			i;
 	struct subNodeTab* 	sub_node_tab;
 
-	if ((sub_node_tab = (struct subNodeTab*)malloc(sizeof(struct subNodeTab) * graph->nb_node)) == NULL){
+	if ((sub_node_tab = malloc(sizeof(struct subNodeTab) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
 
-	for(node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
+	for (node_cursor = graph_get_head_node(graph), i = 0; node_cursor != NULL; node_cursor = node_get_next(node_cursor), i++){
 		sub_node_tab[i].label 	= node_get_label(node_cursor);
 		sub_node_tab[i].node 	= node_cursor;
 		sub_node_tab[i].off_src = 0;
@@ -333,7 +329,7 @@ static struct edgeTab* graphIso_create_edgeTab(struct graph* graph, uint32_t(*ed
 	struct node* 	node_cursor;
 	struct edge* 	edge_cursor;
 
-	if ((edge_tab = (struct edgeTab*)malloc(sizeof(struct edgeTab) * graph->nb_edge)) == NULL){
+	if ((edge_tab = malloc(sizeof(struct edgeTab) * graph->nb_edge)) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -356,7 +352,7 @@ static uint32_t* graphIso_create_src_fast(struct edgeTab* edge_tab, uint32_t nb_
 	uint32_t 	j;
 	uint32_t* 	result;
 
-	if ((result = (uint32_t*)malloc(sizeof(uint32_t) * nb_edge)) == NULL){
+	if ((result = malloc(sizeof(uint32_t) * nb_edge)) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -385,7 +381,7 @@ static uint32_t* graphIso_create_dst_fast(struct edgeTab* edge_tab, uint32_t nb_
 	uint32_t 	j;
 	uint32_t* 	result;
 
-	if ((result = (uint32_t*)malloc(sizeof(uint32_t) * nb_edge)) == NULL){
+	if ((result = malloc(sizeof(uint32_t) * nb_edge)) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -416,7 +412,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	struct compareArgument 	cmp_arg;
 	void** 					save_ptr = NULL;
 
-	if (graph->nb_node == 0){
+	if (!graph->nb_node){
 		log_err("unable to create graphIsoHandle for empty graph");
 		return NULL;
 	}
@@ -426,7 +422,7 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 		return NULL;
 	}
 
-	if ((save_ptr = (void**)malloc(sizeof(void*) * graph->nb_node)) == NULL){
+	if ((save_ptr = malloc(sizeof(void*) * graph->nb_node)) == NULL){
 		log_err("unable to allocate memory");
 		goto error;
 	}
@@ -452,8 +448,8 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	free(save_ptr);
 	save_ptr = NULL;
 
-	handle->src_edge_mapping = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_edge);
-	handle->dst_edge_mapping = (uint32_t*)malloc(sizeof(uint32_t) * graph->nb_edge);
+	handle->src_edge_mapping = malloc(sizeof(uint32_t) * graph->nb_edge);
+	handle->dst_edge_mapping = malloc(sizeof(uint32_t) * graph->nb_edge);
 
 	for (i = 0; i < graph->nb_edge; i++){
 		handle->src_edge_mapping[i] = i;
@@ -636,7 +632,7 @@ static void possibleAssignment_choose_next(struct possibleAssignment* possible_a
 struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, uint32_t(*node_get_label)(struct node*), uint32_t(*edge_get_label)(struct edge*)){
 	struct subGraphIsoHandle* handle;
 
-	if (graph->nb_node == 0){
+	if (!graph->nb_node){
 		log_err("unable to create subGraphIsoHandle for empty graph");
 		return NULL;
 	}
@@ -704,10 +700,6 @@ void graphIso_delete_subGraph_handle(struct subGraphIsoHandle* sub_graph_handle)
 	free(sub_graph_handle);
 }
 
-/* ===================================================================== */
-/* Possible assignment routines 										 */
-/* ===================================================================== */
-
 static struct possibleAssignment* possibleAssignment_create(struct graphIsoHandle* graph_handle, struct subGraphIsoHandle* sub_graph_handle, uint8_t* error){
 	struct edgeLocator{
 		uint32_t 	offset;
@@ -733,7 +725,7 @@ static struct possibleAssignment* possibleAssignment_create(struct graphIsoHandl
 	srch_arg.edge_tab[0] 	= sub_graph_handle->edge_tab;
 	srch_arg.edge_tab[1] 	= graph_handle->edge_tab;
 
-	if ((edge_loc_buffer = (struct edgeLocator*)malloc(sizeof(struct edgeLocator) * subGraphIsoHandle_get_nb_edge(sub_graph_handle))) == NULL){
+	if ((edge_loc_buffer = malloc(sizeof(struct edgeLocator) * subGraphIsoHandle_get_nb_edge(sub_graph_handle))) == NULL){
 		log_err("unable to allocate memory");
 		*error = 1;
 		return NULL;
@@ -772,7 +764,7 @@ static struct possibleAssignment* possibleAssignment_create(struct graphIsoHandl
 		nb_possible_assignment += edge_loc_buffer[i].size;
 	}
 
-	if ((possible_assignment = (struct possibleAssignment*)malloc(possibleAssignment_get_size(subGraphIsoHandle_get_nb_node(sub_graph_handle), subGraphIsoHandle_get_nb_edge(sub_graph_handle), nb_possible_assignment))) == NULL){
+	if ((possible_assignment = malloc(possibleAssignment_get_size(subGraphIsoHandle_get_nb_node(sub_graph_handle), subGraphIsoHandle_get_nb_edge(sub_graph_handle), nb_possible_assignment))) == NULL){
 		log_err("unable to allocate memory");
 		free(edge_loc_buffer);
 		*error = 1;
@@ -1209,7 +1201,7 @@ static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* p
 			buffer_size = uint32_t_remove_duplicate(buffer, buffer_size);
 		}
 		else{
-			if ((buffer_size = possibleAssignment_intersect_src_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge)) == 0){
+			if (!(buffer_size = possibleAssignment_intersect_src_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge))){
 				return -1;
 			}
 		}
@@ -1230,7 +1222,7 @@ static int32_t possibleAssignment_fast_compare_node(struct possibleAssignment* p
 			buffer_size = uint32_t_remove_duplicate(buffer, buffer_size);
 		}
 		else{
-			if ((buffer_size = possibleAssignment_intersect_dst_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge)) == 0){
+			if (!(buffer_size = possibleAssignment_intersect_dst_endpoint(possible_assignment, graph_handle, buffer, buffer_size, edge))){
 				return -1;
 			}
 		}
@@ -1281,7 +1273,7 @@ static int32_t possibleAssignment_global_update_first(struct possibleAssignment*
 	uint32_t* 	restart_idx_ou;
 	uint32_t* 	restart_idx_tp;
 
-	if ((restart_idx_root = (uint32_t*)malloc(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2)) == NULL){
+	if ((restart_idx_root = malloc(sizeof(uint32_t) * subGraphIsoHandle_get_nb_node(sub_graph_handle) * 2)) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
@@ -1682,6 +1674,7 @@ static int32_t possibleAssignment_local_update(struct possibleAssignment* possib
 #endif
 
 #if SUBGRAPHISOMORPHISM_OPTIM_COMPACT == 1
+
 static void possibleAssignment_compact(struct possibleAssignment* possible_assignment){
 	uint32_t i;
 	uint32_t j;
@@ -1691,11 +1684,8 @@ static void possibleAssignment_compact(struct possibleAssignment* possible_assig
 		possible_assignment->edge_meta_buffer[i].offset = j;
 	}
 }
-#endif
 
-/* ===================================================================== */
-/* Compare routines 													 */
-/* ===================================================================== */
+#endif
 
 static void* bsearch_r(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*, void*), void* arg){
 	int32_t result;

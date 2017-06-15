@@ -21,7 +21,7 @@ char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer, size_t* b
 	if (result == NULL){
 		result = (char*)calloc(buffer_length_, 1);
 	}
-	
+
 	if (result == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
@@ -37,7 +37,7 @@ char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer, size_t* b
 			break;
 		}
 
-		switch(txt[i]){
+		switch (txt[i]){
 			case '0' : {result[j >> 1] |= 0x00 << ((~j & 0x01) << 2); j ++; break;}
 			case '1' : {result[j >> 1] |= 0x01 << ((~j & 0x01) << 2); j ++; break;}
 			case '2' : {result[j >> 1] |= 0x02 << ((~j & 0x01) << 2); j ++; break;}

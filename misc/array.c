@@ -10,7 +10,7 @@ static int32_t array_compare(const uint32_t* index1, const uint32_t* index2, voi
 struct _array* _array_create(void){
 	struct _array* _array;
 
-	_array = (struct _array*)malloc(sizeof(struct _array));
+	_array = malloc(sizeof(struct _array));
 	if (_array != NULL){
 		_array_init(_array);
 	}
@@ -45,7 +45,7 @@ int32_t _array_add(struct _array* _array, void* element){
 
 int32_t _array_clone(struct _array* _array_src, struct _array* _array_dst){
 	if (_array_src->nb_allocated_page > 0){
-		_array_dst->buffer = (struct arrayPage*)malloc(_array_src->nb_allocated_page * sizeof(struct arrayPage));
+		_array_dst->buffer = malloc(_array_src->nb_allocated_page * sizeof(struct arrayPage));
 		if (_array_dst->buffer == NULL){
 			log_err("unable to allocate memory");
 			return -1;
@@ -65,9 +65,9 @@ int32_t _array_clone(struct _array* _array_src, struct _array* _array_dst){
 struct array* array_create(uint32_t element_size){
 	struct array* array;
 
-	array = (struct array*)malloc(sizeof(struct array));
+	array = malloc(sizeof(struct array));
 	if (array != NULL){
-		if (array_init(array, element_size) != 0){
+		if (array_init(array, element_size)){
 			free(array);
 			array = NULL;
 		}
@@ -82,12 +82,12 @@ struct array* array_create(uint32_t element_size){
 int32_t array_init(struct array* array, uint32_t element_size){
 	_array_init(&(array->pages));
 
-	if (element_size == 0){
+	if (!element_size){
 		log_err("element size is equal to 0");
 		return -1;
 	}
 
-	array->buffer = (char*)malloc(ARRAY_DEFAULT_ALLOC_SIZE);
+	array->buffer = malloc(ARRAY_DEFAULT_ALLOC_SIZE);
 	if (array->buffer != NULL){
 		array->nb_allocated_byte 	= ARRAY_DEFAULT_ALLOC_SIZE;
 		array->nb_filled_byte 		= 0;
@@ -137,7 +137,7 @@ int32_t array_add(struct array* array, const void* element){
 				nb_allocated_byte += ARRAY_DEFAULT_ALLOC_SIZE;
 			}
 
-			array->buffer = (char*)malloc(nb_allocated_byte);
+			array->buffer = malloc(nb_allocated_byte);
 			if (array->buffer == NULL){
 				log_err("unable to realloc memory");
 				return -1;
@@ -194,7 +194,7 @@ void* array_inc(struct array* array){
 				nb_allocated_byte += ARRAY_DEFAULT_ALLOC_SIZE;
 			}
 
-			array->buffer = (char*)malloc(nb_allocated_byte);
+			array->buffer = malloc(nb_allocated_byte);
 			if (array->buffer == NULL){
 				log_err("unable to realloc memory");
 				return NULL;
@@ -230,7 +230,7 @@ uint32_t* array_create_mapping(struct array* array, int32_t(*compare)(void* elem
 	#pragma GCC diagnostic ignored "-Wpedantic"
 	arg[1] = (void*)compare;
 
-	mapping = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(array));
+	mapping = malloc(sizeof(uint32_t) * array_get_length(array));
 	if (mapping != NULL){
 		for (i = 0; i < array_get_length(array); i++){
 			mapping[i] = i;
@@ -258,7 +258,7 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 	struct arrayPage* 	page_src;
 	struct arrayPage* 	page_dst;
 
-	array_dst->buffer = (char*)malloc(array_src->nb_allocated_byte);
+	array_dst->buffer = malloc(array_src->nb_allocated_byte);
 	if (array_dst->buffer == NULL){
 		log_err("unable to allocate memory");
 		return result;
@@ -281,7 +281,7 @@ int32_t array_clone(struct array* array_src, struct array* array_dst){
 		page_src = (struct arrayPage*)_array_get(array_src->pages, i);
 		page_dst = (struct arrayPage*)_array_get(array_dst->pages, i);
 
-		page_dst->buffer = (char*)malloc(page_src->nb_allocated_byte);
+		page_dst->buffer = malloc(page_src->nb_allocated_byte);
 		if (page_dst->buffer == NULL){
 			log_err_m("unable to allocate memory for page %u", i);
 			return result;
@@ -322,7 +322,7 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 
 	while (nb_remaining_element > 0){
 		nb_allocated_element = ((ARRAY_DEFAULT_PAGE_SIZE - array_dst->nb_filled_byte) / array_dst->element_size > nb_remaining_element) ? nb_remaining_element : ((ARRAY_DEFAULT_PAGE_SIZE - array_dst->nb_filled_byte) / array_dst->element_size);
-		nb_allocated_byte = ((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) / ARRAY_DEFAULT_ALLOC_SIZE + (((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) % ARRAY_DEFAULT_ALLOC_SIZE == 0) ? 0 : 1)) * ARRAY_DEFAULT_ALLOC_SIZE;
+		nb_allocated_byte = ((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) / ARRAY_DEFAULT_ALLOC_SIZE + ((!((array_dst->nb_filled_byte + nb_allocated_element * array_dst->element_size) % ARRAY_DEFAULT_ALLOC_SIZE)) ? 0 : 1)) * ARRAY_DEFAULT_ALLOC_SIZE;
 
 		if (nb_allocated_byte > array_dst->nb_allocated_byte){
 			buffer = realloc(array_dst->buffer, nb_allocated_byte);
@@ -336,7 +336,7 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 		}
 
 		nb_copied_element = 0;
-		while(nb_copied_element < nb_allocated_element){
+		while (nb_copied_element < nb_allocated_element){
 			copy_index_src = offset + (nb_element - nb_remaining_element) + nb_copied_element;
 
 			if (_array_get_length(array_src->pages) * (ARRAY_DEFAULT_PAGE_SIZE / array_src->element_size) <= copy_index_src){

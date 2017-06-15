@@ -10,7 +10,7 @@
 void* list_add_head(struct list* list, const void* element){
 	struct listElement* list_el;
 
-	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
+	if ((list_el = malloc(list_get_element_size(list))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -35,7 +35,7 @@ void* list_add_head(struct list* list, const void* element){
 void* list_add_tail(struct list* list, const void* element){
 	struct listElement* list_el;
 
-	if ((list_el = (struct listElement*)malloc(list_get_element_size(list))) == NULL){
+	if ((list_el = malloc(list_get_element_size(list))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -134,7 +134,7 @@ int32_t listIterator_push_next(struct listIterator* it, const void* element){
 		return -1;
 	}
 
-	if ((list_el = (struct listElement*)malloc(list_get_element_size(it->list))) == NULL){
+	if ((list_el = malloc(list_get_element_size(it->list))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
@@ -143,7 +143,7 @@ int32_t listIterator_push_next(struct listIterator* it, const void* element){
 
 	list_el->prev = it->cursor;
 	list_el->next = it->cursor->next;
-	
+
 	it->cursor->next = list_el;
 	if (list_el->next == NULL){
 		it->list->tail = list_el;
@@ -165,7 +165,7 @@ int32_t listIterator_push_prev(struct listIterator* it, const void* element){
 		return -1;
 	}
 
-	if ((list_el = (struct listElement*)malloc(list_get_element_size(it->list))) == NULL){
+	if ((list_el = malloc(list_get_element_size(it->list))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
@@ -174,7 +174,7 @@ int32_t listIterator_push_prev(struct listIterator* it, const void* element){
 
 	list_el->prev = it->cursor->prev;
 	list_el->next = it->cursor;
-	
+
 	it->cursor->prev = list_el;
 	if (list_el->prev == NULL){
 		it->list->head = list_el;
@@ -207,7 +207,7 @@ void* listIterator_pop_next(struct listIterator* it){
 	}
 	if (it->cursor->next == NULL){
 		it->list->tail = it->cursor->prev;
-		
+
 	}
 	else{
 		it->cursor->next->prev = it->cursor->prev;
@@ -239,7 +239,7 @@ void* listIterator_pop_prev(struct listIterator* it){
 	}
 	if (it->cursor->next == NULL){
 		it->list->tail = it->cursor->prev;
-		
+
 	}
 	else{
 		it->cursor->next->prev = it->cursor->prev;

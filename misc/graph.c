@@ -59,7 +59,7 @@
 struct graph* graph_create(uint32_t node_data_size, uint32_t edge_data_size){
 	struct graph* graph;
 
-	graph = (struct graph*)malloc(sizeof(struct graph));
+	graph = malloc(sizeof(struct graph));
 	if (graph != NULL){
 		graph_init(graph, node_data_size, edge_data_size);
 	}
@@ -301,7 +301,7 @@ struct edge* graph_get_edge(struct node* node_src, struct node* node_dst){
 	struct edge* edge;
 
 	edge = node_get_head_edge_src(node_src);
-	while(edge != NULL){
+	while (edge != NULL){
 		if (edge_get_dst(edge) == node_dst){
 			break;
 		}
@@ -466,7 +466,7 @@ int32_t graph_copy(struct graph* graph_dst, const struct graph* graph_src, int32
 struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
 	struct graph* graph;
 
-	graph = (struct graph*)malloc(sizeof(struct graph));
+	graph = malloc(sizeof(struct graph));
 	if (graph != NULL){
 		memcpy(graph, graph_src, sizeof(struct graph));
 		graph->node_linkedList_head 	= NULL;
@@ -489,11 +489,11 @@ struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(voi
 
 int32_t graph_concat(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg){
 	if (graph_dst->node_data_size != graph_src->node_data_size){
-		log_err("unable to concat graphs with different node size");
+		log_err("unable to concatenate graphs with different node size");
 		return -1;
 	}
 	if (graph_dst->edge_data_size != graph_src->edge_data_size){
-		log_err("unable to concat graphs with different edge size");
+		log_err("unable to concatenate graphs with different edge size");
 		return -1;
 	}
 	if (graph_copy(graph_dst, graph_src, node_copy, edge_copy, arg)){

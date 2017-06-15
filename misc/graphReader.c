@@ -40,7 +40,7 @@ static void graphReaderCursor_get_next(struct graphReaderCursor* reader_cursor){
 	size_t 	i;
 	size_t 	j;
 
-	switch(reader_cursor->token){
+	switch (reader_cursor->token){
 		case READER_TOKEN_NONE 			: {
 			for (i = 0; i < reader_cursor->remaining_size; i++){
 				if (reader_cursor->cursor[i] != ' ' && reader_cursor->cursor[i] != '\n' && reader_cursor->cursor[i] != '\a' && reader_cursor->cursor[i] != '\t'){
@@ -160,7 +160,7 @@ static void graphReaderCursor_get_next(struct graphReaderCursor* reader_cursor){
 	}
 
 	if (fetch_new){
-		switch(*reader_cursor->cursor){
+		switch (*reader_cursor->cursor){
 			case '"' : {
 				reader_cursor->token = READER_TOKEN_GRAPH_NAME;
 				break;
@@ -240,7 +240,7 @@ static void graphReader_set_edge(struct graphReaderEdge* edge, struct graphReade
 void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReaderCallback* callback){
 	struct graphReaderCursor 	reader_cursor;
 	enum graphReaderState 		reader_state;
-	struct graphReaderNode*	 	node 				= NULL;
+	struct graphReaderNode* 	node 				= NULL;
 	struct graphReaderEdge		edge;
 	void* 						binary_tree_root 	= NULL;
 
@@ -250,10 +250,10 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 	reader_state = READER_STATE_START;
 
 	graphReaderCursor_get_next(&reader_cursor);
-	while(reader_cursor.token != READER_TOKEN_NONE){
-		switch(reader_state){
+	while (reader_cursor.token != READER_TOKEN_NONE){
+		switch (reader_state){
 			case READER_STATE_START 		: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 	: {
 						graphReader_get_graph_name(&reader_cursor, callback);
 
@@ -264,13 +264,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is START");
+						log_err("syntax error: state is START");
 					}
 				}
 				break;
 			}
 			case READER_STATE_GRAPH 		: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 	: {
 						log_warn("empty signature -> skip");
 						graphReader_get_graph_name(&reader_cursor, callback);
@@ -294,13 +294,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is GRAPH");
+						log_err("syntax error: state is GRAPH");
 					}
 				}
 				break;
 			}
 			case READER_STATE_SRC 			: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_LABEL 		: {
 						graphReader_get_node_label(&reader_cursor, node, callback);
 
@@ -318,13 +318,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is SRC");
+						log_err("syntax error: state is SRC");
 					}
 				}
 				break;
 			}
 			case READER_STATE_SRC_DESC 		: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_EDGE 			: {
 						edge.src = node;
 						edge.label_ptr = NULL;
@@ -340,13 +340,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is SRC_DESC");
+						log_err("syntax error: state is SRC_DESC");
 					}
 				}
 				break;
 			}
 			case READER_STATE_EDGE 			: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_NODE_ID 		: {
 						if ((node = graphReader_get_node(&reader_cursor, &binary_tree_root, callback)) == NULL){
 							log_err("unable to get graphReaderNode");
@@ -365,13 +365,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is EDGE");
+						log_err("syntax error: state is EDGE");
 					}
 				}
 				break;
 			}
 			case READER_STATE_EDGE_DESC 	: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_NODE_ID 		: {
 						if ((node = graphReader_get_node(&reader_cursor, &binary_tree_root, callback)) == NULL){
 							log_err("unable to get graphReaderNode");
@@ -384,13 +384,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is EDGE");
+						log_err("syntax error: state is EDGE");
 					}
 				}
 				break;
 			}
 			case READER_STATE_DST 			: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 		: {
 						edge.dst = node;
 						graphReader_set_edge(&edge, callback);
@@ -428,13 +428,13 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is DST");
+						log_err("syntax error: state is DST");
 					}
 				}
 				break;
 			}
 			case READER_STATE_DST_DESC 		: {
-				switch(reader_cursor.token){
+				switch (reader_cursor.token){
 					case READER_TOKEN_GRAPH_NAME 		: {
 						edge.dst = node;
 						graphReader_set_edge(&edge, callback);
@@ -470,7 +470,7 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 						break;
 					}
 					default 						: {
-						log_err("syntaxe error: state is DST_DESC");
+						log_err("syntax error: state is DST_DESC");
 					}
 				}
 				break;
@@ -484,7 +484,7 @@ void graphReader_parse(const void* buffer, size_t buffer_size, struct graphReade
 		graphReader_set_edge(&edge, callback);
 	}
 	else{
-		log_err("syntaxe error: incorrect state at the end of the file");
+		log_err("syntax error: incorrect state at the end of the file");
 	}
 
 	if (callback->callback_graph_end != NULL){
@@ -532,11 +532,11 @@ static struct graphReaderNode* graphReader_get_node(struct graphReaderCursor* re
 	struct graphReaderNode*		new_node;
 	struct graphReaderNode** 	existing_node;
 
-	if ((new_node = (struct graphReaderNode*)malloc(sizeof(struct graphReaderNode))) == NULL){
+	if ((new_node = malloc(sizeof(struct graphReaderNode))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
-	
+
 	new_node->id = (uint32_t)atoi(reader_cursor->cursor);
 
 	existing_node = (struct graphReaderNode**)tsearch((void*)new_node, binary_tree_root, graphReaderNode_compare_id);
@@ -545,7 +545,7 @@ static struct graphReaderNode* graphReader_get_node(struct graphReaderCursor* re
 		free(new_node);
 		return NULL;
 	}
-	
+
 	if (*existing_node != new_node){
 		free(new_node);
 		new_node = *existing_node;

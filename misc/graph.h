@@ -7,8 +7,8 @@
 #include "base.h"
 
 /* One can use a better allocator */
-#define graph_allocate_edge(graph) 		(struct edge*)malloc(sizeof(struct edge) + (graph)->edge_data_size)
-#define graph_allocate_node(graph)		(struct node*)malloc(sizeof(struct node) + (graph)->node_data_size)
+#define graph_allocate_edge(graph) 		malloc(sizeof(struct edge) + (graph)->edge_data_size)
+#define graph_allocate_node(graph)		malloc(sizeof(struct node) + (graph)->node_data_size)
 #define graph_free_edge(graph, edge) 	free(edge)
 #define graph_free_node(graph, node) 	free(node)
 
@@ -125,7 +125,7 @@ struct graph* graph_clone(const struct graph* graph_src, int32_t(*node_copy)(voi
 int32_t graph_concat(struct graph* graph_dst, const struct graph* graph_src, int32_t(*node_copy)(void*,const void*,void*), int32_t(*edge_copy)(void*,const void*,void*), void* arg);
 
 #define graph_clean(graph) 																						\
-	while((graph)->node_linkedList_head != NULL){ 																\
+	while ((graph)->node_linkedList_head != NULL){ 																\
 		graph_remove_node((graph), (graph)->node_linkedList_head); 												\
 	}
 

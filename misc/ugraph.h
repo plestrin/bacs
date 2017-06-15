@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 /* One can use a better allocator */
-#define ugraph_allocate_edge(ugraph) 				(struct uedgeContainer*)malloc(sizeof(struct uedgeContainer) + (ugraph)->uedge_data_size)
-#define ugraph_allocate_node(ugraph)				(struct unode*)malloc(sizeof(struct unode) + (ugraph)->unode_data_size)
+#define ugraph_allocate_edge(ugraph) 				malloc(sizeof(struct uedgeContainer) + (ugraph)->uedge_data_size)
+#define ugraph_allocate_node(ugraph)				malloc(sizeof(struct unode) + (ugraph)->unode_data_size)
 #define ugraph_free_edge(ugraph, uedge_container) 	free(uedge_container)
 #define ugraph_free_node(ugraph, unode) 			free(unode)
 
@@ -84,7 +84,7 @@ void ugraph_remove_node(struct ugraph* ugraph, struct unode* unode);
 #define ugraph_get_tail_node(ugraph) 	((ugraph)->unode_linkedList_tail)
 
 #define ugraph_clean(ugraph) 																					\
-	while((ugraph)->unode_linkedList_head != NULL){ 															\
+	while ((ugraph)->unode_linkedList_head != NULL){ 															\
 		ugraph_remove_node((ugraph), (ugraph)->unode_linkedList_head); 											\
 	}
 

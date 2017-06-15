@@ -81,7 +81,7 @@
 struct ugraph* ugraph_create(size_t unode_data_size, size_t uedge_data_size){
 	struct ugraph* ugraph;
 
-	ugraph = (struct ugraph*)malloc(sizeof(struct ugraph));
+	ugraph = malloc(sizeof(struct ugraph));
 	if (ugraph != NULL){
 		ugraph_init(ugraph, unode_data_size, uedge_data_size);
 	}

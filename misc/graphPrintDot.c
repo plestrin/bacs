@@ -8,7 +8,7 @@
 #define GRAPHPRINTDOT_DEFAULT_FILE_NAME "graph.dot"
 
 #define graphPrintDot_print_prologue(graph, file, arg) 																\
-	if ((graph)->dotPrint_prologue != NULL){  																		\
+	if ((graph)->dotPrint_prologue != NULL){ 																		\
 		(graph)->dotPrint_prologue((file), (arg)); 																	\
 	}
 
@@ -23,7 +23,7 @@
 	}
 
 #define graphPrintDot_print_epilogue(graph, file, arg) 																\
-	if ((graph)->dotPrint_epilogue != NULL){  																		\
+	if ((graph)->dotPrint_epilogue != NULL){ 																		\
 		(graph)->dotPrint_epilogue((file), (arg)); 																	\
 	}
 

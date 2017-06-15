@@ -59,13 +59,13 @@ static struct tagMap* tagMap_create(struct array* array, uint32_t nb_category, s
 				desc_buffer[i].tagMap_gateway[j] = NULL;
 			}
 			else{
-				if ((desc_buffer[i].tagMap_gateway[j] = (void**)malloc(array_get_length(element_array) * sizeof(void*))) == NULL){
+				if ((desc_buffer[i].tagMap_gateway[j] = malloc(array_get_length(element_array) * sizeof(void*))) == NULL){
 					log_err("unable to allocate memory");
 					goto exit;
 				}
 				for (k = 0; k < array_get_length(element_array); k++){
 					if (new_token == NULL){
-						if ((new_token = (struct tagMapTreeToken*)malloc(sizeof(struct tagMapTreeToken))) == NULL){
+						if ((new_token = malloc(sizeof(struct tagMapTreeToken))) == NULL){
 							log_err("unable to allocate memory");
 							goto exit;
 						}
@@ -91,7 +91,7 @@ static struct tagMap* tagMap_create(struct array* array, uint32_t nb_category, s
 
 
 	if (nb_tag){
-		if ((tag_map = (struct tagMap*)malloc(sizeof(struct tagMap) + nb_tag * sizeof(uint32_t))) == NULL){
+		if ((tag_map = malloc(sizeof(struct tagMap) + nb_tag * sizeof(uint32_t))) == NULL){
 			log_err("unable to allocate memory");
 			goto exit;
 		}
@@ -185,7 +185,7 @@ static uint32_t arrayMinCoverage_rand(struct array* array, uint32_t nb_category,
 
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
-			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+			if (!*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j]){
 				*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = selection_value;
 				score ++;
 			}
@@ -209,12 +209,12 @@ static uint32_t arrayMinCoverage_greedy(struct array* array, uint32_t nb_categor
 	for (i = 0, score = 0; i < nb_category; i++){
 		for (j = 0, min_size = 0xffffffff, desc_buffer[i].choice = 0; j < desc_buffer[i].nb_element; j++){
 			element_array = *(struct array**)array_get(array, desc_buffer[i].offset + j);
-			if (array_get_length(element_array) == 0){
+			if (!array_get_length(element_array)){
 				continue;
 			}
 
 			for (k = 0, size = 0; k < array_get_length(element_array); k++){
-				if (*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k] == 0){
+				if (!*(uint32_t*)desc_buffer[i].tagMap_gateway[j][k]){
 					size ++;
 				}
 			}
@@ -226,7 +226,7 @@ static uint32_t arrayMinCoverage_greedy(struct array* array, uint32_t nb_categor
 
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
-			if (*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] == 0){
+			if (!*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j]){
 				*(uint32_t*)desc_buffer[i].tagMap_gateway[desc_buffer[i].choice][j] = selection_value;
 				score ++;
 			}
@@ -322,7 +322,7 @@ static uint32_t arrayMinCoverage_exact(struct array* array, uint32_t nb_category
 	for (i = 0; i < desc_buffer[0].nb_element; i++){
 		element_array = *(struct array**)array_get(array, desc_buffer[0].offset + i);
 		for (j = 0, score = 0; j < array_get_length(element_array); j++){
-			if (*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] == 0){
+			if (!*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j]){
 				*(uint32_t*)desc_buffer[0].tagMap_gateway[i][j] = selection_value;
 				score ++;
 			}
@@ -463,7 +463,7 @@ static uint32_t arrayMinCoverage_split(struct array* array, uint32_t nb_category
 	struct categoryDesc* 	copy_desc_buffer;
 	struct array* 			element_array;
 
-	if ((copy_desc_buffer = (struct categoryDesc*)malloc(nb_category * sizeof(struct categoryDesc))) == NULL){
+	if ((copy_desc_buffer = malloc(nb_category * sizeof(struct categoryDesc))) == NULL){
 		log_err("unable to allocate memory");
 		return arrayMinCoverage_exact(array, nb_category, desc_buffer, selection_value, min_score);
 	}
@@ -532,7 +532,7 @@ int32_t arrayMinCoverage_rand_wrapper(struct array* array, uint32_t nb_category,
 	int32_t 		result 			= -1;
 	uint32_t 		local_score 	= 0;
 
-	if (nb_category == 0){
+	if (!nb_category){
 		result = 0;
 	}
 	else{
@@ -566,7 +566,7 @@ int32_t arrayMinCoverage_greedy_wrapper(struct array* array, uint32_t nb_categor
 	uint32_t 				local_score 	= 0;
 	arrayMinCoverage_search arg[] 			= {(arrayMinCoverage_search)arrayMinCoverage_greedy, NULL};
 
-	if (nb_category == 0){
+	if (!nb_category){
 		result = 0;
 	}
 	else{
@@ -653,7 +653,7 @@ int32_t arrayMinCoverage_reshape_wrapper(struct array* array, uint32_t nb_catego
 	uint32_t 				local_score 	= 0;
 	arrayMinCoverage_search arg[] 			= {(arrayMinCoverage_search)arrayMinCoverage_reshape, NULL};
 
-	if (nb_category == 0){
+	if (!nb_category){
 		result = 0;
 	}
 	else{
@@ -695,7 +695,7 @@ int32_t arrayMinCoverage_split_wrapper(struct array* array, uint32_t nb_category
 	uint32_t 				local_score 	= 0;
 	arrayMinCoverage_search arg[] 			= {(arrayMinCoverage_search)arrayMinCoverage_split, (arrayMinCoverage_search)arrayMinCoverage_auto};
 
-	if (nb_category == 0){
+	if (!nb_category){
 		result = 0;
 	}
 	else{
@@ -786,7 +786,7 @@ uint32_t arrayMinCoverage_eval(struct array* array, uint32_t nb_category, struct
 		element_array = *(struct array**)array_get(array, desc_buffer[i].offset + desc_buffer[i].choice);
 		for (j = 0; j < array_get_length(element_array); j++){
 			if (new_token == NULL){
-				if ((new_token = (struct tagMapTreeToken*)malloc(sizeof(struct tagMapTreeToken))) == NULL){
+				if ((new_token = malloc(sizeof(struct tagMapTreeToken))) == NULL){
 					log_err("unable to allocate memory");
 					goto exit;
 				}
@@ -820,7 +820,7 @@ static uint32_t* arrayMinCoverage_save_order(struct categoryDesc* desc_buffer, u
 	uint32_t* 	order;
 	uint32_t 	i;
 
-	order = (uint32_t*)malloc(sizeof(uint32_t) * nb_category);
+	order = malloc(sizeof(uint32_t) * nb_category);
 	if (order == NULL){
 		log_err("unable to allocate memory");
 	}

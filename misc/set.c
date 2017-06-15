@@ -8,7 +8,7 @@
 struct set* set_create(uint32_t element_size, uint32_t nb_element_block){
 	struct set* set;
 
-	if ((set = (struct set*)malloc(set_get_size(element_size, nb_element_block))) != NULL){
+	if ((set = malloc(set_get_size(element_size, nb_element_block))) != NULL){
 		set_init(set, element_size, nb_element_block)
 	}
 	else{
@@ -29,7 +29,7 @@ int32_t set_add(struct set* set, void* element){
 		}
 
 		if (block_cursor->next == NULL){
-			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(set->element_size, set->nb_element_block));
+			block_cursor->next = malloc(setBlock_get_size(set->element_size, set->nb_element_block));
 			if (block_cursor->next == NULL){
 				log_err("unable to allocate memory");
 			}
@@ -63,7 +63,7 @@ int32_t set_add_unique(struct set* set, void* element){
 		}
 
 		if (block_cursor->next == NULL){
-			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(set->element_size, set->nb_element_block));
+			block_cursor->next = malloc(setBlock_get_size(set->element_size, set->nb_element_block));
 			if (block_cursor->next == NULL){
 				log_err("unable to allocate memory");
 			}
@@ -89,7 +89,7 @@ int32_t set_add_last(struct set* set, void* element){
 				return (int32_t)(set->nb_element_tot ++);
 			}
 
-			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(set->element_size, set->nb_element_block));
+			block_cursor->next = malloc(setBlock_get_size(set->element_size, set->nb_element_block));
 			if (block_cursor->next == NULL){
 				log_err("unable to allocate memory");
 				break;
@@ -194,11 +194,11 @@ void* set_export_buffer(struct set* set){
 	struct setBlock* 	block_cursor;
 	uint32_t 			offset;
 
-	if (set->nb_element_tot == 0){
+	if (!set->nb_element_tot){
 		return NULL;
 	}
 
-	buffer = (uint8_t*)malloc(set->nb_element_tot * set->element_size);
+	buffer = malloc(set->nb_element_tot * set->element_size);
 	if (buffer != NULL){
 		for (block_cursor = &(set->block), offset = 0; block_cursor != NULL; block_cursor = block_cursor->next){
 			memcpy(buffer + offset, block_cursor->data, set->element_size * block_cursor->nb_element);
@@ -217,7 +217,7 @@ void* set_export_buffer_unique(struct set* set, uint32_t* nb_element){
 	uint32_t 	i;
 	uint32_t 	offset;
 
-	if (set->nb_element_tot == 0){
+	if (!set->nb_element_tot){
 		*nb_element = 0;
 		return NULL;
 	}
@@ -348,7 +348,7 @@ int32_t subSet_add(struct subSet* sub_set, void* element){
 		}
 
 		if (block_cursor->next == NULL){
-			block_cursor->next = (struct setBlock*)malloc(setBlock_get_size(sub_set->parent->element_size, sub_set->parent->nb_element_block));
+			block_cursor->next = malloc(setBlock_get_size(sub_set->parent->element_size, sub_set->parent->nb_element_block));
 			if (block_cursor->next == NULL){
 				log_err("unable to allocate memory");
 			}

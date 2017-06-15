@@ -16,11 +16,11 @@ int32_t dagPartialOrder_sort_src_dst(struct graph* graph){
 	struct node* 	node_cursor;
 	uint32_t 		generator = 0;
 
-	if (graph->nb_node == 0){
+	if (!graph->nb_node){
 		return 0;
 	}
 
-	if ((node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*))) == NULL){
+	if ((node_buffer = malloc(graph->nb_node * sizeof(struct node*))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
@@ -44,7 +44,7 @@ int32_t dagPartialOrder_sort_src_dst(struct graph* graph){
 			node_buffer[i]->prev = node_buffer[i - 1];
 			node_buffer[i]->next = node_buffer[i + 1];
 		}
-			
+
 		node_buffer[i]->prev = node_buffer[i - 1];
 		node_buffer[i]->next = NULL;
 		graph->node_linkedList_tail = node_buffer[i];
@@ -65,11 +65,11 @@ int32_t dagPartialOrder_sort_dst_src(struct graph* graph){
 	struct node* 	node_cursor;
 	uint32_t 		generator = 0;
 
-	if (graph->nb_node == 0){
+	if (!graph->nb_node){
 		return 0;
 	}
 
-	if ((node_buffer = (struct node**)malloc(graph->nb_node * sizeof(struct node*))) == NULL){
+	if ((node_buffer = malloc(graph->nb_node * sizeof(struct node*))) == NULL){
 		log_err("unable to allocate memory");
 		return -1;
 	}
@@ -93,7 +93,7 @@ int32_t dagPartialOrder_sort_dst_src(struct graph* graph){
 			node_buffer[i]->prev = node_buffer[i + 1];
 			node_buffer[i]->next = node_buffer[i - 1];
 		}
-			
+
 		node_buffer[0]->prev = node_buffer[1];
 		node_buffer[0]->next = NULL;
 		graph->node_linkedList_tail = node_buffer[0];

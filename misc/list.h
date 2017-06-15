@@ -16,7 +16,7 @@ struct list{
 	uint32_t 				nb_element;
 	size_t 					element_size;
 	struct listElement* 	tail;
-	struct listElement* 	head;	
+	struct listElement* 	head;
 };
 
 #define list_init(list, element_size_) 					\

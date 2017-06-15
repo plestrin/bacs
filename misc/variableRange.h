@@ -32,7 +32,7 @@ static inline void variableRange_init_top(struct variableRange* range, uint64_t 
 static inline void variableRange_init_mask(struct variableRange* range, uint64_t mask, uint32_t size_bit){
 	range->mask = bitmask64(size_bit);
 	range->disp = 0;
-	
+
 	if (!(mask &= range->mask)){
 		range->index = 0;
 		range->scale = 0;
@@ -43,7 +43,7 @@ static inline void variableRange_init_mask(struct variableRange* range, uint64_t
 	}
 }
 
-#define variableRange_is_cst(range) 	((range)->index == 0)
+#define variableRange_is_cst(range) 	(!(range)->index)
 #define variableRange_get_cst(range) 	((range)->disp & (range)->mask)
 
 #define variableRange_is_overflow(range) (((((range)->index << (range)->scale) + (range)->disp) & (range)->mask) < (range)->disp)
@@ -85,7 +85,7 @@ int32_t variableRange_is_value_include(const struct variableRange* range, uint64
 int32_t variableRange_is_range_include(const struct variableRange* range1, const struct variableRange* range2);
 int32_t variableRange_is_range_intersect(const struct variableRange* range1, const struct variableRange* range2);
 
-#define variableRange_is_mask_compact(mask) (((((mask) & (-(mask))) + (mask)) & (mask)) == 0)
+#define variableRange_is_mask_compact(mask) (!((((mask) & (-(mask))) + (mask)) & (mask)))
 
 void variableRange_check_format(const struct variableRange* range);
 

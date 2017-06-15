@@ -60,7 +60,7 @@ void set_clean(struct set* set);
 	free(set);
 
 struct setIterator{
-	struct set* 	 	set;
+	struct set* 		set;
 	struct setBlock* 	block;
 	uint32_t 			element;
 };

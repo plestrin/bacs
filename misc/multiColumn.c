@@ -16,12 +16,12 @@ struct multiColumnPrinter* multiColumnPrinter_create(FILE* file, uint32_t nb_col
 	struct multiColumnPrinter* 	printer;
 	uint32_t 					i;
 
-	if (nb_column == 0){
+	if (!nb_column){
 		log_warn("at least one column must be created");
 		nb_column = 1;
 	}
 
-	printer = (struct multiColumnPrinter*)malloc(sizeof(struct multiColumnPrinter) + (nb_column - 1) * sizeof(struct multiColumnColumn));
+	printer = malloc(sizeof(struct multiColumnPrinter) + (nb_column - 1) * sizeof(struct multiColumnColumn));
 	if (printer != NULL){
 		printer->file = file;
 		printer->nb_column = nb_column;
@@ -164,7 +164,7 @@ void multiColumnPrinter_print(const struct multiColumnPrinter* printer, ...){
 		va_start(vl, printer);
 
 		for (i = 0; i < printer->nb_column; i++){
-			switch(printer->columns[i].type){
+			switch (printer->columns[i].type){
 				case MULTICOLUMN_TYPE_STRING 	: {
 					value_str = (char*)va_arg(vl, char*);
 					break;
@@ -202,10 +202,7 @@ void multiColumnPrinter_print(const struct multiColumnPrinter* printer, ...){
 				case MULTICOLUMN_TYPE_HEX_64	: {
 					value_str = raw_value;
 					value_uint64 = (uint64_t)va_arg(vl, uint64_t);
-					#ifdef __linux__
-					#pragma GCC diagnostic ignored "-Wformat" /* ISO C90 does not support the ‘ll’ gnu_printf length modifier */
 					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
-					#endif
 					break;
 				}
 				case MULTICOLUMN_TYPE_UNBOUND_STRING 	: {

@@ -451,7 +451,7 @@ static int32_t variableRange_seg_include_seg(uint64_t seg1_lo, uint64_t seg1_up,
 			return ((seg1_lo <= seg2_lo) && (seg1_up >= seg2_up));
 		}
 		else{
-			return ((seg1_lo == 0) && (seg1_up == size_mask));
+			return ((!seg1_lo) && (seg1_up == size_mask));
 		}
 	}
 	else{
