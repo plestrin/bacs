@@ -195,20 +195,13 @@ static enum ansi_escape_seq termReader_get_ansi_escape_sequence(void){
 	}
 
 	switch (fgetc(stdin)){
-		case '7' :
-			return ANSI_ESC_FIRST;
-		case '8' :
-			return ANSI_ESC_LAST;
-		case 'A' :
-			return ANSI_ESC_UP;
-		case 'B' :
-			return ANSI_ESC_DOWN;
-		case 'D' :
-			return ANSI_ESC_PREV;
-		case 'C' :
-			return ANSI_ESC_NEXT;
-		default :
-			return ANSI_ESC_NONE;
+		case '7' : {return ANSI_ESC_FIRST;}
+		case '8' : {return ANSI_ESC_LAST;}
+		case 'A' : {return ANSI_ESC_UP;}
+		case 'B' : {return ANSI_ESC_DOWN;}
+		case 'D' : {return ANSI_ESC_PREV;}
+		case 'C' : {return ANSI_ESC_NEXT;}
+		default  : {return ANSI_ESC_NONE;}
 	}
 }
 

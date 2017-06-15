@@ -6,7 +6,7 @@
 #include "multiColumn.h"
 #include "base.h"
 
-#define INPUTPARSER_LINE_SIZE 512 /* must be at least larger or equal than INPUTPARSER_NAME_SIZE */
+#define INPUTPARSER_LINE_SIZE 256 /* must be at least larger or equal than INPUTPARSER_NAME_SIZE */
 
 static int32_t inputParser_search_cmd(struct inputParser* parser, const char* cmd);
 #ifdef INTERACTIVE
@@ -43,10 +43,10 @@ int inputParser_init(struct inputParser* parser){
 		return -1;
 	}
 	else{
-		if (inputParser_add_cmd(parser, "help", "Display this help", "str", INPUTPARSER_CMD_TYPE_OPT_ARG, parser, (void(*)(void))inputParser_print_help)){
+		if (inputParser_add_cmd(parser, "help", "Display this help", "str", INPUTPARSER_CMD_TYPE_OPT_ARG, parser, (void(*)(void))inputParser_print_help) < 0){
 			log_warn("unable to add help entry in the input parser");
 		}
-		if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit)){
+		if (inputParser_add_cmd(parser, "exit", "Exit", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, parser, (void(*)(void))inputParser_exit) < 0){
 			log_warn("unable to add exit entry in the input parser");
 		}
 
@@ -70,34 +70,37 @@ int inputParser_init(struct inputParser* parser){
 	return 0;
 }
 
-int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, enum cmdEntryType type, void* ctx, void(*func)(void)){
+int32_t inputParser_add_cmd(struct inputParser* parser, const char* name, const char* cmd_desc, const char* arg_desc, enum cmdEntryType type, void* ctx, void(*func)(void)){
 	struct cmdEntry entry;
-	int 			result = -1;
-	int32_t 		duplicate;
+	int32_t 		result = -1;
 
 	if (name != NULL && cmd_desc != NULL && (arg_desc != NULL || type == INPUTPARSER_CMD_TYPE_NO_ARG)){
-		duplicate = inputParser_search_cmd(parser, name);
-		if (duplicate >= 0){
+		if (inputParser_search_cmd(parser, name) >= 0){
 			log_err_m("\"%s\" is already registered as a command", name);
 			return result;
 		}
 
-		if (strlen(name) > INPUTPARSER_NAME_SIZE){
-			log_warn("name length is larger than INPUTPARSER_NAME_SIZE");
+		if (strlen(name) >= sizeof entry.name){
+			log_warn("name length is too large");
 		}
 
-		if (strlen(cmd_desc) > INPUTPARSER_DESC_SIZE){
-			log_warn("cmd_desc length is larger than INPUTPARSER_DESC_SIZE");
+		if (strlen(cmd_desc) >= sizeof entry.cmd_desc){
+			log_warn("cmd_desc length is too large");
 		}
 
-		if (arg_desc != NULL && strlen(arg_desc) > INPUTPARSER_DESC_SIZE){
-			log_warn("arg_desc length is larger than INPUTPARSER_DESC_SIZE");
+		if (arg_desc != NULL && strlen(arg_desc) > sizeof entry.arg_desc){
+			log_warn("arg_desc length is too large");
 		}
 
-		strncpy(entry.name, name, INPUTPARSER_NAME_SIZE);
-		strncpy(entry.cmd_desc, cmd_desc, INPUTPARSER_DESC_SIZE);
+		strncpy(entry.name, name, sizeof entry.name);
+		entry.name[(sizeof entry.name) - 1] = '\0';
+
+		strncpy(entry.cmd_desc, cmd_desc, sizeof entry.cmd_desc);
+		entry.cmd_desc[(sizeof entry.cmd_desc) - 1] = '\0';
+
 		if (arg_desc != NULL){
-			strncpy(entry.arg_desc, arg_desc, INPUTPARSER_DESC_SIZE);
+			strncpy(entry.arg_desc, arg_desc, sizeof entry.arg_desc);
+			entry.arg_desc[(sizeof entry.arg_desc) - 1] = '\0';
 		}
 		else{
 			entry.arg_desc[0] = '\0';
@@ -112,8 +115,7 @@ int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, 
 		entry.context 	= ctx;
 		entry.function 	= func;
 
-		result = (array_add(&(parser->cmd_array), &entry) < 0);
-		if (result){
+		if ((result = array_add(&(parser->cmd_array), &entry)) < 0){
 			log_err("unable to add element to array");
 		}
 	}

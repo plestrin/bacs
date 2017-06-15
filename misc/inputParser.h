@@ -1,6 +1,8 @@
 #ifndef INPUTPARSER_H
 #define INPUTPARSER_H
 
+#include <stdint.h>
+
 #include "array.h"
 #ifdef INTERACTIVE
 #include "termReader.h"
@@ -41,7 +43,7 @@ struct inputParser{
 
 struct inputParser* inputParser_create(void);
 int inputParser_init(struct inputParser* parser);
-int inputParser_add_cmd(struct inputParser* parser, char* name, char* cmd_desc, char* arg_desc, enum cmdEntryType type, void* ctx, void(*func)(void));
+int32_t inputParser_add_cmd(struct inputParser* parser, const char* name, const char* cmd_desc, const char* arg_desc, enum cmdEntryType type, void* ctx, void(*func)(void));
 void inputParser_exe(struct inputParser* parser, uint32_t argc, char** argv);
 void inputParser_clean(struct inputParser* parser);
 

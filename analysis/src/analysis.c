@@ -90,7 +90,7 @@ static void analysis_delete(struct analysis* analysis);
 
 #define add_cmd_to_input_parser(parser, cmd, cmd_desc, arg_desc, type, arg, func)														\
 	{																																	\
-		if (inputParser_add_cmd((parser), (cmd), (cmd_desc), (arg_desc), (type), (arg), (void(*)(void))(func))){						\
+		if (inputParser_add_cmd((parser), (cmd), (cmd_desc), (arg_desc), (type), (arg), (void(*)(void))(func)) < 0){					\
 			log_err_m("unable to add cmd: \"%s\" to inputParser", (cmd));																\
 		}																																\
 	}

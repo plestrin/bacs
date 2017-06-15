@@ -16,10 +16,10 @@ int main(int argc, char** argv){
 		return EXIT_FAILURE;
 	}
 
-	if (inputParser_add_cmd(&parser, "print", "Print a message", "Message to be printed", INPUTPARSER_CMD_TYPE_ARG, &print_context, (void(*)(void))print)){
+	if (inputParser_add_cmd(&parser, "print", "Print a message", "Message to be printed", INPUTPARSER_CMD_TYPE_ARG, &print_context, (void(*)(void))print) < 0){
 		log_err("unable to add cmd to inputParser");
 	}
-	if (!inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, &print_context, (void(*)(void))print_hello)){
+	if (inputParser_add_cmd(&parser, "helloworld", "Print \"Hello World\"", NULL, INPUTPARSER_CMD_TYPE_NO_ARG, &print_context, (void(*)(void))print_hello) < 0){
 		log_warn("we add two times the same cmd, the second'll not be reachable");
 	}
 
