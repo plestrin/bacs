@@ -340,9 +340,7 @@ void memTrace_clean(struct memTrace* mem_trace){
 		switch (mem_trace->allocation_type){
 			case ALLOCATION_MALLOC 	: {
 				free(mem_trace->mem_addr_buffer);
-				if (mem_trace->mem_valu_buffer != NULL){
-					free(mem_trace->mem_valu_buffer);
-				}
+				free(mem_trace->mem_valu_buffer);
 				break;
 			}
 			case ALLOCATION_MMAP 	: {

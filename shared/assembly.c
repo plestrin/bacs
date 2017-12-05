@@ -246,8 +246,7 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 		}
 	}
 
-	dyn_blocks_realloc = (struct dynBlock*)realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * j);
-	if (dyn_blocks_realloc == NULL){
+	if ((dyn_blocks_realloc = realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * j)) == NULL){
 		log_err("unable to realloc memory");
 	}
 	else{
@@ -278,12 +277,18 @@ int32_t assembly_init(struct assembly* assembly, const uint32_t* buffer_id, size
 	if (is_array_init){
 		array_clean(&asmBlock_array);
 	}
-	if (assembly->dyn_blocks != NULL){
-		free(assembly->dyn_blocks);
-	}
+
+	free(assembly->dyn_blocks);
+
 	switch (buffer_alloc_block){
-		case ALLOCATION_MALLOC 	: {free(buffer_block); break;}
-		case ALLOCATION_MMAP 	: {munmap(buffer_block, buffer_size_block); break;}
+		case ALLOCATION_MALLOC 	: {
+			free(buffer_block);
+			break;
+		}
+		case ALLOCATION_MMAP 	: {
+			munmap(buffer_block, buffer_size_block);
+			break;
+		}
 	}
 
 	return -1;
@@ -830,12 +835,9 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	if (assembly_dst->dyn_blocks == NULL || assembly_dst->mapping_block == NULL){
 		log_err("unable to allocate memory");
-		if (assembly_dst->dyn_blocks != NULL){
-			free(assembly_dst->dyn_blocks);
-		}
-		if (assembly_dst->mapping_block != NULL){
-			free(assembly_dst->mapping_block);
-		}
+
+		free(assembly_dst->dyn_blocks);
+		free(assembly_dst->mapping_block);
 
 		return -1;
 	}
@@ -954,8 +956,7 @@ int32_t assembly_extract_segment(struct assembly* assembly_src, struct assembly*
 
 	tdestroy(bintree_root, assembly_clean_tree_node);
 
-	realloc_mapping = realloc(assembly_dst->mapping_block, size);
-	if (realloc_mapping == NULL){
+	if ((realloc_mapping = realloc(assembly_dst->mapping_block, size)) == NULL){
 		log_err("unable to realloc memory");
 	}
 	else if (realloc_mapping != assembly_dst->mapping_block){
@@ -1003,12 +1004,9 @@ int32_t assembly_concat(struct assembly** assembly_src_buffer, uint32_t nb_assem
 
 	if (assembly_dst->dyn_blocks == NULL || assembly_dst->mapping_block == NULL){
 		log_err("unable to allocate memory");
-		if (assembly_dst->dyn_blocks != NULL){
-			free(assembly_dst->dyn_blocks);
-		}
-		if (assembly_dst->mapping_block != NULL){
-			free(assembly_dst->mapping_block);
-		}
+
+		free(assembly_dst->dyn_blocks);
+		free(assembly_dst->mapping_block);
 
 		return -1;
 	}
@@ -1517,8 +1515,7 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 
 	if (offset){
 		assembly->nb_dyn_block -= offset;
-		assembly->dyn_blocks = (struct dynBlock*)realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * assembly->nb_dyn_block);
-		if (assembly->dyn_blocks == NULL){
+		if ((assembly->dyn_blocks = realloc(assembly->dyn_blocks, sizeof(struct dynBlock) * assembly->nb_dyn_block)) == NULL){
 			log_err("unable to realloc memory");
 			return -1;
 		}
@@ -1550,7 +1547,9 @@ int32_t assembly_filter_blacklisted_function_call(struct assembly* assembly, str
 		new_mapping_block = malloc(new_mapping_size_block);
 		if (new_mapping_block == NULL){
 			log_err("unable to allocate memory");
+
 			free(asm_block_maintainer);
+
 			return -1;
 		}
 
@@ -1794,10 +1793,8 @@ int32_t assembly_compare(const struct assembly* assembly1, const struct assembly
 }
 
 void assembly_clean(struct assembly* assembly){
-	if (assembly->dyn_blocks != NULL){
-		free(assembly->dyn_blocks);
-		assembly->dyn_blocks = NULL;
-	}
+	free(assembly->dyn_blocks);
+	assembly->dyn_blocks = NULL;
 
 	if (assembly->mapping_block != NULL){
 		switch (assembly->allocation_type){

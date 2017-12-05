@@ -68,9 +68,7 @@ int codeMap_add_vdso(struct codeMap* cm, char white_listed){
 		}
 	}
 
-	if (line != NULL){
-		free(line);
-	}
+	free(line);
 
 	if (!address_start && !address_stop){
 		LOG("ERROR: unable to locate VDSO\n");
@@ -192,6 +190,7 @@ static void codeMap_print_image_JSON(struct cm_image* image, FILE* file){
 
 #include "codeMap.h"
 #include "multiColumn.h"
+#include "base.h"
 
 static void codeMap_print_routine(struct multiColumnPrinter* printer, struct cm_routine* routine, int filter);
 static void codeMap_print_section(struct multiColumnPrinter* printer, struct cm_section* section, int filter);
@@ -210,25 +209,23 @@ int codeMap_add_static_image(struct codeMap* cm, struct cm_image* image){
 	struct cm_image** 	cursor = &(cm->images);
 
 	if (cm != NULL){
-		new_image = malloc(sizeof(struct cm_image));
-		if (new_image == NULL){
-			printf("ERROR: in %s, unable to allocate memory\n", __func__);
+		if ((new_image = malloc(sizeof(struct cm_image))) == NULL){
+			log_err("unable to allocate memory");
 			return -1;
 		}
-		else{
-			memcpy(new_image, image, sizeof(struct cm_image));
-			new_image->sections = NULL;
-			new_image->next = NULL;
-			new_image->parent = cm;
 
-			while (*cursor != NULL){
-				cursor = &((*cursor)->next);
-			}
-			*cursor = new_image;
+		memcpy(new_image, image, sizeof(struct cm_image));
+		new_image->sections = NULL;
+		new_image->next = NULL;
+		new_image->parent = cm;
 
-			cm->current_image = new_image;
-			cm->current_section = NULL;
+		while (*cursor != NULL){
+			cursor = &((*cursor)->next);
 		}
+		*cursor = new_image;
+
+		cm->current_image = new_image;
+		cm->current_section = NULL;
 	}
 
 	return 0;
@@ -239,31 +236,28 @@ int codeMap_add_static_section(struct codeMap* cm, struct cm_section* section){
 	struct cm_section** cursor;
 
 	if (cm != NULL){
-		if (cm->current_image != NULL){
-			new_section = malloc(sizeof(struct cm_section));
-			if (new_section == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				return -1;
-			}
-			else{
-				memcpy(new_section, section, sizeof(struct cm_section));
-				new_section->routines = NULL;
-				new_section->next = NULL;
-				new_section->parent = cm->current_image;
-
-				cursor = &(cm->current_image->sections);
-				while (*cursor != NULL){
-					cursor = &((*cursor)->next);
-				}
-				*cursor = new_section;
-
-				cm->current_section = new_section;
-			}
-		}
-		else{
-			printf("ERROR: in %s, current image is NULL\n", __func__);
+		if (cm->current_image == NULL){
+			log_err("current image is NULL");
 			return -1;
 		}
+
+		if ((new_section = malloc(sizeof(struct cm_section))) == NULL){
+			log_err("unable to allocate memory");
+			return -1;
+		}
+
+		memcpy(new_section, section, sizeof(struct cm_section));
+		new_section->routines = NULL;
+		new_section->next = NULL;
+		new_section->parent = cm->current_image;
+
+		cursor = &(cm->current_image->sections);
+		while (*cursor != NULL){
+			cursor = &((*cursor)->next);
+		}
+		*cursor = new_section;
+
+		cm->current_section = new_section;
 	}
 
 	return 0;
@@ -274,86 +268,85 @@ int codeMap_add_static_routine(struct codeMap* cm, struct cm_routine* routine){
 	struct cm_routine**	cursor;
 
 	if (cm != NULL){
-		if (cm->current_section != NULL){
-			new_routine = malloc(sizeof(struct cm_routine));
-			if (new_routine == NULL){
-				printf("ERROR: in %s, unable to allocate memory\n", __func__);
-				return -1;
-			}
-			else{
-				memcpy(new_routine, routine, sizeof(struct cm_routine));
-				new_routine->next = NULL;
-				new_routine->parent = cm->current_section;
-
-				cursor = &(cm->current_section->routines);
-				while (*cursor != NULL){
-					cursor = &((*cursor)->next);
-				}
-				*cursor = new_routine;
-			}
-		}
-		else{
-			printf("ERROR: in %s, current section is NULL\n", __func__);
+		if (cm->current_section == NULL){
+			log_err("current section is NULL");
 			return -1;
 		}
+
+		if ((new_routine = malloc(sizeof(struct cm_routine))) == NULL){
+			log_err("unable to allocate memory");
+			return -1;
+		}
+
+		memcpy(new_routine, routine, sizeof(struct cm_routine));
+		new_routine->next = NULL;
+		new_routine->parent = cm->current_section;
+
+		cursor = &(cm->current_section->routines);
+		while (*cursor != NULL){
+			cursor = &((*cursor)->next);
+		}
+		*cursor = new_routine;
 	}
 
 	return 0;
 }
 
 #if defined ARCH_32
-#define codeMap_create_printer(printer) 																								\
-	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 													\
-		printf("ERROR: in %s, unable to create multi column printer\n", __func__); 														\
-	} 																																	\
-																																		\
-	multiColumnPrinter_set_column_size((printer), 0, 38); 																				\
-	multiColumnPrinter_set_column_size((printer), 1, 7); 																				\
-	multiColumnPrinter_set_column_size((printer), 2, 48); 																				\
-	multiColumnPrinter_set_column_size((printer), 3, 10); 																				\
-	multiColumnPrinter_set_column_size((printer), 4, 10); 																				\
-	multiColumnPrinter_set_column_size((printer), 5, 1); 																				\
-	multiColumnPrinter_set_column_size((printer), 6, 1); 																				\
-																																		\
-	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_32); 															\
-	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_32); 															\
-	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 															\
-	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 															\
-																																		\
-	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 																		\
-	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 																		\
-	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 																		\
-	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 																		\
-	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 																		\
-	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 																			\
-	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 																			\
+#define codeMap_create_printer(printer) 																		\
+	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 							\
+		log_err("unable to create multi column printer"); 														\
+		return; 																								\
+	} 																											\
+																												\
+	multiColumnPrinter_set_column_size((printer), 0, 38); 														\
+	multiColumnPrinter_set_column_size((printer), 1, 7); 														\
+	multiColumnPrinter_set_column_size((printer), 2, 48); 														\
+	multiColumnPrinter_set_column_size((printer), 3, 10); 														\
+	multiColumnPrinter_set_column_size((printer), 4, 10); 														\
+	multiColumnPrinter_set_column_size((printer), 5, 1); 														\
+	multiColumnPrinter_set_column_size((printer), 6, 1); 														\
+																												\
+	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_32); 									\
+	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_32); 									\
+	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 									\
+	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 									\
+																												\
+	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 												\
+	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 												\
+	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 												\
+	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 												\
+	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 												\
+	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 													\
+	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 													\
 	multiColumnPrinter_print_header((printer));
 #elif defined ARCH_64
-#define codeMap_create_printer(printer) 																								\
-	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 													\
-		printf("ERROR: in %s, unable to create multi column printer\n", __func__); 														\
-	} 																																	\
-																																		\
-	multiColumnPrinter_set_column_size((printer), 0, 38); 																				\
-	multiColumnPrinter_set_column_size((printer), 1, 7); 																				\
-	multiColumnPrinter_set_column_size((printer), 2, 48); 																				\
-	multiColumnPrinter_set_column_size((printer), 3, 10); 																				\
-	multiColumnPrinter_set_column_size((printer), 4, 10); 																				\
-	multiColumnPrinter_set_column_size((printer), 5, 1); 																				\
-	multiColumnPrinter_set_column_size((printer), 6, 1); 																				\
-																																		\
-	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_64); 															\
-	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_64); 															\
-	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 															\
-	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 															\
-																																		\
-	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 																		\
-	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 																		\
-	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 																		\
-	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 																		\
-	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 																		\
-	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 																			\
-	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 																			\
+#define codeMap_create_printer(printer) 																		\
+	if (((printer) = multiColumnPrinter_create(stdout, 7, NULL, NULL, NULL)) == NULL){ 							\
+		log_err("unable to create multi column printer"); 														\
+		return; 																								\
+	} 																											\
+																												\
+	multiColumnPrinter_set_column_size((printer), 0, 38); 														\
+	multiColumnPrinter_set_column_size((printer), 1, 7); 														\
+	multiColumnPrinter_set_column_size((printer), 2, 48); 														\
+	multiColumnPrinter_set_column_size((printer), 3, 10); 														\
+	multiColumnPrinter_set_column_size((printer), 4, 10); 														\
+	multiColumnPrinter_set_column_size((printer), 5, 1); 														\
+	multiColumnPrinter_set_column_size((printer), 6, 1); 														\
+																												\
+	multiColumnPrinter_set_column_type((printer), 3, MULTICOLUMN_TYPE_HEX_64); 									\
+	multiColumnPrinter_set_column_type((printer), 4, MULTICOLUMN_TYPE_HEX_64); 									\
+	multiColumnPrinter_set_column_type((printer), 5, MULTICOLUMN_TYPE_BOOL); 									\
+	multiColumnPrinter_set_column_type((printer), 6, MULTICOLUMN_TYPE_BOOL); 									\
+																												\
+	multiColumnPrinter_set_title((printer), 0, (char*)"IMAGE"); 												\
+	multiColumnPrinter_set_title((printer), 1, (char*)"SECTION"); 												\
+	multiColumnPrinter_set_title((printer), 2, (char*)"ROUTINE"); 												\
+	multiColumnPrinter_set_title((printer), 3, (char*)"START @"); 												\
+	multiColumnPrinter_set_title((printer), 4, (char*)"STOP @"); 												\
+	multiColumnPrinter_set_title((printer), 5, (char*)"W"); 													\
+	multiColumnPrinter_set_title((printer), 6, (char*)"E"); 													\
 	multiColumnPrinter_print_header((printer));
 #else
 #error Please specify an architecture {ARCH_32 or ARCH_64}
@@ -375,7 +368,7 @@ void codeMap_print(struct codeMap* cm, const char* str_filter){
 				switch (str_filter[i]){
 				case CODEMAP_FILTER_WHITELIST_CMD 	: {filter |= CODEMAP_FILTER_WHITELIST; break;}
 				case CODEMAP_FILTER_EXECUTED_CMD 	: {filter |= CODEMAP_FILTER_EXECUTED; break;}
-				default 							: {printf("WARNING: in %s, unknown filter specifier '%c'\n", __func__, str_filter[i]); break;}
+				default 							: {log_warn_m("unknown filter specifier '%c'", str_filter[i]); break;}
 				}
 			}
 		}
@@ -536,14 +529,14 @@ int codeMap_check_address(struct codeMap* cm){
 	struct cm_section* 	cursor_section;
 	struct cm_routine*	cursor_routine;
 
-	printf("Checking code map address consistency: ");
+	log_info("checking code map address consistency");
 
 	if (cm != NULL){
 		cursor_image = cm->images;
 		while (cursor_image != NULL){
 
 			if (cursor_image->address_start > cursor_image->address_stop){
-				printf("ERROR: image start address is greater than its stop address\n");
+				log_err("image start address is greater than its stop address");
 				return -1;
 			}
 
@@ -551,12 +544,12 @@ int codeMap_check_address(struct codeMap* cm){
 			while (cursor_section != NULL){
 
 				if (cursor_section->address_start > cursor_section->address_stop){
-					printf("ERROR: section start address is greater than its stop address\n");
+					log_err("section start address is greater than its stop address");
 					return -1;
 				}
 
 				if (cursor_section->address_start < cursor_image->address_start || cursor_section->address_stop > cursor_image->address_stop){
-					printf("ERROR: section can't exist outside of an image\n");
+					log_err("section can't exist outside of an image");
 					return -1;
 				}
 
@@ -564,12 +557,12 @@ int codeMap_check_address(struct codeMap* cm){
 				while (cursor_routine != NULL){
 
 					if (cursor_routine->address_start > cursor_routine->address_stop){
-						printf("ERROR: routine start address is greater than its stop address\n");
+						log_err("routine start address is greater than its stop address");
 						return -1;
 					}
 
 					if (cursor_routine->address_start < cursor_section->address_start || cursor_routine->address_stop > cursor_section->address_stop){
-						printf("ERROR: section can't exist outside of an image\n");
+						log_err("section can't exist outside of an image");
 						return -1;
 					}
 
@@ -583,8 +576,6 @@ int codeMap_check_address(struct codeMap* cm){
 		}
 	}
 
-	printf("SUCCESS\n");
-
 	return 0;
 }
 
@@ -592,14 +583,10 @@ struct cm_image* codeMap_search_image(struct codeMap* cm, ADDRESS address){
 	struct cm_image* image_cursor;
 
 	if (cm != NULL){
-		image_cursor = cm->images;
-
-		while (image_cursor != NULL){
+		for (image_cursor = cm->images; image_cursor != NULL; image_cursor = image_cursor->next){
 			if (CODEMAP_IS_ADDRESS_IN_IMAGE(image_cursor, address)){
 				return image_cursor;
 			}
-
-			image_cursor = image_cursor->next;
 		}
 	}
 
@@ -610,18 +597,10 @@ struct cm_section* codeMap_search_section(struct codeMap* cm, ADDRESS address){
 	struct cm_image* 	image;
 	struct cm_section* 	section_cursor;
 
-	if (cm != NULL){
-		image = codeMap_search_image(cm, address);
-
-		if (image != NULL){
-			section_cursor = image->sections;
-
-			while (section_cursor != NULL){
-				if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
-					return section_cursor;
-				}
-
-				section_cursor = section_cursor->next;
+	if (cm != NULL && (image = codeMap_search_image(cm, address)) != NULL){
+		for (section_cursor = image->sections; section_cursor != NULL; section_cursor = section_cursor->next){
+			if (CODEMAP_IS_ADDRESS_IN_SECTION(section_cursor, address)){
+				return section_cursor;
 			}
 		}
 	}
@@ -633,18 +612,10 @@ struct cm_routine* codeMap_search_routine(struct codeMap* cm, ADDRESS address){
 	struct cm_section* 	section;
 	struct cm_routine* 	routine_cursor;
 
-	if (cm != NULL){
-		section = codeMap_search_section(cm, address);
-
-		if (section != NULL){
-			routine_cursor = section->routines;
-
-			while (routine_cursor != NULL){
-				if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
-					return routine_cursor;
-				}
-
-				routine_cursor = routine_cursor->next;
+	if (cm != NULL && (section = codeMap_search_section(cm, address)) != NULL){
+		for (routine_cursor = section->routines; routine_cursor != NULL; routine_cursor = routine_cursor->next){
+			if (CODEMAP_IS_ADDRESS_IN_ROUTINE(routine_cursor, address)){
+				return routine_cursor;
 			}
 		}
 	}
@@ -748,7 +719,7 @@ void codeMap_search_and_print_symbol(struct codeMap* cm, const char* symbol){
 #endif
 
 struct codeMap* codeMap_create(void){
-	struct codeMap* cm = malloc(sizeof(struct codeMap));
+	struct codeMap* cm = (struct codeMap*)malloc(sizeof(struct codeMap));
 	if (cm == NULL){
 		printf("ERROR: in %s, unable to allocate memory\n", __func__);
 	}
@@ -767,7 +738,7 @@ int codeMap_add_image(struct codeMap* cm, ADDRESS address_start, ADDRESS address
 	struct cm_image** 	cursor = &(cm->images);
 
 	if (cm != NULL){
-		image = malloc(sizeof(struct cm_image));
+		image = (struct cm_image*)malloc(sizeof(struct cm_image));
 		if (image == NULL){
 			printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			return -1;
@@ -800,7 +771,7 @@ int codeMap_add_section(struct codeMap* cm, ADDRESS address_start, ADDRESS addre
 
 	if (cm != NULL){
 		if (cm->current_image != NULL){
-			section = malloc(sizeof(struct cm_section));
+			section = (struct cm_section*)malloc(sizeof(struct cm_section));
 			if (section == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 				return -1;
@@ -837,7 +808,7 @@ struct cm_routine* codeMap_add_routine(struct codeMap* cm, ADDRESS address_start
 
 	if (cm != NULL){
 		if (cm->current_section != NULL){
-			routine = malloc(sizeof(struct cm_routine));
+			routine = (struct cm_routine*)malloc(sizeof(struct cm_routine));
 			if (routine == NULL){
 				printf("ERROR: in %s, unable to allocate memory\n", __func__);
 			}
