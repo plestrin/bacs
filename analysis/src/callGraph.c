@@ -966,16 +966,12 @@ int32_t callGraph_export_node_inclusive(struct callGraph* call_graph, struct nod
 		return -1;
 	}
 
-	log_info_m("export trace fragment [%u:%u]", start_index, stop_index);
-	if (function->routine != NULL){
-		snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:%s", function->routine->name);
-	}
-	else{
-		snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "rtn_inc:[%u:%u]", start_index, stop_index);
-	}
+	snprintf(new_fragment.trace_type.frag.tag, TRACE_TAG_LENGTH, "[%u:%u]", start_index, stop_index);
+
+	log_info_m("export trace fragment %s", new_fragment.trace_type.frag.tag);
 
 	for (listIterator_init(&it, frag_list); listIterator_get_next(&it) != NULL; ){
-		if (trace_compare(&new_fragment, listIterator_get_data(it)) == 0){
+		if (!trace_compare(&new_fragment, listIterator_get_data(it))){
 			log_info_m("an equivalent fragment (%u) has already been exported", it.index);
 			trace_clean(&new_fragment);
 			return 0;

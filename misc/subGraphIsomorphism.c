@@ -268,7 +268,7 @@ void layerNodeData_clean_unode(struct unode* unode){
 	struct layerNodeData* data;
 
 	data = unode_get_layerNodeData(unode);
-	if (data->type == LAYERNODE_TYPE_PRIM && data->edge_buffer != NULL){
+	if (data->type == LAYERNODE_TYPE_PRIM){
 		free(data->edge_buffer);
 	}
 }
@@ -474,21 +474,12 @@ struct graphIsoHandle* graphIso_create_graph_handle(struct graph* graph, uint32_
 	return handle;
 
 	error:
-	if (handle->src_edge_mapping != NULL){
-		free(handle->src_edge_mapping);
-	}
-	if (handle->dst_edge_mapping != NULL){
-		free(handle->dst_edge_mapping);
-	}
-	if (handle->edge_tab != NULL){
-		free(handle->edge_tab);
-	}
-	if (handle->node_tab != NULL){
-		free(handle->node_tab);
-	}
-	if (save_ptr != NULL){
-		free(save_ptr);
-	}
+
+	free(handle->src_edge_mapping);
+	free(handle->dst_edge_mapping);
+	free(handle->edge_tab);
+	free(handle->node_tab);
+	free(save_ptr);
 	free(handle);
 
 	return NULL;
@@ -667,18 +658,11 @@ struct subGraphIsoHandle* graphIso_create_sub_graph_handle(struct graph* graph, 
 	return handle;
 
 	error:
-	if (handle->src_fast != NULL){
-		free(handle->src_fast);
-	}
-	if (handle->dst_fast != NULL){
-		free(handle->dst_fast);
-	}
-	if (handle->edge_tab != NULL){
-		free(handle->edge_tab);
-	}
-	if (handle->sub_node_tab != NULL){
-		free(handle->sub_node_tab);
-	}
+
+	free(handle->src_fast);
+	free(handle->dst_fast);
+	free(handle->edge_tab);
+	free(handle->sub_node_tab);
 	free(handle);
 
 	return NULL;

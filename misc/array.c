@@ -307,7 +307,6 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 	char* 				copy_ptr_src;
 	struct arrayPage* 	page_src;
 
-
 	if (array_src->element_size != array_dst->element_size || array_src->nb_element_per_page != array_dst->nb_element_per_page){
 		log_err("copy between arrays of different element size is a dangerous thing -> abort");
 		return result;
@@ -380,8 +379,8 @@ int32_t array_copy(struct array* array_src, struct array* array_dst, uint32_t of
 }
 
 void array_empty(struct array* array){
-	uint32_t i;
-	struct arrayPage* page;
+	uint32_t 			i;
+	struct arrayPage* 	page;
 
 	array->nb_filled_byte = 0;
 	array->nb_element = 0;
@@ -395,12 +394,10 @@ void array_empty(struct array* array){
 }
 
 void array_clean(struct array* array){
-	uint32_t i;
-	struct arrayPage* page;
+	uint32_t 			i;
+	struct arrayPage* 	page;
 
-	if (array->buffer != NULL){
-		free(array->buffer);
-	}
+	free(array->buffer);
 
 	for (i = 0; i < _array_get_length(array->pages); i++){
 		page = (struct arrayPage*)_array_get(array->pages, i);

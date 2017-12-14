@@ -685,16 +685,15 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 	struct node** 	footprint 			= NULL;
 
 	if (trace->type != FRAGMENT_TRACE || trace->trace_type.frag.ir == NULL){
-		log_err_m("IR is NULL for trace: \"%s\"", trace->trace_type.frag.tag);
+		log_err_m("IR is NULL for %s", trace_get_name(trace));
 		return;
 	}
 
-	if (array_get_length(&(trace->trace_type.frag.result_array)) == 0){
+	if (!array_get_length(&(trace->trace_type.frag.result_array))){
 		return;
 	}
 
-	exported_result = (uint32_t*)malloc(sizeof(uint32_t) * array_get_length(&(trace->trace_type.frag.result_array)));
-	if (exported_result == NULL){
+	if ((exported_result = malloc(sizeof(uint32_t) * array_get_length(&(trace->trace_type.frag.result_array)))) == NULL){
 		log_err("unable to allocate memory");
 		return;
 	}
@@ -712,13 +711,12 @@ void trace_export_result(struct trace* trace, void** signature_buffer, uint32_t 
 		}
 	}
 
-	if (nb_exported_result == 0){
+	if (!nb_exported_result){
 		log_warn("no exported result");
 		goto exit;
 	}
 
-	node_set = set_create(sizeof(struct node*), 512);
-	if (node_set == NULL){
+	if ((node_set = set_create(sizeof(struct node*), 512)) == NULL){
 		log_err("unable to create set");
 		goto exit;
 	}
@@ -917,6 +915,18 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 	}
 
 	memTraceIterator_clean(&mem_it);
+}
+
+const char* trace_get_name(struct trace* trace){
+	if (trace->type == FRAGMENT_TRACE){
+		return trace->trace_type.frag.tag;
+	}
+	else if (trace->type == ELF_TRACE){
+		return "ELF trace";
+	}
+	else{
+		return "EXE trace";
+	}
 }
 
 void trace_reset_ir(struct trace* trace){

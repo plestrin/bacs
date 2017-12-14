@@ -219,7 +219,7 @@ void result_push(struct result* result, struct ugraph* graph_layer, struct ir* i
 		#if SUBGRAPHISOMORPHISM_OPTIM_LAYER == 1
 		if (graph_layer != NULL){
 			if ((layer_node = ugraph_add_node_(graph_layer)) == NULL){
-				log_err("unable to unode to ugraph");
+				log_err("unable to add unode to ugraph");
 			}
 			else{
 				struct layerNodeData* data;

@@ -154,6 +154,8 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2);
 
 void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr);
 
+const char* trace_get_name(struct trace* trace);
+
 void trace_reset_ir(struct trace* trace);
 void trace_reset_result(struct trace* trace);
 void trace_reset_synthesis(struct trace* trace);
