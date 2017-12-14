@@ -9,7 +9,7 @@
 void modeSignature_printDot_node(void* data, FILE* file, void* arg){
 	struct modeSignatureNode* mode_signature_node = (struct modeSignatureNode*)data;
 
-	switch(mode_signature_node->type){
+	switch (mode_signature_node->type){
 		case MODESIGNATURE_NODE_TYPE_PATH 		: {
 			fprintf(file, "[label=\"path\"]");
 			break;
@@ -34,7 +34,7 @@ uint32_t modeSignatureNode_get_label(struct node* node){
 	struct modeSignatureNode* 	mode_signature_node = (struct modeSignatureNode*)node_get_data(node);
 	uint32_t 					label = SUBGRAPHISOMORPHISM_JOKER_LABEL;
 
-	switch(mode_signature_node->type){
+	switch (mode_signature_node->type){
 		case MODESIGNATURE_NODE_TYPE_PATH 		: {
 			label = 0x00000001;
 			break;
@@ -59,7 +59,7 @@ uint32_t synthesisGraphNode_get_label(struct node* node){
 	uint32_t 				label = 0;
 	struct node*			symbol;
 
-	switch(synthesis_node->type){
+	switch (synthesis_node->type){
 		case SYNTHESISNODETYPE_RESULT 			: {
 			symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), 0);
 			label = ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->id << 2;

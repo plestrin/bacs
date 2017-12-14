@@ -6,7 +6,7 @@
 #include "base.h"
 
 /* ===================================================================== */
-/* result routines														 */
+/* result routines 														 */
 /* ===================================================================== */
 
 int32_t result_init(struct result* result, struct codeSignature* code_signature, struct array* assignment_array){
@@ -26,30 +26,20 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 	result->nb_node_intern 		= code_signature->signature.graph.nb_node - (result->nb_node_in + result->nb_node_ou);
 	result->nb_edge 			= code_signature->signature.graph.nb_edge;
 
-	result->in_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_in);
-	result->ou_mapping_buffer 	= (struct signatureLink*)malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_ou);
-	result->intern_node_buffer 	= (struct virtualNode*)malloc(sizeof(struct virtualNode) * result->nb_occurrence * result->nb_node_intern);
-	result->edge_buffer 		= (struct virtualEdge*)malloc(sizeof(struct virtualEdge) * result->nb_occurrence * result->nb_edge);
+	result->in_mapping_buffer 	= malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_in);
+	result->ou_mapping_buffer 	= malloc(sizeof(struct signatureLink) * result->nb_occurrence * result->nb_node_ou);
+	result->intern_node_buffer 	= malloc(sizeof(struct virtualNode) * result->nb_occurrence * result->nb_node_intern);
+	result->edge_buffer 		= malloc(sizeof(struct virtualEdge) * result->nb_occurrence * result->nb_edge);
 	result->symbol_node_buffer 	= (struct node**)calloc(result->nb_occurrence, sizeof(struct node*));
 
 	if (result->in_mapping_buffer == NULL || result->ou_mapping_buffer == NULL || result->intern_node_buffer == NULL || result->edge_buffer == NULL || result->symbol_node_buffer == NULL){
 		log_err("unable to allocate memory");
 
-		if (result->in_mapping_buffer != NULL){
-			free(result->in_mapping_buffer);
-		}
-		if (result->ou_mapping_buffer != NULL){
-			free(result->ou_mapping_buffer);
-		}
-		if (result->intern_node_buffer != NULL){
-			free(result->intern_node_buffer);
-		}
-		if (result->edge_buffer != NULL){
-			free(result->edge_buffer);
-		}
-		if (result->symbol_node_buffer != NULL){
-			free(result->symbol_node_buffer);
-		}
+		free(result->in_mapping_buffer);
+		free(result->ou_mapping_buffer);
+		free(result->intern_node_buffer);
+		free(result->edge_buffer);
+		free(result->symbol_node_buffer);
 
 		return -1;
 	}
@@ -85,7 +75,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 					nb_output ++;
 				}
 
-				if (sig_node->input_number == 0 && sig_node->output_number == 0){
+				if (!sig_node->input_number && !sig_node->output_number){
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= NULL;
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].result 			= operation->operation_type.symbol.result;
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].index 			= operation->operation_type.symbol.index;
@@ -107,7 +97,7 @@ int32_t result_init(struct result* result, struct codeSignature* code_signature,
 					nb_output ++;
 				}
 
-				if (sig_node->input_number == 0 && sig_node->output_number == 0){
+				if (!sig_node->input_number && !sig_node->output_number){
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].node 			= assignment_node[j];
 					result->intern_node_buffer[i * result->nb_node_intern + nb_intern].result 			= NULL;
 					nb_intern ++;
@@ -422,7 +412,7 @@ void result_push(struct result* result, struct ugraph* graph_layer, struct ir* i
 					new_data->type 		= LAYERNODE_TYPE_PRIM;
 					new_data->nb_edge 	= 0;
 
-					if ((new_data->edge_buffer = (struct edge**)malloc(nb_orphan * sizeof(struct edge*))) == NULL){
+					if ((new_data->edge_buffer = malloc(nb_orphan * sizeof(struct edge*))) == NULL){
 						log_err("unable to allocate memory");
 						goto exit;
 					}
@@ -598,7 +588,7 @@ void result_print(struct result* result){
 
 		for (j = 0; j < array_get_length(class_array); j++){
 			class = *(struct symbolMapping**)array_get(class_array, j);
-			if (symbolMapping_may_append(class, symbol_mapping) == 0){
+			if (!symbolMapping_may_append(class, symbol_mapping)){
 				free(symbol_mapping);
 				symbol_mapping = NULL;
 				break;
@@ -656,7 +646,7 @@ void result_print(struct result* result){
 }
 
 /* ===================================================================== */
-/* parameterMapping & symbolMapping routines							 */
+/* parameterMapping & symbolMapping routines 							 */
 /* ===================================================================== */
 
 static enum parameterSimilarity parameterMapping_get_similarity(const struct parameterMapping* parameter_mapping1, const struct parameterMapping* parameter_mapping2){
@@ -715,7 +705,7 @@ static enum parameterSimilarity parameterMapping_get_similarity(const struct par
 		result = PARAMETER_SUBSET;
 	}
 
-	if (nb_found == 0){
+	if (!nb_found){
 		return PARAMETER_DISJOINT;
 	}
 
@@ -733,7 +723,7 @@ void parameterMapping_print_location(const struct parameterMapping* mapping){
 	uint8_t 			buffer_access_size 	= 0;
 	uint64_t 			offset 				= 0;
 
-	if (mapping->nb_fragment == 0){
+	if (!mapping->nb_fragment){
 		return;
 	}
 
@@ -776,8 +766,8 @@ void parameterMapping_print_location(const struct parameterMapping* mapping){
 						else{
 							offset = ir_imm_operation_get_unsigned_value(ir_node_get_operation(op2));
 							if (buffer_start_offset <= offset && offset < buffer_start_offset + 2 * mapping->nb_fragment * (buffer_access_size / 8)){
-								if ((offset - buffer_start_offset) % (buffer_access_size / 8) == 0){
-									if (buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)] == 0){
+								if (!((offset - buffer_start_offset) % (buffer_access_size / 8))){
+									if (!buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)]){
 										buffer[(offset - buffer_start_offset) / (buffer_access_size / 8)] = 1;
 									}
 									else{
@@ -899,7 +889,7 @@ static void symbolMapping_adjust(struct symbolMapping* mapping){
 				k ++;
 			}
 		}
-		if (k != 0){
+		if (k){
 			mapping->mapping_buffer[l].nb_fragment = k;
 			mapping->mapping_buffer[l].ptr_buffer = mapping->mapping_buffer[i].ptr_buffer;
 			l ++;
@@ -921,7 +911,7 @@ struct symbolMapping* symbolMapping_create_from_result(struct result* result, ui
 	for (i = 0; i < result->nb_node_in; i++){
 		link = result->in_mapping_buffer + (index * result->nb_node_in) + i;
 		if (link->virtual_node.node == NULL){
-			log_err("input node is virtual, I don't kown how to handle that case");
+			log_err("input node is virtual, I don't know how to handle that case");
 			continue;
 		}
 		if (!IR_DEPENDENCE_MACRO_DESC_IS_INPUT(link->edge_desc)){
@@ -944,7 +934,7 @@ struct symbolMapping* symbolMapping_create_from_result(struct result* result, ui
 	for (i = 0; i < result->nb_node_ou; i++){
 		link = result->ou_mapping_buffer + (index * result->nb_node_ou) + i;
 		if (link->virtual_node.node == NULL){
-			log_err("output node is virtual, I don't kown how to handle that case");
+			log_err("output node is virtual, I don't know how to handle that case");
 		}
 		if (!IR_DEPENDENCE_MACRO_DESC_IS_OUTPUT(link->edge_desc)){
 			log_err("incorrect macro descriptor");

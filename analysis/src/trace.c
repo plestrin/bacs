@@ -130,7 +130,7 @@ static inline int32_t trace_init(struct trace* trace, enum traceType type){
 
 	trace->type 		= type;
 	trace->mem_trace 	= NULL;
-	switch(type){
+	switch (type){
 		case EXECUTION_TRACE 	: {
 			traceIdentifier_init(&(trace->trace_type.exe.identifier));
 			break;
@@ -158,7 +158,7 @@ struct trace* trace_load_exe(const char* directory_path){
 	struct dirent* 			entry;
 	size_t 					offset;
 
-	if ((trace = (struct trace*)malloc(sizeof(struct trace))) == NULL){
+	if ((trace = malloc(sizeof(struct trace))) == NULL){
 		log_err("unable to allocate memory");
 		return NULL;
 	}
@@ -179,7 +179,7 @@ struct trace* trace_load_exe(const char* directory_path){
 			uint32_t tid;
 
 			offset = strspn(entry->d_name + 7, "0123456789");
-			if (offset == 0){
+			if (!offset){
 				continue;
 			}
 
@@ -269,22 +269,24 @@ int32_t trace_change(struct trace* trace, uint32_t p_index, uint32_t t_index){
 }
 
 struct trace* trace_load_elf(const char* file_path){
-	struct trace* 	trace;
+	struct trace* trace;
 
-	trace = (struct trace*)malloc(sizeof(struct trace));
-	if (trace != NULL){
-		if (assembly_load_elf(&(trace->assembly), file_path)){
-			log_err("unable to init assembly structure from ELF file");
-			free(trace);
-			return NULL;
-		}
+	if ((trace = malloc(sizeof(struct trace))) == NULL){
+		log_err("unable to allocate memory");
+		return NULL;
+	}
 
-		if (trace_init(trace, ELF_TRACE)){
-			log_err("unable to init elfTrace");
-			assembly_clean(&(trace->assembly));
-			free(trace);
-			return NULL;
-		}
+	if (assembly_load_elf(&(trace->assembly), file_path)){
+		log_err("unable to init assembly structure from ELF file");
+		free(trace);
+		return NULL;
+	}
+
+	if (trace_init(trace, ELF_TRACE)){
+		log_err("unable to init elfTrace");
+		assembly_clean(&(trace->assembly));
+		free(trace);
+		return NULL;
 	}
 
 	return trace;
@@ -375,7 +377,7 @@ void trace_search_irComponent(struct trace* trace_ext, struct trace* trace_inn, 
 		}
 	}
 
-	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it); status == 0 && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
+	for (status = assembly_get_first_instruction(&(trace_ext->assembly), &it); !status && !assembly_search_sub_sequence(&(trace_ext->assembly), &(trace_inn->assembly), &it); status = assembly_get_next_instruction(&(trace_ext->assembly), &it)){
 		ir_component.instruction_start 	= it.instruction_index;
 		ir_component.instruction_stop 	= ir_component.instruction_start + assembly_get_nb_instruction(&(trace_inn->assembly));
 		ir_component.ir 				= trace_inn->trace_type.frag.ir;
@@ -439,7 +441,7 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 	trace_reset_ir(trace);
 
 	if ((mapping = array_create_mapping(ir_component_array, irComponent_compare)) == NULL){
-		log_err("unable to create array mappping");
+		log_err("unable to create array mapping");
 		return;
 	}
 
@@ -459,7 +461,7 @@ void trace_create_compound_ir(struct trace* trace, struct array* ir_component_ar
 	log_info_m("found %u already processed instructions sequence(s) in fragment \"%s\"", nb_component, trace->trace_type.frag.tag);
 
 	if (nb_component > 0){
-		component_buffer = (struct irComponent**)malloc(sizeof(struct irComponent*) * nb_component);
+		component_buffer = malloc(sizeof(struct irComponent*) * nb_component);
 		if (component_buffer == NULL){
 			log_err("unable to allocate memory");
 		}
@@ -805,11 +807,11 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
 		return 1;
 	}
 
-	if ((result = assembly_compare(&(trace1->assembly), &(trace2->assembly))) != 0){
+	if ((result = assembly_compare(&(trace1->assembly), &(trace2->assembly)))){
 		return result;
 	}
 
-	if (trace1->mem_trace != NULL && (result = memTrace_compare(trace1->mem_trace, trace2->mem_trace)) != 0){
+	if (trace1->mem_trace != NULL && (result = memTrace_compare(trace1->mem_trace, trace2->mem_trace))){
 		return result;
 	}
 
@@ -819,7 +821,7 @@ int32_t trace_compare(const struct trace* trace1, const struct trace* trace2){
 void trace_create_synthesis(struct trace* trace){
 	if (trace->type == FRAGMENT_TRACE && trace->trace_type.frag.ir != NULL){
 		trace_reset_synthesis(trace);
-		if((trace->trace_type.frag.synthesis_graph = synthesisGraph_create(trace->trace_type.frag.ir)) == NULL){
+		if ((trace->trace_type.frag.synthesis_graph = synthesisGraph_create(trace->trace_type.frag.ir)) == NULL){
 			log_err_m("unable to create synthesis graph for fragment \"%s\"", trace->trace_type.frag.tag);
 		}
 	}

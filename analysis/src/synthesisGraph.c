@@ -44,7 +44,7 @@ static uint64_t irOperation_get_mask(uint64_t mask, struct edge* edge, uint32_t 
 		return 0;
 	}
 
-	switch(dir){
+	switch (dir){
 		case DIR_SRC_TO_DST : {
 			if (irNode_distance_array[ir_node_get_operation(edge_get_dst(edge))->type] == GRAPHMINPATH_INVALID_DST){
 				return 0;
@@ -168,9 +168,7 @@ static int32_t signatureCluster_init(struct signatureCluster* cluster, struct sy
 #define signatureCluster_add(cluster, node) array_add(&((cluster)->instance_array), &(node))
 
 static inline void signatureCluster_clean(struct signatureCluster* cluster){
-	if (cluster->symbol_mapping != NULL){
-		free(cluster->symbol_mapping);
-	}
+	free(cluster->symbol_mapping);
 	array_clean(&(cluster->instance_array));
 }
 
@@ -195,7 +193,7 @@ static void synthesisGraph_cluster_symbols(struct synthesisGraph* synthesis_grap
 
 			for (i = 0; i < array_get_length(&(synthesis_graph->cluster_array)); i++){
 				cluster_cursor = (struct signatureCluster*)array_get(&(synthesis_graph->cluster_array), i);
-				if (symbolMapping_may_append(cluster_cursor->symbol_mapping, mapping) == 0){
+				if (!symbolMapping_may_append(cluster_cursor->symbol_mapping, mapping)){
 					if (signatureCluster_add(cluster_cursor, node_cursor) < 0){
 						log_err("unable to add element to signatureCluster");
 					}
@@ -274,7 +272,7 @@ static struct node* synthesisGraph_add_path(struct graph* synthesis_graph, uint3
 
 	synthesis_node.type 						= SYNTHESISNODETYPE_PATH;
 	synthesis_node.node_type.path.nb_node 		= nb_node;
-	synthesis_node.node_type.path.node_buffer 	= (struct node**)malloc(sizeof(struct node*) * nb_node);
+	synthesis_node.node_type.path.node_buffer 	= malloc(sizeof(struct node*) * nb_node);
 
 	if (synthesis_node.node_type.path.node_buffer == NULL){
 		log_err("unable to allocate memory");
@@ -352,7 +350,7 @@ static void synthesis_graph_convert_ir_node_to_path(struct node* node){
 	struct node** 			node_buffer;
 	struct synthesisNode* 	syn_node = synthesisGraph_get_synthesisNode(node);
 
-	node_buffer = (struct node**)malloc(sizeof(struct node*));
+	node_buffer = malloc(sizeof(struct node*));
 	if (node_buffer != NULL){
 		node_buffer[0] = syn_node->node_type.ir_node;
 		syn_node->type = SYNTHESISNODETYPE_PATH;
@@ -377,7 +375,7 @@ static void synthesisGraph_pack(struct graph* graph){
 	uint32_t 				j;
 	uint32_t 				k;
 
-	node_buffer = (struct node**)malloc(sizeof(struct node*) * graph->nb_node);
+	node_buffer = malloc(sizeof(struct node*) * graph->nb_node);
 	edge_buffer = (struct edge**)node_buffer;
 	if (node_buffer == NULL){
 		log_err("unable to allocate memory");
@@ -396,7 +394,7 @@ static void synthesisGraph_pack(struct graph* graph){
 		qsort(node_buffer, nb_node, sizeof(struct node*), synthesisGraph_compare_ir_node);
 
 		for (i = 1, j = 0; i < nb_node; i++){
-			if (synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i) == 0){
+			if (!synthesisGraph_compare_ir_node(node_buffer + j, node_buffer + i)){
 				graph_transfert_dst_edge(graph, node_buffer[j], node_buffer[i]);
 				graph_transfert_src_edge(graph, node_buffer[j], node_buffer[i]);
 				graph_remove_node(graph, node_buffer[i]);
@@ -439,7 +437,7 @@ static void synthesisGraph_pack(struct graph* graph){
 
 		for (i = 1, j = 0; i < nb_edge; i++){
 			synthesis_edge_cursor = synthesisGraph_get_synthesisEdge(edge_buffer[j]);
-			if (synthesisGraph_compare_edge(edge_buffer + j, edge_buffer + i) == 0){
+			if (!synthesisGraph_compare_edge(edge_buffer + j, edge_buffer + i)){
 				synthesis_edge_cursor->tag = max(synthesis_edge_cursor->tag, synthesisGraph_get_synthesisEdge(edge_buffer[i])->tag);
 				graph_remove_edge(graph, edge_buffer[i]);
 			}
@@ -577,7 +575,7 @@ static void minPath_add_input_start(struct array* path_array, uint32_t offset, u
 	for (i = offset; i < offset + length; i++){
 		path = (struct minPath*)array_get(path_array, i);
 
-		if (array_get_length(path->step_array) == 0){
+		if (!array_get_length(path->step_array)){
 			starting_node = path->reached_node;
 		}
 		else{
@@ -891,7 +889,7 @@ static void synthesisGraph_find_cluster_relation(struct synthesisGraph* synthesi
 		uint32_t 				score;
 		#endif
 
-		if ((desc_buffer = (struct categoryDesc*)malloc(sizeof(struct categoryDesc) * nb_category)) == NULL){
+		if ((desc_buffer = malloc(sizeof(struct categoryDesc) * nb_category)) == NULL){
 			log_err("unable to allocate memory");
 		}
 		else{
@@ -980,7 +978,7 @@ struct synthesisGraph* synthesisGraph_create(struct ir* ir){
 	struct timespec 		timer_start;
 	struct timespec 		timer_stop;
 
-	synthesis_graph = (struct synthesisGraph*)malloc(sizeof(struct synthesisGraph));
+	synthesis_graph = malloc(sizeof(struct synthesisGraph));
 	if (synthesis_graph != NULL){
 		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timer_start)){
 			log_err("clock_gettime fails");
@@ -1037,7 +1035,7 @@ void synthesisGraph_delete_edge(struct graph* graph, struct edge* edge){
 		}
 	}
 	else if (synthesis_node->type == SYNTHESISNODETYPE_IR_NODE){
-		if (node->nb_edge_src == 1 && node->nb_edge_dst == 0){
+		if (node->nb_edge_src == 1 && !node->nb_edge_dst){
 			to_be_delete[0] = node;
 		}
 	}
@@ -1051,7 +1049,7 @@ void synthesisGraph_delete_edge(struct graph* graph, struct edge* edge){
 		}
 	}
 	else if (synthesis_node->type == SYNTHESISNODETYPE_IR_NODE){
-		if (node->nb_edge_dst == 1 && node->nb_edge_src == 0){
+		if (node->nb_edge_dst == 1 && !node->nb_edge_src){
 			to_be_delete[1] = node;
 		}
 	}
@@ -1085,12 +1083,12 @@ void synthesisGraph_printDot_node(void* data, FILE* file){
 	uint32_t 				nb_element;
 
 	synthesis_node = (struct synthesisNode*)data;
-	switch(synthesis_node->type){
+	switch (synthesis_node->type){
 		case SYNTHESISNODETYPE_RESULT : {
 			for (i = 0; i < array_get_length(&(synthesis_node->node_type.cluster->instance_array)); i++){
 				symbol = *(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i);
 
-				if (i == 0){
+				if (!i){
 					fprintf(file, "[shape=box,label=\"%s", ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->name);
 				}
 				else if (ir_node_get_operation(symbol)->operation_type.symbol.sym_sig->id != ir_node_get_operation(*(struct node**)array_get(&(synthesis_node->node_type.cluster->instance_array), i - 1))->operation_type.symbol.sym_sig->id){
@@ -1107,7 +1105,7 @@ void synthesisGraph_printDot_node(void* data, FILE* file){
 			for (i = 0, nb_element = 0; i < synthesis_node->node_type.path.nb_node; i++){
 				operation = ir_node_get_operation(synthesis_node->node_type.path.node_buffer[i]);
 
-				switch(operation->type){
+				switch (operation->type){
 					case IR_OPERATION_TYPE_INST 	: {
 						fprintf(file, "%s<BR ALIGN=\"LEFT\"/>", irOpcode_2_string(operation->operation_type.inst.opcode));
 						nb_element ++;
