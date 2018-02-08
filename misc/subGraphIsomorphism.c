@@ -283,7 +283,7 @@ static void graphIso_assign_recursive_edge(struct graphIsoHandle* graph_handle, 
 
 static struct nodeTab* graphIso_create_nodeTab(struct graph* graph, uint32_t(*node_get_label)(struct node*)){
 	struct node* 		node_cursor;
-	uint32_t 			i;
+	size_t 				i;
 	struct nodeTab* 	node_tab;
 
 	if ((node_tab = malloc(sizeof(struct nodeTab) * graph->nb_node)) == NULL){
@@ -302,7 +302,7 @@ static struct nodeTab* graphIso_create_nodeTab(struct graph* graph, uint32_t(*no
 
 static struct subNodeTab* graphIso_create_subNodeTab(struct graph* graph, uint32_t(*node_get_label)(struct node*)){
 	struct node* 		node_cursor;
-	uint32_t 			i;
+	size_t 				i;
 	struct subNodeTab* 	sub_node_tab;
 
 	if ((sub_node_tab = malloc(sizeof(struct subNodeTab) * graph->nb_node)) == NULL){
@@ -338,8 +338,8 @@ static struct edgeTab* graphIso_create_edgeTab(struct graph* graph, uint32_t(*ed
 		for (edge_cursor = node_get_head_edge_src(node_cursor); edge_cursor != NULL; edge_cursor = edge_get_next_src(edge_cursor)){
 			edge_tab[i].label 	= edge_get_label(edge_cursor);
 			edge_tab[i].edge 	= edge_cursor;
-			edge_tab[i].src 	= (uint32_t)(node_cursor->ptr);
-			edge_tab[i].dst 	= (uint32_t)(edge_get_dst(edge_cursor)->ptr);
+			edge_tab[i].src 	= (uint32_t)(size_t)(node_cursor->ptr);
+			edge_tab[i].dst 	= (uint32_t)(size_t)(edge_get_dst(edge_cursor)->ptr);
 			i ++;
 		}
 	}

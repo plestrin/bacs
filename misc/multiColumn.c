@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #include "multiColumn.h"
 #include "base.h"
@@ -202,7 +203,7 @@ void multiColumnPrinter_print(const struct multiColumnPrinter* printer, ...){
 				case MULTICOLUMN_TYPE_HEX_64	: {
 					value_str = raw_value;
 					value_uint64 = (uint64_t)va_arg(vl, uint64_t);
-					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%llx", value_uint64);
+					snprintf(raw_value, MULTICOLUMN_STRING_MAX_SIZE, "0x%" PRIx64, value_uint64);
 					break;
 				}
 				case MULTICOLUMN_TYPE_UNBOUND_STRING 	: {

@@ -29,7 +29,7 @@ char* readBuffer_raw(const char* txt, size_t txt_length, char* buffer, size_t* b
 
 	for (i = 0, j = 0; i < txt_length; i++){
 		if (j >> 2 == buffer_length_){
-			log_err_m("reach end of output buffer, but %u bytes are left to be parsed", txt_length - i);
+			log_err_m("reach end of output buffer, but %zu bytes are left to be parsed", txt_length - i);
 			break;
 		}
 

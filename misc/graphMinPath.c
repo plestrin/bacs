@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "graphMinPath.h"
 #include "base.h"
@@ -423,7 +424,7 @@ int32_t minPath_check(struct minPath* path, uint64_t(*get_mask)(uint64_t,struct 
 	}
 
 	if (get_mask != NULL){
-		log_debug_m("Last mask: 0x%llx", mask);
+		log_debug_m("last mask: 0x%" PRIx64, mask);
 	}
 
 	return 0;

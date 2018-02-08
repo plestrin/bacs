@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "mapFile.h"
 #include "base.h"
@@ -22,7 +23,7 @@ void* mapFile_map(const char* file_name, size_t* size){
 	}
 
 	if (fstat(file, &sb) < 0){
-		log_err_m("unable to read file %s size", file_name);
+		log_err_m("unable to read the size of file %s", file_name);
 		close(file);
 		return NULL;
 	}
@@ -31,7 +32,7 @@ void* mapFile_map(const char* file_name, size_t* size){
 	buffer = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, file, 0);
 	close(file);
 	if (buffer == MAP_FAILED){
-		log_err_m("unable to map file %s, (size=%u)", file_name, *size);
+		log_err_m("unable to map file %s, (size=%zu)", file_name, *size);
 		return NULL;
 	}
 
@@ -51,7 +52,7 @@ void* mapFile_part(int file, off_t offset, size_t size, struct mappingDesc* desc
 	desc->size = size + align;
 	desc->buffer = mmap(NULL, size + align, PROT_READ, MAP_PRIVATE, file, offset - (off_t)align);
 	if (desc->buffer == MAP_FAILED){
-		log_err_m("unable to map file (size=%u, off=%lld): %s", desc->size, offset - (off_t)align, strerror(errno));
+		log_err_m("unable to map file (size=%zu, off=%" PRId64 "): %s", desc->size, offset - (off_t)align, strerror(errno));
 		desc->buffer = NULL;
 		return NULL;
 	}

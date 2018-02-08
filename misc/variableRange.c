@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "variableRange.h"
 #include "base.h"
@@ -622,29 +623,29 @@ int32_t variableRange_is_range_intersect(const struct variableRange* range1, con
 
 void variableRange_check_format(const struct variableRange* range){
 	if (range->index & ~(range->mask >> range->scale)){
-		log_warn_m("incorrect index format: 0x%llx", range->index);
+		log_warn_m("incorrect index format: 0x%" PRIx64, range->index);
 	}
 }
 
 void variableRange_print(const struct variableRange* range){
 	if (!range->index){
-		printf("%llx, mask=%llx", range->disp, range->mask);
+		printf("%" PRIx64 ", mask=%" PRIx64, range->disp, range->mask);
 	}
 	else{
 		if (!range->scale){
 			if (!range->disp){
-				printf("[0, %llx], mask=%llx", range->index, range->mask);
+				printf("[0, %" PRIx64 "], mask=%" PRIx64, range->index, range->mask);
 			}
 			else{
-				printf("[0, %llx] + %llx, mask=%llx", range->index, range->disp, range->mask);
+				printf("[0, %" PRIx64 "] + %" PRIx64 ", mask=%" PRIx64, range->index, range->disp, range->mask);
 			}
 		}
 		else{
 			if (!range->disp){
-				printf("[0, %llx] << %u, mask=%llx", range->index, range->scale, range->mask);
+				printf("[0, %" PRIx64 "] << %u, mask=%" PRIx64, range->index, range->scale, range->mask);
 			}
 			else{
-				printf("[0, %llx] << %u + %llx, mask=%llx", range->index, range->scale, range->disp, range->mask);
+				printf("[0, %" PRIx64 "] << %u + %" PRIx64 ", mask=%" PRIx64, range->index, range->scale, range->disp, range->mask);
 			}
 		}
 	}

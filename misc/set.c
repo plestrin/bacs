@@ -224,7 +224,7 @@ void* set_export_buffer_unique(struct set* set, uint32_t* nb_element){
 
 	buffer = set_export_buffer(set);
 	if (buffer != NULL){
-		qsort_r(buffer, set->nb_element_tot, set->element_size, (__compar_d_fn_t)memcmp, (void*)(set->element_size));
+		qsort_r(buffer, set->nb_element_tot, set->element_size, (__compar_d_fn_t)memcmp, (void*)(size_t)(set->element_size));
 		for (i = 1, offset = 1; i < set->nb_element_tot; i++){
 			if (memcmp((uint8_t*)buffer + i * set->element_size, (uint8_t*)buffer + (i - 1) * set->element_size, set->element_size)){
 				if (i != offset){

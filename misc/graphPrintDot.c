@@ -53,14 +53,14 @@ int32_t graphPrintDot_print(struct graph* graph, const char* name, void* arg){
 		graphPrintDot_print_prologue(graph, file, arg)
 
 		for (node = graph_get_head_node(graph); node != NULL; node = node_get_next(node)){
-			fprintf(file, "%u ", (uint32_t)node);
+			fprintf(file, "%zu ", (size_t)node);
 			graphPrintDot_print_node_data(graph, node, file, arg)
 			fputs("\n", file);
 		}
 
 		for (node = graph_get_head_node(graph); node != NULL; node = node_get_next(node)){
 			for (edge = node_get_head_edge_src(node); edge != NULL; edge = edge_get_next_src(edge)){
-				fprintf(file, "%u -> %u ", (uint32_t)edge->src_node, (uint32_t)edge->dst_node);
+				fprintf(file, "%zu -> %zu ", (size_t)edge->src_node, (size_t)edge->dst_node);
 				graphPrintDot_print_edge_data(graph, edge, file, arg)
 				fputs("\n", file);
 			}
@@ -110,7 +110,7 @@ int32_t ugraphPrintDot_print(struct ugraph* ugraph, const char* name, void* arg)
 		fputs("graph G {\n", file);
 
 		for (unode = ugraph_get_head_node(ugraph); unode != NULL; unode = unode_get_next(unode)){
-			fprintf(file, "%u\n", (uint32_t)unode);
+			fprintf(file, "%zu\n", (size_t)unode);
 			ugraphPrintDot_print_node_data(ugraph, unode, file, arg)
 			fputs("\n", file);
 		}
@@ -118,7 +118,7 @@ int32_t ugraphPrintDot_print(struct ugraph* ugraph, const char* name, void* arg)
 		for (unode = ugraph_get_head_node(ugraph); unode != NULL; unode = unode_get_next(unode)){
 			for (uedge = unode_get_head_edge(unode); uedge != NULL; uedge = uedge_get_next(uedge)){
 				if ((void*)uedge->container == (void*)uedge){
-					fprintf(file, "%u -- %u ", (uint32_t)unode, (uint32_t)uedge_get_endp(uedge));
+					fprintf(file, "%zu -- %zu ", (size_t)unode, (size_t)uedge_get_endp(uedge));
 					ugraphPrintDot_print_edge_data(ugraph, uedge, file, arg)
 					fputs("\n", file);
 				}

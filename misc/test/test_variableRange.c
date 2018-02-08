@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "../variableRange.h"
 #include "../base.h"
@@ -57,7 +58,7 @@ int32_t main(void){
 		for (variableRangeIterator_init(&it1, &range1), j = 0; variableRangeIterator_get_next(&it1, &value1); j++){
 			if (!variableRange_is_value_include(&range1, value1)){
 				log_err_m("%u", i);
-				printf("\t%llx not in ", value1); variableRange_print(&range1); printf("\n");
+				printf("\t%" PRIx64 " not in ", value1); variableRange_print(&range1); printf("\n");
 				return EXIT_FAILURE;
 			}
 		}
@@ -81,7 +82,7 @@ int32_t main(void){
 			value3 = value1 & ~(0xffffffffffffffff << value2);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" resized by %llx)\n", ~(0xffffffffffffffff << value2));
+				printf("\t%" PRIx64 " = (%" PRIx64 " & %" PRIx64 ") not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" resized by %" PRIx64 ")\n", ~(0xffffffffffffffff << value2));
 				return EXIT_FAILURE;
 			}
 		}
@@ -100,7 +101,7 @@ int32_t main(void){
 			value3 = (-value1) & ~(0xffffffffffffffff << value2);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (-%llx & %llx) not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" neg in %llx)\n", ~(0xffffffffffffffff << value2));
+				printf("\t%" PRIx64 " = (-%" PRIx64 " & %" PRIx64 ") not in ", value3, value1, ~(0xffffffffffffffff << value2)); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" neg in %" PRIx64 ")\n", ~(0xffffffffffffffff << value2));
 				return EXIT_FAILURE;
 			}
 		}
@@ -119,7 +120,7 @@ int32_t main(void){
 			value3 = (value1 + value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llu + %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" + %llu)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIu64 " + %" PRIu64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" + %" PRIu64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -138,7 +139,7 @@ int32_t main(void){
 			value3 = value1 & value2;
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx & %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %llx)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIx64 " & %" PRIx64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" & %" PRIx64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -157,7 +158,7 @@ int32_t main(void){
 			value3 = value1 | value2;
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx | %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" | %llx)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIx64 " | %" PRIx64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" | %" PRIx64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -177,7 +178,7 @@ int32_t main(void){
 			value3 = (value1 << value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx << %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %llu)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIx64 " << %" PRIu64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" << %" PRIu64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -196,7 +197,7 @@ int32_t main(void){
 			value3 = value1 >> value2;
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx >> %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" >> %llu)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIx64 " >> %" PRIu64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" >> %" PRIu64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -215,7 +216,7 @@ int32_t main(void){
 			value3 = (value1 - value2) & bitmask64(MAX_SIZE);
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llu - %llu) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" - %llu)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIu64 " - %" PRIu64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" - %" PRIu64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -234,7 +235,7 @@ int32_t main(void){
 			value3 = value1 ^ value2;
 			if (!variableRange_is_value_include(&range2, value3)){
 				log_err_m("%u", i);
-				printf("\t%llx = (%llx ^ %llx) not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" ^ %llx)\n", value2);
+				printf("\t%" PRIx64 " = (%" PRIx64 " ^ %" PRIx64 ") not in ", value3, value1, value2); variableRange_print(&range2); printf(" ("); variableRange_print(&range1); printf(" ^ %" PRIx64 ")\n", value2);
 				return EXIT_FAILURE;
 			}
 		}
@@ -259,7 +260,7 @@ int32_t main(void){
 				value3 = (value1 + value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx + %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" + "); variableRange_print(&range2); printf(")\n");
+					printf("\t%" PRIx64 " = (%" PRIx64 " + %" PRIx64 " mask %" PRIx64 ") not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" + "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -286,7 +287,7 @@ int32_t main(void){
 				value3 = value1 & value2 & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx & %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" & "); variableRange_print(&range2); printf(")\n");
+					printf("\t%" PRIx64 " = (%" PRIx64 " & %" PRIx64 " mask %" PRIx64 ") not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" & "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -313,7 +314,7 @@ int32_t main(void){
 				value3 = (value1 | value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx | %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" | "); variableRange_print(&range2); printf(")\n");
+					printf("\t%" PRIx64 " = (%" PRIx64 " | %" PRIx64 " mask %" PRIx64 ") not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" | "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -340,7 +341,7 @@ int32_t main(void){
 				value3 = (value1 - value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx - %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" - "); variableRange_print(&range2); printf(")\n");
+					printf("\t%" PRIx64 " = (%" PRIx64 " - %" PRIx64 " mask %" PRIx64 ") not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" - "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -367,7 +368,7 @@ int32_t main(void){
 				value3 = (value1 ^ value2) & bitmask64(size);
 				if (!variableRange_is_value_include(&range3, value3)){
 					log_err_m("%u", i);
-					printf("\t%llx = (%llx ^ %llx mask %llx) not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" ^ "); variableRange_print(&range2); printf(")\n");
+					printf("\t%" PRIx64 " = (%" PRIx64 " ^ %" PRIx64 " mask %" PRIx64 ") not in ", value3, value1, value2, bitmask64(size)); variableRange_print(&range3); printf(" ("); variableRange_print(&range1); printf(" ^ "); variableRange_print(&range2); printf(")\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -391,7 +392,7 @@ int32_t main(void){
 				k = 0;
 				if (j){
 					log_err_m("%u", i);
-					printf("\t"); variableRange_print(&range2); printf(" not included in "); variableRange_print(&range1); printf(" counter example is %llx\n", value2);
+					printf("\t"); variableRange_print(&range2); printf(" not included in "); variableRange_print(&range1); printf(" counter example is %" PRIx64 "\n", value2);
 					return EXIT_FAILURE;
 				}
 			}
@@ -419,7 +420,7 @@ int32_t main(void){
 				k = 1;
 				if (!j){
 					log_err_m("%u", i);
-					printf("\t"); variableRange_print(&range2); printf(" intersect "); variableRange_print(&range1); printf(" counter example is %llx\n", value2);
+					printf("\t"); variableRange_print(&range2); printf(" intersect "); variableRange_print(&range1); printf(" counter example is %" PRIx64 "\n", value2);
 					return EXIT_FAILURE;
 				}
 			}

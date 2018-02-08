@@ -15,7 +15,7 @@
 #define ARRAY2_FINAL_FILL 	456
 #define NB_QUERY 			512001238
 
-int main(){
+int main(void){
 	struct array 	array1;
 	struct array 	array2;
 	char 			obj[OBJECT_SIZE];
@@ -27,12 +27,12 @@ int main(){
 
 	if (array_init(&array1, OBJECT_SIZE)){
 		log_err("unable to init array1");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	if (array_init(&array2, OBJECT_SIZE)){
 		log_err("unable to init array2");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	printf("*** TEST 1 ***\n");
@@ -120,8 +120,8 @@ int main(){
 		log_err("clock_gettime fails");
 	}
 
-	for (i = 0, fetch = 0; i < NB_QUERY; i++){
-		fetch = (uint32_t)fetch + (char*)array_get(&array1, rand() % NB_OBJECT);
+	for (i = 0, fetch = NULL; i < NB_QUERY; i++){
+		fetch = (char*)array_get(&array1, rand() % NB_OBJECT);
 	}
 
 	if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time)){
@@ -135,5 +135,5 @@ int main(){
 	array_clean(&array1);
 	array_clean(&array2);
 
-	return 0;
+	return EXIT_SUCCESS;
 }

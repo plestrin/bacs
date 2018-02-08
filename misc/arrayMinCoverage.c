@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <search.h>
+#include <inttypes.h>
 
 #include "arrayMinCoverage.h"
 #include "base.h"
@@ -447,7 +448,7 @@ static uint32_t arrayMinCoverage_auto(struct array* array, uint32_t nb_category,
 	}
 
 	#ifdef VERBOSE
-	log_info_m("reshape solution for %u categories (complexity is at least %llu)", nb_category, complexity);
+	log_info_m("reshape solution for %u categories (complexity is at least %" PRIu64 ")", nb_category, complexity);
 	#endif
 
 	return arrayMinCoverage_reshape(array, nb_category, desc_buffer, selection_value, min_score, tag_map);
