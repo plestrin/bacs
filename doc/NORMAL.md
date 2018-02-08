@@ -1,26 +1,3 @@
-<style media="screen" type="text/css">
-	table {
-		color:#333333;
-		border-width: 1px;
-		border-color: #666666;
-		border-collapse: collapse;
-	}
-	table th {
-		border-width: 1px;
-		padding: 8px;
-		border-style: solid;
-		border-color: #666666;
-		background-color: #dedede;
-	}
-	table td {
-		border-width: 1px;
-		padding: 8px;
-		border-style: solid;
-		border-color: #666666;
-		background-color: #ffffff;
-	}
-</style>
-
 # Normalization Guide
 
 ## List of Operations
@@ -81,7 +58,7 @@ If according to range value analysis an expression is constant, replace the expr
 ### AND:
 * If there is a constant operand and if it does not modify the set of reachable values -> remove it from the operand list;
 
-### MOVZX 
+### MOVZX
 * If the operand is PART1_8, PART1_16 and the size of its operand is equal to its size -> replace both instructions by AND;
 * If the operand is PART2_8 and the size of its operand is equal to its size -> replace both instructions by SHR and AND.
 *Do we really need this rule (it seems to me that it is redundant with what is done in irVaraiableSize)? Not really, but maybe it should ...*
@@ -128,7 +105,7 @@ If according to range value analysis an expression is constant, replace the expr
 
 1. Expand sizes. For every operation in that list: {ADC, ADD, AND, CMOV, NEG, NOT, OR, SBB, SHL, SUB, XOR} if the size is smaller than the ideal size (which is equal to 32 bits), we increase the size. We also increase the size of constant vertices if the sizes of their direct successors were increased.
 2. Delete obsolete size modifiers. Size modifiers that are not required any more (that is to say the size of theirs direct predecessor is equal to the size of their direct successor(s)) are deleted. Special actions are performed while deleting MOVZX and PART2_8 operations.
-3. Insert new size modifiers. We insert new size modifiers where it is necessary. 
+3. Insert new size modifiers. We insert new size modifiers where it is necessary.
 
 ## Constant Merging
 
@@ -147,6 +124,3 @@ For now on, only two operations are affected  by constant merging: ADD and AND. 
 | Misc Rewrite Rules | DST -> SRC | Safe node iteration. |
 | Remove Subexpression | SRC -> DST | Benefit from a cascading effect. The order is not preserved. |
 | Operation Size Exp | DST -> SRC | Safe node iteration. |
-
-
-
