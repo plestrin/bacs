@@ -28,6 +28,7 @@ misc/test/test_subGraphIso
 misc/test/test_variableRange
 
 lightTracer_pin/obj-ia32/
+lightTracer_pin/obj-intel64/
 
 analysis/analysis
 
@@ -42,6 +43,7 @@ asm/src/*.asm
 
 windows/lightTracer_pin/src/
 windows/lightTracer_pin/obj-ia32/
+windows/lightTracer_pin/obj-intel64/
 windows/sample/build/
 windows/sample/src/
 windows/sample/trace
