@@ -47,7 +47,7 @@ int main(){
 
 	/* DECRYPT */
 	if (AES_set_decrypt_key(key, 128, &dkey)){
-		printf("ERROR: in %s, unable to setup AES dencryption key\n", __func__);
+		printf("ERROR: in %s, unable to setup AES decryption key\n", __func__);
 		return EXIT_FAILURE;
 	}
 
