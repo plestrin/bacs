@@ -37,6 +37,5 @@ clean:
 	@ cd $(CRYPTOPP_DIRECTORY) && $(MAKE) clean
 	@ cd $(GLADMAN_DIRECTORY) && $(MAKE) clean
 	@ cd $(OPENSSL_DIRECTORY) && $(MAKE) clean
-	@ cd $(GO_DIRECTORY) && $(MAKE) clean
 	@ cd $(BOTAN_DIRECTORY) && $(MAKE) clean
 	@ cd $(NETTLE_DIRECTORY) && $(MAKE) clean
