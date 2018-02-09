@@ -60,7 +60,7 @@ int main(void){
 	printf("\nCiphertext CTR: ");
 	fprintBuffer_raw(stdout, (char*)ciphertext, sizeof plaintext);
 
-	if (!memcmp(deciphertext, plaintext, sizeof plaintext)){
+	if (memcmp(deciphertext, plaintext, sizeof plaintext)){
 		printf("\nRecovery:       FAIL\n");
 		return EXIT_FAILURE;
 	}
