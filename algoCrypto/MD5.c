@@ -237,7 +237,7 @@ void md5_feed(struct md5State* md5_state, const uint32_t* data, size_t data_leng
 		memcpy((uint8_t*)md5_state->block + md5_state->local_size, data, MD5_BLOCK_NB_BYTE - md5_state->local_size);
 		md5_compress(md5_state);
 
-		data = (uint32_t*)((uint8_t*)data + (MD5_BLOCK_NB_BYTE - md5_state->local_size));
+		data = (const uint32_t*)((const uint8_t*)data + (MD5_BLOCK_NB_BYTE - md5_state->local_size));
 		data_length = data_length - (MD5_BLOCK_NB_BYTE - md5_state->local_size);
 		md5_state->local_size = 0;
 	}

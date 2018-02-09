@@ -14,11 +14,11 @@
 int main(void){
 	char 		message[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
 	char* 		padded_message;
-	uint32_t 	message_size;
+	size_t 		message_size;
 	uint32_t 	hash[MD5_HASH_NB_DWORD];
 
 	message_size = strlen(message);
-	padded_message = (char*)malloc(MD5_DATA_SIZE_TO_NB_BLOCK(message_size) * MD5_BLOCK_NB_BYTE);
+	padded_message = malloc(MD5_DATA_SIZE_TO_NB_BLOCK(message_size) * MD5_BLOCK_NB_BYTE);
 	if (padded_message != NULL){
 		memcpy(padded_message, message, message_size);
 

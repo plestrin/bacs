@@ -109,7 +109,7 @@ void sha1_feed(struct sha1State* sha1_state, const uint32_t* data, size_t data_l
 		memcpy((uint8_t*)sha1_state->block + sha1_state->local_size, data, SHA1_BLOCK_NB_BYTE - sha1_state->local_size);
 		sha1_compress(sha1_state);
 
-		data = (const uint32_t*)((uint8_t*)data + (SHA1_BLOCK_NB_BYTE - sha1_state->local_size));
+		data = (const uint32_t*)((const uint8_t*)data + (SHA1_BLOCK_NB_BYTE - sha1_state->local_size));
 		data_length = data_length - (SHA1_BLOCK_NB_BYTE - sha1_state->local_size);
 		sha1_state->local_size = 0;
 	}
