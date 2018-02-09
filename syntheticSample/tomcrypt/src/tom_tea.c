@@ -13,34 +13,34 @@ int main(void){
 	symmetric_key 	skey;
 
 	printf("Plaintext:       ");
-	fprintBuffer_raw(stdout, (char*)pt, 8);
+	fprintBuffer_raw(stdout, (char*)pt, sizeof pt);
 	printf("\nKey:             ");
-	fprintBuffer_raw(stdout, (char*)key, 16);
+	fprintBuffer_raw(stdout, (char*)key, sizeof key);
 
 	if (xtea_setup(key, 16, 32, &skey) != CRYPT_OK){
 		printf("ERROR: unable to setup xtea key\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	if (xtea_ecb_encrypt(pt, ct, &skey) != CRYPT_OK){
 		printf("ERROR: unable to encrypt xtea\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	if (xtea_ecb_decrypt(ct, vt, &skey) != CRYPT_OK){
 		printf("ERROR: unable to decrypt xtea\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	printf("\nCiphertext XTEA: ");
-	fprintBuffer_raw(stdout, (char*)ct, 8);
+	fprintBuffer_raw(stdout, (char*)ct, sizeof ct);
 
-	if (memcmp(pt, vt, 8) == 0){
-		printf("\nRecovery:        OK\n");
-	}
-	else{
+	if (memcmp(pt, vt, 8)){
 		printf("\nRecovery:        FAIL\n");
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	printf("\nRecovery:        OK\n");
+
+	return EXIT_SUCCESS;
 }

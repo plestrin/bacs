@@ -5,7 +5,7 @@
 
 #include "printBuffer.h"
 
-int main(){
+int main(void){
 	char 			message[] = "Hello I am a test vector for the HMAC MD5. Since I am 92 bytes wide I lay on several blocks.";
 	char 			key[] = "1 4m 4 53cr3t k3y";
 	hmac_state 		hmac;

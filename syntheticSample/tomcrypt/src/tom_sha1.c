@@ -5,7 +5,7 @@
 
 #include "printBuffer.h"
 
-int main(){
+int main(void){
 	char 		message[] = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
 	uint32_t 	hash[5];
 	hash_state 	md;

@@ -5,7 +5,7 @@
 
 #include "printBuffer.h"
 
-int main(){
+int main(void){
 	unsigned char 	key[8] = {0x75, 0x29, 0x79, 0x38, 0x75, 0x92, 0xcb, 0x70};
 	unsigned char 	ct[8];
 	unsigned char 	vt[8];
