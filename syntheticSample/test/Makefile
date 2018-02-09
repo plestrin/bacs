@@ -1,10 +1,10 @@
-MISC_DIRECTORY 			:= ../../misc/
-CRYPTO_DIRECTORY 		:= ../../algoCrypto/
+MISC_DIRECTORY 		:= ../../misc/
+CRYPTO_DIRECTORY 	:= ../../algoCrypto/
 
-GCC_CC					:= gcc
-GCC_CFLAGS 				:= -W -Wall -pedantic -Wextra -std=gnu99
-CLANG_CC 				:= clang
-CLANG_CFLAGS 			:= -pedantic -Weverything -Wno-cast-align -Wno-unused-macros
+GCC_CC				:= gcc
+GCC_CFLAGS 			:= -W -Wall -pedantic -Wextra -std=gnu99
+CLANG_CC 			:= clang
+CLANG_CFLAGS 		:= -pedantic -Weverything -Wno-cast-align -Wno-unused-macros
 
 TEA_TEST_NAME			:= test_tea
 ECB_TEA_TEST_NAME 		:= test_ecb_tea
@@ -27,7 +27,7 @@ SERPENT_TEST_NAME 		:= test_serpent
 DES_TEST_NAME 			:= test_des
 TWOFISH_TEST_NAME 		:= test_twofish
 
-TARGETS 				:= 	$(TEA_TEST_NAME) 			\
+TARGETS 			:= 	$(TEA_TEST_NAME) 			\
 							$(ECB_TEA_TEST_NAME) 		\
 							$(CBC_TEA_TEST_NAME) 		\
 							$(OFB_TEA_TEST_NAME) 		\
@@ -48,54 +48,57 @@ TARGETS 				:= 	$(TEA_TEST_NAME) 			\
 							$(DES_TEST_NAME) 			\
 							$(TWOFISH_TEST_NAME)
 
-COMPILATIONS 			:= go0 go1 go2 go3 gos co0 co1 co2 co3 coz
+COMPILATIONS_GCC 	:= go0 go1 go2 go3 gos
+COMPILATIONS_CLANG 	:= co0 co1 co2 co3 coz
+COMPILATIONS 		:= $(COMPILATIONS_GCC) $(COMPILATIONS_CLANG)
 
 define TEMPLATE
 build/$$(TEA_TEST_NAME)_$(1): build/TEA.$(1) build/test_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(ECB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ecb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CBC_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_cbc_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(OFB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ofb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CFB_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_cfb_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CTR_TEA_TEST_NAME)_$(1): build/TEA.$(1) build/mode.$(1) build/test_ctr_tea.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(MD5_TEST_NAME)_$(1): build/MD5.$(1) build/test_md5.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(HMAC_MD5_TEST_NAME)_$(1): build/MD5.$(1) build/mode.$(1) build/test_hmac_md5.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(RC4_TEST_NAME)_$(1): build/RC4.$(1) build/test_rc4.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(AES_TEST_NAME)_$(1): build/AES.$(1) build/test_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(ECB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ecb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CBC_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_cbc_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(OFB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ofb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CFB_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_cfb_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(CTR_AES_TEST_NAME)_$(1): build/AES.$(1) build/mode.$(1) build/test_ctr_aes.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(SHA1_TEST_NAME)_$(1): build/SHA1.$(1) build/test_sha1.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(HMAC_SHA1_TEST_NAME)_$(1): build/SHA1.$(1) build/mode.$(1)  build/test_hmac_sha1.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(SERPENT_TEST_NAME)_$(1): build/serpent.$(1) build/test_serpent.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(DES_TEST_NAME)_$(1): build/DES.$(1) build/test_des.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 build/$(TWOFISH_TEST_NAME)_$(1): build/twofish.$(1) build/test_twofish.$$(shell echo $(1) | tr 0-9sz 0) build/printBuffer.$$(shell echo $(1) | tr 0-9sz 0)
-	$$(GCC_CC) -o $$@ $$^
+	$(2) -o $$@ $$^
 endef
 
 all: build $(foreach target,$(TARGETS),$(foreach compilation,$(COMPILATIONS),build/$(target)_$(compilation)))
 
-$(foreach compilation,$(COMPILATIONS),$(eval $(call TEMPLATE,$(compilation))))
+$(foreach compilation,$(COMPILATIONS_GCC),$(eval $(call TEMPLATE,$(compilation),$(GCC_CC))))
+$(foreach compilation,$(COMPILATIONS_CLANG),$(eval $(call TEMPLATE,$(compilation),$(CLANG_CC))))
 
 build:
 	mkdir -p build
