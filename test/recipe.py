@@ -132,7 +132,7 @@ class recipe(object):
 		output_val = process.communicate()
 		process.wait()
 		time_stop = time.time()
-			
+
 		self.log.write(output_val[0])
 		self.log.write(output_val[1])
 
