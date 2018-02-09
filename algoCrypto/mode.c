@@ -8,8 +8,8 @@
 #include "windowsComp.h"
 #endif
 
-static inline void xor(const void* input1, const void* input2, void* output, uint32_t size){
-	uint32_t i;
+static inline void xor(const void* input1, const void* input2, void* output, size_t size){
+	size_t i;
 
 	for (i = 0; i < size / 4; i++){
 		*((uint32_t*)(output) + i) = *((const uint32_t*)(input1) + i) ^ *((const uint32_t*)(input2) + i);
