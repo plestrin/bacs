@@ -53,3 +53,5 @@ example/*/build/
 example/*/whiteList.lst
 
 doc/*.html
+
+new/struct/test/build
