@@ -8,7 +8,7 @@
 
 #define BUFFER_SIZE 256
 
-int main(){
+int main(void){
 	char 		input[BUFFER_SIZE];
 	char* 		buffer;
 	uint32_t 	input_size;

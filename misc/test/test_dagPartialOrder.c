@@ -10,7 +10,7 @@ static void dotPrint_node(void* data, FILE* file, void* arg){
 	fprintf(file, "[label=\"%u\"]", *(uint32_t*)data);
 }
 
-static struct graph* create_graph(){
+static struct graph* create_graph(void){
 	struct graph* 	graph;
 	struct node* 	node_10;
 	struct node* 	node_21;
@@ -49,7 +49,7 @@ static struct graph* create_graph(){
 	return graph;
 }
 
-int main(){
+int main(void){
 	struct graph* 	graph;
 	struct node* 	node_cursor;
 

@@ -27,7 +27,7 @@ int32_t _array_add(struct _array* _array, void* element){
 
 	if (_array->nb_filled_page >= _array->nb_allocated_page){
 		_array->nb_allocated_page += _ARRAY_DEFAULT_ALLOC_PAGE;
-		buffer = (struct arrayPage*)realloc(_array->buffer, _array->nb_allocated_page * sizeof(struct arrayPage));
+		buffer = realloc(_array->buffer, _array->nb_allocated_page * sizeof(struct arrayPage));
 		if (buffer == NULL){
 			log_err("unable to malloc/realloc memory");
 			return -1;
@@ -146,7 +146,7 @@ int32_t array_add(struct array* array, const void* element){
 			array->nb_allocated_byte = nb_allocated_byte;
 		}
 		else{
-			buffer = (char*)realloc(array->buffer, nb_allocated_byte);
+			buffer = realloc(array->buffer, nb_allocated_byte);
 			if (buffer == NULL){
 				log_err("unable to realloc memory");
 				return -1;
@@ -203,7 +203,7 @@ void* array_inc(struct array* array){
 			array->nb_allocated_byte = nb_allocated_byte;
 		}
 		else{
-			buffer = (char*)realloc(array->buffer, nb_allocated_byte);
+			buffer = realloc(array->buffer, nb_allocated_byte);
 			if (buffer == NULL){
 				log_err("unable to realloc memory");
 				return NULL;

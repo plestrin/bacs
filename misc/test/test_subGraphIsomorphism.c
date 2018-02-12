@@ -51,7 +51,7 @@ static uint32_t edge_get_label(struct edge* edge){
 	return 0;
 }
 
-static struct graph* create_graph(){
+static struct graph* create_graph(void){
 	struct graph* 	graph;
 	struct node* 	node_a1;
 	struct node* 	node_a2;
@@ -160,7 +160,7 @@ static struct graph* create_graph(){
 	return graph;
 }
 
-static struct graph* create_subGraph(){
+static struct graph* create_subGraph(void){
 	struct graph* 	sub_graph;
 	struct node* 	node_a1;
 	struct node* 	node_a2;
@@ -202,7 +202,7 @@ static struct graph* create_subGraph(){
 	return sub_graph;
 }
 
-int main(){
+int main(void){
 	struct graph* 					graph;
 	struct graph* 					sub_graph;
 	struct graphIsoHandle* 			graph_handle;

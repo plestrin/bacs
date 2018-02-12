@@ -31,7 +31,7 @@ static int32_t asterix_copy_edge(void* data_dst, const void* data_src, void* arg
 	return 0;
 }
 
-int main(){
+int main(void){
 	struct graph* 	graph;
 	struct graph* 	clone;
 	char 			node_desc[NODE_DESCRIPTION_LENGTH];

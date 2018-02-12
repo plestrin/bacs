@@ -4,7 +4,7 @@
 #include "../multiColumn.h"
 #include "../base.h"
 
-int main(){
+int main(void){
 	struct multiColumnPrinter* printer;
 
 	printer = multiColumnPrinter_create(stdout, 5, NULL, NULL, NULL);
