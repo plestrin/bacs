@@ -67,7 +67,7 @@ ckeck_list = [
 		r'nettle/build/net_hmac_md5',
 		r'cryptopp/build/pp_hmac_md5'
 	],
-	
+
 	# RC4
 	[
 		r'test/build/test_rc4_[gc]o[0-9sz]',
@@ -152,7 +152,8 @@ ckeck_list = [
 	[
 		r'test/build/test_hmac_sha1_[gc]o[0-9sz]',
 		r'tomcrypt/build/tom_hmac_sha1',
-		r'botan/build/bot_hmac_sha1'
+		r'botan/build/bot_hmac_sha1',
+		r'nettle/build/net_hmac_sha1'
 	],
 
 	# SERPENT
@@ -161,7 +162,7 @@ ckeck_list = [
 		r'cryptopp/build/pp_serpent',
 		r'botan/build/bot_serpent'
 	],
-	
+
 	# DES
 	[
 		r'test/build/test_des_[gc]o[0-9sz]',
@@ -170,7 +171,7 @@ ckeck_list = [
 		r'tomcrypt/build/tom_des',
 		r'botan/build/bot_des'
 	],
-	
+
 	# TWOFISH
 	[
 		r'test/build/test_twofish_[gc]o[0-9sz]',

@@ -8,7 +8,7 @@
 int main(void){
 	char 				pt[] = "Hello World!";
 	char				key[] = "Key";
-	char 				ct[sizeof(pt)];
+	char 				ct[sizeof pt];
 	struct arcfour_ctx 	ctx;
 
 	printf("Plaintext:  \"%s\"\n", pt);
