@@ -10,7 +10,7 @@
 #define TEA_KEY_NB_BYTE 	16
 #define TEA_KEY_NB_DWORD 	4
 
-/* 
+/*
  * No padding is done, make sure the data length is a multiple of the block size.
  * - data			: one block of input message
  * - key			: 128 bits key
