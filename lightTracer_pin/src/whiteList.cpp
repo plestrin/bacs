@@ -8,11 +8,28 @@
 
 static int whiteList_compare(const void* entry1, const void* entry2);
 
+struct whiteList* whiteList_create(const char* file_name){
+	struct whiteList* result;
+
+	if ((result = (struct whiteList*)malloc(sizeof(struct whiteList))) == NULL){
+		LOG("ERROR: unable to allocate memory\n");
+	}
+	else{
+		if (whiteList_init(result, file_name)){
+			LOG("ERROR: unable to init whiteList\n");
+			free(result);
+			result = NULL;
+		}
+	}
+
+	return result;
+}
+
 int whiteList_init(struct whiteList* list, const char* file_name){
 	FILE* 	file = NULL;
 	long 	size;
 	int 	i;
-	int 	n;
+	size_t 	n;
 
 	list->buffer = NULL;
 
@@ -27,7 +44,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 		LOG("ERROR: unable to fseek\n");
 		goto error;
 	}
-	
+
 	size = ftell(file);
 	rewind(file);
 
@@ -62,7 +79,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 		}
 	}
 
-	if ((list->entries = (char**)malloc(sizeof(char*)*list->nb_entry)) == NULL){
+	if ((list->entries = (char**)malloc(sizeof(char*) * list->nb_entry)) == NULL){
 		LOG("ERROR: unable to allocate memory\n");
 		goto error;
 	}
@@ -82,7 +99,7 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 		}
 	}
 
-	qsort(list->entries, list->nb_entry, sizeof(char*), whiteList_compare);	
+	qsort(list->entries, list->nb_entry, sizeof(char*), whiteList_compare);
 
 	return 0;
 
@@ -90,37 +107,15 @@ int whiteList_init(struct whiteList* list, const char* file_name){
 	if (file != NULL){
 		fclose(file);
 	}
-	if (list->buffer != NULL){
-		free(list->buffer);
-	}
+
+	free(list->buffer);
 
 	return -1;
 }
 
 void whiteList_clean(struct whiteList* list){
-	if (list->entries != NULL){
-		free(list->entries);
-	}
-	if (list->buffer != NULL){
-		free(list->buffer);
-	}
-}
-
-struct whiteList* whiteList_create(const char* file_name){
-	struct whiteList* result;
-
-	if ((result = (struct whiteList*)malloc(sizeof(struct whiteList))) == NULL){
-		LOG("ERROR: unable to allocate memory\n");
-	}
-	else{
-		if (whiteList_init(result, file_name)){
-			LOG("ERROR: unable to init whiteList\n");
-			free(result);
-			result = NULL;
-		}
-	}
-
-	return result;
+	free(list->entries);
+	free(list->buffer);
 }
 
 int whiteList_search(struct whiteList* list, const char* entry){

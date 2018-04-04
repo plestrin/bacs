@@ -5,7 +5,7 @@
 * XED
 * For Windows: Visual Studio Express 2013 MSVC 18.00, GNU Make, PIN version 2.14
 
-If you get an error about `BBL_InsertFillBuffer` while compiling LightTracer PIN, add the following prototype to `$PIN_ROOT)/source/include/pin/gen/pin_client.PH`:
+If you get an error about `BBL_InsertFillBuffer` while compiling LightTracer PIN, add the following prototype to `$(PIN_ROOT)/source/include/pin/gen/pin_client.PH`:
 ```C
 	extern VOID BBL_InsertFillBuffer(BBL bbl, IPOINT action, BUFFER_ID id, ...);
 ```
