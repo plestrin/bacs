@@ -47,7 +47,7 @@ static const enum irDependenceType dependence_label_table[NB_IR_OPCODE - 1][IRIM
 	{IR_DEPENDENCE_TYPE_DIRECT, 	IR_DEPENDENCE_TYPE_DIRECT, 		IR_DEPENDENCE_TYPE_DIRECT}, 	/* 30 IR_JOKER 		*/
 };
 
-static const uint8_t sign_extand_table[NB_IR_OPCODE - 1] = {
+static const uint8_t sign_extend_table[NB_IR_OPCODE - 1] = {
 	1, /* 0  IR_ADD 		*/
 	1, /* 1  IR_ADD 		*/
 	1, /* 2  IR_AND 		*/
@@ -1028,7 +1028,7 @@ static struct node* memOperand_build_address(struct ir* ir, const struct memOper
 static int32_t asmRisc_process_part1(struct ir* ir, struct asmRiscIns* risc){
 	uint8_t i;
 
-	if (sign_extand_table[risc->opcode]){
+	if (sign_extend_table[risc->opcode]){
 		for (i = 0; i < risc->nb_input_operand; i++){
 			asmOperand_sign_extend(risc->input_operand + i, risc->output_operand.size);
 		}
