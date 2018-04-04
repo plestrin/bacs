@@ -1,69 +1,23 @@
 #include <iostream>
-#include <iomanip>
-#include <stdint.h>
-#include <dlfcn.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
-#include <botan/init.h>
 #include <botan/pipe.h>
 #include <botan/ecb.h>
 #include <botan/aes.h>
 
-static void print_raw_buffer(Botan::byte* buffer, int buffer_length);
+#include "misc.h"
 
-static void botan_patch();
-static void botan_ecb_aes();
+int main(void){
+	char 		pt[] = "Hi I am an AES ECB test vector distributed on 4 128-bit blocks!";
+	Botan::byte key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+	Botan::byte ct[sizeof pt];
+	Botan::byte vt[sizeof pt];
 
-int main() {
-	botan_patch();
-	botan_ecb_aes();
-	return 0;
-}
-
-static void botan_patch(){
-	void* 	lib_handle;
-	char* 	func_addr;
-	int32_t page_size;
-
-	lib_handle = dlopen("/usr/lib/libbotan-1.10.so.0", RTLD_LAZY);
-	if (lib_handle == NULL){
-		std::cout << "ERROR: in " << __func__ << ", " << dlerror() << std::endl;
-		return;
+	if (botan_patch()){
+		std::cout << "ERROR: in " << __func__ << ", unable to patch Botan" << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	func_addr = (char*)dlsym(lib_handle, "_ZN5Botan26confirm_startup_self_testsERNS_17Algorithm_FactoryE");
-	if (func_addr == NULL){
-		std::cout << "ERROR: in " << __func__ << ", " << dlerror() << std::endl;
-		goto exit;
-	}
-
-	page_size = getpagesize();
-
-	if (mprotect(func_addr - ((unsigned long)func_addr % page_size), page_size, PROT_EXEC | PROT_READ | PROT_WRITE)){
-		std::cout << "ERROR: in " << __func__ << ", unable to set memory write permission" << std::endl;
-		goto exit;
-	}
-
-	*func_addr = 0xc3;
-
-	if (mprotect(func_addr - ((long)func_addr % page_size), page_size, PROT_EXEC | PROT_READ)){
-		std::cout << "ERROR: in " << __func__ << ", unable to reset memory permission" << std::endl;
-		goto exit;
-	}
-
-	exit:
-	if (dlclose(lib_handle)){
-		std::cout << "ERROR: in " << __func__ << ", " << dlerror() << std::endl;
-	}
-}
-
-static void botan_ecb_aes(){
-	char 					pt[] = "Hi I am an AES ECB test vector distributed on 4 128-bit blocks!";
-	unsigned char 			key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
-	Botan::byte 			ct[sizeof(pt)];
-	Botan::byte				vt[sizeof(pt)];
-	Botan::SymmetricKey 	botan_key(key, 16);
+	Botan::SymmetricKey 	botan_key(key, sizeof key);
 	Botan::ECB_Encryption* 	enc_ecb_aes;
 	Botan::Pipe* 			enc_pipe;
 	Botan::ECB_Decryption* 	dec_ecb_aes;
@@ -71,15 +25,15 @@ static void botan_ecb_aes(){
 
 	std::cout << "Plaintext:      \"" << pt << "\"" << std::endl;
 	std::cout << "Key 128:        ";
-	print_raw_buffer((Botan::byte*)key, 16);
+	print_raw_buffer(key, sizeof key);
 
 	enc_ecb_aes = new Botan::ECB_Encryption(new Botan::AES_128, new Botan::Null_Padding, botan_key);
 	enc_pipe = new Botan::Pipe(enc_ecb_aes, NULL, NULL);
 
-	enc_pipe->process_msg((Botan::byte*)pt, sizeof(pt));
-	if (enc_pipe->read(ct, sizeof(pt)) != sizeof(pt)){
-		std::cout << std::endl << "ERROR: the number of byte read from the pipe is incorrect" << std::endl;
-		return;
+	enc_pipe->process_msg((Botan::byte*)pt, sizeof pt);
+	if (enc_pipe->read(ct, sizeof pt) != sizeof pt){
+		std::cout << std::endl << "ERROR: in " << __func__ << ", the number of byte read from the pipe is incorrect" << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	delete(enc_pipe);
@@ -87,33 +41,23 @@ static void botan_ecb_aes(){
 	dec_ecb_aes = new Botan::ECB_Decryption(new Botan::AES_128, new Botan::Null_Padding, botan_key);
 	dec_pipe = new Botan::Pipe(dec_ecb_aes, NULL, NULL);
 
-	dec_pipe->process_msg(ct, sizeof(pt));
-	if (dec_pipe->read(vt, sizeof(pt)) != sizeof(pt)){
-		std::cout << std::endl << "ERROR: the number of byte read from the pipe is incorrect" << std::endl;
-		return;
+	dec_pipe->process_msg(ct, sizeof pt);
+	if (dec_pipe->read(vt, sizeof pt) != sizeof pt){
+		std::cout << std::endl << "ERROR: in " << __func__ << ", the number of byte read from the pipe is incorrect" << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	delete(dec_pipe);
 
-	if (!memcmp(pt, vt, 16)){
-		std::cout << std::endl << "Ciphertext ECB: ";
-		print_raw_buffer(ct, sizeof(pt));
-		std::cout << std::endl << "Recovery:       OK" << std::endl;
-	}
-	else{
-		std::cout << std::endl << "Ciphertext ECB: ";
-		print_raw_buffer(ct, sizeof(pt));
-		std::cout << std::endl << "Recovery:       FAIL" << std::endl;
-	}
-}
+	std::cout << std::endl << "Ciphertext ECB: ";
+	print_raw_buffer(ct, sizeof pt);
 
-static void print_raw_buffer(Botan::byte* buffer, int buffer_length){
-	for (int i = 0; i < buffer_length; i++){
-		if (buffer[i] & 0xf0){
-			std::cout << std::hex << (buffer[i] & 0xff);
-		}
-		else{
-			std::cout << "0" << std::hex << (buffer[i] & 0xff);
-		}
+	if (memcmp(pt, vt, sizeof pt)){
+		std::cout << std::endl << "Recovery:       FAIL" << std::endl;
+		return EXIT_FAILURE;
 	}
+
+	std::cout << std::endl << "Recovery:       OK" << std::endl;
+
+	return EXIT_SUCCESS;
 }
