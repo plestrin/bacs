@@ -53,17 +53,15 @@ int main(void){
 	ecb_dec_tea.ProcessData(vt, ct, sizeof ct);
 
 	std::cout << std::endl << "Ciphertext TEA:  ";
+	readBuffer_reverse_endianness(ct, sizeof ct);
+	print_raw_buffer(ct, sizeof ct);
 
 	if (memcmp(pt, vt, sizeof pt)){
-		readBuffer_reverse_endianness(ct, sizeof ct);
-		print_raw_buffer(ct, sizeof ct);
 		std::cout << std::endl << "Recovery:        FAIL" << std::endl;
 		return EXIT_FAILURE;
 	}
 
-	readBuffer_reverse_endianness(ct, sizeof ct);
-	print_raw_buffer(ct, sizeof ct);
-	std::cout << std::endl << "Recovery:        FAIL" << std::endl;
+	std::cout << std::endl << "Recovery:        OK" << std::endl;
 
 	CryptoPP::ECB_Mode<CryptoPP::XTEA>::Encryption ecb_enc_xtea((byte*)key, sizeof key);
 	ecb_enc_xtea.ProcessData(ct, (byte*)pt, sizeof pt);
@@ -72,17 +70,15 @@ int main(void){
 	ecb_dec_xtea.ProcessData(vt, ct, sizeof ct);
 
 	std::cout << "Ciphertext XTEA: ";
+	readBuffer_reverse_endianness(ct, sizeof ct);
+	print_raw_buffer(ct, sizeof ct);
 
-	if (memcmp(pt, vt, 8)){
-		readBuffer_reverse_endianness(ct, sizeof ct);
-		print_raw_buffer(ct, sizeof ct);
-		std::cout << std::endl << "Recovery:        OK" << std::endl;
+	if (memcmp(pt, vt, sizeof pt)){
+		std::cout << std::endl << "Recovery:        FAIL" << std::endl;
 		return EXIT_FAILURE;
 	}
 
-	readBuffer_reverse_endianness(ct, sizeof ct);
-	print_raw_buffer(ct, sizeof ct);
-	std::cout << std::endl << "Recovery:        FAIL" << std::endl;
+	std::cout << std::endl << "Recovery:        OK" << std::endl;
 
 	return EXIT_SUCCESS;
 }
