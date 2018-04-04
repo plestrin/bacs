@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "ir.h"
 #include "irImporterAsm.h"
@@ -630,7 +631,7 @@ void ir_dotPrint_node(void* data, FILE* file, void* arg){
 					break;
 				}
 				case 64 : {
-					fprintf(file, ",label=\"0x%llx\"", operation->operation_type.imm.value);
+					fprintf(file, ",label=\"0x%" PRIx64 "\"", operation->operation_type.imm.value);
 					break;
 				}
 				default : {

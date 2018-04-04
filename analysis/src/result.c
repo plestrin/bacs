@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "result.h"
 #include "base.h"
@@ -816,7 +817,7 @@ void parameterMapping_print_location(const struct parameterMapping* mapping){
 
 		if ((buffer_start_offset + i * (buffer_access_size / 8)) - offset == mapping->nb_fragment * (buffer_access_size / 8)){
 			ir_print_location_node(base);
-			printf("[%llu:%llu]\n", offset, buffer_start_offset + i * (buffer_access_size / 8));
+			printf("[%" PRIu64 ":%" PRIu64 "]\n", offset, buffer_start_offset + i * (buffer_access_size / 8));
 			return;
 		}
 	}

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "trace.h"
 #include "assemblyElfLoader.h"
@@ -857,7 +858,7 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 
 	for (return_code = memTraceIterator_get_prev_addr(&mem_it, addr); !return_code; return_code = memTraceIterator_get_prev_addr(&mem_it, addr)){
 		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
-			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
+			log_err_m("unable to get address %" PRIu64 " from assembly", mem_it.mem_addr_index);
 			break;
 		}
 
@@ -867,7 +868,7 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 		}
 
 		if (ins_it.mem_access_index != mem_it.mem_addr_index){
-			log_err_m("memory access index inconsistency: run check %llu vs %llu", ins_it.mem_access_index, mem_it.mem_addr_index);
+			log_err_m("memory access index inconsistency: run check %" PRIu64 " vs %" PRIu64, ins_it.mem_access_index, mem_it.mem_addr_index);
 			break;
 		}
 
@@ -892,7 +893,7 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 
 	for (return_code = memTraceIterator_get_next_addr(&mem_it, addr); !return_code; return_code = memTraceIterator_get_next_addr(&mem_it, addr)){
 		if (assembly_get_address(&(trace->assembly), &ins_it, mem_it.mem_addr_index)){
-			log_err_m("unable to get address %llu from assembly", mem_it.mem_addr_index);
+			log_err_m("unable to get address %" PRIu64 " from assembly", mem_it.mem_addr_index);
 			break;
 		}
 
@@ -902,7 +903,7 @@ void trace_search_memory(struct trace* trace, uint32_t offset, ADDRESS addr){
 		}
 
 		if (ins_it.mem_access_index != mem_it.mem_addr_index){
-			log_err_m("memory access index inconsistency: run check %llu vs %llu", ins_it.mem_access_index, mem_it.mem_addr_index);
+			log_err_m("memory access index inconsistency: run check %" PRIu64 " vs %" PRIu64, ins_it.mem_access_index, mem_it.mem_addr_index);
 			break;
 		}
 

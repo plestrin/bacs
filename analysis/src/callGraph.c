@@ -525,7 +525,7 @@ enum blockLabel* callGraph_alloc_label_buffer(struct assembly* assembly){
 	}
 
 	if ((label_buffer = (enum blockLabel*)calloc(nb_block, sizeof(enum blockLabel))) == NULL){
-		log_err_m("unable to allocate memory (%u byte(s))", nb_block * sizeof(enum blockLabel));
+		log_err_m("unable to allocate memory (%zu byte(s))", nb_block * sizeof(enum blockLabel));
 	}
 
 	return label_buffer;

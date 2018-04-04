@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "irExpression.h"
 #include "dagPartialOrder.h"
@@ -490,10 +491,10 @@ void irAffineForm_print(struct irAffineForm* affine_form){
 
 	for (term = (struct irAffineTerm*)setIterator_get_first(&(affine_form->term_set), &iterator); term != NULL; term = (struct irAffineTerm*)setIterator_get_next(&iterator)){
 		if (irAffineTerm_is_neg(term)){
-			printf("-%lld x %p ", term->coef, (void*)(term->variable));
+			printf("-%" PRId64 " x %p ", term->coef, (void*)(term->variable));
 		}
 		else{
-			printf("%llu x %p ", term->coef, (void*)(term->variable));
+			printf("%" PRIu64 " x %p ", term->coef, (void*)(term->variable));
 		}
 	}
 	printf("\n");

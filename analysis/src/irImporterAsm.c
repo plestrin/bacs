@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "irImporterAsm.h"
 #include "irBuilder.h"
@@ -2603,7 +2604,7 @@ static void simd_decode_special_psllq_psrlq(struct ir* ir, struct instructionIte
 		return;
 	}
 
-	log_err_m("this case is not implemented yet: PS*LQ second operand is equal to: %llu -> skip instruction", operand_buffer[1].operand_type.imm);
+	log_err_m("this case is not implemented yet: PS*LQ second operand is equal to: %" PRIu64 " -> skip instruction", operand_buffer[1].operand_type.imm);
 }
 
 static void simd_decode_special_pslldq(struct ir* ir, struct instructionIterator* it, struct asmCiscIns* cisc, const struct memAddress* mem_addr){

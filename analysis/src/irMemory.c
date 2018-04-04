@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <search.h>
+#include <inttypes.h>
 
 #include "irMemory.h"
 #include "irVariableRange.h"
@@ -1110,7 +1111,7 @@ void accessGroup_print(const struct accessGroup* group, FILE* file){
 		else{
 			fputc('W', file);
 		}
-		fprintf(file, ":0x%llx:%u:%p", group->entries[i]->offset, group->entries[i]->size, (void*)group->entries[i]);
+		fprintf(file, ":0x%" PRIx64 ":%u:%p", group->entries[i]->offset, group->entries[i]->size, (void*)group->entries[i]);
 		if (i != group->nb_entry - 1){
 			fputc(' ', file);
 		}
@@ -1356,10 +1357,10 @@ void accessTable_print(const struct accessTable* table, uint32_t* mapping, FILE*
 		}
 
 		if (i == array_get_length(&(table->access_array)) - 1){
-			fprintf(file, "%c:0x%llx:%u", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
+			fprintf(file, "%c:0x%" PRIx64 ":%u", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
 		}
 		else{
-			fprintf(file, "%c:0x%llx:%u ", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
+			fprintf(file, "%c:0x%" PRIx64 ":%u ", (ir_node_get_operation(edge_get_dst(entry->access))->type == IR_OPERATION_TYPE_IN_MEM) ? 'R' : 'W', entry->offset, entry->size);
 		}
 	}
 	fputs("}", file);
